@@ -4,10 +4,12 @@ import {
   AdaptivePaneClose,
   AdaptivePaneHeader,
   AdaptivePaneTitle,
+  AdaptivePaneTrigger,
   adaptivePanePageClass,
+  createAdaptivePaneController,
 } from '@/components/ui/adaptive-pane'
 import { Avatar } from '@/components/ui/avatar'
-import { Button } from '@/components/ui/button'
+import { buttonVariants } from '@/components/ui/button'
 import { SizeClassProvider, useSizeClass } from '@/lib/container'
 
 const activity = ['Called · 4 min', 'Shared “Q3 plan”', 'Sent 3 messages', 'Joined the team']
@@ -17,7 +19,8 @@ function Profile() {
   // renders; the pane's `auto` reads that scope: regular → column,
   // medium → drawer, compact → push (an `end` pane).
   const [ref, sizeClass] = useSizeClass({ breakpoints: { medium: 440, regular: 640 } })
-  const [open, setOpen] = useState(true)
+  // The trigger sits outside the pane, so it reaches it through the pane's controller.
+  const [pane] = useState(createAdaptivePaneController)
   return (
     <div
       ref={ref}
@@ -36,18 +39,18 @@ function Profile() {
             <div style={{ fontSize: 20, fontWeight: 700, margin: '10px 0 14px' }}>
               Maya Lindqvist
             </div>
-            <Button size="sm" variant="secondary" aria-pressed={open} onClick={() => setOpen(!open)}>
+            <AdaptivePaneTrigger controller={pane} className={buttonVariants({ size: 'sm', variant: 'secondary' })}>
               Activity
-            </Button>
+            </AdaptivePaneTrigger>
             <div style={{ marginTop: 12, fontSize: 12.5, color: 'var(--muted-foreground)' }}>
               Size class: {sizeClass}
             </div>
           </div>
         </main>
         <AdaptivePane
+          controller={pane}
           side="end"
-          open={open}
-          onOpenChange={setOpen}
+          defaultOpen
           columnWidth={260}
           drawerWidth={280}
           className={({ presentation }) => (presentation === 'column' ? 'border-s border-border' : undefined)}

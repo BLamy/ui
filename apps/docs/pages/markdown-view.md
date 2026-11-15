@@ -6,7 +6,7 @@ Use a sibling when the job differs:
 
 - **The user writes the Markdown:** [MarkdownEditor](https://blamy.github.io/ui/#/markdown-editor), a rich, form-ready field. Toggle between the two for an edit / preview pair.
 - **Source code, not prose:** [CodeEditor](https://blamy.github.io/ui/#/code-editor), editable or read-only, with gutters and a windowed renderer for big files.
-- **A whole chat transcript:** [Conversation](https://blamy.github.io/ui/#/conversation), whose `MessageMarkdown` is a `MarkdownView` with the reply styling.
+- **A whole chat transcript:** [Conversation](https://blamy.github.io/ui/#/conversation), whose `ConversationMarkdown` is a `MarkdownView` with the reply styling.
 
 {% tabs title="Installation" sync="install" %}
 {% tab title="shadcn CLI" %}
@@ -21,12 +21,12 @@ import { MarkdownView } from '@/components/ui/markdown-view'
 {% tab title="npm" %}
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 
-Import the stylesheet once at your app's entry, then the parts from the package root:
+Import the stylesheet once at your app's entry, then the parts from their module:
 
 ```tsx
 import '@brett_lamy/ui/styles.css'
 
-import { MarkdownView } from '@brett_lamy/ui'
+import { MarkdownView } from '@brett_lamy/ui/markdown-view'
 ```
 {% endtab %}
 {% endtabs %}
@@ -74,7 +74,7 @@ Pass the latest accumulated markdown as chunks arrive. `streaming` is forwarded 
 
 ## Styling
 
-Import `@brett_lamy/ui/styles.css`; the component brings Docstream's stylesheet with it. The root is `<div data-slot="markdown-view" data-renderer="docstream" class="wb-md">`. `.wb-md` sets the reading rhythm (headings, lists, inline code, tables) from the theme's variables, and code fences take their colors from `--code`, `--code-foreground` and CodeEditor's `--bl-syntax-*` knobs, so a dark scope or a custom palette restyles them. Pass `className` for layout. Docstream's own sheet is not in a cascade layer yet, so to override one of its rules use a selector at least as specific as its own.
+Import `@brett_lamy/ui/styles.css`; the component brings Docstream's stylesheet with it. The root is `<div data-slot="markdown-view" data-renderer="docstream" class="wb-md">`. `.wb-md` sets the reading rhythm (headings, lists, inline code, tables) from the theme's variables; the first block starts at the top of the box and the last adds no space under it, so a reply that opens with a heading sits flush in a bubble or a card. Code fences take their surface from `--code` / `--code-foreground` and their token colors from CodeEditor's `--bl-syntax-*` knobs (`.wb-md` points Docstream's `--docs-tok-*` at them), so one setting colors a snippet the same in a CodeEditor and in a MarkdownView. Fence tokens come from Docstream's highlighter, which needs WebGPU; in a browser without it, fences are plain text until Docstream gains a fallback lexer. Pass `className` for layout. Docstream's own sheet is not in a cascade layer yet, so to override one of its rules use a selector at least as specific as its own.
 
 ## Accessibility
 

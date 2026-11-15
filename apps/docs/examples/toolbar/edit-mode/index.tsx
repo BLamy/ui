@@ -31,7 +31,7 @@ export default function ToolbarEditMode() {
     <div className="relative mx-auto h-[420px] w-full max-w-sm overflow-hidden rounded-card bg-background shadow-hairline">
       <div className="absolute inset-0 overflow-y-auto pt-2 pb-20">
         <div className="flex justify-end px-4">
-          <Button variant="link" onClick={() => { setEditing((e) => !e); setPicked(new Set()) }}>
+          <Button variant="plain" onClick={() => { setEditing((e) => !e); setPicked(new Set()) }}>
             {editing ? 'Done' : 'Select'}
           </Button>
         </div>
@@ -44,7 +44,7 @@ export default function ToolbarEditMode() {
           </ListSection>
         </List>
         {!rows.length && (
-          <Button variant="link" className="mx-auto mt-4 flex" onClick={() => setGone(new Set())}>Restore contacts</Button>
+          <Button variant="plain" className="mx-auto mt-4 flex" onClick={() => setGone(new Set())}>Restore contacts</Button>
         )}
       </div>
       {editing && (

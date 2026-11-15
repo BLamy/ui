@@ -102,7 +102,7 @@ describe('ArtifactChatContainer', () => {
     expect(screen.getByRole('textbox', { name: 'Message', hidden: true })).toBe(message);
     expect(message.value).toBe('half a thought');
     expect(document.querySelector('[data-slot=artifact-chat-content]')).toBe(content);
-    expect(document.querySelector('[data-slot=floating-sheet-foot]')?.contains(message)).toBe(true);
+    expect(document.querySelector('[data-slot=floating-sheet-footer]')?.contains(message)).toBe(true);
     // The column played its exit and went.
     expect(column()).toBeNull();
     // And back: the column slides in (it didn't on first paint) and takes the composer again.
@@ -140,6 +140,17 @@ describe('ArtifactChatContainer', () => {
     } finally {
       observer.disconnect();
     }
+  });
+
+  it('docked, an explicit appearance paints the chat column only: the content keeps the page theme', () => {
+    render(<App appearance="dark" />);
+    const content = document.querySelector<HTMLElement>('[data-slot=artifact-chat-content]')!;
+    expect(content.closest('[data-theme-scope]')).toBeNull();
+    expect(root().classList.contains('dark')).toBe(false);
+    const aside = screen.getByRole('complementary', { name: 'Chat' });
+    expect(aside.getAttribute('data-theme-scope')).toBe('sheet');
+    expect(aside.classList.contains('dark')).toBe(true);
+    expect(aside.contains(screen.getByText('Transcript'))).toBe(true);
   });
 
   it('docks the column on the end edge and names it', () => {

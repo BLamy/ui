@@ -2,7 +2,7 @@
 
 A grid of cells for CSV files and other tables, from ten rows up to millions. Only the cells in view are in the page, so a million-row file scrolls as smoothly as a short one. You can edit cells in place, select ranges, copy and paste to and from other spreadsheets, undo, and resize columns. Sorting a number or date column runs as a WebGPU compute shader, and each number column's header shows a histogram tallied on the GPU. Without WebGPU, both run on the CPU and give the same answers.
 
-Use [DataTable](https://blamy.github.io/ui/#/data-table) instead when people read and pick rows rather than edit cells: its unit is a row, with typed columns rendered by you. The two share the column edge (`columnResizerClass`) and the empty state.
+Use [DataTable](https://blamy.github.io/ui/#/data-table) instead when people read and pick rows rather than edit cells: its unit is a row (selected and pressed as one, its cells reached one by one), with typed columns rendered by you. The two share the column edge (`columnResizerClass`) and the empty state.
 
 It's one primitive built from UI SDK behaviors: [`createGridFocus`](https://ui-sdk.dev/docs/core/behaviors/focus) moves the active cell, [`createCellRange`](https://ui-sdk.dev/docs/core/behaviors/selection) selects blocks and reads them as tab-separated text (`cellsToText` / `textToCells`), [`createInlineEdit`](https://ui-sdk.dev/docs/core/behaviors/lists) edits a cell in place, `createUndoStack` keeps the history, [`createResize`](https://ui-sdk.dev/docs/core/behaviors/direct-manipulation) sizes the columns, and two [`createVirtualizer`](https://ui-sdk.dev/docs/core/behaviors/lists)s render only the rows and columns in view.
 
@@ -19,12 +19,12 @@ import { Spreadsheet } from '@/components/ui/spreadsheet'
 {% tab title="npm" %}
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 
-Import the stylesheet once at your app's entry, then the parts from the package root:
+Import the stylesheet once at your app's entry, then the parts from their module:
 
 ```tsx
 import '@brett_lamy/ui/styles.css'
 
-import { Spreadsheet } from '@brett_lamy/ui'
+import { Spreadsheet } from '@brett_lamy/ui/spreadsheet'
 ```
 {% endtab %}
 {% endtabs %}

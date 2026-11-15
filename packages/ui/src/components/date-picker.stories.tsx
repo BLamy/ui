@@ -5,7 +5,7 @@ import {
   DatePicker,
   DatePickerClear,
   DatePickerContent,
-  DatePickerField,
+  DatePickerInputGroup,
   DatePickerHint,
   DatePickerInput,
   DatePickerPreset,
@@ -19,7 +19,10 @@ const meta: Meta<typeof DatePicker> = {
   title: 'Molecules/DatePicker',
   component: DatePicker,
   args: { locale: 'en-US', defaultMonth: '2026-09', today: '2026-01-01' },
-  decorators: [(Story) => <Panel w={380}><div className="h-[420px]"><Story /></div></Panel>],
+  // One frame for every story: `parameters.dark` and `parameters.height` (tall enough for the open popup) change it.
+  decorators: [(Story, { parameters }) => (
+    <Panel w={380} dark={parameters.dark}><div style={{ height: parameters.height ?? 420 }}><Story /></div></Panel>
+  )],
 };
 export default meta;
 type Story = StoryObj<typeof DatePicker>;
@@ -29,7 +32,7 @@ export const Default: Story = {
     <Field>
       <FieldLabel>Date</FieldLabel>
       <DatePicker {...args} defaultValue="2026-09-09">
-        <DatePickerField />
+        <DatePickerInputGroup />
         <DatePickerContent />
       </DatePicker>
       <FieldDescription>Type a date, or open the calendar.</FieldDescription>
@@ -42,7 +45,7 @@ export const Open: Story = {
     <Field>
       <FieldLabel>Date</FieldLabel>
       <DatePicker {...args} defaultOpen defaultValue="2026-09-09">
-        <DatePickerField />
+        <DatePickerInputGroup />
         <DatePickerContent />
       </DatePicker>
     </Field>
@@ -54,7 +57,7 @@ export const Empty: Story = {
     <Field>
       <FieldLabel>Due</FieldLabel>
       <DatePicker {...args} defaultOpen>
-        <DatePickerField />
+        <DatePickerInputGroup />
         <DatePickerHint />
         <DatePickerContent />
       </DatePicker>
@@ -69,7 +72,7 @@ export const WithTime: Story = {
       <Field className="min-w-0 flex-1">
         <FieldLabel>Starts</FieldLabel>
         <DatePicker {...args} defaultValue="2026-09-09">
-          <DatePickerField />
+          <DatePickerInputGroup />
           <DatePickerContent />
         </DatePicker>
       </Field>
@@ -83,10 +86,10 @@ export const Sizes: Story = {
     <div className="flex flex-col gap-3">
       {(['sm', 'default', 'lg'] as const).map((s) => (
         <DatePicker key={s} {...args} defaultValue="2026-09-09">
-          <DatePickerField size={s}>
+          <DatePickerInputGroup size={s}>
             <DatePickerInput aria-label={s} />
             <DatePickerTrigger />
-          </DatePickerField>
+          </DatePickerInputGroup>
           <DatePickerContent />
         </DatePicker>
       ))}
@@ -99,7 +102,7 @@ export const Invalid: Story = {
     <Field invalid>
       <FieldLabel>Due</FieldLabel>
       <DatePicker {...args} defaultValue="2026-09-09">
-        <DatePickerField />
+        <DatePickerInputGroup />
         <DatePickerContent />
       </DatePicker>
       <FieldError>Pick a date after today.</FieldError>
@@ -112,7 +115,7 @@ export const Disabled: Story = {
     <Field disabled>
       <FieldLabel>Due</FieldLabel>
       <DatePicker {...args} defaultValue="2026-09-09">
-        <DatePickerField />
+        <DatePickerInputGroup />
         <DatePickerContent />
       </DatePicker>
     </Field>
@@ -124,11 +127,11 @@ export const Clearable: Story = {
     <Field>
       <FieldLabel>Due</FieldLabel>
       <DatePicker {...args} defaultValue="2026-09-09">
-        <DatePickerField>
+        <DatePickerInputGroup>
           <DatePickerInput />
           <DatePickerClear />
           <DatePickerTrigger />
-        </DatePickerField>
+        </DatePickerInputGroup>
         <DatePickerContent />
       </DatePicker>
     </Field>
@@ -136,12 +139,12 @@ export const Clearable: Story = {
 };
 
 export const Presets: Story = {
-  decorators: [(Story) => <Panel w={380}><div className="h-[470px]"><Story /></div></Panel>],
+  parameters: { height: 520 },
   render: (args) => (
     <Field>
       <FieldLabel>Due</FieldLabel>
       <DatePicker {...args} defaultOpen defaultValue="2026-09-09">
-        <DatePickerField />
+        <DatePickerInputGroup />
         <DatePickerContent>
           <CalendarHeader />
           <CalendarGrid />
@@ -162,7 +165,7 @@ export const Range: Story = {
     <Field>
       <FieldLabel>Stay</FieldLabel>
       <DatePicker {...args}>
-        <DatePickerField />
+        <DatePickerInputGroup />
         <DatePickerContent />
       </DatePicker>
       <FieldDescription>Check-in to check-out.</FieldDescription>
@@ -171,13 +174,13 @@ export const Range: Story = {
 };
 
 export const RangeOpen: Story = {
-  decorators: [(Story) => <Panel w={380}><div className="h-[460px]"><Story /></div></Panel>],
+  parameters: { height: 460 },
   args: { mode: 'range', defaultValue: ['2026-09-08', '2026-09-13'] },
   render: (args) => (
     <Field>
       <FieldLabel>Stay</FieldLabel>
       <DatePicker {...args} defaultOpen>
-        <DatePickerField />
+        <DatePickerInputGroup />
         <DatePickerContent />
       </DatePicker>
     </Field>
@@ -185,12 +188,12 @@ export const RangeOpen: Story = {
 };
 
 export const Dark: Story = {
-  decorators: [(Story) => <Panel w={380} dark><div className="h-[420px]"><Story /></div></Panel>],
+  parameters: { dark: true },
   render: (args) => (
     <Field>
       <FieldLabel>Date</FieldLabel>
       <DatePicker {...args} defaultOpen defaultValue="2026-09-09">
-        <DatePickerField />
+        <DatePickerInputGroup />
         <DatePickerContent />
       </DatePicker>
     </Field>

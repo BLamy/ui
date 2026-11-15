@@ -3,7 +3,7 @@ import {
   FloatingSheet,
   FloatingSheetBody,
   FloatingSheetFab,
-  FloatingSheetFoot,
+  FloatingSheetFooter,
   type FloatingSheetAppearance,
   type FloatingSheetCollapse,
   type FloatingSheetFabAlign,
@@ -24,7 +24,7 @@ interface Args {
   bodyAlign: 'start' | 'end';
   fabSide: FloatingSheetFabSide;
   fabAlign: FloatingSheetFabAlign;
-  withFoot: boolean;
+  withFooter: boolean;
   defaultOpen: boolean;
   defaultMinimized: boolean;
   snapPoints?: number[];
@@ -59,12 +59,9 @@ function Demo(args: Args) {
         peek={args.peek}
         collapse={args.collapse}
         bodyAlign={args.bodyAlign}
-        fabSide={args.fabSide}
-        fabAlign={args.fabAlign}
         defaultOpen={args.defaultOpen}
         defaultMinimized={args.defaultMinimized}
         snapPoints={args.snapPoints}
-        radius={args.gutter === 0 ? 20 : 28}
         aria-label="Order"
       >
         <FloatingSheetBody>
@@ -85,14 +82,14 @@ function Demo(args: Args) {
             ))}
           </div>
         </FloatingSheetBody>
-        {args.withFoot ? (
-          <FloatingSheetFoot>
+        {args.withFooter ? (
+          <FloatingSheetFooter>
             <div className="flex gap-2.5 px-4 pt-2.5 pb-4">
               <Button size="pill" className="flex-1">Continue</Button>
             </div>
-          </FloatingSheetFoot>
+          </FloatingSheetFooter>
         ) : null}
-        <FloatingSheetFab aria-label="Show order"><Icon name="cart" size={22} /></FloatingSheetFab>
+        <FloatingSheetFab side={args.fabSide} align={args.fabAlign} aria-label="Show order"><Icon name="cart" size={22} /></FloatingSheetFab>
       </FloatingSheet>
     </div>
   );
@@ -104,13 +101,13 @@ const meta: Meta<Args> = {
   args: {
     variant: 'glass',
     appearance: 'auto',
-    gutter: 20,
+    gutter: 10,
     peek: 0,
     collapse: 'fab',
     bodyAlign: 'start',
     fabSide: 'bottom',
     fabAlign: 'center',
-    withFoot: true,
+    withFooter: true,
     defaultOpen: false,
     defaultMinimized: false,
   },
@@ -126,7 +123,7 @@ const meta: Meta<Args> = {
     docs: {
       description: {
         component:
-          'A card that rests over a page and grows into it: UI SDK’s Drawer with snap points at the peek and full height, modal only above the peek. FloatingSheetBody grows, FloatingSheetFoot stays pinned, and a drag below rest folds it into its FloatingSheetFab. ArtifactChatContainer floats its chat on it.',
+          'A card that rests over a page and grows into it: UI SDK’s Drawer with snap points at the peek and full height, modal only above the peek. FloatingSheetBody grows, FloatingSheetFooter stays pinned, and a drag below rest folds it into its FloatingSheetFab. ArtifactChatContainer floats its chat on it.',
       },
     },
   },
@@ -134,15 +131,15 @@ const meta: Meta<Args> = {
 export default meta;
 type Story = StoryObj<Args>;
 
-/** Glass at rest on its cap and foot, following the page's appearance (try the dark toolbar toggle). */
+/** Glass at rest on its cap and footer, following the page's appearance (try the dark toolbar toggle). */
 export const Glass: Story = {};
-/** A peek keeps part of the body visible above the foot. */
+/** A peek keeps part of the body visible above the footer. */
 export const GlassPeeking: Story = { args: { peek: 220 } };
-/** The opaque card inside a gutter. */
+/** The opaque card at rest: the same 10px inset and sheet radius as Dialog's tray. */
 export const Card: Story = { args: { variant: 'sheet', peek: 160 } };
 /** Edge to edge, like a system sheet; no FAB. */
 export const DockedSheet: Story = {
-  args: { variant: 'sheet', gutter: 0, peek: 300, collapse: 'none', withFoot: false },
+  args: { variant: 'sheet', gutter: 0, peek: 300, collapse: 'none', withFooter: false },
 };
 /** Grown to the top of its host over the scrim. */
 export const Open: Story = { args: { defaultOpen: true } };

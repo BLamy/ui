@@ -18,6 +18,8 @@ import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
 import { Icon, type IconName } from '@/lib/icon';
 import { passkeyUnsupportedReason } from '@/lib/passkey';
+import { calloutVariants } from '@/lib/primitives';
+import { useCopy } from '@/lib/use-copy';
 import { cn } from '@/lib/utils';
 import type { Vault, VaultState, VaultStatus, VaultUnsupportedReason } from '@/lib/vault';
 import { useVault, useVaultState, vaultErrorMessage } from '@/lib/vault-react';
@@ -30,12 +32,13 @@ import { useVault, useVaultState, vaultErrorMessage } from '@/lib/vault-react';
    </VaultProvider>
    The screens are exported on their own (VaultSetup, VaultUnlock, VaultUnsupported, VaultStatusBadge) to build a
    different shell, and so is the dialog that enrolls a passkey and shows the recovery key once (VaultEnrollDialog,
-   with RecoveryKey). */
+   with VaultRecoveryKey). */
 
 /* The theme's primary (white on the iOS blue, 3.6:1) and its muted text (3.3:1 on a grouped background) are under
    WCAG AA for body-size text. These screens carry the text people must read to keep their data, so they darken the
-   primary where it holds text and use a stronger muted colour. */
-const vaultActionClass = 'bg-[color-mix(in_oklab,var(--primary)_78%,black)]';
+   primary where it holds text and use a stronger muted colour. In dark mode white on the primary already passes,
+   so the buttons and links take the theme's own primary there. */
+const vaultActionClass = 'bg-[color-mix(in_oklab,var(--primary)_78%,black)] dark:bg-primary';
 const vaultLinkClass = 'text-[color-mix(in_oklab,var(--primary)_78%,black)] dark:text-primary';
 const vaultErrorClass = 'text-[color-mix(in_oklab,var(--destructive)_72%,black)] dark:text-destructive';
 const vaultMutedClass = 'text-foreground/70';
@@ -130,7 +133,7 @@ export function VaultUnsupported({ vault, className, ...props }: VaultUnsupporte
 
 /* ── recovery key ── */
 
-export const recoveryKeyVariants = cva(
+export const vaultRecoveryKeyVariants = cva(
   'grid justify-center gap-x-6 gap-y-1 rounded-ctl bg-secondary px-3 py-3 font-mono text-callout font-semibold tracking-wide text-foreground tabular-nums select-text [-webkit-user-select:text]',
   {
     variants: { layout: { grid: 'grid-cols-[repeat(2,max-content)]', row: 'grid-cols-[repeat(4,max-content)]' } },
@@ -138,15 +141,15 @@ export const recoveryKeyVariants = cva(
   },
 );
 
-export interface RecoveryKeyProps extends Omit<ComponentProps<'div'>, 'children'>, VariantProps<typeof recoveryKeyVariants> {
+export interface VaultRecoveryKeyProps extends Omit<ComponentProps<'div'>, 'children'>, VariantProps<typeof vaultRecoveryKeyVariants> {
   /** `XXXX-XXXX-…`, as returned by `vault.enroll()`. */
   value: string;
 }
 
 /** The recovery key in groups of four. A labelled group so a screen reader reads it as one thing; not a live region. */
-export function RecoveryKey({ value, layout, className, ...props }: RecoveryKeyProps) {
+export function VaultRecoveryKey({ value, layout, className, ...props }: VaultRecoveryKeyProps) {
   return (
-    <div data-slot="recovery-key" role="group" aria-label="Recovery key" className={cn(recoveryKeyVariants({ layout }), className)} {...props}>
+    <div data-slot="vault-recovery-key" role="group" aria-label="Recovery key" className={cn(vaultRecoveryKeyVariants({ layout }), className)} {...props}>
       {/* Read letter by letter by assistive tech; the visible groups are for the eye (and copying). */}
       <span className="sr-only select-none">{value.split('-').map((group) => group.split('').join(' ')).join(', ')}</span>
       {value.split('-').map((group, i) => (
@@ -208,7 +211,8 @@ export function VaultEnrollDialog({
   const [recoveryKey, setRecoveryKey] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
   const [typed, setTyped] = useState('');
-  const [copied, setCopied] = useState<'idle' | 'copied' | 'failed'>('idle');
+  const { copy: copyText, copied } = useCopy();
+  const [copyFailed, setCopyFailed] = useState(false);
   const abort = useRef<AbortController | null>(null);
   const errorId = useId();
   const descriptionId = useId();
@@ -218,7 +222,7 @@ export function VaultEnrollDialog({
   /** Leaving the dialog cancels an open prompt; once it has finished closing it forgets the key. */
   const forget = () => {
     abort.current?.abort();
-    setStep('intro'); setError(null); setRecoveryKey(null); setSaved(false); setTyped(''); setCopied('idle');
+    setStep('intro'); setError(null); setRecoveryKey(null); setSaved(false); setTyped(''); setCopyFailed(false);
   };
   useEffect(() => { if (open === false) abort.current?.abort(); }, [open]);
   useEffect(() => () => abort.current?.abort(), []);
@@ -251,12 +255,7 @@ export function VaultEnrollDialog({
   }
 
   async function copy() {
-    try {
-      await navigator.clipboard.writeText(recoveryKey ?? '');
-      setCopied('copied');
-    } catch {
-      setCopied('failed');
-    }
+    setCopyFailed(!(await copyText(recoveryKey ?? '')));
   }
 
   /** Done's action: the dialog closes (reason `action`) once the key is confirmed; a failure keeps it open. */
@@ -329,7 +328,10 @@ export function VaultEnrollDialog({
                   </div>
                 ) : null}
                 {error ? (
-                  <p id={errorId} role="alert" className={cn('m-0 rounded-ctl bg-destructive/10 px-3 py-2 text-footnote', vaultErrorClass)}>{error}</p>
+                  <p id={errorId} role="alert" className={calloutVariants({ tone: 'destructive' })}>
+                    <Icon name="exclamation-circle" size={16} />
+                    <span className="min-w-0 [overflow-wrap:anywhere]">{error}</span>
+                  </p>
                 ) : null}
               </div>
               <DialogFooter>
@@ -350,13 +352,14 @@ export function VaultEnrollDialog({
                 <p id={`${descriptionId}-recovery`} className={description}>
                   This is the only way back in if you lose your passkey. It is shown once and not stored anywhere.
                 </p>
-                <RecoveryKey value={recoveryKey ?? ''} />
-                <div className="flex flex-wrap gap-2">
-                  <Button variant="secondary" size="sm" autoFocus onClick={() => void copy()}>
-                    <Icon name={copied === 'copied' ? 'check' : 'copy'} size={15} />
-                    {copied === 'copied' ? 'Copied' : 'Copy'}
+                <VaultRecoveryKey value={recoveryKey ?? ''} />
+                {/* Two equal buttons; 44px tall where the dialog is a sheet on a touch screen. */}
+                <div className="grid grid-cols-2 gap-2 *:group-data-[presentation=sheet]/dialog:h-11">
+                  <Button variant="secondary" autoFocus onClick={() => void copy()}>
+                    <Icon name={copied ? 'check' : 'copy'} size={15} />
+                    {copied ? 'Copied' : 'Copy'}
                   </Button>
-                  <Button variant="secondary" size="sm" onClick={() => download(`${(appName ?? 'vault').toLowerCase().replace(/\s+/g, '-')}-recovery-key.txt`, `${name} recovery key\n\n${recoveryKey}\n\nAnyone with this key can read the data it protects. Keep it somewhere safe and private.\n`)}>
+                  <Button variant="secondary" onClick={() => download(`${(appName ?? 'vault').toLowerCase().replace(/\s+/g, '-')}-recovery-key.txt`, `${name} recovery key\n\n${recoveryKey}\n\nAnyone with this key can read the data it protects. Keep it somewhere safe and private.\n`)}>
                     <Icon name="download" size={15} />
                     Save as file
                   </Button>
@@ -364,7 +367,7 @@ export function VaultEnrollDialog({
                 <p className={cn('m-0 text-footnote', vaultMutedClass)}>
                   Keep it in a password manager or print it. Anyone who has it can open your data, and nobody can reissue it.
                 </p>
-                {copied === 'failed' ? <p role="alert" className={cn('m-0 text-footnote', vaultErrorClass)}>Copying was blocked. Select the key and copy it by hand.</p> : null}
+                {copyFailed ? <p role="alert" className={cn('m-0 text-footnote', vaultErrorClass)}>Copying was blocked. Select the key and copy it by hand.</p> : null}
                 {requireVerification ? (
                   <Field invalid={typed.length > 0 && !verified && typed.replace(/[\s-]/g, '').length >= 32}>
                     <FieldLabel className={vaultMutedClass}>Type the key to confirm you saved it</FieldLabel>
@@ -513,12 +516,12 @@ export function VaultUnlock({ vault, appName, title, description, autoFocus = tr
 
       <div className="flex flex-col items-center gap-1">
         {!passkeyOff ? (
-          <Button variant="link" size="sm" className={vaultLinkClass} onClick={() => { setError(null); setMode(mode === 'passkey' ? 'recovery' : 'passkey'); }}>
+          <Button variant="plain" size="sm" className={vaultLinkClass} onClick={() => { setError(null); setMode(mode === 'passkey' ? 'recovery' : 'passkey'); }}>
             {mode === 'passkey' ? 'Use recovery key instead' : 'Use passkey instead'}
           </Button>
         ) : null}
         <AlertDialog>
-          <AlertDialogTrigger className={cn(buttonVariants({ variant: 'link', size: 'sm' }), vaultMutedClass)}>Lost both? Erase this vault…</AlertDialogTrigger>
+          <AlertDialogTrigger className={cn(buttonVariants({ variant: 'plain', size: 'sm' }), vaultMutedClass)}>Lost both? Erase this vault…</AlertDialogTrigger>
           <AlertDialogBackdrop />
           <AlertDialogContent>
             <AlertDialogHeader>

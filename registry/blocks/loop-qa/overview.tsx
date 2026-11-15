@@ -2,11 +2,13 @@
    (one player that seeks from exploration to exploration while the caption slides the way you paged), the
    latest run's findings and the newest open bugs. */
 import { useRef, useState } from 'react';
+import { EmptyState } from '@/components/ui/empty-state';
 import { Swap } from '@/components/ui/swap';
 import { Button } from '@/components/ui/button';
 import { MarkdownView } from '@/components/ui/markdown-view';
 import { ProgressRing } from '@/components/ui/progress-ring';
-import { ReplayPreview, formatReplayTime, type ReplayPreviewHandle } from '@/components/ui/replay-preview';
+import { formatReplayTime } from '@brett_lamy/docstream/replay';
+import { ReplayPreview, type ReplayPreviewHandle } from '@/components/ui/replay-preview';
 import { Icon } from '@/lib/icon';
 import { useDirection } from '@/lib/motion';
 import { isOpen } from './agent';
@@ -69,7 +71,7 @@ export function Overview({ project: p }: { project: Project }) {
           trailing={<Button size="sm" variant="ghost" className="h-7 rounded-md px-2 text-[12.5px] text-muted-foreground" onClick={() => qa.setTab('bugs')}>All {open.length}<Icon name="chevron-right" size={12} sw={2.4} /></Button>}>
           <ul className="m-0 list-none p-1.5">
             {recent.map((b) => <BugLine key={b.id} bug={b} />)}
-            {!recent.length ? <li className="px-3 py-6 text-center text-footnote text-muted-foreground">No open bugs.</li> : null}
+            {!recent.length ? <EmptyState size="sm" render={<li />} title="No open bugs." /> : null}
           </ul>
         </Panel>
       </div>

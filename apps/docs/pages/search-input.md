@@ -15,12 +15,12 @@ import { SearchInput } from '@/components/ui/search-input'
 {% tab title="npm" %}
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 
-Import the stylesheet once at your app's entry, then the parts from the package root:
+Import the stylesheet once at your app's entry, then the parts from their module:
 
 ```tsx
 import '@brett_lamy/ui/styles.css'
 
-import { SearchInput } from '@brett_lamy/ui'
+import { SearchInput } from '@brett_lamy/ui/search-input'
 ```
 {% endtab %}
 {% endtabs %}
@@ -117,7 +117,7 @@ Generated from the source. Call a recipe on any element to borrow a component's 
 Defined in `@/components/ui/search-input`. Base classes:
 
 ```text
-[ 'box-border flex min-w-0 items-center bg-secondary text-foreground transition-[box-shadow] duration-spring-snappy ease-spring-snappy', 'focus-within:shadow-[inset_0_0_0_1.5px_var(--primary)] has-[input:disabled]:opacity-50', ]
+[ 'box-border flex min-w-0 items-center bg-secondary text-foreground transition-[box-shadow] duration-spring-snappy ease-spring-snappy', // The fill stays on focus, as on iOS; the focus line is the field's. fieldFocusRing, 'has-[input:disabled]:opacity-50', ]
 ```
 
 **`size`** — default `default`

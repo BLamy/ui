@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Toggle } from '@/components/ui/toggle';
 import { FilterBar, FilterToolbar } from '@/components/ui/filter';
 import { FilterInput } from '@/components/ui/filter-input';
-import { LogList, LogRowContent, createLogListController, type LogListController, type LogRowState } from '@/components/ui/log-list';
+import { LogList, LogListRowContent, createLogListController, type LogListController, type LogRowState } from '@/components/ui/log-list';
 import { Slider } from '@/components/ui/slider';
 import { matchFilters, type Filter, type FilterField } from '@/lib/filter-model';
 import { Icon } from '@/lib/icon';
@@ -338,7 +338,7 @@ export const FilteredWithCountsPhone: Story = {
   render: () => <PhoneWindow><FilteredDemo /></PhoneWindow>,
 };
 
-/** `message` can be any node, and `renderRow` can add to a row with `LogRowContent`, or draw it all yourself. A press on
+/** `message` can be any node, and `renderRow` can add to a row with `LogListRowContent`, or draw it all yourself. A press on
  *  a control inside a row doesn't press the row. */
 function RichDemo() {
   const rows = useMemo<LogRow[]>(() => makeLogs(200, { seed: 3 }).map((row, i) => (i % 4 ? row : {
@@ -356,7 +356,7 @@ function RichDemo() {
   const [pressed, setPressed] = useState('Press a row');
   const renderRow = useCallback((row: LogRow, state: LogRowState) => (
     <>
-      <LogRowContent row={row} expanded={state.expanded} cut={state.cut} disclosure={state.disclosure} formatTime={state.formatTime} />
+      <LogListRowContent row={row} expanded={state.expanded} cut={state.cut} disclosure={state.disclosure} formatTime={state.formatTime} />
       {state.index % 16 === 0 ? (
         <Button variant="quiet" size="sm" className="-my-0.5 h-5 shrink-0 rounded-md px-1.5 text-caption2" onClick={() => setPressed(`Pressed the button in row ${state.index}`)}>
           Inspect

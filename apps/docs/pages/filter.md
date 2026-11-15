@@ -19,14 +19,14 @@ import {
 {% tab title="npm" %}
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 
-Import the stylesheet once at your app's entry, then the parts from the package root:
+Import the stylesheet once at your app's entry, then the parts from their module:
 
 ```tsx
 import '@brett_lamy/ui/styles.css'
 
 import {
   FilterBar, FilterToolbar, FilterMenu, FilterList, FilterChip,
-} from '@brett_lamy/ui'
+} from '@brett_lamy/ui/filter'
 ```
 {% endtab %}
 {% endtabs %}
@@ -130,7 +130,7 @@ The serialized form is `field:operator:value;…`, every part percent-encoded, a
 | Part | Props |
 | --- | --- |
 | `FilterBar` | `fields`, `value` / `defaultValue` / `onValueChange`, `match` / `defaultMatch` / `onMatchChange`, `allowDuplicates`, `locale`, `children`, and the props of a `<div>`. |
-| `FilterToolbar` | The row: UI SDK's Toolbar (its props: `orientation`, `loop`, `disabled`, `controller`…). `children`. |
+| `FilterToolbar` | The row: the kit [Toolbar](https://blamy.github.io/ui/#/toolbar) (`variant`, `size`, and UI SDK's `orientation`, `loop`, `disabled`, `controller`…). `children`. Its own buttons (Filter, Match, Clear all) are the Toolbar's quiet `sm` tools. |
 | `FilterMenu` | The Filter button and its popover. `shortcut` (a single key such as `"f"`, which opens the menu while nothing editable has focus), `render` (your own trigger element, like `<Button variant="secondary" />`), `children` (the trigger's content; default a filter icon and "Filter"), `open` / `defaultOpen` / `onOpenChange(open, details)`, `side` / `align`, `className` (the trigger), `contentProps` (the popover content's props, such as its `className`). Outside a bar also `fields` and `state`. |
 | `FilterList` | The chips, as a list. A render function child draws each filter yourself. Renders nothing when empty. |
 | `FilterChip` | One filter. `filter`, `field`, `onValueChange(filter, details)` (an edit, reason `update`; in a bar, `details.cancel()` keeps the bar as it was), `onRemove`, `readOnly`, `size` (`default` 28px · `sm` 24px), `variant` (`default` · `preview`, the tinted chip of a filter not applied yet). Inside a bar it needs only `filter`. |
@@ -179,7 +179,7 @@ Inside a `FilterBar` it needs nothing else: it reads the fields and applies into
 | Prop | Effect |
 | --- | --- |
 | `fields` | What can be filtered. Default: the enclosing bar's. |
-| `onApply(filters)` | Called with the understood filters on Enter or Apply. Default: the bar's `apply`. |
+| `onApply(filters, details)` | Called with the understood filters on Enter or Apply, and `details` (`reason: 'apply'`, the key or press as `event`, `cancel()` keeps the phrase in the box). Default: the bar's `apply`. |
 | `mode` | With a bar: `merge` (default) replaces the filter of a field the sentence names and adds the rest; `replace` swaps them all. |
 | `value` / `defaultValue` / `onValueChange(text, details)` | The sentence. `details` is the Input's: `reason` is `input-change` for typing, `clear-press` for Esc and `imperative` when the box empties after an apply; `cancel()` rejects the change. |
 | `placeholder` | Default "Describe what you want…". |
@@ -268,7 +268,7 @@ Inside a `FilterBar`, its `fields`, filters, `match`, edits, `announce(message)`
 - The row is a `toolbar` labelled "Filters"; the chips are a labelled `list` of `group`s whose names are sentences — "Status is any of Open, In progress".
 - The operator and value buttons are named by what they do and hold ("Status operator: is any of", "Status value: Open, In progress"), so their visible text is part of the name. The × reads "Remove filter: Status is any of Open, In progress".
 - Menus and pickers are UI SDK's: the search field (a `combobox`) keeps DOM focus and the active option is virtual (`aria-activedescendant`); a field's values are a `listbox` with `aria-multiselectable` whose ticked options say so (`aria-selected`); operator and match menus are `menuitemradio`s; focus returns to the button that opened them.
-- Additions, edits, removals, Clear all and match changes are announced politely through UI SDK's `announce()` (one live region for the page), in the bar's own document Each is said once the bar shows it: a controlled consumer that refuses a change (by not passing it back) hears nothing said, and focus stays where it was.
+- Additions, edits, removals, Clear all and match changes are announced politely through UI SDK's `announce()` (one live region for the page), in the bar's own document. Each is said once the bar shows it: a controlled consumer that refuses a change (by not passing it back) hears nothing said, and focus stays where it was.
 - Option colors are decoration; every option has its label, and counts are text.
 - The × on a chip draws a 12px glyph, but its hit area reaches above and below the chip and widens on touch screens (`pointer: coarse`).
 

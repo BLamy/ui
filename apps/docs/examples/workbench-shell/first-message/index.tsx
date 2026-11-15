@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { AssistantMessage, Conversation, ConversationComposer, ConversationEmpty, ConversationMessages, ConversationSuggestions, MessageMarkdown, Suggestion, UserMessage } from '@/components/ui/conversation'
+import { ConversationAssistantMessage, Conversation, ConversationComposer, ConversationEmpty, ConversationMessages, ConversationSuggestions, ConversationMarkdown, ConversationSuggestion, ConversationUserMessage } from '@/components/ui/conversation'
 import { ThemeScope } from '@/lib/theme'
 import { stripAttachmentRefs, WorkbenchComposer } from '@/components/blocks/t3-clone/components/workbench/workbench-composer'
 
@@ -47,11 +47,11 @@ function NewThread() {
           <ConversationMessages threadKey="new">
             {messages.map((m) =>
               m.role === 'user' ? (
-                <UserMessage key={m.id}>{m.text}</UserMessage>
+                <ConversationUserMessage key={m.id}>{m.text}</ConversationUserMessage>
               ) : (
-                <AssistantMessage key={m.id}>
-                  <MessageMarkdown markdown={m.text} />
-                </AssistantMessage>
+                <ConversationAssistantMessage key={m.id}>
+                  <ConversationMarkdown markdown={m.text} />
+                </ConversationAssistantMessage>
               ),
             )}
           </ConversationMessages>
@@ -63,9 +63,9 @@ function NewThread() {
           </ConversationComposer>
           <ConversationSuggestions>
             {['Add a dark mode toggle', 'Write tests for the cart'].map((s) => (
-              <Suggestion key={s} onClick={() => send(s)}>
+              <ConversationSuggestion key={s} onClick={() => send(s)}>
                 {s}
-              </Suggestion>
+              </ConversationSuggestion>
             ))}
           </ConversationSuggestions>
         </Conversation>

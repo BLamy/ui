@@ -18,7 +18,7 @@ import {
 {% tab title="npm" %}
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 
-Import the stylesheet once at your app's entry, then the parts from the package root:
+Import the stylesheet once at your app's entry, then the parts from their module:
 
 ```tsx
 import '@brett_lamy/ui/styles.css'
@@ -26,7 +26,7 @@ import '@brett_lamy/ui/styles.css'
 import {
   Field, FieldLabel, FieldDescription, FieldError, FieldSet,
   FieldLegend, FieldGroup,
-} from '@brett_lamy/ui'
+} from '@brett_lamy/ui/field'
 ```
 {% endtab %}
 {% endtabs %}

@@ -7,7 +7,7 @@
 import { useMemo, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
-import { SplitViewHeader, SplitViewSupplementary, SplitViewToggle, useSplitView } from '@/components/ui/split-view';
+import { SplitViewHeader, SplitViewSupplementary, SplitViewSidebarTrigger, useSplitView } from '@/components/ui/split-view';
 import { HoverCardHeader } from '@/components/ui/hover-card';
 import { Tree, type TreeGitStatus, type TreeNode } from '@/components/ui/tree';
 import { Icon } from '@/lib/icon';
@@ -123,7 +123,7 @@ export function FileColumn({ atlas }: { atlas: AtlasState }) {
   const state = atlas.view === 'files' ? atlas.files : atlas.diff;
   return (
     <SplitViewSupplementary aria-label={atlas.view === 'files' ? 'Files' : 'Changes'} width={320} minWidth={260}>
-      <SplitViewHeader titleAlign="start" leading={<SplitViewToggle />}
+      <SplitViewHeader titleAlign="start" leading={<SplitViewSidebarTrigger />}
         title={w ? <span className="flex min-w-0 items-center gap-1.5">
           <BranchIcon size={15} className="text-muted-foreground" />
           <span className={cn('truncate', !w.branch && 'italic')}>{branchLabel(w)}</span>

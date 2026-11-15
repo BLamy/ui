@@ -3,7 +3,6 @@ import {
   createContext, memo, useCallback, useContext, useEffect, useImperativeHandle, useMemo, useRef, useState,
   type CSSProperties, type ComponentProps, type HTMLAttributes, type KeyboardEvent, type MouseEvent, type ReactNode, type Ref, type RefObject,
 } from 'react';
-import { announce } from '@ui-sdk/core';
 import { cva, type VariantProps } from 'class-variance-authority';
 import {
   CodeEditorWindow, codeEditorGutterCellVariants, codeEditorLineVariants,
@@ -12,7 +11,7 @@ import {
   type CodeEditorValueChangeDetails,
 } from '@/lib/code-editor-window';
 import { CodeDocument, CodeHistory, caretAt } from '@/lib/code-document';
-import { lineSet, tooBigForPage, type CodeHighlight, type CodeLineRange, type CodeSelection } from '@/lib/code-editor-model';
+import { clipTokens, lineSet, tooBigForPage, type CodeHighlight, type CodeLineRange, type CodeSelection } from '@/lib/code-editor-model';
 import {
   PLAIN_LANGUAGES, codeTokenClass, lexSyntax, peekSyntax, fallbackResult, tokenizeLines, webgpuSupported,
   type CodeToken, type SyntaxEngine, type SyntaxHighlighter, type SyntaxResult,
@@ -21,6 +20,7 @@ import { prefersReducedMotion } from '@/lib/reduced-motion';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/lib/icon';
 import { useAppearance } from '@/lib/theme';
+import { useCopy } from '@/lib/use-copy';
 import { cn, cx } from '@/lib/utils';
 
 /* ══ CodeEditor — one component and one API, with two renderers, because two things need opposite things from the DOM ══
@@ -128,7 +128,7 @@ export const codeEditorVariants = cva('bl-syntax', {
       /** A card: hairline border, rounded, its own surface. */
       default: 'bl-syntax-card',
       /** No chrome: sits on whatever surface it's placed on. */
-      ghost: 'bl-syntax-ghost',
+      plain: 'bl-syntax-plain',
       /** A `<code>` span in running text. */
       inline: 'bl-syntax-inline',
     },
@@ -431,10 +431,12 @@ export function CodeEditorTitle({ className, children, ...props }: ComponentProp
   );
 }
 
+/** The clipboard, with the old `execCommand('copy')` way where the async API is missing or refused (an insecure origin,
+    some embedded frames). Throws when neither worked, so `useCopy` reports it as not copied. */
 async function writeClipboard(text: string) {
   try {
     await navigator.clipboard.writeText(text);
-    return true;
+    return;
   } catch {
     const ta = document.createElement('textarea');
     ta.value = text;
@@ -444,7 +446,7 @@ async function writeClipboard(text: string) {
     ta.select();
     const ok = document.execCommand('copy');
     ta.remove();
-    return ok;
+    if (!ok) throw new Error('Copy was blocked');
   }
 }
 
@@ -457,17 +459,15 @@ export interface CodeEditorCopyButtonProps extends Omit<ComponentProps<typeof Bu
   children?: ReactNode;
 }
 
-/** The kit's quiet 28px icon Button (44px to a finger) that copies the editor's text, and says so: a check, "Copied", and the
-    announcer. Named "Copy code" unless you pass an `aria-label`. */
+/** The kit's quiet 28px icon Button (44px to a finger) that copies the editor's text with `useCopy`, and says so: a check,
+    "Copied", and the announcer. Named "Copy code" unless you pass an `aria-label`. */
 export function CodeEditorCopyButton({ value, onValueCopy, variant = 'quiet', size = 'icon-sm', className, children, 'aria-label': ariaLabel = 'Copy code', ...props }: CodeEditorCopyButtonProps) {
   const ctx = useContext(CodeEditorContext);
-  const [copied, setCopied] = useState(false);
-  const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
-  useEffect(() => () => clearTimeout(timer.current), []);
+  const { copy, copied } = useCopy({ write: writeClipboard, announcement: 'Copied to clipboard' });
   return (
     <Button
       data-slot="code-editor-copy-button"
-      data-copied={copied || undefined}
+      data-copied={copied ? '' : undefined}
       aria-label={copied ? 'Copied' : ariaLabel}
       variant={variant}
       size={size}
@@ -479,13 +479,7 @@ export function CodeEditorCopyButton({ value, onValueCopy, variant = 'quiet', si
       onClick={async (e, details) => {
         props.onClick?.(e, details);
         const text = value ?? ctx?.getValue() ?? '';
-        if (await writeClipboard(text)) {
-          onValueCopy?.(text);
-          announce('Copied to clipboard');
-          setCopied(true);
-          clearTimeout(timer.current);
-          timer.current = setTimeout(() => setCopied(false), 1600);
-        }
+        if (await copy(text)) onValueCopy?.(text);
       }}
     >
       {children ?? <Icon name={copied ? 'check' : 'copy'} size={15} />}
@@ -521,8 +515,9 @@ interface CodeEditorCommonProps extends Omit<CodeEditorDisplayProps, 'lineNumber
   /** The one shorthand for a part: a `CodeEditorCopyButton` in the header, or floating top-right when there is no title. Compose
       the parts yourself for anything else. */
   showCopy?: boolean;
-  /** Force the token palette to light or dark. Defaults to the ambient AppearanceProvider, else the color scheme. */
-  appearance?: 'light' | 'dark';
+  /** The token palette's color scheme. `auto` (default) follows the ambient AppearanceProvider, else the page's color
+      scheme; `light` or `dark` forces one. */
+  appearance?: 'auto' | 'light' | 'dark';
   /** A line-number gutter: `true`, a side (`start` / `end`, windowed), or an object whose `onClick` makes the numbers buttons
       (windowed). Shown by default in an editor and for `lines` or `getLine`, and not for a read-only text. */
   lineNumbers?: boolean | 'start' | 'end' | CodeEditorLineNumbers;
@@ -552,7 +547,7 @@ interface CodeEditorCommonProps extends Omit<CodeEditorDisplayProps, 'lineNumber
     for a document too big to join on every key. */
 type EditableProps = {
   readOnly?: false;
-  variant?: 'default' | 'ghost';
+  variant?: 'default' | 'plain';
   /** Editing needs the windowed renderer. */
   windowed?: true;
   lines?: never;
@@ -600,7 +595,7 @@ type InlineProps = ReadOnlyBase & {
 /** Read-only lines: always windowed. */
 type ReadOnlyLinesProps = ReadOnlyBase & {
   readOnly: true;
-  variant?: 'default' | 'ghost';
+  variant?: 'default' | 'plain';
   windowed?: true;
   value?: never;
   defaultValue?: never;
@@ -702,7 +697,7 @@ export function CodeEditor(props: CodeEditorProps) {
   const onLineNumberClick = pressable?.onClick;
 
   const ambient = useAppearance();
-  const scheme = appearance ?? ambient;
+  const scheme = appearance === undefined || appearance === 'auto' ? ambient : appearance;
   const v: Variant = variant ?? 'default';
   const lineSource = !!lines || !!getLine;
   const readOnly = !!readOnlyProp || v === 'inline' || lineSource;
@@ -725,6 +720,19 @@ export function CodeEditor(props: CodeEditorProps) {
     || !!onLineNumberClick || !!onCopyText || !!onSelectionChange || maxLineLength !== undefined;
   const tooBig = useMemo(() => readOnly && !lineSource && v !== 'inline' && windowed === undefined && !viewerOnly && tooBigForPage(text), [readOnly, lineSource, v, windowed, viewerOnly, text]);
   const useWindow = v !== 'inline' && (!readOnly || lineSource || (windowed ?? (viewerOnly || tooBig)));
+
+  /* A read-only text that fits the page, drawn windowed (a source view, `windowed`), takes its colors from the page's own
+     lexing of the whole text, so the same source looks the same in either renderer. An editor keeps the resumable lexer:
+     its text changes on every key, and a whole-text pass per key is what that lexer exists to avoid. */
+  const shareTokens = useWindow && readOnly && !lineSource && (highlight === undefined || highlight === true) && engine !== 'gpu';
+  const fitsPage = useMemo(() => shareTokens && !tooBigForPage(text), [shareTokens, text]);
+  const { lines: pageLines, highlighter: pageHighlighter } = useSyntaxTokens(fitsPage ? withoutLastLineEnd(text) : '', { language, enabled: fitsPage, engine });
+  // Until the page's lexing answers (a GPU round trip), the resumable lexer colors it, so it is never plain.
+  const sharing = fitsPage && pageHighlighter !== 'pending';
+  const sharedHighlight = useMemo<CodeHighlight | undefined>(
+    () => (sharing ? (piece, lineIndex, { offset }) => clipTokens(pageLines[lineIndex] ?? [], 0, offset, offset + piece.length) : undefined),
+    [sharing, pageLines],
+  );
 
   // A read-only text in the windowed renderer is a document that's replaced when the text changes, not edited.
   const readOnlyDocument = useMemo(
@@ -764,7 +772,8 @@ export function CodeEditor(props: CodeEditorProps) {
     windowed: useWindow,
     handle,
     display: {
-      lineNumbers: lineNumbers ?? defaultLineNumbers, startLine, highlightLines, addedLines, removedLines, wrap, maxHeight, lineProps, highlight, engine, tabSize, lineHeight,
+      lineNumbers: lineNumbers ?? defaultLineNumbers, startLine, highlightLines, addedLines, removedLines, wrap, maxHeight, lineProps,
+      highlight: sharedHighlight ?? highlight, engine, tabSize, lineHeight,
     },
     windowProps: {
       lines, lineCount, getLine, contentKey,
@@ -778,7 +787,7 @@ export function CodeEditor(props: CodeEditorProps) {
       gutters, onLineNumberClick, lineNumberClickable: pressable?.clickable, lineNumberLabel: pressable?.label, lineNumberTitle: pressable?.title,
       currentLine, currentColumn, revealCurrentLine,
       lineDecoration, markers, scrollToLine: revealLine, maxLineLength, onCopyText, onSelectionChange,
-      paddingY: v === 'ghost' ? 0 : CARD_PADDING,
+      paddingY: v === 'plain' ? 0 : CARD_PADDING,
       onKeyDown: onKeyDown as ((event: KeyboardEvent<HTMLDivElement>) => void) | undefined,
       onContextMenu: onContextMenu as ((event: MouseEvent<HTMLDivElement>) => void) | undefined,
       'aria-label': ariaLabel ?? (typeof title === 'string' ? title : undefined),

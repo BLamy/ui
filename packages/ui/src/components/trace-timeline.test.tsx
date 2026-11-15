@@ -9,9 +9,9 @@ import type { TraceActivity, TraceLane, TraceRange, TraceStop } from '@/lib/trac
 const RANGE: TraceRange = { start: 0, end: 3_600_000 };
 const LENGTH = 600;
 const STOPS: Array<TraceStop<string>> = [
-  { key: 'a', time: 600_000, caption: 'First', preview: 'The first stop', tone: 'info' },
+  { key: 'a', time: 600_000, caption: 'First', preview: 'The first stop', tint: 'var(--primary)' },
   { key: 'b', time: 1_800_000, caption: 'Second', level: 2 },
-  { key: 'c', time: 3_000_000, caption: 'Third', tone: 'error' },
+  { key: 'c', time: 3_000_000, caption: 'Third', tone: 'destructive' },
 ];
 
 type RectInit = { width: number; height: number; left?: number; top?: number };
@@ -117,8 +117,8 @@ describe('ARIA', () => {
     // The caller's width wins over the rail's 44px.
     expect(slider().className).not.toContain('w-11');
     expect(slider().style.zIndex).toBe('3');
-    expect(traceTimelineVariants({ orientation: 'vertical', side: 'left' })).toContain('left-0');
-    expect(traceTimelineVariants({ orientation: 'vertical', side: 'right' })).toContain('right-0');
+    expect(traceTimelineVariants({ orientation: 'vertical', side: 'start' })).toContain('start-0');
+    expect(traceTimelineVariants({ orientation: 'vertical', side: 'end' })).toContain('end-0');
   });
 });
 
@@ -327,14 +327,17 @@ describe('controlled and uncontrolled', () => {
 
 describe('the rail', () => {
   it('sits on its edge, placed by its classes, and draws one dash per stop', () => {
-    render(rail({ className: 'top-2 bottom-8', side: 'left' }));
+    render(rail({ className: 'top-2 bottom-8', side: 'start' }));
     expect(slider().className).toContain('top-2');
     expect(slider().className).toContain('bottom-8');
     expect(slider().className).not.toContain('top-0');
-    expect(slider().className).toContain('left-0');
+    expect(slider().className).toContain('start-0');
     const dashes = [...document.querySelectorAll<HTMLElement>('[data-slot=trace-timeline-stop]')];
     expect(dashes).toHaveLength(3);
-    expect(dashes.map((d) => d.getAttribute('data-tone'))).toEqual(['info', 'default', 'error']);
+    expect(dashes.map((d) => d.getAttribute('data-tone'))).toEqual(['default', 'default', 'destructive']);
+    // A tint of the host's own colors the dash.
+    expect(dashes[0].style.backgroundColor).toBe('var(--primary)');
+    expect(dashes[0].className).toContain('start-(--tt-dash)');
     expect(dashes[0].style.getPropertyValue('--y')).toBe('99px');
     expect(dashes[1].style.getPropertyValue('--len')).toBe('6px');
     expect(dashes[0].style.getPropertyValue('--len')).toBe('9px');
@@ -406,11 +409,32 @@ describe('the rail', () => {
     expect(screen.getByAltText('480000')).toBeTruthy();
   });
 
+  it('draws the card from a TraceTimelinePreview wherever it sits, inside a host component too', () => {
+    const frame = manualFrames();
+    function HostPreview() {
+      return <><TraceTimelinePreview<string> lines={4} width={300}>{(time) => <img alt={`at ${Math.round(time)}`} />}</TraceTimelinePreview></>;
+    }
+    render(rail({ children: <HostPreview /> }));
+    pointer('pointerMove', 360, 100);
+    frame();
+    const cards = document.querySelectorAll<HTMLElement>('[data-slot=trace-timeline-card]');
+    expect(cards).toHaveLength(1);
+    expect(cards[0].style.getPropertyValue('--tt-lines')).toBe('4');
+    expect(cards[0].querySelector('img')).toBeTruthy();
+  });
+
+  it('marks the stop the playhead is at and the disabled ones, as IndexBar does', () => {
+    render(rail({ value: 600_000, stops: [STOPS[0], { ...STOPS[1], disabled: true }, STOPS[2]] }));
+    const dashes = [...document.querySelectorAll<HTMLElement>('[data-slot=trace-timeline-stop]')];
+    expect(dashes.map((d) => d.hasAttribute('data-current'))).toEqual([true, false, false]);
+    expect(dashes.map((d) => d.hasAttribute('data-disabled'))).toEqual([false, true, false]);
+  });
+
   it('publishes how far rows run under it, with the same meaning as IndexBar, and cleans up', () => {
     const { rerender, container } = render(<div>{rail()}</div>);
     const host = container.firstChild as HTMLElement;
     expect(host.style.getPropertyValue('--bl-index-bar-inset')).toBe('44px');
-    rerender(<div>{rail({ side: 'left' })}</div>);
+    rerender(<div>{rail({ side: 'start' })}</div>);
     expect(host.style.getPropertyValue('--bl-index-bar-inset')).toBe('');
     rerender(<div>{rail({ insetContent: false })}</div>);
     expect(host.style.getPropertyValue('--bl-index-bar-inset')).toBe('');

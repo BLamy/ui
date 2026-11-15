@@ -101,7 +101,7 @@ function ContactsLargeTitle() {
                 {open.f} {open.l}
               </NavigationStackTitle>
               <NavigationStackTrailing>
-                <Button variant="link" style={{ padding: '0 12px' }}>
+                <Button variant="plain">
                   Edit
                 </Button>
               </NavigationStackTrailing>

@@ -32,11 +32,6 @@ export interface CodeToken {
   className?: string;
 }
 
-/** The same as `CodeTokenType`, under the name it had first. */
-export type SyntaxTokenType = CodeTokenType;
-/** The same as `CodeToken`, under the name it had first. */
-export type SyntaxToken = CodeToken;
-
 /** The classes a token draws with. Empty for plain text with no class of its own, which needs no element. */
 export function codeTokenClass(token: Pick<CodeToken, 'className'> & { type?: CodeTokenType }): string {
   const color = token.type && token.type !== 'plain' ? `bl-tok bl-tok-${token.type}` : '';
@@ -111,7 +106,8 @@ export function peekSyntax(code: string, engine: SyntaxEngine = 'auto'): SyntaxR
    type, function or constant. Such spans are re-cut: operator runs become `operator`, punctuation, a lone `.` or `:`
    and whitespace become plain, and word runs keep their label. */
 
-const RELABEL = new Set<SyntaxTokenType>(['keyword', 'type', 'function', 'constant']);
+// `operator` too: gpu-lexer labels brackets, commas and semicolons as operators, which the kit's other lexers leave plain.
+const RELABEL = new Set<CodeTokenType>(['keyword', 'type', 'function', 'constant', 'operator']);
 const OP_CHARS = '=<>!+-*/%&|^~?:.';
 const PUNCT_CHARS = '()[]{};,';
 const isSpace = (c: string) => c === ' ' || c === '\t' || c === '\n' || c === '\r' || c === '\f' || c === '\v';
@@ -141,7 +137,7 @@ function charKind(text: string, i: number): RunKind {
 export function normalizeSpans(code: string, spans: readonly SyntaxSpan[]): SyntaxSpan[] {
   const out: SyntaxSpan[] = [];
   let at = 0;
-  const push = (type: SyntaxTokenType, start: number, end: number) => {
+  const push = (type: CodeTokenType, start: number, end: number) => {
     start = Math.max(start, at);
     if (end <= start) return;
     at = end;
@@ -167,7 +163,7 @@ export function normalizeSpans(code: string, spans: readonly SyntaxSpan[]): Synt
       const run = text.slice(i, j);
       // A tag's angle brackets labelled with its name (`<div`, `</p>`, `/>`) are punctuation, not operators.
       const tagBracket = /^(<\/?|\/?>)$/.test(run) && /[A-Za-z]/.test(text);
-      const type: SyntaxTokenType =
+      const type: CodeTokenType =
         kind === 'word' ? s.type : kind === 'op' && run !== '.' && run !== ':' && !tagBracket ? 'operator' : 'plain';
       push(type, s.start + i, s.start + j);
       i = j;
@@ -262,6 +258,8 @@ const KEYWORDS = new Set(
     'trait try type typeof use var void where while with yield fi done esac local echo').split(' '),
 );
 const CONSTANTS = new Set('true false null undefined nil None True False NaN Infinity self'.split(' '));
+/** Built-in type names: types, as gpu-lexer labels them (and so does the windowed lexer, lib/code-editor-model.ts). */
+export const BUILTIN_TYPES = new Set('string number boolean bigint symbol unknown never any'.split(' '));
 const RX =
   /(\/\/[^\n]*|#(?=[ \t!]|$)[^\n]*|\/\*[\s\S]*?(?:\*\/|$)|<!--[\s\S]*?(?:-->|$))|("(?:[^"\\\n]|\\.)*"?|'(?:[^'\\\n]|\\.)*'?|`(?:[^`\\]|\\.)*`?)|(\b(?:0[xob][\da-f_]+|\d[\d_]*(?:\.\d+)?(?:e[+-]?\d+)?)\b)|([A-Za-z_$][\w$]*)|(\?\.(?!\d)|\.{2,3}|::|[=<>!+\-*/%&|^~?:]*[=<>!+\-*/%&|^~?][=<>!+\-*/%&|^~?:]*)/gi;
 
@@ -272,7 +270,7 @@ export function fallbackSpans(code: string): SyntaxSpan[] {
   while ((m = RX.exec(code))) {
     const start = m.index;
     const end = start + m[0].length;
-    let type: SyntaxTokenType = 'plain';
+    let type: CodeTokenType = 'plain';
     if (m[1]) type = 'comment';
     else if (m[2]) type = 'string';
     else if (m[3]) type = 'number';
@@ -284,7 +282,7 @@ export function fallbackSpans(code: string): SyntaxSpan[] {
           ? 'constant'
           : /^\s*\(/.test(code.slice(end, end + 8))
             ? 'function'
-            : /^[A-Z][a-z]/.test(w)
+            : /^[A-Z]([a-z]|$)/.test(w) || BUILTIN_TYPES.has(w)
               ? 'type'
               : 'plain';
     } else if (m[5]) type = 'operator';
@@ -297,10 +295,10 @@ export function fallbackSpans(code: string): SyntaxSpan[] {
 
 /** Split `code` into lines of tokens (spans cut at newlines; gaps are plain). A single trailing newline is dropped,
     so a file ending in `\n` doesn't show an empty last line. */
-export function tokenizeLines(code: string, spans: readonly SyntaxSpan[] | null): SyntaxToken[][] {
+export function tokenizeLines(code: string, spans: readonly SyntaxSpan[] | null): CodeToken[][] {
   const src = code.endsWith('\n') ? code.slice(0, -1) : code;
-  const lines: SyntaxToken[][] = [[]];
-  const emit = (type: SyntaxTokenType, text: string) => {
+  const lines: CodeToken[][] = [[]];
+  const emit = (type: CodeTokenType, text: string) => {
     let from = 0;
     for (let nl = text.indexOf('\n'); nl !== -1; nl = text.indexOf('\n', from)) {
       if (nl > from) lines[lines.length - 1].push({ type, text: text.slice(from, nl) });

@@ -8,7 +8,7 @@
   ],
   "exports": [
     "LogList",
-    "LogRowContent",
+    "LogListRowContent",
     "logListVariants",
     "createLogListController"
   ],
@@ -22,7 +22,7 @@
     "LogListValueChangeReason",
     "LogListExpandedChangeReason",
     "LogListFollowingChangeReason",
-    "LogRowContentProps",
+    "LogListRowContentProps",
     "LogRowState"
   ]
 }

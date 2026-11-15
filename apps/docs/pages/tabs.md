@@ -1,13 +1,14 @@
 # Tabs
 
-Switch between views, one at a time, on UI SDK's `Tabs`: a list of tabs, one selected, and the panel that belongs to it. One root covers every place tabs live, from a segmented control at the top of a settings card to the iOS tab bar at the bottom of an app, a side rail on a tablet and a Discord-style workspace switcher. `variant` picks the look and `side` says where the tabs sit around the panels.
+Switch between views, one at a time, on UI SDK's `Tabs`: a list of tabs, one selected, and the panel that belongs to it. One root covers every place tabs live, from a segmented control at the top of a settings card to the iOS tab bar at the bottom of an app, a side rail on a tablet and a Discord-style server switcher. `variant` picks the look and `side` says where the tabs sit around the panels.
 
 Choose by what changes:
 
 | You need | Use |
 | --- | --- |
 | Panels of content, one visible at a time (a settings page, a detail view) | `Tabs` with `variant="segmented"` or `"underline"` |
-| The app's bottom tab bar, a side rail, a workspace switcher | `Tabs` with `variant="bar"`, `"rail"` or `"workspace"` (see "Bottom tab bar" below) |
+| The app's bottom tab bar, a side rail, a server switcher | `Tabs` with `variant="bar"`, `"rail"` or `"switcher"` (see "Bottom tab bar" below); `presentation="auto"` for a bar on a phone and a rail wider |
+| A sidebar on a tablet that is the tab bar on a phone | [SplitView](https://blamy.github.io/ui/#/split-view) with `compactPresentation="tabs"` |
 | A value or a view mode with no panels (a filter, a time range) | [Segmented](https://blamy.github.io/ui/#/segmented): a radio group, not a tablist |
 | Push and pop screens inside a tab | [NavigationStack](https://blamy.github.io/ui/#/navigation-stack) inside a `TabsPanel` |
 | Tabs the user can drag between dockable panes (an editor) | [Workspace](https://blamy.github.io/ui/#/workspace) |
@@ -27,12 +28,12 @@ import {
 {% tab title="npm" %}
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 
-Import the stylesheet once at your app's entry, then the parts from the package root:
+Import the stylesheet once at your app's entry, then the parts from their module:
 
 ```tsx
 import '@brett_lamy/ui/styles.css'
 
-import { Tabs, TabsList, TabsTab, TabsPanel } from '@brett_lamy/ui'
+import { Tabs, TabsList, TabsTab, TabsPanel } from '@brett_lamy/ui/tabs'
 ```
 {% endtab %}
 {% endtabs %}
@@ -57,6 +58,14 @@ Put a `TabsTab` and a matching `TabsPanel` under the same `value`. `segmented` (
 
 `side="start"` (or `"end"`) stands the list up beside the panels; Up and Down then move between tabs.
 
+`size` is `sm` (32px), `default` (36px) or `lg` (44px), Button's heights. A segmented Tabs draws the same track, segments and card as [Segmented](https://blamy.github.io/ui/#/segmented) and ToggleGroup `filled` at every size, so the three line up in one toolbar; `underline` scales its row and label the same way.
+
+```tsx
+<Tabs size="sm" defaultValue="day">
+  <TabsList aria-label="Range">…</TabsList>
+</Tabs>
+```
+
 ## Controlled, with directional panels
 
 `value` and `onValueChange` control the selection, so anything (a Next button, a route) can move it. `onValueChange` gets the new value and the details of the change: `details.reason` is `item-press`, `list-navigation` (arrow keys), `find-in-page`, `item-removed` or `imperative`, and `details.cancel()` refuses it. The value is `null` when nothing is selected. A panel knows which way the selection moved on screen (UI SDK's `data-activation-direction`) and slides in from that side: forward comes from the right, back from the left. Under reduced motion it cross-fades instead.
@@ -79,7 +88,7 @@ The other four looks put the list on a `TabsBar`, a surface that can also hold p
 | --- | --- | --- |
 | `bar` | `bottom` | The iOS tab bar: 62px, translucent, pinned over the bottom of the host (its top with `side="top"`), hiding with the scroll. |
 | `rail` | `start` | A side rail of icons over labels, with a tinted fill under the selected tab. |
-| `workspace` | `start` | A 52px column of tiles (Discord, Slack); its list scrolls when the tiles outgrow it. |
+| `switcher` | `start` | A 52px column of tiles (Discord, Slack servers); its list scrolls when the tiles outgrow it. |
 | `plain` | `top` | No chrome: you style the bar and the tabs. |
 
 Panels inside `TabsPanels` stack in the space the bar leaves and each scrolls on its own: the old one slides out while the new one slides in. A bare `TabsPanel` (as in the in-page looks) sits in the flow instead.
@@ -103,7 +112,7 @@ Panels inside `TabsPanels` stack in the space the bar leaves and each scrolls on
 
 ## Bottom tab bar
 
-The iOS tab bar is `Tabs variant="bar"`: icons over short labels on a blurred bar pinned to the bottom edge of the nearest positioned ancestor, floating over the screen. Give the host `relative` and leave 62px under the content (a `NavigationStackContent` takes `bottomInset`).
+The iOS tab bar is `Tabs variant="bar"`: icons over short labels on a blurred bar pinned to the bottom edge of the nearest positioned ancestor, floating over the screen. Give the host `relative`. The bar is 62px plus the device's bottom safe area (the home indicator of an installed iPhone web app, `env(safe-area-inset-bottom)`), and the `Tabs` root publishes that height as `--tabs-bar-h`: a [NavigationStack](https://blamy.github.io/ui/#/navigation-stack) anywhere inside the root keeps that much room under its content by itself, so no stack needs a number. Your own scroller can end with `<div className="h-(--tabs-bar-h)" />`.
 
 {% demo src="tabs/phone" %}
 
@@ -140,9 +149,20 @@ When your router shows the screen, leave the panels out: the bar is then only th
 </div>
 ```
 
+### A bar on a phone, a rail wider
+
+`presentation="auto"` picks the app-navigation look from the size-class scope around (the [SplitView](https://blamy.github.io/ui/#/split-view), BLProvider or [SidebarProvider](https://blamy.github.io/ui/#/sidebar) the Tabs sits in, measured by its own box, never the viewport): the bottom `bar` while it is compact, the side `rail` from 640px. The tabs, the panels and their state are the same elements either way. `presentation="bar"` or `"rail"` forces one; outside every scope `auto` is the bar.
+
+```tsx
+<Tabs presentation="auto" defaultValue="contacts" className="absolute inset-0">
+  <TabsBar><TabsList aria-label="Sections">…</TabsList></TabsBar>
+  <TabsPanels>…</TabsPanels>
+</Tabs>
+```
+
 ### Hiding with the scroll
 
-`TabsBar` in the `bar` look follows the kit's chrome state: scrolling down hides it, scrolling up (or reaching the top) brings it back, in step with a [NavigationStack](https://blamy.github.io/ui/#/navigation-stack)'s bar above. It needs no wiring: a NavigationStack page publishes the state as it scrolls. In a scroller of your own, call `chromeStore.set(true)` on a scroll down and `chromeStore.set(false)` on a scroll up, as the demo above does (import it from `@/lib/theme`, or `@brett_lamy/ui`). `hideOnScroll={false}` pins the bar. Anything else that should duck out of the way reads the same flag with `useChromeHidden()`.
+`TabsBar` in the `bar` look follows the kit's chrome state: scrolling down hides it, scrolling up (or reaching the top) brings it back, in step with a [NavigationStack](https://blamy.github.io/ui/#/navigation-stack)'s bar above. It needs no wiring: a NavigationStack page publishes the state as it scrolls. In a scroller of your own, call `chromeStore.set(true)` on a scroll down and `chromeStore.set(false)` on a scroll up, as the demo above does (import it from `@/lib/theme`, or `@brett_lamy/ui/lib/theme` on npm). `hideOnScroll={false}` pins the bar. Anything else that should duck out of the way reads the same flag with `useChromeHidden()`.
 
 ### Tabs and navigation stacks
 
@@ -162,14 +182,14 @@ A mail client's leading rail: a logo in `TabsHeader`, the mailboxes as tabs, Com
 
 {% demo src="tabs/editor-inspector" %}
 
-## Workspace switcher
+## Server switcher
 
-`variant="workspace"` is the rail for a [ChatShell](https://blamy.github.io/ui/#/chat-shell): a 52px muted column. The footer follows the last tile, `TabsSeparator` is the short rule under Home, `TabsAction` the dashed "Add" tile, and the `TabsPill` on each tab's leading edge (a nub for `attention`, taller on hover, full when selected) rides the bouncy spring. On touch, the tiles' and the action's hit areas grow to 44px. Custom tiles are the tabs' content, and the rail gets tab semantics for free: one tab stop, Up and Down between servers, Home and End to jump.
+`variant="switcher"` is the rail for a [ChatShell](https://blamy.github.io/ui/#/chat-shell): a 52px muted column. The footer follows the last tile, `TabsSeparator` is the short rule under Home, `TabsAction` the dashed "Add" tile, and the `TabsPill` on each tab's leading edge (a nub for `attention`, taller on hover, full when selected) rides the bouncy spring. On touch, the tiles' and the action's hit areas grow to 44px. Custom tiles are the tabs' content, and the rail gets tab semantics for free: one tab stop, Up and Down between servers, Home and End to jump.
 
 {% demo src="tabs/chat-workspaces" %}
 
 ```tsx
-<Tabs variant="workspace" value={server} onValueChange={setServer}>
+<Tabs variant="switcher" value={server} onValueChange={setServer}>
   <TabsBar>
     <TabsList aria-label="Workspaces">
       <TabsTab value="home" aria-label="Direct Messages">
@@ -233,8 +253,10 @@ UI SDK gives the list `role="tablist"` (with `aria-orientation` when vertical), 
 
 | Prop | Default | Effect |
 | --- | --- | --- |
-| `variant` | `segmented` | `segmented`, `underline`, `bar`, `rail`, `workspace` or `plain`; read by every part. |
-| `side` | by `variant` | `top`, `bottom`, `start` or `end`: where the tabs sit around the panels. It sets the orientation (`top`/`bottom` horizontal, `start`/`end` vertical). Defaults to `bottom` for `bar`, `start` for `rail` and `workspace`, `top` otherwise. |
+| `variant` | `segmented` | `segmented`, `underline`, `bar`, `rail`, `switcher` or `plain`; read by every part. |
+| `presentation` | — | `auto`, `bar` or `rail`: the app-navigation look by size (`auto`: bar in a compact scope, rail otherwise). When set it replaces `variant`. |
+| `size` | `default` | `sm`, `default` or `lg`: the height of `segmented` (32 / 36 / 44px, Segmented's track) and `underline` tabs. |
+| `side` | by `variant` | `top`, `bottom`, `start` or `end`: where the tabs sit around the panels. It sets the orientation (`top`/`bottom` horizontal, `start`/`end` vertical). Defaults to `bottom` for `bar`, `start` for `rail` and `switcher`, `top` otherwise. |
 | `value` / `defaultValue` / `onValueChange` | first enabled tab | Controlled / initial selection, by tab `value`. `onValueChange(value, details)`. |
 | `activation` | `automatic` | `manual` selects on Enter or Space instead of on focus. |
 | `loop` | `true` | Whether arrow keys wrap from the last tab to the first. |
@@ -252,7 +274,7 @@ UI SDK gives the list `role="tablist"` (with `aria-orientation` when vertical), 
 | `TabsPanel` | `value`; only the selected panel is mounted unless you pass `keepMounted` (or `hiddenUntilFound`). Flows on its own; stacks inside `TabsPanels`. |
 | `TabsPanels` | The box the panels share: they stack in it, scroll on their own, and cross-slide. It fills the space the bar leaves. |
 | `TabsBar` | The surface around the list, in the root's look. `hideOnScroll` (default `true`) applies to `bar`. |
-| `TabsHeader` / `TabsFooter` | Content before the list, and at the far end of the bar (in `workspace`, right after the list). |
+| `TabsHeader` / `TabsFooter` | Content before the list, and at the far end of the bar (in `switcher`, right after the list). |
 | `TabsAction` | A button in the bar that isn't a tab ("Add server", "Compose"): `icon`, children as its label, `onClick`, `disabled`. |
 | `TabsSeparator` | A decorative divider inside the list; arrow keys pass over it. |
 | `TabsPill` | Inside a tab: the Discord pill on its leading edge. `attention` shows the unread nub while the tab is neither hovered nor selected. |
@@ -299,7 +321,7 @@ flex min-h-0 min-w-0 [&>[data-slot=tabs-panels]~[data-slot=tabs-bar]]:-order-1 [
 | `underline` | `gap-4` |
 | `bar` | — |
 | `rail` | — |
-| `workspace` | — |
+| `switcher` | — |
 | `plain` | — |
 
 ### `tabsBarVariants`
@@ -318,7 +340,7 @@ box-border
 | `underline` | `inline` |
 | `bar` | `cn( 'absolute inset-x-0 bottom-0 z-120 flex data-[side=top]:top-0 data-[side=top]:bottom-auto transition-transform duration-spring-smooth ease-spring-s…` |
 | `rail` | `relative flex w-19 shrink-0 flex-col gap-1 bg-bar py-2 data-[side=end]:border-s data-[side=start]:border-e border-border` |
-| `workspace` | `flex w-13 shrink-0 flex-col items-center gap-2 border-e border-border bg-muted px-0 py-2.5` |
+| `switcher` | `flex w-13 shrink-0 flex-col items-center gap-2 border-e border-border bg-muted px-0 py-2.5` |
 | `plain` (default) | `inline` |
 
 ### `tabsListVariants`
@@ -333,11 +355,11 @@ relative outline-none
 
 | Value | Adds |
 | --- | --- |
-| `segmented` (default) | `cn('flex', segmentTrackVariants())` |
+| `segmented` (default) | `flex` |
 | `underline` | `isolate flex gap-5 shadow-hairline-b data-[orientation=vertical]:flex-col data-[orientation=vertical]:gap-0 data-[orientation=vertical]:border-e data-[orientat…` |
 | `bar` | `flex flex-1` |
 | `rail` | `flex flex-col gap-1 px-1.5` |
-| `workspace` | `flex min-h-0 w-full flex-col items-center gap-2 overflow-y-auto overscroll-contain -mt-1 -mb-1.5 pt-1 pb-1.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidd…` |
+| `switcher` | `flex min-h-0 w-full flex-col items-center gap-2 overflow-y-auto overscroll-contain -mt-1 -mb-1.5 pt-1 pb-1.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidd…` |
 | `plain` | `flex data-[orientation=vertical]:flex-col` |
 
 ### `tabsTabVariants`
@@ -352,12 +374,14 @@ group/tab relative box-border cursor-pointer border-0 bg-transparent [font-famil
 
 | Value | Adds |
 | --- | --- |
-| `segmented` (default) | `segmentItemVariants()` |
-| `underline` | `cn( 'bl-btn -mb-px flex h-10 items-center justify-center gap-1.5 px-0.5 py-0 text-subhead leading-[inherit] font-semibold whitespace-nowrap hover:not…` |
+| `segmented` (default) | — |
+| `underline` | `cn( 'bl-btn -mb-px flex items-center justify-center gap-1.5 px-0.5 py-0 leading-[inherit] font-semibold whitespace-nowrap hover:not-data-selected:not…` |
 | `bar` | `cn( 'bl-btn flex flex-1 flex-col items-center justify-center gap-[3px] p-0 text-center leading-[normal] data-selected:text-primary focus-visible:roun…` |
 | `rail` | `cn( 'bl-btn flex flex-col items-center justify-center gap-[3px] rounded-panel px-1 pt-[7px] pb-1.5 text-center leading-[normal] hover:not-data-select…` |
-| `workspace` | `group flex w-full shrink-0 justify-center p-0 text-inherit pointer-coarse:after:absolute pointer-coarse:after:inset-x-0 pointer-coarse:after:-inset-y-1.5` |
+| `switcher` | `group flex w-full shrink-0 justify-center p-0 text-inherit pointer-coarse:after:absolute pointer-coarse:after:inset-x-0 pointer-coarse:after:-inset-y-1.5` |
 | `plain` | `p-0 text-inherit` |
+
+4 compound variants — see the source.
 
 ### `tabsIndicatorVariants`
 
@@ -371,11 +395,11 @@ absolute
 
 | Value | Adds |
 | --- | --- |
-| `segmented` (default) | `cn('inset-0', segmentIndicatorVariants())` |
+| `segmented` (default) | `inset-0` |
 | `underline` | `bg-primary` |
 | `bar` | `bg-primary` |
 | `rail` | `bg-primary` |
-| `workspace` | `bg-primary` |
+| `switcher` | `bg-primary` |
 | `plain` | `bg-primary` |
 
 **`orientation`** — default `horizontal`
@@ -385,7 +409,7 @@ absolute
 | `horizontal` (default) | — |
 | `vertical` | — |
 
-4 compound variants — see the source.
+5 compound variants — see the source.
 
 ### `tabsPillVariants`
 
@@ -413,5 +437,5 @@ cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-ring/45 data
 | `underline` | `bl-btn border-0 bg-transparent p-0 [font-family:inherit] text-muted-foreground hover:not-data-disabled:text-foreground` |
 | `bar` | `bl-btn flex flex-1 flex-col items-center justify-center gap-[3px] border-0 bg-transparent p-0 leading-[normal] [font-family:inherit] text-muted-foreground acti…` |
 | `rail` | `bl-btn mx-1.5 flex flex-col items-center justify-center gap-[3px] rounded-panel border-0 bg-transparent px-1 pt-[7px] pb-1.5 leading-[normal] [font-family:inhe…` |
-| `workspace` | `relative grid size-[34px] shrink-0 place-items-center rounded-[17px] border border-dashed border-border bg-transparent text-muted-foreground [transition:border…` |
+| `switcher` | `relative grid size-[34px] shrink-0 place-items-center rounded-[17px] border border-dashed border-border bg-transparent text-muted-foreground [transition:border…` |
 | `plain` (default) | `bl-btn border-0 bg-transparent p-0 [font-family:inherit]` |

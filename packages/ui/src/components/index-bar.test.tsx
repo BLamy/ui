@@ -9,9 +9,9 @@ beforeAll(() => {
 afterEach(cleanup);
 
 const items = [
-  { key: 'a', caption: 'Alpha' },
-  { key: 'b', caption: 'Bravo' },
-  { key: 'c', caption: 'Charlie' },
+  { value: 'a', caption: 'Alpha' },
+  { value: 'b', caption: 'Bravo' },
+  { value: 'c', caption: 'Charlie' },
 ];
 
 describe('IndexBar', () => {

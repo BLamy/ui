@@ -19,9 +19,9 @@ import { Button } from '@/components/ui/button';
 import { EmptyState, type EmptyStateProps } from '@/components/ui/empty-state';
 import { Swap } from '@/components/ui/swap';
 import { Kbd } from '@/components/ui/kbd';
-import { Icon } from '@/lib/icon';
+import { Icon, type IconName } from '@/lib/icon';
 import { sectionLabelVariants, selectableText } from '@/lib/primitives';
-import { shortcutKeys } from '@/lib/shortcut-text';
+import { isGlyphShortcut, shortcutKeys, shortcutText } from '@/lib/shortcut-text';
 import { scopeStyle, useThemeScopeProps } from '@/lib/theme';
 import { cn, cx } from '@/lib/utils';
 
@@ -605,8 +605,8 @@ export function CommandMenuGroupLabel({ className, ...props }: ComponentProps<ty
 
 /* ── CommandMenuItem ── */
 
-/** The keys of a shortcut, one cap each: UI SDK's CommandShortcut, which formats them for the platform (⇧⌘O, or
-    Ctrl+Shift+O). Inside a command it shows the command's `shortcut`; with its own `shortcut` it only shows keys. */
+/** The keys of a shortcut: UI SDK's CommandShortcut, which formats them for the platform. The glyph form is one tight
+    run (⇧⌘O), as in DropdownMenu and Tooltip; the text form keeps a cap per key (Ctrl Shift O). Inside a command it shows the command's `shortcut`; with its own `shortcut` it only shows keys. */
 export function CommandMenuShortcut({ className, children, ...props }: ComponentProps<typeof CommandShortcut>) {
   return (
     <CommandShortcut
@@ -619,8 +619,10 @@ export function CommandMenuShortcut({ className, children, ...props }: Component
   );
 }
 
-/* One cap per key, modifiers in Apple's order (the kit's shared rendering, `lib/shortcut-text`). */
+/* Modifiers in Apple's order (the kit's shared rendering, `lib/shortcut-text`): a glyph run as one word with
+   DropdownMenuShortcut's letter-spacing, the text form one cap per key. */
 function keycaps(text: string) {
+  if (isGlyphShortcut(text)) return <kbd className="font-sans font-normal tracking-[.08em]">{shortcutText(text)}</kbd>;
   return shortcutKeys(text).map((cap, i) => <kbd key={i} className="min-w-3 text-center font-sans font-normal">{cap}</kbd>);
 }
 
@@ -665,7 +667,7 @@ export type CommandMenuItemProps = Omit<ComponentProps<typeof CommandItem>, 'tit
   /** Identifies the command: passed to `onAction`, and the highlight's value (default: `title` when it is a string). */
   value?: string;
   /** Leading icon: an Icon name or any node (a monogram, an image). */
-  icon?: string | ReactNode;
+  icon?: IconName | ReactNode;
   /** The row's text. A string shows what the search matched in bold. Plain-text children are the same thing:
       `<CommandMenuItem>New thread</CommandMenuItem>`. */
   title?: ReactNode;

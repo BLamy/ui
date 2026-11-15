@@ -1,6 +1,6 @@
 import {
   createChange, createController, createGridFocus, css, definePrimitive, dispatch, isRTL, live, selects,
-  type ChangeDetails, type GridCell, type ResizeDraft,
+  type ChangeDetails, type GridCell, type GridFocusReason, type ResizeDraft,
 } from '@ui-sdk/core';
 import { createColumnResize, createVirtualRows, isRowPress, type ColumnResizeReason, type RowAlign } from '@/lib/grid-behaviors';
 import type { RowId } from '@/lib/log-list-model';
@@ -11,11 +11,14 @@ import {
 import { bindSizeClass, type SizeClass, type SizeClassBreakpoints } from '@/lib/size-class';
 
 /* ══ The data-table primitive: rows of one height under headers that sort and resize ══
-   One tab stop. The rows in view are rendered (`createVirtualRows`: UI SDK's virtualizer and grid focus); the column
-   headers are a row of their own on a second grid focus, reached with ↑ from the first row. Column widths are UI SDK's
+   One tab stop, as APG's grid has it. The rows in view are rendered (`createVirtualRows`: UI SDK's virtualizer and grid
+   focus, by row); with `focus: 'cell'` (the default) focus is on a cell of the active row, which ← → move along it and
+   ↑ ↓ carry to the same column of the next row, so one value can be reached and read on its own. `focus: 'row'` keeps it
+   on whole rows (stacked rows always are). The column headers are a row of their own on a second grid focus, reached
+   with ↑ from the first row. Column widths are UI SDK's
    resize (`createColumnResize`): a drag keeps its width in a live draft, written to the grid's column template with no
-   render, and asks for it once on release. The playhead (for rows on a timeline) is live state too: its share of the
-   time range and the rows after it, written straight to the page. The selected row, the sort and the widths are state
+   render, and asks for it once on release. The current time (for rows on a timeline) is live state too: its share of
+   the time range and the rows after it, written straight to the page. The selected row, the sort and the widths are state
    a host can control.
    The table's own size class (`bindSizeClass`, on the root) decides its layout: stacked rows while it's compact, and
    the columns with a `hideBelow` class gone below it. The rows are given as they come; the primitive sorts them, and
@@ -56,9 +59,9 @@ export function createDataTableController() {
     focus: () => void;
     /** Scrolls to a row by id: centered by default, or `auto` to move only if it's out of view. */
     scrollToId: (id: RowId, options?: { align?: RowAlign }) => void;
-    /** Moves the playhead with no render at all, for a clock's every tick. The `playhead` prop takes over when it next
-     *  changes. */
-    setPlayhead: (time: number | null) => void;
+    /** Moves the current time with no render at all, for a clock's every tick. The `currentTime` prop takes over when it
+     *  next changes. */
+    setCurrentTime: (time: number | null) => void;
     /** Selects a row, or none with `null`. */
     setValue: (value: RowId | null) => boolean;
     /** Sorts by a column, or back to the rows' own order with `null`. */
@@ -76,13 +79,15 @@ export type DataTableOptions<T extends DataTableRow = DataTableRow> = {
   /** Every column the table can show, in order. The ones shown depend on the table's size class. */
   columns: readonly DataTableColumnSpec[];
   /** A time on `timeRange`, in ms: rows whose `time` is later are the future (`data-future`), and the grid writes its
-   *  share of the range (`--data-table-playhead`, `data-playhead`) for an overlay to draw a line at. The controller's
-   *  `setPlayhead` moves it in between changes of this. */
-  playhead?: number | null;
-  /** The range the playhead moves on, in ms. */
+   *  share of the range (`--data-table-current-time`, `data-current-time`) for an overlay to draw a line at. The controller's
+   *  `setCurrentTime` moves it in between changes of this. */
+  currentTime?: number | null;
+  /** The range the current time moves on, in ms. */
   timeRange?: DataTableTimeRange | null;
   /** `single` (default): a press selects the row. `none`: rows press (`onAction`) but are never selected. */
-  selectionMode?: 'single' | 'none';
+  mode?: 'single' | 'none';
+  /** `cell` (default): the arrow keys move between cells. `row`: focus stays on whole rows, and ← → scroll sideways. */
+  focus?: 'cell' | 'row';
   value?: RowId | null;
   defaultValue?: RowId | null;
   onValueChange?: (value: RowId | null, details: ChangeDetails<DataTableValueChangeReason>) => void;
@@ -115,6 +120,8 @@ export type DataTableState = {
   measured: Readonly<Record<string, number>>;
   /** The active row. */
   active: GridCell | null;
+  /** The active cell's column in the active row, from 0, with `focus: 'cell'`. */
+  col: number;
   /** The active column header. */
   header: GridCell | null;
   /** The columns shown, in order. */
@@ -123,9 +130,9 @@ export type DataTableState = {
   sizeClass: SizeClass | null;
   /** Stacked rows: `layout="stacked"`, or `auto` while the table is compact. */
   stacked: boolean;
-  /** Live: a column's edge while a pointer drags it, the playhead's time, the range and the view's height. */
+  /** Live: a column's edge while a pointer drags it, the current time, the range and the view's height. */
   draft: ResizeDraft | null;
-  playhead: number | null;
+  currentTime: number | null;
   range: DataTableTimeRange | null;
   view: number;
   /** Live: a count of the rows' layouts, which places them and sizes their box. */
@@ -155,9 +162,15 @@ const byRow = {
   },
 };
 
+/** A cell reads the active row by its own row, so a move reaches the rows it leaves and lands on. */
+const byCellRow = {
+  values: ({ props }: { props: { row?: number } }) => [String(props.row ?? -1)],
+  moved: byRow.moved,
+};
+
 /** State a part doesn't read, so a change to it doesn't reach the part. */
-const UNPLACED = { rows: [], count: [], value: [], sort: [], columnWidths: [], measured: [], active: [], header: [], columns: [], sizeClass: [], stacked: [] };
-const NOTHING = { ...UNPLACED, draft: [], playhead: [], range: [], view: [], layout: [] };
+const UNPLACED = { rows: [], count: [], value: [], sort: [], columnWidths: [], measured: [], active: [], col: [], header: [], columns: [], sizeClass: [], stacked: [] };
+const NOTHING = { ...UNPLACED, draft: [], currentTime: [], range: [], view: [], layout: [] };
 
 const NO_WIDTHS: Readonly<Record<string, number>> = {};
 const SCROLL_STEP = 48;
@@ -180,10 +193,10 @@ export const dataTable = definePrimitive({
     value: 'value', defaultValue: 'value', onValueChange: 'callback', onAction: 'callback',
     sort: 'value', defaultSort: 'value', onSortChange: 'callback',
     columnWidths: 'value', defaultColumnWidths: 'value', onColumnWidthsChange: 'callback',
-    rows: 'value', columns: 'value', playhead: 'value', timeRange: 'value', selectionMode: 'string', rowHeights: 'value', headerHeight: 'number', breakpoints: 'value', layout: 'string', controller: 'value',
+    rows: 'value', columns: 'value', currentTime: 'value', timeRange: 'value', mode: 'string', focus: 'string', rowHeights: 'value', headerHeight: 'number', breakpoints: 'value', layout: 'string', controller: 'value',
   },
   controlled: ['value', 'sort', 'columnWidths'],
-  live: ['draft', 'playhead', 'range', 'view', 'layout'],
+  live: ['draft', 'currentTime', 'range', 'view', 'layout'],
   state: (options: DataTableOptions): DataTableState => {
     const sort = options.sort ?? options.defaultSort ?? null;
     const rows = sortBy(options.rows, sort, options.columns);
@@ -195,12 +208,13 @@ export const dataTable = definePrimitive({
       columnWidths: options.columnWidths ?? options.defaultColumnWidths ?? NO_WIDTHS,
       measured: NO_WIDTHS,
       active: null,
+      col: 0,
       header: null,
       columns: shownColumns(options.columns, null),
       sizeClass: null,
       stacked: options.layout === 'stacked',
       draft: null,
-      playhead: options.playhead ?? null,
+      currentTime: options.currentTime ?? null,
       range: options.timeRange ?? null,
       view: 0,
       layout: 0,
@@ -288,11 +302,11 @@ export const dataTable = definePrimitive({
       if (index >= 0 && !rows.isVisible(index)) rows.scrollTo(index, 'center');
     };
 
-    let given = { playhead: options().playhead, value: options().value };
+    let given = { currentTime: options().currentTime, value: options().value };
     context.onOptions((next, synced) => {
       const was = given;
-      given = { playhead: next.playhead, value: next.value };
-      if (next.playhead !== was.playhead) store.set({ playhead: next.playhead ?? null });
+      given = { currentTime: next.currentTime, value: next.value };
+      if (next.currentTime !== was.currentTime) store.set({ currentTime: next.currentTime ?? null });
       refresh(synced && 'sort' in synced ? { sort: synced.sort } : {});
       if (next.value !== was.value && next.value !== undefined) reveal(next.value);
     });
@@ -326,10 +340,10 @@ export const dataTable = definePrimitive({
       cols: () => store.get().columns.length,
     });
     // Stacked rows have no column headers to be on.
-    const focusHeader = (event?: Event) => {
+    const focusHeader = (event?: Event, col?: number) => {
       const { columns, header: at } = store.get();
       if (store.get().stacked || !columns.length) return false;
-      header.focus({ row: 0, col: Math.min(at?.col ?? 0, columns.length - 1) }, { reason: event ? 'list-navigation' : 'imperative', event });
+      header.focus({ row: 0, col: Math.min(col ?? at?.col ?? 0, columns.length - 1) }, { reason: event ? 'list-navigation' : 'imperative', event });
       return true;
     };
 
@@ -355,14 +369,77 @@ export const dataTable = definePrimitive({
     const sortColumn = (id: string | null, details: { reason: DataTableSortChangeReason; event?: Event }) =>
       setSort(id === null ? null : nextDataTableSort(store.get().sort, id), details);
 
-    /* ── Rows ── */
+    /* ── Rows and their cells ── */
+
+    /** Focus is on cells: `focus: 'cell'`, in a table (stacked rows are one cell each) with columns. */
+    const cellFocus = (state: Pick<DataTableState, 'stacked' | 'columns'> = store.get()) =>
+      (options().focus ?? 'cell') === 'cell' && !state.stacked && state.columns.length > 0;
+    /** The active cell's column, kept in the columns shown. */
+    const colOf = (state: Pick<DataTableState, 'col' | 'columns'>) => Math.max(0, Math.min(state.col, state.columns.length - 1));
+    const cellIn = (row: HTMLElement | undefined, col: number) =>
+      row?.querySelector<HTMLElement>(`:scope > [data-slot=data-table-cell][aria-colindex="${col + 1}"]`) ?? undefined;
+    /** Moves the active cell to a column of a row: in the active row at once, else through the row's focus, which hands it
+     *  on to the cell (`bindRow`). */
+    const focusCell = (index: number, col: number, details: { reason: GridFocusReason; event?: Event }) => {
+      const { columns, active } = store.get();
+      const to = Math.max(0, Math.min(col, columns.length - 1));
+      if (store.get().col !== to) store.set({ col: to });
+      if (active?.row === index) cellIn(rows.rowElement(index), to)?.focus();
+      else rows.focusRow(index, details);
+    };
 
     const press = (index: number, event?: Event) => {
       const row = rows.all[index];
       if (!row) return;
       rows.setActive(index);
-      if (options().selectionMode !== 'none') change('value', row.id, { reason: 'item-press', event });
+      if (options().mode !== 'none') change('value', row.id, { reason: 'item-press', event });
       dispatch(context, 'onAction', row.id, { reason: 'item-press', event, row, index });
+    };
+
+    /** The keys on a cell: ← → along the row, ↑ ↓ and Page Up/Down to the same column of another row, Home and End to the
+     *  row's ends (with Control or Command, the grid's first and last rows), Enter or Space to press the row. */
+    const cellKeydown = (event: KeyboardEvent, index: number, col: number) => {
+      if (event.key === 'Tab') {
+        rows.tab.keydown(event);
+        return;
+      }
+      if (event.defaultPrevented || event.altKey) return;
+      const mod = event.ctrlKey || event.metaKey;
+      const last = store.get().columns.length - 1;
+      const forward = (event.key === 'ArrowRight') !== isRTL(event.target as Element);
+      const nav = { reason: 'list-navigation' as const, event };
+      switch (event.key) {
+        case 'ArrowLeft':
+        case 'ArrowRight':
+          if (mod) return;
+          focusCell(index, col + (forward ? 1 : -1), nav);
+          break;
+        case 'Home':
+        case 'End':
+          if (mod) focusCell(event.key === 'Home' ? 0 : rows.all.length - 1, col, nav);
+          else focusCell(index, event.key === 'Home' ? 0 : last, nav);
+          break;
+        case 'ArrowUp':
+          if (mod) return;
+          if (index === 0) focusHeader(event, col);
+          else focusCell(index - 1, col, nav);
+          break;
+        case 'ArrowDown':
+        case 'PageUp':
+        case 'PageDown':
+          if (mod) return;
+          // The rows' grid focus moves by row (and by a page); the row hands focus on to the cell in this column.
+          rows.grid.keydown(event);
+          return;
+        case 'Enter':
+        case ' ':
+          if (mod || event.shiftKey) return;
+          press(index, event);
+          break;
+        default:
+          return;
+      }
+      event.preventDefault();
     };
 
     const headerKeydown = (event: KeyboardEvent, col: number) => {
@@ -385,10 +462,15 @@ export const dataTable = definePrimitive({
           if (column.sortable) sortColumn(column.id, { reason: 'trigger-press', event });
           break;
         case 'ArrowDown':
-        case 'Escape':
+        case 'Escape': {
           if (!rows.all.length) return;
-          rows.focus();
+          // Down from a header lands in its column.
+          if (cellFocus() && store.get().col !== col) store.set({ col });
+          const at = store.get().active?.row;
+          if (at !== undefined && cellFocus()) focusCell(at, col, { reason: 'list-navigation', event });
+          else rows.focus();
           break;
+        }
         default:
           return;
       }
@@ -401,6 +483,19 @@ export const dataTable = definePrimitive({
       if (column && !event.defaultPrevented && event.key !== 'Tab') {
         if (target === column) headerKeydown(event, Number(column.getAttribute('aria-colindex')) - 1);
         return;
+      }
+      if (cellFocus()) {
+        const cell = target.closest?.('[data-slot=data-table-cell]') as HTMLElement | null | undefined;
+        const index = rows.indexFrom(target);
+        if (cell && index >= 0) {
+          if (cell === target) cellKeydown(event, index, Number(cell.getAttribute('aria-colindex')) - 1);
+          // Escape from a control in a cell goes back to the cell; Tab goes on through the row's controls and out.
+          else if (event.key === 'Escape' && !event.defaultPrevented) {
+            cell.focus();
+            event.preventDefault();
+          } else if (event.key === 'Tab') rows.tab.keydown(event);
+          return;
+        }
       }
       // ↑ from the first row, or in a table with none, goes up to the headers.
       const plain = !event.altKey && !event.metaKey && !event.ctrlKey && !event.shiftKey;
@@ -427,7 +522,7 @@ export const dataTable = definePrimitive({
       event.preventDefault();
     };
 
-    /** The view's height, for the playhead's line. */
+    /** The view's height, for the current time's line. */
     const measure = (el: HTMLElement) => {
       if (el.clientHeight !== store.get().view) store.set({ view: el.clientHeight });
     };
@@ -437,7 +532,7 @@ export const dataTable = definePrimitive({
       scrollToId(id: RowId, { align = 'center' }: { align?: RowAlign } = {}) {
         rows.scrollTo(rows.indexOf(id), align);
       },
-      setPlayhead: (time: number | null) => store.set({ playhead: time }),
+      setCurrentTime: (time: number | null) => store.set({ currentTime: time }),
       setValue: (value: RowId | null) => change('value', value, { reason: 'imperative' }),
       setSort: (sort: DataTableSort | null) => setSort(sort, { reason: 'imperative' }),
       setColumnWidths: (widths: Readonly<Record<string, number>>) => change('columnWidths', widths, { reason: 'imperative' }),
@@ -446,7 +541,35 @@ export const dataTable = definePrimitive({
         resize,
         header,
         rowHeight: (state: DataTableState) => rowHeightOf(state),
-        selectable: () => options().selectionMode !== 'none',
+        selectable: () => options().mode !== 'none',
+        cellFocus,
+        /** A cell's `tabindex` with cell focus: `"0"` for the active cell, `"-1"` for the others. Undefined otherwise. */
+        cellTabIndex(state: DataTableState, row: number | undefined, col: number): '0' | '-1' | undefined {
+          if (!cellFocus(state) || col < 1 || row === undefined) return undefined;
+          return state.active?.row === row && colOf(state) === col - 1 ? '0' : '-1';
+        },
+        /** Joins a rendered row: its grid focus, and with cell focus, focus on the row handed on to the active column's
+         *  cell, and a cell focused some other way (a press, a screen reader's cursor) made the active one. */
+        bindRow(el: HTMLElement, index: number): () => void {
+          const unbind = rows.bindRow(el, index);
+          const onFocus = (event: FocusEvent) => {
+            if (event.target === el && cellFocus()) cellIn(el, colOf(store.get()))?.focus();
+          };
+          const onFocusIn = (event: FocusEvent) => {
+            const cell = (event.target as Element).closest?.('[data-slot=data-table-cell]');
+            if (!cell || cell.parentElement !== el || !cellFocus()) return;
+            const col = Number(cell.getAttribute('aria-colindex')) - 1;
+            if (store.get().active?.row !== index) rows.setActive(index);
+            if (col >= 0 && store.get().col !== col) store.set({ col });
+          };
+          el.addEventListener('focus', onFocus);
+          el.addEventListener('focusin', onFocusIn);
+          return () => {
+            el.removeEventListener('focus', onFocus);
+            el.removeEventListener('focusin', onFocusIn);
+            unbind();
+          };
+        },
         headerHeight: () => options().headerHeight,
         sortBy: sortColumn,
         click(index: number, el: HTMLElement | undefined, event?: Event) {
@@ -454,7 +577,7 @@ export const dataTable = definePrimitive({
         },
         /** The column template, from the widths as they show now, the dragged one included. */
         template: (state: DataTableState) => columnTemplate(state.columns, resize.widths(state)),
-        playheadShare: (state: DataTableState) => (state.range ? timeShare(state.playhead, state.range) : null),
+        currentTimeShare: (state: DataTableState) => (state.range ? timeShare(state.currentTime, state.range) : null),
         keydown,
         connectRoot(el: HTMLElement): () => void {
           root = el;
@@ -486,7 +609,7 @@ export const dataTable = definePrimitive({
   },
   slots: (slot) => ({
     root: slot<Record<never, never>, DataTableRootState>({
-      selects: selects({ count: [], value: [], columnWidths: [], measured: [], active: [], header: [], draft: [], playhead: [], range: [], view: [], layout: [] }),
+      selects: selects({ count: [], value: [], columnWidths: [], measured: [], active: [], header: [], draft: [], currentTime: [], range: [], view: [], layout: [] }),
       state: (state) => ({
         sort: state.sort, rows: state.rows, columns: state.columns, sizeClass: state.sizeClass, stacked: state.stacked,
       }),
@@ -502,19 +625,19 @@ export const dataTable = definePrimitive({
         'aria-rowcount': String(state.count + 1),
         tabindex: api.internal.rows.gridTabIndex(state, state.count),
       }),
-      // The column template follows a dragged edge, and the playhead's line moves, with no render.
+      // The column template follows a dragged edge, and the current time's line moves, with no render.
       live: live((state, { api }) => {
         const { template, minWidth } = api.internal.template(state);
-        const share = api.internal.playheadShare(state);
+        const share = api.internal.currentTimeShare(state);
         return {
-          'data-playhead': share === null ? undefined : '',
+          'data-current-time': share === null ? undefined : '',
           style: css({
             '--data-table-row': `${api.internal.rowHeight(state)}px`,
             '--data-table-header': `${api.internal.headerHeight()}px`,
             '--data-table-cols': template,
             '--data-table-min-width': `${minWidth}px`,
             '--data-table-view': `${state.view}px`,
-            '--data-table-playhead': share === null ? undefined : String(share),
+            '--data-table-current-time': share === null ? undefined : String(share),
           }),
         };
       }),
@@ -530,7 +653,7 @@ export const dataTable = definePrimitive({
     column: slot<{ value: string; index: number; sortable: boolean }>({
       role: 'columnheader',
       props: { value: 'string', index: 'number', sortable: 'boolean' },
-      selects: selects({ rows: [], count: [], value: [], columnWidths: [], measured: [], active: [], columns: [], sizeClass: [], stacked: [], draft: [], playhead: [], range: [], view: [], layout: [] }),
+      selects: selects({ rows: [], count: [], value: [], columnWidths: [], measured: [], active: [], columns: [], sizeClass: [], stacked: [], draft: [], currentTime: [], range: [], view: [], layout: [] }),
       attrs: (state, { props, api }) => {
         const sorted = state.sort?.column === props.value ? state.sort.direction : null;
         return {
@@ -554,7 +677,7 @@ export const dataTable = definePrimitive({
     resizer: slot<{ value: string }>({
       role: 'separator',
       props: { value: 'string' },
-      selects: selects({ rows: [], count: [], value: [], sort: [], active: [], header: [], sizeClass: [], stacked: [], playhead: [], range: [], view: [], layout: [] }),
+      selects: selects({ rows: [], count: [], value: [], sort: [], active: [], header: [], sizeClass: [], stacked: [], currentTime: [], range: [], view: [], layout: [] }),
       attrs: (state, { props, api }) => api.internal.resize.handleAttrs(state, props.value),
       live: live((state, { props, api }) => ({ 'data-dragging': api.internal.resize.dragging(state, props.value) ? '' : undefined })),
       on: {
@@ -577,7 +700,7 @@ export const dataTable = definePrimitive({
 
     rows: slot({
       role: 'rowgroup',
-      selects: selects({ ...UNPLACED, draft: [], playhead: [], range: [], view: [] }),
+      selects: selects({ ...UNPLACED, draft: [], currentTime: [], range: [], view: [] }),
       live: live((_state, { api }) => ({ style: css({ height: `${api.internal.rows.virtual.size()}px` }) })),
     }),
 
@@ -596,7 +719,7 @@ export const dataTable = definePrimitive({
       attrs: (state, { props, api }) => {
         const selected = state.value === props.value;
         return {
-          tabindex: api.internal.rows.tabIndex(state, props.index),
+          tabindex: api.internal.cellFocus(state) ? '-1' : api.internal.rows.tabIndex(state, props.index),
           'aria-rowindex': String(props.index + 2),
           'aria-selected': api.internal.selectable() ? String(selected) : undefined,
           'data-index': String(props.index),
@@ -604,25 +727,37 @@ export const dataTable = definePrimitive({
           'data-active': api.internal.rows.isActive(state, props.index) ? '' : undefined,
         };
       },
-      // Sent after the playhead: dimmed as the future, whatever order the rows are sorted in.
+      // Sent after the current time: dimmed as the future, whatever order the rows are sorted in.
       live: live((state, { props }) => ({
-        'data-future': state.playhead !== null && props.time !== null && props.time > state.playhead ? '' : undefined,
+        'data-future': state.currentTime !== null && props.time !== null && props.time > state.currentTime ? '' : undefined,
       })),
       press: ({ api, props, el }, event) => api.internal.click(props.index, el, event),
-      bind: (el, { api, props }) => api.internal.rows.bindRow(el, props.index),
+      bind: (el, { api, props }) => api.internal.bindRow(el, props.index),
     }),
 
-    // `col` counts from 1, or is 0 in stacked rows, whose cells aren't columns.
-    cell: slot<{ col: number }>({
+    // `col` counts from 1, or is 0 in stacked rows, whose cells aren't columns. `row` is its row's index, from the row.
+    cell: slot<{ col: number; row?: number }>({
       role: 'gridcell',
-      props: { col: 'number' },
-      focus: { none: 'Focus stays on the row.' },
-      selects: selects(NOTHING),
-      attrs: (_state, { props }) => ({ 'aria-colindex': props.col > 0 ? String(props.col) : undefined }),
+      props: { col: 'number', row: { kind: 'number', from: 'row.index' } },
+      // With cell focus, a cell is the tab stop; the grid's keydown moves it. Else focus stays on the row.
+      focus: (state, { api }) => (api.internal.cellFocus(state) ? 'roving' : { none: 'Focus stays on the row.' }),
+      keys: { none: 'The grid handles the keys, for a cell and its row alike.' },
+      selects: selects({
+        rows: [], count: [], value: [], sort: [], columnWidths: [], measured: [], header: [], sizeClass: [], draft: [], currentTime: [], range: [], view: [], layout: [],
+        active: byCellRow,
+      }),
+      attrs: (state, { props, api }) => {
+        const tabindex = api.internal.cellTabIndex(state, props.row, props.col);
+        return {
+          'aria-colindex': props.col > 0 ? String(props.col) : undefined,
+          tabindex,
+          'data-active': tabindex === '0' ? '' : undefined,
+        };
+      },
     }),
 
-    // Drawn over the rows, sticky to the view, like a playhead's line. It's for sighted users only: what it shows
-    // has to be said another way too (the dimmed future rows say where a playhead is).
+    // Drawn over the rows, sticky to the view, like the current time's line. It's for sighted users only: what it shows
+    // has to be said another way too (the dimmed future rows say where the current time is).
     overlay: slot({ selects: selects(NOTHING), attrs: () => ({ 'aria-hidden': 'true' }) }),
 
     // Above the grid, outside the scroller: a summary, filters, actions.

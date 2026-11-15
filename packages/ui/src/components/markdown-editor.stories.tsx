@@ -1,19 +1,31 @@
 import { useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { MarkdownEditor, type MarkdownEditorAttachment } from '@/components/ui/markdown-editor';
+import { MarkdownEditor, MarkdownEditorToolbarButton, type MarkdownEditorAttachment } from '@/components/ui/markdown-editor';
+import { Toolbar, ToolbarSeparator } from '@/components/ui/toolbar';
+import { Icon } from '@/lib/icon';
 import { Field, FieldError, FieldLabel } from '@/components/ui/field';
 import { Panel, Caption } from '../stories/primitive-frame';
+import { Phone } from '../stories/frame';
 
 const meta: Meta<typeof MarkdownEditor> = {
   title: 'Atoms/MarkdownEditor',
   component: MarkdownEditor,
   args: { placeholder: 'Write something — type / for blocks', variant: 'default', size: 'default' },
   argTypes: {
-    variant: { control: 'inline-radio', options: ['default', 'ghost', 'card'] },
+    variant: { control: 'inline-radio', options: ['default', 'plain', 'card'] },
     size: { control: 'inline-radio', options: ['sm', 'default', 'lg'] },
     imagePaste: { control: 'inline-radio', options: ['inline', 'chip'] },
   },
-  decorators: [(Story, ctx) => <Panel w={520} dark={ctx.parameters.dark}><Story /></Panel>],
+  decorators: [
+    (Story, ctx) =>
+      ctx.parameters.phone ? (
+        <Phone dark={ctx.parameters.dark}>
+          <div className="absolute inset-0 flex flex-col p-4 pt-14"><Story /></div>
+        </Phone>
+      ) : (
+        <Panel w={520} dark={ctx.parameters.dark}><Story /></Panel>
+      ),
+  ],
 };
 export default meta;
 type Story = StoryObj<typeof MarkdownEditor>;
@@ -44,8 +56,8 @@ const states = (
     <MarkdownEditor aria-label="Filled" defaultValue={notes} />
     <Caption>Card · small</Caption>
     <MarkdownEditor aria-label="Card" variant="card" size="sm" defaultValue={'A **card** editor with `sm` type.'} />
-    <Caption>Ghost</Caption>
-    <MarkdownEditor aria-label="Ghost" variant="ghost" minHeight={0} defaultValue={'No chrome — text on the surface it sits on.'} />
+    <Caption>Plain</Caption>
+    <MarkdownEditor aria-label="Plain" variant="plain" minHeight={0} defaultValue={'No chrome — text on the surface it sits on.'} />
     <Caption>Disabled · invalid</Caption>
     <MarkdownEditor aria-label="Disabled" disabled minHeight={0} defaultValue="Disabled" />
     <Field invalid>
@@ -121,7 +133,7 @@ const styledDoc = `Groceries for Saturday
     circles and hairline tables. The editor's stylesheet is layered under utilities, so no `!important`. */
 export const StyledParts: Story = {
   args: {
-    variant: 'ghost',
+    variant: 'plain',
     'aria-label': 'Styled note',
     defaultValue: styledDoc,
     classNames: {
@@ -133,5 +145,34 @@ export const StyledParts: Story = {
       tableHeader: 'bg-transparent font-semibold border-border px-3 py-1.5',
       tableCell: 'border-border px-3 py-1.5',
     },
+  },
+};
+
+/** In a phone-sized frame, with the toolbar: the field fills the width, and the toolbar's hint gives way before its tools. */
+export const PhoneWidth: Story = {
+  args: { 'aria-label': 'Note', defaultValue: notes, toolbar: true, variant: 'card', minHeight: 220 },
+  parameters: { phone: true },
+};
+
+export const PhoneWidthDark: Story = {
+  args: { 'aria-label': 'Note', defaultValue: notes, toolbar: true, variant: 'card', minHeight: 220 },
+  parameters: { phone: true, dark: true },
+};
+
+/** `toolbar` takes a node: a kit Toolbar of `MarkdownEditorToolbarButton`s, each a command (and, with `mark`, a toggle
+    that is pressed while the selection is in it). Here: bold, italic, a heading and a checklist, and no link. */
+export const CustomToolbar: Story = {
+  args: {
+    'aria-label': 'Release notes',
+    defaultValue: notes,
+    variant: 'card',
+    toolbar: (
+      <Toolbar aria-label="Formatting" size="sm">
+        <MarkdownEditorToolbarButton command="toggleBold" mark="bold" aria-label="Bold"><strong>B</strong></MarkdownEditorToolbarButton>
+        <MarkdownEditorToolbarButton command="toggleItalic" mark="italic" aria-label="Italic"><em>I</em></MarkdownEditorToolbarButton>
+        <ToolbarSeparator />
+        <MarkdownEditorToolbarButton command="toggleTaskList" mark="taskList" aria-label="Checklist"><Icon name="checklist" size={16} /></MarkdownEditorToolbarButton>
+      </Toolbar>
+    ),
   },
 };

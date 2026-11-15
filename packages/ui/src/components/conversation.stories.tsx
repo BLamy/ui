@@ -2,18 +2,18 @@ import { useState, type ReactNode } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Composer, ComposerCard, ComposerFooter, ComposerInput, ComposerSend, ComposerSpacer, ComposerStop } from '@/components/ui/composer/composer';
 import {
-  AssistantMessage,
+  ConversationAssistantMessage,
   Conversation,
   ConversationComposer,
   ConversationEmpty,
   ConversationMessages,
   ConversationSuggestions,
   ConversationTyping,
-  MessageMarkdown,
-  Suggestion,
-  ToolCall,
-  UserMessage,
-  WorkLog,
+  ConversationMarkdown,
+  ConversationSuggestion,
+  ConversationToolCall,
+  ConversationUserMessage,
+  ConversationWorkLog,
 } from '@/components/ui/conversation';
 import { AppearanceProvider, ThemeScope, type Appearance } from '@/lib/theme';
 
@@ -60,28 +60,28 @@ function Thread({ empty, streaming, workLogOpen }: { empty?: boolean; streaming?
     <Conversation empty={empty}>
       <ConversationEmpty title="What are we building?" description="Start a thread — ask anything about this workspace." />
       <ConversationMessages threadKey="t1" streaming={streaming}>
-        <UserMessage key="u1" attachments={[{ id: 'shot', name: 'checkout.png', src: SHOT, kind: 'image' }, { id: 'log', name: 'build.log', kind: 'text', size: 18400 }]}>
+        <ConversationUserMessage key="u1" attachments={[{ id: 'shot', name: 'checkout.png', src: SHOT, kind: 'image' }, { id: 'log', name: 'build.log', kind: 'text', size: 18400 }]}>
           The checkout button is clipped on mobile, can you fix it?
-        </UserMessage>
-        <AssistantMessage key="a1">
-          <WorkLog summary="Worked for 1m 4s" defaultOpen={workLogOpen}>
-            <ToolCall icon="doc-text" title="Read" description="checkout/button.tsx" />
-            <ToolCall icon="doc-text" title="Edited" description="checkout/button.tsx" code={'- className="w-[420px]"\n+ className="w-full max-w-[420px]"'} />
-            <ToolCall status="running" title="Running" description="pnpm nx test checkout" />
-            <ToolCall status="error" title="Type check failed" description="2 errors" />
-          </WorkLog>
-          <MessageMarkdown markdown="The button had a fixed **420px** width. It is now `w-full` with a max width, so it shrinks inside narrow screens." />
-        </AssistantMessage>
-        <UserMessage key="u2">Thanks. Anything else?</UserMessage>
-        <AssistantMessage key="a2">{streaming ? <ConversationTyping /> : <WorkLog summary="Worked for 3s" />}</AssistantMessage>
+        </ConversationUserMessage>
+        <ConversationAssistantMessage key="a1">
+          <ConversationWorkLog summary="Worked for 1m 4s" defaultOpen={workLogOpen}>
+            <ConversationToolCall icon="doc-text" title="Read" description="checkout/button.tsx" />
+            <ConversationToolCall icon="doc-text" title="Edited" description="checkout/button.tsx" code={'- className="w-[420px]"\n+ className="w-full max-w-[420px]"'} />
+            <ConversationToolCall status="running" title="Running" description="pnpm nx test checkout" />
+            <ConversationToolCall status="error" title="Type check failed" description="2 errors" />
+          </ConversationWorkLog>
+          <ConversationMarkdown markdown="The button had a fixed **420px** width. It is now `w-full` with a max width, so it shrinks inside narrow screens." />
+        </ConversationAssistantMessage>
+        <ConversationUserMessage key="u2">Thanks. Anything else?</ConversationUserMessage>
+        <ConversationAssistantMessage key="a2">{streaming ? <ConversationTyping /> : <ConversationWorkLog summary="Worked for 3s" />}</ConversationAssistantMessage>
       </ConversationMessages>
       <ConversationComposer>
         <Box streaming={streaming} />
       </ConversationComposer>
       <ConversationSuggestions>
-        <Suggestion>Plan a trip</Suggestion>
-        <Suggestion>Explain this repo</Suggestion>
-        <Suggestion>Write tests</Suggestion>
+        <ConversationSuggestion>Plan a trip</ConversationSuggestion>
+        <ConversationSuggestion>Explain this repo</ConversationSuggestion>
+        <ConversationSuggestion>Write tests</ConversationSuggestion>
       </ConversationSuggestions>
     </Conversation>
   );
@@ -105,18 +105,18 @@ function Starting() {
     <Conversation empty={empty}>
       <ConversationEmpty title="What are we building?" />
       <ConversationMessages threadKey="t2">
-        {empty ? null : <UserMessage key="u1">Plan a trip</UserMessage>}
+        {empty ? null : <ConversationUserMessage key="u1">Plan a trip</ConversationUserMessage>}
         {empty ? null : (
-          <AssistantMessage key="a1">
+          <ConversationAssistantMessage key="a1">
             <ConversationTyping />
-          </AssistantMessage>
+          </ConversationAssistantMessage>
         )}
       </ConversationMessages>
       <ConversationComposer>
         <Box />
       </ConversationComposer>
       <ConversationSuggestions>
-        <Suggestion onClick={() => setEmpty(false)}>Plan a trip</Suggestion>
+        <ConversationSuggestion onClick={() => setEmpty(false)}>Plan a trip</ConversationSuggestion>
       </ConversationSuggestions>
     </Conversation>
   );

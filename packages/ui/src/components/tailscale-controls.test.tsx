@@ -182,6 +182,20 @@ describe('TailscaleSummary', () => {
     expect(screen.getByText(/^As phone\./)).toBeTruthy();
     expect(screen.getByText('3 pages and 9 requests this session.')).toBeTruthy();
   });
+
+  it('says where the connection stands, and can be driven without a provider', () => {
+    const { rerender } = render(<TailscaleSummary status="signing-in" tailnet="example.ts.net" />);
+    expect(screen.getByText('Connecting to example.ts.net')).toBeTruthy();
+    expect(screen.queryByText(/^As /)).toBeNull();
+    rerender(<TailscaleSummary status="needs-approval" />);
+    expect(screen.getByText('Waiting for approval')).toBeTruthy();
+    rerender(<TailscaleSummary status="idle" />);
+    expect(screen.getByText('Not connected')).toBeTruthy();
+    rerender(<TailscaleSummary status="connected" tailnet="example.ts.net" selfName="laptop." />);
+    expect(screen.getByText('Connected to example.ts.net')).toBeTruthy();
+    expect(screen.getByText('As laptop')).toBeTruthy();
+    expect(document.querySelector('[data-slot="tailscale-summary"]')!.getAttribute('data-status')).toBe('connected');
+  });
 });
 
 describe('TailscaleExitNodes', () => {
@@ -217,12 +231,12 @@ describe('TailscaleExitNodes', () => {
     fireEvent.click(rows()[2]);
     expect(onValueChange).toHaveBeenCalledWith('node-bretts-macbook-pro', expect.objectContaining({ reason: expect.any(String) }));
     await waitFor(() => expect(rows()[2].textContent).toContain('Connecting…'));
-    await waitFor(() => expect(onAction).toHaveBeenCalledWith('node-bretts-macbook-pro'));
+    await waitFor(() => expect(onAction).toHaveBeenCalledWith('node-bretts-macbook-pro', expect.objectContaining({ reason: expect.any(String) })));
     await act(async () => { done(); });
     await waitFor(() => expect(screen.queryByText('Connecting…')).toBeNull());
     expect(tailscale.getSnapshot().exitNodeId).toBe('node-bretts-macbook-pro');
     fireEvent.click(rows()[0]);
-    await waitFor(() => expect(onAction).toHaveBeenLastCalledWith(null));
+    await waitFor(() => expect(onAction).toHaveBeenLastCalledWith(null, expect.objectContaining({ reason: expect.any(String) })));
   });
 
   it('does not switch when onValueChange cancels, and shows a controlled value', async () => {
@@ -260,11 +274,11 @@ describe('TailscaleExitNodes', () => {
     expect(fake.exitNodeId).toBeNull();
   });
 
-  it('shows Connecting… and a spinner on the row being switched to, and takes a glyph of its own', async () => {
+  it('shows Connecting… and a spinner on the row being switched to, and takes a trailing glyph of its own', async () => {
     const { tailscale } = await connected();
     let finish = () => {};
     const onAction = () => new Promise<void>((resolve) => { finish = resolve; });
-    shell(tailscale, <TailscaleExitNodes onAction={onAction} glyph={(_p, s) => (s.connecting ? <i data-testid="busy" /> : <i data-testid="idle" />)} />);
+    shell(tailscale, <TailscaleExitNodes onAction={onAction} trailing={(_p, s) => (s.connecting ? <i data-testid="busy" /> : <i data-testid="idle" />)} />);
     fireEvent.click(rows()[2]);
     await waitFor(() => expect(rows()[2].textContent).toContain('Connecting…'));
     expect(within(rows()[2]).getByTestId('busy')).toBeTruthy();
@@ -282,10 +296,23 @@ describe('TailscaleExitNodes', () => {
     expect(alert.className).toContain('text-destructive');
   });
 
-  it('says so when the tailnet has no exit node', async () => {
+  it('keeps its heading and props and shows an EmptyState when the tailnet has no exit node', async () => {
     const { tailscale } = await connected({ exitNodes: [], offlineExitNodes: [] });
-    shell(tailscale, <TailscaleExitNodes />);
-    expect(screen.getByText(/No exit node on this tailnet/)).toBeTruthy();
+    const view = shell(tailscale, <TailscaleExitNodes id="exits" aria-describedby="hint" className="mt-2" />);
+    const root = document.querySelector('[data-slot="tailscale-exit-nodes"]')!;
+    expect(root.id).toBe('exits');
+    expect(root.getAttribute('aria-describedby')).toBe('hint');
+    expect(root.className).toContain('mt-2');
+    expect(root.hasAttribute('data-empty')).toBe(true);
+    expect(screen.getByText('Exit node')).toBeTruthy();
+    const empty = screen.getByRole('status');
+    expect(empty.getAttribute('data-slot')).toBe('empty-state');
+    expect(within(empty).getByText('No exit node')).toBeTruthy();
+    expect(within(empty).getByText(/Only your devices can be reached/)).toBeTruthy();
     expect(screen.queryByRole('listbox')).toBeNull();
+    view.rerender(<TailscaleProvider tailscale={tailscale}><TailscaleExitNodes emptyState="Nothing to route through" /></TailscaleProvider>);
+    expect(within(screen.getByRole('status')).getByText('Nothing to route through')).toBeTruthy();
+    view.rerender(<TailscaleProvider tailscale={tailscale}><TailscaleExitNodes emptyState={null} /></TailscaleProvider>);
+    expect(screen.queryByRole('status')).toBeNull();
   });
 });

@@ -41,15 +41,22 @@ const DEFAULT_ACTIONS: readonly DebugToolbarAction[] = [
   'continue', 'step-over', 'step-into', 'step-out', 'step-back', 'reverse-continue', 'restart', 'stop',
 ];
 
+/** What `onAction` gets beside the action: why it ran (a press of its tool) and the event. */
+export interface DebugToolbarActionDetails {
+  reason: 'trigger-press';
+  event: Event;
+}
+
 interface DebugToolbarContextValue {
-  onAction?: (action: DebugToolbarAction) => void;
+  onAction?: (action: DebugToolbarAction, details: DebugToolbarActionDetails) => unknown;
   disabledActions: readonly DebugToolbarAction[];
 }
 const DebugToolbarContext = createContext<DebugToolbarContextValue>({ disabledActions: [] });
 
 export type DebugToolbarProps = Omit<ToolbarProps, 'children'> & {
-  /** Called with the action of the pressed control. */
-  onAction?: (action: DebugToolbarAction) => void;
+  /** Called with the action of the pressed control and `{ reason, event }`, after the control's own `onClick`; an
+   *  `onClick` that calls `event.preventDefault()` keeps it from running. */
+  onAction?: (action: DebugToolbarAction, details: DebugToolbarActionDetails) => unknown;
   /** The controls to show, in order. Default: all eight. Ignored when you pass children. */
   actions?: readonly DebugToolbarAction[];
   /** Actions the debugger can't run right now: they stay focusable with `aria-disabled`. */
@@ -78,8 +85,9 @@ export function DebugToolbar({
   );
 }
 
-/** A tool follows the toolbar's size: 28, 36 or 44px. */
+/** A tool follows the toolbar's size: 28, 36 or 44px, and its glyph with it: 16, 20 or 24px (above the type ramp: a glyph size, not text). */
 const iconSizes: Record<ToolbarSize, ButtonSize> = { sm: 'icon-sm', default: 'icon', lg: 'icon-lg' };
+const glyphSizes: Partial<Record<ButtonSize, string>> = { 'icon-sm': 'text-callout', icon: 'text-title', 'icon-lg': 'text-[24px]' };
 
 export type DebugToolbarButtonProps = Omit<ToolbarButtonProps, 'children'> & {
   action: DebugToolbarAction;
@@ -89,7 +97,7 @@ export type DebugToolbarButtonProps = Omit<ToolbarButtonProps, 'children'> & {
 
 /** One action: its Codicon in an icon tool, its name in a tooltip (the button's name too). Disabled when the
     DebugToolbar lists it in `disabledActions` or when you pass `disabled`; a press calls the toolbar's `onAction`
-    after your own `onClick`. */
+    after your own `onClick`, unless that called `event.preventDefault()`. */
 export function DebugToolbarButton({ action, label, size, tone, disabled, onClick, className, ...props }: DebugToolbarButtonProps) {
   const toolbar = useContext(DebugToolbarContext);
   const bar = useToolbar();
@@ -109,14 +117,14 @@ export function DebugToolbarButton({ action, label, size, tone, disabled, onClic
             disabled={disabled ?? toolbar.disabledActions.includes(action)}
             onClick={(event) => {
               onClick?.(event);
-              toolbar.onAction?.(action);
+              if (!event.defaultPrevented) toolbar.onAction?.(action, { reason: 'trigger-press', event: event.nativeEvent });
             }}
             className={className}
             {...props}
           />
         }
       >
-        <span aria-hidden="true" className={cn('codicon', `codicon-${meta.icon}`, iconSize === 'icon-sm' ? 'text-callout' : 'text-title')} />
+        <span aria-hidden="true" className={cn('codicon', `codicon-${meta.icon}`, glyphSizes[iconSize] ?? 'text-title')} />
       </TooltipTrigger>
       <TooltipContent>{label ?? meta.label}</TooltipContent>
     </Tooltip>

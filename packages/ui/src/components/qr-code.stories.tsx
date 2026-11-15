@@ -47,7 +47,7 @@ export const RoundedVsSquare: Story = {
   render: () => (
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16 }}>
       <Card label="rounded"><QRCode value="WIFI:S:Home Network;T:WPA;P:correct-horse-battery-staple;;" size={116} /></Card>
-      <Card label="square"><QRCode value="WIFI:S:Home Network;T:WPA;P:correct-horse-battery-staple;;" size={116} rounded={false} /></Card>
+      <Card label="square"><QRCode value="WIFI:S:Home Network;T:WPA;P:correct-horse-battery-staple;;" size={116} shape="square" /></Card>
     </div>
   ),
 };

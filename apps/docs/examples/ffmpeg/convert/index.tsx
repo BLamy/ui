@@ -4,7 +4,7 @@ import { FileUploadTrigger } from '@/components/ui/file-upload'
 import { Progress } from '@/components/ui/progress'
 import { FfmpegError, mediaFileName } from '@/lib/ffmpeg'
 import { FfmpegProvider, useFfmpeg, useFfmpegSupport, useMediaInfo } from '@/lib/ffmpeg/react'
-import { formatFileSize } from '@ui-sdk/core/file-input';
+import { formatFileSize } from '@/lib/file-size';
 import { formatTimecode } from '@/lib/video-timeline-model'
 
 // FFmpeg in a worker, like a command line: probe a file, then turn it into an

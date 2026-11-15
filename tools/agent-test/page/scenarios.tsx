@@ -4,8 +4,8 @@
    ../scenarios.mjs. */
 import { useState, type ComponentType } from 'react';
 import { Button, buttonVariants } from '@/components/ui/button';
-import { Combobox, ComboboxContent, ComboboxField, ComboboxInput, ComboboxTrigger } from '@/components/ui/combobox';
-import { DatePicker, DatePickerContent, DatePickerField } from '@/components/ui/date-picker';
+import { Combobox, ComboboxContent, ComboboxInputGroup, ComboboxInput, ComboboxTrigger } from '@/components/ui/combobox';
+import { DatePicker, DatePickerContent, DatePickerInputGroup } from '@/components/ui/date-picker';
 import {
   AlertDialog, AlertDialogBackdrop, AlertDialogClose, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
   Dialog, DialogBackdrop, DialogBody, DialogClose, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
@@ -173,10 +173,10 @@ function Assignee() {
       <Field>
         <FieldLabel>Assignee</FieldLabel>
         <Combobox items={people} value={assignee} onValueChange={setAssignee}>
-          <ComboboxField>
+          <ComboboxInputGroup>
             <ComboboxInput placeholder="Search the team" />
             <ComboboxTrigger />
-          </ComboboxField>
+          </ComboboxInputGroup>
           <ComboboxContent />
         </Combobox>
       </Field>
@@ -222,7 +222,7 @@ function DueDate() {
       <Field>
         <FieldLabel>Due date</FieldLabel>
         <DatePicker locale="en-US" defaultMonth="2026-09" value={date} onValueChange={setDate}>
-          <DatePickerField />
+          <DatePickerInputGroup />
           <DatePickerContent />
         </DatePicker>
       </Field>

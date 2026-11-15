@@ -14,7 +14,7 @@
     "ColorPickerSliderThumb",
     "ColorPickerSwatches",
     "ColorPickerSwatchItem",
-    "ColorPickerField",
+    "ColorPickerInputGroup",
     "ColorPickerInput",
     "ColorPickerChannelInput",
     "ColorPickerSwatch",
@@ -35,7 +35,7 @@
     "ColorPickerTriggerProps",
     "ColorPickerContentProps",
     "ColorPickerSliderProps",
-    "ColorPickerFieldProps",
+    "ColorPickerInputGroupProps",
     "ColorInputProps",
     "ColorSwatchProps",
     "ColorPickerController"

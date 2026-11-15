@@ -18,7 +18,8 @@ import { Input } from '@/components/ui/input';
 import { listboxItemVariants, listboxVariants } from '@/components/ui/listbox';
 import { Popover, PopoverContent, PopoverTitle, PopoverTrigger, createPopoverController, type PopoverProps } from '@/components/ui/popover';
 import { Segmented, SegmentedItem } from '@/components/ui/segmented';
-import { Toolbar } from '@/components/ui/toolbar';
+import { Toolbar, toolbarButtonVariants } from '@/components/ui/toolbar';
+import { EmptyState } from '@/components/ui/empty-state';
 import {
   DATE_PRESETS, RELATIVE_UNITS, createFilter, describeFilter, describeValue, isDateValue, isFilterComplete,
   operatorLabel, operatorsFor, withOperator, withValue,
@@ -28,7 +29,7 @@ import { Icon } from '@/lib/icon';
 import { changeDetails, type ChangeGiven } from '@/lib/change-details';
 import { useControllableChange } from '@/lib/controllable-state';
 import { optionSearch } from '@/lib/option-search-primitive';
-import { pressableFocusRing, selectableText } from '@/lib/primitives';
+import { selectableText } from '@/lib/primitives';
 import { cn, cx } from '@/lib/utils';
 
 /* ══ Filter — Linear-style filtering ══
@@ -180,14 +181,13 @@ export const filterChipVariants = cva(
 /** One part of a chip (field, operator, value, remove): a hairline from its neighbour, its own hover, press and focus.
     The outer parts round with the chip, so their hover fill follows its corners. */
 const chipPart =
-  'bl-btn flex min-w-0 items-center gap-1.5 border-0 border-l border-border bg-transparent px-2 [font-family:inherit] text-inherit outline-none first:rounded-s-lg first:border-l-0 last:rounded-e-lg';
+  'bl-btn flex min-w-0 items-center gap-1.5 border-0 border-s border-border bg-transparent px-2 [font-family:inherit] text-inherit outline-none first:rounded-s-lg first:border-s-0 last:rounded-e-lg';
 const chipButton =
   'cursor-pointer hover:bg-accent active:bg-secondary-strong focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring';
 
-const triggerButton = cn(
-  'bl-btn box-border inline-flex h-7 shrink-0 cursor-pointer items-center gap-1.5 rounded-lg border-0 bg-transparent px-2 [font-family:inherit] text-footnote font-medium text-foreground/70 transition-[background-color] duration-spring-snappy ease-spring-snappy hover:bg-accent active:bg-secondary-strong motion-reduce:transition-none',
-  pressableFocusRing,
-);
+/** The row's own buttons (Filter, Match, Clear all): the kit Toolbar's quiet `sm` tool (32px, Button's scale), so a
+    theme or size change to the toolbar reaches them. The chips keep their own parts. */
+const triggerButton = cn(toolbarButtonVariants({ variant: 'quiet', size: 'sm' }), 'shrink-0');
 
 const popupList = cn(listboxVariants({ variant: 'popup' }));
 const popupRow = listboxItemVariants({ variant: 'popup' });
@@ -262,7 +262,6 @@ const backOnEmpty = (onBack?: () => void) => (e: ReactKeyboardEvent<HTMLInputEle
   if (onBack && e.key === 'Backspace' && e.currentTarget.value === '') onBack();
 };
 
-const emptyClass = 'px-3 py-6 text-center text-footnote text-foreground/70';
 
 /** A row of a one-choice list (a preset, Yes / No), with a check for the current one. */
 function Choice({ value, children }: { value: string; children: ReactNode }) {
@@ -350,7 +349,7 @@ function OptionEditor({ field, value, onChange, onBack }: { field: FilterField; 
           </OptionSearchOption>
         ))}
       </OptionSearchList>
-      <OptionSearchEmpty className={emptyClass}>No matches</OptionSearchEmpty>
+      <EmptyState size="sm" description="No matches" render={<OptionSearchEmpty />} />
     </OptionSearch>
   );
 }
@@ -590,7 +589,7 @@ export function FilterMenu({
         )}
       </BarButton>
       <PopoverContent
-        variant="surface"
+        variant="plain"
         {...contentProps}
         side={side}
         align={align}
@@ -629,7 +628,8 @@ export function FilterMenu({
                 </CommandItem>
               ))}
             </CommandList>
-            <CommandEmpty className={cn(emptyClass, 'not-data-empty:hidden')}>{fields.length && !available.length ? 'Every field is already filtered' : 'No matching fields'}</CommandEmpty>
+            <EmptyState size="sm" render={<CommandEmpty className="not-data-empty:hidden" />}
+              description={fields.length && !available.length ? 'Every field is already filtered' : 'No matching fields'} />
           </Command>
         )}
       </PopoverContent>
@@ -685,7 +685,7 @@ function ValueButton({ filter, field, locale, onChange }: { filter: Filter; fiel
       <BarButton render={<PopoverTrigger />} data-part="value" aria-label={`${field.label} value: ${isFilterComplete(filter) ? summary : 'none selected'}`} className={cn(chipPart, chipButton, 'max-w-56 font-medium')}>
         <ValueSummary filter={filter} field={field} locale={locale} />
       </BarButton>
-      <PopoverContent variant="surface" side="bottom" align="start" className="w-64 min-w-0 overflow-hidden outline-none">
+      <PopoverContent variant="plain" side="bottom" align="start" className="w-64 min-w-0 overflow-hidden outline-none">
         <PopoverTitle className="sr-only">{`Edit ${field.label}`}</PopoverTitle>
         <FilterValueEditor
           field={field}

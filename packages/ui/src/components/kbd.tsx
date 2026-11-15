@@ -43,7 +43,7 @@ export function Kbd({ className, keys, children, ...props }: KbdProps) {
     <kbd
       data-slot="kbd"
       className={cn(
-        'pointer-events-none box-border inline-flex h-5 min-w-5 items-center justify-center gap-0.5 rounded-sm bg-secondary px-1.5 font-sans text-caption leading-none font-medium text-muted-foreground shadow-hairline-b select-none [&_svg]:size-3',
+        'pointer-events-none box-border inline-flex h-5 w-fit min-w-5 items-center justify-center gap-0.5 rounded-sm bg-secondary px-1.5 font-sans text-caption leading-none font-medium text-muted-foreground shadow-hairline-b select-none [&_svg]:size-3',
         className,
       )}
       {...props}
@@ -54,5 +54,5 @@ export function Kbd({ className, keys, children, ...props }: KbdProps) {
 }
 
 export function KbdGroup({ className, ...props }: ComponentProps<'span'>) {
-  return <span data-slot="kbd-group" className={cn('inline-flex items-center gap-1', className)} {...props} />;
+  return <span data-slot="kbd-group" className={cn('inline-flex w-fit items-center gap-1', className)} {...props} />;
 }

@@ -13,34 +13,38 @@ Copies the source into your project's `components/ui/` (with the parts it is bui
 ```tsx
 import {
   AdaptivePane, AdaptivePaneHeader, AdaptivePaneTitle,
-  AdaptivePaneClose,
+  AdaptivePaneClose, AdaptivePaneTrigger,
 } from '@/components/ui/adaptive-pane'
 ```
 {% endtab %}
 {% tab title="npm" %}
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 
-Import the stylesheet once at your app's entry, then the parts from the package root:
+Import the stylesheet once at your app's entry, then the parts from their module:
 
 ```tsx
 import '@brett_lamy/ui/styles.css'
 
 import {
   AdaptivePane, AdaptivePaneHeader, AdaptivePaneTitle,
-  AdaptivePaneClose,
-} from '@brett_lamy/ui'
+  AdaptivePaneClose, AdaptivePaneTrigger,
+} from '@brett_lamy/ui/adaptive-pane'
 ```
 {% endtab %}
 {% endtabs %}
 
 ## Usage
 
-Put the pane in a positioned host (`position: relative`), beside the page it belongs to. `open` says whether it shows, in every presentation; `onOpenChange(open, details)` hears why it wants to change. The header parts give it a title and a way to close that fit each presentation.
+Put the pane in a positioned host (`position: relative`), beside the page it belongs to. `open` says whether it shows, in every presentation; `onOpenChange(open, details)` hears why it wants to change. The header parts give it a title and a way to close that fit each presentation. The button that opens it lives outside it, so `AdaptivePaneTrigger` reaches it through the pane's `controller`: it toggles `open` (`onOpenChange` hears `trigger-press`) and tells assistive technology whether the pane shows and which element it controls (`aria-expanded`, `aria-controls`).
 
 ```tsx
+const [pane] = useState(createAdaptivePaneController)
+
 <div className="relative flex h-full">
-  <main className={cn('min-w-0 flex-1', adaptivePanePageClass)}>…</main>
-  <AdaptivePane side="end" open={open} onOpenChange={setOpen} columnWidth={300}>
+  <main className={cn('min-w-0 flex-1', adaptivePanePageClass)}>
+    <AdaptivePaneTrigger controller={pane} className={buttonVariants({ variant: 'secondary' })}>Activity</AdaptivePaneTrigger>
+  </main>
+  <AdaptivePane controller={pane} side="end" columnWidth={300}>
     <AdaptivePaneHeader>
       <AdaptivePaneTitle>Activity</AdaptivePaneTitle>
       <AdaptivePaneClose backLabel="Profile" />
@@ -63,7 +67,7 @@ Put the pane in a positioned host (`position: relative`), beside the page it bel
 | `cover` | Fills the positioned host at `zIndex`: a full-screen panel, or a detail page over its list. |
 | `hidden` | Nothing on screen, whatever `open` says; the children stay mounted, off the page. |
 
-`side` is the host's edge the pane belongs to: UI SDK's logical `start` (the default) or `end`, which follow the reading direction (under `dir="rtl"` a `start` drawer comes from the right, and its separator and swipe strip move with it), or a physical `left` or `right`.
+`side` is the host's edge the pane belongs to: `start` (the default) or `end`, which follow the reading direction (under `dir="rtl"` a `start` drawer comes from the right, and its separator and swipe strip move with it).
 
 A shell with its own thresholds can still pass a presentation by hand (`presentation={wide ? 'column' : 'drawer'}`); with `auto`, make the host a size-class scope instead (`useSizeClass` and `SizeClassProvider` from `@/lib/container`, as the demo above does), so a dialog opened from inside the pane follows the same scope.
 
@@ -71,7 +75,7 @@ A shell with its own thresholds can still pass a presentation by hand (`presenta
 
 ## Header, title and close
 
-`AdaptivePaneHeader` is the pane's title row. In a column, a drawer or a cover it is the surface bar the kit's dialogs use (the title, then a round ×); in a push it is the NavigationStack bar. `AdaptivePaneTitle` (an `h2`) names the pane: the drawer's dialog and the pushed page's region are labelled by it, unless the pane has its own `aria-label`. `AdaptivePaneClose` is the × in a column, drawer or cover (named "Close" plus the title: "Close Activity") and the "‹ Back" button in a push, showing `backLabel`; either way `onOpenChange` hears `close-press`. Actions after the close part sit at the end of the row.
+`AdaptivePaneHeader` is the pane's title row. In a column, a drawer or a cover it is the surface bar the kit's dialogs use (the title, then a round ×); in a push it is the NavigationStack bar, built from the same pieces as NavigationStack's (`barSurface` and `lib/nav-bar`): the bar material and hairline, the title centered, the back button on the leading edge. `AdaptivePaneTitle` (an `h2`) names the pane: the drawer's dialog and the pushed page's region are labelled by it, unless the pane has its own `aria-label`. `AdaptivePaneClose` is the × in a column, drawer or cover (named "Close" plus the title: "Close Activity") and the "‹ Back" button in a push: it shows `backLabel` while it fits beside the title, then "Back", then the chevron alone, as NavigationStack's does, and is named "Back to" + `backLabel`; either way `onOpenChange` hears `close-press`. Actions after the close part sit at the end of the row.
 
 {% demo src="adaptive-pane/file-inspector" %}
 
@@ -135,7 +139,7 @@ The presentation doesn't have to come from the width. Here the reader chooses: d
 | --- | --- | --- |
 | `presentation` | `auto` | `auto` · `column` · `drawer` · `push` · `cover` · `hidden`. |
 | `open` / `defaultOpen` / `onOpenChange(open, details)` | closed | Whether it shows. `details.reason`: `close-press`, `escape-key`, `outside-press`, `swipe`, `back`, `imperative`…; `details.cancel()` keeps it. |
-| `side` | `start` | `start` · `end` · `left` · `right`. |
+| `side` | `start` | `start` · `end` (logical: they follow the reading direction). |
 | `columnWidth` | the track's | The column's width (number = px, or any CSS length). |
 | `drawerWidth` | `20rem` | The drawer's width, capped at 85% of the host (override with `max-w-*` in `className`). |
 | `resizable` | `false` | A separator on the inner edge of a column or drawer. |
@@ -146,22 +150,31 @@ The presentation doesn't have to come from the width. Here the reader chooses: d
 | `modal` / `dismissible` | `true` / `true` | The drawer's modality and whether Escape, the scrim and the swipe can close it (UI SDK's Drawer props). |
 | `zIndex` | 30 | Stacking of the drawer, push or cover over the host's other children. |
 | `aria-label` | the title | The pane's name. |
-| `controller` | — | From `createAdaptivePaneController()`: `isOpen`, `setOpen`, `getWidths`, `setWidths` from anywhere (also the agent's actions). |
+| `controller` | — | From `createAdaptivePaneController()`: `isOpen`, `setOpen`, `getWidths`, `setWidths` from anywhere (also the agent's actions), and what an `AdaptivePaneTrigger` connects through. |
 | `className` / `style` | — | The pane's box in every presentation: the column, the drawer's panel, the pushed page, the cover. Either may be a function of `{ presentation, open, side }`. |
+
+### AdaptivePaneTrigger
+
+| Prop | Default | Effect |
+| --- | --- | --- |
+| `controller` | — (required) | The controller the pane was given. |
+| `onClick(event)` | — | Runs before the pane toggles; `event.preventDefault()` keeps it as it is. |
+
+Any other Button prop (`render`, `className`, `disabled`…): it is UI SDK's unstyled Button, so style it with `buttonVariants()` or `render={<Button … />}`. It writes `aria-expanded`, `aria-controls` (the pane's id) and `data-open`.
 
 ### AdaptivePaneClose
 
 | Prop | Default | Effect |
 | --- | --- | --- |
-| `backLabel` | `Back` | What a pushed pane goes back to, beside the chevron. |
-| `aria-label` | "Close" + title / the back label | Its name. |
+| `backLabel` | `Back` | What a pushed pane goes back to, beside the chevron (shortened to "Back", then to the chevron, when the bar is narrow). |
+| `aria-label` | "Close" + title / "Back to" + back label | Its name. |
 | `children` | × / ‹ backLabel | Replaces the glyph. |
 
 `AdaptivePaneHeader` takes a `div`'s props; `AdaptivePaneTitle` an `h2`'s.
 
 ## Styling
 
-Slots: `adaptive-pane` (the root, with `data-presentation`, `data-side`, `data-open` / `data-closed`, `data-dragging`), `adaptive-pane-resizer`, `adaptive-pane-edge`, `adaptive-pane-dim` and `adaptive-pane-page` (the push), `adaptive-pane-header` (with `data-presentation="push"` in a push), `adaptive-pane-title`, `adaptive-pane-close`. The drawer is a `Sheet contained` with `SheetContent variant="panel"`: its panel is `drawer-content` with `data-variant="panel"`, its host `sheet-host`. Variables: `--adaptive-pane-w` (the width, resized or the host's), `--adaptive-pane-z`, and on the host `--adaptive-pane-under`.
+Slots: `adaptive-pane` (the root, with `data-presentation`, `data-side`, `data-open` / `data-closed`, `data-dragging`), `adaptive-pane-resizer`, `adaptive-pane-edge`, `adaptive-pane-dim` and `adaptive-pane-page` (the push), `adaptive-pane-header` (with `data-presentation="push"` in a push), `adaptive-pane-title`, `adaptive-pane-close`; the trigger is UI SDK's Button hooked by `data-adaptive-pane-trigger`. The drawer is a `Sheet contained` with `SheetContent variant="panel"`: its panel is `drawer-content` with `data-variant="panel"`, its host `sheet-host`. Variables: `--adaptive-pane-w` (the width, resized or the host's), `--adaptive-pane-z`, and on the host `--adaptive-pane-under`.
 
 ## Container utilities
 
@@ -173,4 +186,3 @@ The shells share more primitives, in `@/lib/container` and `@/lib/kept-children`
 | `useContainerWidth(initial?)` | Returns `[ref, width]`; a ResizeObserver keeps `width` in sync with the element, not the viewport. |
 | `useContainerSize(initial?)` | The same with both axes: returns `[ref, { width, height }]`. |
 | `useKeptChildren(children)` | The pane's own trick, for your own regions: render children once through a portal and dock them wherever they show now (`{ portal, dock, inline }`). |
-| `defineSlot(name)` / `collectSlots(children)` | Marker components for compound slots and the reader that maps them to their children. |

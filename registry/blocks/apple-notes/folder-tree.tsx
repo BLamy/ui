@@ -18,13 +18,13 @@ export function FolderTree({ notes, root, onOpen }: { notes: NotesState; root: F
     const leaves = (parent: string): Node[] => notes.filter !== 'all' && notes.filter !== 'markdown' ? [] : notes.notes.filter((n) => n.folder === parent && (!q || `${title(n)}\n${n.body}`.toLowerCase().includes(q)))
       .map((n) => {
         const marks = [notes.files.unseen.has(n.id) ? 'Changed outside Notes' : '', notes.drafts[n.id] ? 'Unsaved changes' : ''].filter(Boolean);
-        return { value: n.id, label: title(n), note: n, icon: 'doc' as const, ...(marks.length ? { detail: '•', detailTitle: marks.join(', ') } : {}) };
+        return { value: n.id, label: title(n), note: n, icon: 'doc' as const, ...(marks.length ? { trailing: '•', description: marks.join(', ') } : {}) };
       });
     // Models, images and data files open in their viewers; under All Files, everything else is listed beside them, dimmed.
     const rest = (parent: string): Node[] => notes.others
       .filter((o) => notes.listed(o) && o.folder === parent && (!q || o.name.toLowerCase().includes(q)))
       .map((o) => ({ value: o.id, label: o.name, other: o, ...(o.kind === 'stl' ? { icon: 'cube' as const } : o.kind === 'image' ? { icon: 'photo' as const } : o.kind === 'csv' ? { icon: 'table' as const }
-        : viewable(o.kind) ? {} : { dimmed: true, detailTitle: 'Drag onto a note to embed it' }) }));
+        : viewable(o.kind) ? {} : { dimmed: true, description: 'Drag onto a note to embed it' }) }));
     const sorted = (items: Node[]) => items.sort((a, b) => a.label.localeCompare(b.label));
     const build = (parent: string): Node[] => [...notes.folders
       .filter((f) => f.parent === parent && notes.shown(f))

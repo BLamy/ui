@@ -1,17 +1,17 @@
 import { useState } from 'react'
 import {
-  AssistantMessage,
+  ConversationAssistantMessage,
   ConversationTyping,
-  MessageMarkdown,
-  ToolCall,
-  UserMessage,
-  WorkLog,
+  ConversationMarkdown,
+  ConversationToolCall,
+  ConversationUserMessage,
+  ConversationWorkLog,
 } from '@/components/ui/conversation'
 import { ThemeScope } from '@/lib/theme'
 import { Button } from '@/components/ui/button'
 import { SettledBanner } from '@/components/blocks/t3-clone/components/settled-banner'
 
-// The transcript parts standing alone: a user turn with an image, a WorkLog
+// The transcript parts standing alone: a user turn with an image, a ConversationWorkLog
 // whose tool calls are done, running and failed, the typing dots, and the
 // banner a settled thread shows above its composer (T3 Code's SettledBanner, from
 // the t3-clone block).
@@ -26,27 +26,27 @@ export default function WorkLogExample() {
   return (
     <ThemeScope scope="workbench" className="rounded-card p-5">
       <div className="mx-auto grid max-w-[620px] gap-1">
-        <UserMessage attachments={[{ id: 'shot', name: 'checkout.png', src: SHOT, kind: 'image' }]}>
+        <ConversationUserMessage attachments={[{ id: 'shot', name: 'checkout.png', src: SHOT, kind: 'image' }]}>
           The checkout button is clipped on mobile, can you fix it?
-        </UserMessage>
-        <AssistantMessage>
-          <WorkLog summary="Worked for 1m 4s" defaultOpen>
-            <ToolCall icon="doc-text" title="Read" description="checkout/button.tsx" />
-            <ToolCall
+        </ConversationUserMessage>
+        <ConversationAssistantMessage>
+          <ConversationWorkLog summary="Worked for 1m 4s" defaultOpen>
+            <ConversationToolCall icon="doc-text" title="Read" description="checkout/button.tsx" />
+            <ConversationToolCall
               icon="doc-text"
               title="Edited"
               description="checkout/button.tsx"
               code={'- className="w-[420px]"\n+ className="w-full max-w-[420px]"'}
             />
-            <ToolCall status="running" title="Running" description="pnpm nx test checkout" />
-            <ToolCall status="error" title="Type check failed" description="2 errors" />
-          </WorkLog>
-          <MessageMarkdown markdown="The button had a fixed **420px** width. It is now `w-full` with a max width, so it shrinks inside narrow screens." />
-        </AssistantMessage>
-        <UserMessage>Thanks. Anything else?</UserMessage>
-        <AssistantMessage>
+            <ConversationToolCall status="running" title="Running" description="pnpm nx test checkout" />
+            <ConversationToolCall status="error" title="Type check failed" description="2 errors" />
+          </ConversationWorkLog>
+          <ConversationMarkdown markdown="The button had a fixed **420px** width. It is now `w-full` with a max width, so it shrinks inside narrow screens." />
+        </ConversationAssistantMessage>
+        <ConversationUserMessage>Thanks. Anything else?</ConversationUserMessage>
+        <ConversationAssistantMessage>
           <ConversationTyping />
-        </AssistantMessage>
+        </ConversationAssistantMessage>
 
         <div className="mt-4">
           {settled ? (

@@ -1,7 +1,7 @@
 /* The inspectors for what isn't a node or a scene: a segue (how it presents, how it moves, the props it passes —
    prepare(for:sender:) — and the destination's delegate, implemented here), a context (its fields, and who reads
    them), the entry point, and the storyboard itself (its device, the commands the app handles, and its JSON). */
-import { FontStackPicker } from '@/components/ui/font-picker';
+import { FontStackPicker, FontStackPickerContent, FontStackPickerInputGroup } from '@/components/ui/font-picker';
 import { Button as SdkButton } from '@ui-sdk/react/button';
 import { Icon } from '@/lib/icon';
 import { ActionList } from './actions';
@@ -196,16 +196,15 @@ export function DocPanel({ doc }: { doc: Doc }) {
           <Field key={kind} label={kind === 'sans' ? 'Text' : 'Code'} wide>
             <FontStackPicker
               aria-label={kind === 'sans' ? 'Text fonts' : 'Code fonts'}
-              size="sm"
               value={doc.fonts?.[kind] ?? []}
               placeholder={kind === 'sans' ? 'System font' : 'System monospace'}
               defaultCategory={kind === 'mono' ? 'monospace' : 'all'}
-              side="left"
-              align="start"
               onValueChange={(list) => b.commit((d) => ({ ...d, fonts: { ...d.fonts, [kind]: list.length ? list : undefined } }))}
               onPreview={(list) => b.setPreview(list === undefined ? null : { target: 'doc', props: { [kind]: list } })}
-              className="bg-secondary"
-            />
+            >
+              <FontStackPickerInputGroup size="sm" className="bg-secondary" />
+              <FontStackPickerContent side="start" align="start" />
+            </FontStackPicker>
           </Field>
         ))}
         <Help>A stack: the first family that loads is used. Hover the list to see every scene in a family; a Text can have a family of its own.</Help>

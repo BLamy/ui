@@ -93,7 +93,7 @@ export function ItemRow({ ui, state, title, labels, meta, assignees, comments, s
       {!ui.phone ? (
         <div className="flex w-[120px] shrink-0 items-start justify-end gap-4 pt-1">
           {assignees.length ? (
-            <AvatarGroup size={20} label="Assignees">
+            <AvatarGroup size={20} aria-label="Assignees">
               {assignees.map((u) => <Avatar key={u.login} name={`${u.f} ${u.l}`} src={u.avatar} card={<UserCard user={u} />} />)}
             </AvatarGroup>
           ) : null}

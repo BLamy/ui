@@ -17,12 +17,12 @@ import { LogList } from '@/components/ui/log-list'
 {% tab title="npm" %}
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 
-Import the stylesheet once at your app's entry, then the parts from the package root:
+Import the stylesheet once at your app's entry, then the parts from their module:
 
 ```tsx
 import '@brett_lamy/ui/styles.css'
 
-import { LogList } from '@brett_lamy/ui'
+import { LogList } from '@brett_lamy/ui/log-list'
 ```
 {% endtab %}
 {% endtabs %}
@@ -68,12 +68,12 @@ Rows are as tall as they need to be. They're measured as they mount, and what's 
 
 {% demo src="log-list/open-rows" %}
 
-`renderRow` draws a row's content yourself. `LogRowContent` is the usual content, to add to or to leave out. Keep the function stable with `useCallback`, as a new one renders every mounted row again.
+`renderRow` draws a row's content yourself. `LogListRowContent` is the usual content, to add to or to leave out. Keep the function stable with `useCallback`, as a new one renders every mounted row again.
 
 ```tsx
 const renderRow = useCallback((row: LogRow, state: LogRowState) => (
   <>
-    <LogRowContent row={row} expanded={state.expanded} cut={state.cut} disclosure={state.disclosure} formatTime={state.formatTime} />
+    <LogListRowContent row={row} expanded={state.expanded} cut={state.cut} disclosure={state.disclosure} formatTime={state.formatTime} />
     <Button variant="quiet" size="sm" onClick={() => inspect(row)}>Inspect</Button>
   </>
 ), [])
@@ -135,8 +135,8 @@ A press on a row is the row's own click, so touch, mouse and a screen reader's c
 | `onAction` | none | `(id, details)`: a press, or Enter or Space on the active row, with `details.row` and `details.index`. |
 | `controller` | none | `createLogListController()`, to drive it from outside. |
 | `copyable` | `true` | The Copy button, and ⌘C. |
-| `getRowText` / `onRowCopy` | `logRowText` / none | What's copied, and hearing about it, with the text, for a host with a clipboard of its own. |
-| `renderRow` | `LogRowContent` | A row's content. Must be stable. |
+| `getRowText` / `onRowCopy` | `logRowText` / none | What's copied, and hearing about it: `onRowCopy(text, row)`, text first as ObjectTree's and ObjectValue's `onValueCopy`, for a host with a clipboard of its own. |
+| `renderRow` | `LogListRowContent` | A row's content. Must be stable. |
 | `formatTime` | `formatLogTime` | How times read. Must be stable. |
 | `density` | `compact` | One line's height: `compact` 24px · `default` 28px · `comfortable` 32px (for touch). |
 | `estimatedRowHeight` | one line | A row's height until it's measured. |

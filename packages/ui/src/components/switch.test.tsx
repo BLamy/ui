@@ -115,7 +115,7 @@ describe('Switch', () => {
     const track = screen.getByRole('switch', { name: 'Wi-Fi' });
     expect(track.getAttribute('data-size')).toBe('sm');
     expect(track.className).toContain('w-[38px]');
-    expect(track.querySelector('[data-slot="switch-thumb"]')!.className).toContain('group-data-[size=sm]:w-[18px]');
+    expect(track.querySelector('[data-slot="switch-thumb"]')!.className).toContain('group-data-[size=sm]/switch:w-[18px]');
     cleanup();
     render(<Switch aria-label="Wi-Fi" />);
     expect(screen.getByRole('switch').getAttribute('data-size')).toBe('default');

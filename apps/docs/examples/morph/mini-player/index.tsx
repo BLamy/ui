@@ -1,11 +1,13 @@
 import { useRef, useState } from 'react'
 import { DialogContent } from '@ui-sdk/react/dialog'
+import { Button } from '@/components/ui/button'
 import { Dialog, DialogTitle } from '@/components/ui/dialog'
 import { Morph, MorphGroup, MorphPresence } from '@/components/ui/morph'
 import { NowPlayingBars } from '@/components/ui/now-playing-bars'
 import { Slider } from '@/components/ui/slider'
 import { Icon } from '@/lib/icon'
 
+const transport = 'text-white hover:not-data-disabled:bg-white/15 hover:not-data-disabled:text-white'
 const art = 'bg-[linear-gradient(135deg,#ff7a59_0%,#ff3d7f_45%,#7b3dff_100%)]'
 
 // One player, two layouts. The mini bar and the full player are both
@@ -16,6 +18,7 @@ const art = 'bg-[linear-gradient(135deg,#ff7a59_0%,#ff3d7f_45%,#7b3dff_100%)]'
 // adds the morph and drag-to-dismiss.
 export default function MiniPlayer() {
   const [open, setOpen] = useState(false)
+  const [playing, setPlaying] = useState(true)
   const bar = useRef<HTMLElement>(null)
   return (
     <div className="relative mx-auto h-[560px] max-w-[380px] overflow-hidden rounded-sheet bg-background shadow-hairline [contain:layout]" data-layer-host="">
@@ -45,7 +48,7 @@ export default function MiniPlayer() {
                 <div className="text-subhead font-medium">Golden Hour</div>
                 <div className="text-footnote text-muted-foreground">The Weekend Ensemble</div>
               </Morph>
-              <NowPlayingBars className="text-primary" />
+              <NowPlayingBars playing={playing} className="text-primary" />
             </Morph>
           )}
         </MorphPresence>
@@ -70,11 +73,17 @@ export default function MiniPlayer() {
               <div className="text-callout text-white/60">The Weekend Ensemble</div>
             </Morph>
             <Morph layoutId="controls" fade className="mt-4.5 grid gap-4">
-              <Slider aria-label="Position" data-no-drag variant="on-dark" size="sm" defaultValue={32} />
-              <div className="flex items-center justify-center gap-11">
-                <Icon name="backward" size={32} />
-                <Icon name="pause" size={40} />
-                <Icon name="forward" size={32} />
+              <Slider aria-label="Position" data-no-drag variant="overlay" appearance="dark" size="sm" defaultValue={32} />
+              <div data-no-drag className="flex items-center justify-center gap-8">
+                <Button variant="ghost" size="icon-lg" aria-label="Previous" className={transport}>
+                  <Icon name="backward" size={30} />
+                </Button>
+                <Button variant="ghost" size="icon" aria-label={playing ? 'Pause' : 'Play'} className={`${transport} size-14`} onClick={() => setPlaying(!playing)}>
+                  <Icon name={playing ? 'pause' : 'play'} size={40} />
+                </Button>
+                <Button variant="ghost" size="icon-lg" aria-label="Next" className={transport}>
+                  <Icon name="forward" size={30} />
+                </Button>
               </div>
             </Morph>
           </DialogContent>

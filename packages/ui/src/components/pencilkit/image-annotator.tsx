@@ -6,7 +6,7 @@ import { Dialog, DialogBackdrop, DialogClose, DialogContent, type DialogCloseAct
 import { buttonVariants } from '@/components/ui/button';
 import { PencilKitAnnotator } from '@/components/ui/pencilkit/pencilkit-annotator';
 import { prefersReducedMotion } from '@/lib/motion';
-import { themeScopeProps, useLayerHost } from '@/lib/theme';
+import { themeScopeClass, themeScopeProps, useLayerHost } from '@/lib/theme';
 import { cn } from '@/lib/utils';
 
 /* ══ ImageAnnotator — draw on an image, save it flattened ══
@@ -14,10 +14,15 @@ import { cn } from '@/lib/utils';
    rasterizes the image and the surface's first <svg> into one PNG. The surface comes from an *engine*: a component
    that hands the lightbox its canvas and tools through a render-prop child. The default engine is PencilKit's
    (`PencilKitAnnotator`); swap it for a subtree with `ImageAnnotatorProvider`, or per lightbox with `engine`.
-   `null` opts out: the lightbox is then a plain preview (the image and Close).
+   `null` opts out: the lightbox is then a plain preview (the image and Close). A fixed surface is a one-line engine:
+   `({ children }) => children({ canvas: <MySvg /> })`.
 
      <ImageAnnotator src={png} open={open} onOpenChange={setOpen} onSave={(url) => setPng(url)} />
      <ImageAnnotatorProvider engine={MyEngine}>…</ImageAnnotatorProvider>
+
+   The lightbox is always dark, but the surface is drawn on the image, so it wears the image's appearance
+   (`appearance`, measured from the image by default): a theme-following color (`var(--foreground)`) is dark over a
+   light screenshot and light over a dark photo, and is saved that way.
 
    The Composer opens one when an image attachment is pressed (its `annotator` prop picks the engine). */
 
@@ -27,7 +32,7 @@ export interface ImageAnnotatorSurface {
   canvas: React.ReactNode;
   /** Tools, in a bar under the image so they never cover it. */
   toolbar?: React.ReactNode;
-  /** The lightbox's heading (default "Annotate — strokes flatten into the image on save"). */
+  /** The lightbox's heading (default "Markup"). */
   title?: string;
 }
 export interface ImageAnnotatorEngineProps {
@@ -65,14 +70,39 @@ export interface ImageAnnotatorProps extends Pick<DialogOptions, 'open' | 'defau
   onSave?: (dataUrl: string, details: DialogCloseActionDetails) => void;
   /** The drawing engine; defaults to the nearest ImageAnnotatorProvider's, else PencilKit. `null` forces the preview. */
   engine?: ImageAnnotatorEngine | null;
-  /** A fixed drawing surface (its first <svg> is flattened), instead of an engine. */
-  canvas?: React.ReactNode;
+  /** The appearance the surface is drawn in: the image's. `auto` (default) measures it from the image (a light
+   *  screenshot is `light`); an image the page can't read (cross-origin, no CORS) counts as light. */
+  appearance?: 'auto' | 'light' | 'dark';
   /** The element the image zooms out of on open and back into on close (a thumbnail); else it scales in. */
   origin?: () => HTMLElement | null;
 }
 
 /** The lightbox's palette: a dark `workbench` theme scope, whatever opened it (an image well, dark tools). */
 const LIGHTBOX_SCOPE = themeScopeProps({ scope: 'workbench', appearance: 'dark' });
+
+/** Whether an image is light or dark: the mean luminance of a 16×16 copy. `null` when it can't be read. */
+function imageAppearance(img: HTMLImageElement): 'light' | 'dark' | null {
+  if (!img.naturalWidth) return null;
+  try {
+    const cv = img.ownerDocument.createElement('canvas');
+    cv.width = cv.height = 16;
+    const ctx = cv.getContext('2d', { willReadFrequently: true });
+    if (!ctx) return null;
+    ctx.drawImage(img, 0, 0, 16, 16);
+    const px = ctx.getImageData(0, 0, 16, 16).data;
+    let sum = 0,
+      weight = 0;
+    for (let i = 0; i < px.length; i += 4) {
+      const a = px[i + 3] / 255;
+      sum += a * (0.2126 * px[i] + 0.7152 * px[i + 1] + 0.0722 * px[i + 2]);
+      weight += a;
+    }
+    return weight === 0 ? null : sum / weight / 255 > 0.5 ? 'light' : 'dark';
+  } catch {
+    // A cross-origin image without CORS taints the canvas.
+    return null;
+  }
+}
 
 /** Writes where the image box flies from (open) or to (close) as variables its transition reads. */
 function setZoom(box: HTMLElement, origin: HTMLElement | null, fallbackScale: number) {
@@ -160,8 +190,8 @@ export function ImageAnnotator({
   onOpenChange,
   onOpenChangeComplete,
   onSave,
-  canvas,
   engine: engineProp,
+  appearance = 'auto',
   origin,
 }: ImageAnnotatorProps) {
   const [openInner, setOpenInner] = useState(defaultOpen);
@@ -170,7 +200,7 @@ export function ImageAnnotator({
   // The image as state: the dialog's content mounts in its own commit, and the flight starts once it is there.
   const [img, setImg] = useState<HTMLImageElement | null>(null);
   const contextEngine = useImageAnnotatorEngine();
-  const Engine = canvas === undefined ? (engineProp === undefined ? contextEngine : engineProp) : null;
+  const Engine = engineProp === undefined ? contextEngine : engineProp;
   // The thumbnail hides while the image is out of it (it is the image, flown out), and shows once it is back.
   const hidden = useRef<HTMLElement | null>(null);
   const reveal = () => {
@@ -180,6 +210,9 @@ export function ImageAnnotator({
   React.useEffect(() => reveal, []);
   const host = useLayerHost();
   const [ready, setReady] = useState(false);
+  // The image's own appearance, once it has loaded: the surface over it is drawn in it.
+  const measured = React.useMemo(() => (ready && img ? imageAppearance(img) : null), [ready, img]);
+  const surfaceAppearance = appearance === 'auto' ? (measured ?? 'light') : appearance;
 
   // Open: once the image has its size, it flies out of the thumbnail (UI SDK's animateIn from where it was).
   React.useLayoutEffect(() => {
@@ -220,13 +253,13 @@ export function ImageAnnotator({
     const url = img && box ? await rasterize(img, box) : null;
     if (url) onSave?.(url, details);
   };
-  const preview = canvas === undefined && !Engine;
+  const preview = !Engine;
   // The lightbox around a surface: chrome above the image, the surface over it, tools under it.
   const layout = (surface: ImageAnnotatorSurface | null) => (
     <>
       <div data-slot="image-annotator-header" className={cn('flex items-center gap-2', lightboxChrome('delay-80'))}>
         <span className="flex-1 text-footnote font-semibold text-foreground">
-          {surface ? (surface.title ?? 'Annotate — strokes flatten into the image on save') : 'Preview'}
+          {surface ? (surface.title ?? 'Markup') : 'Preview'}
         </span>
         {surface ? (
           <>
@@ -256,7 +289,12 @@ export function ImageAnnotator({
         )}
       >
         <img ref={setImg} src={src} alt="" className="block h-auto max-h-[68cqh] w-auto max-w-[86cqw] min-w-[min(340px,86cqw)]" />
-        {surface?.canvas}
+        {surface ? (
+          // The surface wears the image's appearance, not the lightbox's.
+          <div data-slot="image-annotator-surface" data-appearance={surfaceAppearance} className={cn(themeScopeClass(surfaceAppearance), 'contents')}>
+            {surface.canvas}
+          </div>
+        ) : null}
       </div>
       {surface?.toolbar ? (
         <div data-slot="image-annotator-tools" className={lightboxChrome('delay-120')}>
@@ -294,7 +332,7 @@ export function ImageAnnotator({
         className={cn(LIGHTBOX_SCOPE.className, 'group/lightbox pointer-events-none fixed inset-0 z-400 grid place-items-center font-sans text-foreground outline-none [container-type:size]')}
       >
         <div data-slot="image-annotator" className="pointer-events-auto flex max-w-[90cqw] flex-col gap-2.5">
-          {Engine ? <Engine>{layout}</Engine> : layout(canvas === undefined ? null : { canvas })}
+          {Engine ? <Engine>{layout}</Engine> : layout(null)}
         </div>
       </DialogContent>
     </Dialog>

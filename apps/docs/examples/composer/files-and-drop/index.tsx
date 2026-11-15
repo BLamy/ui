@@ -49,7 +49,7 @@ function FilesAndDrop() {
       <Composer
         defaultAttachments={seed}
         defaultValue="Here's the repro and the logs ![header.png](attachment:f-shot) — what's going on?"
-        maxFileSize={10 * 1024 * 1024}
+        maxSize={10 * 1024 * 1024}
         maxFiles={8}
         onSubmit={(_markdown, attachments) =>
           setSent(`${attachments.length} file${attachments.length === 1 ? '' : 's'}: ${attachments.map((a) => a.name).join(', ')}`)

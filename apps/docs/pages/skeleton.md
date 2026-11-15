@@ -15,12 +15,12 @@ import { Skeleton, SkeletonText } from '@/components/ui/skeleton'
 {% tab title="npm" %}
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 
-Import the stylesheet once at your app's entry, then the parts from the package root:
+Import the stylesheet once at your app's entry, then the parts from their module:
 
 ```tsx
 import '@brett_lamy/ui/styles.css'
 
-import { Skeleton, SkeletonText } from '@brett_lamy/ui'
+import { Skeleton, SkeletonText } from '@brett_lamy/ui/skeleton'
 ```
 {% endtab %}
 {% endtabs %}
@@ -89,7 +89,7 @@ Keep the placeholder and the content in one container and swap them: `Swap` cros
 
 ## Light and dark
 
-The fill is `bg-secondary-strong` and the sweep a `--card` highlight, so the same placeholder sits right on light and dark surfaces, and in any ThemeScope, with no extra props.
+The fill is `bg-secondary-strong` and the sweep a highlight that is lighter than the bar in both appearances (`--skeleton-sheen`: the card color in light, the foreground at 8% in dark, where the card is darker than the bar), so the same placeholder sits right on light and dark surfaces, and in any ThemeScope, with no extra props. Set `--skeleton-sheen` on a surface of your own to change it.
 
 {% demo src="skeleton/light-and-dark" %}
 
@@ -106,6 +106,7 @@ Placeholders are `aria-hidden`: they are decoration, not content. Mark the regio
 | `shape` | `default` | `default` · `rect` · `text` · `circle` (see Shapes). |
 | `width` / `height` | — | A size computed at runtime; a number is px, a string any CSS length. Prefer classes otherwise. |
 | `className` / `style` | — | Merged onto the block (`div`); every other `div` prop passes through. |
+| `render` | — | Another element, where the markup needs phrasing content: `<Skeleton shape="text" render={<span />} />` inside a `<p>` or a button. |
 
 ### SkeletonText
 
@@ -127,7 +128,7 @@ Generated from the source. Call a recipe on any element to borrow a component's 
 Defined in `@/components/ui/skeleton`. Base classes:
 
 ```text
-block bg-secondary-strong [background-image:linear-gradient(90deg,transparent_25%,color-mix(in_oklab,var(--card)_55%,transparent)_50%,transparent_75%)] [background-size:200%_100%] [background-position:150%_0] [background-repeat:no-repeat] animate-bl-shimmer motion-reduce:animate-none
+[ // The sheen is lighter than the bar in both appearances: the card color in light, a whisper of the foreground in // dark (the dark card is darker than the bar, and would sweep a shadow across it). '[--skeleton-sheen:color-mix(in_oklab,var(--card)_55%,transparent)] dark:[--skeleton-sheen:color-mix(in_oklab,var(--foreground)_8%,transparent)]', 'block bg-secondary-strong [background-image:linear-gradient(90deg,transparent_25%,var(--skeleton-sheen)_50%,transparent_75%)] [background-size:200%_100%] [background-position:150%_0] [background-repeat:no-repeat] animate-bl-shimmer motion-reduce:animate-none', ]
 ```
 
 **`shape`** — default `default`

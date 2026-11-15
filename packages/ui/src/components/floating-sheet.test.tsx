@@ -2,7 +2,7 @@
 import { useRef, useState } from 'react';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { FloatingSheet, FloatingSheetBody, FloatingSheetFab, FloatingSheetFoot, useFloatingSheet } from '@/components/ui/floating-sheet';
+import { FloatingSheet, FloatingSheetBody, FloatingSheetFab, FloatingSheetFooter, useFloatingSheet } from '@/components/ui/floating-sheet';
 import { useHideOnScroll } from '@/lib/scroll-edge';
 import { BLProvider } from '@/lib/theme';
 
@@ -24,7 +24,7 @@ beforeAll(() => {
     configurable: true,
     get() {
       if (this.dataset.slot === 'floating-sheet') return hostHeight;
-      return this.dataset.slot === 'floating-sheet-foot' ? 60 : 720;
+      return this.dataset.slot === 'floating-sheet-footer' ? 60 : 720;
     },
   });
 });
@@ -60,7 +60,7 @@ function Order(props: Parameters<typeof FloatingSheet>[0]) {
           {props.children ?? (
             <>
               <FloatingSheetBody><p>Arriving in 12 minutes</p><State /></FloatingSheetBody>
-              <FloatingSheetFoot><button type="button">Track</button></FloatingSheetFoot>
+              <FloatingSheetFooter><button type="button">Track</button></FloatingSheetFooter>
             </>
           )}
         </FloatingSheet>
@@ -78,8 +78,9 @@ describe('FloatingSheet', () => {
     expect(sheet.getAttribute('aria-modal')).not.toBe('true');
     expect(sheet.contains(document.activeElement)).toBe(false);
     expect(screen.getByRole('button', { name: 'Expand' })).toBeTruthy();
-    // The sheet is its own layer host: it fills its box, not the app.
-    expect(document.querySelector('[data-slot=floating-sheet]')?.hasAttribute('data-layer-host')).toBe(true);
+    // A contained Sheet: its layer host fills the sheet's box, not the app.
+    expect(document.querySelector('[data-slot=floating-sheet] > [data-slot=sheet-host]')?.hasAttribute('data-layer-host')).toBe(true);
+    expect(document.querySelector('[data-slot=sheet-host]')?.contains(sheet)).toBe(true);
   });
 
   it('grows from its cap and reports the change with a reason', async () => {
@@ -231,7 +232,12 @@ describe('FloatingSheet', () => {
   });
 
   it('places the FAB by side and align, on the inline edges', async () => {
-    render(<Order fabSide="end" fabAlign="end" />);
+    render(
+      <Order>
+        <FloatingSheetBody><p>Arriving in 12 minutes</p></FloatingSheetBody>
+        <FloatingSheetFab side="end" align="end" aria-label="Show order" />
+      </Order>,
+    );
     await settle();
     const fab = document.querySelector<HTMLElement>('[data-floating-sheet-fab]')!;
     expect(fab.className).toContain('end-(--fs-fab-gutter)');

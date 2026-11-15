@@ -1,4 +1,4 @@
-import { formatFileSize } from '@ui-sdk/core/file-input';
+import { formatFileSize } from '@/lib/file-size';
 import type { DataTableSortValue, DataTableTimeRange } from '@/lib/data-table-model';
 import type { RowId } from '@/lib/log-list-model';
 import { formatDuration } from '@/lib/sql-format';
@@ -8,8 +8,9 @@ import { formatDuration } from '@/lib/sql-format';
    what each built-in column sorts by. How rows sort and how columns turn into a CSS grid is DataTable's
    (lib/data-table-model). No React and no DOM. */
 
-/** A bar's color. */
-export type RequestTone = 'neutral' | 'primary' | 'success' | 'warning' | 'danger' | 'accent';
+/** A bar's meaning, on the kit's one tone set: `default` is the primary color, `muted` a quiet gray. A color of your own
+ *  (a category: scripts, fonts, IPC) is a row's `tint`. */
+export type RequestTone = 'default' | 'muted' | 'success' | 'warning' | 'destructive';
 
 export interface RequestRow {
   id: RowId;
@@ -29,8 +30,10 @@ export interface RequestRow {
   time?: number;
   /** How long it took, in ms. */
   duration?: number;
-  /** The bar's color. Default: `danger` if it failed, else `primary`. */
+  /** The bar's tone. Default: `destructive` if it failed, else `default`. */
   tone?: RequestTone;
+  /** The bar's color, any CSS color (`var(--chart-5)`), for a category of your own: wins over `tone`. */
+  tint?: string;
   /** Still waiting: says so in Status and Time, and the bar runs on to the end of the range when it has no `duration`. */
   pending?: boolean;
   /** It failed, whatever its status. A status of 0 or from 400 up counts without this. */
@@ -71,14 +74,14 @@ export function requestDurationText(row: Pick<RequestRow, 'duration' | 'pending'
   return row.duration === undefined ? '—' : formatDuration(row.duration);
 }
 
-/** DevTools' Size column: "280 B" under a kilobyte (Intl would say "280 byte"), else "1.7 kB". */
+/** DevTools' Size column: "280 B", "1.7 kB" (the kit's formatFileSize). */
 export function requestSizeText(row: Pick<RequestRow, 'size'>): string {
   if (row.size === undefined) return '—';
-  return row.size < 1000 ? `${Math.round(row.size)} B` : formatFileSize(row.size);
+  return formatFileSize(row.size);
 }
 
 export function requestTone(row: Pick<RequestRow, 'tone' | 'failed' | 'status' | 'pending'>): RequestTone {
-  return row.tone ?? (isRequestFailed(row) ? 'danger' : 'primary');
+  return row.tone ?? (isRequestFailed(row) ? 'destructive' : 'default');
 }
 
 /* ── The waterfall ── */

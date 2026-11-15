@@ -229,7 +229,7 @@ export function ModelPicker({
         {current?.name ?? 'Choose model'}
       </PopoverTrigger>
       <PopoverContent
-        variant="surface"
+        variant="plain"
         palette="trigger"
         side={side}
         align={align}

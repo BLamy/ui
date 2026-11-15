@@ -37,7 +37,7 @@ describe('List', () => {
   it('opens swipe actions from the keyboard, runs one, and Escape closes them', async () => {
     const onAction = vi.fn();
     const { getByRole, container } = render(
-      <ListRow title="Message" onClick={() => {}} trailingActions={[{ label: 'Archive', onAction }]} />,
+      <ListRow title="Message" onClick={() => {}} endActions={[{ label: 'Archive', onAction }]} />,
     );
     const row = getByRole('button', { name: 'Message' });
     const actions = container.querySelector('[data-slot=list-row-actions]')!;
@@ -63,8 +63,8 @@ describe('List', () => {
   it('with actions on both sides, Left opens the trailing strip and Right the leading one', async () => {
     const { getByRole, container } = render(
       <ListRow title="Message" onClick={() => {}}
-        leadingActions={[{ label: 'Unread', onAction: () => {} }]}
-        trailingActions={[{ label: 'Archive', onAction: () => {} }, { label: 'More', onAction: () => {} }]} />,
+        startActions={[{ label: 'Unread', onAction: () => {} }]}
+        endActions={[{ label: 'Archive', onAction: () => {} }, { label: 'More', onAction: () => {} }]} />,
     );
     const root = container.querySelector<HTMLElement>('[data-slot=list-row]')!;
     const strip = (side: string) => container.querySelector<HTMLElement>(`[data-slot=list-row-actions][data-side=${side}]`)!;
@@ -94,7 +94,7 @@ describe('List', () => {
 
   it('runs a destructive action with the Delete key once the row has slid away and collapsed (its exit)', async () => {
     const onDelete = vi.fn();
-    const { getByRole, container } = render(<ListRow title="Draft" onClick={() => {}} trailingActions={[{ label: 'Delete', destructive: true, onAction: onDelete }]} />);
+    const { getByRole, container } = render(<ListRow title="Draft" onClick={() => {}} endActions={[{ label: 'Delete', destructive: true, onAction: onDelete }]} />);
     const root = container.querySelector<HTMLElement>('[data-slot=list-row]')!;
     Object.defineProperty(root, 'offsetHeight', { configurable: true, value: 44 });
     // happy-dom runs no transitions: stand in for the collapse that a browser would be running.
@@ -119,15 +119,15 @@ describe('List', () => {
     const a = createListRowController();
     const { getByRole, container } = render(
       <>
-        <List><ListSection><ListRow key="a" title="A" onClick={() => {}} controller={a} trailingActions={[{ label: 'Flag A', onAction: () => {} }]} /></ListSection></List>
-        <List><ListSection><ListRow key="b" title="B" onClick={() => {}} trailingActions={[{ label: 'Flag B', onAction: () => {} }]} /></ListSection></List>
+        <List><ListSection><ListRow key="a" title="A" onClick={() => {}} controller={a} endActions={[{ label: 'Flag A', onAction: () => {} }]} /></ListSection></List>
+        <List><ListSection><ListRow key="b" title="B" onClick={() => {}} endActions={[{ label: 'Flag B', onAction: () => {} }]} /></ListSection></List>
       </>,
     );
     const [actionsA, actionsB] = container.querySelectorAll<HTMLElement>('[data-slot=list-row-actions]');
     for (const el of [actionsA, actionsB]) {
       el.getBoundingClientRect = () => ({ width: 88, height: 44, top: 0, left: 0, right: 88, bottom: 44, x: 0, y: 0, toJSON: () => ({}) });
     }
-    act(() => { a.show('trailing'); });
+    act(() => { a.show('end'); });
     await flush();
     expect(actionsA.hasAttribute('inert')).toBe(false);
     const b = getByRole('button', { name: 'B' });
@@ -137,7 +137,7 @@ describe('List', () => {
     expect(actionsB.hasAttribute('inert')).toBe(false);
     expect(actionsA.hasAttribute('inert')).toBe(true);
     // The controller opening A again closes B.
-    act(() => { a.show('trailing'); });
+    act(() => { a.show('end'); });
     await flush();
     expect(actionsA.hasAttribute('inert')).toBe(false);
     expect(actionsB.hasAttribute('inert')).toBe(true);
@@ -150,7 +150,7 @@ describe('List', () => {
   });
 
   it('a row without onClick but with actions is a focusable group', () => {
-    const { getByRole } = render(<ListRow title="Flagged" trailingActions={[{ label: 'Unflag', onAction: () => {} }]} />);
+    const { getByRole } = render(<ListRow title="Flagged" endActions={[{ label: 'Unflag', onAction: () => {} }]} />);
     const group = getByRole('group', { name: 'Flagged' });
     expect(group.getAttribute('tabindex')).toBe('0');
   });
@@ -219,7 +219,7 @@ describe('List', () => {
     const onClick = vi.fn();
     const onAction = vi.fn();
     const { getByRole, container } = render(
-      <ListRow title="Private Relay" disabled onClick={onClick} trailingActions={[{ label: 'Delete', destructive: true, onAction }]} />,
+      <ListRow title="Private Relay" disabled onClick={onClick} endActions={[{ label: 'Delete', destructive: true, onAction }]} />,
     );
     const button = getByRole('button', { name: 'Private Relay' }) as HTMLButtonElement;
     expect(button.disabled).toBe(true);
@@ -232,7 +232,7 @@ describe('List', () => {
 
   it('in edit mode a row reports its check as pressed and does not swipe', () => {
     const { getByRole, container, rerender } = render(
-      <ListRow title="Inbox" editing checked onClick={() => {}} trailingActions={[{ label: 'Archive', onAction: () => {} }]} />,
+      <ListRow title="Inbox" editing checked onClick={() => {}} endActions={[{ label: 'Archive', onAction: () => {} }]} />,
     );
     expect(getByRole('button', { name: 'Inbox' }).getAttribute('aria-pressed')).toBe('true');
     expect(container.querySelector('[data-slot=list-row-actions]')).toBeNull();

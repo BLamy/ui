@@ -44,7 +44,7 @@ export function DocOutline({
         panelTitle={title}
         aria-label="Outline"
         items={items.map((it, i) => ({
-          key: i,
+          value: i,
           caption: it.text,
           level: it.level - 1,
         }))}

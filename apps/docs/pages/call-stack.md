@@ -15,12 +15,12 @@ import { CallStack } from '@/components/ui/call-stack'
 {% tab title="npm" %}
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 
-Import the stylesheet once at your app's entry, then the parts from the package root:
+Import the stylesheet once at your app's entry, then the parts from their module:
 
 ```tsx
 import '@brett_lamy/ui/styles.css'
 
-import { CallStack } from '@brett_lamy/ui'
+import { CallStack } from '@brett_lamy/ui/call-stack'
 ```
 {% endtab %}
 {% endtabs %}

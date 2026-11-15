@@ -32,7 +32,7 @@ beforeAll(() => {
   Object.defineProperty(HTMLElement.prototype, 'offsetHeight', {
     configurable: true,
     get(this: HTMLElement) {
-      return this.dataset.slot === 'floating-sheet-foot' ? 72 : 640;
+      return this.dataset.slot === 'floating-sheet-footer' ? 72 : 640;
     },
   });
 });
@@ -74,34 +74,46 @@ describe('ArtifactChatContainer floating', () => {
     await settle();
     const dialog = screen.getByRole('dialog', { name: 'Chat' });
     expect(dialog.querySelector('[data-slot=floating-sheet-body]')?.textContent).toContain('Three things changed.');
-    expect(dialog.querySelector('[data-slot=floating-sheet-foot]')?.contains(screen.getByRole('textbox'))).toBe(true);
+    expect(dialog.querySelector('[data-slot=floating-sheet-footer]')?.contains(screen.getByRole('textbox'))).toBe(true);
     // The composer wears the glass scope, in the page's appearance by default.
     expect(screen.getByRole('textbox').closest('[data-theme-scope=glass]')).not.toBeNull();
     // The content is not a landmark of its own.
     expect(document.querySelector('main')).toBeNull();
   });
 
+  it('paints only the chat in an explicit appearance, never the artifact', async () => {
+    render(<Chat appearance="dark" />);
+    await settle();
+    const content = document.querySelector<HTMLElement>('[data-slot=artifact-chat-content]')!;
+    expect(content.closest('[data-theme-scope]')).toBeNull();
+    expect(content.closest('.dark')).toBeNull();
+    // The sheet and the composer's glass are dark.
+    expect(screen.getByRole('textbox').closest('.dark')).not.toBeNull();
+    expect(sheet().classList.contains('dark')).toBe(true);
+  });
+
   it('turns the composer into a working status that brings it back when pressed', async () => {
     const onComposingChange = vi.fn();
     render(<Chat working workingLabel="Thinking…" onComposingChange={onComposingChange} />);
     await settle();
-    const status = screen.getByRole('button', { name: /Thinking…/ });
-    expect(status.textContent).toContain('Add something new');
+    const status = screen.getByRole('button', { name: 'Write a message' });
+    // Named for its action; the status is its description.
+    expect(document.getElementById(status.getAttribute('aria-describedby')!)?.textContent).toBe('Thinking…');
     fireEvent.click(status);
     expect(onComposingChange).toHaveBeenCalledWith(true, expect.objectContaining({ reason: 'trigger-press' }));
     expect(onComposingChange.mock.calls[0][1].event).toBeInstanceOf(Event);
     await settle();
-    expect(screen.queryByRole('button', { name: /Thinking…/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Write a message' })).toBeNull();
   });
 
   it('a canceled composing change keeps the working status', async () => {
     const onComposingChange = vi.fn((_c: boolean, details: { cancel: () => void }) => details.cancel());
     render(<Chat working workingLabel="Thinking…" onComposingChange={onComposingChange} />);
     await settle();
-    fireEvent.click(screen.getByRole('button', { name: /Thinking…/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Write a message' }));
     await settle();
     expect(onComposingChange).toHaveBeenCalledTimes(1);
-    expect(screen.getByRole('button', { name: /Thinking…/ })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Write a message' })).toBeTruthy();
   });
 
   it('work starting and stopping hides and brings back an uncontrolled composer, reported as imperative', async () => {
@@ -112,7 +124,7 @@ describe('ArtifactChatContainer floating', () => {
     rerender(<Chat working workingLabel="Thinking…" onComposingChange={onComposingChange} />);
     await settle();
     expect(onComposingChange).toHaveBeenLastCalledWith(false, expect.objectContaining({ reason: 'imperative', source: 'programmatic' }));
-    expect(screen.getByRole('button', { name: /Thinking…/ })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Write a message' })).toBeTruthy();
   });
 
   it('keeps the FAB out of reach until the chat is folded into it, and unfolds from it', async () => {

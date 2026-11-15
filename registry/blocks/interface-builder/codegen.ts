@@ -354,23 +354,14 @@ function navStackJsx(n: Node, c: SceneCode, depth: number): string {
   return `<NavStack\n  ${bar.join('\n  ')}\n  root={\n${indent(content, 4)}\n  }\n/>`;
 }
 
-/** A TabsScreen: the kit's Tabs on a bar, a tab per child; `auto` side follows its own size class (a tab bar when
-    compact, a side rail from 700px). */
+/** A TabsScreen: the kit's Tabs on a bar, a tab per child; `auto` side is Tabs' `presentation="auto"` (a tab bar
+    while the size-class scope is compact, a side rail otherwise). */
 function tabsScreenJsx(n: Node, c: SceneCode): string {
   for (const part of ['Tabs', 'TabsBar', 'TabsList', 'TabsTab', 'TabsPanels', 'TabsPanel']) c.imports.add(`@/components/ui/tabs|${part}`);
   const tabs = itemsOf(n.props.tabs);
   const asked = ['bottom', 'start', 'top'].find((x) => x === n.props.side);
-  let side = `"${asked}"`;
-  let variant = asked === 'start' ? '"rail"' : '"bar"';
-  let box = '';
-  if (!asked) {
-    const i = ++c.seq;
-    c.imports.add('@/lib/container|useSizeClass');
-    c.hooks.push(`// A tab bar when compact, a side rail from 700px.\nconst [tabBox${i}, tabSize${i}] = useSizeClass({ breakpoints: { medium: 700 }, initial: 'compact' });`);
-    side = `{tabSize${i} === 'compact' ? 'bottom' : 'start'}`;
-    variant = `{tabSize${i} === 'compact' ? 'bar' : 'rail'}`;
-    box = `tabBox${i}`;
-  }
+  // No side asked: a tab bar while the size-class scope is compact, a side rail otherwise.
+  const look = asked ? `variant=${asked === 'start' ? '"rail"' : '"bar"'} side="${asked}"` : 'presentation="auto"';
   const bound = n.bind?.value;
   const selection = bound ? `value={${bound}}` : `defaultValue=${JSON.stringify(String(n.props.value ?? tabs[0]?.id ?? ''))}`;
   const change = eventAttr(n, c, 'onValueChange');
@@ -379,7 +370,7 @@ function tabsScreenJsx(n: Node, c: SceneCode): string {
     const content = child ? jsx(child, 'vertical', c) : `<div /* drop a scene here for ${t.label} */ />`;
     return `<TabsPanel value=${JSON.stringify(t.id)} keepMounted className="overflow-hidden">\n${indent(content, 2)}\n</TabsPanel>`;
   });
-  const view = `<Tabs variant=${variant} side=${side} ${selection}${change} className="relative size-full">
+  const view = `<Tabs ${look} ${selection}${change} className="relative size-full">
   <TabsBar>
     <TabsList aria-label="Tabs">
 ${indent(tabs.map((t) => `<TabsTab value=${JSON.stringify(t.id)} icon=${JSON.stringify(t.icon ?? 'circle')}>${t.label}</TabsTab>`).join('\n'), 6)}
@@ -389,7 +380,7 @@ ${indent(tabs.map((t) => `<TabsTab value=${JSON.stringify(t.id)} icon=${JSON.str
 ${indent(panels.join('\n'), 4)}
   </TabsPanels>
 </Tabs>`;
-  return box ? `<div ref={${box}} className="relative size-full">\n${indent(view, 2)}\n</div>` : view;
+  return view;
 }
 
 /** A SplitView: the storyboard runtime's SplitHost over the kit's, a column per slot; a Show Detail segue from a

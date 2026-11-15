@@ -9,7 +9,7 @@ import { Board } from './board';
 
 // The frames' rrweb stages are out of scope here: the board's hover card is.
 vi.mock('./frame', () => ({ ScreenFrame: () => null }));
-vi.mock('@/components/ui/replay-preview', () => ({ formatReplayTime: (ms: number) => `${Math.round(ms / 1000)}s` }));
+vi.mock('@brett_lamy/docstream/replay', () => ({ formatReplayTime: (ms: number) => `${Math.round(ms / 1000)}s` }));
 
 declare global { var __UI_SDK_STRICT__: boolean | undefined }
 globalThis.__UI_SDK_STRICT__ = true;

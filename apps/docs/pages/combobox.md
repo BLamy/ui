@@ -10,7 +10,7 @@ Copies the source into your project's `components/ui/` (with the parts it is bui
 
 ```tsx
 import {
-  Combobox, ComboboxField, ComboboxInput, ComboboxTrigger,
+  Combobox, ComboboxInputGroup, ComboboxInput, ComboboxTrigger,
   ComboboxContent, ComboboxItem,
 } from '@/components/ui/combobox'
 ```
@@ -18,31 +18,31 @@ import {
 {% tab title="npm" %}
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 
-Import the stylesheet once at your app's entry, then the parts from the package root:
+Import the stylesheet once at your app's entry, then the parts from their module:
 
 ```tsx
 import '@brett_lamy/ui/styles.css'
 
 import {
-  Combobox, ComboboxField, ComboboxInput, ComboboxTrigger,
+  Combobox, ComboboxInputGroup, ComboboxInput, ComboboxTrigger,
   ComboboxContent, ComboboxItem,
-} from '@brett_lamy/ui'
+} from '@brett_lamy/ui/combobox'
 ```
 {% endtab %}
 {% endtabs %}
 
 ## Anatomy
 
-The `Combobox` root renders no element: lay the label, the field and any help text out with a [Field](https://blamy.github.io/ui/#/field). `ComboboxField` is the kit's filled field box (the same box, heights and focus edge as an [Input](https://blamy.github.io/ui/#/input)), which the popup hangs from; inside it go the bare `ComboboxInput` and the `ComboboxTrigger` (the disclosure button), and with no children it is those two. `ComboboxContent` is the popup, as wide as the field, holding a `ComboboxList` of options and a `ComboboxEmpty` message beside it. Options written as children are filtered for you by their text (or `label`, plus `keywords`).
+The `Combobox` root renders no element: lay the label, the field and any help text out with a [Field](https://blamy.github.io/ui/#/field). `ComboboxInputGroup` is the kit's filled field box (the same box, heights and focus edge as an [Input](https://blamy.github.io/ui/#/input)), which the popup hangs from; inside it go the bare `ComboboxInput` and the `ComboboxTrigger` (the disclosure button), and with no children it is those two. `ComboboxContent` is the popup, as wide as the field, holding a `ComboboxList` of options and a `ComboboxEmpty` message beside it. Options written as children are filtered for you by their text (or `label`, plus `keywords`).
 
 ```tsx
 <Field>
   <FieldLabel>City</FieldLabel>
   <Combobox>
-    <ComboboxField>
+    <ComboboxInputGroup>
       <ComboboxInput placeholder="Search cities" />
       <ComboboxTrigger />
-    </ComboboxField>
+    </ComboboxInputGroup>
     <ComboboxContent>
       <ComboboxEmpty>No cities found.</ComboboxEmpty>
       <ComboboxList>
@@ -63,10 +63,10 @@ The value is an option (`value` / `defaultValue` / `onValueChange(value, details
 
 ```tsx
 <Combobox items={people} value={assignee} onValueChange={setAssignee}>
-  <ComboboxField>
+  <ComboboxInputGroup>
     <ComboboxInput placeholder="Search the team" />
     <ComboboxTrigger />
-  </ComboboxField>
+  </ComboboxInputGroup>
   <ComboboxContent>
     <ComboboxEmpty>No one matches.</ComboboxEmpty>
     <ComboboxList>
@@ -94,13 +94,13 @@ With `multiple` the value is a list, and choosing an option toggles it and keeps
 <Field>
   <FieldLabel>Cities</FieldLabel>
   <Combobox multiple defaultValue={['Berlin']}>
-    <ComboboxField>
+    <ComboboxInputGroup>
       <ComboboxChips>
         <ComboboxInput placeholder="Add a city" />
       </ComboboxChips>
       <ComboboxClear />
       <ComboboxTrigger />
-    </ComboboxField>
+    </ComboboxInputGroup>
     <ComboboxContent>
       <ComboboxList>{cities.map((c) => <ComboboxItem key={c} value={c}>{c}</ComboboxItem>)}</ComboboxList>
     </ComboboxContent>
@@ -112,7 +112,7 @@ To draw the chips yourself, pass `ComboboxChips` a function of the value's state
 
 ## Sizes
 
-`size` on `ComboboxField` is `sm` (32px, for a toolbar or an inspector row), `default` (44px) or `lg` (50px), as on every field; the buttons inside shrink with it.
+`size` on `ComboboxInputGroup` is `sm` (32px, for a toolbar or an inspector row), `default` (44px) or `lg` (50px), as on every field; the buttons inside shrink with it, and a `sm` field opens dense 32px rows.
 
 ## When the list opens
 
@@ -147,11 +147,11 @@ UI SDK's `Combobox` props. The popup renders into BLProvider's root unless you p
 | `disabled` / `required` / `readOnly` / `name` | — | State and the form input (a Field's `name` and `disabled` reach it). |
 | `presentation` / `controller` | — | Sheet on small screens; `createComboboxController()`. |
 
-### ComboboxField and its parts
+### ComboboxInputGroup and its parts
 
 | Part | Props |
 | --- | --- |
-| `ComboboxField` | A `<div>`: `size` `sm` / `default` / `lg`; `children` default to a `ComboboxInput` and a `ComboboxTrigger`. |
+| `ComboboxInputGroup` | A `<div>`: `size` `sm` / `default` / `lg`; `children` default to a `ComboboxInput` and a `ComboboxTrigger`. |
 | `ComboboxInput` | UI SDK's input, bare: `placeholder`, `aria-label` (outside a Field), `className`… |
 | `ComboboxTrigger` | The disclosure button, out of the tab order. `aria-label` defaults to `Show options`; children replace the chevron. |
 | `ComboboxClear` | The Clear button. `aria-label` defaults to `Clear`; children replace the icon. |
@@ -163,12 +163,14 @@ UI SDK's `Combobox` props. The popup renders into BLProvider's root unless you p
 | --- | --- | --- |
 | `side` / `align` / `sideOffset` | `bottom` / `start` / `8` | Position under the field. |
 | `anchor` | the field | What the popup hangs from and matches in width. |
+| `size` | the field's | `sm`: dense 32px rows in footnote text. A `sm` `ComboboxInputGroup` opens `sm` rows, as a small `SelectTrigger` does; an explicit `size` wins. |
+| `palette` | `scope` | Where the colors come from: the ThemeScope it was opened from, or `trigger`: the field's own surface (for a field on a surface CSS paints). |
 | `ComboboxList` `children` | the matching `items` | Options, or a function of the list's state. |
 | `ComboboxItem` `value` / `label` / `keywords` | — | The option's value; its text when the children are not plain text; more words that match. |
 | `ComboboxItem` `icon` / `description` / `disabled` | — | Leading icon; secondary line; dimmed and skipped. |
 
-`ComboboxChip` (`value`, `removeLabel`, children default to the option's label) with its `ComboboxChipRemove`, `ComboboxStatus` (the loading or error line of an async list, as `(state) => node` children), `ComboboxEmpty` (shown while nothing matches; text children become the kit's [EmptyState](https://blamy.github.io/ui/#/empty-state) title), `ComboboxGroup`, `ComboboxGroupLabel`, `ComboboxSeparator` and `ComboboxLabel` complete the set.
+`ComboboxChip` (`value`, `removeLabel`, children default to the option's label) with its `ComboboxChipRemove`, `ComboboxStatus` (the loading or error line of an async list, as `(state) => node` children), `ComboboxEmpty` (shown and announced while nothing matches: the kit's [EmptyState](https://blamy.github.io/ui/#/empty-state) with `icon`, `title` (default "No results"; text children say the same), `description` and `action`, the same props as `CommandMenuEmpty`), `ComboboxGroup`, `ComboboxGroupLabel`, `ComboboxSeparator` and `ComboboxLabel` complete the set.
 
 ## Styling
 
-Parts carry UI SDK's slots: `combobox-input`, `combobox-trigger`, `combobox-content`, `combobox-list`, `combobox-item`, `combobox-empty`, `combobox-group`, `combobox-chips`, `combobox-chip`, `combobox-chip-remove`, `combobox-clear`, `combobox-status`, and the kit's `combobox-field` (with `data-size`). The field is `fieldSurfaceVariants` from [Input](https://blamy.github.io/ui/#/input): a 1.5px primary edge while the input has focus and while the list is open, a red one when the input is invalid, dimmed when disabled. The chevron rotates on the trigger's `data-open`. Group labels are the kit's menu section label (`sectionLabelVariants({ variant: 'menu' })`). The popup hides itself while there is nothing to show. There is no cva recipe of its own: the field is `fieldSurfaceVariants`.
+Parts carry UI SDK's slots: `combobox-input`, `combobox-trigger`, `combobox-content`, `combobox-list`, `combobox-item`, `combobox-empty`, `combobox-group`, `combobox-chips`, `combobox-chip`, `combobox-chip-remove`, `combobox-clear`, `combobox-status`, and the kit's `combobox-input-group` (with `data-size`). The field is `fieldSurfaceVariants` from [Input](https://blamy.github.io/ui/#/input): a 1.5px primary edge while the input has focus and while the list is open, a red one when the input is invalid, dimmed when disabled. The chevron rotates on the trigger's `data-open`. Group labels are the kit's menu section label (`sectionLabelVariants({ variant: 'menu' })`). The popup hides itself while there is nothing to show. There is no cva recipe of its own: the field is `fieldSurfaceVariants`.

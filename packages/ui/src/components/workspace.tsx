@@ -5,7 +5,7 @@ import { createPortal } from 'react-dom';
 import { createParts, usePart, usePrimitive, type PartProps } from '@ui-sdk/react/primitive';
 import { Resizable, ResizableHandle, ResizablePanel } from '@ui-sdk/react/resizable';
 import { Tabs, TabsList, TabsPanel, TabsTab } from '@ui-sdk/react/tabs';
-import { useSizeClass } from '@/lib/container';
+import { SizeClassProvider, useSizeClass } from '@/lib/container';
 import { Icon } from '@/lib/icon';
 import { cn, cx } from '@/lib/utils';
 import {
@@ -83,7 +83,7 @@ export type WorkspaceClassNames = {
   split?: string;
   /** The handle between two children of a split (`data-hovering`, `data-dragging`). */
   handle?: string;
-  /** A tabset (`data-active`, `data-maximized`, `data-empty`, `data-tab-side`). */
+  /** A tabset (`data-current`, `data-maximized`, `data-empty`, `data-tab-side`). */
   tabset?: string;
   /** The strip that holds a tabset's tabs and toolbar. */
   header?: string;
@@ -167,7 +167,9 @@ export type WorkspaceProps<TabData = unknown, TabsetData = unknown> = WorkspaceO
     tabDescription?: string;
     /** `docked` lays the tabsets out in their splits; `tabs` shows every tab in one strip along the bottom, one at a time,
      *  with nothing to drag (a phone's layout). `auto` (the default) is `tabs` while the workspace's own box is compact
-     *  (narrower than 640px) and `docked` otherwise. The layout is kept either way. */
+     *  (narrower than 640px) and `docked` otherwise. The workspace is a container, like SplitView: it measures its own
+     *  box (a workspace in a narrow pane of a wide window is compact) and provides that size class as the scope of
+     *  what it renders, so popups in a tab follow it. The layout is kept either way. */
     presentation?: WorkspacePresentation;
     classNames?: WorkspaceClassNames;
   };
@@ -277,15 +279,18 @@ export function Workspace<TabData = unknown, TabsetData = unknown>({
       ref: rootRef,
       ...({ 'data-presentation': tabsOnly ? 'tabs' : 'docked' } as Record<string, string>),
       className: cx('h-full min-h-0 min-w-0 overflow-hidden font-sans bg-background text-foreground', className),
+      // A container, like SplitView: its own box is the scope of everything in it (a tab's popups included).
       children: (state) => (
-        <WorkspaceView
-          state={state}
-          shared={shared}
-          hosts={hosts}
-          tabsOnly={tabsOnly}
-          description={tabDescription}
-          renderTabContent={renderTabContent as (tab: AnyTab, state: WorkspaceTabContentState) => ReactNode}
-        />
+        <SizeClassProvider value={sizeClass}>
+          <WorkspaceView
+            state={state}
+            shared={shared}
+            hosts={hosts}
+            tabsOnly={tabsOnly}
+            description={tabDescription}
+            renderTabContent={renderTabContent as (tab: AnyTab, state: WorkspaceTabContentState) => ReactNode}
+          />
+        </SizeClassProvider>
       ),
     },
     'div',
@@ -307,7 +312,7 @@ function WorkspaceView({
   description: string;
   renderTabContent: (tab: AnyTab, state: WorkspaceTabContentState) => ReactNode;
 }) {
-  const { layout, lists, activeTabsetId } = state;
+  const { layout, lists, currentTabsetId } = state;
   const tabsets = useMemo(() => workspaceTabsets(layout), [layout]);
   const open = useMemo(() => new Map(tabsets.flatMap((tabset) => tabset.tabs.map((tab) => [tab.id, tab] as const))), [tabsets]);
   const context = useMemo(() => ({ ...shared, tab: (tabId: string) => open.get(tabId) }), [shared, open]);
@@ -320,7 +325,7 @@ function WorkspaceView({
   const tabsetProps = (tabset: AnyTabset) => ({
     ids: lists[tabset.id] ?? [],
     label: shared.api.internal.tabsetLabel(tabset.id),
-    active: activeTabsetId === tabset.id,
+    current: currentTabsetId === tabset.id,
     maximized: maximized === tabset,
     only,
   });
@@ -330,7 +335,7 @@ function WorkspaceView({
         {description}
       </span>
       {tabsOnly ? (
-        <TabsView tabsets={tabsets} activeTabsetId={activeTabsetId} />
+        <TabsView tabsets={tabsets} currentTabsetId={currentTabsetId} />
       ) : maximized ? (
         <TabsetView node={maximized} {...tabsetProps(maximized)} />
       ) : (
@@ -350,9 +355,9 @@ function WorkspaceView({
 
 /** The compact presentation: every tab of every tabset in one strip along the bottom, the active tabset's tab on show.
  *  Picking a tab selects it in its tabset and makes that tabset the active one; nothing can be dragged. */
-function TabsView({ tabsets, activeTabsetId }: { tabsets: AnyTabset[]; activeTabsetId: string | null }) {
+function TabsView({ tabsets, currentTabsetId }: { tabsets: AnyTabset[]; currentTabsetId: string | null }) {
   const { api, keepMounted } = useWorkspaceContext('The tab strip');
-  const active = tabsets.find((tabset) => tabset.id === activeTabsetId) ?? tabsets.find((tabset) => tabset.tabs.length);
+  const active = tabsets.find((tabset) => tabset.id === currentTabsetId) ?? tabsets.find((tabset) => tabset.tabs.length);
   const tabs = tabsets.flatMap((tabset) => tabset.tabs.map((tab) => ({ tab, tabsetId: tabset.id })));
   return (
     <KitTabs
@@ -400,7 +405,7 @@ type TabsetProps = {
   ids: string[];
   /** What the tabset is called. */
   label: string;
-  active: boolean;
+  current: boolean;
   maximized: boolean;
   only: boolean;
 };
@@ -451,7 +456,7 @@ const sameTabset = (a: AnyTabset, b: AnyTabset) =>
 const sameIds = (a: readonly string[], b: readonly string[]) => a.length === b.length && a.every((id, index) => id === b[index]);
 
 const TabsetView = memo(
-  function TabsetView({ node, ids, label, active, maximized, only }: TabsetProps & { node: AnyTabset }) {
+  function TabsetView({ node, ids, label, current, maximized, only }: TabsetProps & { node: AnyTabset }) {
     const { api, classNames, keepMounted, tab: tabOf, renderTab, renderTabsetToolbar, renderEmptyTabset } = useWorkspaceContext('A tabset');
     return (
       <parts.Tabset value={node.id} aria-label={label} className={(state) => cn(TABSET, PLACED[state.tabSide].tabset, classNames.tabset)}>
@@ -473,7 +478,7 @@ const TabsetView = memo(
                   })}
                 </TabsList>
                 <div className={cn(TOOLBAR, classNames.toolbar)}>
-                  {renderTabsetToolbar ? renderTabsetToolbar(node, { active, maximized, only, empty, selectedTabId, tabSide }) : <WorkspaceToolbar />}
+                  {renderTabsetToolbar ? renderTabsetToolbar(node, { current, maximized, only, empty, selectedTabId, tabSide }) : <WorkspaceToolbar />}
                 </div>
               </parts.Header>
               <parts.Panels className={cn(TAB_PANELS, classNames.tabPanels)}>
@@ -489,7 +494,7 @@ const TabsetView = memo(
       </parts.Tabset>
     );
   },
-  (a, b) => sameTabset(a.node, b.node) && sameIds(a.ids, b.ids) && a.label === b.label && a.active === b.active && a.maximized === b.maximized && a.only === b.only,
+  (a, b) => sameTabset(a.node, b.node) && sameIds(a.ids, b.ids) && a.label === b.label && a.current === b.current && a.maximized === b.maximized && a.only === b.only,
 );
 
 /** A tab's panel, which adopts the element the tab's content is rendered into. */

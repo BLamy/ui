@@ -31,8 +31,8 @@ function MessageRow({ mail, m, selected, chevron, isEdge, onOpen }: {
       className={cn(ROW, mail.editing ? '[&>[data-slot=list-row-content]]:pl-2' : '[&>[data-slot=list-row-content]]:pl-8')}
       onClick={() => { if (mail.editing) mail.toggleChecked(m.id); else onOpen(m.id); }}
       // Index 0 is the outermost action: the one a long swipe fires.
-      leadingActions={[{ label: m.unread ? 'Read' : 'Unread', icon: m.unread ? 'envelope-open' : 'envelope-badge', onAction: () => mail.toggleRead(m.id) }]}
-      trailingActions={[
+      startActions={[{ label: m.unread ? 'Read' : 'Unread', icon: m.unread ? 'envelope-open' : 'envelope-badge', onAction: () => mail.toggleRead(m.id) }]}
+      endActions={[
         { label: 'Trash', icon: 'trash', destructive: true, onAction: () => mail.trash([m.id]) },
         { label: 'Archive', icon: 'archivebox', tint: ARCHIVE_PURPLE, onAction: () => mail.archive([m.id]) },
         { label: m.flagged ? 'Unflag' : 'Flag', icon: 'flag-fill', tint: 'var(--warning, oklch(0.769 0.165 70.1))', onAction: () => mail.toggleFlag(m.id) },

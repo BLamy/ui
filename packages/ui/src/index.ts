@@ -1,10 +1,10 @@
 import './styles.css';
 
 // lib
-export { cn, FONT, BARH, pressable, brandTile } from './lib/utils';
+export { cn, cx } from './lib/utils';
 export {
   springs, springCss, direction, useDirection, fades, useSpringTransition, useReducedMotion, type SpringName,
-  prefersReducedMotion, flipSnapshot, flipPlay, type FlipSnapshot,
+  prefersReducedMotion,
 } from './lib/motion';
 export { usePresence, usePresenceList, useEnterExit } from './lib/presence';
 export type { Presence, PresenceEntry, PresenceOptions } from './lib/presence';
@@ -22,21 +22,21 @@ export type {
 } from './components/canvas';
 export {
   toBoard, toScreen, MIN_SIZE,
-  rotatePt, centerOf, dist, cornersOf, rectOf, unionRect, intersects, inFrame, distToSegment, distToPolyline,
-  frameHandles, handleCursor, resizeFrame, rotateFrame, snapMove, HANDLE_DIR, ALL_HANDLES, EDGE_HANDLES,
+  dist, cornersOf, rectOf, unionRect, intersects, inFrame, distToSegment, distToPolyline,
+  frameHandles, handleCursor, resizeFrame, rotateFrame, snapMove,
 } from './lib/canvas-math';
 export type { Viewport, Frame, Guide, Handle, HandleId, Pt, Rect } from './lib/canvas-math';
 export type { AnimatedHeightProps } from './components/animated-height';
 export { Celebrate } from './components/celebrate';
 export type { CelebrateProps } from './components/celebrate';
 export {
-  BLProvider, BLSafeCtx, BLStickyCtx, chromeStore, useChromeHidden, chromeOffset,
-  AppearanceContext, AppearanceProvider, useAppearance,
-  ThemeScope, ThemeScopeContext, useThemeScope, useScopeAppearance, useThemeScopeProps, themeScopeProps, themeScopeClass, tintVars, themeVarStyle, readThemeVars, THEME_VARS,
+  BLProvider, useChromeHidden,
+  AppearanceProvider, useAppearance,
+  ThemeScope, useThemeScope, useScopeAppearance, useThemeScopeProps, themeScopeProps, readThemeVars, tintForeground, THEME_VARS,
   useLayerHost,
 } from './lib/theme';
 export type { BLProviderProps, Appearance, ThemeScopeProps, ThemeScopeName, ThemeScopeState, ThemeVars, ThemeVar } from './lib/theme';
-export { useContainerWidth, useContainerSize, useSizeClass, useSizeClassScope, SizeClassProvider, usePresentation, useMountPresentationKey, defineSlot, collectSlots } from './lib/container';
+export { useContainerWidth, useContainerSize, useSizeClass, useSizeClassScope, SizeClassProvider, usePresentation } from './lib/container';
 export { bindSizeClass, sizeClassOf } from './lib/size-class';
 export type { SizeClass, SizeClassBreakpoints, BindSizeClassOptions } from './lib/size-class';
 export { createStack } from './lib/stack';
@@ -49,15 +49,15 @@ export { bindPullToRefresh } from './lib/pull-to-refresh';
 export type { BindPullToRefreshOptions, PullToRefreshDetails, PullToRefresh } from './lib/pull-to-refresh';
 export { bindScrollEdge, useHideOnScroll } from './lib/scroll-edge';
 export type { BindScrollEdgeOptions } from './lib/scroll-edge';
-export { LocalStreams, StreamFullError, pack, unpack } from './lib/append-stream';
+export { LocalStreams } from './lib/append-stream';
 export { DurableStreamsClient, CloudSync, useCloud, deviceId } from './lib/durable-streams';
 export type { DurableStreamsConfig, CloudSettings, CloudStatus } from './lib/durable-streams';
 export { useSessionRecording, startSessionRecording, useSessions, useSessionCloud, sessionCloud, readSession, deleteSession, clearSessions, currentSessionId, storageUsage } from './lib/session-recorder';
 export type { SessionInfo, SessionRecordingOptions, RecordedEvent, IndexRecord } from './lib/session-recorder';
 export { usePersistentState, loadJSON, saveJSON } from './lib/persistent-state';
 export { useControllableChange } from './lib/controllable-state';
-export type { SlotComponent, SlotProps, ContainerSize, UseSizeClassOptions } from './lib/container';
-export { Icon, Chevron, IC, ICON_NAMES, ICON_ALIASES, ICON_CATEGORIES, ICON_KEYWORDS, ICON_WEIGHTS } from './lib/icon';
+export type { ContainerSize, UseSizeClassOptions } from './lib/container';
+export { Icon, Chevron, ICON_NAMES, ICON_ALIASES, ICON_CATEGORIES, ICON_KEYWORDS } from './lib/icon';
 export type { IconProps, IconName, IconCanonicalName, IconShape, IconWeight, IconCategory, ChevronProps, ChevronDirection } from './lib/icon';
 
 // components
@@ -86,7 +86,7 @@ export type {
   ListRowFullSwipe, ListSectionOrderChangeDetails, ListSectionOrderChangeReason,
 } from './components/list';
 export { IndexBar, alphabetItems, indexBarVariants } from './components/index-bar';
-export type { IndexBarProps, IndexBarItem, IndexBarKey, IndexBarJumpReason, IndexBarJumpDetails } from './components/index-bar';
+export type { IndexBarProps, IndexBarItem, IndexBarValue, IndexBarJumpReason, IndexBarJumpDetails } from './components/index-bar';
 export {
   Toolbar, ToolbarButton, ToolbarGroup, ToolbarSeparator, ToolbarText, toolbarVariants, toolbarButtonVariants, useToolbar,
   createToolbarController,
@@ -107,12 +107,12 @@ export type {
   NavigationStackChangeOptions, NavigationStackReason, NavigationStackPageState,
 } from './components/navigation-stack';
 export {
-  SplitView, SplitViewSidebar, SplitViewSupplementary, SplitViewDetail, SplitViewHeader, SplitViewContent, SplitViewToggle,
+  SplitView, SplitViewSidebar, SplitViewSupplementary, SplitViewDetail, SplitViewHeader, SplitViewContent, SplitViewSidebarTrigger,
   SplitViewItem, useSplitView, useSplitViewColumn, useSplitViewBack,
   SplitViewSection, splitViewItemVariants, createSplitViewController,
 } from './components/split-view';
 export type {
-  SplitViewProps, SplitViewColumnProps, SplitViewHeaderProps, SplitViewContentProps, SplitViewToggleProps, SplitViewItemProps,
+  SplitViewProps, SplitViewColumnProps, SplitViewSidebarProps, SplitViewHeaderProps, SplitViewContentProps, SplitViewSidebarTriggerProps, SplitViewItemProps,
   SplitViewState, SplitViewContextValue, SplitViewColumn, SplitViewSizeClass, SplitViewSidebarBehavior, SplitViewValue,
   SplitViewSectionProps, SplitViewItemTint,
   SplitViewController, SplitViewColumnWidths, SplitViewDefaultSidebarOpen, SplitViewColumnState, SplitViewItemState, SplitViewHeaderState,
@@ -124,15 +124,15 @@ export {
   AdaptivePane, AdaptivePaneHeader, AdaptivePaneTitle, AdaptivePaneClose, adaptivePanePageClass, createAdaptivePaneController,
 } from './components/adaptive-pane';
 export { useKeptChildren } from './lib/kept-children';
-export type { KeptChildren } from './lib/kept-children';
+export type { KeptChildren, KeptChildrenOptions } from './lib/kept-children';
 export {
-  Sidebar, SidebarProvider, SidebarHeader, SidebarContent, SidebarFooter, SidebarWorkspace, SidebarSearch,
+  Sidebar, SidebarProvider, SidebarHeader, SidebarContent, SidebarFooter, SidebarAccount, SidebarSearch,
   SidebarSection, SidebarItem, SidebarTrigger, SidebarInset, sidebarItemVariants, useSidebar, useSidebarCollapsed,
   createSidebarController,
 } from './components/sidebar';
 export type {
   SidebarContextValue, SidebarProviderProps, SidebarVariant, SidebarPresentation, SidebarState, SidebarProps,
-  SidebarWorkspaceProps, SidebarSearchProps, SidebarSectionProps, SidebarItemProps, SidebarTriggerProps, SidebarController, SidebarOpenChangeDetails, SidebarOpenChangeReason,
+  SidebarAccountProps, SidebarSearchProps, SidebarSectionProps, SidebarItemProps, SidebarTriggerProps, SidebarController, SidebarOpenChangeDetails, SidebarOpenChangeReason,
 } from './components/sidebar';
 export type {
   AdaptivePaneProps, AdaptivePaneState, AdaptivePaneCloseProps, AdaptivePanePresentation, AdaptivePaneController, AdaptivePaneOpenChangeDetails,
@@ -153,7 +153,7 @@ export { Card, CardHeader, CardTitle, CardDescription, CardAction, CardContent, 
 export type { CardProps } from './components/card';
 export { Separator, separatorVariants } from './components/separator';
 export type { SeparatorProps } from './components/separator';
-export { EmptyState, emptyStateVariants } from './components/empty-state';
+export { EmptyState, emptyStateVariants, renderEmptyState } from './components/empty-state';
 export type { EmptyStateProps } from './components/empty-state';
 export { Label, labelVariants } from './components/label';
 export type { LabelProps } from './components/label';
@@ -168,14 +168,14 @@ export {
 export type {
   ScrollAreaProps, ScrollAreaViewportProps, ScrollAreaContentProps, ScrollAreaCornerProps, ScrollAreaScrollbarProps, ScrollAreaThumbProps, ScrollAreaScrollToEndProps,
 } from './components/scroll-area';
-export { Input, inputVariants, fieldSurfaceVariants, createInputController } from './components/input';
+export { Input, inputVariants, fieldSurfaceVariants, fieldFocusRing, createInputController } from './components/input';
 export type { InputProps, InputController } from './components/input';
 export { Textarea, textareaVariants } from './components/textarea';
 export type { TextareaProps } from './components/textarea';
-export { MarkdownEditor, markdownEditorVariants, looksLikeMarkdown, insertMarkdown } from './components/markdown-editor';
+export { MarkdownEditor, MarkdownEditorToolbarButton, markdownEditorVariants, looksLikeMarkdown, insertMarkdown } from './components/markdown-editor';
 export type {
   MarkdownEditorProps, MarkdownEditorHandle, MarkdownEditorInstance, MarkdownEditorAttachment, MarkdownEditorClassNames,
-  MarkdownEditorValueChangeDetails, MarkdownEditorValueChangeReason,
+  MarkdownEditorValueChangeDetails, MarkdownEditorValueChangeReason, MarkdownEditorToolbarButtonProps,
 } from './components/markdown-editor';
 export { Field, FieldLabel, FieldDescription, FieldError, FieldSet, FieldLegend, FieldGroup, FieldControl, useFieldControl } from './components/field';
 export type { FieldLabelProps } from './components/field';
@@ -187,7 +187,7 @@ export {
   Toggle, ToggleIcon, toggleVariants, createToggleController,
   ToggleGroup, ToggleGroupItem, toggleGroupVariants, createToggleGroupController,
 } from './components/toggle';
-export type { ToggleProps, ToggleVariant, ToggleSize, ToggleGroupProps, ToggleGroupItemProps } from './components/toggle';
+export type { ToggleProps, ToggleVariant, ToggleSize, ToggleGroupProps, ToggleGroupItemProps, ToggleGroupVariant } from './components/toggle';
 export {
   Tabs, TabsBar, TabsList, TabsTab, TabsTabIcon, TabsIndicator, TabsPill, TabsSeparator, TabsAction, TabsHeader,
   TabsFooter, TabsPanels, TabsPanel, useTabs, useTabsTab, createTabsController,
@@ -197,25 +197,26 @@ export {
 export type {
   TabsProps, TabsBarProps, TabsListProps, TabsTabProps, TabsTabIconProps, TabsIndicatorProps, TabsPillProps,
   TabsSeparatorProps, TabsActionProps, TabsHeaderProps, TabsFooterProps, TabsPanelsProps, TabsPanelProps,
-  TabsVariant, TabsSide, TabsOrientation, TabsController, TabsTabState, TabsValueChangeReason,
+  TabsVariant, TabsSide, TabsOrientation, TabsPresentation, TabsController, TabsTabState, TabsValueChangeReason,
 } from './components/tabs';
 export {
   Dialog, DialogTrigger, DialogBackdrop, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogBody, DialogFooter,
-  DialogClose, DialogBack, DialogView, SurfaceFlow, SurfaceFlowTitle, dialogVariants, createDialogController,
+  DialogClose, DialogBack, DialogView, dialogVariants, createDialogController,
   surfaceHeaderVariants, surfaceTitleVariants, surfaceDescriptionVariants, surfaceBodyVariants, surfaceFooterVariants, closeButtonVariants,
   AlertDialog, AlertDialogTrigger, AlertDialogBackdrop, AlertDialogContent, AlertDialogHeader, AlertDialogTitle,
   AlertDialogDescription, AlertDialogFooter, AlertDialogClose, alertDialogCloseVariants, createAlertDialogController, createConfirm,
 } from './components/dialog';
 export type {
   DialogProps, DialogContentProps, DialogHeaderProps, DialogFooterProps, DialogBackProps, DialogViewProps, DialogController,
-  SurfaceFlowProps,
   AlertDialogProps, AlertDialogContentProps, AlertDialogFooterProps, AlertDialogCloseProps, AlertDialogController,
 } from './components/dialog';
 export {
   Sheet, SheetTrigger, SheetBackdrop, SheetContent, SheetHandle, SheetHeader, SheetTitle, SheetDescription, SheetBody,
-  SheetFooter, SheetClose, SheetView, sheetVariants, sheetGrabberVariants, createSheetController,
+  SheetFooter, SheetClose, SheetBack, SheetView, sheetVariants, sheetGrabberVariants, createSheetController,
 } from './components/sheet';
-export type { SheetProps, SheetContentProps, SheetViewProps, SheetController } from './components/sheet';
+export type {
+  SheetProps, SheetContentProps, SheetHeaderProps, SheetFooterProps, SheetBackProps, SheetViewProps, SheetController,
+} from './components/sheet';
 export {
   Popover, PopoverTrigger, PopoverContent, PopoverArrow, PopoverTitle, PopoverDescription, PopoverClose,
   popoverContentVariants, createPopoverController,
@@ -232,7 +233,7 @@ export type {
   DropdownMenuCheckboxItemProps, DropdownMenuRadioGroupProps, DropdownMenuRadioItemProps, DropdownMenuGroupProps,
   DropdownMenuSubProps, DropdownMenuSubTriggerProps, DropdownMenuController, DropdownMenuData, DropdownMenuDataItem,
 } from './components/dropdown-menu';
-export { useTriggerPalette, isLightSurface } from './lib/trigger-palette';
+export { useTriggerPalette } from './lib/trigger-palette';
 export type { PopupPalette, TriggerPaletteProps } from './lib/trigger-palette';
 export { Tooltip, TooltipTrigger, TooltipContent, TooltipArrow, TooltipShortcut, createTooltipController } from './components/tooltip';
 export type { TooltipProps, TooltipContentProps, TooltipController } from './components/tooltip';
@@ -248,13 +249,13 @@ export type {
   SelectProps, SelectLabelProps, SelectTriggerProps, SelectContentProps, SelectItemProps, SelectController,
 } from './components/select';
 export {
-  Combobox, ComboboxLabel, ComboboxField, ComboboxInput, ComboboxTrigger, ComboboxClear, ComboboxChips, ComboboxContent, ComboboxList,
+  Combobox, ComboboxLabel, ComboboxInputGroup, ComboboxInput, ComboboxTrigger, ComboboxClear, ComboboxChips, ComboboxContent, ComboboxList,
   ComboboxEmpty, ComboboxItem, ComboboxGroup, ComboboxGroupLabel, ComboboxSeparator, ComboboxChip, ComboboxChipRemove, ComboboxStatus,
   createComboboxController,
 } from './components/combobox';
 export type {
-  ComboboxProps, ComboboxLabelProps, ComboboxFieldProps, ComboboxChipsProps, ComboboxContentProps, ComboboxItemProps, ComboboxChipProps,
-  ComboboxController,
+  ComboboxProps, ComboboxLabelProps, ComboboxInputGroupProps, ComboboxChipsProps, ComboboxContentProps, ComboboxItemProps, ComboboxChipProps,
+  ComboboxEmptyProps, ComboboxController,
 } from './components/combobox';
 export { Slider, SliderValue, SliderControl, SliderTrack, SliderIndicator, SliderThumb, sliderVariants, createSliderController } from './components/slider';
 export type { SliderProps, SliderVariant } from './components/slider';
@@ -264,7 +265,7 @@ export {
 export type { ListboxProps, ListboxItemProps, ListData, ListboxController } from './components/listbox';
 export {
   Tree, TreeItem, TreeItemLabel, TreeItemIndicator, TreeItemCheckbox, TreeGroup, treeVariants, treeRowVariants,
-  createTreeController, treeFromPaths, visibleTreeRows,
+  createTreeController,
 } from './components/tree';
 export type {
   TreeProps, TreeDataProps, TreePartsProps, TreeDataOptions, TreeNode, TreeNodeActionDetails, TreeRowState, TreeDensity, TreeActionOn, TreeDropTarget,
@@ -288,7 +289,7 @@ export type {
 export { Progress, ProgressLabel, ProgressValue, ProgressTrack, ProgressIndicator, progressVariants, progressIndicatorVariants } from './components/progress';
 export type { ProgressProps } from './components/progress';
 export { lexSyntax, webgpuSupported, probeWebGPU, languageFromPath, tokenizeLines } from './lib/syntax';
-export type { CodeToken, CodeTokenType, SyntaxToken, SyntaxTokenType, SyntaxSpan, SyntaxHighlighter, SyntaxResult, SyntaxEngine, WebGPUProbe } from './lib/syntax';
+export type { CodeToken, CodeTokenType, SyntaxSpan, SyntaxHighlighter, SyntaxResult, SyntaxEngine, WebGPUProbe } from './lib/syntax';
 // ── end shadcn primitives ──
 
 // ── Workbench: IDE-style agent workspace — composer, chat, terminal dock, surface panel, WorkbenchShell ──
@@ -331,7 +332,7 @@ export {
   type ComposerAttachmentKind,
   type ComposerAttachOptions,
   type ComposerFileSource,
-  type ComposerFileRejection,
+  type FileRejection,
   type ComposerCardProps,
   type ComposerAddonProps,
   type ComposerPillProps,
@@ -371,7 +372,7 @@ export {
 export {
   FloatingSheet,
   FloatingSheetBody,
-  FloatingSheetFoot,
+  FloatingSheetFooter,
   FloatingSheetFab,
   useFloatingSheet,
   floatingSheetVariants,
@@ -379,7 +380,7 @@ export {
   floatingSheetFabVariants,
   type FloatingSheetProps,
   type FloatingSheetBodyProps,
-  type FloatingSheetFootProps,
+  type FloatingSheetFooterProps,
   type FloatingSheetFabProps,
   type FloatingSheetContextValue,
   type FloatingSheetChangeDetails,
@@ -441,6 +442,7 @@ export type {
   PencilInkPickerProps,
   PencilWidthPickerProps,
   PencilActionsProps,
+  PencilPickerPresentation,
 } from './components/pencilkit/pencil-toolbar';
 export { usePencilHistory } from './components/pencilkit/use-pencil-history';
 export type { PencilHistory } from './components/pencilkit/use-pencil-history';
@@ -459,10 +461,10 @@ export type {
   ToastRegionProps, ToastProps, ToastIconProps, ToastVariant, ToastExtras, Hud, Toaster, ToastData, ToastOptions, ToastType, ToastItem,
   ToastState, ToastRegionState, ToastActionData, ToastCancel, ToastDismissDetails, ToastDismissReason,
 } from './components/toast';
-export { ProgressRing, CountdownRing, useCountdown, progressRingVariants, countdownRingLabelVariants } from './components/progress-ring';
+export { ProgressRing, CountdownRing, useCountdown, progressRingVariants, countdownRingValueVariants } from './components/progress-ring';
 export type { ProgressRingProps, ProgressRingSize, ProgressRingTone, CountdownRingProps, UseCountdownOptions, Countdown } from './components/progress-ring';
 // ReplayPreview lives in docstream; re-exported here (see components/replay-preview.tsx)
-export { ReplayPreview, formatReplayTime } from './components/replay-preview';
+export { ReplayPreview } from './components/replay-preview';
 export type {
   ReplayPreviewProps, ReplayPreviewHandle, ReplaySource, ReplayChrome, ReplayEvent, ReplayMarker, ReplayMarkerKind,
   ReplayDevtools, ReplayDevtoolsTab, ReplayInspection, ReplayInspectionTab,
@@ -492,11 +494,11 @@ export type {
 
 // ── AI transcript parts (used by the Composer, ArtifactChatContainer and several blocks) ──
 export {
-  Conversation, ConversationEmpty, ConversationMessages, ConversationComposer, ConversationSuggestions, Suggestion,
-  UserMessage, AssistantMessage, MessageMarkdown, ConversationTyping, WorkLog, ToolCall,
+  Conversation, ConversationEmpty, ConversationMessages, ConversationComposer, ConversationSuggestions, ConversationSuggestion,
+  ConversationUserMessage, ConversationAssistantMessage, ConversationMarkdown, ConversationTyping, ConversationWorkLog, ConversationToolCall,
   type ConversationProps, type ConversationEmptyProps, type ConversationMessagesProps, type ConversationComposerProps,
-  type ConversationSuggestionsProps, type SuggestionProps, type MessageProps, type UserMessageProps, type MessageMarkdownProps,
-  type WorkLogProps, type ToolCallProps,
+  type ConversationSuggestionsProps, type ConversationSuggestionProps, type ConversationAssistantMessageProps, type ConversationUserMessageProps, type ConversationMarkdownProps, type ConversationTypingProps,
+  type ConversationWorkLogProps, type ConversationToolCallProps,
 } from './components/conversation';
 
 // ── Calendar / DateInput / DatePicker / ColorPicker ──
@@ -511,25 +513,27 @@ export {
   type DateInputProps, type TimeInputProps, type DateInputController, type TimeInputController, type DateInputSegmentData, type DateInputState,
 } from './components/date-input';
 export {
-  DatePicker, DatePickerField, DatePickerInput, DatePickerTrigger, DatePickerClear, DatePickerHint, DatePickerPreset, DatePickerContent,
-  datePickerFieldVariants, createDatePickerController,
-  type DatePickerProps, type DatePickerFieldProps, type DatePickerContentProps, type DatePickerController, type DatePickerMode, type DatePickerValue,
+  DatePicker, DatePickerInputGroup, DatePickerInput, DatePickerTrigger, DatePickerClear, DatePickerHint, DatePickerPreset, DatePickerContent,
+  datePickerInputGroupVariants, createDatePickerController,
+  type DatePickerProps, type DatePickerInputGroupProps, type DatePickerContentProps, type DatePickerController, type DatePickerMode, type DatePickerValue,
 } from './components/date-picker';
 export {
   ColorPicker, ColorPickerTrigger, ColorPickerContent, ColorPickerArea, ColorPickerAreaThumb, ColorPickerAreaCanvas,
-  ColorPickerSlider, ColorPickerSliderThumb, ColorPickerSwatches, ColorPickerSwatchItem, ColorPickerField, ColorPickerInput,
+  ColorPickerSlider, ColorPickerSliderThumb, ColorPickerSwatches, ColorPickerSwatchItem, ColorPickerInputGroup, ColorPickerInput,
   ColorPickerChannelInput, ColorPickerSwatch, ColorPickerEyeDropper, ColorInput, ColorSwatch, colorPickerTriggerVariants,
   createColorPickerController,
   type ColorPickerProps, type ColorPickerTriggerProps, type ColorPickerContentProps, type ColorPickerSliderProps,
-  type ColorPickerFieldProps, type ColorInputProps, type ColorSwatchProps, type ColorPickerController,
+  type ColorPickerInputGroupProps, type ColorInputProps, type ColorSwatchProps, type ColorPickerController,
 } from './components/color-picker';
 export {
-  FontPicker, FontPickerTrigger, FontPickerContent, FontList, FontStackPicker, fontStackPickerVariants,
+  FontPicker, FontPickerTrigger, FontPickerContent, FontList, FontStackPicker, FontStackPickerInputGroup, FontStackPickerContent,
+  fontStackPickerInputGroupVariants,
   type FontPickerProps, type FontPickerTriggerProps, type FontPickerContentProps, type FontListProps, type FontStackPickerProps,
+  type FontStackPickerInputGroupProps, type FontStackPickerContentProps, type FontPickerFormProps,
   type FontPickerChangeDetails, type FontPickerReason,
 } from './components/font-picker';
 export {
-  GOOGLE_FONTS, FONT_CATEGORIES, findGoogleFont, fontStack, googleFontsUrl, loadGoogleFont, useGoogleFont, useGoogleFontStatus,
+  GOOGLE_FONTS, findGoogleFont, fontStack, loadGoogleFont, useGoogleFont, useGoogleFontStatus,
   type GoogleFont, type FontCategory, type GoogleFontOptions, type GoogleFontStatus,
 } from './lib/google-fonts';
 
@@ -567,12 +571,12 @@ export type { VaultStorage, IndexedDbOptions, LocalStorageOptions } from './lib/
 export { VaultProvider, useVault, useVaultState, useWebAuthnSupport, usePasskey, useEncryptedState, vaultErrorMessage } from './lib/vault-react';
 export type { VaultProviderProps, UsePasskey, EncryptedStateMeta, EncryptedStateSetter } from './lib/vault-react';
 export {
-  VaultGate, VaultUnlock, VaultSetup, VaultUnsupported, VaultStatusBadge, VaultEnrollDialog, RecoveryKey, recoveryKeyVariants,
+  VaultGate, VaultUnlock, VaultSetup, VaultUnsupported, VaultStatusBadge, VaultEnrollDialog, VaultRecoveryKey, vaultRecoveryKeyVariants,
   unsupportedMessage,
 } from './components/vault-gate';
 export type {
   VaultGateProps, VaultUnlockProps, VaultSetupProps, VaultUnsupportedProps, VaultStatusBadgeProps, VaultEnrollDialogProps,
-  RecoveryKeyProps,
+  VaultRecoveryKeyProps,
 } from './components/vault-gate';
 
 // ── PGlite ──
@@ -583,8 +587,8 @@ export type {
   PGliteProviderProps, DatabaseState, DatabaseStatus, QueryState, UseQueryOptions, LiveQueryState, UseLiveQueryOptions, MutationState,
 } from './lib/pglite';
 export {
-  openDatabase, runMigrations, runSql, toSqlError, parseDataDir, peekDataDirVersion, deleteDatabase, readServerInfo,
-  runtimePostgresMajor, identifier, quoteIdent, quoteLiteral, PGliteError, DataDirVersionError, MigrationError,
+  openDatabase, runMigrations, runSql, toSqlError, peekDataDirVersion, deleteDatabase,
+  PGliteError, DataDirVersionError, MigrationError,
 } from './lib/pglite-core';
 export type {
   Database, DatabaseInfo, OpenDatabaseOptions, OpenedDatabase, PGliteAssets, Migration, MigrationOptions, MigrationResult,
@@ -594,7 +598,7 @@ export type {
 export { useTabLock, SingleTabGate } from './lib/tab-lock';
 export type { TabLock, TabLockStatus, SingleTabGateProps } from './lib/tab-lock';
 export {
-  exportDatabase, importDatabase, detectImportFormat, readArchiveVersion, dumpVersion,
+  exportDatabase, importDatabase,
 } from './lib/pglite-transfer';
 export type { ExportFormat, ExportOptions, ExportResult, ImportResult } from './lib/pglite-transfer';
 export { downloadFile, pickFile } from './lib/pglite-files';
@@ -602,16 +606,16 @@ export { loadSchema, useSchema, schemaTreeItems } from './lib/pglite-schema';
 export type {
   SchemaInfo, SchemaNode, SchemaTable, SchemaColumn, ColumnReference, RelationKind, LoadSchemaOptions, UseSchemaState, SchemaTreeNode,
 } from './lib/pglite-schema';
-export { usePersistenceSupport, detectPersistenceSupport } from './lib/pglite-storage';
+export { usePersistenceSupport } from './lib/pglite-storage';
 export type { PersistenceSupport } from './lib/pglite-storage';
-export { sqlSpans, splitStatements, positionToLineColumn } from './lib/sql-lex';
-export type { SqlSpan, SqlSpanType, SqlStatement } from './lib/sql-lex';
-export { formatCell, toCsv, toJson, pgTypeName, formatDuration, pluralRows, PG_TYPE } from './lib/sql-format';
-export type { FormattedCell, CellKind, TabularResult } from './lib/sql-format';
-export { SqlEditor, SqlEditorFooter, SqlEditorRun, useSqlHistory } from './components/sql-editor';
-export type { SqlEditorProps, SqlEditorFooterProps, SqlEditorRunProps, SqlEditorHandle, SqlHistory } from './components/sql-editor';
-export { SqlConsole, SqlConsoleHeader, SqlConsoleDatabaseMenu, SqlConsoleSidebar, SqlConsoleEditor, SqlConsoleResults } from './components/sql-console';
-export type { SqlConsoleProps, SqlConsoleHeaderProps, SqlConsoleEditorProps } from './components/sql-console';
+export {
+  SqlConsole, SqlConsoleHeader, SqlConsoleDatabaseMenu, SqlConsoleSidebar, SqlConsoleEditor, SqlConsoleEditorFooter, SqlConsoleEditorRun,
+  SqlConsoleResults, useSqlHistory,
+} from './components/sql-console';
+export type {
+  SqlConsoleProps, SqlConsoleHeaderProps, SqlConsoleEditorProps, SqlConsoleEditorFooterProps, SqlConsoleEditorRunProps, SqlConsoleEditorHandle,
+  SqlHistory,
+} from './components/sql-console';
 
 // Spreadsheet: a virtualized grid with GPU sorting and histograms, and the CSV reader it pairs with
 export { Spreadsheet, spreadsheetVariants, createSpreadsheetController } from './components/spreadsheet';
@@ -619,25 +623,25 @@ export type {
   SpreadsheetProps, SpreadsheetController, SpreadsheetSortInfo, SpreadsheetSortChangeReason, SpreadsheetValueChangeReason, SpreadsheetColumnWidthsChangeReason,
 } from './components/spreadsheet';
 export {
-  parseCellNumber, parseCellDate, inferColumnType, columnNumbers, sortKeys, sortPermutationCpu, sortTextPermutation, sortRows,
-  selectionStats, columnHistogram, histogramCpu, binScale, GPU_MIN_ROWS, MAX_BINS,
+  parseCellNumber, parseCellDate, columnNumbers, sortKeys, sortPermutationCpu, sortRows,
+  selectionStats, columnHistogram,
 } from './lib/spreadsheet-model';
 export type {
   SpreadsheetColumnType, SpreadsheetSortDirection, SpreadsheetSort, SpreadsheetEngine, SpreadsheetRanOn, SpreadsheetSortResult,
   SpreadsheetEngineOptions, SelectionStats, SpreadsheetHistogram,
 } from './lib/spreadsheet-model';
-export { parseCsv, stringifyCsv, csvField, detectDelimiter, delimiterForPath } from './lib/csv';
+export { parseCsv, stringifyCsv, delimiterForPath } from './lib/csv';
 export type { CsvDelimiter, CsvFormat, CsvParseResult, CsvParseOptions } from './lib/csv';
 
 
 // ── Filters ──
 export {
-  DATE_PRESETS, FILTER_OPERATORS, RELATIVE_UNITS, coerceFilter, createFilter, createFilterId, dateRange, defaultOperator, describeFilter, describeValue,
-  emptyValue, isDateValue, isFilterComplete, matchFilters, matchesFilters, operatorLabel, operatorsFor, parseFilters, serializeFilters, toTime,
+  coerceFilter, createFilter, dateRange, defaultOperator, describeFilter, describeValue,
+  matchFilters, matchesFilters, operatorLabel, operatorsFor, parseFilters, serializeFilters, toTime,
   withOperator, withValue,
 } from './lib/filter-model';
 export type {
-  DateOptions, DatePreset, DateValue, Filter, FilterField, FilterKind, FilterOperator, FilterOption, FilterValue, MatchOptions, RelativeUnit,
+  DateValue, Filter, FilterField, FilterKind, FilterOperator, FilterOption, FilterValue, MatchOptions,
 } from './lib/filter-model';
 export {
   FilterBar, FilterToolbar, FilterMenu, FilterList, FilterChip, FilterClear, FilterMatch, FilterValueEditor, useFilters, useFilterBar, useOptionalFilterBar,
@@ -658,12 +662,13 @@ export type { FilterQueryResult, UseFilterQueryOptions, Interpretation, Unresolv
 
 // ── FileUpload ──
 export {
-  FileUpload, FileUploadDropzone, FileUploadTrigger, FileUploadList, FileUploadItem, FileUploadThumbnail, fileUploadDropzoneVariants, fileUploadItemVariants, useFileUploadContext,
+  FileUpload, FileUploadDropzone, FileUploadTrigger, FileUploadList, FileUploadItem, FileUploadThumbnail, fileUploadDropzoneVariants, fileUploadItemVariants,
 } from './components/file-upload';
 export type {
-  FileUploadProps, FileUploadDropzoneProps, FileUploadTriggerProps, FileUploadListProps, FileUploadItemProps, FileUploadContextValue, OnFiles,
+  FileUploadProps, FileUploadDropzoneProps, FileUploadTriggerProps, FileUploadListProps, FileUploadItemProps, FileUploadThumbnailProps, FileUploadContextValue, FileUploadFilesHandler,
 } from './components/file-upload';
 export { xhrUpload, describeAccept, describeRules, fileKind, rejectionMessage } from './lib/file-upload-model';
+export { formatFileSize } from './lib/file-size';
 export type {
   UploadFile, UploadFn, UploadContext, UploadResult, FileStatus,
   FileUploadRules, RejectionReason, RejectionContext, RejectionMessages, XhrUploadOptions, FileKind,
@@ -680,7 +685,7 @@ export type { FileUploadState, FileUploadInputProps } from './lib/use-file-uploa
 
 // ── Tailscale ──
 export {
-  createTailscale, createTailscaleFetch, toTailscaleRequest, toResponse, isSafeLoginUrl, tailscaleErrorMessage, TailscaleError,
+  createTailscale, tailscaleErrorMessage, TailscaleError,
   memoryTailscalePersistence, webStorageTailscalePersistence, vaultTailscalePersistence,
 } from './lib/tailscale';
 export type {
@@ -689,8 +694,8 @@ export type {
   TailscaleRequest, TailscaleResponse, TailscaleSession, TailscalePersistence, TailscaleVaultLike, TailscaleErrorReason,
 } from './lib/tailscale';
 export {
-  resolveTailscalePolicy, matchTailscalePolicy, encodeTailscalePolicy, decodeTailscalePolicy, describeTailscalePolicy,
-  isTailnetHost, isTailnetAddress, TailscalePolicyError,
+  resolveTailscalePolicy, matchTailscalePolicy,
+  TailscalePolicyError,
 } from './lib/tailscale-policy';
 export type {
   TailscalePolicy, ResolvedTailscalePolicy, TailscaleIntercept, TailscaleUnavailable, TailscaleMatch, TailscaleMatchReason,
@@ -703,7 +708,7 @@ export { createTailscaleConnectClient } from './lib/tailscale-connect';
 export type { TailscaleConnectOptions, TailscaleConnectModule, TailscaleIpn } from './lib/tailscale-connect';
 export { createFakeTailscaleClient } from './lib/tailscale-fake';
 export type { FakeTailscale, FakeTailscaleOptions, FakeTailnetHandler } from './lib/tailscale-fake';
-export { registerTailscaleRouter, tailscaleServiceWorkerUrl, tailscaleRouterUnsupportedReason } from './lib/tailscale-router/bridge';
+export { registerTailscaleRouter } from './lib/tailscale-router/bridge';
 export type {
   TailscaleRouterHandle, TailscaleRouterOptions, TailscaleRouterState, TailscaleRouterStatus, TailscaleRouteTarget,
   TailscaleRoutedRequest,
@@ -721,31 +726,31 @@ export type {
 
 // ── Video: FFmpeg, the timeline model, render, playback and the editing parts ──
 export {
-  createFfmpeg, ffmpegUnsupportedReason, FfmpegError, parseProbe, parseRate, mediaFileName,
+  createFfmpeg, ffmpegUnsupportedReason, FfmpegError, parseProbe, mediaFileName,
 } from './lib/ffmpeg';
 export type {
   Ffmpeg, FfmpegOptions, FfmpegJob, FfmpegResult, FfmpegProgress, FfmpegInput, FfmpegTool, FfmpegErrorCode, ProbeOptions,
   MediaInfo, MediaKind, VideoStreamInfo, AudioStreamInfo,
 } from './lib/ffmpeg';
-export { extractFrames, extractPeaks, frameTimes, wavPeaks } from './lib/ffmpeg/media';
+export { extractFrames, extractPeaks, frameTimes } from './lib/ffmpeg/media';
 export type { MediaFrame, FramesOptions, MediaPeaks, PeaksOptions } from './lib/ffmpeg/media';
 export {
-  FfmpegProvider, useFfmpeg, useFfmpegSupport, useMediaInfo, useMediaFrames, useMediaPeaks, probeMedia, mediaFrames, mediaPeaks, releaseMedia,
+  FfmpegProvider, useFfmpeg, useFfmpegSupport, useMediaInfo, useMediaFrames, useMediaPeaks, releaseMedia,
 } from './lib/ffmpeg/react';
 export type { FfmpegProviderProps, MediaFrameURL, AsyncResult } from './lib/ffmpeg/react';
 export {
-  clipDuration, clipEnd, sourceTime, trackDuration, timelineDuration, quantize, clipsAt, findClip, timelineId,
-  layoutTrack, updateClip, updateTrack, removeClips, splitClip, trimClip, moveClip, insertClip, magneticIndex,
-  sliceTimeline, snapTargets, snapTime, formatTimecode, parseTimecode, timelineLooks, lookCss, lookFfmpeg,
+  clipDuration, clipEnd, sourceTime, timelineDuration, quantize, clipsAt,
+  layoutTrack, updateClip, updateTrack, removeClips, splitClip, trimClip, moveClip, insertClip,
+  sliceTimeline, snapTargets, snapTime, formatTimecode, parseTimecode,
 } from './lib/video-timeline-model';
 export type {
   Timeline, TimelineTrack, TimelineClip, TimelineFormat, TimelineLook, TrackKind, ClipFrame, TrimLimits, PlaceOptions,
 } from './lib/video-timeline-model';
-export { buildRender, renderTimeline, renderMime } from './lib/video-render';
+export { buildRender, renderTimeline } from './lib/video-render';
 export type { RenderMedia, RenderContainer, RenderQuality, RenderOptions, RenderPlan, RenderTimelineOptions } from './lib/video-render';
 export { createPlayback, usePlaybackClock, usePlaybackState } from './lib/playback';
 export type { Playback, PlaybackState } from './lib/playback';
-export { VideoTimeline, timelineMediaType, fitTimelineZoom, timelineZoomRange } from './components/video-timeline';
+export { VideoTimeline, timelineMediaType, fitTimelineZoom } from './components/video-timeline';
 export type {
   VideoTimelineProps, TimelineMediaInfo, TimelineDrop, TimelineDropDetails, VideoTimelineAction, VideoTimelineChangeDetails, VideoTimelineChangeReason,
   VideoTimelineSelectionReason, VideoTimelineZoomReason,
@@ -760,17 +765,15 @@ export type { WaveformProps } from './components/waveform';
 export { TuiPreview } from './components/tui-preview';
 export type { TuiPreviewProps, TuiPreviewOptions, TuiPreviewState, TuiTheme } from './components/tui-preview';
 export { OpenCode, openCodeVariants } from './components/open-code';
-export { DEFAULT_OPENCODE_PREVIEW_URL } from './lib/open-code-preview';
-export type { OpenCodeProps, OpenCodeState } from './components/open-code';
-export { createAlmostNodeOpenCodeHost, createAgentWasmOpenCodeHost, loadOpenCodeRuntime, DEFAULT_OPENCODE_RUNTIME_URL } from './lib/open-code-host';
+export type { OpenCodeProps, OpenCodeBaseProps, OpenCodeHostProps, OpenCodeState } from './components/open-code';
+export { createAlmostNodeOpenCodeHost, createAgentWasmOpenCodeHost } from './lib/open-code-host';
 export type { OpenCodeHostBridge, OpenCodePort, OpenCodeWorkspaceBridge, OpenCodeProcessBridge, OpenCodeCommand, OpenCodeMcpServer, OpenCodeRuntime, OpenCodeRuntimeSession, AlmostNodeOpenCodeContainer, AlmostNodeOpenCodeOptions } from './lib/open-code-host';
 
-export { createVaultOpenCodeCredentialStore, createVaultOpenCodeConnectionStore, OPENCODE_CREDENTIAL_SLOT, OPENCODE_CONNECTION_SLOT } from './lib/open-code-keychain';
 export type { OpenCodeCredentialStore, OpenCodeConnectionStore, OpenCodeKeychainStore } from './lib/open-code-host';
 
 export {
   Workspace, WorkspaceTab, WorkspaceTabTrigger, WorkspaceTabClose, WorkspaceToolbar, WorkspaceMaximize,
-  createWorkspaceController, workspaceTabsets,
+  createWorkspaceController,
 } from './components/workspace';
 export type {
   WorkspaceProps, WorkspaceTabProps, WorkspaceTabTriggerProps, WorkspaceTabCloseProps, WorkspaceToolbarProps, WorkspaceMaximizeProps,
@@ -783,10 +786,10 @@ export type {
 
 // Debugging parts
 export { DebugToolbar, DebugToolbarButton, debugToolbarActions } from './components/debug-toolbar';
-export type { DebugToolbarAction, DebugToolbarProps, DebugToolbarButtonProps } from './components/debug-toolbar';
+export type { DebugToolbarAction, DebugToolbarActionDetails, DebugToolbarProps, DebugToolbarButtonProps } from './components/debug-toolbar';
 export { TraceTimeline, TraceTimelinePreview, traceTimelineVariants } from './components/trace-timeline';
 export type { TraceTimelineProps, TraceTimelinePreviewProps, TraceTimelineHandle, TraceValueChangeDetails, TraceValueChangeReason, TraceValueCommitDetails, TraceViewChangeDetails, TraceViewChangeReason, TracePickReason, TraceFocusedLaneChangeDetails, TraceSelectedThreadChangeDetails, TraceSelectedRequestChangeDetails, TraceDrawStats, TraceFetchActivity } from './components/trace-timeline';
-export { linearAxis, stopAxis, advanceAlong, selectStops, formatTraceTime, TRACE_SCRUB_SPEEDS } from './lib/trace-timeline-model';
+export { linearAxis, stopAxis, advanceAlong, selectStops, formatTraceTime } from './lib/trace-timeline-model';
 export type { TraceActivity, TraceAxis, TraceDensity, TraceDiamonds, TraceKey, TraceLane, TraceMarkSeries, TraceRange, TraceRequest, TraceScrubSpeed, TraceStop, TraceStopMark, TraceThread, TraceTone, TraceWindow } from './lib/trace-timeline-model';
 export {
   CodeEditor, CodeEditorHeader, CodeEditorTitle, CodeEditorCopyButton, CodeEditorContent, useCodeEditor, SyntaxTokens, useSyntaxTokens,
@@ -806,18 +809,17 @@ export { ObjectTree } from './components/object-tree';
 export type { ObjectTreeProps, ObjectTreeValueChangeDetails } from './components/object-tree';
 export { ObjectValue } from './components/object-value';
 export type { ObjectValueProps } from './components/object-value';
-export { childrenOfValue, nodeFromValue, objectTreeKey } from './lib/object-tree-model';
+export { nodeFromValue, objectTreeKey } from './lib/object-tree-model';
 export type { ObjectTreeGetterResult, ObjectTreeNode, ObjectTreeRoot } from './lib/object-tree-model';
 export { copyTextOf, previewFromValue, previewText, previewTokens } from './lib/object-tree-value';
-export type { ValueMapEntry, ValuePreview, ValuePreviewOptions, ValueProperty, ValueTint, ValueToken, ValueType } from './lib/object-tree-value';
+export type { ValueMapEntry, ValuePreview, ValuePreviewOptions, ValueProperty, ValueTokenType, ValueToken, ValueType } from './lib/object-tree-value';
 export { CallStack } from './components/call-stack';
 export type { CallStackProps, CallStackValueChangeDetails } from './components/call-stack';
-export { fileBaseName, fullLocation, shortLocation } from './lib/call-stack-model';
 export type { CallStackFrame, CallStackFrameKind, CallStackLocation } from './lib/call-stack-model';
-export { LogList, LogRowContent, logListVariants, createLogListController } from './components/log-list';
+export { LogList, LogListRowContent, logListVariants, createLogListController } from './components/log-list';
 export type {
   LogListProps, LogListController, LogListActionDetails, LogListValueChangeReason, LogListExpandedChangeReason,
-  LogListFollowingChangeReason, LogRowContentProps, LogRowState,
+  LogListFollowingChangeReason, LogListRowContentProps, LogRowState,
 } from './components/log-list';
 export { LOG_LEVELS, countLogLevels, formatLogTime, logRowText, nodeText, normalizeLogLevel } from './lib/log-list-model';
 export type { LogLevel, LogLevelCounts, LogRow, RowId } from './lib/log-list-model';
@@ -828,11 +830,11 @@ export type {
   DataTableColumnSize, DataTableSort, DataTableSortDirection, DataTableSortValue, DataTableTimeRange,
 } from './components/data-table';
 export { sortDataTableRows } from './lib/data-table-model';
-export { RequestLink, RequestTable, REQUEST_COLUMNS } from './components/request-table';
-export type { RequestColumnId, RequestLinkProps, RequestTableProps } from './components/request-table';
-export { isRequestFailed, requestDisplayName, requestDurationText, requestName, requestSizeText, requestStatusText, requestTimeRange, requestTone } from './lib/request-table-model';
+export { RequestTableLink, RequestTable, REQUEST_COLUMNS } from './components/request-table';
+export type { RequestColumnId, RequestTableLinkProps, RequestTableProps } from './components/request-table';
+export { isRequestFailed, requestDurationText, requestName, requestSizeText, requestStatusText, requestTimeRange } from './lib/request-table-model';
 export type { RequestRow, RequestTone } from './lib/request-table-model';
 export { Terminal, terminalVariants } from './components/terminal';
 export type { TerminalProps, TerminalHandle } from './components/terminal';
-export { createTerminalShell, createLineState, applyKey, applyCompletion, readKeys, renderLine, eraseLine, wordAtCursor, formatColumns, cellWidth, textWidth, stripAnsi, advance, toTerminalNewlines, trimTranscript, MAX_HISTORY } from './lib/terminal-line';
-export type { CellPosition, CompletionStep, LineEvent, LineState, LineStep, RenderedLine, TerminalCommandHandler, TerminalCommandIO, TerminalCompleter, TerminalShell, TerminalShellOptions, TerminalSink } from './lib/terminal-line';
+export { createTerminalShell, applyKey, applyCompletion, readKeys, renderLine } from './lib/terminal-line';
+export type { TerminalCommandHandler, TerminalCommandIO, TerminalCompleter, TerminalShell, TerminalShellOptions, TerminalSink } from './lib/terminal-line';

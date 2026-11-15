@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
-import { AssistantMessage, Conversation, ConversationComposer, ConversationMessages, MessageMarkdown, UserMessage } from '@/components/ui/conversation'
-import { SidebarContent, SidebarFooter, SidebarHeader, SidebarItem, SidebarSection, SidebarWorkspace } from '@/components/ui/sidebar'
+import { ConversationAssistantMessage, Conversation, ConversationComposer, ConversationMessages, ConversationMarkdown, ConversationUserMessage } from '@/components/ui/conversation'
+import { SidebarContent, SidebarFooter, SidebarHeader, SidebarItem, SidebarSection, SidebarAccount } from '@/components/ui/sidebar'
 import { ThemeScope } from '@/lib/theme'
 import { stripAttachmentRefs, WorkbenchComposer } from '@/components/blocks/t3-clone/components/workbench/workbench-composer'
 import { useWorkbenchShell, WorkbenchContent, WorkbenchHeader, WorkbenchMain, WorkbenchShell, WorkbenchSidebar, WorkbenchSidebarClose, WorkbenchSidebarTrigger, WorkbenchTitle } from '@/components/blocks/t3-clone/components/workbench/workbench-shell'
@@ -76,7 +76,7 @@ function Threads({
       <SidebarHeader>
         <div className="flex items-center gap-1">
           <div className="min-w-0 flex-1">
-            <SidebarWorkspace title="Assistant" />
+            <SidebarAccount title="Assistant" />
           </div>
           <WorkbenchSidebarClose />
         </div>
@@ -98,7 +98,7 @@ function Threads({
         </SidebarSection>
       </SidebarContent>
       <SidebarFooter>
-        <SidebarWorkspace title="Ada Lovelace" description="Pro plan" />
+        <SidebarAccount title="Ada Lovelace" description="Pro plan" />
       </SidebarFooter>
     </div>
   )
@@ -147,11 +147,11 @@ function ChatOnly() {
               <ConversationMessages threadKey={current}>
                 {messages.map((m) =>
                   m.role === 'user' ? (
-                    <UserMessage key={m.id}>{m.text}</UserMessage>
+                    <ConversationUserMessage key={m.id}>{m.text}</ConversationUserMessage>
                   ) : (
-                    <AssistantMessage key={m.id}>
-                      <MessageMarkdown markdown={m.text} />
-                    </AssistantMessage>
+                    <ConversationAssistantMessage key={m.id}>
+                      <ConversationMarkdown markdown={m.text} />
+                    </ConversationAssistantMessage>
                   ),
                 )}
               </ConversationMessages>

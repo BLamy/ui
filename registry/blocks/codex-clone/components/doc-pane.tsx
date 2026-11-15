@@ -105,14 +105,14 @@ function DocPage({ codex, doc, editorRef, format }: { codex: CodexState; doc: Do
           {doc.cover ? <div aria-hidden="true" className="mb-6 h-[120px] rounded-xl bg-(image:--doc-cover)" style={{ '--doc-cover': doc.cover } as React.CSSProperties} /> : null}
           <MarkdownEditor
             ref={editorRef}
-            variant="ghost"
+            variant="plain"
             aria-label={doc.title}
             defaultValue={doc.body}
             toolbar={format}
             minHeight={240}
             // Only edits made while the editor has focus count: it normalizes the Markdown on load.
-            onFocus={() => (typing.current = true)}
-            onBlur={() => (typing.current = false)}
+            onEditorFocus={() => (typing.current = true)}
+            onEditorBlur={() => (typing.current = false)}
             onValueChange={(body) => typing.current && codex.editDoc(doc.id, { body })}
             className="text-subhead"
             classNames={DOC_PARTS}
@@ -214,7 +214,7 @@ export function DocContent({ codex }: { codex: CodexState }) {
       {doc ? (
         <DocPage key={`${codex.current.id}:${doc.id}`} codex={codex} doc={doc} editorRef={editorRef} format={format} />
       ) : (
-        <EmptyState icon={<Icon name="doc" size={48} sw={1.2} />} title="No document yet" description="Ask dot to write something up and it lands here." />
+        <EmptyState icon={<Icon name="doc" sw={1.2} />} title="No document yet" description="Ask dot to write something up and it lands here." />
       )}
     </>
   );

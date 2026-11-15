@@ -20,7 +20,7 @@ export default function Share() {
           value={value || ' '}
           size={176}
           level={level}
-          rounded={rounded}
+          shape={rounded ? 'rounded' : 'square'}
           aria-label="Open shared album"
         />
       </div>

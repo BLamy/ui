@@ -107,7 +107,7 @@ export function Chat() {
   return (
     <ChatShell breakpoint={880}>
       <ChatShellNav>
-        <Tabs variant="workspace" defaultValue="hq" className="contents">
+        <Tabs variant="switcher" defaultValue="hq" className="contents">
           <TabsBar>
             <TabsList aria-label="Workspaces">
               <TabsTab value="hq" aria-label="HQ"><TabsPill />{/* tile */}</TabsTab>

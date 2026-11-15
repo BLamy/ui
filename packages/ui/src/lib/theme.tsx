@@ -65,7 +65,7 @@ export function useAppearance(): Appearance | undefined {
    defines them for light (`:root` / `.light`) and dark (`.dark`). BLProvider and ThemeScope only pick which values
    apply below them: they put `light` or `dark` on their root, and `data-theme-scope` names a surface the bl-theme
    restyles with the same variables (the Workbench, its always-dark terminal, team chat). A `tint` overrides
-   --primary / --ring for the subtree. */
+   --primary / --ring for the subtree, with an ink that reads on it (--primary-foreground). */
 export type ThemeScopeName = 'workbench' | 'chat' | 'terminal' | 'sheet' | 'glass' | (string & {});
 
 /** Variables to set on a scope, by name without the leading `--`: `{ radius: '0.25rem', primary: '#f43' }`. Names are
@@ -83,9 +83,67 @@ export const themeVarStyle = (vars?: ThemeVars): CSSProperties => {
 export const themeScopeClass = (appearance: Appearance | undefined) =>
   appearance === 'dark' ? 'dark scheme-dark' : appearance === 'light' ? 'light scheme-light' : '';
 
-/** --primary / --ring for a tint (nothing when no tint is given, so the theme's primary applies). */
+/* ── A readable ink on a tint ──
+   A tint is the fill of primary buttons, so it needs an ink of its own. White stays while it reaches 3:1 on the tint
+   (WCAG's minimum for large text and controls, and what the iOS blue gives: 3.6:1); on a lighter tint (green, orange,
+   yellow, teal, where white is about 2:1) the ink is a near-black, which is then at least 6:1. The switch is the tint's
+   relative luminance (0.30). For a color this can read (hex, rgb notation, a gray oklch) it is worked out here; for any other
+   CSS color (a name, hsl(), a var()) the browser works it out with relative color syntax, from the same luminance. */
+const TINT_INK_DARK = 'oklch(0.2 0 0)';
+const TINT_INK_LIGHT = 'oklch(1 0 0)';
+/** The luminance at which white falls under 3:1. */
+const TINT_INK_SWITCH = 0.3;
+
+/** The sRGB channels (0–255) of a hex or rgb() color, or null for anything else. */
+function parseRgb(color: string): [number, number, number] | null {
+  const c = color.trim().toLowerCase();
+  const hex = /^#([\da-f]{3,4}|[\da-f]{6}|[\da-f]{8})$/.exec(c);
+  if (hex) {
+    const h = hex[1].length <= 4 ? [...hex[1].slice(0, 3)].map((d) => d + d).join('') : hex[1].slice(0, 6);
+    return [0, 2, 4].map((i) => parseInt(h.slice(i, i + 2), 16)) as [number, number, number];
+  }
+  const rgb = /^rgba?\(\s*([\d.]+%?)[\s,]+([\d.]+%?)[\s,]+([\d.]+%?)/.exec(c);
+  if (rgb) return rgb.slice(1, 4).map((v) => (v.endsWith('%') ? parseFloat(v) * 2.55 : parseFloat(v))) as [number, number, number];
+  return null;
+}
+
+const linear = (channel: number) => {
+  const c = channel / 255;
+  return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+};
+
+/** WCAG relative luminance of a hex or rgb() color, or of an achromatic `oklch(L 0 0)` (the inks below); null otherwise. */
+function luminance(color: string): number | null {
+  const rgb = parseRgb(color);
+  if (rgb) {
+    const [r, g, b] = rgb.map(linear);
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  }
+  const gray = /^oklch\(\s*([\d.]+)(%?)\s+0\s+0\s*\)$/i.exec(color.trim());
+  return gray ? (gray[2] ? parseFloat(gray[1]) / 100 : parseFloat(gray[1])) ** 3 : null;
+}
+
+/** The ink for text and icons on a tint: white while it reaches 3:1 on it, else a near-black. */
+export function tintForeground(tint: string): string {
+  const y = luminance(tint);
+  if (y !== null) return y > TINT_INK_SWITCH ? TINT_INK_DARK : TINT_INK_LIGHT;
+  // XYZ's Y is the luminance: k is 1 under the switch (white), 0 above it (the ink, whose Y is 0.2³).
+  const k = `clamp(0, (${TINT_INK_SWITCH} - y) * 1000, 1)`;
+  return `color(from ${tint} xyz-d65 calc(0.0076 + 0.9429 * ${k}) calc(0.008 + 0.992 * ${k}) calc(0.0087 + 1.0803 * ${k}))`;
+}
+
+/** WCAG 2 contrast ratio of two colors `tintForeground` can read (hex, rgb(), a gray oklch()); null otherwise. */
+export function contrastRatio(a: string, b: string): number | null {
+  const x = luminance(a);
+  const y = luminance(b);
+  if (x === null || y === null) return null;
+  return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05);
+}
+
+/** --primary, its ink (--primary-foreground) and --ring for a tint (nothing when no tint is given, so the theme's
+    primary applies). */
 export const tintVars = (tint?: string): CSSProperties =>
-  (tint ? { '--primary': tint, '--ring': tint } : {}) as CSSProperties;
+  (tint ? { '--primary': tint, '--primary-foreground': tintForeground(tint), '--ring': tint } : {}) as CSSProperties;
 
 /** The props a scope root carries: `data-theme-scope`, the appearance class and the tint. */
 export function themeScopeProps({ scope, appearance, tint, vars }: { scope?: ThemeScopeName; appearance?: Appearance; tint?: string; vars?: ThemeVars }) {
@@ -165,7 +223,9 @@ export interface ThemeScopeProps extends ComponentProps<'div'> {
       plain scope inherits the page's `.dark` / light, `workbench` is dark, other surface scopes are light, and the
       terminal scope is always dark. */
   appearance?: Appearance;
-  /** Accent for the subtree (--primary / --ring). */
+  /** Accent for the subtree: --primary and --ring, and a readable --primary-foreground for it (white on a dark tint, a
+      near-black on a light one such as the iOS green; see `tintForeground`). Set `vars={{ 'primary-foreground': … }}` to
+      choose the ink yourself. */
   tint?: string;
   /** Theme variables for the subtree, by name without `--`: `{ radius: '0.25rem', card: '#111' }`. Wins over `tint`. */
   vars?: ThemeVars;
@@ -210,7 +270,8 @@ export interface BLProviderProps {
   /** Defaults to the ambient `AppearanceProvider` value; without one the provider inherits the page's appearance
       (shadcn's `.dark` on an ancestor, else light). */
   dark?: boolean;
-  /** Accent for everything below: sets --primary and --ring. Defaults to the theme's primary. */
+  /** Accent for everything below: sets --primary, --ring and a readable --primary-foreground (as ThemeScope's `tint`).
+      Defaults to the theme's primary. */
   tint?: string;
   /** Dynamic Island floor. `true` → 59px, a number → that many px. */
   safeTop?: boolean | number;

@@ -3,7 +3,7 @@
 BL UI is built on [UI SDK](https://ui-sdk.dev) (keyboard, focus, selection, popups, ARIA) and Tailwind CSS v4, and needs React 19. It uses our fork of UI SDK under upstream's package names (see [Built on UI SDK](https://blamy.github.io/ui/#/ui-sdk)). You can take it two ways from one source of truth:
 
 - **shadcn registry (recommended).** `npx shadcn@latest add …` copies the source of the parts you pick into your project. There is no runtime dependency on `@brett_lamy/ui`, only what each part imports (`@ui-sdk/core`, `@ui-sdk/react`, `framer-motion`, …). You own the files, so you can edit variants and defaults, and you ship exactly what you added.
-- **npm package.** `npm install @brett_lamy/ui` gives you everything, packaged together. It is generated from the same sources: ESM, one output module per source module so bundlers tree-shake, and `'use client'` on component modules for Next.js.
+- **npm package.** `npm install @brett_lamy/ui` gives you everything, packaged together. It is generated from the same sources: ESM, one output module per source module so bundlers tree-shake, an entry per module at the registry's path (`@brett_lamy/ui/dialog` for `@/components/ui/dialog`), and `'use client'` on component modules for Next.js.
 
 | | Registry | npm |
 | --- | --- | --- |
@@ -304,8 +304,12 @@ import '@brett_lamy/ui/theme.css' // optional: the iOS palette
 ### Use it
 
 ```tsx
-import { BLProvider, NavigationStack, SplitView } from '@brett_lamy/ui'
+import { BLProvider } from '@brett_lamy/ui/lib/theme'
+import { NavigationStack } from '@brett_lamy/ui/navigation-stack'
+import { SplitView } from '@brett_lamy/ui/split-view'
 ```
+
+Every module has its own entry, at the registry's path under the package name: `@/components/ui/split-view` is `@brett_lamy/ui/split-view`, `@/lib/theme` is `@brett_lamy/ui/lib/theme`, and each component page shows its import. The components, their parts and the documented hooks are also on the package root, `import { BLProvider, NavigationStack, SplitView } from '@brett_lamy/ui'`. Both tree-shake the same in a production build; a module entry also keeps the dev server and your editor from loading the whole index to resolve one name, and switching to or from the registry changes only the prefix.
 
 Vite pre-bundles the docstream packages on first use. If it reports a missing export from `@brett_lamy/docstream` or `@brett_lamy/docstream-editor`, add them to `optimizeDeps.include` ([Optimization](https://blamy.github.io/ui/#/optimization)).
 {% endstep %}
@@ -347,14 +351,14 @@ The package is compiled ESM and its component modules carry `'use client'`, so a
 
 ```tsx
 // app/page.tsx
-import { Button } from '@brett_lamy/ui'
+import { Button } from '@brett_lamy/ui/button'
 
 export default function Page() {
   return <Button>Continue</Button>
 }
 ```
 
-`experimental.optimizePackageImports: ['@brett_lamy/ui']` in `next.config` keeps barrel imports cheap. `transpilePackages` is not needed: the package is already compiled.
+Module entries (`@brett_lamy/ui/button`) need no configuration. If you import from the package root instead, `experimental.optimizePackageImports: ['@brett_lamy/ui']` in `next.config` keeps those imports cheap. `transpilePackages` is not needed: the package is already compiled.
 {% endstep %}
 {% endstepper %}
 {% endtab %}

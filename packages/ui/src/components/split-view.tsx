@@ -12,7 +12,9 @@
      regular   sidebar · supplementary · detail tiled (the sidebar tiles; the toggle slides it away)
      medium    supplementary · detail tiled; the sidebar floats over them (overlay) or pushes them (displace)
      compact   one column at a time: picking pushes the next column; back, Escape and a swipe from the leading
-               edge pop
+               edge pop. A sidebar with `compactPresentation="tabs"` becomes the iOS tab bar over the other
+               columns instead of the stack's first page: its `tab` items (and `tab` sections, as one tab each) are
+               the tabs, and picking one selects it as at any other width
 
    A column that pushes pages of its own holds a <NavigationStack>. The column is the stack's parent
    (lib/stack-parent): collapsed, the stack's first page gets the back button to the column before, labelled with
@@ -28,9 +30,10 @@
    NavigationStack: the column under slides back 30% under a 10% shade, the one on top casts `shadow-edge-*`. */
 import {
   createContext, useCallback, useContext, useId, useLayoutEffect, useMemo, useRef, useState,
-  type ComponentProps, type ReactNode, type Ref,
+  type ComponentProps, type CSSProperties, type ReactNode, type Ref,
 } from 'react';
 import { usePart, usePrimitive, type PartProps, type PrimitiveHandle } from '@ui-sdk/react/primitive';
+import { useShortcut, useShortcutHint } from '@ui-sdk/react/shortcuts';
 import {
   Collapsible as SdkCollapsible,
   CollapsiblePanel as SdkCollapsiblePanel,
@@ -38,11 +41,12 @@ import {
 } from '@ui-sdk/react/collapsible';
 import type { ChangeDetails } from '@ui-sdk/core';
 import { cva, type VariantProps } from 'class-variance-authority';
-import { Chevron, Icon } from '@/lib/icon';
+import { Chevron, Icon, type IconName } from '@/lib/icon';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
+import { Tabs, TabsBar, TabsList, TabsTab } from '@/components/ui/tabs';
 import { cn, cx } from '@/lib/utils';
 import { SizeClassProvider } from '@/lib/container';
-import { sectionLabelVariants } from '@/lib/primitives';
+import { barBottomHeight, sectionLabelVariants } from '@/lib/primitives';
 import { StackParentContext, type StackParent } from '@/lib/stack-parent';
 import {
   BackLabel, backName, barBackButton, barTitle, barTitleFade, barTitleHidden, centeredRoom, largeTitleText, useBackFit,
@@ -126,7 +130,7 @@ export interface SplitViewContextValue extends SplitViewState {
   /** Selects `value` in `column` and shows the column after it (a push when collapsed). `null` clears. */
   select: (column: SplitViewColumn, value: string | null, options?: Opt<SplitViewValueChangeReason>) => boolean;
   /** Whether `value` is the current one in `column` (what its items draw): never while collapsed, where rows are
-   *  navigation. */
+   *  navigation, except in a sidebar that has become a tab bar. */
   isCurrent: (column: SplitViewColumn, value: string) => boolean;
   /** Puts `column` on top of the compact stack (tracked at every size). */
   show: (column: SplitViewColumn, options?: Opt<SplitViewCompactColumnChangeReason>) => boolean;
@@ -146,7 +150,7 @@ export function useSplitView(): SplitViewContextValue {
       setSidebarOpen: (open, o) => api.setSidebarOpen(open, o),
       toggleSidebar: (o) => api.toggleSidebar(o),
       select: (column, value, o) => api.select(column, value, o),
-      isCurrent: (column, value) => !state.collapsed && state.value[column] === value,
+      isCurrent: (column, value) => (!state.collapsed || (column === 'sidebar' && state.sidebarTabs)) && state.value[column] === value,
       show: (column, o) => api.show(column, o),
       back: (o) => api.back(o),
       setColumnWidth: (column, width, o) => api.setColumnWidth(column, width, o),
@@ -186,7 +190,7 @@ export function SplitView({
   compactColumn, defaultCompactColumn, onCompactColumnChange,
   supplementaryOpen, defaultSupplementaryOpen, onSupplementaryOpenChange,
   columnWidths, defaultColumnWidths, onColumnWidthsChange,
-  onSizeClassChange, controller, debug, children, className, ...props
+  onSizeClassChange, controller, debug, children, className, style, ...props
 }: SplitViewProps) {
   const handle = usePrimitive(splitView, {
     sizeClass, breakpoints, sidebarBehavior,
@@ -204,6 +208,9 @@ export function SplitView({
   return usePart(handle, 'root', {}, {
     ...props,
     className: cx('group/split relative isolate h-full w-full touch-pan-y overflow-hidden bg-background', className),
+    // A sidebar that is a tab bar covers the bottom: what scrolls under it keeps that much room (`--tabs-bar-h`, as
+    // under a Tabs `bar`).
+    style: (state: SplitViewState) => ({ ...(state.sidebarTabs ? { '--tabs-bar-h': barBottomHeight } : null), ...apply(style, state) }) as CSSProperties,
     children: (state) => (
       <RootProvider handle={handle} state={state} titles={titles} setTitle={setTitle}>
         {children}
@@ -216,14 +223,14 @@ export function SplitView({
 }
 
 function RootProvider({ handle, state, titles, setTitle, children }: RootContext & { children: ReactNode }) {
-  const { sizeClass, collapsed, columns, sidebarOpen, sidebarBehavior, value, compactColumn, canGoBack, columnWidths, supplementaryOpen } = state;
+  const { sizeClass, collapsed, columns, sidebarOpen, sidebarBehavior, value, compactColumn, canGoBack, columnWidths, supplementaryOpen, sidebarTabs } = state;
   const key = columns.join();
   const ctx = useMemo<RootContext>(() => ({
     handle,
-    state: { sizeClass, collapsed, columns: key ? (key.split(',') as SplitViewColumn[]) : [], sidebarOpen, sidebarBehavior, value, compactColumn, canGoBack, columnWidths, supplementaryOpen },
+    state: { sizeClass, collapsed, columns: key ? (key.split(',') as SplitViewColumn[]) : [], sidebarOpen, sidebarBehavior, value, compactColumn, canGoBack, columnWidths, supplementaryOpen, sidebarTabs },
     titles,
     setTitle,
-  }), [handle, sizeClass, collapsed, key, sidebarOpen, sidebarBehavior, value, compactColumn, canGoBack, columnWidths, supplementaryOpen, titles, setTitle]);
+  }), [handle, sizeClass, collapsed, key, sidebarOpen, sidebarBehavior, value, compactColumn, canGoBack, columnWidths, supplementaryOpen, sidebarTabs, titles, setTitle]);
   // The view's size class is the scope of everything in it, popups included (`presentation="auto"`).
   return (
     <Ctx.Provider value={ctx}>
@@ -285,12 +292,12 @@ const DIM = cn(
   'group-data-swiping/column:transition-none group-data-swiping/column:group-data-behind/column:opacity-[calc(0.1_*_(1_-_var(--stack-progress)))]',
 );
 
-function ColumnPart({ column, width, minWidth, maxWidth, resizable, children, className, ...props }: SplitViewColumnProps & { column: SplitViewColumn }) {
+function ColumnPart({ column, width, minWidth, maxWidth, resizable, tabs = false, children, className, ...props }: SplitViewColumnProps & { column: SplitViewColumn; tabs?: boolean }) {
   const { handle, state, titles, setTitle } = useRoot(`SplitView${column[0].toUpperCase()}${column.slice(1)}`);
   const d = SPLIT_VIEW_COLUMN_DEFAULTS[column];
   const w = width ?? d.width, min = minWidth ?? d.minWidth, max = maxWidth ?? d.maxWidth, res = resizable ?? d.resizable;
   const { register } = handle.api.internal;
-  useLayoutEffect(() => { register(column, { width: w, minWidth: min, maxWidth: max, resizable: res }); }, [register, column, w, min, max, res]);
+  useLayoutEffect(() => { register(column, { width: w, minWidth: min, maxWidth: max, resizable: res, tabs }); }, [register, column, w, min, max, res, tabs]);
   useLayoutEffect(() => () => register(column, null), [register, column]);
 
   // The column is the parent of a NavigationStack at its root (and of a SplitViewHeader): collapsed, the way back
@@ -317,9 +324,96 @@ function ColumnPart({ column, width, minWidth, maxWidth, resizable, children, cl
   return <ColumnCtx.Provider value={column}>{el}</ColumnCtx.Provider>;
 }
 
+export interface SplitViewSidebarProps extends SplitViewColumnProps {
+  /** What the sidebar becomes in a compact split view. `stack` (default): the compact stack's first page, so picking
+   *  an item pushes the column after it (Mail, Settings). `tabs`: the iOS tab bar, pinned over the bottom of the other
+   *  columns (Music, Podcasts): its `tab` items and `tab` sections are the tabs, and picking one selects it, as at
+   *  any other width, and goes back to the first page of the stack beside it. The columns are the same elements at
+   *  every size, so a NavigationStack in the detail (with `resetKey={value.sidebar}`) stays mounted. */
+  compactPresentation?: 'stack' | 'tabs';
+}
+
 /** Primary column: navigation (mailboxes, folders, settings sections). */
-export function SplitViewSidebar(props: SplitViewColumnProps) {
-  return <ColumnPart column="sidebar" aria-label="Sidebar" {...props} />;
+export function SplitViewSidebar({ compactPresentation = 'stack', children, ...props }: SplitViewSidebarProps) {
+  const tabs = compactPresentation === 'tabs';
+  const [entries, setEntries] = useState<ReadonlyMap<string, { current: TabEntry | null }>>(() => new Map());
+  const registry = useMemo<TabRegistry | null>(() => (tabs ? {
+    set: (key, entry) => setEntries((m) => {
+      const next = new Map(m);
+      if (entry) next.set(key, entry); else next.delete(key);
+      return next;
+    }),
+  } : null), [tabs]);
+  return (
+    <>
+      <TabRegistryContext.Provider value={registry}>
+        <ColumnPart column="sidebar" aria-label="Sidebar" tabs={tabs} {...props}>{children}</ColumnPart>
+      </TabRegistryContext.Provider>
+      {tabs ? <SidebarTabBar entries={entries} label={props['aria-label'] ?? 'Sidebar'} /> : null}
+    </>
+  );
+}
+
+/* ── The sidebar as a tab bar (compact, `compactPresentation="tabs"`) ──
+   The tabs are the sidebar's own items and sections that say `tab`, in the order they appear in it: an item is a
+   tab for its value; a section with a `value` is one tab (UIKit's tab group) that is current while any item in it
+   is. They register here as they render; the bar is the kit's Tabs `bar`. */
+type TabEntry =
+  | { kind: 'tab'; value: string; title: ReactNode; icon: ReactNode; disabled?: boolean; el: () => Element | null }
+  | { kind: 'member'; value: string; group: string };
+/** Each entry is the latest render's (a ref), so a title or icon that changes shows without registering again. */
+interface TabRegistry { set: (key: string, entry: { current: TabEntry | null } | null) => void }
+const TabRegistryContext = createContext<TabRegistry | null>(null);
+/** The `tab` section an item is in: its value, for the tab bar to call the section current. */
+const TabGroupContext = createContext<string | null>(null);
+
+/** Registers a tab (or a member of a tab group) with the sidebar's tab bar while it is rendered. */
+function useTabEntry(entry: TabEntry | null) {
+  const registry = useContext(TabRegistryContext);
+  const key = useId();
+  const set = registry?.set;
+  const sig = entry ? JSON.stringify([entry.kind, entry.value, entry.kind === 'member' ? entry.group : entry.disabled]) : '';
+  const latest = useRef(entry);
+  latest.current = entry;
+  useLayoutEffect(() => {
+    if (!set || !latest.current) return undefined;
+    set(key, latest);
+    return () => set(key, null);
+    // Re-registers when what identifies it changes; its title and icon are read when the bar renders.
+  }, [set, key, sig]);
+  return !!registry;
+}
+
+type TabItem = Extract<TabEntry, { kind: 'tab' }>;
+type TabMember = Extract<TabEntry, { kind: 'member' }>;
+
+function SidebarTabBar({ entries, label }: { entries: ReadonlyMap<string, { current: TabEntry | null }>; label: string }) {
+  const { handle, state } = useRoot('SplitViewSidebar');
+  if (!state.sidebarTabs) return null;
+  const all = [...entries.values()].map((e) => e.current).filter((e): e is TabEntry => e != null);
+  // In the sidebar's order, once per value (an item can show in two sections).
+  const tabs = all.filter((e): e is TabItem => e.kind === 'tab')
+    .sort((a, b) => {
+      const x = a.el(), y = b.el();
+      return x && y && x !== y ? (x.compareDocumentPosition(y) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1) : 0;
+    })
+    .filter((t, i, list) => list.findIndex((u) => u.value === t.value) === i);
+  const selected = state.value.sidebar ?? null;
+  const group = all.find((e): e is TabMember => e.kind === 'member' && e.value === selected)?.group;
+  const current = selected == null ? null : tabs.some((t) => t.value === selected) ? selected : group ?? null;
+  return (
+    <Tabs variant="bar" value={current} activation="manual"
+      onValueChange={(value, details) => { if (value != null) handle.api.select('sidebar', value, { reason: 'item-press', event: details.event }); }}
+      className="absolute inset-x-0 bottom-0 z-60">
+      <TabsBar>
+        <TabsList aria-label={label}>
+          {tabs.map((t) => (
+            <TabsTab key={t.value} value={t.value} icon={t.icon} disabled={t.disabled}>{t.title}</TabsTab>
+          ))}
+        </TabsList>
+      </TabsBar>
+    </Tabs>
+  );
 }
 /** Middle column of a three-column split: the list whose selection drives the detail. */
 export function SplitViewSupplementary(props: SplitViewColumnProps) {
@@ -406,7 +500,12 @@ export interface SplitViewHeaderProps extends Omit<PartProps<'div', SplitViewHea
   largeTitleClassName?: string;
   /** No large title: the inline title (and the bar's hairline) fade in once the content scrolls. */
   showOnScroll?: boolean;
-  /** Leading items (`<SplitViewToggle/>`). Collapsed, the back button to the column before takes their place. */
+  /** iOS's scroll-edge appearance: the bar's hairline shows only once the pane's SplitViewContent has scrolled
+   *  under it, as a NavigationStackBar's surface does, so the bars of a window line up at rest. Default true;
+   *  `false` keeps the hairline at rest too (a column whose content doesn't scroll under the bar). A bar with no
+   *  SplitViewContent in its pane always draws it. */
+  scrollEdge?: boolean;
+  /** Leading items (`<SplitViewSidebarTrigger/>`). Collapsed, the back button to the column before takes their place. */
   leading?: ReactNode;
   trailing?: ReactNode;
   /** The back button's label; defaults to the previous column's title. */
@@ -433,7 +532,7 @@ function HeaderBack({ handle, row, title, label, align }: {
  *  to the column before. It is the same bar as NavigationStackBar, as one component: a column that pushes holds a
  *  NavigationStack, whose pages use NavigationStackBar's parts. */
 export function SplitViewHeader({
-  title, titleAlign = 'center', largeTitle, largeTitleTrailing, largeTitleClassName, showOnScroll, leading, trailing, backLabel,
+  title, titleAlign = 'center', largeTitle, largeTitleTrailing, largeTitleClassName, showOnScroll, scrollEdge = true, leading, trailing, backLabel,
   className, ref, ...props
 }: SplitViewHeaderProps) {
   const s = useRoot('SplitViewHeader');
@@ -465,7 +564,11 @@ export function SplitViewHeader({
   const header = usePart(s.handle, 'header', { value: paneKey, largeTitle: large, showOnScroll: !!showOnScroll }, {
     ...props,
     ref: setRow,
-    className: (h: SplitViewHeaderState) => cn('group/header relative z-30 flex h-toolbar shrink-0 items-center px-1.5', !h.fading && 'shadow-hairline-b', apply(className, h)),
+    className: (h: SplitViewHeaderState) => cn(
+      'group/header relative z-30 flex h-toolbar shrink-0 items-center px-1.5',
+      !h.fading && (!scrollEdge || !h.inContent || h.scrolled) && 'shadow-hairline-b',
+      apply(className, h),
+    ),
     children: (h: SplitViewHeaderState) => (
       <>
         <div className={cn('relative z-1 flex items-center', start && !back && !leading ? 'min-w-0' : 'min-w-[44px]')}>
@@ -477,7 +580,7 @@ export function SplitViewHeader({
           {title}
         </div>
         {h.fading ? <span aria-hidden="true" className={cn('pointer-events-none absolute inset-x-0 bottom-0 h-px bg-border', barTitleFade, !h.inline && barTitleHidden)} /> : null}
-        <div className="relative z-1 ml-auto flex items-center gap-0.5">{trailing}</div>
+        <div className="relative z-1 ms-auto flex items-center gap-0.5">{trailing}</div>
       </>
     ),
   }, 'div');
@@ -507,24 +610,36 @@ export function SplitViewContent({ children, className, ...props }: SplitViewCon
       <>
         {large ? <LargeTitle handle={handle} pane={key} spec={large} /> : null}
         {children}
+        {/* Room under a tab bar that covers the bottom (`--tabs-bar-h`: a Tabs bar, or this sidebar as one). */}
+        <div aria-hidden="true" className="h-(--tabs-bar-h) shrink-0" />
       </>
     ),
   }, 'div');
 }
 
-export type SplitViewToggleProps = Omit<PartProps<'button', { open: boolean }>, 'children'>;
+export type SplitViewSidebarTriggerProps = Omit<PartProps<'button', { open: boolean }>, 'children'> & {
+  /** The glyph. Default the 22px `sidebar` icon in the tint. */
+  children?: ReactNode;
+  /** A key that shows and hides the sidebar from anywhere (UI SDK's shortcut syntax: `"mod+alt+s"`), announced as the
+   *  button's `aria-keyshortcuts`. */
+  shortcut?: string;
+};
 
-/** Sidebar button (`aria-expanded`, `aria-controls`). Shown whenever there's a sidebar to open or close; gone
- *  when collapsed, where back takes over. */
-export function SplitViewToggle({ className, ...props }: SplitViewToggleProps) {
-  const { handle } = useRoot('SplitViewToggle');
-  return usePart(handle, 'toggle', {}, {
+/** The sidebar button (`aria-expanded`, `aria-controls`): shows and hides the sidebar. It is there whenever there's a
+ *  sidebar to open or close, and gone when collapsed, where back takes over. */
+export function SplitViewSidebarTrigger({ className, children, shortcut, ...props }: SplitViewSidebarTriggerProps) {
+  const { handle, state } = useRoot('SplitViewSidebarTrigger');
+  const hint = useShortcutHint(shortcut || 'a');
+  const usable = !state.collapsed && state.columns.includes('sidebar') && state.columns.length > 1;
+  useShortcut(shortcut, (event) => { if (usable) handle.api.toggleSidebar({ reason: 'shortcut', event }); });
+  return usePart(handle, 'sidebar-trigger', {}, {
     ...props,
+    ...(shortcut ? { 'aria-keyshortcuts': hint.ariaKeyshortcuts } : null),
     className: cx(cn(
       'bl-btn grid cursor-pointer place-items-center rounded-ctl border-0 bg-transparent px-2.5 py-2 text-primary outline-none',
       'transition-[background,scale] duration-150 hover:bg-secondary active:scale-[.94] focus-visible:ring-2 focus-visible:ring-ring',
     ), className),
-    children: <Icon name="sidebar" size={22} sw={1.9} />,
+    children: children ?? <Icon name="sidebar" size={22} sw={1.9} />,
   }, 'button');
 }
 
@@ -536,7 +651,7 @@ export type SplitViewItemTint = string | { background: string; foreground?: stri
  *  44px tall in a compact split view (touch). */
 export const splitViewItemVariants = cva(
   [
-    'bl-btn group/item relative flex w-full cursor-pointer items-center gap-3 border-0 text-left [font-family:inherit] text-subhead text-foreground outline-none',
+    'bl-btn group/item relative flex w-full cursor-pointer items-center gap-3 border-0 text-start [font-family:inherit] text-subhead text-foreground outline-none',
     'transition-[background-color,color] duration-150',
     'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset',
     'disabled:cursor-default disabled:opacity-45',
@@ -553,8 +668,9 @@ export const splitViewItemVariants = cva(
     compoundVariants: [
       { variant: 'pill', current: true, tinted: false, class: 'bg-primary text-primary-foreground' },
       { variant: 'pill', current: true, tinted: true, class: 'bg-(--split-item-tint) text-(--split-item-on-tint)' },
-      { variant: 'row', current: true, tinted: false, class: 'bg-primary/14' },
-      { variant: 'row', current: true, tinted: true, class: 'bg-(--split-item-tint)/14' },
+      // Over black a 14% wash is barely a step: dark doubles it, so the current row still reads.
+      { variant: 'row', current: true, tinted: false, class: 'bg-primary/14 dark:bg-primary/26' },
+      { variant: 'row', current: true, tinted: true, class: 'bg-(--split-item-tint)/14 dark:bg-(--split-item-tint)/26' },
     ],
     defaultVariants: { variant: 'pill', current: false, tinted: false },
   },
@@ -569,8 +685,9 @@ export interface SplitViewItemProps
   title?: ReactNode;
   /** The secondary line under the title. */
   description?: ReactNode;
-  /** The leading glyph, in the tint. */
-  icon?: ReactNode;
+  /** The leading glyph, in the tint: an `Icon` name (drawn at 21px; in a compact tab bar, the tab's 25px glyph that
+   *  thickens when selected) or any node. */
+  icon?: IconName | ReactNode;
   /** Trailing detail: a count, a time… */
   trailing?: ReactNode;
   /** Replaces the icon / title / description / trailing layout entirely. */
@@ -584,15 +701,23 @@ export interface SplitViewItemProps
   preview?: ReactNode;
   /** Can't be picked, and the arrow keys pass over it. */
   disabled?: boolean;
+  /** In a sidebar with `compactPresentation="tabs"`: this item is one of the compact tab bar's tabs (its `icon`
+   *  over its `title`). */
+  tab?: boolean;
 }
 
 /** A row bound to its column's value: pressing it selects `value` and shows the next column (a push while
  *  collapsed). `onClick` runs first; `event.preventDefault()` keeps it from selecting. */
 export function SplitViewItem({
-  value, title, description, icon, trailing, children, variant, tint, preview, disabled, className, style, ...props
+  value, title, description, icon, trailing, children, variant, tint, preview, disabled, tab, className, style, ref, ...props
 }: SplitViewItemProps) {
   const s = useRoot('SplitViewItem');
   const column = useContext(ColumnCtx) ?? 'supplementary';
+  // A tab of the sidebar's compact tab bar, or a member of the `tab` section it is in.
+  const own = useRef<HTMLButtonElement | null>(null);
+  const setRef = useMergedRef(own, ref);
+  const group = useContext(TabGroupContext);
+  useTabEntry(tab ? { kind: 'tab', value, title, icon, disabled, el: () => own.current } : group != null ? { kind: 'member', value, group } : null);
   const v = variant ?? (column === 'sidebar' ? 'pill' : 'row');
   const current = !s.state.collapsed && s.state.value[column] === value;
   const pushes = s.state.collapsed && s.state.columns.indexOf(column) < s.state.columns.length - 1;
@@ -603,9 +728,11 @@ export function SplitViewItem({
     '--split-item-on-tint': typeof tint === 'string' ? 'var(--primary-foreground)' : tint.foreground ?? 'var(--primary-foreground)',
   } : undefined;
   const on = current && v === 'pill';
+  const glyph = typeof icon === 'string' ? <Icon name={icon as IconName} size={21} /> : icon;
   const ink = (rest: string, onTint: string, onPrimary: string) => (on ? (tinted ? onTint : onPrimary) : rest);
   const part: PartProps<'button', SplitViewItemState> = {
     ...props,
+    ref: setRef,
     ...({ 'data-tinted': tinted || undefined } as object),
     className: cx(splitViewItemVariants({ variant: v, current, tinted }), className),
     style: tintVars ? (st: SplitViewItemState) => ({ ...tintVars, ...apply(style, st) }) : style,
@@ -613,7 +740,7 @@ export function SplitViewItem({
       <>
         {children ?? (
           <>
-            {icon ? <span className={cn('grid w-6 shrink-0 place-items-center', ink(tinted ? 'text-(--split-item-tint)' : 'text-primary', 'text-(--split-item-on-tint)', 'text-primary-foreground'))}>{icon}</span> : null}
+            {glyph ? <span className={cn('grid w-6 shrink-0 place-items-center', ink(tinted ? 'text-(--split-item-tint)' : 'text-primary', 'text-(--split-item-on-tint)', 'text-primary-foreground'))}>{glyph}</span> : null}
             <span className="min-w-0 flex-1">
               <span className="block truncate leading-[1.3]">{title}</span>
               {description ? <span className={cn('mt-px block truncate text-footnote', ink('text-muted-foreground', 'text-(--split-item-on-tint)/80', 'text-primary-foreground/80'))}>{description}</span> : null}
@@ -622,7 +749,7 @@ export function SplitViewItem({
             {pushes ? <Icon name="chev" size={14} sw={2.6} className={cn('shrink-0', ink('text-tertiary-foreground', 'text-(--split-item-on-tint)/70', 'text-primary-foreground/70'))} /> : null}
           </>
         )}
-        {v === 'row' ? <span aria-hidden="true" className="pointer-events-none absolute right-0 bottom-0 left-4 h-px bg-border" /> : null}
+        {v === 'row' ? <span aria-hidden="true" className="pointer-events-none absolute end-0 bottom-0 start-4 h-px bg-border" /> : null}
       </>
     ),
   };
@@ -661,25 +788,37 @@ export interface SplitViewSectionProps extends Omit<ComponentProps<'div'>, 'titl
   /** Default true. */
   defaultOpen?: boolean;
   onOpenChange?: (open: boolean, details: ChangeDetails) => void;
+  /** In a sidebar with `compactPresentation="tabs"`: the whole section is one tab of the compact tab bar (UIKit's tab
+   *  group, Music's Library), named by its `title`, with this `icon`. Picking it selects `value`; while any item in
+   *  the section is the selection, it is the current tab. */
+  tab?: boolean;
+  /** The section's tab: the value it selects. */
+  value?: string;
+  /** The section's tab: its glyph, an `Icon` name or a node. */
+  icon?: IconName | ReactNode;
 }
 /** A titled group of SplitViewItems in a column (`role="group"`, named by its label). A value may appear in more
  *  than one section; each copy draws current. */
 export function SplitViewSection({
-  title, variant = 'default', labelClassName, collapsible, open, defaultOpen = true, onOpenChange, children, ...props
+  title, variant = 'default', labelClassName, collapsible, open, defaultOpen = true, onOpenChange, tab, value, icon, children, ref, ...props
 }: SplitViewSectionProps) {
   const uid = useId();
+  const own = useRef<HTMLDivElement | null>(null);
+  const setRef = useMergedRef(own, ref);
+  const group = tab && value != null ? value : null;
+  useTabEntry(group != null ? { kind: 'tab', value: group, title, icon, el: () => own.current } : null);
   const labelCls = cn(SECTION_LABEL[variant], labelClassName);
-  const items = <div className="flex flex-col gap-px">{children}</div>;
+  const items = <div className="flex flex-col gap-px"><TabGroupContext.Provider value={group}>{children}</TabGroupContext.Provider></div>;
   return (
-    <div data-slot="split-view-section" role="group" aria-labelledby={title != null ? uid : undefined} {...props}>
+    <div ref={setRef} data-slot="split-view-section" role="group" aria-labelledby={title != null ? uid : undefined} {...props}>
       {collapsible && title != null ? (
         <SdkCollapsible open={open} defaultOpen={defaultOpen} onOpenChange={onOpenChange}>
           <SdkCollapsibleTrigger id={uid}
-            className={cn('bl-btn group/section flex w-full cursor-pointer items-center border-0 bg-transparent text-left [font-family:inherit] outline-none focus-visible:rounded-lg focus-visible:ring-2 focus-visible:ring-ring', labelCls)}>
+            className={cn('bl-btn group/section flex w-full cursor-pointer items-center border-0 bg-transparent text-start [font-family:inherit] outline-none focus-visible:rounded-lg focus-visible:ring-2 focus-visible:ring-ring', labelCls)}>
             {(state) => (
               <>
                 <span className="flex-1">{title}</span>
-                <Chevron direction={state.open ? 'down' : 'right'} size={variant === 'prominent' ? 18 : 14} strokeWidth={2.6} className="text-primary" />
+                <Chevron direction={state.open ? 'down' : 'right'} size={variant === 'prominent' ? 18 : 14} strokeWidth={2.6} className="text-primary rtl:-scale-x-100" />
               </>
             )}
           </SdkCollapsibleTrigger>

@@ -16,7 +16,7 @@ There is nothing to import. An element is a layer host while it has the `data-la
 
 ## Already done for you
 
-`BLProvider`'s root, a contained `Sheet`'s host (`data-slot="sheet-host"`, from `<Sheet contained>`) and `FloatingSheet`'s root are layer hosts, and every kit popup renders into the nearest `BLProvider` root (`useLayerHost()` returns it). So a dialog in a framed app covers the frame, not the page, as long as the frame is a `BLProvider`. A popup of UI SDK's that you render yourself: pass `container={useLayerHost()}`.
+`BLProvider`'s root and a contained `Sheet`'s host (`data-slot="sheet-host"`, from `<Sheet contained>`, which AdaptivePane's drawer and `FloatingSheet` render) are layer hosts, and every kit popup renders into the nearest `BLProvider` root (`useLayerHost()` returns it). So a dialog in a framed app covers the frame, not the page, as long as the frame is a `BLProvider`. A popup of UI SDK's that you render yourself: pass `container={useLayerHost()}`.
 
 ## What a host does
 

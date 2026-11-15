@@ -43,7 +43,7 @@ function CodeTheme() {
 
 Gotchas:
 
-- **A `ThemeScope` does not publish its appearance to this hook.** The scope sets a class and a `ThemeScopeContext`, but `useAppearance()` inside `<ThemeScope appearance="dark">` still returns the provider's value (or the `<html>` class). Only `AppearanceProvider` changes what `useAppearance` returns, as the demo shows. For a library that needs the scope's appearance, such as a diff or editor theme, wrap the subtree in an `AppearanceProvider` too, or use `useThemeScopeProps` below.
+- **A `ThemeScope` does not publish its appearance to this hook.** The scope sets a class and a context (`useThemeScope()` reads it), but `useAppearance()` inside `<ThemeScope appearance="dark">` still returns the provider's value (or the `<html>` class). Only `AppearanceProvider` changes what `useAppearance` returns, as the demo shows. For a library that needs the scope's appearance, such as a diff or editor theme, wrap the subtree in an `AppearanceProvider` too, or use `useThemeScopeProps` below.
 - **It never returns `'light'` by itself.** Without a provider, light is `undefined`: there is no detection of an `html.light` class or of `prefers-color-scheme`. Treat `undefined` as "the host's default", usually light.
 - **Server render.** The server snapshot is "no `dark` class", so the server render and the hydration render return `undefined` (or the provider's value) and a page that uses the `dark` class updates right after hydration. It observes only changes to the `class` attribute of `<html>`.
 
@@ -88,7 +88,7 @@ Gotchas:
 
 Whether the shared "chrome" (the navigation bar and the tab bar) is hidden. A scrolling screen hides both when you scroll down and brings them back when you scroll up, and everything that follows reads this one flag, wherever it is in the tree.
 
-- **Export:** public, together with `chromeStore` and `chromeOffset`. Registry item `theme`.
+- **Export:** public, from the package root. The store behind it, `chromeStore`, and `chromeOffset` come from its module: `@/lib/theme`, or `@brett_lamy/ui/lib/theme` on npm. Registry item `theme`.
 - **Needs:** nothing: it is a module-level store, not a context, so there is no provider to wrap. **Default:** `false`.
 
 ```ts

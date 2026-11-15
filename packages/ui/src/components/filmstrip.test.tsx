@@ -33,6 +33,14 @@ describe('Filmstrip', () => {
     expect(cells.map((c) => c.style.getPropertyValue('--frame'))).toEqual(['url("f1.png")', 'url("f3.png")', 'url("f5.png")', 'url("f7.png")', 'url("f9.png")']);
   });
 
+  it('stops shimmering when told the frames are not coming (loading={false}), and shimmers on request', () => {
+    const { rerender } = render(<Filmstrip frames={[]} loading={false} aspect={16 / 9} />);
+    expect(strip().hasAttribute('data-loading')).toBe(false);
+    expect(strip().children).toHaveLength(0);
+    rerender(<Filmstrip frames={[{ time: 0, src: 'a.png' }]} loading aspect={16 / 9} />);
+    expect(strip().hasAttribute('data-loading')).toBe(true);
+  });
+
   it('is decorative and passes its ref', () => {
     let el: HTMLDivElement | null = null;
     render(<Filmstrip frames={[]} ref={(node) => { el = node; }} />);

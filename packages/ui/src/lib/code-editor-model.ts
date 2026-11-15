@@ -9,7 +9,7 @@
 
    Everything that holds something per line can follow an edit (`LineEdit`) instead of starting over: the grid of a long
    line, the lexer's states and checkpoints, the token cache, the row counts. The document itself is in lib/code-document. */
-import type { CodeToken, CodeTokenType } from '@/lib/syntax';
+import { BUILTIN_TYPES, type CodeToken, type CodeTokenType } from '@/lib/syntax';
 
 export type { CodeToken, CodeTokenType } from '@/lib/syntax';
 
@@ -845,7 +845,9 @@ export function lexRange(text: string, from: number, to: number, state: LexState
           if (text.charCodeAt(next) === 0x28) type = 'function';
           else {
             const second = text.charCodeAt(i + 1);
-            if (c >= 0x41 && c <= 0x5a && second >= 0x61 && second <= 0x7a) type = 'type';
+            const capital = c >= 0x41 && c <= 0x5a;
+            // As lib/syntax labels types: a capitalized word, a lone capital (`T`) and the built-in type names.
+            if ((capital && ((second >= 0x61 && second <= 0x7a) || end - i === 1)) || (short && !member && BUILTIN_TYPES.has(word))) type = 'type';
           }
         }
         if (type !== 'plain') emit?.(i, end, type);

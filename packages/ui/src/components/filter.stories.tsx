@@ -56,6 +56,24 @@ export const AllKinds: Story = {
   args: { fields, defaultValue: many },
 };
 
+/** A narrow pane (320px, a phone's sidebar or a compact inspector): the chips wrap onto new lines, a long value
+    truncates inside its chip, and the bar's buttons stay on the row's grid. */
+export const Narrow: Story = {
+  render: (args) => (
+    <div className="w-[320px] rounded-panel shadow-hairline p-2">
+      <FilterBar {...args}>
+        <FilterToolbar>
+          <FilterMenu />
+          <FilterList />
+          <FilterMatch />
+          <FilterClear />
+        </FilterToolbar>
+      </FilterBar>
+    </div>
+  ),
+  args: { fields, defaultValue: many },
+};
+
 /** The Filter menu open: the searchable list of fields not yet filtered. Held open (`open`) for review, so a click
     elsewhere doesn't close it. */
 export const MenuOpen: Story = {

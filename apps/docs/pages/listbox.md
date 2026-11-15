@@ -15,12 +15,12 @@ import { Listbox, ListboxItem } from '@/components/ui/listbox'
 {% tab title="npm" %}
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 
-Import the stylesheet once at your app's entry, then the parts from the package root:
+Import the stylesheet once at your app's entry, then the parts from their module:
 
 ```tsx
 import '@brett_lamy/ui/styles.css'
 
-import { Listbox, ListboxItem } from '@brett_lamy/ui'
+import { Listbox, ListboxItem } from '@brett_lamy/ui/listbox'
 ```
 {% endtab %}
 {% endtabs %}
@@ -65,6 +65,16 @@ Options can be data too: `<Listbox items={['Reflection', 'Apex']} />` draws the 
 </Listbox>
 ```
 
+## Empty
+
+With no options (an empty `items`, or no children) the list shows its `emptyState` in its place, read the way every kit collection reads it ([EmptyState](https://blamy.github.io/ui/#/empty-state)): left out, a small "No options"; a string, the title; `null`, nothing; any other node, as is. It is a polite status, so a search that empties the list is announced.
+
+```tsx
+<Listbox aria-label="Files" emptyState={query ? 'No files match.' : 'No files yet.'}>
+  {files.map((f) => <ListboxItem key={f.path} value={f.path}>{f.name}</ListboxItem>)}
+</Listbox>
+```
+
 ## Lists of actions
 
 A Listbox always selects. For a list whose rows run something, use a [DropdownMenu](https://blamy.github.io/ui/#/dropdown-menu) or [CommandMenu](https://blamy.github.io/ui/#/command-menu); for a list that reports a press but keeps nothing selected, pass `value={null}` with `activation="manual"` and act in `onValueChange`. To open a row on Enter or a double click beside a selection, handle `onKeyDown` / `onDoubleClick` on the item.
@@ -77,7 +87,7 @@ UI SDK renders a `listbox` of `option`s with `aria-selected` and, with `multiple
 
 ### Listbox
 
-UI SDK's `Listbox` props, plus `variant`.
+UI SDK's `Listbox` props, plus `variant` and `emptyState`.
 
 | Prop | Default | Effect |
 | --- | --- | --- |
@@ -87,6 +97,7 @@ UI SDK's `Listbox` props, plus `variant`.
 | `activation` | `automatic` | `manual`: the arrows move without selecting. |
 | `deselectable` | `false` | A press on the selected option clears it. |
 | `items` | — | Options as data. |
+| `emptyState` | `"No options"` | Shown instead of the list while it has no options (see [Empty](#empty)). |
 | `orientation` / `loop` | `vertical` / — | Arrow-key direction and wrapping. |
 | `disabled` / `readOnly` / `required` / `name` | — | State and a hidden form input. |
 | `controller` | — | `createListboxController()`: drive it from outside. |
@@ -106,7 +117,7 @@ UI SDK's `Listbox` props, plus `variant`.
 
 ## Styling
 
-The list carries UI SDK's `listbox` slot (with our `data-variant`), options `listbox-item`, then `listbox-group`, `listbox-group-label` (the kit's menu section label, `sectionLabelVariants({ variant: 'menu' })`), `listbox-separator`. Options expose `data-highlighted` (the active option), `data-selected` and `data-disabled`; hover is `:hover`, a press `:active`, keyboard focus `:focus-visible`. The popup list scrolls past 320px (or the room its popup has, if less). `listboxVariants` and `listboxItemVariants` are the recipes; nest the list inside a `Card` or sheet, or restyle with `className` (for example `bg-muted` on a card-colored surface).
+The list carries UI SDK's `listbox` slot (with our `data-variant`), options `listbox-item`, then `listbox-group`, `listbox-group-label` (the kit's menu section label, `sectionLabelVariants({ variant: 'menu' })`), `listbox-separator`. An empty list is `data-slot="listbox-empty"` (with the list's variant look) around the empty state. Options expose `data-highlighted` (the active option), `data-selected` and `data-disabled`; hover is `:hover`, a press `:active`, keyboard focus `:focus-visible`. The popup list scrolls past 320px (or the room its popup has, if less). `listboxVariants` and `listboxItemVariants` are the recipes; nest the list inside a `Card` or sheet, or restyle with `className` (for example `bg-muted` on a card-colored surface).
 
 ## cva recipes
 

@@ -155,8 +155,9 @@ describe('InterfaceBuilder panes', () => {
     width = 800;
     await open();
     expect(builder().getAttribute('data-size-class')).toBe('medium');
-    // Closed at first below regular.
-    expect(host.querySelector('[aria-label="Inspectors"]')).toBeNull();
+    // Closed at first below regular (a closed drawer stays mounted, hidden, in its contained host).
+    const tabs = host.querySelector('[aria-label="Inspectors"]');
+    expect(!tabs || !!tabs.closest('[hidden]')).toBe(true);
     const toggle = button('Inspector');
     expect(toggle.getAttribute('aria-pressed')).toBe('false');
     await act(async () => toggle.click());

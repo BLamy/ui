@@ -23,8 +23,8 @@ describe('generate', () => {
     expect(tabs).toContain('<TabsPanel value="Garden" keepMounted');
     expect(tabs).toContain('value={tab} onValueChange={');
     expect(tabs).toContain('<GardenNav />');
-    expect(tabs).toContain("useSizeClass({ breakpoints: { medium: 700 }, initial: 'compact' })");
-    expect(tabs).toContain("tabSize1 === 'compact' ? 'bottom' : 'start'");
+    expect(tabs).toContain('<Tabs presentation="auto"');
+    expect(tabs).not.toContain('useSizeClass');
     expect(file(SAMPLE_DOC, 'scenes/GardenNav.tsx')).toContain('<NavStack root={<Garden />} />');
     const garden = file(SAMPLE_DOC, 'scenes/Garden.tsx');
     expect(garden).toContain('useScreen({');

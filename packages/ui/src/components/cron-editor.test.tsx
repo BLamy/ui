@@ -95,7 +95,8 @@ describe('CronEditor (raw expression)', () => {
     expect(cell('dayOfMonth').hasAttribute('data-invalid')).toBe(false);
     expect(runs()).toEqual([]);
     expect(document.querySelector('[data-slot=cron-editor-next]')?.textContent).toContain('Fix the expression to see when it runs.');
-    expect(description()).toBe('');
+    // No empty line under the fields while the expression is invalid.
+    expect(description()).toBeUndefined();
   });
 
   it('asks for five fields while fewer are typed, marking the missing ones', () => {

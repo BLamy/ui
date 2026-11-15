@@ -4,7 +4,7 @@ import { Dialog, DialogBackdrop, DialogBody, DialogClose, DialogContent, DialogD
 import { Progress } from '@/components/ui/progress';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle';
 import { FfmpegError, type Ffmpeg, type FfmpegProgress } from '@/lib/ffmpeg';
-import { formatFileSize } from '@ui-sdk/react/file-input';
+import { formatFileSize } from '@/lib/file-size';
 import { Icon } from '@/lib/icon';
 import { buildRender, type RenderContainer, type RenderMedia, type RenderPlan, type RenderQuality } from '@/lib/video-render';
 import { timelineDuration, type Timeline, type TimelineFormat } from '@/lib/video-timeline-model';
@@ -121,14 +121,14 @@ export function ExportDialog({ ffmpeg, engine, project, media }: { ffmpeg: Ffmpe
         <DialogBody className="flex flex-col gap-4 px-5 pb-5">
           {phase.at === 'setup' ? (
             <>
-              <ToggleGroup<RenderContainer> aria-label="Format" variant="filled" size="sm" deselectable={false} className="w-full"
+              <ToggleGroup<RenderContainer> aria-label="Format" variant="segmented" size="sm" deselectable={false} className="w-full"
                 value={[container]} onValueChange={([next]) => next && setContainer(next)}>
                 {CONTAINERS.map((c) => <ToggleGroupItem key={c.id} value={c.id} className="flex-1">{c.label}</ToggleGroupItem>)}
               </ToggleGroup>
               <p className="m-0 text-footnote text-muted-foreground">{CONTAINERS.find((c) => c.id === container)?.note}</p>
               <div className="grid grid-cols-[auto_1fr] items-center gap-x-4 gap-y-3">
                 <span className="text-footnote font-medium">Quality</span>
-                <ToggleGroup<RenderQuality> aria-label="Quality" variant="filled" size="sm" deselectable={false}
+                <ToggleGroup<RenderQuality> aria-label="Quality" variant="segmented" size="sm" deselectable={false}
                   value={[quality]} onValueChange={([next]) => next && setQuality(next)}>
                   <ToggleGroupItem value="low" className="flex-1">Smaller</ToggleGroupItem>
                   <ToggleGroupItem value="medium" className="flex-1">Balanced</ToggleGroupItem>
@@ -137,7 +137,7 @@ export function ExportDialog({ ffmpeg, engine, project, media }: { ffmpeg: Ffmpe
                 {!audioOnly ? (
                   <>
                     <span className="text-footnote font-medium">Size</span>
-                    <ToggleGroup aria-label="Size" variant="filled" size="sm" deselectable={false}
+                    <ToggleGroup aria-label="Size" variant="segmented" size="sm" deselectable={false}
                       value={[size]} onValueChange={([next]) => next && setSize(next)}>
                       {SIZES.map((s) => <ToggleGroupItem key={s.id} value={s.id} className="flex-1">{s.label}</ToggleGroupItem>)}
                     </ToggleGroup>

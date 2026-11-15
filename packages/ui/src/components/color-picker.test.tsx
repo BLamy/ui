@@ -3,7 +3,7 @@ import { act, cleanup, fireEvent, render, screen, within } from '@testing-librar
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { ComponentProps } from 'react';
 import {
-  ColorInput, ColorPicker, ColorPickerArea, ColorPickerChannelInput, ColorPickerContent, ColorPickerEyeDropper, ColorPickerField,
+  ColorInput, ColorPicker, ColorPickerArea, ColorPickerChannelInput, ColorPickerContent, ColorPickerEyeDropper, ColorPickerInputGroup,
   ColorPickerInput, ColorPickerSlider, ColorPickerSliderThumb, ColorPickerSwatch, ColorPickerSwatches, ColorPickerSwatchItem,
   ColorPickerTrigger, ColorSwatch, createColorPickerController,
 } from '@/components/ui/color-picker';
@@ -70,20 +70,27 @@ describe('ColorPicker', () => {
 });
 
 describe('ColorPickerTrigger and ColorPickerContent', () => {
-  it('shows the color in the trigger as hex, with the opacity once it is below 1', () => {
+  it('shows the same string in the trigger as in its text box, never a second notation', async () => {
     const view = render(popover());
     expect(screen.getByRole('button').textContent).toBe(VIOLET);
     expect(within(screen.getByRole('button')).getByRole('img').getAttribute('aria-label')).toMatch(/purple/);
     view.unmount();
-    render(popover({ defaultValue: 'hsla(262, 83%, 66%, 0.6)' }));
-    expect(screen.getByRole('button').textContent).toBe('#9560f099');
+    render(popover({ defaultValue: 'hsla(262, 83%, 66%, 0.6)', defaultOpen: true }));
+    await settle();
+    const input = screen.getByRole('textbox', { name: 'Color' }) as HTMLInputElement;
+    expect(screen.getByRole('button', { name: /^Accent/ }).textContent).toBe(input.value);
   });
 
-  it('shows the value in the picker\'s `format`, and opens from the root\'s `defaultOpen` with no Popover around it', async () => {
+  it('writes an edit in the picker\'s `format`, in the trigger too, and opens from the root\'s `defaultOpen` with no Popover around it', async () => {
     render(popover({ format: 'hsl', defaultOpen: true }));
     await settle();
-    expect(screen.getByRole('button', { name: /^Accent/ }).textContent).toMatch(/^hsl\(/);
     expect(screen.getByRole('dialog', { name: 'Accent' })).toBeTruthy();
+    const input = screen.getByRole('textbox', { name: 'Color' }) as HTMLInputElement;
+    fireEvent.change(input, { target: { value: 'red' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+    await settle();
+    expect(screen.getByRole('button', { name: /^Accent/ }).textContent).toMatch(/^hsl\(/);
+    expect(screen.getByRole('button', { name: /^Accent/ }).textContent).toBe(input.value);
   });
 
   it('names the trigger and the dialog after the picker, not its color', async () => {
@@ -518,20 +525,20 @@ describe('ColorPickerChannelInput', () => {
   });
 });
 
-describe('ColorPickerField', () => {
+describe('ColorPickerInputGroup', () => {
   it('edits the color of the ColorPicker around it', () => {
     const onValueChange = vi.fn();
     const { container } = render(
       <ColorPicker aria-label="Accent" defaultValue={VIOLET} onValueChange={onValueChange}>
-        <ColorPickerField size="sm">
+        <ColorPickerInputGroup size="sm">
           <ColorPickerSwatch />
           <ColorPickerInput />
-        </ColorPickerField>
+        </ColorPickerInputGroup>
       </ColorPicker>,
     );
     // One root: the group is a plain box inside the picker.
     expect(container.querySelectorAll('[data-slot=color-picker]')).toHaveLength(1);
-    expect(container.querySelector('[data-slot=color-picker-field]')?.getAttribute('role')).toBeNull();
+    expect(container.querySelector('[data-slot=color-picker-input-group]')?.getAttribute('role')).toBeNull();
     const input = screen.getByRole('textbox', { name: 'Color' }) as HTMLInputElement;
     typeText(input, '#30d158');
     fireEvent.keyDown(input, { key: 'Enter' });

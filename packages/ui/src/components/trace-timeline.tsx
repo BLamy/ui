@@ -1,10 +1,10 @@
 'use client';
 import {
-  Children, isValidElement, useCallback, useEffect, useImperativeHandle, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore,
-  type CSSProperties, type FocusEvent, type HTMLAttributes, type PointerEvent as ReactPointerEvent, type ReactElement, type ReactNode, type Ref,
+  createContext, useCallback, useContext, useEffect, useImperativeHandle, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore,
+  type CSSProperties, type FocusEvent, type HTMLAttributes, type PointerEvent as ReactPointerEvent, type ReactNode, type Ref,
 } from 'react';
 import { cva } from 'class-variance-authority';
-import { announce } from '@ui-sdk/core';
+import { announce, isRTL } from '@ui-sdk/core';
 import { usePart, usePrimitive } from '@ui-sdk/react/primitive';
 import { useAppearance } from '@/lib/theme';
 import {
@@ -33,7 +33,7 @@ import {
    y), so a host swaps `orientation` when its width crosses a threshold and nothing is lost:
 
      <TraceTimeline range={range} lanes={lanes} stops={stops} value={t} onValueChange={setT}
-       orientation={narrow ? 'vertical' : 'horizontal'} side="right" className={narrow ? 'inset-y-2' : undefined} />
+       orientation={narrow ? 'vertical' : 'horizontal'} side="end" className={narrow ? 'inset-y-2' : undefined} />
 
    Marks go on a canvas, at most one thing per device pixel per row, found by binary search over sorted arrays, so an hour
    with hundreds of thousands of marks costs what the pixels cost. Colours are the theme's tokens, read from its CSS
@@ -51,13 +51,13 @@ export const traceTimelineVariants = cva('font-sans touch-none select-none', {
       // A rail fills its positioned parent's height, 44px wide: move or size it with classes (`inset-y-2`, `w-14`).
       vertical: 'absolute top-0 bottom-0 z-80 w-11 cursor-pointer rounded-lg -outline-offset-2 [outline:2px_solid_transparent] focus-visible:[outline:2px_solid_var(--primary)]',
     },
-    side: { right: '', left: '' },
+    side: { end: '', start: '' },
   },
   compoundVariants: [
-    { orientation: 'vertical', side: 'right', className: 'right-0' },
-    { orientation: 'vertical', side: 'left', className: 'left-0' },
+    { orientation: 'vertical', side: 'end', className: 'end-0' },
+    { orientation: 'vertical', side: 'start', className: 'start-0' },
   ],
-  defaultVariants: { orientation: 'horizontal', side: 'right' },
+  defaultVariants: { orientation: 'horizontal', side: 'end' },
 });
 
 export type {
@@ -93,22 +93,89 @@ export interface TraceTimelinePreviewProps<K extends TraceKey = TraceKey> {
   children?: (time: number, stop: TraceStop<K> | null) => ReactNode;
 }
 
-/** Configures the preview card beside the pointer: put one inside a TraceTimeline. It renders nothing itself. */
-export function TraceTimelinePreview<K extends TraceKey = TraceKey>(props: TraceTimelinePreviewProps<K>): null {
-  void props;
-  return null;
+/** What the card beside the pointer shows and where, from the root, for the part that draws it. */
+interface CardState<K extends TraceKey> {
+  show: boolean;
+  spot: Spot<K> | null;
+  stop: TraceStop<K> | null;
+  title: string;
+  /** The stop's time, and how many more are in its cluster. */
+  meta: string | null;
+  speed: number | null;
+  vertical: boolean;
+  side: 'start' | 'end';
+  /** Its place: `--tt-card-x` / `--tt-card-y`. */
+  style: CSSProperties | undefined;
+  /** The widest it can be beside the rail, in px. */
+  room: number;
+  ref: Ref<HTMLDivElement>;
 }
 
-/** The TraceTimelinePreview among a timeline's children, if any. */
-function previewOf<K extends TraceKey>(children: ReactNode): TraceTimelinePreviewProps<K> {
-  const found = Children.toArray(children).find((c): c is ReactElement<TraceTimelinePreviewProps<K>> => isValidElement(c) && c.type === TraceTimelinePreview);
-  return found?.props ?? {};
+interface CardContextValue {
+  card: CardState<TraceKey>;
+  /** A TraceTimelinePreview says it's there (and whether it has a slot of its own); returns its leaving. */
+  register: (slot: boolean) => () => void;
+}
+
+const CardContext = createContext<CardContextValue | null>(null);
+
+/** The card: a stop's title, time and preview, or the time under the pointer; a slot of the host's on top. */
+function TraceCard<K extends TraceKey>({ card, lines, width, slot }: { card: CardState<K>; lines: number; width: number; slot?: TraceTimelinePreviewProps<K>['children'] }) {
+  const { show, spot, stop } = card;
+  if (!show || !spot) return null;
+  return (
+    <div
+      ref={card.ref}
+      data-slot="trace-timeline-card"
+      data-speed={card.speed ?? undefined}
+      style={{ ...card.style, '--tt-lines': lines, '--tt-card-w': `${Math.min(width, card.room)}px` } as CSSProperties}
+      className={cn(
+        'pointer-events-none absolute top-(--tt-card-y) z-10 box-border w-max max-w-(--tt-card-w) min-w-[160px] px-[13px] py-[9px] motion-reduce:transition-none',
+        waveCard,
+        card.vertical
+          ? cn(
+            'transition-[top,inset-inline-start,inset-inline-end] duration-spring-snappy ease-spring-snappy',
+            // It grows out of the rail: from the inner side's edge.
+            card.side === 'start' ? 'start-(--tt-card-x) origin-left rtl:origin-right' : 'end-(--tt-card-x) origin-right rtl:origin-left',
+          )
+          : 'left-(--tt-card-x) origin-bottom',
+      )}
+    >
+      {slot ? <div data-slot="trace-timeline-preview" className="mb-[6px] empty:hidden">{slot(spot.time, stop)}</div> : null}
+      <div className="flex items-start gap-2">
+        <div className="min-w-0 flex-1 truncate text-footnote leading-[18px] font-semibold text-foreground">{card.title}</div>
+        {stop?.trailing}
+      </div>
+      {card.meta != null ? <div className="text-caption leading-[16px] text-muted-foreground tabular-nums">{card.meta}</div> : null}
+      {stop?.preview != null
+        ? <div className="mt-[2px] line-clamp-(--tt-lines) text-caption leading-[16px] text-pretty text-muted-foreground">{stop.preview}</div>
+        : null}
+      {spot.lane ? <div className="text-caption leading-[16px] text-muted-foreground">{spot.lane}</div> : null}
+      {card.speed != null ? (
+        <div data-slot="trace-timeline-speed" className="mt-[3px] text-caption leading-[16px] font-medium text-primary">
+          {TRACE_SCRUB_SPEEDS[card.speed].label}{card.speed === 0 ? ' · pull away to slow' : ''}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+/** The card beside the pointer, drawn where it's placed inside a TraceTimeline (which places it beside the rail or over
+ *  the strip): a stop's title, time and preview, with a slot of your own on top. Without one, the timeline draws the
+ *  card itself with two lines of preview. */
+export function TraceTimelinePreview<K extends TraceKey = TraceKey>({ lines = 2, width = 260, children }: TraceTimelinePreviewProps<K>) {
+  const context = useContext(CardContext);
+  const register = context?.register;
+  const slot = !!children;
+  useLayoutEffect(() => register?.(slot), [register, slot]);
+  if (!context) throw new Error('TraceTimelinePreview must be inside a TraceTimeline');
+  return <TraceCard<K> card={context.card as CardState<K>} lines={lines} width={width} slot={children} />;
 }
 
 export type TraceFetchActivity = (laneKey: string, edges: Float64Array, signal: AbortSignal) => Promise<readonly TraceActivity[]> | readonly TraceActivity[];
 
 export interface TraceTimelineProps<K extends TraceKey = TraceKey> extends Omit<HTMLAttributes<HTMLDivElement>, 'children' | 'defaultValue'> {
-  /** A `TraceTimelinePreview`, to configure the preview card. */
+  /** A `TraceTimelinePreview`, for a card of your own: more lines, a wider card, a thumbnail on top. */
   children?: ReactNode;
   /** The whole timeline, on the shared clock. */
   range: TraceRange;
@@ -135,11 +202,12 @@ export interface TraceTimelineProps<K extends TraceKey = TraceKey> extends Omit<
   onViewChange?: (view: TraceRange, details: TraceViewChangeDetails) => void;
   /** `horizontal` is the strip, `vertical` the rail. */
   orientation?: 'horizontal' | 'vertical';
-  /** Rail: the edge it sits on. Its stops and card are on the inner side. Place and size the rail itself with classes
-   *  (`inset-y-2`, `w-14`): it fills its positioned parent's height and is 44px wide. */
-  side?: 'left' | 'right';
+  /** Rail: the edge it sits on, `end` (default) or `start`, as IndexBar's. Its stops and card are on the inner side.
+   *  Place and size the rail itself with classes (`inset-y-2`, `w-14`): it fills its positioned parent's height and is
+   *  44px wide. */
+  side?: 'start' | 'end';
   /** Rail: publish how far list rows run under it as `--bl-index-bar-inset` on its parent, as IndexBar does, so ListRows
-   *  beside it keep their trailing accessories clear of it (right side only). Default true. */
+   *  beside it keep their trailing accessories clear of it (`end` side only). Default true. */
   insetContent?: boolean;
   /** The lane in focus (a single lane always is). A press on a lane's row focuses it (`item-press`), and so does
    *  Alt+↑ / Alt+↓ (`list-navigation`). */
@@ -198,7 +266,7 @@ const TOKENS = {
   card: 'text-card',
   warning: 'text-warning',
   success: 'text-success',
-  error: 'text-destructive',
+  destructive: 'text-destructive',
   chart1: 'text-chart-1',
   chart2: 'text-chart-2',
   chart3: 'text-chart-3',
@@ -209,10 +277,10 @@ type TokenName = keyof typeof TOKENS;
 const TOKEN_NAMES = Object.keys(TOKENS) as TokenName[];
 
 const TONE_DASH: Record<Exclude<TraceTone, 'default'>, string> = {
-  info: 'bg-primary',
+  muted: 'bg-tertiary-foreground',
   success: 'bg-success',
   warning: 'bg-warning',
-  error: 'bg-destructive',
+  destructive: 'bg-destructive',
 };
 
 function readTokens(holder: HTMLElement): Record<TokenName, string> {
@@ -227,7 +295,7 @@ function readTokens(holder: HTMLElement): Record<TokenName, string> {
 function toColors(t: Record<TokenName, string>): TraceColors {
   return {
     foreground: t.foreground, muted: t.muted, faint: t.faint, border: t.border, primary: t.primary, background: t.background,
-    surface: t.surface, ruler: t.ruler, card: t.card, warning: t.warning, success: t.success, error: t.error,
+    surface: t.surface, ruler: t.ruler, card: t.card, warning: t.warning, success: t.success, destructive: t.destructive,
     chart: [t.chart1, t.chart2, t.chart3, t.chart4, t.chart5],
   };
 }
@@ -303,16 +371,28 @@ const ACTIVITY_PX = 2;
 export function TraceTimeline<K extends TraceKey = TraceKey>({
   range, axis: axisProp, lanes: lanesProp = NO_LANES, requests = NO_REQUESTS, stops = NO_STOPS as Array<TraceStop<K>>,
   value, defaultValue, onValueChange, onValueCommit, view: viewProp, defaultView, onViewChange,
-  orientation = 'horizontal', side = 'right', insetContent = true, children,
+  orientation = 'horizontal', side = 'end', insetContent = true, children,
   focusedLane, defaultFocusedLane, onFocusedLaneChange, selectedThread, defaultSelectedThread, onSelectedThreadChange,
   selectedRequest, defaultSelectedRequest, onSelectedRequestChange,
   fetchActivity, activityDebounce = 60, step, minSpan = TRACE_MIN_SPAN, formatTime = formatTraceTime,
-  gutter = TRACE_GUTTER, requestsLabel = 'requests', stopsLabel = 'stops',
+  gutter = TRACE_GUTTER, requestsLabel = 'Requests', stopsLabel = 'Stops',
   'aria-label': ariaLabel, onDraw, ref, className, style, onBlur, onPointerMove, onPointerLeave, ...rest
 }: TraceTimelineProps<K>) {
   const vertical = orientation === 'vertical';
-  const { children: renderPreview, lines: previewLines = 2, width: previewWidth = 260 } = previewOf<K>(children);
   const rootRef = useRef<HTMLDivElement>(null);
+  // The edge a rail is on, on the page: `side` in the root's text direction, for the canvas and the pointer's maths.
+  const [rtl, setRtl] = useState(false);
+  // Read once a rail is on the page: the text direction of a page or panel doesn't change under a mounted timeline.
+  useLayoutEffect(() => {
+    if (rootRef.current && vertical) setRtl(isRTL(rootRef.current));
+  }, [vertical]);
+  const edge: 'left' | 'right' = (side === 'end') !== rtl ? 'right' : 'left';
+  // A TraceTimelinePreview among the children draws the card; without one the root does.
+  const [previewPart, setPreviewPart] = useState<{ slot: boolean } | null>(null);
+  const registerPreview = useCallback((slot: boolean) => {
+    setPreviewPart({ slot });
+    return () => setPreviewPart(null);
+  }, []);
   const dataCanvas = useRef<HTMLCanvasElement>(null);
   const overlayCanvas = useRef<HTMLCanvasElement>(null);
   const tokenHolder = useRef<HTMLSpanElement>(null);
@@ -400,7 +480,7 @@ export function TraceTimeline<K extends TraceKey = TraceKey>({
     return out;
   };
   const requestGroups = useMemo(
-    () => (theme ? groupRequests(requests, axis, (r) => (r.color ? colorOf(r.color) : r.tone ? toneColor(theme.colors, r.tone) : theme.colors.chart[0])) : []),
+    () => (theme ? groupRequests(requests, axis, (r) => (r.tint ? colorOf(r.tint) : r.tone ? toneColor(theme.colors, r.tone) : theme.colors.chart[0])) : []),
     // colorOf only reads refs.
     [requests, axis, theme],
   );
@@ -461,7 +541,7 @@ export function TraceTimeline<K extends TraceKey = TraceKey>({
     const el = rootRef.current;
     if (!el || !vertical) return undefined;
     const bound = bindRowInset(el, {
-      enabled: () => insetOptions.current.insetContent && insetOptions.current.side === 'right',
+      enabled: () => insetOptions.current.insetContent && insetOptions.current.side === 'end',
       fallback: () => insetOptions.current.railWidth,
       ignoreOwnChanges: true,
     });
@@ -537,7 +617,7 @@ export function TraceTimeline<K extends TraceKey = TraceKey>({
     const ph = Math.round(size.height * dpr);
     if (canvas.width !== pw) canvas.width = pw;
     if (canvas.height !== ph) canvas.height = ph;
-    return { ctx, dpr, vertical, side, width: size.width, height: size.height, start, length, columns: Math.max(1, Math.round(length * dpr)), axis, win, colors: theme.colors, font: theme.font };
+    return { ctx, dpr, vertical, edge, width: size.width, height: size.height, start, length, columns: Math.max(1, Math.round(length * dpr)), axis, win, colors: theme.colors, font: theme.font };
   };
   const paintData = () => {
     const f = frameFor(dataCanvas.current);
@@ -572,10 +652,10 @@ export function TraceTimeline<K extends TraceKey = TraceKey>({
   // These run in the same commit as the DOM dashes and pill, so the canvas and they can't disagree on screen.
   useLayoutEffect(() => {
     painters.current.paintData();
-  }, [theme, size, vertical, side, start, length, axis, win, rows, lanes, requestGroups, marks, focusedKey, selectedThreadKey, selectedRequestKey, activityVersion, requestsLabel, stopsLabel]);
+  }, [theme, size, vertical, edge, start, length, axis, win, rows, lanes, requestGroups, marks, focusedKey, selectedThreadKey, selectedRequestKey, activityVersion, requestsLabel, stopsLabel]);
   useLayoutEffect(() => {
     painters.current.paintOverlay();
-  }, [theme, size, vertical, side, start, length, axis, win, rows, time, hover]);
+  }, [theme, size, vertical, edge, start, length, axis, win, rows, time, hover]);
 
   // A view can be panned away from the playhead, but when the playhead itself moves out of the view (playing, stepping,
   // a key), the view goes to it. A scrub handles that itself.
@@ -611,7 +691,7 @@ export function TraceTimeline<K extends TraceKey = TraceKey>({
 
   const rect = () => (rootRef.current as HTMLElement).getBoundingClientRect();
   const alongOf = (r: DOMRect, x: number, y: number) => (vertical ? y - r.top : x - r.left - start);
-  const acrossOf = (r: DOMRect, x: number, y: number) => (vertical ? (side === 'right' ? r.right - x : x - r.left) : y - r.top);
+  const acrossOf = (r: DOMRect, x: number, y: number) => (vertical ? (edge === 'right' ? r.right - x : x - r.left) : y - r.top);
   const pullOf = (r: DOMRect, x: number, y: number) => (vertical ? Math.max(0, acrossOf(r, x, y) - railWidth) : 0);
   const scrubContext = (snap: boolean) => ({ axis, win: winNow.current, length, marks: snap ? marks : NO_MARKS });
   const alongOfFraction = (fraction: number) => ((fraction - winNow.current.from) / (winNow.current.to - winNow.current.from)) * length;
@@ -907,8 +987,8 @@ export function TraceTimeline<K extends TraceKey = TraceKey>({
   }), [handle.api]);
 
   /* ── The preview card ── */
-  const focusSpot: Spot<K> | null = drag ?? hover ?? (peek && vertical ? { along: playheadAlong, pull: 0, time, mark: peek.stop ? { stop: peek.stop, along: playheadAlong, count: 1, tone: peek.stop.tone ?? 'default', first: peek.stop.time, last: peek.stop.time, dim: false } : null } : null);
-  const showCard = !!focusSpot && (vertical || !!renderPreview || !!focusSpot.mark);
+  const focusSpot: Spot<K> | null = drag ?? hover ?? (peek && vertical ? { along: playheadAlong, pull: 0, time, mark: peek.stop ? { stop: peek.stop, along: playheadAlong, count: 1, tone: peek.stop.tone ?? 'default', first: peek.stop.time, last: peek.stop.time, disabled: false } : null } : null);
+  const showCard = !!focusSpot && (vertical || !!previewPart?.slot || !!focusSpot.mark);
   const cardStop = focusSpot?.mark?.stop ?? null;
   const [cardSize, setCardSize] = useState({ width: 200, height: 56 });
   useLayoutEffect(() => {
@@ -950,6 +1030,21 @@ export function TraceTimeline<K extends TraceKey = TraceKey>({
   // The card says the time; the pill would only sit under it.
   const pillHidden = showCard && !!focusSpot && Math.abs(focusSpot.along - playheadAlong) < cardSize.height / 2 + 12 && focusSpot.pull < 40;
 
+  const card: CardState<K> = {
+    show: showCard,
+    spot: focusSpot,
+    stop: cardStop,
+    title: cardTitle,
+    meta: cardStop ? `${formatTime(cardStop.time, resolutionHere)}${focusSpot?.mark && focusSpot.mark.count > 1 ? ` · ${focusSpot.mark.count - 1} more here` : ''}` : null,
+    speed,
+    vertical,
+    side,
+    style: cardStyle,
+    room: Math.max(160, size.hostWidth - railWidth - 16),
+    ref: cardRef,
+  };
+  const cardContext: CardContextValue = { card: card as CardState<TraceKey>, register: registerPreview };
+
   const sideAttr = { 'data-side': vertical ? side : undefined };
   const root = usePart(handle, 'root', {}, {
     'aria-label': ariaLabel ?? (rest['aria-labelledby'] ? undefined : 'Timeline'),
@@ -970,8 +1065,6 @@ export function TraceTimeline<K extends TraceKey = TraceKey>({
       '--tt-width': railWidth + 'px',
       '--tt-height': stripHeight(lanes, { requests: hasRequests, stops: hasStops }) + 'px',
       '--tt-dash': dashInset + 'px',
-      '--tt-lines': previewLines,
-      '--tt-card-w': Math.min(previewWidth, Math.max(160, size.hostWidth - railWidth - 16)) + 'px',
       ...style,
     } as CSSProperties,
     children: (
@@ -987,18 +1080,22 @@ export function TraceTimeline<K extends TraceKey = TraceKey>({
         const hot = hotMark === mark;
         const current = currentMark === mark;
         const f = hot || current ? 1 : focal == null ? 0 : traceSwell(mark.along - focal);
+        const tint = mark.stop.tint;
         return (
           <span
             key={String(mark.stop.key ?? mark.stop.time)}
             data-slot="trace-timeline-stop"
             data-tone={mark.tone}
             data-count={mark.count}
-            style={{ '--y': `${mark.along - 1}px`, '--len': `${waveDashLength(f, mark.stop.level ?? 1)}px`, '--f': f } as CSSProperties}
+            // As IndexBar's options say it: the stop you're at, and one with nothing to jump to.
+            data-current={current ? '' : undefined}
+            data-disabled={mark.disabled ? '' : undefined}
+            style={{ '--y': `${mark.along - 1}px`, '--len': `${waveDashLength(f, mark.stop.level ?? 1)}px`, '--f': f, ...(tint && !hot ? { backgroundColor: tint } : {}) } as CSSProperties}
             className={cn(
               'pointer-events-none absolute top-(--y)', waveDash,
-              side === 'left' ? 'left-(--tt-dash)' : 'right-(--tt-dash)',
+              side === 'start' ? 'start-(--tt-dash)' : 'end-(--tt-dash)',
               mark.tone !== 'default' ? TONE_DASH[mark.tone] : waveDashTone({ hot, current }),
-              mark.dim && !hot && 'opacity-55',
+              mark.disabled && !hot && 'opacity-55',
             )}
           />
         );
@@ -1012,48 +1109,16 @@ export function TraceTimeline<K extends TraceKey = TraceKey>({
           className={cn(
             'pointer-events-none absolute top-(--y) -translate-y-1/2 rounded-full bg-primary px-1.5 text-caption2 leading-[17px] font-semibold whitespace-nowrap text-primary-foreground tabular-nums shadow-[0_1px_4px_--alpha(black/24%)]',
             'transition-opacity duration-100 motion-reduce:transition-none data-hidden:opacity-0',
-            side === 'left' ? 'left-[calc(var(--tt-width)+3px)]' : 'right-[calc(var(--tt-width)+3px)]',
+            side === 'start' ? 'start-[calc(var(--tt-width)+3px)]' : 'end-[calc(var(--tt-width)+3px)]',
           )}
         >
           {timeText}
         </span>
       )}
-      {showCard && focusSpot ? (
-        <div
-          ref={cardRef}
-          data-slot="trace-timeline-card"
-          data-speed={speed ?? undefined}
-          style={cardStyle}
-          className={cn(
-            'pointer-events-none absolute top-(--tt-card-y) z-10 box-border w-max max-w-(--tt-card-w) min-w-[160px] px-[13px] py-[9px] motion-reduce:transition-none',
-            waveCard,
-            vertical
-              ? cn('transition-[top,left,right] duration-spring-snappy ease-spring-snappy', side === 'left' ? 'left-(--tt-card-x) origin-left' : 'right-(--tt-card-x) origin-right')
-              : 'left-(--tt-card-x) origin-bottom',
-          )}
-        >
-          {renderPreview ? <div data-slot="trace-timeline-preview" className="mb-[6px] empty:hidden">{renderPreview(focusSpot.time, cardStop)}</div> : null}
-          <div className="flex items-start gap-2">
-            <div className="min-w-0 flex-1 truncate text-footnote leading-[18px] font-semibold text-foreground">{cardTitle}</div>
-            {cardStop?.trailing}
-          </div>
-          {cardStop ? (
-            <div className="text-caption leading-[16px] text-muted-foreground tabular-nums">
-              {formatTime(cardStop.time, resolutionHere)}
-              {focusSpot.mark && focusSpot.mark.count > 1 ? ` · ${focusSpot.mark.count - 1} more here` : ''}
-            </div>
-          ) : null}
-          {cardStop?.preview != null
-            ? <div className="mt-[2px] line-clamp-(--tt-lines) text-caption leading-[16px] text-pretty text-muted-foreground">{cardStop.preview}</div>
-            : null}
-          {focusSpot.lane ? <div className="text-caption leading-[16px] text-muted-foreground">{focusSpot.lane}</div> : null}
-          {speed != null ? (
-            <div data-slot="trace-timeline-speed" className="mt-[3px] text-caption leading-[16px] font-medium text-primary">
-              {TRACE_SCRUB_SPEEDS[speed].label}{speed === 0 ? ' · pull away to slow' : ''}
-            </div>
-          ) : null}
-        </div>
-      ) : null}
+      <CardContext.Provider value={cardContext}>
+        {children}
+        {previewPart ? null : <TraceCard<K> card={card} lines={2} width={260} />}
+      </CardContext.Provider>
       </>
     ),
   }, 'div');

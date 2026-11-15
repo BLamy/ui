@@ -3,8 +3,9 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createRef, type ComponentProps } from 'react';
 import { act, cleanup, fireEvent, render, waitFor } from '@testing-library/react';
 import { Field, FieldDescription, FieldError, FieldLabel } from '@ui-sdk/react/field';
+import { Toolbar } from '@/components/ui/toolbar';
 import {
-  MarkdownEditor, looksLikeMarkdown, type MarkdownEditorHandle, type MarkdownEditorValueChangeDetails,
+  MarkdownEditor, MarkdownEditorToolbarButton, looksLikeMarkdown, type MarkdownEditorHandle, type MarkdownEditorValueChangeDetails,
 } from '@/components/ui/markdown-editor';
 import { BLProvider } from '@/lib/theme';
 
@@ -44,11 +45,11 @@ describe('MarkdownEditor', () => {
     expect(root.className).not.toContain('h-8');
   });
 
-  it('hands handleKeyDown the key first, and onFocus / onBlur the focus event', async () => {
+  it('hands handleKeyDown the key first, and onEditorFocus / onEditorBlur the focus event', async () => {
     const handleKeyDown = vi.fn(() => true);
     const onFocus = vi.fn();
     const onBlur = vi.fn();
-    const { ref } = await mount({ 'aria-label': 'Notes', handleKeyDown, onFocus, onBlur });
+    const { ref } = await mount({ 'aria-label': 'Notes', handleKeyDown, onEditorFocus: onFocus, onEditorBlur: onBlur });
     act(() => ref.current!.focus());
     await waitFor(() => expect(onFocus).toHaveBeenCalled());
     expect((onFocus.mock.calls[0] as unknown[])[0]).toBeInstanceOf(FocusEvent);
@@ -56,6 +57,37 @@ describe('MarkdownEditor', () => {
     expect(handleKeyDown).toHaveBeenCalled();
     act(() => ref.current!.blur());
     await waitFor(() => expect(onBlur).toHaveBeenCalled());
+  });
+
+  it('React onFocus goes to the root (it bubbles from the writing area)', async () => {
+    let target: EventTarget | null = null;
+    const onFocus = vi.fn((event: { currentTarget: EventTarget }) => { target = event.currentTarget; });
+    const { ref } = await mount({ 'aria-label': 'Notes', onFocus });
+    act(() => ref.current!.focus());
+    await waitFor(() => expect(onFocus).toHaveBeenCalled());
+    expect(target).toBe(document.querySelector('[data-slot=markdown-editor]'));
+  });
+
+  it('takes a toolbar of its own: buttons run their command, and a mark makes one a toggle', async () => {
+    const { ref } = await mount({
+      'aria-label': 'Notes',
+      defaultValue: 'plain words',
+      toolbar: (
+        <Toolbar aria-label="Formatting">
+          <MarkdownEditorToolbarButton command="toggleBold" mark="bold" aria-label="Bold">B</MarkdownEditorToolbarButton>
+        </Toolbar>
+      ),
+    });
+    const slot = document.querySelector('[data-slot=markdown-editor-toolbar]')!;
+    expect(slot.querySelector('[role=toolbar]')?.getAttribute('aria-label')).toBe('Formatting');
+    // Not docstream's built-in row as well.
+    expect(document.querySelector('.gb-toolbar')).toBeNull();
+    const bold = slot.querySelector<HTMLButtonElement>('button')!;
+    await waitFor(() => expect(bold.getAttribute('aria-pressed')).toBe('false'));
+    act(() => { ref.current!.editor!.commands.selectAll(); });
+    act(() => { fireEvent.click(bold); });
+    await waitFor(() => expect(ref.current!.getMarkdown()).toMatch(/\*\*plain words\*\*/));
+    await waitFor(() => expect(bold.getAttribute('aria-pressed')).toBe('true'));
   });
 
   it('uncontrolled: setMarkdown replaces the document, reports Markdown and submits it with the form', async () => {

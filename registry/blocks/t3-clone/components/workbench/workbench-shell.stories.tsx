@@ -24,9 +24,9 @@ import {
   WorkbenchTab,
   useOptionalWorkbenchShell,
 } from './workbench-shell';
-import { Conversation, ConversationEmpty, ConversationMessages, ConversationComposer, ConversationSuggestions, Suggestion, UserMessage, AssistantMessage, MessageMarkdown, WorkLog, ToolCall } from '@/components/ui/conversation';
+import { Conversation, ConversationEmpty, ConversationMessages, ConversationComposer, ConversationSuggestions, ConversationSuggestion, ConversationUserMessage, ConversationAssistantMessage, ConversationMarkdown, ConversationWorkLog, ConversationToolCall } from '@/components/ui/conversation';
 import { SettledBanner } from '../settled-banner';
-import { SidebarContent, SidebarFooter, SidebarHeader, SidebarItem, SidebarSearch, SidebarSection, SidebarWorkspace } from '@/components/ui/sidebar';
+import { SidebarContent, SidebarFooter, SidebarHeader, SidebarItem, SidebarSearch, SidebarSection, SidebarAccount } from '@/components/ui/sidebar';
 import { Icon } from '@/lib/icon';
 
 import { WorkbenchComposer } from './workbench-composer';
@@ -82,7 +82,7 @@ function ThreadNav({
       <SidebarHeader>
         <div className="flex items-center gap-1">
           <div className="min-w-0 flex-1">
-            <SidebarWorkspace title={brand} description={detail} />
+            <SidebarAccount title={brand} description={detail} />
           </div>
           <WorkbenchSidebarClose />
         </div>
@@ -160,12 +160,12 @@ function ShellDemo({
               <ConversationMessages threadKey={thread?.id}>
                 {thread?.messages.map((m) =>
                   m.role === 'user' ? (
-                    <UserMessage key={m.id}>{m.text}</UserMessage>
+                    <ConversationUserMessage key={m.id}>{m.text}</ConversationUserMessage>
                   ) : (
-                    <AssistantMessage key={m.id}>
-                      {m.summary ? <WorkLog summary={m.summary}>{m.steps?.map((s, i) => <ToolCall key={i} {...s} />)}</WorkLog> : null}
-                      <MessageMarkdown markdown={m.text} />
-                    </AssistantMessage>
+                    <ConversationAssistantMessage key={m.id}>
+                      {m.summary ? <ConversationWorkLog summary={m.summary}>{m.steps?.map((s, i) => <ConversationToolCall key={i} {...s} />)}</ConversationWorkLog> : null}
+                      <ConversationMarkdown markdown={m.text} />
+                    </ConversationAssistantMessage>
                   ),
                 )}
               </ConversationMessages>
@@ -177,7 +177,7 @@ function ShellDemo({
               </ConversationComposer>
               <ConversationSuggestions>
                 {SUGGESTIONS.map((s) => (
-                  <Suggestion key={s}>{s}</Suggestion>
+                  <ConversationSuggestion key={s}>{s}</ConversationSuggestion>
                 ))}
               </ConversationSuggestions>
             </Conversation>
@@ -281,11 +281,11 @@ function ChatOnlyDemo() {
               <ConversationMessages threadKey={t.id}>
                 {t.messages.map((m) =>
                   m.role === 'user' ? (
-                    <UserMessage key={m.id}>{m.text}</UserMessage>
+                    <ConversationUserMessage key={m.id}>{m.text}</ConversationUserMessage>
                   ) : (
-                    <AssistantMessage key={m.id}>
-                      <MessageMarkdown markdown={m.text} />
-                    </AssistantMessage>
+                    <ConversationAssistantMessage key={m.id}>
+                      <ConversationMarkdown markdown={m.text} />
+                    </ConversationAssistantMessage>
                   ),
                 )}
               </ConversationMessages>
@@ -316,13 +316,13 @@ export const ChatWithInspector: Story = {
           <WorkbenchContent>
             <Conversation>
               <ConversationMessages threadKey="inspect">
-                <UserMessage key="u">Fix the boot order so the shim installs before the first tap.</UserMessage>
-                <AssistantMessage key="a">
-                  <WorkLog summary="Worked for 42s" defaultOpen>
-                    {THREADS[1].messages[1].steps?.map((s, i) => <ToolCall key={i} {...s} />)}
-                  </WorkLog>
-                  <MessageMarkdown markdown="Done — the change is in the inspector." />
-                </AssistantMessage>
+                <ConversationUserMessage key="u">Fix the boot order so the shim installs before the first tap.</ConversationUserMessage>
+                <ConversationAssistantMessage key="a">
+                  <ConversationWorkLog summary="Worked for 42s" defaultOpen>
+                    {THREADS[1].messages[1].steps?.map((s, i) => <ConversationToolCall key={i} {...s} />)}
+                  </ConversationWorkLog>
+                  <ConversationMarkdown markdown="Done — the change is in the inspector." />
+                </ConversationAssistantMessage>
               </ConversationMessages>
               <ConversationComposer>
                 <WorkbenchComposer checkout={false} onSubmit={() => {}} />

@@ -18,12 +18,15 @@ import { Swap } from '@/components/ui/swap'
 {% tab title="npm" %}
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 
-Import the stylesheet once at your app's entry, then the parts from the package root:
+Import the stylesheet once at your app's entry, then the parts from their module:
 
 ```tsx
 import '@brett_lamy/ui/styles.css'
 
-import { springs, TextMorph, NumberMorph, Swap } from '@brett_lamy/ui'
+import { springs } from '@brett_lamy/ui/lib/motion'
+import { TextMorph } from '@brett_lamy/ui/text-morph'
+import { NumberMorph } from '@brett_lamy/ui/number-morph'
+import { Swap } from '@brett_lamy/ui/swap'
 ```
 {% endtab %}
 {% endtabs %}
@@ -137,7 +140,7 @@ The kit's motion comes from two engines and the panel slows both: framer-motion 
 | Component | Motion |
 | --- | --- |
 | `Button` | sinks on press (snappy); a string label morphs |
-| `Toggle`, `ToggleGroup` | press sink; a single-select `filled` group slides its card |
+| `Toggle`, `ToggleGroup` | press sink; a single-select `segmented` group slides its card |
 | `Segmented`, `Tabs` | the selection indicator slides and resizes (smooth) |
 | `TabsPanel` | directional enter / exit |
 | `Switch` | thumb springs across and stretches while pressed |

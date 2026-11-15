@@ -67,6 +67,13 @@ describe('ObjectTree', () => {
     expect(chevron('b')).toBeTruthy();
   });
 
+  it('caps a row\'s indent at a quarter of the row, over Tree\'s own logical indent', () => {
+    render(<ObjectTree aria-label="T" root={[leaf('a', 7)]} />);
+    const classes = label('a').className.split(/\s+/);
+    // One inline-start padding wins: the capped one. A physical padding would sit beside it and win in the stylesheet.
+    expect(classes.filter((c) => /^(ps|pl)-/.test(c))).toEqual(['ps-[min(calc(var(--tree-pad-x)+(var(--tree-level,1)-1)*var(--tree-indent)),25%)]']);
+  });
+
   it('takes one node as well as a list, and says when there is nothing', () => {
     const { unmount } = render(<ObjectTree aria-label="T" root={leaf('solo')} />);
     expect(rowText()).toEqual(['solo:1']);

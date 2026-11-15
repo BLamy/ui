@@ -1,6 +1,6 @@
 'use client';
 import { createContext, useContext, useId, useLayoutEffect, useRef, useState, type ComponentProps, type CSSProperties, type ReactNode } from 'react';
-import { formatColor, type Color } from '@ui-sdk/core/color';
+import { formatColor, parseColor, type Color } from '@ui-sdk/core/color';
 import {
   ColorPicker as SdkColorPicker,
   ColorPickerArea as SdkColorPickerArea,
@@ -33,7 +33,7 @@ import { cn, cx } from '@/lib/utils';
    same color as data for `@ui-sdk/core/color`). `space` picks the channels the parts edit ("hsv" by default, "hsl",
    "srgb", "oklch") and `format` how the value is written (hex by default). Every part inside edits that color:
    a ColorPickerArea (two channels at once), ColorPickerSliders (one channel), ColorPickerSwatches (presets), a
-   ColorPickerField holding a ColorPickerInput (any CSS color, typed) or ColorPickerChannelInputs (one channel as a
+   ColorPickerInputGroup holding a ColorPickerInput (any CSS color, typed) or ColorPickerChannelInputs (one channel as a
    number), a ColorPickerEyeDropper, and the ColorPickerSwatch that shows it. Thumbs take arrows, Shift+arrows,
    Page Up/Down and Home/End. The root also holds a popover's open state, so a trigger and a popup go straight in:
    <ColorPicker defaultValue="hsl(262 83% 66%)">
@@ -56,8 +56,6 @@ const ColorPickerStateContext = createContext<ColorPickerState | null>(null);
 interface ColorPickerName {
   labelledBy?: string;
   label?: string;
-  /** How the value is written, which the trigger shows it in. */
-  format?: ColorPickerProps['format'];
 }
 const ColorPickerNameContext = createContext<ColorPickerName>({});
 
@@ -76,7 +74,7 @@ export function ColorPicker({ children, ref, open, defaultOpen, onOpenChange, pr
     if (next !== labelledBy) setLabelledBy(next);
   });
   return (
-    <ColorPickerNameContext.Provider value={{ labelledBy, label: props['aria-label'], format: props.format }}>
+    <ColorPickerNameContext.Provider value={{ labelledBy, label: props['aria-label'] }}>
       <SdkColorPicker
         ref={(el: HTMLDivElement | null) => {
           root.current = el;
@@ -270,7 +268,7 @@ const fieldInput = cn(
   selectableText,
 );
 
-/** The color's text box, inside a ColorPickerField: any CSS color, read on Enter or when it loses focus (text that is
+/** The color's text box, inside a ColorPickerInputGroup: any CSS color, read on Enter or when it loses focus (text that is
     not a color goes back to the value, and Escape puts it back at once). It is named "Color" unless you name it, with
     `aria-label`, `aria-labelledby`, or a label pointed at its `id`. */
 export function ColorPickerInput({ className, ...props }: ComponentProps<typeof SdkColorPickerInput>) {
@@ -287,12 +285,17 @@ export function ColorPickerChannelInput({ className, ...props }: ComponentProps<
     <>
       <SdkColorPickerChannelInput
         className={cx(
-          [fieldInput, 'tabular-nums [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none'],
+          [
+            fieldInput,
+            'tabular-nums [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none',
+            // As wide as its digits, so the unit follows the number rather than the field's far end.
+            unit && 'w-[3.5ch] flex-none field-sizing-content min-w-[2ch] supports-[field-sizing:content]:w-auto',
+          ],
           className,
         )}
         {...props}
       />
-      {unit ? <span aria-hidden="true" className="shrink-0 text-muted-foreground">{unit}</span> : null}
+      {unit ? <span aria-hidden="true" className="shrink-0 ps-0.5 text-muted-foreground">{unit}</span> : null}
     </>
   );
 }
@@ -306,14 +309,14 @@ export function ColorPickerSwatch({ className, ...props }: ComponentProps<typeof
   return <SdkColorPickerSwatch className={cx(swatch, className)} {...props} />;
 }
 
-export interface ColorPickerFieldProps extends ComponentProps<'div'>, VariantProps<typeof fieldSurfaceVariants> {}
+export interface ColorPickerInputGroupProps extends ComponentProps<'div'>, VariantProps<typeof fieldSurfaceVariants> {}
 
 /** The kit's filled field box around a picker's ColorPickerSwatch, ColorPickerInput or ColorPickerChannelInputs (the
     picker holds the color, so it is a plain box). It dims with the picker. */
-export function ColorPickerField({ className, size, ...props }: ColorPickerFieldProps) {
+export function ColorPickerInputGroup({ className, size, ...props }: ColorPickerInputGroupProps) {
   return (
     <div
-      data-slot="color-picker-field"
+      data-slot="color-picker-input-group"
       data-size={size ?? 'default'}
       className={cn(fieldSurfaceVariants({ size }), 'w-full in-data-disabled:cursor-not-allowed in-data-disabled:opacity-50', className)}
       {...props}
@@ -379,17 +382,19 @@ export const colorPickerTriggerVariants = cva(
 );
 
 export type ColorPickerTriggerProps = Omit<ComponentProps<typeof PopoverTrigger>, 'children'> & VariantProps<typeof colorPickerTriggerVariants> & {
-  /** Show the value beside the swatch, in the picker's `format` (hex by default). Default: true. */
+  /** Show the value beside the swatch, as the picker's ColorPickerInput shows it. Default: true. */
   showValue?: boolean;
 };
 
-/** The popup's trigger: the picker's color and its value (in the picker's `format`; hex shows eight digits once
-    the opacity is below 1). */
+/** The popup's trigger: the picker's color and its value, written as the picker holds it (the string its
+    ColorPickerInput shows; once edited, in the picker's `format`, hex with eight digits below full opacity). */
 export function ColorPickerTrigger({ className, size, showValue = true, ...props }: ColorPickerTriggerProps) {
   const state = useContext(ColorPickerStateContext);
   const name = useContext(ColorPickerNameContext);
   const valueId = useId();
-  const text = state ? formatColor(state.color, name.format ?? 'hex') : '';
+  // The value as the picker holds it: the same string its ColorPickerInput shows, so one widget never shows a color in
+  // two notations (an edit writes it in the picker's `format`). A value it cannot read shows the color it fell back to.
+  const text = !state ? '' : parseColor(state.value) ? state.value : formatColor(state.color, 'hex');
   // Named by the field, then the color it shows ("Accent, " and the value).
   const named = name.labelledBy ? { 'aria-labelledby': `${name.labelledBy} ${valueId}` }
     : name.label ? { 'aria-label': `${name.label}, ${text}` } : {};
@@ -427,7 +432,7 @@ export function ColorPickerContent({
   const picker = useContext(ColorPickerNameContext);
   const byField = ariaLabel === undefined && !picker.label && picker.labelledBy;
   return (
-    <PopoverContent side={side} align={align} aria-labelledby={byField || undefined} className={cx('flex w-64 min-w-0 flex-col gap-3 p-3', className)} {...props}>
+    <PopoverContent side={side} align={align} aria-labelledby={byField || undefined} className={cx('flex w-64 min-w-(--anchor-width) flex-col gap-3 p-3', className)} {...props}>
       {byField ? null : <PopoverTitle className="sr-only">{ariaLabel ?? picker.label ?? 'Color picker'}</PopoverTitle>}
       {children ?? (
         <>
@@ -438,10 +443,10 @@ export function ColorPickerContent({
               <ColorPickerSliderThumb aria-label="Opacity" />
             </ColorPickerSlider>
           ) : null}
-          <ColorPickerField size="sm">
+          <ColorPickerInputGroup size="sm">
             <ColorPickerSwatch />
             <ColorPickerInput />
-          </ColorPickerField>
+          </ColorPickerInputGroup>
           {swatches?.length ? (
             <ColorPickerSwatches aria-label="Preset colors">
               {swatches.map((color) => <ColorPickerSwatchItem key={color} value={color} />)}

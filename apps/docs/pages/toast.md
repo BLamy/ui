@@ -17,12 +17,12 @@ import { ToastRegion, toast, hud } from '@/components/ui/toast'
 {% tab title="npm" %}
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 
-Import the stylesheet once at your app's entry, then the parts from the package root:
+Import the stylesheet once at your app's entry, then the parts from their module:
 
 ```tsx
 import '@brett_lamy/ui/styles.css'
 
-import { ToastRegion, toast, hud } from '@brett_lamy/ui'
+import { ToastRegion, toast, hud } from '@brett_lamy/ui/toast'
 ```
 {% endtab %}
 {% endtabs %}
@@ -211,7 +211,7 @@ group/toasts outline-none data-[side=top]:top-[calc(env(safe-area-inset-top,0px)
 Defined in `@/components/ui/toast`. Base classes:
 
 ```text
-flex outline-none focus-visible:ring-2 focus-visible:ring-primary
+['flex', pressableFocusRing]
 ```
 
 **`variant`** — default `banner`

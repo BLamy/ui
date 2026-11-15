@@ -26,8 +26,8 @@ export const checkboxVariants = cva(
     'active:not-data-disabled:scale-90',
     pressableFocusRing,
     // Invalid: the box itself (`aria-invalid`, which a Field writes on its control) or the group around it.
-    'aria-invalid:border-destructive group-aria-invalid:border-destructive',
-    'aria-invalid:data-checked:border-destructive aria-invalid:data-checked:bg-destructive group-aria-invalid:data-checked:border-destructive group-aria-invalid:data-checked:bg-destructive',
+    'aria-invalid:border-destructive group-aria-invalid/checkbox-group:border-destructive',
+    'aria-invalid:data-checked:border-destructive aria-invalid:data-checked:bg-destructive group-aria-invalid/checkbox-group:data-checked:border-destructive group-aria-invalid/checkbox-group:data-checked:bg-destructive',
     'data-disabled:cursor-default data-disabled:opacity-40',
   ],
   {
@@ -79,7 +79,7 @@ export type CheckboxGroupProps<T extends string = string> = ComponentProps<typeo
 /** Checkboxes that share one list of checked values. Name it with `aria-label`, or a Label whose `htmlFor` is
     the group's `id`. */
 export function CheckboxGroup<T extends string = string>({ className, ...props }: CheckboxGroupProps<T>) {
-  return <SdkCheckboxGroup<T> className={cx('group flex flex-col gap-3', className)} {...props} />;
+  return <SdkCheckboxGroup<T> className={cx('group/checkbox-group flex flex-col gap-3', className)} {...props} />;
 }
 
 export { createCheckboxController, createCheckboxGroupController } from '@ui-sdk/react/checkbox';

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { formatColor, parseColor } from '@ui-sdk/core/color'
-import { ColorPicker, ColorPickerChannelInput, ColorPickerField, ColorPickerSwatch } from '@/components/ui/color-picker'
+import { ColorPicker, ColorPickerChannelInput, ColorPickerInputGroup, ColorPickerSwatch } from '@/components/ui/color-picker'
 import { Label } from '@/components/ui/label'
 
 const channels = [
@@ -11,7 +11,7 @@ const channels = [
 
 // A ColorPickerChannelInput is a number box for one channel of the color in the
 // root's `space`, with its unit after it. Here one ColorPicker holds the color and
-// three boxes edit it, each in a ColorPickerField, so changing any updates the
+// three boxes edit it, each in a ColorPickerInputGroup, so changing any updates the
 // swatch and the value.
 export default function Channel() {
   const [color, setColor] = useState('hsl(262 83% 66%)')
@@ -34,9 +34,9 @@ export default function Channel() {
         {channels.map(({ channel, label }) => (
           <div key={channel} className="flex flex-col gap-1.5">
             <Label variant="field" htmlFor={`channel-${channel}`}>{label}</Label>
-            <ColorPickerField>
+            <ColorPickerInputGroup>
               <ColorPickerChannelInput id={`channel-${channel}`} channel={channel} />
-            </ColorPickerField>
+            </ColorPickerInputGroup>
           </div>
         ))}
       </div>

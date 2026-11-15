@@ -318,7 +318,7 @@ function RailBadge() {
 }
 ```
 
-`side` is the root's, or the default for its `variant` (`bottom` for `bar`, `start` for `rail` and `workspace`, `top` otherwise); `orientation` follows from it.
+`side` is the root's, or the default for its `variant` (`bottom` for `bar`, `start` for `rail` and `switcher`, `top` otherwise); `orientation` follows from it.
 
 ## `useTabsTab`
 
@@ -349,7 +349,7 @@ Hover, press and keyboard focus are not part of the state: style them with the p
 State of the enclosing [FloatingSheet](https://blamy.github.io/ui/#/floating-sheet).
 
 - **Export:** public. Registry item `floating-sheet`.
-- **Needs:** a `FloatingSheet` ancestor (anything inside `FloatingSheetBody`, `FloatingSheetFoot` or `FloatingSheetFab` counts). **Outside it:** throws `useFloatingSheet must be used within <FloatingSheet>`.
+- **Needs:** a `FloatingSheet` ancestor (anything inside `FloatingSheetBody`, `FloatingSheetFooter` or `FloatingSheetFab` counts). **Outside it:** throws `useFloatingSheet must be used within <FloatingSheet>`.
 
 ```ts
 function useFloatingSheet(): FloatingSheetContextValue

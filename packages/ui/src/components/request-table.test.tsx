@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { createDataTableController, type DataTableColumn } from '@/components/ui/data-table';
-import { RequestLink, RequestTable } from '@/components/ui/request-table';
+import { RequestTableLink, RequestTable } from '@/components/ui/request-table';
 import type { RowId } from '@/lib/log-list-model';
 import type { RequestRow } from '@/lib/request-table-model';
 
@@ -43,7 +43,7 @@ const grid = () => screen.getByRole('grid');
 const row = (index: number) => document.querySelector<HTMLElement>(`[data-slot=data-table-row][data-index="${index}"]`) as HTMLElement;
 const allRows = () => [...document.querySelectorAll<HTMLElement>('[data-slot=data-table-row]')];
 const column = (id: string) => document.querySelector<HTMLElement>(`[role=columnheader][data-column="${id}"]`) as HTMLElement;
-/** The playhead's line is placed by the grid's `--data-table-playhead`. */
+/** The current time's line is placed by the grid's `--data-table-current-time`. */
 const line = () => grid();
 const firstName = () => row(0).querySelector('[data-slot=request-table-name]')?.textContent;
 
@@ -76,8 +76,8 @@ describe('RequestTable', () => {
   });
 
   it('shows the columns it is given, a built-in adjusted or one of your own', () => {
-    const own: DataTableColumn<RequestRow & { from: string }> = { id: 'from', title: 'From', width: 90, render: (r) => `from ${r.from}` };
-    render(<RequestTable rows={[{ id: 1, url: 'cart:add', from: 'renderer', status: 'ok' }]} columns={[{ id: 'url', title: 'Channel' }, own, 'status']} />);
+    const own: DataTableColumn<RequestRow & { from: string }> = { id: 'from', header: 'From', width: 90, cell: (r) => `from ${r.from}` };
+    render(<RequestTable rows={[{ id: 1, url: 'cart:add', from: 'renderer', status: 'ok' }]} columns={[{ id: 'url', header: 'Channel' }, own, 'status']} />);
     expect(screen.getAllByRole('columnheader').map((c) => c.textContent)).toEqual(['Channel', 'From', 'Status']);
     expect(row(0).querySelector('[data-column=url]')?.textContent).toBe('cart:add');
     expect(row(0).querySelector('[data-column=from]')?.textContent).toBe('from renderer');
@@ -96,6 +96,26 @@ describe('RequestTable', () => {
     expect(row(1).querySelector('[data-column=status]')?.textContent).toBe('(pending)');
   });
 
+  it('says when each request started, for screen readers, and colors a bar by its tone or tint', () => {
+    render(<RequestTable rows={[{ id: 1, url: 'a', time: 0, duration: 50 }, { id: 2, url: 'b', time: 1500, status: 500 }, { id: 3, url: 'c', time: 40, tint: 'var(--chart-5)' }]} timeRange={[0, 2000]} />);
+    const waterfall = (i: number) => row(i).querySelector<HTMLElement>('[data-column=waterfall]') as HTMLElement;
+    const bar = (i: number) => waterfall(i).querySelector<HTMLElement>('[data-slot=request-table-bar]') as HTMLElement;
+    expect(waterfall(0).textContent).toBe('Starts at 0 ms');
+    expect(waterfall(1).textContent).toBe('Starts at 1.5 s');
+    expect(bar(0).getAttribute('aria-hidden')).toBe('true');
+    expect(bar(0).getAttribute('data-tone')).toBe('default');
+    expect(bar(1).getAttribute('data-tone')).toBe('destructive');
+    expect(bar(2).hasAttribute('data-tint')).toBe(true);
+    expect(bar(2).style.getPropertyValue('--bar-tint')).toBe('var(--chart-5)');
+  });
+
+  it('keeps a caller\'s rowProps beside its own', () => {
+    render(<RequestTable rows={[{ id: 1, url: 'a', status: 500 }, { id: 2, url: 'b' }]} rowProps={(r) => ({ 'data-mine': r.id === 2 })} />);
+    expect(row(0).hasAttribute('data-failed')).toBe(true);
+    expect(row(0).hasAttribute('data-mine')).toBe(false);
+    expect(row(1).hasAttribute('data-mine')).toBe(true);
+  });
+
   it('shows the empty state and footer', () => {
     const { rerender } = render(<RequestTable rows={[]} emptyState="No requests yet" />);
     expect(screen.getByText('No requests yet')).toBeTruthy();
@@ -104,59 +124,59 @@ describe('RequestTable', () => {
   });
 });
 
-describe('the playhead', () => {
+describe('the current time', () => {
   it('is one line, however many rows there are', () => {
-    render(<RequestTable rows={makeRows(50)} timeRange={[0, 1000]} playhead={250} />);
-    expect(document.querySelectorAll('[data-slot=request-table-playhead]').length).toBe(1);
+    render(<RequestTable rows={makeRows(50)} timeRange={[0, 1000]} currentTime={250} />);
+    expect(document.querySelectorAll('[data-slot=request-table-current-time]').length).toBe(1);
     expect(line()).toBeTruthy();
   });
 
   it('has none without a waterfall to be on', () => {
-    render(<RequestTable rows={makeRows(5)} columns={['name', 'status']} playhead={100} />);
-    expect(document.querySelector('[data-slot=request-table-playhead]')).toBeNull();
+    render(<RequestTable rows={makeRows(5)} columns={['name', 'status']} currentTime={100} />);
+    expect(document.querySelector('[data-slot=request-table-current-time]')).toBeNull();
   });
 
   it('has none without one', () => {
     render(<RequestTable rows={makeRows(5)} />);
-    expect(grid().hasAttribute('data-playhead')).toBe(false);
+    expect(grid().hasAttribute('data-current-time')).toBe(false);
     expect(allRows().some((el) => el.hasAttribute('data-future'))).toBe(false);
   });
 
   it('draws a line at its share of the range and dims rows sent after it', () => {
-    render(<RequestTable rows={makeRows(11)} timeRange={[0, 1000]} playhead={250} />);
-    expect(grid().hasAttribute('data-playhead')).toBe(true);
-    expect(line().style.getPropertyValue('--data-table-playhead')).toBe('0.25');
+    render(<RequestTable rows={makeRows(11)} timeRange={[0, 1000]} currentTime={250} />);
+    expect(grid().hasAttribute('data-current-time')).toBe(true);
+    expect(line().style.getPropertyValue('--data-table-current-time')).toBe('0.25');
     expect(row(2).hasAttribute('data-future')).toBe(false);
     expect(row(3).hasAttribute('data-future')).toBe(true);
   });
 
   it('moves without rendering a single row', () => {
     const renders = vi.fn();
-    const columns: (DataTableColumn | 'waterfall')[] = [{ id: 'name', title: 'Name', render: (r) => { renders(); return r.url; } }, 'waterfall'];
+    const columns: (DataTableColumn | 'waterfall')[] = [{ id: 'name', header: 'Name', cell: (r) => { renders(); return r.url; } }, 'waterfall'];
     const rows = makeRows(100);
-    const { rerender } = render(<RequestTable rows={rows} columns={columns} timeRange={[0, 10_000]} playhead={100} />);
+    const { rerender } = render(<RequestTable rows={rows} columns={columns} timeRange={[0, 10_000]} currentTime={100} />);
     renders.mockClear();
-    for (const playhead of [500, 900, 2000, 5000]) rerender(<RequestTable rows={rows} columns={columns} timeRange={[0, 10_000]} playhead={playhead} onAction={() => {}} />);
+    for (const playhead of [500, 900, 2000, 5000]) rerender(<RequestTable rows={rows} columns={columns} timeRange={[0, 10_000]} currentTime={playhead} onAction={() => {}} />);
     expect(renders).not.toHaveBeenCalled();
     expect(row(5).hasAttribute('data-future')).toBe(false);
-    expect(line().style.getPropertyValue('--data-table-playhead')).toBe('0.5');
+    expect(line().style.getPropertyValue('--data-table-current-time')).toBe('0.5');
   });
 
   it('moves with no React at all through the controller, and hides off the range', () => {
     const controller = createDataTableController();
     render(<RequestTable controller={controller} rows={makeRows(11)} timeRange={[0, 1000]} />);
-    act(() => { controller.setPlayhead(500); });
-    expect(line().style.getPropertyValue('--data-table-playhead')).toBe('0.5');
+    act(() => { controller.setCurrentTime(500); });
+    expect(line().style.getPropertyValue('--data-table-current-time')).toBe('0.5');
     expect(row(6).hasAttribute('data-future')).toBe(true);
-    act(() => { controller.setPlayhead(5000); });
-    expect(grid().hasAttribute('data-playhead')).toBe(false);
-    act(() => { controller.setPlayhead(null); });
+    act(() => { controller.setCurrentTime(5000); });
+    expect(grid().hasAttribute('data-current-time')).toBe(false);
+    act(() => { controller.setCurrentTime(null); });
     expect(row(6).hasAttribute('data-future')).toBe(false);
   });
 
   it('dims the right rows when sorted, as they are no longer in time order', () => {
-    render(<RequestTable rows={makeRows(11)} timeRange={[0, 1000]} playhead={250} defaultSort={{ column: 'time', direction: 'descending' }} columns={['name', 'waterfall']} />);
-    // Sent latest first: the first rows are the ones after the playhead.
+    render(<RequestTable rows={makeRows(11)} timeRange={[0, 1000]} currentTime={250} defaultSort={{ column: 'time', direction: 'descending' }} columns={['name', 'waterfall']} />);
+    // Sent latest first: the first rows are the ones after the current time.
     expect(row(0).hasAttribute('data-future')).toBe(true);
     expect(row(10).hasAttribute('data-future')).toBe(false);
   });
@@ -208,8 +228,8 @@ describe('sorting', () => {
   it('a column can sort by a value of its own, or not at all', () => {
     const rows = makeRows(3);
     const columns: DataTableColumn[] = [
-      { id: 'mine', title: 'Mine', render: (r) => r.method, sortValue: (r) => -(r.time ?? 0) },
-      { id: 'plain', title: 'Plain', render: (r) => r.method },
+      { id: 'mine', header: 'Mine', cell: (r) => r.method, sortValue: (r) => -(r.time ?? 0) },
+      { id: 'plain', header: 'Plain', cell: (r) => r.method },
     ];
     render(<RequestTable rows={rows} columns={columns} />);
     fireEvent.click(column('plain'));
@@ -244,7 +264,7 @@ describe('press, selection and links', () => {
           value={selected}
           onValueChange={setSelected}
           onAction={onAction}
-          renderLink={(row) => (row.id === 'r1' ? <RequestLink onClick={() => setSelected('r2000')}>Server function</RequestLink> : null)}
+          renderLink={(row) => (row.id === 'r1' ? <RequestTableLink onClick={() => setSelected('r2000')}>Server function</RequestTableLink> : null)}
         />
       );
     }
@@ -333,7 +353,7 @@ describe('keyboard', () => {
   });
 
   it('Tab from a row goes through its links, and Escape comes back', () => {
-    render(<RequestTable rows={makeRows(5)} renderLink={(r) => (r.id === 'r0' ? <RequestLink onClick={() => {}}>Server</RequestLink> : null)} />);
+    render(<RequestTable rows={makeRows(5)} renderLink={(r) => (r.id === 'r0' ? <RequestTableLink onClick={() => {}}>Server</RequestTableLink> : null)} />);
     tabIn();
     const link = screen.getByRole('button', { name: 'Server' });
     act(() => { link.focus(); });

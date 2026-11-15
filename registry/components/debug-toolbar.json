@@ -12,6 +12,7 @@
     "DebugToolbar"
   ],
   "types": [
-    "DebugToolbarAction"
+    "DebugToolbarAction",
+    "DebugToolbarActionDetails"
   ]
 }

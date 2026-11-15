@@ -1,5 +1,5 @@
 'use client';
-import { createContext, useContext, type ComponentProps, type ReactNode } from 'react';
+import { useContext, type ComponentProps, type ReactNode } from 'react';
 import {
   Select as SdkSelect,
   SelectContent as SdkSelectContent,
@@ -22,8 +22,9 @@ import { labelVariants } from '@/components/ui/label';
 import { listboxItemVariants, listboxVariants } from '@/components/ui/listbox';
 import { Icon } from '@/lib/icon';
 import {
-  ListDataItems, OptionRow, optionGroupClass, optionGroupLabelClass, optionLabel, optionSeparatorClass, optionSheetClass, useOptionDescription,
-  type ListDataParts, type OptionRowProps,
+  ListDataItems, OptionRow, OptionRowSizeContext, PickerFieldSizeContext, optionGroupClass, optionGroupLabelClass, optionLabel, optionRowSizes,
+  optionSeparatorClass, optionSheetClass, useOptionDescription, useOptionRowSize, usePickerFieldSize, useReportFieldSize,
+  type ListDataParts, type OptionRowProps, type OptionRowSize,
 } from '@/lib/option-row';
 import { popoverMotion, popoverSurface } from '@/lib/primitives';
 import { scopeStyle, useLayerHost, useThemeScopeProps } from '@/lib/theme';
@@ -56,11 +57,14 @@ export function Select<T = string, Multiple extends boolean | undefined = false>
   const host = useLayerHost();
   // "auto" follows the nearest size class around (a sheet when compact), even when the content is portaled.
   const shown = usePresentation(presentation, 'popover');
+  const fieldSize = usePickerFieldSize();
   return (
-    <SdkSelect<T, Multiple> container={container === undefined ? host : container} presentation={shown} {...(props as SelectProps<T, Multiple>)}>
-      {children}
-      {props.items ? <PlacedContent><SdkSelectContent /></PlacedContent> : null}
-    </SdkSelect>
+    <PickerFieldSizeContext.Provider value={fieldSize}>
+      <SdkSelect<T, Multiple> container={container === undefined ? host : container} presentation={shown} {...(props as SelectProps<T, Multiple>)}>
+        {children}
+        {props.items ? <PlacedContent><SdkSelectContent /></PlacedContent> : null}
+      </SdkSelect>
+    </PickerFieldSizeContext.Provider>
   );
 }
 
@@ -102,6 +106,7 @@ export type SelectTriggerProps = ComponentProps<typeof SdkSelectTrigger> & Varia
 
 /** The button: its children (a `SelectValue` when it has none), then the up-down chevrons. */
 export function SelectTrigger({ className, variant, size, children, ...props }: SelectTriggerProps) {
+  useReportFieldSize(size);
   const face = (kids: ReactNode) => <>{kids ?? <SelectValue />}<Icon name="chevron-up-down" size={16} sw={2.2} className="shrink-0 opacity-70" /></>;
   return (
     <SdkSelectTrigger className={cx(selectTriggerVariants({ variant, size }), className)} {...props}>
@@ -115,14 +120,10 @@ export function SelectValue({ className, ...props }: ComponentProps<typeof SdkSe
   return <SdkSelectValue className={cx('min-w-0 flex-1 truncate data-placeholder:text-tertiary-foreground', className)} {...props} />;
 }
 
-/** The rows' size: `sm` is the dense list of an inspector or a settings row (32px rows, footnote text). */
-type SelectContentSize = 'sm' | 'default';
-const RowSizeContext = createContext<SelectContentSize>('default');
-const rowSizes = { sm: 'min-h-8 py-1.5 text-footnote leading-[18px]', default: '' } as const;
-
 export type SelectContentProps = ComponentProps<typeof SdkSelectContent> & {
-  /** `sm`: 32px rows in footnote text, for a select in a dense panel. Default `default`. */
-  size?: SelectContentSize;
+  /** `sm`: 32px rows in footnote text, for a select in a dense panel. Default: the trigger's (a `sm` trigger opens
+      `sm` rows). */
+  size?: OptionRowSize;
   /** Where the colors come from: the ThemeScope it was opened from (`scope`, the default), or the trigger's
       element (`trigger`), for a trigger on a surface that CSS paints rather than a ThemeScope (see `useTriggerPalette`). */
   palette?: PopupPalette;
@@ -131,12 +132,13 @@ export type SelectContentProps = ComponentProps<typeof SdkSelectContent> & {
 /** The popup and its list: 8px under the button, at least as wide as it (and 200px), scrolling past 320px. It renders
  *  into BLProvider's root (see `useLayerHost`) and wears the ThemeScope it was opened from. Without children it draws
  *  the select's `items`. */
-export function SelectContent({ className, style, sideOffset = 8, size = 'default', palette = 'scope', ref, children, ...props }: SelectContentProps) {
+export function SelectContent({ className, style, sideOffset = 8, size: sizeProp, palette = 'scope', ref, children, ...props }: SelectContentProps) {
+  const size = useOptionRowSize(sizeProp);
   const scope = useThemeScopeProps();
   const trigger = useTriggerPalette(palette === 'trigger', ref);
   const colors = trigger.props ?? scope;
   return (
-    <RowSizeContext.Provider value={size}>
+    <OptionRowSizeContext.Provider value={size}>
       <SdkSelectContent
         ref={trigger.ref}
         data-theme-scope={colors['data-theme-scope']}
@@ -154,7 +156,7 @@ export function SelectContent({ className, style, sideOffset = 8, size = 'defaul
       >
         {children ?? ((state: SelectContentState) => <ListDataItems items={state.items} parts={selectParts} />)}
       </SdkSelectContent>
-    </RowSizeContext.Provider>
+    </OptionRowSizeContext.Provider>
   );
 }
 
@@ -163,13 +165,13 @@ export type SelectItemProps<T = string> = Omit<ComponentProps<typeof SdkSelectIt
 /** An option. `value` is what the select's value becomes; `label` is the text the button shows and typing finds when
  *  the children are not plain text. */
 export function SelectItem<T = string>({ className, icon, description, label, children, ...props }: SelectItemProps<T>) {
-  const size = useContext(RowSizeContext);
+  const size = useContext(OptionRowSizeContext);
   const described = useOptionDescription(description);
   return (
     <SdkSelectItem<T>
       label={optionLabel(label, children)}
       aria-describedby={described.describedBy}
-      className={cx([listboxItemVariants({ variant: 'popup' }), rowSizes[size]], className)}
+      className={cx([listboxItemVariants({ variant: 'popup' }), optionRowSizes[size]], className)}
       {...props}
     >
       <OptionRow variant="popup" icon={icon} description={description} descriptionId={described.id} Indicator={SelectItemIndicator} ItemIcon={SelectItemIcon}>

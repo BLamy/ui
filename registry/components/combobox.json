@@ -6,7 +6,7 @@
   "exports": [
     "Combobox",
     "ComboboxLabel",
-    "ComboboxField",
+    "ComboboxInputGroup",
     "ComboboxInput",
     "ComboboxTrigger",
     "ComboboxClear",
@@ -25,7 +25,7 @@
   ],
   "imports": [
     "Combobox",
-    "ComboboxField",
+    "ComboboxInputGroup",
     "ComboboxInput",
     "ComboboxTrigger",
     "ComboboxContent",
@@ -34,11 +34,12 @@
   "types": [
     "ComboboxProps",
     "ComboboxLabelProps",
-    "ComboboxFieldProps",
+    "ComboboxInputGroupProps",
     "ComboboxChipsProps",
     "ComboboxContentProps",
     "ComboboxItemProps",
     "ComboboxChipProps",
+    "ComboboxEmptyProps",
     "ComboboxController"
   ]
 }

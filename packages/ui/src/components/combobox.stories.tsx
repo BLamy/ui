@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import {
-  Combobox, ComboboxChips, ComboboxClear, ComboboxContent, ComboboxEmpty, ComboboxField, ComboboxGroup, ComboboxGroupLabel, ComboboxInput,
+  Combobox, ComboboxChips, ComboboxClear, ComboboxContent, ComboboxEmpty, ComboboxInputGroup, ComboboxGroup, ComboboxGroupLabel, ComboboxInput,
   ComboboxItem, ComboboxList, ComboboxStatus, ComboboxTrigger,
 } from '@/components/ui/combobox';
 import { Field, FieldDescription, FieldError, FieldLabel } from '@/components/ui/field';
@@ -37,10 +37,10 @@ function City({ query, open }: { query?: string; open?: boolean }) {
     <Field ref={ref}>
       <FieldLabel>City</FieldLabel>
       <Combobox defaultOpen={open && !query}>
-        <ComboboxField>
+        <ComboboxInputGroup>
           <ComboboxInput placeholder="Search cities" />
           <ComboboxTrigger />
-        </ComboboxField>
+        </ComboboxInputGroup>
         <ComboboxContent>
           <ComboboxEmpty>No cities found.</ComboboxEmpty>
           <ComboboxList>
@@ -72,10 +72,10 @@ export const FromData: Story = {
       <Field>
         <FieldLabel>Assignee</FieldLabel>
         <Combobox defaultOpen defaultValue="kim" items={people}>
-          <ComboboxField>
+          <ComboboxInputGroup>
             <ComboboxInput placeholder="Search the team" />
             <ComboboxTrigger />
-          </ComboboxField>
+          </ComboboxInputGroup>
           <ComboboxContent>
             <ComboboxEmpty>No one matches.</ComboboxEmpty>
             <ComboboxList>
@@ -98,11 +98,11 @@ function Cities({ dark, open }: { dark?: boolean; open?: boolean }) {
       <Field>
         <FieldLabel>Cities</FieldLabel>
         <Combobox multiple defaultValue={['Lisbon', 'Seoul', 'Tokyo']} defaultOpen={open}>
-          <ComboboxField>
+          <ComboboxInputGroup>
             <ComboboxChips><ComboboxInput placeholder="Add a city" /></ComboboxChips>
             <ComboboxClear />
             <ComboboxTrigger />
-          </ComboboxField>
+          </ComboboxInputGroup>
           <ComboboxContent>
             <ComboboxEmpty>No cities found.</ComboboxEmpty>
             <ComboboxList>{cities.map((c) => <ComboboxItem key={c} value={c}>{c}</ComboboxItem>)}</ComboboxList>
@@ -124,7 +124,7 @@ export const Groups: Story = {
       <Field>
         <FieldLabel>City</FieldLabel>
         <Combobox defaultOpen>
-          <ComboboxField />
+          <ComboboxInputGroup />
           <ComboboxContent>
             <ComboboxList>
               <ComboboxGroup>
@@ -150,7 +150,7 @@ export const AsyncStatus: Story = {
       <Field>
         <FieldLabel>Movie</FieldLabel>
         <Combobox items={[]} status="loading" filter={false} defaultOpen>
-          <ComboboxField />
+          <ComboboxInputGroup />
           <ComboboxContent>
             <ComboboxStatus>{(state) => (state.loading ? 'Searching…' : null)}</ComboboxStatus>
             <ComboboxList />
@@ -167,7 +167,7 @@ export const Invalid: Story = {
       <Field invalid>
         <FieldLabel>City</FieldLabel>
         <Combobox items={cities}>
-          <ComboboxField />
+          <ComboboxInputGroup />
           <ComboboxContent />
         </Combobox>
         <FieldError match>Pick a city we fly to.</FieldError>
@@ -182,7 +182,7 @@ export const Disabled: Story = {
       <Field disabled>
         <FieldLabel>City</FieldLabel>
         <Combobox items={cities} defaultValue="Lisbon">
-          <ComboboxField />
+          <ComboboxInputGroup />
           <ComboboxContent />
         </Combobox>
       </Field>
@@ -196,10 +196,10 @@ export const Sizes: Story = {
     <Screen h={360}>
       {(['sm', 'default', 'lg'] as const).map((size) => (
         <Combobox key={size} items={cities} defaultValue="Paris">
-          <ComboboxField size={size}>
+          <ComboboxInputGroup size={size}>
             <ComboboxInput aria-label={`City, ${size}`} />
             <ComboboxTrigger />
-          </ComboboxField>
+          </ComboboxInputGroup>
           <ComboboxContent />
         </Combobox>
       ))}

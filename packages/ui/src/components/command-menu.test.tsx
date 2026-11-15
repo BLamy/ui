@@ -362,8 +362,8 @@ describe('CommandMenu', () => {
       </CommandMenu>,
     );
     await settle();
-    // Apple's modifier order (⌃⌥⇧⌘), whatever order the shortcut was written in.
-    expect([...document.querySelectorAll('[data-slot="command-shortcut"] kbd')].map((el) => el.textContent)).toEqual(['⇧', '⌘', 'P']);
+    // Apple's modifier order (⌃⌥⇧⌘), whatever order the shortcut was written in, as one tight run like a menu's.
+    expect([...document.querySelectorAll('[data-slot="command-shortcut"] kbd')].map((el) => el.textContent)).toEqual(['⇧⌘P']);
   });
 
   it('inline, it takes focus as it mounts without scrolling the page, through its own input', () => {

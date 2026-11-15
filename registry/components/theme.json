@@ -11,6 +11,7 @@
     "useThemeScope",
     "useScopeAppearance",
     "readThemeVars",
+    "tintForeground",
     "useLayerHost"
   ],
   "imports": [

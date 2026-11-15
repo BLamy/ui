@@ -4,7 +4,9 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useId,
   useLayoutEffect,
+  useMemo,
   useRef,
   useState,
   type ComponentProps,
@@ -12,7 +14,6 @@ import {
   type ReactNode,
   type RefObject,
 } from 'react';
-import { createPortal } from 'react-dom';
 import { animate } from 'framer-motion';
 import { Button as SdkButton } from '@ui-sdk/react/button';
 import type { ChangeDetails } from '@ui-sdk/core';
@@ -24,8 +25,8 @@ import { usePresence } from '@/lib/presence';
 import { prefersReducedMotion } from '@/lib/reduced-motion';
 import { useControllableChange } from '@/lib/controllable-state';
 import type { ChangeGiven } from '@/lib/change-details';
-import { ThemeScope, ThemeScopeContext, themeScopeClass, useThemeScope, type Appearance } from '@/lib/theme';
-import { useAttachHost, usePersistentHost } from '@/lib/persistent-host';
+import { ThemeScope, ThemeScopeContext, themeScopeClass, type Appearance, type ThemeScopeState } from '@/lib/theme';
+import { useKeptChildren, type KeptChildren } from '@/lib/kept-children';
 import { focusRing } from '@/lib/primitives';
 import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
@@ -34,7 +35,7 @@ import {
   FloatingSheet,
   FloatingSheetBody,
   FloatingSheetFab,
-  FloatingSheetFoot,
+  FloatingSheetFooter,
   type FloatingSheetAppearance,
   type FloatingSheetChangeDetails,
   type FloatingSheetFabAlign,
@@ -102,8 +103,9 @@ interface PartsContextValue {
   layout: ArtifactChatLayout;
   side: ArtifactChatSide;
   contentRef: RefObject<HTMLDivElement | null>;
-  chatHost: HTMLElement | null;
-  composerHost: HTMLElement | null;
+  /** The Chat and Composer parts keep their children mounted (`useKeptChildren`) and hand the root their dock refs. */
+  keepChat: (dock: KeptChildren['dock'] | null) => void;
+  keepComposer: (dock: KeptChildren['dock'] | null) => void;
   scheme: Appearance | undefined;
   renderCard?: (card: ReactNode) => ReactNode;
 }
@@ -245,7 +247,6 @@ export function ArtifactChatContainer({
     [rootRef, ref],
   );
   const scheme: Appearance | undefined = appearance === 'auto' ? undefined : appearance;
-  const parentScope = useThemeScope();
   const layout: ArtifactChatLayout =
     requestedLayout === 'auto' ? (sizeClass === 'compact' ? 'floating' : 'split') : requestedLayout;
   const floating = layout === 'floating';
@@ -278,20 +279,26 @@ export function ArtifactChatContainer({
   };
 
   // ── one chat, two layouts ──
-  // The composer and the transcript are rendered once (by their parts, through portals) into detached hosts that
-  // are re-attached to the column's or the floating sheet's docks (see persistent-host.tsx), so switching layouts
-  // keeps the draft, the caret and a streaming reply. The composer then flies from its old place to its new one,
-  // and the artifact pane is revealed from its old edges.
-  const composerHost = usePersistentHost('artifact-chat-composer');
-  const chatHost = usePersistentHost('artifact-chat-transcript');
+  // The Chat and Composer parts render their children once and keep them mounted (`useKeptChildren`); the column's
+  // or the floating sheet's docks take them in, so switching layouts keeps the draft, the caret and a streaming
+  // reply. The composer then flies from its old place to its new one, and the artifact pane is revealed from its
+  // old edges.
+  const [chatKeep, setChatKeep] = useState<KeptChildren['dock'] | null>(null);
+  const [composerKeep, setComposerKeep] = useState<KeptChildren['dock'] | null>(null);
+  const keepChat = useCallback((dock: KeptChildren['dock'] | null) => setChatKeep(() => dock), []);
+  const keepComposer = useCallback((dock: KeptChildren['dock'] | null) => setComposerKeep(() => dock), []);
   const [composerDock, setComposerDock] = useState<HTMLElement | null>(null);
-  const [chatDock, setChatDock] = useState<HTMLElement | null>(null);
-  useAttachHost(composerHost, composerDock);
-  useAttachHost(chatHost, chatDock);
   // A layout's docks claim the shared parts when they mount; a column that is leaving keeps quiet, so the floating
   // chat's docks keep them.
-  const claimChat = useCallback((el: HTMLElement | null) => { if (el) setChatDock(el); }, []);
-  const claimComposer = useCallback((el: HTMLElement | null) => { if (el) setComposerDock(el); }, []);
+  const claimChat = useCallback((el: HTMLElement | null) => { if (el) chatKeep?.(el); }, [chatKeep]);
+  const claimComposer = useCallback(
+    (el: HTMLElement | null) => {
+      if (!el) return;
+      composerKeep?.(el);
+      setComposerDock(el);
+    },
+    [composerKeep],
+  );
 
   const contentRef = useRef<HTMLDivElement | null>(null);
   const shift = useRef<{ layout: boolean; composer: DOMRect | null; content: DOMRect | null } | null>(null);
@@ -301,7 +308,7 @@ export function ArtifactChatContainer({
   const column = usePresence<HTMLDivElement>(!floating, { instant: !ready });
   if (!ready) lastFloating.current = floating;
   if (lastFloating.current !== floating && !shift.current && typeof window !== 'undefined') {
-    const composerEl = composerHost?.querySelector('[data-slot="composer"]');
+    const composerEl = composerDock?.querySelector('[data-slot="composer"]');
     shift.current = {
       layout: floating,
       composer: composerEl?.isConnected ? composerEl.getBoundingClientRect() : null,
@@ -312,11 +319,12 @@ export function ArtifactChatContainer({
     lastFloating.current = floating;
     const snap = shift.current;
     // Wait until the new layout's composer dock has been attached.
-    if (!snap || snap.layout !== floating || !composerDock?.isConnected || composerHost?.parentNode !== composerDock) return;
+    // Wait until the new layout's dock holds the composer.
+    const composerEl = composerDock?.isConnected ? composerDock.querySelector<HTMLElement>('[data-slot="composer"]') : null;
+    if (!snap || snap.layout !== floating || !composerEl) return;
     shift.current = null;
     if (prefersReducedMotion()) return;
-    const composerEl = composerHost?.querySelector<HTMLElement>('[data-slot="composer"]');
-    if (snap.composer && composerEl) {
+    if (snap.composer) {
       const to = composerEl.getBoundingClientRect();
       const from = snap.composer;
       composerEl.style.width = `${from.width}px`;
@@ -347,6 +355,7 @@ export function ArtifactChatContainer({
 
   // While the agent works the floating composer's card becomes a tappable status; the real card stays mounted under it.
   const revealRef = useRef<(event: Event) => void>(() => undefined);
+  const workingId = useId();
   revealRef.current = (event) => changeComposing(true, { reason: 'trigger-press', event });
   const renderCard = useCallback(
     (card: ReactNode) => (
@@ -360,21 +369,23 @@ export function ArtifactChatContainer({
             focusRing,
             variant === 'glass' && 'backdrop-blur-[16px]',
           )}
+          // Named for what it does; the status it shows is its description.
+          aria-label="Write a message"
+          aria-describedby={workingId}
           onClick={(event) => revealRef.current(event.nativeEvent)}
         >
           <span className="grid animate-[ck-floating-working_1.8s_ease-in-out_infinite] place-items-center text-muted-foreground motion-reduce:animate-none" aria-hidden="true">
             <Icon name="sparkle" size={18} sw={1.9} />
           </span>
-          <span className="min-w-0 flex-1 truncate text-subhead font-semibold text-muted-foreground">{workingLabel}</span>
-          <Icon name="plus" size={20} sw={1.9} />
-          <span className="sr-only">Add something new</span>
+          <span id={workingId} className="min-w-0 flex-1 truncate text-subhead font-semibold text-muted-foreground">{workingLabel}</span>
+          <Icon name="square-pencil" size={19} sw={1.9} />
         </SdkButton>
         <div data-inactive="" aria-hidden inert className="pointer-events-none invisible absolute inset-x-0 bottom-0">
           {card}
         </div>
       </div>
     ),
-    [workingLabel, variant],
+    [workingLabel, variant, workingId],
   );
 
   const value: ArtifactChatContainerContextValue = {
@@ -397,8 +408,8 @@ export function ArtifactChatContainer({
     layout,
     side: chatSide,
     contentRef,
-    chatHost,
-    composerHost,
+    keepChat,
+    keepComposer,
     scheme,
     renderCard: idle ? renderCard : undefined,
   };
@@ -407,18 +418,16 @@ export function ArtifactChatContainer({
     <ArtifactChatContainerContext.Provider value={value}>
       <PartsContext.Provider value={parts}>
         <SizeClassProvider value={sizeClass}>
-          {/* light / dark: the bl-theme's `sheet` scope in that appearance, published to popups opened inside;
-              `auto` leaves the page's theme (and any scope above) alone. */}
-          <ThemeScopeContext.Provider value={scheme ? { scope: 'sheet', appearance: scheme } : parentScope}>
+          {/* light / dark paint the chat surfaces only (the docked column, the floating sheet, the composer's glass) in
+              the bl-theme's `sheet` scope; the artifact keeps the page's theme. `auto` leaves every scope alone. */}
             <div
               {...props}
               ref={setRoot}
               data-slot="artifact-chat-container"
               data-layout={layout}
               data-appearance={scheme}
-              data-theme-scope={scheme ? 'sheet' : undefined}
               data-chat-side={chatSide}
-              className={cn(artifactChatContainerVariants({ layout, chatSide }), themeScopeClass(scheme), className)}
+              className={cn(artifactChatContainerVariants({ layout, chatSide }), className)}
               style={{
                 '--ck-artifact-chat-width': typeof chatWidth === 'number' ? `${chatWidth}px` : chatWidth,
                 ...style,
@@ -442,7 +451,8 @@ export function ArtifactChatContainer({
                   <aside
                     aria-label={chatLabel}
                     data-slot="artifact-chat-chat"
-                    className={cn('ck-artifact-chat__chat flex min-h-0 min-w-0 flex-1 flex-col border-border bg-card', end ? 'border-s' : 'border-e')}
+                    data-theme-scope={scheme ? 'sheet' : undefined}
+                    className={cn('ck-artifact-chat__chat flex min-h-0 min-w-0 flex-1 flex-col border-border bg-card text-foreground', end ? 'border-s' : 'border-e', themeScopeClass(scheme))}
                   >
                     <div ref={claimChat} data-slot="artifact-chat-transcript-dock" className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden" />
                     <div ref={claimComposer} data-slot="artifact-chat-composer-dock" className="min-w-0 shrink-0 p-2" />
@@ -464,8 +474,6 @@ export function ArtifactChatContainer({
                   appearance={appearance}
                   bodyAlign="end"
                   collapse="fab"
-                  fabSide={fabSide}
-                  fabAlign={fabAlign}
                   hideOnScroll={hideOnScroll}
                   scrollRef={contentRef}
                   aria-label={chatLabel}
@@ -473,14 +481,14 @@ export function ArtifactChatContainer({
                   <FloatingSheetBody>
                     <div ref={claimChat} data-slot="artifact-chat-transcript-dock" className="flex h-full min-h-0 min-w-0 flex-col" />
                   </FloatingSheetBody>
-                  <FloatingSheetFoot>
-                    <div ref={claimComposer} data-slot="artifact-chat-composer-dock" className="min-w-0 p-2" />
-                  </FloatingSheetFoot>
-                  <FloatingSheetFab aria-label={`Open ${chatLabel}`}>{fabIcon ?? <Icon name="sparkle" size={22} sw={1.9} />}</FloatingSheetFab>
+                  {/* Presses on the padding around the composer go through to the cap's touch area behind it. */}
+                  <FloatingSheetFooter className="pointer-events-none">
+                    <div ref={claimComposer} data-slot="artifact-chat-composer-dock" className="pointer-events-none min-w-0 p-2" />
+                  </FloatingSheetFooter>
+                  <FloatingSheetFab side={fabSide} align={fabAlign} aria-label={`Open ${chatLabel}`}>{fabIcon ?? <Icon name="sparkle" size={22} sw={1.9} />}</FloatingSheetFab>
                 </FloatingSheet>
               ) : null}
             </div>
-          </ThemeScopeContext.Provider>
         </SizeClassProvider>
       </PartsContext.Provider>
     </ArtifactChatContainerContext.Provider>
@@ -513,22 +521,38 @@ export function ArtifactChatContainerContent({ className, ref, ...props }: Artif
   );
 }
 
+/** The scope a chat part publishes to popups opened inside it: the `sheet` scope in an explicit appearance. */
+function useChatScope(scheme: Appearance | undefined): ThemeScopeState | null {
+  return useMemo(() => (scheme ? { scope: 'sheet', appearance: scheme } : null), [scheme]);
+}
+
+/** Keeps a part's children mounted and hands its dock ref to the root, which docks them in the current layout. */
+function useKeptPart(children: ReactNode, keep: (dock: KeptChildren['dock'] | null) => void, slot: string): ReactNode {
+  const kept = useKeptChildren(children, { slot });
+  useLayoutEffect(() => {
+    keep(kept.dock);
+    return () => keep(null);
+  }, [keep, kept.dock]);
+  return kept.portal;
+}
+
 /** The transcript (a Conversation, a MessageScroller…): the docked column's body, or the floating sheet's growing
-    body. Rendered once and moved between them. */
+    body. Rendered once and moved between them; popups opened inside it wear the chat's appearance. */
 export function ArtifactChatContainerChat({ children }: { children?: ReactNode }) {
-  const { chatHost } = useParts('ArtifactChatContainerChat');
-  return chatHost ? createPortal(children, chatHost) : null;
+  const { keepChat, scheme } = useParts('ArtifactChatContainerChat');
+  const scope = useChatScope(scheme);
+  return useKeptPart(scope ? <ThemeScopeContext.Provider value={scope}>{children}</ThemeScopeContext.Provider> : children, keepChat, 'artifact-chat-transcript');
 }
 
 /** The Composer: pinned under the docked transcript, or the floating sheet's foot. It wears the bl-theme's `glass`
     scope in the chat's appearance; while `working` floats, its card is swapped for the working status. */
 export function ArtifactChatContainerComposer({ children }: { children?: ReactNode }) {
-  const { composerHost, scheme, renderCard } = useParts('ArtifactChatContainerComposer');
-  if (!composerHost) return null;
-  return createPortal(
-    <ThemeScope scope="glass" appearance={scheme} className="min-w-0">
+  const { keepComposer, scheme, renderCard } = useParts('ArtifactChatContainerComposer');
+  return useKeptPart(
+    <ThemeScope scope="glass" appearance={scheme} className="pointer-events-auto min-w-0">
       <ComposerOutlet renderCard={renderCard}>{children}</ComposerOutlet>
     </ThemeScope>,
-    composerHost,
+    keepComposer,
+    'artifact-chat-composer',
   );
 }

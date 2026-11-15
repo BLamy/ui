@@ -47,7 +47,7 @@
     "ComposerAttachmentKind",
     "ComposerAttachOptions",
     "ComposerFileSource",
-    "ComposerFileRejection",
+    "FileRejection",
     "ComposerValueChangeDetails",
     "ComposerAttachmentsChangeDetails",
     "ComposerExpandedChangeDetails",

@@ -2,7 +2,7 @@ import { useState } from 'react'
 import {
   DatePicker,
   DatePickerContent,
-  DatePickerField,
+  DatePickerInputGroup,
   DatePickerInput,
   DatePickerTrigger,
 } from '@/components/ui/date-picker'
@@ -21,7 +21,7 @@ export default function Basic() {
       <Field>
         <FieldLabel>Date</FieldLabel>
         <DatePicker locale="en-US" value={date} onValueChange={setDate}>
-          <DatePickerField />
+          <DatePickerInputGroup />
           <DatePickerContent />
         </DatePicker>
         <FieldDescription>
@@ -30,10 +30,10 @@ export default function Basic() {
       </Field>
 
       <DatePicker locale="en-US" defaultMonth="2026-09">
-        <DatePickerField size="sm">
+        <DatePickerInputGroup size="sm">
           <DatePickerInput aria-label="Due, small" placeholder="Due" />
           <DatePickerTrigger />
-        </DatePickerField>
+        </DatePickerInputGroup>
         <DatePickerContent />
       </DatePicker>
     </ThemeScope>

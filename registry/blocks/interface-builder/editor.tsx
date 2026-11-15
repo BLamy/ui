@@ -118,7 +118,7 @@ export function Editor({ appearance, initialRunning }: { appearance: 'light' | '
           <div className="relative flex min-h-0 flex-1">
             <AdaptivePane
               presentation={narrow ? 'drawer' : 'column'}
-              side="left"
+              side="start"
               aria-label="Navigator"
               open={navOpen}
               onOpenChange={(open) => { touched.current = true; setNavOpen(open); }}
@@ -150,7 +150,7 @@ export function Editor({ appearance, initialRunning }: { appearance: 'light' | '
 
             <AdaptivePane
               presentation={narrow ? 'drawer' : 'column'}
-              side="right"
+              side="end"
               aria-label="Inspector"
               open={inspectorOpen}
               onOpenChange={(open) => { touched.current = true; setInspectorOpen(open); }}

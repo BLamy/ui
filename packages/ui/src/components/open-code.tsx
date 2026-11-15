@@ -11,9 +11,11 @@ import {
 import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
 import { Icon } from '@/lib/icon';
+import { calloutVariants } from '@/lib/primitives';
 import { useAppearance, useThemeScope, type Appearance } from '@/lib/theme';
 import { useSizeClass } from '@/lib/container';
 import { Button } from '@/components/ui/button';
+import { EmptyState } from '@/components/ui/empty-state';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle';
 import { createOpenCodeBrowser } from '@/lib/open-code-browser';
 import {
@@ -50,16 +52,27 @@ export const openCodeVariants = cva(
   },
 );
 
-export interface OpenCodeProps
+/** Where the workspace comes from: borrow a `host`, or `createHost` a fresh one on each Start (disposed on Stop). One or
+    the other, never both; with neither, the runtime runs without a workspace bridge. */
+export type OpenCodeHostProps =
+  | {
+      /** An existing host to borrow. It is not disposed on Stop. */
+      host?: OpenCodeHostBridge;
+      createHost?: never;
+    }
+  | {
+      host?: never;
+      /** Makes a fresh host on each Start; it is disposed on Stop. */
+      createHost?: () => OpenCodeHostBridge | Promise<OpenCodeHostBridge>;
+    };
+
+export interface OpenCodeBaseProps
   extends Omit<ComponentProps<'section'>, 'children' | 'title'>,
     VariantProps<typeof openCodeVariants> {
-  /** Borrow an existing host, or create a fresh one on each Start (disposed on Stop). */
-  host?: OpenCodeHostBridge;
   /** Supported encrypted host store. Locking stops the terminal; autoStart restores it after unlocking. */
   credentialStore?: OpenCodeCredentialStore;
   /** Encrypted connection choice, Tailscale session and exit node. Uses the same unlock lifecycle as credentialStore. */
   connectionStore?: OpenCodeConnectionStore;
-  createHost?: () => OpenCodeHostBridge | Promise<OpenCodeHostBridge>;
   runtimeUrl?: string;
   /** Hosts AlmostNode's worker and bootstrap on a separate origin. */
   previewRuntimeUrl?: string;
@@ -80,6 +93,8 @@ export interface OpenCodeProps
     host?: OpenCodeHostBridge,
   ) => void;
 }
+
+export type OpenCodeProps = OpenCodeBaseProps & OpenCodeHostProps;
 
 /* ══ OpenCode — a real OpenCode TUI beside the HTTP apps its host runtime starts ══
    The kit's Button runs Start/Stop, Reload and Close; the open ports are a ToggleGroup (one tab stop, arrows
@@ -197,8 +212,6 @@ export function OpenCode({
     setSelected(null);
     setPreviewPath('/');
     void (async () => {
-      if (host && createHost)
-        throw new Error('Choose host or createHost, not both.');
       const nextHost = host ?? (owned = await createHost?.());
       if (cancelled) {
         owned?.dispose?.();
@@ -392,26 +405,27 @@ export function OpenCode({
         {/* The runtime's connection control and Start / Stop stay together at the end, also when the header wraps. */}
         <div className="ml-auto flex items-center gap-2">
           <div ref={connection} />
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={() => {
-              if (started) {
+          {/* Stopped, the Start button is the empty terminal's action, next to what it explains. */}
+          {started ? (
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => {
                 setStarted(false);
                 setState('stopped');
                 setPorts([]);
                 setSelected(null);
                 setError('');
-              } else setStarted(true);
-            }}
-          >
-            {started ? 'Stop OpenCode' : 'Start OpenCode'}
-          </Button>
+              }}
+            >
+              Stop OpenCode
+            </Button>
+          ) : null}
         </div>
       </header>
       {error && (
-        <p role="alert" className="m-3 flex items-start gap-2 rounded-ctl bg-destructive/10 p-3 text-footnote text-foreground">
-          <Icon name="exclamation-circle" size={16} className="mt-px shrink-0 text-destructive" />
+        <p role="alert" className={cn(calloutVariants({ tone: 'destructive' }), 'm-3')}>
+          <Icon name="exclamation-circle" size={16} />
           <span className="min-w-0 [overflow-wrap:anywhere]">{error}</span>
         </p>
       )}
@@ -429,10 +443,13 @@ export function OpenCode({
             </p>
           )}
           {!started && (
-            <p className="absolute inset-0 m-auto flex max-w-sm items-center justify-center p-6 text-center text-footnote text-muted-foreground">
-              Start OpenCode to edit files and run commands in this browser.
-              Servers opened by the host appear here as live previews.
-            </p>
+            <EmptyState
+              className="absolute inset-0"
+              icon={<Icon name="keyboard" />}
+              title={state === 'stopped' ? `${title} stopped` : state === 'error' ? `${title} could not start` : `${title} isn't running`}
+              description="Start it to edit files and run commands in this browser. Servers the host opens appear beside it as live previews."
+              action={<Button size="sm" onClick={() => setStarted(true)}>Start OpenCode</Button>}
+            />
           )}
         </div>
         {ports.length > 0 && (

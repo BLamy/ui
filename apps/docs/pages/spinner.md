@@ -15,12 +15,12 @@ import { Spinner } from '@/components/ui/spinner'
 {% tab title="npm" %}
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 
-Import the stylesheet once at your app's entry, then the parts from the package root:
+Import the stylesheet once at your app's entry, then the parts from their module:
 
 ```tsx
 import '@brett_lamy/ui/styles.css'
 
-import { Spinner } from '@brett_lamy/ui'
+import { Spinner } from '@brett_lamy/ui/spinner'
 ```
 {% endtab %}
 {% endtabs %}
@@ -92,7 +92,7 @@ A loader nobody can see should not keep animating: each one pauses itself while 
 
 ## In a button
 
-Render the spinner only while the work runs, next to the label, and disable the button so a second press cannot double-submit. The spinner is decorative, so announce the result somewhere: here a `role="status"` line.
+Render the spinner only while the work runs, next to the label, and return the work's Promise from `onClick`: the [Button](https://blamy.github.io/ui/#/button) is then pending until it settles (`aria-busy`, `data-pending`), so it ignores a second press and keeps focus, without the faded look of `disabled`. The spinner is decorative, so announce the result somewhere: here a `role="status"` line.
 
 {% demo src="spinner/button-loading" %}
 

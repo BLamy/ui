@@ -13,6 +13,8 @@ import {
   ComposerExpand,
   ComposerFooter,
   ComposerInput,
+  ComposerOptions,
+  ComposerOptionsOutlet,
   ComposerSelect,
   ComposerSend,
   ComposerSeparator,
@@ -121,10 +123,10 @@ describe('Composer', () => {
 
   it('attaches files dropped on the card, and turns away the ones it does not take', async () => {
     const onAttachmentsChange = vi.fn();
-    const onFilesRejected = vi.fn();
+    const onReject = vi.fn();
     const onDropFiles = vi.fn();
     render(
-      <Composer acceptedFileTypes={['.pdf', 'text/*']} onAttachmentsChange={onAttachmentsChange} onFilesRejected={onFilesRejected} onDropFiles={onDropFiles}>
+      <Composer accept={['.pdf', 'text/*']} onAttachmentsChange={onAttachmentsChange} onReject={onReject} onDropFiles={onDropFiles}>
         <ComposerCard>
           <ComposerAttachments />
           <ComposerFooter>
@@ -137,7 +139,7 @@ describe('Composer', () => {
     await act(async () => dropFiles(card, [file('spec.pdf', 'application/pdf'), file('song.mp3', 'audio/mpeg')]));
     await waitFor(() => expect(onAttachmentsChange).toHaveBeenCalled());
     expect(onDropFiles).toHaveBeenCalledWith([expect.objectContaining({ name: 'spec.pdf' })], 'drop');
-    expect(onFilesRejected).toHaveBeenCalledWith([expect.objectContaining({ reason: 'type' })]);
+    expect(onReject).toHaveBeenCalledWith([expect.objectContaining({ reasons: ['file-type'] })]);
     const attached = onAttachmentsChange.mock.lastCall![0] as ComposerAttachment[];
     expect(attached.map((a) => a.name)).toEqual(['spec.pdf']);
     expect(onAttachmentsChange.mock.lastCall![1]).toMatchObject({ reason: 'drop', event: expect.objectContaining({ type: 'drop' }) });
@@ -298,8 +300,8 @@ describe('Composer', () => {
     render(
       <Composer>
         <ComposerBump side="top" draggable onOpenChange={onOpenChange} maxReveal={200}>
-          <ComposerBumpContent label="Transcript">Messages</ComposerBumpContent>
-          <ComposerBumpHandle label="Chat" />
+          <ComposerBumpContent aria-label="Transcript">Messages</ComposerBumpContent>
+          <ComposerBumpHandle aria-label="Chat" />
         </ComposerBump>
         <ComposerCard />
       </Composer>,
@@ -450,8 +452,8 @@ describe('Composer', () => {
     render(
       <Composer>
         <ComposerBump side="top" draggable onOpenChange={onOpenChange} maxReveal={200}>
-          <ComposerBumpContent label="Transcript">Messages</ComposerBumpContent>
-          <ComposerBumpHandle label="Chat">Row</ComposerBumpHandle>
+          <ComposerBumpContent aria-label="Transcript">Messages</ComposerBumpContent>
+          <ComposerBumpHandle aria-label="Chat">Row</ComposerBumpHandle>
         </ComposerBump>
         <ComposerCard />
       </Composer>,
@@ -479,8 +481,8 @@ describe('Composer', () => {
     render(
       <Composer>
         <ComposerBump side="top" draggable defaultOpen maxReveal={200}>
-          <ComposerBumpContent label="Transcript">Messages</ComposerBumpContent>
-          <ComposerBumpHandle label="Chat" />
+          <ComposerBumpContent aria-label="Transcript">Messages</ComposerBumpContent>
+          <ComposerBumpHandle aria-label="Chat" />
         </ComposerBump>
         <ComposerCard />
       </Composer>,
@@ -552,6 +554,38 @@ function fakeScroller() {
   return el;
 }
 
+describe('ComposerOptions', () => {
+  it('moves the same pills (and their props) into the outlet while compact, and back', () => {
+    const items = [{ value: 'low', label: 'Low' }, { value: 'high', label: 'High' }];
+    const Shell = ({ collapsed }: { collapsed: 'none' | 'compact' }) => (
+      <Composer collapsed={collapsed}>
+        <ComposerCard>
+          <ComposerFooter>
+            <ComposerOptions data-testid="options" aria-label="Options">
+              <ComposerSelect aria-label="Effort" items={items} />
+            </ComposerOptions>
+          </ComposerFooter>
+        </ComposerCard>
+        <ComposerBump side="bottom">
+          <ComposerBumpHandle>
+            <ComposerOptionsOutlet />
+          </ComposerBumpHandle>
+        </ComposerBump>
+      </Composer>
+    );
+    const { rerender } = render(<Shell collapsed="none" />);
+    const pill = screen.getByRole('button', { name: /^Effort/ });
+    const options = screen.getByTestId('options');
+    expect(options.getAttribute('aria-label')).toBe('Options');
+    expect(document.querySelector('[data-slot=composer-footer]')?.contains(pill)).toBe(true);
+    rerender(<Shell collapsed="compact" />);
+    expect(screen.getByRole('button', { name: /^Effort/ })).toBe(pill);
+    expect(document.querySelector('[data-slot=composer-options-outlet]')?.contains(pill)).toBe(true);
+    rerender(<Shell collapsed="none" />);
+    expect(document.querySelector('[data-slot=composer-footer]')?.contains(pill)).toBe(true);
+  });
+});
+
 describe('Composer disabled', () => {
   it('disables every control and says so on the root', () => {
     render(
@@ -597,7 +631,7 @@ describe('Composer collapse on scroll', () => {
     ref.current = fakeScroller();
     const onCollapsedChange = vi.fn();
     const view = render(
-      <Composer collapseOnScroll={ref} collapseTo="fab" onCollapsedChange={onCollapsedChange} {...props}>
+      <Composer collapseOnScroll={ref} collapse="fab" onCollapsedChange={onCollapsedChange} {...props}>
         <ComposerCard>
           {children}
           <ComposerFooter>
@@ -684,11 +718,13 @@ describe('Composer collapse on scroll', () => {
 
 describe('ImageAnnotator', () => {
   const SRC = 'data:image/png;base64,AAAA';
+  /** A fixed drawing surface: a one-line engine. */
+  const FixedSurface: ImageAnnotatorEngine = ({ children }) => children({ canvas: <div /> });
 
   it('opens and closes through UI SDK\'s open API, reporting why', async () => {
     const onOpenChange = vi.fn();
     const onOpenChangeComplete = vi.fn();
-    render(<ImageAnnotator src={SRC} canvas={<div />} defaultOpen onOpenChange={onOpenChange} onOpenChangeComplete={onOpenChangeComplete} />);
+    render(<ImageAnnotator src={SRC} engine={FixedSurface} defaultOpen onOpenChange={onOpenChange} onOpenChangeComplete={onOpenChangeComplete} />);
     const dialog = await screen.findByRole('dialog', { name: 'Annotate image' });
     expect(dialog.getAttribute('data-slot')).toBe('dialog-content');
     await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Cancel' })); });
@@ -714,7 +750,7 @@ describe('ImageAnnotator', () => {
     const toDataURL = vi.spyOn(HTMLCanvasElement.prototype, 'toDataURL').mockReturnValue('data:image/png;base64,SAVED');
     const onSave = vi.fn();
     const onOpenChange = vi.fn();
-    render(<ImageAnnotator src={SRC} canvas={<div />} defaultOpen onSave={onSave} onOpenChange={onOpenChange} />);
+    render(<ImageAnnotator src={SRC} engine={FixedSurface} defaultOpen onSave={onSave} onOpenChange={onOpenChange} />);
     await screen.findByRole('dialog', { name: 'Annotate image' });
     await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Save annotation' })); });
     await waitFor(() => expect(onSave).toHaveBeenCalledWith('data:image/png;base64,SAVED', expect.objectContaining({ source: expect.any(String) })));

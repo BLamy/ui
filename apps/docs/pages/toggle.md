@@ -17,12 +17,14 @@ import {
 {% tab title="npm" %}
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 
-Import the stylesheet once at your app's entry, then the parts from the package root:
+Import the stylesheet once at your app's entry, then the parts from their module:
 
 ```tsx
 import '@brett_lamy/ui/styles.css'
 
-import { Toggle, ToggleGroup, ToggleGroupItem } from '@brett_lamy/ui'
+import {
+  Toggle, ToggleGroup, ToggleGroupItem,
+} from '@brett_lamy/ui/toggle'
 ```
 {% endtab %}
 {% endtabs %}
@@ -44,7 +46,7 @@ import { Toggle, ToggleGroup, ToggleGroupItem } from '@brett_lamy/ui'
 | `outline` | a hairline frame | tinted, the frame gone |
 | `quiet` | muted text, a fill on hover: Button's `quiet` | a grey fill: the toolbar tool that is switched on |
 
-`size` is `sm` 32px, `default` 36px or `lg` 44px for a text label, and Button's icon sizes for a lone glyph: `icon-sm` (a 28px square, the toolbar tool), `icon` (a 36px circle) and `icon-lg` (a 44px circle). Control it with `pressed` and `onPressedChange(pressed, details)`, or leave it uncontrolled with `defaultPressed`.
+`size` is `sm` 32px, `default` 36px or `lg` 44px for a text label (footnote, subhead and callout text, the same steps as Button), and Button's icon sizes for a lone glyph: `icon-sm` (a 28px square, the toolbar tool, whose hit area grows to 44px on a touch screen), `icon` (a 36px circle) and `icon-lg` (a 44px circle). Control it with `pressed` and `onPressedChange(pressed, details)`, or leave it uncontrolled with `defaultPressed`.
 
 {% demo src="toggle/toolbar" %}
 
@@ -69,7 +71,7 @@ A row of toggles on UI SDK's `ToggleGroup`: one tab stop, arrow keys between the
 {% demo src="toggle/group-modes" %}
 
 ```tsx
-<ToggleGroup variant="filled" aria-label="View" defaultValue={['grid']} deselectable={false}>
+<ToggleGroup variant="segmented" aria-label="View" defaultValue={['grid']} deselectable={false}>
   <ToggleGroupItem value="list">List</ToggleGroupItem>
   <ToggleGroupItem value="grid">Grid</ToggleGroupItem>
 </ToggleGroup>
@@ -80,7 +82,7 @@ A row of toggles on UI SDK's `ToggleGroup`: one tab stop, arrow keys between the
 </ToggleGroup>
 ```
 
-The group's `variant` is a Toggle variant, with two of its own looks: `filled` is a secondary tray where, in a single group, one card slides between the items; `outline` joins the items in one hairline frame. `details.reason` is `item-press` or `imperative` (a write from a controller made with `createToggleGroupController()` and passed as `controller`); `details.cancel()` keeps the current value.
+The group's `variant` is a Toggle variant (`default`, `filled`, `quiet`: each item is that toggle, a little apart from the next) or one of two group looks. `segmented` is [Segmented](https://blamy.github.io/ui/#/segmented)'s track, spelled as on [Tabs](https://blamy.github.io/ui/#/tabs): in a single group one card slides between the items, in a `multiple` group each pressed item wears the card. `outline` joins the items in one hairline frame. The pressed items show in every look. `orientation="vertical"` stacks the items in every look too, and an `outline` group then joins them top to bottom. `details.reason` is `item-press` or `imperative` (a write from a controller made with `createToggleGroupController()` and passed as `controller`); `details.cancel()` keeps the current value.
 
 ## Accessibility
 
@@ -105,7 +107,7 @@ Every UI SDK `ToggleGroup` prop applies, plus:
 
 | Prop | Default | Effect |
 | --- | --- | --- |
-| `variant` | `default` | `default` (a gap, tinted when on) · `quiet` (a gap, the quiet look) · `filled` (a tray with a sliding card) · `outline` (joined in a hairline frame). |
+| `variant` | `default` | `default` (a gap, tinted when on) · `filled` (a gap, filled toggles) · `quiet` (a gap, the quiet look) · `segmented` (Segmented's tray, with a sliding card) · `outline` (joined in a hairline frame). |
 | `size` | `default` | Any Toggle size; passed to every item. |
 | `multiple` | `false` | Let several items stay pressed. |
 | `value` / `defaultValue` / `onValueChange` | — | The pressed items' values, as an array. |
@@ -115,11 +117,11 @@ Every UI SDK `ToggleGroup` prop applies, plus:
 
 ### ToggleGroupItem
 
-A Toggle: `value` (what the group's value lists while it is pressed), `disabled`, `focusableWhenDisabled`, `className`, `children`, plus `variant` and `size` to override the group's for one item. Its own `pressed` / `defaultPressed` don't apply inside a group.
+A Toggle: `value` (what the group's value lists while it is pressed), `disabled`, `focusableWhenDisabled`, `className`, `children`, plus `size` to override the group's for one item, and `variant` to give one item another Toggle look (not in a `segmented` group, whose items are all segments). Its own `pressed` / `defaultPressed` don't apply inside a group.
 
 ## Styling
 
-A Toggle is `data-slot="toggle"`, with `data-pressed` while it is on, `data-disabled` and `data-has-icon` from UI SDK; hover, a held press and keyboard focus are the native `hover:`, `active:` and `focus-visible:`. A press scales it to 97%, as Button does. The group is `data-slot="toggle-group"` (with `data-variant` and `data-orientation`); the sliding card is `data-slot="selection-indicator"`, positioned from the `--selection-indicator-left`, `-top`, `-width` and `-height` variables it writes on itself. `toggleVariants({ variant, size })` and `toggleGroupVariants({ variant })` return the class lists; `ToggleVariant` and `ToggleSize` are the value types.
+A Toggle is `data-slot="toggle"`, with `data-pressed` while it is on, `data-disabled` and `data-has-icon` from UI SDK; hover, a held press and keyboard focus are the native `hover:`, `active:` and `focus-visible:`. A press scales it to 97%, as Button does. The group is `data-slot="toggle-group"` (with `data-variant` and `data-orientation`); the sliding card is `data-slot="selection-indicator"`, positioned from the `--selection-indicator-left`, `-top`, `-width` and `-height` variables it writes on itself. `toggleVariants({ variant, size })` and `toggleGroupVariants({ variant })` return the class lists; `ToggleVariant`, `ToggleGroupVariant` and `ToggleSize` are the value types.
 
 ## cva recipes
 
@@ -130,7 +132,7 @@ Generated from the source. Call a recipe on any element to borrow a component's 
 Defined in `@/components/ui/toggle`. Base classes:
 
 ```text
-[ 'bl-btn box-border inline-flex cursor-pointer items-center justify-center gap-1.5 border-0 [font-family:inherit] font-semibold whitespace-nowrap [&_svg]:shrink-0', 'transition-[background-color,color,box-shadow,scale] duration-spring-snappy ease-spring-snappy active:not-aria-expanded:not-data-disabled:scale-[.97] motion-reduce:transition-none', pressableFocusRing, 'data-disabled:cursor-default data-disabled:opacity-40', ]
+[ 'bl-btn box-border inline-flex shrink-0 cursor-pointer items-center justify-center gap-1.5 border-0 [font-family:inherit] font-semibold whitespace-nowrap [&_svg]:shrink-0', 'transition-[background-color,color,box-shadow,scale] duration-spring-snappy ease-spring-snappy active:not-aria-expanded:not-data-disabled:scale-[.97] motion-reduce:transition-none', pressableFocusRing, 'data-disabled:cursor-default data-disabled:opacity-40', ]
 ```
 
 **`variant`** — default `default`
@@ -148,8 +150,8 @@ Defined in `@/components/ui/toggle`. Base classes:
 | --- | --- |
 | `sm` | `h-8 min-w-8 rounded-lg px-2 text-footnote` |
 | `default` (default) | `h-9 min-w-9 rounded-ctl px-2.5 text-subhead` |
-| `lg` | `h-11 min-w-11 rounded-xl px-3.5 text-body` |
-| `icon-sm` | `size-7 rounded-lg p-0` |
+| `lg` | `h-11 min-w-11 rounded-xl px-3.5 text-callout` |
+| `icon-sm` | `['relative size-7 rounded-lg p-0', coarseHitArea]` |
 | `icon` | `size-9 rounded-full p-0` |
 | `icon-lg` | `size-11 rounded-full p-0` |
 
@@ -158,7 +160,7 @@ Defined in `@/components/ui/toggle`. Base classes:
 Defined in `@/components/ui/toggle`. Base classes:
 
 ```text
-relative isolate inline-flex w-fit items-center
+group/toggle-group relative isolate inline-flex w-fit items-center data-[orientation=vertical]:flex-col data-[orientation=vertical]:items-stretch
 ```
 
 **`variant`** — default `default`
@@ -166,6 +168,7 @@ relative isolate inline-flex w-fit items-center
 | Value | Adds |
 | --- | --- |
 | `default` (default) | `gap-1` |
+| `filled` | `gap-1` |
 | `quiet` | `gap-1` |
-| `filled` | — |
 | `outline` | `gap-0 rounded-ctl shadow-hairline` |
+| `segmented` | — |

@@ -204,6 +204,25 @@ describe('PencilCanvas on a Canvas', () => {
     expect(surface().tagName.toLowerCase()).toBe('svg');
   });
 
+  it('passes ref, id, aria-* and data-* to its svg, and its ref to the div on its own', () => {
+    let boardRef: Element | null = null;
+    const { unmount } = render(
+      <Canvas>
+        <PencilCanvas ref={(el) => { boardRef = el; }} id="ink" aria-label="Sketch" data-layer="ink" />
+      </Canvas>,
+    );
+    expect(boardRef).toBe(surface());
+    expect(surface().tagName.toLowerCase()).toBe('svg');
+    expect(surface().getAttribute('id')).toBe('ink');
+    expect(surface().getAttribute('aria-label')).toBe('Sketch');
+    expect(surface().getAttribute('data-layer')).toBe('ink');
+    unmount();
+    const ref = { current: null as HTMLDivElement | SVGSVGElement | null };
+    render(<div className="relative"><PencilCanvas ref={ref} /></div>);
+    expect(ref.current).toBe(surface());
+    expect(surface().tagName.toLowerCase()).toBe('div');
+  });
+
   it('hands presses back to the host while disabled', async () => {
     const onStrokesChange = vi.fn();
     const onCanvasPointerDown = vi.fn();

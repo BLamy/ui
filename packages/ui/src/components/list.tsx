@@ -8,7 +8,7 @@ import { createParts } from '@ui-sdk/react/primitive';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { Button as SdkButton } from '@ui-sdk/react/button';
 import { checkboxVariants } from '@/components/ui/checkbox';
-import { EmptyState } from '@/components/ui/empty-state';
+import { renderEmptyState } from '@/components/ui/empty-state';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
 import { Icon, IC } from '@/lib/icon';
 import { springs } from '@/lib/motion';
@@ -34,7 +34,7 @@ export type {
    (`onClick`), a container for controls, or both, with swipe actions, an edit-mode gutter and a hover preview.
    Behavior lives in lib/list-primitive.ts; a list whose rows are chosen from (one or many) is a Listbox. */
 
-/** A swipe action. In `leadingActions` / `trailingActions`, index 0 is the outermost button (nearest the screen
+/** A swipe action. In `startActions` / `endActions`, index 0 is the outermost button (nearest the screen
  *  edge): the one a full swipe runs. */
 export type ListRowAction = ListRowActionOf<string | ReactNode>;
 
@@ -83,10 +83,9 @@ function isEmpty(children: ReactNode): boolean {
   });
 }
 
-const defaultEmpty = <EmptyState size="sm" title="No items" />;
 
 export function List({
-  children, variant, density = 'default', header, stickyTop, emptyState = defaultEmpty, className, ...props
+  children, variant, density = 'default', header, stickyTop, emptyState, className, ...props
 }: ListProps) {
   const hRef = useRef<HTMLDivElement | null>(null);
   const [hh, setHh] = useState(0);
@@ -110,7 +109,7 @@ export function List({
             <div ref={hRef} className="sticky top-(--list-header-top) z-24 bg-sticky backdrop-blur-[10px] transition-[top] duration-spring-smooth ease-spring-smooth"
               style={{ '--list-header-top': chromeOffset(above, chromeHid) + 'px' } as CSSProperties}>{header}</div>
           ) : null}
-          {empty ? (typeof emptyState === 'string' ? <EmptyState size="sm" title={emptyState} /> : emptyState) : children}
+          {empty ? renderEmptyState(emptyState, { title: 'No items' }) : children}
         </div>
       </BLStickyCtx.Provider>
     </ListCtx>
@@ -238,10 +237,10 @@ function SectionItem({ value, label, animated, entering, slot, children }: {
 export const listRowVariants = cva(
   [
     // Type metrics a <button> would reset, so a host's body line-height or tracking doesn't reach the row.
-    'relative z-1 box-border flex w-full touch-pan-y items-center gap-3 py-0 pl-4 text-left text-body leading-[normal] tracking-[normal] outline-none',
+    'relative z-1 box-border flex w-full touch-pan-y items-center gap-3 py-0 ps-4 text-start text-body leading-[normal] tracking-[normal] outline-none',
     'focus-visible:[box-shadow:inset_0_0_0_2px_var(--primary)]',
     // Trailing inset clears an IndexBar overlaying the list (it publishes --bl-index-bar-inset on its parent).
-    'pr-[max(16px,calc(var(--bl-index-bar-inset,0px)+6px))]',
+    'pe-[max(16px,calc(var(--bl-index-bar-inset,0px)+6px))]',
     // The swipe offset (`--swipe-x`, from UI SDK) moves the surface; it springs back unless a finger holds it.
     'translate-x-(--swipe-x) transition-[translate] duration-spring-snappy ease-spring-snappy group-data-swiping/row:transition-none motion-reduce:transition-none',
   ],
@@ -251,7 +250,7 @@ export const listRowVariants = cva(
        *  multi-line row (a checkbox beside a wrapping title, an avatar beside a message preview). */
       align: { center: '', top: '[&>[data-slot=list-row-leading]]:self-start [&>[data-slot=list-row-leading]]:pt-[7px]' },
       /** Main axis: `start` (default), or `center` for a lone button row ("Sign Out", "Add Account"). */
-      justify: { start: '', center: '' },
+      justify: { start: '', center: '[&_[data-slot=list-row-body]]:justify-center [&_[data-slot=list-row-title]]:flex-none' },
       density: { compact: 'min-h-9', default: 'min-h-row', comfortable: 'min-h-14' },
       // The wash lies over the card (a translucent fill alone would vanish into a dark grouped background).
       current: { true: 'bg-card bg-linear-to-r from-secondary-strong to-secondary-strong', false: 'bg-card' },
@@ -292,10 +291,11 @@ export interface ListRowProps extends Omit<ComponentProps<'div'>, 'title' | 'chi
   disabled?: boolean;
   /** Makes the row a button. Without it the row is a plain container. */
   onClick?: ComponentProps<typeof SdkButton>['onClick'];
-  /** Revealed by swiping right (or → from the keyboard). */
-  leadingActions?: ListRowAction[];
-  /** Revealed by swiping left (or ← from the keyboard). A `destructive` action also runs on Delete. */
-  trailingActions?: ListRowAction[];
+  /** At the row's start: revealed by swiping toward the end (right, in left-to-right text; or → from the keyboard). */
+  startActions?: ListRowAction[];
+  /** At the row's end: revealed by swiping toward the start (or ← from the keyboard). A `destructive` action also
+   *  runs on Delete. */
+  endActions?: ListRowAction[];
   /** A long swipe runs the outermost action. Default `true` (both sides). */
   fullSwipe?: ListRowFullSwipe;
   /** Without `onClick`, pressing the row toggles the switch/checkbox inside it. Default true. */
@@ -331,16 +331,16 @@ function ActionIcon({ icon }: { icon: ListRowAction['icon'] }) {
 /** One side's actions: measured at their full width (where the row stops when open), drawn as a strip that grows
  *  with the swipe; a full swipe hands the whole strip to the outermost action. */
 function RowActions({ side, actions }: { side: 'start' | 'end'; actions: ListRowAction[] }) {
-  // DOM order follows the screen (left → right), so Tab walks the buttons as they appear.
+  // DOM order follows the reading order (start → end), so Tab walks the buttons as they appear.
   const shown = actions.map((a, i) => ({ a, i }));
   if (side === 'end') shown.reverse();
   return (
     <RowParts.Actions value={side}
-      className={cn('absolute inset-y-0 w-(--list-row-actions-w)', side === 'start' ? 'left-0' : 'right-0')}
+      className={cn('absolute inset-y-0 w-(--list-row-actions-w)', side === 'start' ? 'start-0' : 'end-0')}
       style={{ '--list-row-actions-w': actions.reduce((w, a) => w + actionW(a), 0) + 'px' } as CSSProperties}>
       <div className={cn(
         'absolute inset-y-0 flex w-(--list-row-reveal) overflow-hidden transition-[width] duration-spring-snappy ease-spring-snappy group-data-swiping/row:transition-none motion-reduce:transition-none',
-        side === 'start' ? 'left-0' : 'right-0',
+        side === 'start' ? 'start-0' : 'end-0',
       )}>
         {shown.map(({ a, i }) => (
           <RowParts.Action key={a.label + i} value={`${side}-${i}`} side={side} index={i} aria-label={a.label}
@@ -372,7 +372,7 @@ function Grip({ title, value, index, count }: { title: ReactNode; value: string;
   const id = useId();
   return (
     <SectionParts.Handle value={value} aria-label={`Reorder ${typeof title === 'string' ? title : 'row'}`} aria-describedby={id}
-      className="bl-btn pointer-events-auto -mr-2 grid h-[44px] w-[40px] shrink-0 cursor-grab touch-none place-items-center rounded-lg border-0 bg-transparent p-0 text-tertiary-foreground outline-none select-none focus-visible:[box-shadow:inset_0_0_0_2px_var(--primary)] data-grabbed:cursor-grabbing">
+      className="bl-btn pointer-events-auto -me-2 grid h-[44px] w-[40px] shrink-0 cursor-grab touch-none place-items-center rounded-lg border-0 bg-transparent p-0 text-tertiary-foreground outline-none select-none focus-visible:[box-shadow:inset_0_0_0_2px_var(--primary)] data-grabbed:cursor-grabbing">
       <Icon name="menu" size={22} sw={1.8} />
       <span id={id} className="sr-only">Drag, or press Space and then the up and down arrows, to move. Position {index + 1} of {count}.</span>
     </SectionParts.Handle>
@@ -381,7 +381,7 @@ function Grip({ title, value, index, count }: { title: ReactNode; value: string;
 
 export function ListRow({
   title, description, icon, trailing, accessory, checked, current: isCurrent, editing, disabled, onClick,
-  leadingActions, trailingActions, fullSwipe, labelToggles, divider, align, justify, tone, isEdge, controller,
+  startActions, endActions, fullSwipe, labelToggles, divider, align, justify, tone, isEdge, controller,
   children, preview, contentClassName, className, ...props
 }: ListRowProps) {
   const slot = use(RowSlotCtx);
@@ -389,27 +389,27 @@ export function ListRow({
   const id = useId();
   const titleId = id + '-t', subId = id + '-s', hintId = id + '-h';
 
-  const trailingActs = disabled ? [] : trailingActions ?? [];
-  const leadingActs = disabled ? [] : leadingActions ?? [];
-  const swipeable = !editing && (leadingActs.length > 0 || trailingActs.length > 0);
+  const endActs = disabled ? [] : endActions ?? [];
+  const startActs = disabled ? [] : startActions ?? [];
+  const swipeable = !editing && (startActs.length > 0 || endActs.length > 0);
   const control = accessory != null && accessory !== 'chevron' && accessory !== 'check' ? accessory : null;
   const pressable = !!onClick;
   /** Full-width content replaces the title. */
   const fullWidth = children != null && children !== false;
   const hasTitle = !fullWidth && title != null;
-  const allActs = [...leadingActs, ...trailingActs];
+  const allActs = [...startActs, ...endActs];
   const group = !pressable && swipeable;
-  const hasDelete = trailingActs.some((a) => a.destructive);
+  const hasDelete = endActs.some((a) => a.destructive);
   const shortcuts = `ArrowLeft ArrowRight${hasDelete ? ' Delete' : ''}`;
   const hint = swipeable
-    ? `Actions: ${allActs.map((a) => a.label).join(', ')}. ${[trailingActs.length && 'Left arrow', leadingActs.length && 'right arrow'].filter(Boolean).join(' or ')} to reveal.`
+    ? `Actions: ${allActs.map((a) => a.label).join(', ')}. ${[endActs.length && 'Left arrow', startActs.length && 'right arrow'].filter(Boolean).join(' or ')} to reveal.`
     : null;
   const ariaCurrent = isCurrent || (accessory === 'check' && checked) ? 'true' : undefined;
 
   const body = (
     <>
-      {swipeable && leadingActs.length ? <RowActions side="start" actions={leadingActs} /> : null}
-      {swipeable && trailingActs.length ? <RowActions side="end" actions={trailingActs} /> : null}
+      {swipeable && startActs.length ? <RowActions side="start" actions={startActs} /> : null}
+      {swipeable && endActs.length ? <RowActions side="end" actions={endActs} /> : null}
       <RowParts.Content
         aria-labelledby={group ? titleId : undefined}
         aria-describedby={group && hint ? hintId : undefined}
@@ -437,8 +437,8 @@ export function ListRow({
         ) : null}
         {/* The edit-mode check: always present, 0 wide (its negative margin cancels the gap) until `editing`. */}
         <span aria-hidden="true" data-slot="list-row-edit" className={cn(
-          'pointer-events-none relative flex shrink-0 items-center overflow-hidden transition-[width,opacity,margin-right] duration-spring-snappy ease-spring-snappy motion-reduce:transition-none',
-          editing ? 'mr-0 w-[30px] opacity-100' : '-mr-3 w-0 opacity-0',
+          'pointer-events-none relative flex shrink-0 items-center overflow-hidden transition-[width,opacity,margin-inline-end] duration-spring-snappy ease-spring-snappy motion-reduce:transition-none',
+          editing ? 'me-0 w-[30px] opacity-100' : '-me-3 w-0 opacity-0',
         )}>
           <span data-checked={checked ? '' : undefined}
             className={cn(checkboxVariants({ shape: 'circle' }), 'pointer-events-none cursor-default ease-spring-bouncy')}>
@@ -450,14 +450,13 @@ export function ListRow({
           'pointer-events-none relative flex min-h-[inherit] min-w-0 flex-1 items-center gap-2.5 px-0',
           fullWidth ? 'py-3' : density === 'compact' ? 'py-1' : 'py-[7px]',
           divider !== false && '[box-shadow:inset_0_-1px_0_var(--border)]',
-          justify === 'center' ? 'justify-center' : 'justify-start',
         )}>
           {/* Switches and sliders anywhere in the row (even wrapped in the caller's own component) are named by the title. */}
           <RowLabelContext value={hasTitle ? titleId : undefined}>
             {fullWidth ? (
               <RowParts.Control data-row-control="" className="pointer-events-auto min-w-0 flex-1">{children}</RowParts.Control>
             ) : (
-              <div className={cn('min-w-0', justify === 'center' ? 'flex-none' : 'flex-1')}>
+              <div data-slot="list-row-title" className="min-w-0 flex-1">
                 <div id={titleId} className="truncate leading-[1.3]">{title}</div>
                 {description ? <div id={subId} className="mt-px truncate text-footnote text-muted-foreground">{description}</div> : null}
               </div>
@@ -479,7 +478,7 @@ export function ListRow({
 
   const root = (
     <RowParts.Root {...props}
-      leadingActions={leadingActs} trailingActions={trailingActs} fullSwipe={fullSwipe} editing={!!editing} disabled={!!disabled}
+      startActions={startActs} endActions={endActs} fullSwipe={fullSwipe} editing={!!editing} disabled={!!disabled}
       labelToggles={labelToggles} isEdge={isEdge} group={group} controller={controller}
       data-disabled={disabled ? '' : undefined}
       className={cn(
@@ -493,7 +492,7 @@ export function ListRow({
   return (
     <HoverCard>
       <HoverCardTrigger render={root}>{body}</HoverCardTrigger>
-      <HoverCardContent side="right" align="start">{preview}</HoverCardContent>
+      <HoverCardContent side="end" align="start">{preview}</HoverCardContent>
     </HoverCard>
   );
 }

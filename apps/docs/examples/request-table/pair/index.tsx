@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react'
-import { RequestLink, RequestTable } from '@/components/ui/request-table'
+import { RequestTableLink, RequestTable } from '@/components/ui/request-table'
 import type { RowId } from '@/lib/log-list-model'
 import type { RequestRow } from '@/lib/request-table-model'
 
@@ -15,8 +15,8 @@ const CALLS = [
 
 // The browser's requests and the server functions that answered them.
 const ROWS: Row[] = CALLS.flatMap((call, i): Row[] => [
-  { id: `browser-${i}`, url: `https://shop.example.com/_serverFn/${call.fn}`, method: 'POST', status: call.status, type: 'fetch', time: call.at, duration: call.took, tone: 'primary', other: `server-${i}`, otherLabel: 'Server function' },
-  { id: `server-${i}`, url: `server:${call.fn}`, name: `${call.fn}()`, method: 'FN', status: call.status, type: 'function', time: call.at + 14, duration: call.took - 28, tone: 'accent', other: `browser-${i}`, otherLabel: 'Browser call' },
+  { id: `browser-${i}`, url: `https://shop.example.com/_serverFn/${call.fn}`, method: 'POST', status: call.status, type: 'fetch', time: call.at, duration: call.took, other: `server-${i}`, otherLabel: 'Server function' },
+  { id: `server-${i}`, url: `server:${call.fn}`, name: `${call.fn}()`, method: 'FN', status: call.status, type: 'function', time: call.at + 14, duration: call.took - 28, tint: 'var(--chart-5)', other: `browser-${i}`, otherLabel: 'Browser call' },
 ])
 
 const COLUMNS = ['name', 'method', 'status', 'duration', 'waterfall'] as const
@@ -24,7 +24,7 @@ const COLUMNS = ['name', 'method', 'status', 'duration', 'waterfall'] as const
 // A row's link selects the other end of its call, which comes into view if it isn't already.
 export default function Pair() {
   const [selected, setSelected] = useState<RowId | null>('browser-4')
-  const renderLink = useCallback((row: Row) => <RequestLink onClick={() => setSelected(row.other)}>{row.otherLabel}</RequestLink>, [])
+  const renderLink = useCallback((row: Row) => <RequestTableLink onClick={() => setSelected(row.other)}>{row.otherLabel}</RequestTableLink>, [])
   return (
     <RequestTable<Row>
       aria-label="Requests and server functions"

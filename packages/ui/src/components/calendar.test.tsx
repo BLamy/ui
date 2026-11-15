@@ -160,7 +160,7 @@ describe('Calendar', () => {
     expect(months.querySelectorAll('[data-slot=calendar-grid]')).toHaveLength(2);
   });
 
-  it('grows its days to touch size in a compact container', async () => {
+  it('grows its days to touch size in a compact container, sharing a width that never runs past it', async () => {
     render(
       <SizeClassProvider value="compact">
         <Calendar {...en} />
@@ -168,7 +168,13 @@ describe('Calendar', () => {
     );
     await settle();
     expect(document.querySelector('[data-slot=calendar]')?.getAttribute('data-size-class')).toBe('compact');
-    expect(cell('2026-09-09').className).toContain('in-data-[size-class=compact]:size-11');
+    // A month is seven 44px days wide (308px) and no wider than its container; a day is a seventh of it, at most 44px.
+    const grid = document.querySelector('[data-slot=calendar-grid]')!;
+    expect(grid.className).toContain('in-data-[size-class=compact]:w-77');
+    expect(grid.className).toContain('in-data-[size-class=compact]:max-w-full');
+    expect(grid.className).toContain('in-data-[size-class=compact]:table-fixed');
+    expect(cell('2026-09-09').className).toContain('in-data-[size-class=compact]:size-auto');
+    expect(cell('2026-09-09').querySelector('span')!.className).toContain('in-data-[size-class=compact]:max-w-11');
   });
 
   it('cannot be focused or picked while disabled', async () => {

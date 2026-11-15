@@ -17,14 +17,14 @@ import {
 {% tab title="npm" %}
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 
-Import the stylesheet once at your app's entry, then the parts from the package root:
+Import the stylesheet once at your app's entry, then the parts from their module:
 
 ```tsx
 import '@brett_lamy/ui/styles.css'
 
 import {
   BLProvider, ThemeScope, AppearanceProvider, useAppearance,
-} from '@brett_lamy/ui'
+} from '@brett_lamy/ui/lib/theme'
 ```
 {% endtab %}
 {% endtabs %}
@@ -53,14 +53,14 @@ Dark mode is shadcn's: the `.dark` class. `BLProvider` and `ThemeScope` put `lig
 
 ## Tint
 
-`tint` sets `--primary` and `--ring` for everything below it: buttons, switches, selection, links.
+`tint` sets `--primary` and `--ring` for everything below it: buttons, switches, selection, links. It also sets `--primary-foreground`, the ink on a primary fill: white while white reaches 3:1 on the tint (the iOS blue, red and purple), and a near-black on a lighter tint such as green, orange, yellow or teal, where white would be about 2:1 (`tintForeground(tint)` in `@/lib/theme` is the rule; pass `vars={{ 'primary-foreground': … }}` to choose your own).
 
 ```tsx
 <BLProvider tint="#FF375F">…</BLProvider>
 <ThemeScope tint="#5E5CE6">…</ThemeScope>
 ```
 
-> Tints are picked from the iOS system palette: `#0A84FF`, `#5E5CE6`, `#30B0C7`, `#34C759`, `#FF9F0A`, `#FF375F`. Anything else works. Pick a color with contrast against both card colors.
+> Tints are picked from the iOS system palette: `#0A84FF`, `#5E5CE6`, `#30B0C7`, `#34C759`, `#FF9F0A`, `#FF375F`. Anything else works: the ink on it is picked for you. Pick a color with contrast against both card colors, since a tint is also link and selection text.
 
 ## The iOS theme
 
@@ -211,7 +211,7 @@ A scope sets only what it changes. Everything else (border, muted text, the bars
 | --- | --- |
 | `scope` | An open string. It becomes `data-theme-scope="…"`, so any `[data-theme-scope="name"]` rule in your CSS applies. Built-ins are listed below. |
 | `appearance` | `light` or `dark` for this subtree. Defaults to the ambient `AppearanceProvider`; without one, a plain scope inherits the page and a named scope is light (`terminal` is always dark). |
-| `tint` | `--primary` and `--ring` for the subtree. |
+| `tint` | `--primary` and `--ring` for the subtree, and a `--primary-foreground` that reads on it. |
 | `vars` | Variables by name without the leading dashes. Typed by the theme's variable names, so `radius`, `card` and `font-sans` autocomplete; any other key is a custom property of your own. Wins over `tint`. |
 
 `THEME_VARS` lists every variable name and `ThemeVar` is the union type. `themeScopeProps()` returns the same attribute, class and style for a root you render yourself, and `readThemeVars(el)` reads the resolved variables back.
@@ -222,7 +222,7 @@ A custom named scope inherits variables it does not define. When giving it a dar
 
 ### Overlays follow their scope
 
-Popovers, tooltips, menus, dialogs, sheets and the CommandMenu render in a portal (`BLProvider`'s root, else `<body>`), outside the scope's DOM, so CSS inheritance no longer reaches them. `ThemeScope` publishes its state through `ThemeScopeContext`, and the overlay primitives put the same `data-theme-scope`, appearance class, tint and `vars` on their own root. A popover opened inside a dark, pink, square-cornered scope is dark, pink and square-cornered.
+Popovers, tooltips, menus, dialogs, sheets and the CommandMenu render in a portal (`BLProvider`'s root, else `<body>`), outside the scope's DOM, so CSS inheritance no longer reaches them. `ThemeScope` publishes its state through a context (`useThemeScope()` reads it), and the overlay primitives put the same `data-theme-scope`, appearance class, tint and `vars` on their own root. A popover opened inside a dark, pink, square-cornered scope is dark, pink and square-cornered.
 
 For an overlay of your own, spread the same props onto its root:
 

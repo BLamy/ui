@@ -24,7 +24,7 @@ export default function Highlighting({ variant = 'default' }: { variant?: string
   const highlight = variant === 'custom' ? highlightLog : variant === 'none' ? null : undefined
   return (
     <div className="mx-auto h-36 w-full max-w-2xl overflow-hidden rounded-card border border-border">
-      <CodeEditor readOnly variant="ghost" lines={LINES} highlight={highlight} aria-label="server.log" />
+      <CodeEditor readOnly variant="plain" lines={LINES} highlight={highlight} aria-label="server.log" />
     </div>
   )
 }

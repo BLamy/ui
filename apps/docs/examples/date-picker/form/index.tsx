@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { Button } from '@/components/ui/button'
-import { DatePicker, DatePickerContent, DatePickerField } from '@/components/ui/date-picker'
+import { DatePicker, DatePickerContent, DatePickerInputGroup } from '@/components/ui/date-picker'
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field'
 import { ThemeScope } from '@/lib/theme'
 
@@ -23,7 +23,7 @@ export default function FormDemo() {
         <Field name="due">
           <FieldLabel>Due date</FieldLabel>
           <DatePicker locale="en-US" required min="2026-09-01" defaultMonth="2026-09">
-            <DatePickerField />
+            <DatePickerInputGroup />
             <DatePickerContent />
           </DatePicker>
           <FieldDescription>Required, from 1 September 2026.</FieldDescription>
@@ -39,7 +39,7 @@ export default function FormDemo() {
             endName="to"
             defaultValue={['2026-09-08', '2026-09-13']}
           >
-            <DatePickerField />
+            <DatePickerInputGroup />
             <DatePickerContent />
           </DatePicker>
         </Field>

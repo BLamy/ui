@@ -1,5 +1,5 @@
 'use client';
-import { createContext, useCallback, useContext, useMemo, useRef, useState, type ComponentProps, type ReactNode } from 'react';
+import { useCallback, useState, type ComponentProps, type ReactNode } from 'react';
 import { createFocusRecovery } from '@ui-sdk/core';
 import {
   Dialog as SdkDialog,
@@ -35,6 +35,7 @@ import { scopeStyle, useLayerHost, useThemeScopeProps } from '@/lib/theme';
 import { useMountPresentationKey, usePresentation } from '@/lib/container';
 import { AnimatedHeight } from '@/components/ui/animated-height';
 import { Swap } from '@/components/ui/swap';
+import { SurfaceFlow, SurfaceFlowTitle, SurfaceHeaderContext, useSurfaceFlow, useSurfaceHeader } from '@/lib/surface-flow';
 
 /* ══ Dialog and AlertDialog — UI SDK's dialogs with the kit's cards ══
    UI SDK owns the behavior: the focus trap, Esc, focus returning to the trigger, the inert page behind,
@@ -107,33 +108,6 @@ export {
 
 /* ── Dialog ── */
 
-interface DialogFlow {
-  /** The root's `view`; undefined for a dialog that isn't a flow. */
-  view: string | undefined;
-  /** Travel of the last view change: 1 forward, -1 back (a view seen before), 0 none. */
-  direction: -1 | 0 | 1;
-  dismissible: boolean;
-}
-const DialogFlowContext = createContext<DialogFlow>({ view: undefined, direction: 0, dismissible: true });
-const DialogHeaderContext = createContext<'default' | 'bar' | null>(null);
-
-/** The direction of each change of `view`: revisiting a view in the trail is going back. */
-function useViewDirection(view: string | undefined): -1 | 0 | 1 {
-  const trail = useRef<string[]>(view === undefined ? [] : [view]);
-  const last = useRef<{ view: string | undefined; direction: -1 | 0 | 1 }>({ view, direction: 0 });
-  if (last.current.view !== view && view !== undefined) {
-    const at = trail.current.indexOf(view);
-    if (at >= 0) {
-      trail.current = trail.current.slice(0, at + 1);
-      last.current = { view, direction: -1 };
-    } else {
-      trail.current = [...trail.current, view];
-      last.current = { view, direction: 1 };
-    }
-  }
-  return last.current.direction;
-}
-
 export type DialogProps = ComponentProps<typeof SdkDialog> & {
   /** Key of the current view of a flow. A new key springs the card to its DialogView's height and slides in from
       the right, with its title; a key seen before comes back from the left. */
@@ -151,36 +125,6 @@ export function Dialog({ container, presentation = 'auto', view, dismissible = t
     <SurfaceFlow view={view} dismissible={dismissible}>
       <SdkDialog key={key} container={container === undefined ? host : container} presentation={shown} dismissible={dismissible} {...props} />
     </SurfaceFlow>
-  );
-}
-
-export interface SurfaceFlowProps {
-  /** Key of the current view; undefined for a surface that isn't a flow. */
-  view?: string;
-  /** Whether the surface can be dismissed (the bare DialogClose × is left out when it can't). Default true. */
-  dismissible?: boolean;
-  children?: ReactNode;
-}
-
-/** The view flow of a modal surface, for a surface root other than Dialog (Sheet's `view`): it works out the
-    direction of each change of `view` and lets DialogView, DialogTitle, DialogBack and SurfaceFlowTitle below follow it. */
-export function SurfaceFlow({ view, dismissible = true, children }: SurfaceFlowProps) {
-  const direction = useViewDirection(view);
-  const flow = useMemo(() => ({ view, direction, dismissible }), [view, direction, dismissible]);
-  return <DialogFlowContext.Provider value={flow}>{children}</DialogFlowContext.Provider>;
-}
-
-/** A flow title's text: when the surface has a `view`, a new title travels in from the side its view comes from
-    while the old one plays its exit. Outside a flow, the children as they are. DialogTitle uses it; so can the
-    title of another surface (SheetTitle). */
-export function SurfaceFlowTitle({ children }: { children?: ReactNode }) {
-  const { view, direction } = useContext(DialogFlowContext);
-  if (view === undefined) return children;
-  const key = typeof children === 'string' || typeof children === 'number' ? String(children) : view;
-  return (
-    <Swap value={key} direction={direction} distance={18} blur={3} inline className="grid w-full overflow-x-clip [overflow-clip-margin:8px]">
-      <span className="justify-self-start">{children}</span>
-    </Swap>
   );
 }
 
@@ -224,7 +168,7 @@ export const dialogVariants = cva(
         /** As a sheet: attached to the bottom edge, like the kit's Sheet. */
         default:
           'data-[presentation=sheet]:m-0 data-[presentation=sheet]:w-full data-[presentation=sheet]:rounded-b-none data-[presentation=sheet]:pb-[max(12px,env(safe-area-inset-bottom))]',
-        /** As a sheet: a tray floating inset from the edges. */
+        /** As a sheet: a tray floating `trayInset` (10px) in from the edges, with `--radius-sheet` corners: the same card as FloatingSheet at rest. */
         tray: 'data-[presentation=sheet]:mx-2.5 data-[presentation=sheet]:mt-0 data-[presentation=sheet]:mb-[max(10px,env(safe-area-inset-bottom))] data-[presentation=sheet]:w-auto',
       },
     },
@@ -241,7 +185,7 @@ export function DialogContent<Payload = unknown>({
   className, style, size = 'default', variant = 'default', children, ...props
 }: DialogContentProps<Payload>) {
   const scope = useThemeScopeProps();
-  const { dismissible } = useContext(DialogFlowContext);
+  const { dismissible } = useSurfaceFlow();
   return (
     <SdkDialogContent<Payload>
       data-theme-scope={scope['data-theme-scope']}
@@ -269,9 +213,9 @@ export interface DialogHeaderProps extends ComponentProps<'div'>, VariantProps<t
     DialogClose in one row. */
 export function DialogHeader({ className, variant = 'default', ...props }: DialogHeaderProps) {
   return (
-    <DialogHeaderContext.Provider value={variant}>
+    <SurfaceHeaderContext.Provider value={variant}>
       <div data-slot="dialog-header" data-variant={variant} className={cn(surfaceHeaderVariants({ variant }), className)} {...props} />
-    </DialogHeaderContext.Provider>
+    </SurfaceHeaderContext.Provider>
   );
 }
 
@@ -279,8 +223,8 @@ export function DialogHeader({ className, variant = 'default', ...props }: Dialo
     When the root has a `view`, a new title travels in from the side its view comes from (the leaving one plays its
     exit), and long titles wrap rather than run under the ×. */
 export function DialogTitle({ className, children, ...props }: ComponentProps<typeof SdkDialogTitle>) {
-  const { view } = useContext(DialogFlowContext);
-  const header = useContext(DialogHeaderContext);
+  const { view } = useSurfaceFlow();
+  const header = useSurfaceHeader();
   const bar = header === 'bar';
   const base = cn(surfaceTitleVariants(), bar ? 'min-w-0 flex-1 py-px' : 'pe-8');
   if (view === undefined) {
@@ -323,8 +267,8 @@ export function DialogFooter({ className, orientation = 'horizontal', ...props }
     isn't dismissible. A `value` is reported as `returnValue`, and an `action` runs first (a Promise it returns keeps
     the dialog open). */
 export function DialogClose({ className, children, render, ...props }: ComponentProps<typeof SdkDialogClose>) {
-  const { dismissible } = useContext(DialogFlowContext);
-  const header = useContext(DialogHeaderContext);
+  const { dismissible } = useSurfaceFlow();
+  const header = useSurfaceHeader();
   if (children !== undefined || render !== undefined) {
     return <SdkDialogClose className={className} render={render} {...props}>{children}</SdkDialogClose>;
   }
@@ -351,7 +295,7 @@ export function DialogBack({ hidden = false, className, 'aria-label': label = 'B
       data-hidden={hidden || undefined}
       aria-hidden={hidden || undefined}
       inert={hidden || undefined}
-      className="-ms-1 grid w-[30px] shrink-0 place-items-center overflow-clip transition-[width,margin,opacity,scale] duration-spring-snappy ease-spring-snappy [overflow-clip-margin:4px] data-hidden:ms-0 data-hidden:-me-2.5 data-hidden:w-0 data-hidden:scale-40 data-hidden:opacity-0 motion-reduce:transition-none"
+      className="-ms-1 grid w-[30px] shrink-0 place-items-center overflow-clip transition-[width,margin,opacity,scale] duration-spring-snappy ease-spring-snappy [overflow-clip-margin:7px] data-hidden:ms-0 data-hidden:-me-2.5 data-hidden:w-0 data-hidden:scale-40 data-hidden:opacity-0 motion-reduce:transition-none"
     >
       <SdkButton aria-label={label} className={cx(closeButtonVariants(), className)} {...props}>
         {children ?? <Icon name="chevL" size={15} sw={2.6} className="rtl:-scale-x-100" />}
@@ -370,7 +314,7 @@ export interface DialogViewProps extends Omit<ComponentProps<typeof AnimatedHeig
     root it still springs the card to its content's height as that changes (an error appearing). Sheet's SheetView is
     this part under a Sheet with a `view`. */
 export function DialogView({ children, className, ...props }: DialogViewProps) {
-  const { view, direction } = useContext(DialogFlowContext);
+  const { view, direction } = useSurfaceFlow();
   const key = view ?? '';
   const [recovery] = useState(() => createFocusRecovery<{ card: HTMLElement | null }>({ fallback: (lost) => lost.props.card }));
   const bind = useCallback(

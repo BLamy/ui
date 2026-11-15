@@ -179,6 +179,8 @@ export function CronEditor({
   const zoneKnown = isValidTimeZone(zone);
   // While the plain-English box can run (or is still checking), it leads; without WebGPU, the raw editor does.
   const [support, setSupport] = useState<boolean | null>(null);
+  // A newer answer is on its way from the model: the one shown is dimmed and marked busy.
+  const [answering, setAnswering] = useState(false);
   // Disabled, the editor shows the expression itself (read-only).
   const plainEnglish = naturalLanguage && !disabled && support !== false;
   const unsupported = naturalLanguage && support === false;
@@ -219,7 +221,7 @@ export function CronEditor({
               data-field={f.name}
               data-active={caretField === i ? '' : undefined}
               data-invalid={bad ? '' : undefined}
-              className="flex min-w-0 flex-col-reverse items-center justify-end gap-0.5 rounded-ctl bg-secondary px-1 py-1.5 text-center ring-primary data-active:ring-2 data-invalid:ring-2 data-invalid:ring-destructive"
+              className="flex min-w-0 flex-col-reverse items-center justify-end gap-0.5 rounded-ctl px-1 py-1.5 text-center shadow-hairline ring-primary data-active:ring-2 data-invalid:ring-2 data-invalid:ring-destructive"
             >
               <dt className={cn('text-caption2 leading-tight', previewSubtle)}>{f.label}</dt>
               <dd className={cn('m-0 max-w-full truncate font-mono text-subhead leading-tight text-foreground', part === undefined && previewSubtle)}>
@@ -230,9 +232,10 @@ export function CronEditor({
         })}
       </dl>
 
-      <p data-slot="cron-editor-description" className="m-0 min-h-[18px] px-1 text-detail text-foreground">
-        {validation.valid ? words : null}
-      </p>
+      {/* Kept while valid (its height holds while cronstrue loads); an invalid expression has no words to show. */}
+      {validation.valid ? (
+        <p data-slot="cron-editor-description" className="m-0 min-h-[18px] px-1 text-detail text-foreground">{words}</p>
+      ) : null}
 
       {presets && presets.length ? (
         <div data-slot="cron-editor-presets">
@@ -255,15 +258,15 @@ export function CronEditor({
     <div data-slot="cron-editor" className={cn('flex min-w-0 flex-col gap-3 text-footnote', className)} {...rest}>
       {name !== undefined ? <input type="hidden" name={name} value={expression} disabled={disabled} /> : null}
       {naturalLanguage && support !== false ? (
-        <NaturalLanguage label={naturalLanguageLabel} current={expression} onUse={set} onSupport={setSupport} debounceMs={parse?.debounceMs} disabled={disabled} />
+        <NaturalLanguage label={naturalLanguageLabel} current={expression} onUse={set} onSupport={setSupport} onPending={setAnswering} debounceMs={parse?.debounceMs} disabled={disabled} />
       ) : null}
 
       {plainEnglish ? (
         // The expression the model chose, always in view, and the raw editor a press away to correct it.
         <Disclosure open={editing} onOpenChange={setEditing} className="shadow-none">
-          <div data-slot="cron-editor-expression" className="flex min-w-0 items-center gap-2 px-1">
+          <div data-slot="cron-editor-expression" aria-busy={answering || undefined} className="flex min-w-0 items-center gap-2 px-1">
             <span className={previewSubtle}>Expression</span>
-            <code className="min-w-0 truncate font-mono text-subhead text-foreground">{empty ? '–' : expression}</code>
+            <code className={cn('min-w-0 truncate font-mono text-subhead text-foreground transition-opacity duration-spring-snappy ease-spring-snappy', answering && 'opacity-60')}>{empty ? '–' : expression}</code>
             <DisclosureTrigger className="ms-auto w-auto flex-none gap-1 text-footnote font-semibold text-primary">Edit expression</DisclosureTrigger>
           </div>
           <DisclosurePanel hiddenUntilFound={false} className="text-footnote text-foreground">
@@ -306,6 +309,8 @@ interface NaturalLanguageProps {
   onUse: (expression: string, details: CronEditorChangeDetails) => void;
   /** Reports whether gpu-cron can run here (null while checking). */
   onSupport: (supported: boolean | null) => void;
+  /** Reports whether a newer answer is pending. */
+  onPending: (pending: boolean) => void;
   debounceMs?: number;
   disabled?: boolean;
 }
@@ -324,11 +329,13 @@ function answerDetails({ event, source }: { event?: Event; source: ChangeSource 
 
 /** The plain-English box: each answer gpu-cron gives for the text becomes the value. Rendered only while gpu-cron may
     run; where it cannot, the raw field's description says why. */
-function NaturalLanguage({ label, current, onUse, onSupport, debounceMs = 0, disabled }: NaturalLanguageProps) {
+function NaturalLanguage({ label, current, onUse, onSupport, onPending, debounceMs = 0, disabled }: NaturalLanguageProps) {
   const [text, setText] = useState('');
   // How the text being answered was typed: an answer reports it as its own change.
   const typed = useRef<{ event?: Event; source: ChangeSource }>({ source: 'keyboard' });
-  const { result, error, supported, parsedText } = useCronParse(text, { debounceMs, enabled: !disabled });
+  const { result, error, supported, parsedText, pending } = useCronParse(text, { debounceMs, enabled: !disabled });
+  useEffect(() => onPending(pending), [pending, onPending]);
+  useEffect(() => () => onPending(false), [onPending]);
   const answer = result && parsedText === text ? result.expression : null;
 
   useEffect(() => onSupport(supported), [supported, onSupport]);

@@ -49,8 +49,8 @@ export const popoverContentVariants = cva(
       variant: {
         /** A padded panel for arbitrary content, 18rem wide. */
         panel: 'w-72 p-4',
-        /** The bare surface, at least as wide as its anchor: for a list or a layout that pads itself. */
-        surface: 'min-w-(--anchor-width)',
+        /** No padding or width of its own (only at least as wide as its anchor): for a list or a layout that pads itself. */
+        plain: 'min-w-(--anchor-width)',
       },
     },
     defaultVariants: { variant: 'panel' },

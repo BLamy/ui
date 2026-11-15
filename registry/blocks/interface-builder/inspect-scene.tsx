@@ -6,7 +6,7 @@ import { Button as SdkButton } from '@ui-sdk/react/button';
 import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
 import { ActionList } from './actions';
-import { AddButton, ChoiceInput, CodeLine, ColorInput, ExprInput, Field, Help, IconAction, NameInput, Section, TextInput } from './fields';
+import { AddButton, ChoiceInput, CodeLine, InspectorColorInput, ExprInput, Field, Help, IconAction, NameInput, Section, TextInput } from './fields';
 import { CommandBlock } from './inspect-node';
 import { freeNames } from './expr';
 import { sceneNames } from './diagnostics';
@@ -76,7 +76,7 @@ export function ScenePanel({ scene, doc }: { scene: Scene; doc: Doc }) {
           {doc.entry === scene.id ? <span className="flex items-center gap-1.5 text-footnote text-success"><Icon name="checkmark" size={13} sw={2.6} /> Is the entry point</span>
             : <SdkButton onClick={() => b.commit((d) => ({ ...d, entry: scene.id }))} className="h-7 cursor-pointer rounded-md border-0 bg-secondary px-2 text-caption font-medium text-foreground outline-none hover:bg-secondary-strong focus-visible:ring-2 focus-visible:ring-ring">Make initial scene</SdkButton>}
         </Field>
-        <Field label="Background"><ColorInput label="Background" value={scene.background ?? null} onChange={(v) => upd((s) => ({ ...s, background: v }))} /></Field>
+        <Field label="Background"><InspectorColorInput label="Background" value={scene.background ?? null} onChange={(v) => upd((s) => ({ ...s, background: v }))} /></Field>
         <Field label="Embed in">
           <div className="flex flex-wrap gap-1">
             {(['NavigationStack', 'TabsScreen', 'SplitView'] as const).map((k) => (

@@ -1,6 +1,6 @@
 'use client';
 import {
-  createContext, memo, useContext, useMemo, useSyncExternalStore,
+  createContext, memo, useContext, useId, useMemo, useSyncExternalStore,
   type ReactElement, type ReactNode,
 } from 'react';
 import type { ChangeDetails, VirtualItem } from '@ui-sdk/core';
@@ -8,7 +8,8 @@ import { createParts, usePart, usePrimitive, type PartProps, type PrimitiveHandl
 import { cva, type VariantProps } from 'class-variance-authority';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { EmptyState } from '@/components/ui/empty-state';
+import { renderEmptyState } from '@/components/ui/empty-state';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Icon } from '@/lib/icon';
 import type { RowId } from '@/lib/log-list-model';
 import type { DataTableColumnSize, DataTableSort, DataTableSortValue, DataTableTimeRange } from '@/lib/data-table-model';
@@ -20,21 +21,23 @@ import { columnResizerClass, dataRowLayers, tableHeaderCellClass } from '@/lib/p
 import { cn, cx } from '@/lib/utils';
 
 /* ══ DataTable — rows of data under columns that sort and resize, 100,000 of them if need be ══
-   <DataTable rows={rows} columns={[{ id: 'name', title: 'Name', flex: 2 }, { id: 'size', title: 'Size', align: 'end' }]} />
+   <DataTable rows={rows} columns={[{ id: 'name', header: 'Name', flex: 2 }, { id: 'size', header: 'Size', align: 'end' }]} />
 
    Rows are plain objects with an `id`. A column says how wide it is (`width`, or a `flex` share with a `minWidth`), what
-   its cells show (`render`, else the row's field of the same name) and what it sorts by (`sortValue`, else that field).
-   Only the rows in view are rendered, so a table of a hundred thousand rows scrolls like one of ten.
+   its cells show (`cell`, else the row's field of the same name) and what it sorts by (`sortValue`, else that field),
+   as a TanStack `ColumnDef` would. Only the rows in view are rendered, so a table of a hundred thousand rows scrolls
+   like one of ten. While `loading` and still without rows it shows placeholder rows, not "No rows".
 
    It has a size class of its own (not the viewport's, so a side panel gets it too): compact, under 480 px, the rows
    stack (the first column's cell over the others', or `renderStackedRow`) and sorting moves into a menu; below 760 px
    the columns with `hideBelow: 'regular'` go.
 
-   It's the data-table primitive (lib/data-table-primitive), built from UI SDK's virtualizer, grid focus and resize: a
-   grid with one tab stop, where ↑ ↓ Home End and Page Up/Down move between rows, Enter or Space presses one, ← → scroll
-   sideways, and Tab goes through the row's own controls and on out; ↑ from the first row reaches the headers, where
-   ← → move, Enter sorts and ⌥← ⌥→ resize. Presets build on it: RequestTable (a waterfall and a playhead) and the SQL
-   console's results. */
+   It's the data-table primitive (lib/data-table-primitive), built from UI SDK's virtualizer, grid focus and resize: an
+   APG grid with one tab stop. ← → move between a row's cells and ↑ ↓ Page Up/Down to the same cell of another row, Home
+   and End to the row's ends (with Ctrl or ⌘ to the first and last rows), Enter or Space presses the row, and Tab goes
+   through the cell's own controls and on out; ↑ from the first row reaches the headers, where ← → move, Enter sorts and
+   ⌥← ⌥→ resize. `focus="row"` keeps focus on whole rows instead (← → then scroll sideways); stacked rows always do.
+   Presets build on it: RequestTable (a waterfall and the current time) and the SQL console's results. */
 
 export const dataTableVariants = cva(
   // The hairline is drawn over the content, so the header's fill and a row's tint don't hide it.
@@ -59,20 +62,20 @@ const ROW_HEIGHT: Record<DataTableDensity, { table: number; stacked: number }> =
 const HEADER_HEIGHT: Record<DataTableDensity, number> = { compact: 28, default: 30, comfortable: 32 };
 
 export interface DataTableColumn<T extends DataTableRow = DataTableRow> extends DataTableColumnSize {
-  /** The header's text. */
-  title?: ReactNode;
-  /** The column in plain words: what the stacked layout's sort menu calls it, and screen readers when `title` isn't a
+  /** The header's content. Default: `label`, else the id. */
+  header?: ReactNode;
+  /** The column in plain words: what the stacked layout's sort menu calls it, and screen readers when `header` isn't a
    *  string. */
   label?: string;
   /** `end` lines the header and cells up at the end, in tabular figures: numbers, sizes, durations. */
   align?: 'start' | 'end';
-  /** Pressing the header sorts by this column. Default true, unless the column has a `render` and no `sortValue`. */
+  /** Pressing the header sorts by this column. Default true, unless the column has a `cell` and no `sortValue`. */
   sortable?: boolean;
   /** What it sorts by. Default: the row's field of the column's id. */
   sortValue?: (row: T) => DataTableSortValue;
-  /** The cell. Default: the row's field of the column's id, as text. Must be stable: a row only renders again when its
-   *  row object or the columns change. */
-  render?: (row: T) => ReactNode;
+  /** A cell's content. Default: the row's field of the column's id, as text. Must be stable: a row only renders again
+   *  when its row object or the columns change. */
+  cell?: (row: T) => ReactNode;
   /** The cells' classes, after the table's own: `text-muted-foreground`, `font-mono`. */
   className?: string;
   /** Shown at the header's end, after its sort arrow: a unit, a total. */
@@ -111,16 +114,17 @@ function useDataTable(): DataTableHandle {
   return handle;
 }
 
-const ROW_CLASS = `group/row absolute inset-x-0 top-0 h-(--data-table-row) cursor-default ${dataRowLayers} data-future:*:opacity-45`;
+const ROW_CLASS = `group/row absolute inset-x-0 top-0 h-(--data-table-row) cursor-default ${dataRowLayers} has-[>[data-slot=data-table-cell]:focus-visible]:before:bg-foreground/4 data-future:*:opacity-45`;
 const TABLE_ROW_CLASS = `${ROW_CLASS} grid grid-cols-(--data-table-cols) items-center`;
 const STACKED_ROW_CLASS = `${ROW_CLASS} flex items-center gap-2 px-2`;
 
-const CELL_CLASS = 'min-w-0 truncate px-2';
+// With cell focus, the focused cell has the ring and its row the hover wash.
+const CELL_CLASS = 'min-w-0 truncate px-2 outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset';
 const CELL_END_CLASS = `${CELL_CLASS} text-end tabular-nums`;
 
 /** A column's words, for the sort menu and screen readers. */
-function dataTableColumnName(column: Pick<DataTableColumn<never>, 'id' | 'label' | 'title'>): string {
-  return column.label ?? (typeof column.title === 'string' ? column.title : column.id);
+function dataTableColumnName(column: Pick<DataTableColumn<never>, 'id' | 'label' | 'header'>): string {
+  return column.label ?? (typeof column.header === 'string' ? column.header : column.id);
 }
 
 function fieldText(row: DataTableRow, id: string): ReactNode {
@@ -131,7 +135,7 @@ function fieldText(row: DataTableRow, id: string): ReactNode {
 }
 
 function cellContent<T extends DataTableRow>(column: Column<T>, row: T): ReactNode {
-  return column.render ? column.render(row) : fieldText(row, column.id);
+  return column.cell ? column.cell(row) : fieldText(row, column.id);
 }
 
 /** The stacked row the table draws without `renderStackedRow`: the first column's cell, over the others' in a line. */
@@ -175,7 +179,7 @@ function RowViewInner<T extends DataTableRow>({ row, index, start, stacked, colu
     children: stacked
       ? (renderStackedRow ? renderStackedRow(row) : <DefaultStackedRow<T> row={row} columns={columns} />)
       : columns.map((column, at) => (
-        <parts.Cell key={column.id} col={at + 1} data-column={column.id} className={cn(column.align === 'end' ? CELL_END_CLASS : CELL_CLASS, column.className)}>
+        <parts.Cell key={column.id} col={at + 1} row={index} data-column={column.id} className={cn(column.align === 'end' ? CELL_END_CLASS : CELL_CLASS, column.className)}>
           {cellContent(column, row)}
         </parts.Cell>
       )),
@@ -184,13 +188,18 @@ function RowViewInner<T extends DataTableRow>({ row, index, start, stacked, colu
 
 const RowView = memo(RowViewInner) as typeof RowViewInner;
 
-function ColumnHeader<T extends DataTableRow>({ column, index, sort }: { column: Column<T>; index: number; sort: DataTableSort | null }) {
+function ColumnHeader<T extends DataTableRow>({ column, index, sort, nameId }: { column: Column<T>; index: number; sort: DataTableSort | null; nameId: string }) {
   const sorted = sort?.column === column.id ? sort.direction : null;
+  // A header that isn't plain text is named by its `label`, when it has one; else by what it shows.
+  const label = column.header != null && typeof column.header !== 'string' ? column.label : undefined;
   return (
     <parts.Column
       value={column.id}
       index={index}
       sortable={column.sortable}
+      // Named by its header alone: the resize handle and the header's end are controls and extras, not its name.
+      aria-labelledby={label ? undefined : nameId}
+      aria-label={label}
       className={cn(
         tableHeaderCellClass,
         'group/column relative flex h-(--data-table-header) min-w-0 items-center gap-1 px-2',
@@ -198,7 +207,7 @@ function ColumnHeader<T extends DataTableRow>({ column, index, sort }: { column:
         column.align === 'end' && 'justify-end',
       )}
     >
-      <span className="min-w-0 truncate">{column.title ?? column.label ?? column.id}</span>
+      <span id={nameId} className="min-w-0 truncate">{column.header ?? column.label ?? column.id}</span>
       {sorted ? <Icon name={sorted === 'ascending' ? 'arrow-up' : 'arrow-down'} size={10} sw={2.6} className="shrink-0 text-foreground" /> : null}
       {column.headerEnd != null ? <span data-slot="data-table-header-end" className="ms-auto shrink-0 font-normal tabular-nums">{column.headerEnd}</span> : null}
       {/* A column's edge, which a drag, the arrow keys or a double press resizes. */}
@@ -243,7 +252,13 @@ export interface DataTableProps<T extends DataTableRow = DataTableRow>
   /** The columns, in order. */
   columns: readonly DataTableColumn<T>[];
   /** `single` (default): a press selects the row (`value`). `none`: rows press (`onAction`) but never stay selected. */
-  selectionMode?: 'single' | 'none';
+  mode?: 'single' | 'none';
+  /** `cell` (default): the arrow keys move between cells, so one value can be reached and read on its own. `row`: focus
+   *  stays on whole rows, and ← → scroll sideways. Stacked rows are always `row`. */
+  focus?: 'cell' | 'row';
+  /** The rows aren't here yet: while there are none, placeholder rows show instead of the empty state; the grid is
+   *  `aria-busy` while it's true. */
+  loading?: boolean;
   /** The selected row's id, controlled; `null` for none. A new value that's out of view is scrolled to. */
   value?: RowId | null;
   defaultValue?: RowId | null;
@@ -267,33 +282,35 @@ export interface DataTableProps<T extends DataTableRow = DataTableRow>
   renderStackedRow?: (row: T) => ReactNode;
   /** What the stacked layout's header says about the rows. Default "12 rows". */
   countLabel?: (count: number) => ReactNode;
-  /** A time on `timeRange`, in ms: rows whose `rowTime` is later are dimmed as the future (`data-future`), and the grid
-   *  gets `data-playhead` and `--data-table-playhead` (its share of the range, 0…1) for an `overlay` to draw a line at.
-   *  It changes no row's props, so it can move on every frame; the controller's `setPlayhead` moves it with no render. */
-  playhead?: number | null;
-  /** The range the playhead moves on, in ms. */
+  /** Where a recording is now, in ms on `timeRange` (as LogList's `currentTime`): rows whose `rowTime` is later are
+   *  dimmed as the future (`data-future`), and the grid gets `data-current-time` and `--data-table-current-time` (its
+   *  share of the range, 0…1) for an `overlay` to draw a line at. It changes no row's props, so it can move on every
+   *  frame; the controller's `setCurrentTime` moves it with no render. */
+  currentTime?: number | null;
+  /** The range the current time moves on, in ms. */
   timeRange?: DataTableTimeRange;
-  /** A row's time, for the playhead. Must be stable. */
+  /** A row's time, for the current time. Must be stable. */
   rowTime?: (row: T) => number | null | undefined;
   /** Attributes for a row, from its data, for the cells' classes to read (`group-data-failed/row:text-destructive`).
    *  Must be stable. */
   rowProps?: (row: T) => DataTableRowAttributes;
-  /** Drawn over the rows, sticky to the view and hidden from screen readers: a playhead's line. */
+  /** Drawn over the rows, sticky to the view and hidden from screen readers: the current time's line. */
   overlay?: (state: DataTableOverlayState<T>) => ReactNode;
-  /** Shown when there are no rows. Default `<EmptyState size="sm" title="No rows" />`. */
+  /** Shown when there are no rows: a string is the title of a small `EmptyState` (default "No rows"), `null` shows
+   *  nothing, any other node is drawn as is (`renderEmptyState`). */
   emptyState?: ReactNode;
   /** Above the grid, outside the scroller: a summary, filters, actions. */
   toolbar?: ReactNode;
   /** After the last row, inside the scroller: "3 more later", a "Load more". */
   footer?: ReactNode;
-  /** Scrolls, selects, sorts and moves the playhead from outside: `createDataTableController()`. */
+  /** Scrolls, selects, sorts and moves the current time from outside: `createDataTableController()`. */
   controller?: DataTableController;
   'aria-label'?: string;
 }
 
 /** The columns as given, with `sortable` filled in. */
 function useColumns<T extends DataTableRow>(columnsProp: readonly DataTableColumn<T>[]): readonly Column<T>[] {
-  return useMemo(() => columnsProp.map((column) => ({ ...column, sortable: column.sortable ?? (!column.render || !!column.sortValue) })), [columnsProp]);
+  return useMemo(() => columnsProp.map((column) => ({ ...column, sortable: column.sortable ?? (!column.cell || !!column.sortValue) })), [columnsProp]);
 }
 
 interface BodyProps<T extends DataTableRow> {
@@ -306,6 +323,7 @@ interface BodyProps<T extends DataTableRow> {
   countLabel: (count: number) => ReactNode;
   overlay: ((state: DataTableOverlayState<T>) => ReactNode) | undefined;
   emptyState: ReactNode;
+  loading: boolean;
   toolbar: ReactNode;
   footer: ReactNode;
   density: DataTableDensity;
@@ -314,7 +332,7 @@ interface BodyProps<T extends DataTableRow> {
 }
 
 /** The table, rendered from what the root's state says: the rows in order, the columns its size class shows, the sort
- *  and the layout. A moving playhead never reaches it. */
+ *  and the layout. A moving current time never reaches it. */
 function BodyInner<T extends DataTableRow>({ handle, total, density, toolbar, rootProps, ...rest }: BodyProps<T>) {
   const { className, ...props } = rootProps;
   return usePart(handle, 'root', {}, {
@@ -347,21 +365,22 @@ interface TableProps<T extends DataTableRow> extends Omit<BodyProps<T>, 'density
 }
 
 function TableInner<T extends DataTableRow>({
-  handle, allColumns, rows, columns, sort, stacked, rowTime, rowProps, renderStackedRow, countLabel, overlay, emptyState, footer, ariaLabel,
+  handle, allColumns, rows, columns, sort, stacked, rowTime, rowProps, renderStackedRow, countLabel, overlay, emptyState, loading, footer, ariaLabel,
 }: TableProps<T>) {
   const { virtual } = handle.api.internal.rows;
+  const nameBase = useId();
   const items = useSyncExternalStore<readonly VirtualItem[]>(virtual.subscribe, virtual.items, virtual.items);
 
   const header = useMemo(() => (stacked ? (
     <parts.Header className={cn(tableHeaderCellClass, 'flex h-(--data-table-header) items-center justify-between gap-2 bg-secondary ps-2 pe-1 font-normal shadow-hairline-b')}>
-      <parts.Heading className="tabular-nums">{countLabel(rows.length)}</parts.Heading>
+      <parts.Heading className="tabular-nums">{loading && !rows.length ? 'Loading…' : countLabel(rows.length)}</parts.Heading>
       <SortMenu<T> columns={columns} allColumns={allColumns} sort={sort} />
     </parts.Header>
   ) : (
     <parts.Header className="grid h-(--data-table-header) grid-cols-(--data-table-cols) bg-secondary shadow-hairline-b">
-      {columns.map((column, i) => <ColumnHeader<T> key={column.id} column={column} index={i} sort={sort} />)}
+      {columns.map((column, i) => <ColumnHeader<T> key={column.id} column={column} index={i} sort={sort} nameId={`${nameBase}-h${i}`} />)}
     </parts.Header>
-  )), [stacked, columns, allColumns, sort, rows.length, countLabel]);
+  )), [stacked, columns, allColumns, sort, rows.length, countLabel, nameBase, loading]);
 
   const rowEls: ReactElement[] = [];
   for (const item of items) {
@@ -386,6 +405,7 @@ function TableInner<T extends DataTableRow>({
   return (
     <parts.Grid
       aria-label={ariaLabel}
+      aria-busy={loading || undefined}
       aria-colcount={stacked ? undefined : columns.length}
       className="group/grid bl-scroll relative min-h-0 flex-1 overflow-auto overscroll-contain outline-none [overflow-anchor:none]"
     >
@@ -393,10 +413,44 @@ function TableInner<T extends DataTableRow>({
         {drawn != null ? <parts.Overlay className="pointer-events-none sticky top-0 z-3 h-0">{drawn}</parts.Overlay> : null}
         <parts.Head className="sticky top-0 z-2 bg-card">{header}</parts.Head>
         <parts.Rows className="relative w-full">{rowEls}</parts.Rows>
-        <parts.Empty>{emptyState === undefined ? <EmptyState size="sm" title="No rows" /> : emptyState}</parts.Empty>
+        {loading && !rows.length
+          ? <LoadingRows ends={columns.map((column) => column.align === 'end')} stacked={stacked} />
+          : <parts.Empty>{renderEmptyState(emptyState, { title: 'No rows' })}</parts.Empty>}
         {footer != null ? <parts.Footer className="px-3 py-2 text-center text-caption text-muted-foreground">{footer}</parts.Footer> : null}
       </div>
     </parts.Grid>
+  );
+}
+
+/** How wide each placeholder's bar is, by row and column: uneven, like text. */
+const PLACEHOLDER_WIDTHS = ['72%', '48%', '60%', '36%', '54%', '66%', '42%'];
+const PLACEHOLDER_ROWS = 6;
+
+/** Rows to come, at the rows' own height and the columns' widths. Hidden from screen readers: the grid is `aria-busy`. */
+function LoadingRows({ ends, stacked }: { ends: readonly boolean[]; stacked: boolean }) {
+  return (
+    <div data-slot="data-table-loading" aria-hidden="true">
+      {Array.from({ length: PLACEHOLDER_ROWS }, (_, row) => (
+        <div
+          key={row}
+          className={cn(
+            "relative h-(--data-table-row) after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-border/60 after:content-['']",
+            stacked ? 'flex flex-col justify-center gap-2 px-2' : 'grid grid-cols-(--data-table-cols) items-center',
+          )}
+        >
+          {stacked ? (
+            <>
+              <Skeleton shape="text" className="h-2.5" style={{ width: PLACEHOLDER_WIDTHS[row % PLACEHOLDER_WIDTHS.length] }} />
+              <Skeleton shape="text" className="h-2" style={{ width: PLACEHOLDER_WIDTHS[(row + 3) % PLACEHOLDER_WIDTHS.length] }} />
+            </>
+          ) : (ends.length ? ends : [false]).map((end, col) => (
+            <div key={col} className={cn('flex min-w-0 px-2', end && 'justify-end')}>
+              <Skeleton shape="text" className="h-2.5" style={{ width: PLACEHOLDER_WIDTHS[(row + col * 2) % PLACEHOLDER_WIDTHS.length] }} />
+            </div>
+          ))}
+        </div>
+      ))}
+    </div>
   );
 }
 
@@ -406,9 +460,9 @@ const Body = memo(BodyInner) as typeof BodyInner;
 const defaultCountLabel = (count: number) => `${count.toLocaleString('en-US')} ${count === 1 ? 'row' : 'rows'}`;
 
 export function DataTable<T extends DataTableRow = DataTableRow>({
-  rows, columns: columnsProp, selectionMode, value, defaultValue, onValueChange, onAction, sort, defaultSort, onSortChange,
+  rows, columns: columnsProp, mode, focus, loading = false, value, defaultValue, onValueChange, onAction, sort, defaultSort, onSortChange,
   columnWidths, defaultColumnWidths, onColumnWidthsChange, layout = 'auto', breakpoints, renderStackedRow,
-  countLabel = defaultCountLabel, playhead = null, timeRange, rowTime, rowProps, overlay, emptyState, toolbar, footer, controller,
+  countLabel = defaultCountLabel, currentTime = null, timeRange, rowTime, rowProps, overlay, emptyState, toolbar, footer, controller,
   density, 'aria-label': ariaLabel = 'Rows', ...rootProps
 }: DataTableProps<T>) {
   const allColumns = useColumns(columnsProp);
@@ -416,10 +470,10 @@ export function DataTable<T extends DataTableRow = DataTableRow>({
   const from = timeRange?.[0];
   const to = timeRange?.[1];
   const range = useMemo<DataTableTimeRange | null>(() => (from !== undefined && to !== undefined ? [from, to] : null), [from, to]);
-  // As on LogList, this is why a moving playhead costs no rows: its prop stops here, as an option the primitive writes
-  // to the page.
+  // As on LogList, this is why a moving current time costs no rows: its prop stops here, as an option the primitive
+  // writes to the page.
   const options: DataTableOptions<T> = {
-    rows, columns: allColumns, selectionMode, playhead, timeRange: range, value, defaultValue, onValueChange, onAction, sort,
+    rows, columns: allColumns, mode, focus, currentTime, timeRange: range, value, defaultValue, onValueChange, onAction, sort,
     defaultSort, onSortChange, columnWidths, defaultColumnWidths, onColumnWidthsChange, breakpoints, layout, controller,
     rowHeights: ROW_HEIGHT[d], headerHeight: HEADER_HEIGHT[d],
   };
@@ -435,6 +489,7 @@ export function DataTable<T extends DataTableRow = DataTableRow>({
       countLabel={countLabel}
       overlay={overlay}
       emptyState={emptyState}
+      loading={loading}
       toolbar={toolbar}
       footer={footer}
       density={d}

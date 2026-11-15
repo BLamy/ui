@@ -1,5 +1,5 @@
 import type { FileRejectionReason } from '@ui-sdk/core/file-input';
-import { formatFileSize } from '@ui-sdk/core/file-input';
+import { formatFileSize } from '@/lib/file-size';
 
 /* ══ File upload — the rows, the rules and the request ══
    What a file upload is made of, with no state or React: an `UploadFile` row (queued, uploading, done, error or

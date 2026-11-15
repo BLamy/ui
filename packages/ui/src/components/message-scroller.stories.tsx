@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Button } from '@/components/ui/button';
-import { AssistantMessage, UserMessage } from '@/components/ui/conversation';
+import { ConversationAssistantMessage, ConversationUserMessage } from '@/components/ui/conversation';
 import { MessageScroller, MessageScrollerItem } from '@/components/ui/message-scroller';
 import { AppearanceProvider, ThemeScope, type Appearance } from '@/lib/theme';
 
@@ -35,23 +35,23 @@ interface Msg {
 }
 const message = (m: Msg) =>
   m.user ? (
-    <UserMessage key={m.id} value={m.id}>
+    <ConversationUserMessage key={m.id} value={m.id}>
       {m.text}
-    </UserMessage>
+    </ConversationUserMessage>
   ) : (
-    <AssistantMessage key={m.id} value={m.id} className="text-detail leading-[1.55]">
+    <ConversationAssistantMessage key={m.id} value={m.id} className="text-detail leading-[1.55]">
       {m.text}
-    </AssistantMessage>
+    </ConversationAssistantMessage>
   );
 
-const long = (n: number) => Array.from({ length: n }, (_, i) => `Line ${i + 1} of an earlier reply that gives the thread real scroll height.`).join(' ');
+const long = (n: number, what = 'an earlier reply') => Array.from({ length: n }, (_, i) => `Line ${i + 1} of ${what} that gives the thread real scroll height.`).join(' ');
 const THREAD: Msg[] = [
   { id: 'u1', user: true, text: 'First turn — scrolled far off-screen above.' },
   { id: 'a1', user: false, text: long(14) },
   { id: 'u2', user: true, text: 'Second turn — also above the fold.' },
   { id: 'a2', user: false, text: long(14) },
   { id: 'u3', user: true, text: 'Last turn — the thread opens anchored here.' },
-  { id: 'a3', user: false, text: long(18) },
+  { id: 'a3', user: false, text: long(40, 'the latest reply') },
 ];
 
 function Turns({ appearance }: { appearance?: Appearance }) {
@@ -112,7 +112,8 @@ function StreamingDemo({ appearance }: { appearance?: Appearance }) {
 /** A reply streams; scroll up and the pill says "Streaming" until you jump back. */
 export const Streaming: Story = { render: () => <StreamingDemo /> };
 
-/** A thread opens anchored at its last user turn (the previous reply peeking above); the jump pill shows. */
+/** A thread opens anchored at its last user turn (the previous reply peeking above). Its reply runs well past the
+    fold, so the jump pill shows. */
 export const OpensAtLastAnchor: Story = {
   render: () => (
     <Frame>

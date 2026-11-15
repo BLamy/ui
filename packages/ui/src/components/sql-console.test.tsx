@@ -87,6 +87,59 @@ describe('SqlConsole', () => {
     // Composed without a sidebar, it is one column whatever its width.
     expect(document.querySelector('[data-slot=sql-console-sidebar]')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Database' })).toBeNull();
+    // The editor is invalid and described by the alert while its text is what failed.
+    expect(area().getAttribute('aria-invalid')).toBe('true');
+    expect(area().getAttribute('aria-describedby')).toBe(alert.id);
+    fireEvent.input(area(), { target: { value: 'select 1' } });
+    expect(area().hasAttribute('aria-invalid')).toBe(false);
+    expect(area().hasAttribute('aria-describedby')).toBe(false);
+  });
+
+  it('takes its text controlled: value / onValueChange, typed and put in from outside', async () => {
+    const onValueChange = vi.fn();
+    const { rerender } = render(
+      <PGliteProvider>
+        <SqlConsole value="select 1" onValueChange={onValueChange} />
+      </PGliteProvider>,
+    );
+    await ready();
+    expect(area().value).toBe('select 1');
+    fireEvent.input(area(), { target: { value: 'select 12' } });
+    expect(onValueChange).toHaveBeenLastCalledWith('select 12', expect.objectContaining({ reason: 'input-change' }));
+    // Controlled: the text is what the host passes back.
+    expect(area().value).toBe('select 1');
+    rerender(
+      <PGliteProvider>
+        <SqlConsole value="select 'saved query'" onValueChange={onValueChange} />
+      </PGliteProvider>,
+    );
+    expect(area().value).toBe("select 'saved query'");
+  });
+
+  it('labels each value with its column when the result is stacked', async () => {
+    const width = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'clientWidth');
+    // A phone-wide console: the result table is compact, so its rows stack.
+    Object.defineProperty(HTMLElement.prototype, 'clientWidth', { configurable: true, get: () => 360 });
+    try {
+      render(
+        <PGliteProvider>
+          <SqlConsole timing={false} defaultValue="select 'Le Guin' as author, 2 as books, 13.75::numeric as avg_price">
+            <SqlConsoleEditor />
+            <SqlConsoleResults />
+          </SqlConsole>
+        </PGliteProvider>,
+      );
+      await ready();
+      runKeys();
+      const fields = await waitFor(() => {
+        const el = document.querySelector('[data-slot=sql-console-stacked-fields]');
+        expect(el).toBeTruthy();
+        return el!;
+      }, wait);
+      expect(fields.textContent).toBe('books2avg_price13.75');
+    } finally {
+      if (width) Object.defineProperty(HTMLElement.prototype, 'clientWidth', width);
+    }
   });
 
   it('shows a result as a DataTable with its summary, typed headers and numbers at the end', async () => {

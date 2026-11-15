@@ -71,7 +71,7 @@ test.describe('without WebGPU', () => {
     await expect(page.locator('[data-slot=cron-editor-description]')).toHaveText('');
 
     await typeInto(expression(page), '*/20 8-18 * * mon-fri');
-    await expect(errors).toHaveCount(0);
+    await expect(errors.locator('[data-slot=field-error]')).toHaveCount(0);
     await expect(page.locator('[data-slot=cron-editor-description]')).toContainText('Every 20 minutes');
     await expect(cell(page, 'hour').locator('dd')).toHaveText('8-18');
   });

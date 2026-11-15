@@ -1,11 +1,12 @@
 {
   "name": "kept-children",
   "title": "useKeptChildren",
-  "description": "Keeps the last children of a closing panel mounted while it animates out, so a drawer or pushed page never empties before it leaves.",
+  "description": "Children that survive a change of presentation: rendered once through a portal into a detached element that the current home docks, so a draft, the caret, scroll and a streaming reply stay mounted while a region moves between a column, a drawer, a pushed page or a floating sheet. The kit's one way to keep children mounted (AdaptivePane, Sidebar, ArtifactChatContainer).",
   "exports": [
     "useKeptChildren"
   ],
   "types": [
-    "KeptChildren"
+    "KeptChildren",
+    "KeptChildrenOptions"
   ]
 }

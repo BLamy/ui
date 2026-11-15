@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
-import { AssistantMessage, Conversation, ConversationComposer, ConversationMessages, MessageMarkdown, ToolCall, WorkLog } from '@/components/ui/conversation'
+import { ConversationAssistantMessage, Conversation, ConversationComposer, ConversationMessages, ConversationMarkdown, ConversationToolCall, ConversationWorkLog } from '@/components/ui/conversation'
 import { ThemeScope } from '@/lib/theme'
 import { SurfaceAgents } from '@/components/blocks/t3-clone/components/workbench/surfaces'
 import { TerminalBody, TerminalHeader } from '@/components/blocks/t3-clone/components/workbench/terminal'
@@ -80,26 +80,26 @@ function AgentConsole() {
           <WorkbenchContent>
             <Conversation>
               <ConversationMessages threadKey="release" streaming>
-                <AssistantMessage key="plan">
-                  <WorkLog summary="Running for 1m 2s" defaultOpen>
-                    <ToolCall
+                <ConversationAssistantMessage key="plan">
+                  <ConversationWorkLog summary="Running for 1m 2s" defaultOpen>
+                    <ConversationToolCall
                       title="Applied database migrations"
                       description="3 files"
                     />
-                    <ToolCall
+                    <ConversationToolCall
                       title="Deploying the API"
                       description="2 of 4 pods"
                       status="running"
                     />
-                    <ToolCall icon="clock-dial" title="Smoke tests" description="queued" />
-                  </WorkLog>
-                  <MessageMarkdown
+                    <ConversationToolCall icon="clock-dial" title="Smoke tests" description="queued" />
+                  </ConversationWorkLog>
+                  <ConversationMarkdown
                     markdown={
                       'Deploying **api@2.14**. I’ll run the smoke tests once ' +
                       'every pod is healthy.'
                     }
                   />
-                </AssistantMessage>
+                </ConversationAssistantMessage>
               </ConversationMessages>
               <ConversationComposer>
                 <WorkbenchComposer

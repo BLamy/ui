@@ -58,7 +58,7 @@ export interface CanvasPointerLayer {
   onCancel?: () => void;
 }
 
-export interface CanvasContextValue extends Omit<CanvasController, 'getViewport' | 'toScreen'> {
+export interface CanvasContextValue extends Omit<CanvasController, 'getViewport'> {
   viewport: Viewport;
   /** The view's zoom: divide a screen length by it to get board units. */
   zoom: number;
@@ -68,8 +68,8 @@ export interface CanvasContextValue extends Omit<CanvasController, 'getViewport'
   local: (e: { clientX: number; clientY: number }) => Pt;
   /** A pointer event's position in board units. */
   toBoard: (e: { clientX: number; clientY: number }) => Pt;
-  /** A board point in the canvas's own pixels (the controller's `toScreen` gives client pixels). */
-  toScreen: (p: Pt) => Pt;
+  /** A board point in the canvas's own pixels, the partner of `local` (`toScreen` gives client pixels). */
+  toLocal: (p: Pt) => Pt;
   /** Lets a child take presses before the host; returns the cleanup. The last one added is asked first. */
   addPointerLayer: (layer: CanvasPointerLayer) => () => void;
 }
@@ -159,7 +159,7 @@ export function Canvas({
   const value = useMemo<CanvasContextValue>(() => ({
     viewport: view, zoom: view.zoom, size, local,
     toBoard: (e) => { const s = local(e); return toBoard(view, s.x, s.y); },
-    toScreen: (p) => toScreen(view, p), toCanvas: api.toCanvas, visible: api.visible,
+    toLocal: (p) => toScreen(view, p), toScreen: api.toScreen, toCanvas: api.toCanvas, visible: api.visible,
     setViewport: api.setViewport, panBy: api.panBy, zoomTo: api.zoomTo, zoomBy: api.zoomBy, fit: api.fit, reveal: api.reveal,
     addPointerLayer,
   }), [view, size, local, api, addPointerLayer]);

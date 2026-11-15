@@ -125,7 +125,8 @@
         { "id": "sidebar", "title": "Sidebar" },
         { "id": "split-view", "title": "SplitView" },
         { "id": "tabs", "title": "Tabs" },
-        { "id": "toolbar", "title": "Toolbar" }
+        { "id": "toolbar", "title": "Toolbar" },
+        { "id": "debug-toolbar", "title": "DebugToolbar" }
       ]
     },
     {
@@ -152,9 +153,8 @@
       "section": "Editors and workbench",
       "pages": [
         { "id": "code-editor", "title": "CodeEditor" },
-        { "id": "debug-toolbar", "title": "DebugToolbar" },
-        { "id": "docstream", "title": "Markdown" },
         { "id": "markdown-editor", "title": "MarkdownEditor" },
+        { "id": "markdown-view", "title": "MarkdownView" },
         { "id": "open-code", "title": "OpenCode" },
         { "id": "pencilkit", "title": "PencilKit" },
         { "id": "replay-preview", "title": "ReplayPreview" },
@@ -183,7 +183,7 @@
         { "id": "env-variables", "title": "Example environment variables" },
         { "id": "passkey-vault", "title": "Passkey vault" },
         { "id": "pglite", "title": "PGlite" },
-        { "id": "tailscale-login", "title": "Sign in with Tailscale" },
+        { "id": "tailscale", "title": "Sign in with Tailscale" },
         { "id": "sql-console", "title": "SqlConsole" },
         { "id": "tailscale-router", "title": "Tailscale request router" }
       ]

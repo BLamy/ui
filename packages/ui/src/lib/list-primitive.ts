@@ -14,7 +14,7 @@ import {
 /** The one key a row's swipe behavior keeps: every row is its own instance. */
 const ROW = 'row';
 
-/** A swipe action. In `leadingActions` / `trailingActions`, index 0 is the outermost button (nearest the screen
+/** A swipe action. In `startActions` / `endActions`, index 0 is the outermost button (nearest the screen
  *  edge): the one a full swipe runs. */
 export interface ListRowAction<Icon = unknown> {
   label: string;
@@ -32,13 +32,13 @@ export type ListRowActionReason = 'action-press' | 'full-swipe' | 'delete-key';
 export type ListRowActionDetails = { reason: ListRowActionReason; event?: Event };
 
 /** Which side may run its outermost action with a long swipe. */
-export type ListRowFullSwipe = boolean | 'leading' | 'trailing';
+export type ListRowFullSwipe = boolean | 'start' | 'end';
 
 /** Drives a ListRow's actions from outside it. Pass it as `controller`. */
 export function createListRowController() {
   return createController<{
     /** Opens the actions on a side; with `focus`, the first one takes focus. */
-    show: (side: 'leading' | 'trailing', options?: { focus?: boolean }) => boolean;
+    show: (side: 'start' | 'end', options?: { focus?: boolean }) => boolean;
     /** Closes the open actions; with `focus`, the row takes focus back. */
     close: (options?: { focus?: boolean }) => boolean;
   }>();
@@ -46,8 +46,8 @@ export function createListRowController() {
 export type ListRowController = ReturnType<typeof createListRowController>;
 
 export type ListRowOptions = {
-  leadingActions?: ListRowAction[];
-  trailingActions?: ListRowAction[];
+  startActions?: ListRowAction[];
+  endActions?: ListRowAction[];
   fullSwipe?: ListRowFullSwipe;
   /** Edit mode: the row doesn't swipe. */
   editing?: boolean;
@@ -72,7 +72,6 @@ export type ListRowState = {
   swipeable: boolean;
 };
 
-const sideOf = (side: 'leading' | 'trailing'): SwipeSide => (side === 'leading' ? 'start' : 'end');
 /** The rows whose actions are open, in every list on the page: opening one closes the others, as on iOS. */
 const openRows = new Set<() => void>();
 // Controls in the row and the reorder grip keep their own gestures.
@@ -82,13 +81,13 @@ const INTERACTIVE = 'button,input,select,textarea,a[href],label,[role=switch],[r
 
 const synced = (options: ListRowOptions) => ({
   group: !!options.group,
-  swipeable: !!(options.leadingActions?.length || options.trailingActions?.length),
+  swipeable: !!(options.startActions?.length || options.endActions?.length),
 });
 
 export const listRow = definePrimitive({
   name: 'list-row',
   options: {
-    leadingActions: 'value', trailingActions: 'value', fullSwipe: 'value', editing: 'boolean', disabled: 'boolean', labelToggles: 'boolean',
+    startActions: 'value', endActions: 'value', fullSwipe: 'value', editing: 'boolean', disabled: 'boolean', labelToggles: 'boolean',
     isEdge: 'value', group: 'boolean', controller: 'value',
   },
   state: (options: ListRowOptions): ListRowState => ({ open: null, swiping: null, removing: null, ...synced(options) }),
@@ -96,10 +95,10 @@ export const listRow = definePrimitive({
   live: ['swiping', 'removing'],
   api: (context) => {
     const actions = (side: SwipeSide) =>
-      (side === 'start' ? context.options().leadingActions : context.options().trailingActions) ?? [];
+      (side === 'start' ? context.options().startActions : context.options().endActions) ?? [];
     const canFull = (side: SwipeSide) => {
       const f = context.options().fullSwipe ?? true;
-      return f === true || (f !== false && sideOf(f) === side);
+      return f === true || (f !== false && f === side);
     };
     let leave = () => {};
     context.onDestroy(() => leave());
@@ -128,7 +127,7 @@ export const listRow = definePrimitive({
       fullSwipe: () => 0.55,
       disabled: () => {
         const o = context.options();
-        return !!o.editing || !!o.disabled || !!context.store.get().removing || (!o.leadingActions?.length && !o.trailingActions?.length);
+        return !!o.editing || !!o.disabled || !!context.store.get().removing || (!o.startActions?.length && !o.endActions?.length);
       },
       onFullSwipe: (_key, side, { event }) => {
         const first = actions(side)[0];
@@ -144,7 +143,7 @@ export const listRow = definePrimitive({
     return {
       swipe,
       canFull,
-      show: (side: 'leading' | 'trailing', options?: { focus?: boolean }) => swipe.show(ROW, sideOf(side), options),
+      show: (side: 'start' | 'end', options?: { focus?: boolean }) => swipe.show(ROW, side, options),
       close: (options?: { focus?: boolean }) => swipe.close(options),
       internal: {
         pointerdown(event: PointerEvent, el: HTMLElement) {

@@ -3,7 +3,7 @@ import { useMemo, useState, type HTMLAttributes } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   STRING_PREVIEW_LENGTH, copyTextOf, formatLength, fullLength, hiddenLength, nextShownLength, previewTokens,
-  type ValuePreview, type ValueTint,
+  type ValuePreview, type ValueTokenType,
 } from '@/lib/object-tree-value';
 import { selectableText } from '@/lib/primitives';
 import { useCopy } from '@/lib/use-copy';
@@ -17,7 +17,7 @@ import { cn } from '@/lib/utils';
    <ObjectValue value={previewFromValue({ a: 1, b: [2, 3] })} /> ══ */
 
 /** The tints share CodeEditor's token colors, so a value and the code next to it read alike. */
-const TINTS: Record<ValueTint, string> = {
+const TINTS: Record<ValueTokenType, string> = {
   string: 'bl-tok-string',
   number: 'bl-tok-number',
   keyword: 'bl-tok-keyword',
@@ -35,10 +35,10 @@ const TINTS: Record<ValueTint, string> = {
   plain: '',
 };
 
-/** The kit's link button, at the size of the text around it; its hit area reaches past the text (24px tall) without
- *  moving the lines. */
+/** The kit's inline link, in the caption face; its hit area reaches past the text (24px tall) without moving the
+ *  lines. */
 const linkButton = cn(
-  'relative ms-1.5 h-auto rounded-sm px-0 align-baseline font-sans text-caption2 font-medium hover:underline active:not-aria-expanded:not-data-disabled:scale-100',
+  'relative ms-1.5 align-baseline font-sans text-caption2 font-medium',
   'after:absolute after:-inset-x-1 after:-inset-y-1.5 after:content-[""]',
 );
 
@@ -81,8 +81,8 @@ export function ObjectValue({ value, maxLength = STRING_PREVIEW_LENGTH, quote, a
       ))}
       {hidden > 0 ? (
         <>
-          <Button variant="link" size="sm" className={linkButton} onClick={showMore}>Show more ({formatLength(hidden)})</Button>
-          <Button variant="link" size="sm" className={linkButton} onClick={() => void copy(copyTextOf(value))}>{copied ? 'Copied' : 'Copy'}</Button>
+          <Button variant="link" className={linkButton} onClick={showMore}>Show more ({formatLength(hidden)})</Button>
+          <Button variant="link" className={linkButton} onClick={() => void copy(copyTextOf(value))}>{copied ? 'Copied' : 'Copy'}</Button>
         </>
       ) : null}
     </span>

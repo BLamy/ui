@@ -140,7 +140,7 @@ function DebuggerEditor({
     <CodeEditor
       ref={editor}
       readOnly
-      variant="ghost"
+      variant="plain"
       lines={lines}
       aria-label={source.url || source.id}
       gutters={gutters}

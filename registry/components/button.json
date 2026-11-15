@@ -1,7 +1,7 @@
 {
   "name": "button",
   "title": "Button",
-  "description": "The labelled action button: UI SDK's Button with default, secondary, outline, contrast, ghost, quiet, destructive and link variants, seven sizes including the full-width iOS pill and three square icon sizes, a pending state while its onClick Promise runs, a press that sinks on a spring, and a text label that morphs into the next one.",
+  "description": "The labelled action button: UI SDK's Button with default, secondary, outline, contrast, ghost, quiet, destructive, plain (the iOS bar text button) and link (inline, in running text) variants, seven sizes including the full-width iOS pill and three square icon sizes, a pending state while its onClick Promise runs, a press that sinks on a spring, and a text label that morphs into the next one.",
   "page": "button",
   "exports": [
     "Button",

@@ -230,7 +230,7 @@ function Shell({ samples }: { samples: boolean }) {
 
       {/* Library, viewer, inspector */}
       <div className="relative flex min-h-0 flex-1">
-        <AdaptivePane presentation={wide ? 'column' : 'drawer'} side="left" aria-label="Media" open={wide || panel === 'media'}
+        <AdaptivePane presentation={wide ? 'column' : 'drawer'} side="start" aria-label="Media" open={wide || panel === 'media'}
           onOpenChange={(open) => setPanel(open ? 'media' : null)} columnWidth={256} className={cn(side, 'border-r border-border')}>
           {media}
         </AdaptivePane>
@@ -247,7 +247,7 @@ function Shell({ samples }: { samples: boolean }) {
             <VideoPreviewControls playback={clock} fps={fps} />
           </div>
         </div>
-        <AdaptivePane presentation={wide ? 'column' : 'drawer'} side="right" aria-label="Inspector" open={wide || panel === 'inspector'}
+        <AdaptivePane presentation={wide ? 'column' : 'drawer'} side="end" aria-label="Inspector" open={wide || panel === 'inspector'}
           onOpenChange={(open) => setPanel(open ? 'inspector' : null)} columnWidth={288} className={cn(side, 'border-l border-border')}>
           {inspector}
         </AdaptivePane>
@@ -303,7 +303,7 @@ function ClipBody({ clip, track, width }: { clip: TimelineClip; track: TimelineT
   return (
     <>
       <div className={cn('absolute inset-x-0 top-0 opacity-90', sound ? 'bottom-3' : 'bottom-0')}>
-        {images.length ? <Filmstrip frames={images} from={ready.kind === 'image' ? 0 : clip.in} to={ready.kind === 'image' ? 0 : clip.out} /> : null}
+        <Filmstrip frames={images} loading={ready.kind === 'image' ? false : frames.loading} from={ready.kind === 'image' ? 0 : clip.in} to={ready.kind === 'image' ? 0 : clip.out} />
       </div>
       {sound ? <div className="absolute inset-x-0 bottom-0 h-3 bg-black/25">{wave}</div> : null}
       {clipDuration(clip) && clip.look ? <div className="absolute right-1 bottom-3.5 rounded-sm bg-background/70 px-1 text-caption2">{clip.look}</div> : null}

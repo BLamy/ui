@@ -5,7 +5,7 @@
 import { useCallback, useEffect, useId, useMemo, useRef, useState, type KeyboardEvent, type PointerEvent, type ReactNode } from 'react';
 import { bindDrag, dragThreshold, type BindDragOptions } from '@ui-sdk/core';
 import { formatColor, parseColor } from '@ui-sdk/core/color';
-import { ColorPicker, ColorPickerArea, ColorPickerField, ColorPickerInput, ColorPickerSlider, ColorPickerSwatch } from '@/components/ui/color-picker';
+import { ColorPicker, ColorPickerArea, ColorPickerInputGroup, ColorPickerInput, ColorPickerSlider, ColorPickerSwatch } from '@/components/ui/color-picker';
 import { Button as SdkButton } from '@ui-sdk/react/button';
 import { Toggle as SdkToggle } from '@ui-sdk/react/toggle';
 import { Popover, PopoverClose, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -324,7 +324,7 @@ const toHex = (c: string) => {
 };
 
 /** A color: a theme color (follows light and dark), an iOS system color, or any color from the picker. */
-export function ColorInput({ value, onChange, label, allowNone = true }: { value: string | null | undefined; onChange: (v: string | null) => void; label: string; allowNone?: boolean }) {
+export function InspectorColorInput({ value, onChange, label, allowNone = true }: { value: string | null | undefined; onChange: (v: string | null) => void; label: string; allowNone?: boolean }) {
   const theme = THEME_COLORS.find((t) => t.id === value);
   const text = !value ? 'None' : theme ? theme.label : value.toUpperCase();
   const custom = value && !value.startsWith('$') ? value : null;
@@ -373,10 +373,10 @@ function CustomColor({ value, onChange }: { value: string; onChange: (v: string)
       <div className="text-caption2 font-semibold tracking-wide text-muted-foreground uppercase">Custom</div>
       <ColorPickerArea className="h-28 w-full" />
       <ColorPickerSlider channel="hue" aria-label="Hue" />
-      <ColorPickerField size="sm">
+      <ColorPickerInputGroup size="sm">
         <ColorPickerSwatch />
         <ColorPickerInput aria-label="Hex color" />
-      </ColorPickerField>
+      </ColorPickerInputGroup>
     </ColorPicker>
   );
 }

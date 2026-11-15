@@ -204,7 +204,7 @@ function WithGuttersDemo() {
     <WindowFrame>
       <Pane title="src/store.js" detail="editable, with a gutter">
         <CodeEditor
-          variant="ghost"
+          variant="plain"
           defaultValue={STORE_SOURCE}
           language="js"
           gutters={gutters}
@@ -228,7 +228,7 @@ function MegabyteLineDemo({ phone }: { phone?: boolean }) {
   return (
     <Size>
       <Pane title="bundle.js" detail={`1,048,576 characters on line 3, ${edits} edits`}>
-        <CodeEditor variant="ghost" defaultValue={text} language="js" onEdit={() => setEdits((n) => n + 1)} revealLine={{ line: 3, column: 500_000, align: 'start' }} aria-label="bundle.js" />
+        <CodeEditor variant="plain" defaultValue={text} language="js" onEdit={() => setEdits((n) => n + 1)} revealLine={{ line: 3, column: 500_000, align: 'start' }} aria-label="bundle.js" />
       </Pane>
     </Size>
   );
@@ -243,7 +243,7 @@ function HalfMillionDemo({ line, phone, wrap }: { line?: number; phone?: boolean
   return (
     <Size>
       <Pane title="generated.js" detail={`500,000 lines, ${edits} edits`}>
-        <CodeEditor variant="ghost" defaultValue={halfMillionLines()} language="js" onEdit={() => setEdits((n) => n + 1)} revealLine={line} wrap={wrap} aria-label="generated.js" />
+        <CodeEditor variant="plain" defaultValue={halfMillionLines()} language="js" onEdit={() => setEdits((n) => n + 1)} revealLine={line} wrap={wrap} aria-label="generated.js" />
       </Pane>
     </Size>
   );
@@ -259,7 +259,7 @@ function PhoneDemo({ wrap, dark }: { wrap?: boolean; dark?: boolean }) {
   return (
     <PhoneFrame dark={dark}>
       <Pane title="src/store.js" detail={wrap ? 'wrapped' : undefined}>
-        <CodeEditor variant="ghost" defaultValue={STORE_SOURCE} language="js" wrap={wrap} aria-label="store.js" />
+        <CodeEditor variant="plain" defaultValue={STORE_SOURCE} language="js" wrap={wrap} aria-label="store.js" />
       </Pane>
     </PhoneFrame>
   );

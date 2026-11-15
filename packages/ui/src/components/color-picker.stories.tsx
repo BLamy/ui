@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
 import { formatColor, parseColor } from '@ui-sdk/core/color';
 import {
-  ColorInput, ColorPicker, ColorPickerArea, ColorPickerChannelInput, ColorPickerContent, ColorPickerField, ColorPickerInput,
+  ColorInput, ColorPicker, ColorPickerArea, ColorPickerChannelInput, ColorPickerContent, ColorPickerInputGroup, ColorPickerInput,
   ColorPickerSlider, ColorPickerSwatch, ColorPickerSwatches, ColorPickerSwatchItem, ColorPickerTrigger, ColorSwatch,
 } from '@/components/ui/color-picker';
 import { Field, FieldDescription, FieldError, FieldLabel } from '@/components/ui/field';
@@ -83,10 +83,10 @@ export const Composed: Story = {
         <ColorPickerArea className="h-36 w-full" />
         <ColorPickerSlider channel="hue" label="Hue" showValue />
         <ColorPickerSlider channel="alpha" label="Opacity" showValue />
-        <ColorPickerField size="sm">
+        <ColorPickerInputGroup size="sm">
           <ColorPickerSwatch />
           <ColorPickerInput aria-label="Hex" />
-        </ColorPickerField>
+        </ColorPickerInputGroup>
         <Caption>Presets</Caption>
         <ColorPickerSwatches aria-label="Presets">
           {swatches.map((c) => <ColorPickerSwatchItem key={c} value={c} />)}

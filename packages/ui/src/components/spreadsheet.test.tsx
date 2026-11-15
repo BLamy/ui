@@ -279,6 +279,12 @@ describe('Spreadsheet', () => {
     expect(screen.queryByRole('img', { name: /^Name histogram/ })).toBeNull();
   });
 
+  it('names a column by its title alone, and says a date column\'s range in days', async () => {
+    render(<Spreadsheet engine="fallback" aria-label="Dates" defaultValue={[['Name', 'Due'], ['a', '2026-05-03'], ['b', '2026-10-12']]} />);
+    expect(screen.getByRole('columnheader', { name: 'Due' })).toBeTruthy();
+    await screen.findByRole('img', { name: 'Due histogram: values from 2026-05-03 to 2026-10-12' });
+  });
+
   it('renames a column by double-clicking its title', async () => {
     const onRows = vi.fn();
     render(<Harness onRows={onRows} />);

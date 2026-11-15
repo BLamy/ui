@@ -3,10 +3,10 @@ import { Breadcrumb, BreadcrumbItem, type BreadcrumbItemData } from '@/component
 // Every item but the last is a link (`href`) or a button (`onClick`); the last
 // is the current page (aria-current), plain text unless it has a handler.
 const PATH: BreadcrumbItemData[] = [
-  { id: 'home', label: 'Home', icon: 'house', href: '#home' },
-  { id: 'projects', label: 'Projects', href: '#projects' },
-  { id: 'design', label: 'Design system', href: '#design' },
-  { id: 'breadcrumb', label: 'Breadcrumb' },
+  { value: 'home', label: 'Home', icon: 'house', href: '#home' },
+  { value: 'projects', label: 'Projects', href: '#projects' },
+  { value: 'design', label: 'Design system', href: '#design' },
+  { value: 'breadcrumb', label: 'Breadcrumb' },
 ]
 
 export default function Trail() {

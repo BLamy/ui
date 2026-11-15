@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 /* Builds the shadcn registry — source-copy items, computed from the code.
  *
- *   node tools/registry/build.mjs            → registry.json (repo root)
+ *   node tools/registry/build.mjs            → registry.json (repo root), and the per-module `exports` of
+ *                                              packages/ui/package.json (package-exports.mjs)
  *   node tools/registry/build.mjs --static   → …then `shadcn build` into apps/docs/public/r (served at /ui/r)
  *   node tools/registry/build.mjs --static --url http://localhost:4500/r --out /tmp/r
  *                                            → a static registry for another host (local testing); the
@@ -25,6 +26,7 @@ import { dirname, join, relative, resolve } from 'node:path';
 import postcss from 'postcss';
 import ts from 'typescript';
 import { ROOT, SRC, buildGraph, importsOf, resolveModule, npmVersion, moduleExports } from './graph.mjs';
+import { packageModules, withPackageExports } from './package-exports.mjs';
 
 const args = process.argv.slice(2);
 const flag = (name) => args.includes(name);
@@ -185,8 +187,9 @@ const graph = buildGraph({ errors });
 const titleOf = (name) => name.split('-').map((w) => w[0].toUpperCase() + w.slice(1)).join(' ');
 const depsField = (npm) => npm.map(([n, v]) => (v ? `${n}@${v}` : n));
 
-// The npm package's barrel must carry everything the docs show (a name documented on a page but missing from the
-// barrel would work with the registry and break with `npm install`).
+// The npm package must carry everything the docs show (a name documented on a page but missing from it would work
+// with the registry and break with `npm install`): from the root barrel, or from the module's own entry point
+// (`@brett_lamy/ui/<path>`, package-exports.mjs).
 const barrelNames = new Set();
 {
   const sf = ts.createSourceFile('index.ts', read(`${SRC}/index.ts`), ts.ScriptTarget.Latest, true);
@@ -195,9 +198,14 @@ const barrelNames = new Set();
   });
 }
 const definedAnywhere = new Set();
+const onSubpath = new Set();
+const subpathModules = new Set(packageModules(graph));
 for (const mod of graph.modules) {
   const ex = moduleExports(`${SRC}/${mod}`);
-  for (const v of [...ex.values, ...ex.types]) definedAnywhere.add(v);
+  for (const v of [...ex.values, ...ex.types]) {
+    definedAnywhere.add(v);
+    if (subpathModules.has(mod)) onSubpath.add(v);
+  }
 }
 // shadcn's CLI goes by a file's last path part when it installs, so it turns `@/lib/x` into `@/components/ui/x` if
 // both are being installed, and a part ends up importing from itself. So a lib file can't be named after a component.
@@ -210,7 +218,7 @@ const componentItems = [...graph.items.values()].map((it) => {
   const type = it.kind === 'lib' ? 'registry:lib' : 'registry:ui';
   for (const e of m.exports ?? []) {
     if (!definedAnywhere.has(e)) errors.push(`registry/components/${it.name}.json: nothing in the library exports "${e}"`);
-    else if (!barrelNames.has(e)) errors.push(`registry/components/${it.name}.json: "${e}" is documented but missing from packages/ui/src/index.ts`);
+    else if (!barrelNames.has(e) && !onSubpath.has(e)) errors.push(`registry/components/${it.name}.json: "${e}" is documented but neither in packages/ui/src/index.ts nor on a package subpath`);
   }
   return {
     name: it.name,
@@ -298,6 +306,8 @@ if (errors.length) {
 }
 
 let registryFile = 'registry.json';
+// The package's per-module entry points (package-exports.mjs), from the same graph.
+emit('packages/ui/package.json', JSON.stringify(withPackageExports(readJson('packages/ui/package.json'), graph), null, 2) + '\n');
 if (URL_BASE === PROD_URL) emit('registry.json', registryJson);
 else {
   // Another host: build from a temporary registry.json, leaving the committed one alone.

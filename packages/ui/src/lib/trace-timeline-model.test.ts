@@ -425,7 +425,7 @@ describe('pooling', () => {
 
 describe('selectStops', () => {
   const axis = linearAxis({ start: 0, end: 1000 });
-  const stop = (time: number, level = 1, tone?: TraceTone, dim?: boolean): TraceStop<string> => ({ key: `${time}`, time, level, tone, dim });
+  const stop = (time: number, level = 1, tone?: TraceTone, disabled?: boolean): TraceStop<string> => ({ key: `${time}`, time, level, tone, disabled });
 
   it('places what fits and keeps at least the gap between dashes', () => {
     const random = seeded(21);
@@ -448,17 +448,17 @@ describe('selectStops', () => {
   });
 
   it('gives a cluster its most severe tone and stands it for its most severe stop', () => {
-    const marks = selectStops([stop(500, 1, 'info'), stop(501, 1, 'error'), stop(502, 1, 'warning'), stop(503, 2)], { axis, win: FULL, length: 600 });
+    const marks = selectStops([stop(500, 1, 'muted'), stop(501, 1, 'destructive'), stop(502, 1, 'warning'), stop(503, 2)], { axis, win: FULL, length: 600 });
     expect(marks).toHaveLength(1);
-    expect(marks[0].tone).toBe('error');
+    expect(marks[0].tone).toBe('destructive');
     expect(marks[0].stop.time).toBe(501);
-    expect(mostSevere('warning', 'info')).toBe('warning');
+    expect(mostSevere('warning', 'muted')).toBe('warning');
     expect(mostSevere('default', 'success')).toBe('success');
   });
 
-  it('dims a cluster only when everything in it is dim', () => {
-    expect(selectStops([stop(500, 1, undefined, true), stop(501, 2, undefined, true)], { axis, win: FULL, length: 600 })[0].dim).toBe(true);
-    expect(selectStops([stop(500, 1, undefined, true), stop(501, 2)], { axis, win: FULL, length: 600 })[0].dim).toBe(false);
+  it('disables a cluster only when everything in it is disabled', () => {
+    expect(selectStops([stop(500, 1, undefined, true), stop(501, 2, undefined, true)], { axis, win: FULL, length: 600 })[0].disabled).toBe(true);
+    expect(selectStops([stop(500, 1, undefined, true), stop(501, 2)], { axis, win: FULL, length: 600 })[0].disabled).toBe(false);
   });
 
   it('reveals more as you zoom in, and leaves out what is out of view', () => {
@@ -489,7 +489,7 @@ describe('selectStops', () => {
 
   it('never lets an important stop go missing from a zoom it fits in', () => {
     const random = seeded(45);
-    const landmarks = Array.from({ length: 12 }, (_, i) => stop(40 + i * 80, 1, 'info'));
+    const landmarks = Array.from({ length: 12 }, (_, i) => stop(40 + i * 80, 1, 'success'));
     const noise = Array.from({ length: 4000 }, () => stop(random() * 1000, 3));
     const stops = [...noise, ...landmarks];
     const marks = selectStops(stops, { axis, win: FULL, length: 600 });
@@ -817,10 +817,10 @@ describe('sameLanes', () => {
     expect(sameLanes([lane()], [])).toBe(false);
     expect(sameLanes([lane()], [{ ...lane(), offset: 3 }])).toBe(false);
     expect(sameLanes([lane()], [{ ...lane(), title: 'B' }])).toBe(false);
-    expect(sameLanes([lane()], [{ ...lane(), color: 'red' }])).toBe(false);
+    expect(sameLanes([lane()], [{ ...lane(), tint: 'red' }])).toBe(false);
     expect(sameLanes([lane()], [{ ...lane(), density: { times: new Float64Array([1]) } }])).toBe(false);
     expect(sameLanes([lane()], [{ ...lane(), marks: [] }])).toBe(false);
-    expect(sameLanes([lane()], [{ ...lane(), marks: [{ key: 'm', times, tone: 'error' }] }])).toBe(false);
+    expect(sameLanes([lane()], [{ ...lane(), marks: [{ key: 'm', times, tone: 'destructive' }] }])).toBe(false);
     expect(sameLanes([lane()], [{ ...lane(), threads: [{ id: 2 }] }])).toBe(false);
   });
 });

@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button'
 import {
   FloatingSheet,
   FloatingSheetBody,
-  FloatingSheetFoot,
+  FloatingSheetFooter,
   type FloatingSheetVariant,
 } from '@/components/ui/floating-sheet'
 import { ProgressStepper } from '@/components/ui/progress-stepper'
@@ -127,11 +127,11 @@ export default function AppearanceMorph({
             ))}
           </div>
         </FloatingSheetBody>
-        <FloatingSheetFoot>
+        <FloatingSheetFooter>
           <div style={{ padding: '8px 16px 16px' }}>
             <Button size="pill">Track order</Button>
           </div>
-        </FloatingSheetFoot>
+        </FloatingSheetFooter>
       </FloatingSheet>
     </Host>
   )

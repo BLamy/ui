@@ -1,6 +1,6 @@
 # Conversation
 
-An agent thread around one composer. A `Conversation` starts empty: the kit's [EmptyState](https://blamy.github.io/ui/#/empty-state) above a centred composer, with suggestion chips under it. When the first message arrives the empty state leaves, the same composer flies down to its dock with the draft and focus intact, and the first turn rises in. From then on the messages live in a [MessageScroller](https://blamy.github.io/ui/#/message-scroller), and `UserMessage`, `AssistantMessage`, `WorkLog` and `ToolCall` are the pieces you put in it.
+An agent thread around one composer. A `Conversation` starts empty: the kit's [EmptyState](https://blamy.github.io/ui/#/empty-state) above a centred composer, with suggestion chips under it. When the first message arrives the empty state leaves, the same composer flies down to its dock with the draft and focus intact, and the first turn rises in. From then on the messages live in a [MessageScroller](https://blamy.github.io/ui/#/message-scroller), and `ConversationUserMessage`, `ConversationAssistantMessage`, `ConversationWorkLog` and `ConversationToolCall` are the pieces you put in it.
 
 Use something else when: you only need the transcript, without the empty state and the dock ([MessageScroller](https://blamy.github.io/ui/#/message-scroller)); the chat sits beside other content or floats over it ([ArtifactChatContainer](https://blamy.github.io/ui/#/artifact-chat-container)); you are building the prompt box itself ([Composer](https://blamy.github.io/ui/#/composer)).
 
@@ -13,27 +13,29 @@ Copies the source into your project's `components/ui/` (with the parts it is bui
 ```tsx
 import {
   Conversation, ConversationEmpty, ConversationMessages,
-  ConversationComposer, UserMessage, AssistantMessage,
+  ConversationComposer, ConversationUserMessage,
+  ConversationAssistantMessage,
 } from '@/components/ui/conversation'
 ```
 {% endtab %}
 {% tab title="npm" %}
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 
-Import the stylesheet once at your app's entry, then the parts from the package root:
+Import the stylesheet once at your app's entry, then the parts from their module:
 
 ```tsx
 import '@brett_lamy/ui/styles.css'
 
 import {
   Conversation, ConversationEmpty, ConversationMessages,
-  ConversationComposer, UserMessage, AssistantMessage,
-} from '@brett_lamy/ui'
+  ConversationComposer, ConversationUserMessage,
+  ConversationAssistantMessage,
+} from '@brett_lamy/ui/conversation'
 ```
 {% endtab %}
 {% endtabs %}
 
-The parts take their colors from the theme scope they are in (`chat`, `workbench`, or none), light or dark. `MessageMarkdown` renders through `MarkdownView`, which uses docstream; the shadcn CLI adds it as a dependency.
+The parts take their colors from the theme scope they are in (`chat`, `workbench`, or none), light or dark. `ConversationMarkdown` renders through `MarkdownView`, which uses docstream; the shadcn CLI adds it as a dependency.
 
 ## Anatomy
 
@@ -44,20 +46,20 @@ Keep the children in this order; the parts animate between the empty and the thr
   <ConversationEmpty title="What are we building?" description="Ask anything about this workspace." />
   <ConversationMessages threadKey={thread.id} streaming={streaming}>
     {turns.map((t) => [
-      <UserMessage key={`${t.id}-u`} attachments={t.files}>{t.prompt}</UserMessage>,
-      <AssistantMessage key={`${t.id}-a`}>
-        <WorkLog summary="Worked for 4s">
-          <ToolCall icon="doc-text" title="Read" description="src/app.tsx" />
-        </WorkLog>
-        <MessageMarkdown markdown={t.reply} streaming={t.streaming} />
-      </AssistantMessage>,
+      <ConversationUserMessage key={`${t.id}-u`} attachments={t.files}>{t.prompt}</ConversationUserMessage>,
+      <ConversationAssistantMessage key={`${t.id}-a`}>
+        <ConversationWorkLog summary="Worked for 4s">
+          <ConversationToolCall icon="doc-text" title="Read" description="src/app.tsx" />
+        </ConversationWorkLog>
+        <ConversationMarkdown markdown={t.reply} streaming={t.streaming} />
+      </ConversationAssistantMessage>,
     ])}
   </ConversationMessages>
   <ConversationComposer>
     <Composer onSubmit={(markdown, files) => send(markdown, files)}>…</Composer>
   </ConversationComposer>
   <ConversationSuggestions>
-    <Suggestion onClick={() => send('Draft a plan')}>Draft a plan</Suggestion>
+    <ConversationSuggestion onClick={() => send('Draft a plan')}>Draft a plan</ConversationSuggestion>
   </ConversationSuggestions>
 </Conversation>
 ```
@@ -72,11 +74,11 @@ Press a suggestion or send a message. The reply streams with the typing dots fir
 
 ## Messages and the work log
 
-`ConversationMessages` is a `MessageScroller` that fades in when the thread starts, and every `UserMessage` and `AssistantMessage` in it is a scroller item, wherever it sits (wrapped in a fragment, a `div` or a component of yours). A `UserMessage` anchors the scroll by default, so a new turn lands near the top with the reply growing below it; pass `anchor` to change that, and `value` to give a message a stable id of your own. Switch `threadKey` to re-open at the last anchor; `peek` sets how many pixels of the previous turn stay visible.
+`ConversationMessages` is a `MessageScroller` that fades in when the thread starts, and every `ConversationUserMessage` and `ConversationAssistantMessage` in it is a scroller item, wherever it sits (wrapped in a fragment, a `div` or a component of yours). A `ConversationUserMessage` anchors the scroll by default, so a new turn lands near the top with the reply growing below it; pass `anchor` to change that, and `value` to give a message a stable id of your own. Switch `threadKey` to re-open at the last anchor; `peek` sets how many pixels of the previous turn stay visible.
 
-A `UserMessage` shows what the [Composer](https://blamy.github.io/ui/#/composer) sent with it: pass `onSubmit`'s attachments as `attachments`. Images are thumbnails named by their file name; other files are chips with their name and size.
+A `ConversationUserMessage` shows what the [Composer](https://blamy.github.io/ui/#/composer) sent with it: pass `onSubmit`'s attachments as `attachments`. Images are thumbnails named by their file name; other files are chips with their name and size.
 
-`WorkLog` is the "Worked for 1m 4s" row. With `ToolCall` children it is a disclosure button (`aria-expanded`) whose panel springs open; with none it is static text, without a chevron. Each `ToolCall` is `done`, `running` (a pulsing dot) or `error`, with an optional `description` and a `code` well. `MessageMarkdown` shows the typing dots while `streaming` is true and no text has arrived.
+`ConversationWorkLog` is the "Worked for 1m 4s" row. With `ConversationToolCall` children it is a disclosure button (`aria-expanded`) whose panel springs open; with none it is static text, without a chevron. Each `ConversationToolCall` is `done`, `running` (a pulsing dot) or `error`, with an optional `description` and a `code` well. `ConversationMarkdown` shows the typing dots while `streaming` is true and no text has arrived.
 
 {% demo src="conversation/work-log" %}
 
@@ -87,7 +89,7 @@ Product-specific rows above the composer (T3 Code's "This thread is settled" ban
 - The empty state's title is a heading (`h2`, or `headingLevel`), so a screen reader's heading list finds the prompt.
 - The transcript is [MessageScroller](https://blamy.github.io/ui/#/message-scroller)'s labelled `role="log"` region (name it with `aria-label` when a page shows two), with `aria-busy` while `streaming`.
 - `ConversationTyping` is `role="status"` with the label "Thinking"; a running tool call is an image named "Running", a failed one "Failed".
-- `Suggestion` is the kit's Button, and `WorkLog` a UI SDK Collapsible: its summary row is the trigger, with `aria-expanded` and `aria-controls` on its panel.
+- `ConversationSuggestion` is the kit's Button, and `ConversationWorkLog` a UI SDK Collapsible: its summary row is the trigger, with `aria-expanded` and `aria-controls` on its panel.
 - The composer keeps focus and its draft across the empty-to-thread move.
 
 ## Props
@@ -121,12 +123,14 @@ Takes [MessageScroller](https://blamy.github.io/ui/#/message-scroller)'s props: 
 
 | Part | Props | Notes |
 | --- | --- | --- |
-| `UserMessage` | `attachments`, `anchor` (default `true`), `value`, `div` props | Right-aligned bubble up to 78% wide, its attachments above it. No text means no bubble. |
-| `AssistantMessage` | `anchor` (default `false`), `value`, `div` props | The reply: work log and markdown. |
-| `MessageMarkdown` | `markdown`, `streaming` | Streaming Markdown, and the typing dots until the first token. |
+| `ConversationUserMessage` | `attachments`, `anchor` (default `true`), `value`, `div` props | Right-aligned bubble up to 78% wide, its attachments above it. No text means no bubble. |
+| `ConversationAssistantMessage` | `anchor` (default `false`), `value`, `div` props | The reply: work log and markdown. |
+| `ConversationMarkdown` | `markdown`, `streaming`, [MarkdownView](https://blamy.github.io/ui/#/docstream)'s props (`className`, `ref`, `onReferenceClick`…) | Streaming Markdown, and the typing dots until the first token. |
 | `ConversationTyping` | `div` props | The three-dot wave. |
-| `WorkLog` | `summary`, `defaultOpen`, `open`, `onOpenChange(open, details)`, `className` | Children are `ToolCall`s; with none the row is static. |
-| `ToolCall` | `title`, `description`, `code`, `icon`, `status`, `className` | `status`: `done` (default, the `icon` or a check), `running`, `error`. |
+| `ConversationWorkLog` | `summary`, `defaultOpen`, `open`, `onOpenChange(open, details)`, `div` props | Children are `ConversationToolCall`s; with none the row is static. |
+| `ConversationToolCall` | `title`, `description`, `code`, `icon`, `status`, `div` props | `status`: `done` (default, the `icon` or a check), `running`, `error`. |
+
+The message parts also work in a bare [MessageScroller](https://blamy.github.io/ui/#/message-scroller), without the empty state and the dock: inside any scroller `ConversationUserMessage` and `ConversationAssistantMessage` render as its items. Every part takes `ref` and its root element's props (`id`, `data-*`, `aria-*`).
 
 ### Dock and chips
 
@@ -134,7 +138,7 @@ Takes [MessageScroller](https://blamy.github.io/ui/#/message-scroller)'s props: 
 | --- | --- | --- |
 | `ConversationComposer` | `div` props | The composer dock: `--conversation-width` (620px) and centred while empty, `--message-column-width` (780px) with `--message-gutter` in a thread. It animates between the two (skipped under reduced motion). |
 | `ConversationSuggestions` | `div` props | Wrapping row of chips under the empty composer. |
-| `Suggestion` | Button props (`onClick`, `disabled`…) | One chip: the kit's `outline` Button, small and round. |
+| `ConversationSuggestion` | Button props (`onClick`, `disabled`…) | One chip: the kit's `outline` Button, small and round. |
 
 ## Styling
 

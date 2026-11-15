@@ -188,3 +188,23 @@ describe('Listbox parts', () => {
     expect(listboxItemVariants()).toContain('min-h-11');
   });
 });
+
+describe('Listbox emptyState', () => {
+  it('shows the default empty state as a status when there are no options, and the list once there are', async () => {
+    const { rerender } = render(<Listbox aria-label="Files" items={[]} />);
+    expect(screen.queryByRole('listbox')).toBeNull();
+    expect(screen.getByRole('status').textContent).toBe('No options');
+    rerender(<Listbox aria-label="Files" items={['a.txt']} />);
+    await settle();
+    expect(screen.getByRole('listbox', { name: 'Files' })).toBeTruthy();
+    expect(screen.queryByRole('status')).toBeNull();
+  });
+
+  it('reads a string as the title, null as nothing, and empty children as empty', () => {
+    const { container, rerender } = render(<Listbox aria-label="Files" emptyState="No files match.">{[]}</Listbox>);
+    expect(screen.getByRole('status').textContent).toBe('No files match.');
+    expect(container.querySelector('[data-slot=listbox-empty]')!.getAttribute('data-variant')).toBe('inset');
+    rerender(<Listbox aria-label="Files" emptyState={null}>{[]}</Listbox>);
+    expect(screen.queryByRole('status')).toBeNull();
+  });
+});

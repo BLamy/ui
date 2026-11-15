@@ -13,7 +13,7 @@ const sections = [
 ]
 
 const stops: IndexBarItem<string>[] = sections.map((s) => ({
-  key: s.id,
+  value: s.id,
   caption: s.title,
   level: s.level,
 }))

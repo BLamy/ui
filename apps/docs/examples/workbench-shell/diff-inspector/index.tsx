@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
-import { AssistantMessage, Conversation, ConversationComposer, ConversationMessages, MessageMarkdown, ToolCall, UserMessage, WorkLog } from '@/components/ui/conversation'
+import { ConversationAssistantMessage, Conversation, ConversationComposer, ConversationMessages, ConversationMarkdown, ConversationToolCall, ConversationUserMessage, ConversationWorkLog } from '@/components/ui/conversation'
 import { ThemeScope } from '@/lib/theme'
 import { SurfaceDiff } from '@/components/blocks/t3-clone/components/workbench/surfaces'
 import { WorkbenchActions, WorkbenchContent, WorkbenchHeader, WorkbenchMain, WorkbenchPanel, WorkbenchPanelClose, WorkbenchPanelFullscreen, WorkbenchPanelHeader, WorkbenchPanelTitle, WorkbenchPanelTrigger, WorkbenchShell, WorkbenchTitle } from '@/components/blocks/t3-clone/components/workbench/workbench-shell'
@@ -76,25 +76,25 @@ function ChatWithDiff() {
           <WorkbenchContent>
             <Conversation>
               <ConversationMessages threadKey="cart">
-                <UserMessage key="u1">
+                <ConversationUserMessage key="u1">
                   Totals ignore quantity — can you fix it?
-                </UserMessage>
-                <AssistantMessage key="a1">
-                  <WorkLog summary="Worked for 18s" defaultOpen>
-                    <ToolCall title="Read src/cart.ts" />
-                    <ToolCall
+                </ConversationUserMessage>
+                <ConversationAssistantMessage key="a1">
+                  <ConversationWorkLog summary="Worked for 18s" defaultOpen>
+                    <ConversationToolCall title="Read src/cart.ts" />
+                    <ConversationToolCall
                       title="Ran the cart tests"
                       description="12 passed"
                       code="pnpm test cart"
                     />
-                  </WorkLog>
-                  <MessageMarkdown
+                  </ConversationWorkLog>
+                  <ConversationMarkdown
                     markdown={
                       '`total()` now multiplies by `qty`, and the items are ' +
                       'typed. The change is in the inspector →'
                     }
                   />
-                </AssistantMessage>
+                </ConversationAssistantMessage>
               </ConversationMessages>
               <ConversationComposer>
                 <WorkbenchComposer checkout={false} onSubmit={() => {}} />

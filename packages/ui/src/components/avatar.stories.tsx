@@ -98,7 +98,7 @@ export const GroupOverflow: StoryObj<typeof AvatarGroup> = {
 /** `menu`: the stack is one button that opens a menu of everyone. */
 export const GroupMenu: StoryObj<typeof AvatarGroup> = {
   render: () => (
-    <AvatarGroup menu size={24} max={3} label="Reviewers">
+    <AvatarGroup menu size={24} max={3} aria-label="Reviewers">
       {PEOPLE.slice(0, 6).map((name) => <Avatar key={name} name={name} />)}
     </AvatarGroup>
   ),
@@ -119,7 +119,7 @@ export const HoverCard: Story = {
 export const OnACard: Story = {
   render: () => (
     <Card className="flex-row items-center gap-3 p-4">
-      <AvatarGroup label="Team">
+      <AvatarGroup aria-label="Team">
         {PEOPLE.slice(0, 4).map((name) => <Avatar key={name} name={name} />)}
       </AvatarGroup>
       <Avatar name="Noor" status="online" />

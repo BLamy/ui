@@ -17,12 +17,12 @@ import { Breadcrumb, BreadcrumbItem } from '@/components/ui/breadcrumb'
 {% tab title="npm" %}
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 
-Import the stylesheet once at your app's entry, then the parts from the package root:
+Import the stylesheet once at your app's entry, then the parts from their module:
 
 ```tsx
 import '@brett_lamy/ui/styles.css'
 
-import { Breadcrumb, BreadcrumbItem } from '@brett_lamy/ui'
+import { Breadcrumb, BreadcrumbItem } from '@brett_lamy/ui/breadcrumb'
 ```
 {% endtab %}
 {% endtabs %}
@@ -36,9 +36,9 @@ Pass `items` for the data-driven form, or compose `BreadcrumbItem`s as children.
 ```tsx
 <Breadcrumb
   items={[
-    { id: 'home', label: 'Home', icon: 'house', href: '/' },
-    { id: 'projects', label: 'Projects', href: '/projects' },
-    { id: 'here', label: 'Design system' },
+    { value: 'home', label: 'Home', icon: 'house', href: '/' },
+    { value: 'projects', label: 'Projects', href: '/projects' },
+    { value: 'here', label: 'Design system' },
   ]}
 />
 
@@ -57,7 +57,7 @@ The last item is plain text; give it an `onClick` or an `href` and it is pressab
 
 ## Sibling menus
 
-An item that carries `siblings` is a picker: pressing it opens a menu of the other entries of its parent, the `currentSibling` one checked, and choosing one fires that entry's `href` or `onClick`. Use it for a file path, a project switcher or any hierarchy where the siblings are one step away. The item's own `href` and `onClick` are not used (the menu replaces them), so put the "go there" action in the entries.
+An item that carries `siblings` is a picker: pressing it opens a menu of the other entries of its parent, the `siblingValue` one checked, and choosing one fires that entry's `href` or `onClick`. Use it for a file path, a project switcher or any hierarchy where the siblings are one step away. The item's own `href` and `onClick` are not used (the menu replaces them), so put the "go there" action in the entries.
 
 An item that opens a popup of your own instead (a file picker dialog, say) is a button with `onClick` plus `aria-haspopup`, `aria-expanded` and `aria-controls`, which go onto the item's button. In the `…` menu it is an ordinary item that runs `onClick`.
 
@@ -65,13 +65,13 @@ An item that opens a popup of your own instead (a file picker dialog, say) is a 
 
 ```tsx
 {
-  id: 'folder',
+  value: 'folder',
   label: 'ui',
   icon: 'folder',
-  currentSibling: 'ui',
+  siblingValue: 'ui',
   siblings: [
-    { id: 'ui', label: 'ui', icon: 'folder', href: '/ui' },
-    { id: 'docs', label: 'docs', icon: 'folder', href: '/docs' },
+    { value: 'ui', label: 'ui', icon: 'folder', href: '/ui' },
+    { value: 'docs', label: 'docs', icon: 'folder', href: '/docs' },
   ],
 }
 ```
@@ -97,7 +97,7 @@ fitBreadcrumbs([44, 76, 108, 100, 92], 320, 16, 24)
 
 The root is a `nav` landmark named "Breadcrumb" (`aria-label` overrides it) around an ordered list. The current item has `aria-current="page"`. A sibling picker is a button with `aria-haspopup`, `aria-expanded` and a `menu` of `menuitemradio` rows (the current one `aria-checked`); the `…` button needs a name, so `ellipsisLabel` localizes "More". Links are real `a` elements when they have an `href`; arrow keys, Home/End, type-to-select and Esc come from the menu. The measuring copy is `aria-hidden` and `inert`, so assistive tech, agents and focus never see it, but a test that queries by text will find each label twice — query within the `breadcrumb-list` slot or by role.
 
-For an agent (UI SDK's `createAgent`), the trail is one `breadcrumb` entry named like the landmark. Its `items` are the shown items (`{ value, label }`, `value` being the item's `id`), and its `activate(value)` presses one: the link, button or sibling picker. It returns `false` for plain-text items and hidden ones. The hidden items are rows of the `…` menu, a Menu entry of its own named "More". Sibling pickers are Menus too.
+For an agent (UI SDK's `createAgent`), the trail is one `breadcrumb` entry named like the landmark. Its `items` are the shown items (`{ value, label }`), and its `activate(value)` presses one: the link, button or sibling picker. It returns `false` for plain-text items and hidden ones. The hidden items are rows of the `…` menu, a Menu entry of its own named "More". Sibling pickers are Menus too.
 
 ## Props
 
@@ -118,13 +118,13 @@ For an agent (UI SDK's `createAgent`), the trail is one `breadcrumb` entry named
 
 | Prop | Default | Effect |
 | --- | --- | --- |
-| `id` | — | `string \| number` key (required in `BreadcrumbItemData`; it is also the menu row's value). |
+| `value` | the React key | `string \| number` name (required in `BreadcrumbItemData`; it is also the menu row's value). |
 | `label` | — | The plain-text name (a `string`): what shows, what the menus' type-to-select and an agent read. |
 | `children` | `label` | Content to show instead, like an icon and a styled name; the menus show it too and still read `label`. On `BreadcrumbItem`, children alone (a string) work as the label. |
 | `icon` | — | An icon name or a node, before the label. |
 | `href` / `onClick` | — | The link and / or press handler. `onClick(event)` gets the click (call `event.preventDefault()` on a link to route it yourself), or, for a row chosen in a menu, the event that chose it. |
-| `siblings` | — | `BreadcrumbEntry[]` (`id`, `label`, `children`, `icon`, `href`, `onClick`): the entries of this item's parent, shown as a menu on press. |
-| `currentSibling` | — | The id of the `siblings` entry that is current; the menu's rows are then radio items and this one is checked. |
+| `siblings` | — | `BreadcrumbEntry[]` (`value`, `label`, `children`, `icon`, `href`, `onClick`): the entries of this item's parent, shown as a menu on press. |
+| `siblingValue` | — | The `value` of the `siblings` entry that is current; the menu's rows are then radio items and this one is checked. |
 
 `BreadcrumbEllipsis` (`items`, `aria-label`) is the `…` item the root renders; use it directly for a trail you shorten by hand. `BreadcrumbSeparator` is the chevron span (children replace the icon).
 

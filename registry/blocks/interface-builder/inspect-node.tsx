@@ -10,7 +10,7 @@ import { Icon } from '@/lib/icon';
 import { ActionList, type ActionContext } from './actions';
 import { itemsOf, specOf, type PropSpec } from './catalog';
 import {
-  AddButton, BindToggle, ChoiceInput, CodeLine, ColorInput, ExprInput, Field, Help, IconAction, IconInput, NameInput, NumberInput, Section, SwitchInput, TextInput,
+  AddButton, BindToggle, ChoiceInput, CodeLine, InspectorColorInput, ExprInput, Field, Help, IconAction, IconInput, NameInput, NumberInput, Section, SwitchInput, TextInput,
 } from './fields';
 import { literalSource, refPath, type Scope } from './expr';
 import type { Action, Align, Axis, Distribute, Doc, Layout, Literal, Node, Scene, Shadow, Sizing, Style } from './model';
@@ -46,7 +46,7 @@ function LiteralControl({ ps, value, onChange, ctx }: { ps: PropSpec; value: Lit
     case 'enum':
       return <ChoiceInput label={label} value={String(value ?? ps.default ?? '')} options={c.options} onChange={(v) => onChange(v)} />;
     case 'color':
-      return <ColorInput label={label} value={value == null ? null : String(value)} onChange={(v) => onChange(v)} />;
+      return <InspectorColorInput label={label} value={value == null ? null : String(value)} onChange={(v) => onChange(v)} />;
     case 'icon':
       return <IconInput label={label} value={value == null ? null : String(value)} onChange={(v) => onChange(v)} />;
     case 'items':
@@ -82,7 +82,7 @@ function FontInput({ label, value, systemLabel, onChange, onPreview }: {
   return (
     <FontPicker aria-label={label} value={value} systemLabel={systemLabel} onValueChange={onChange} onPreview={onPreview}>
       <FontPickerTrigger size="sm" className="h-7 rounded-md bg-secondary px-2 text-footnote hover:bg-secondary-strong" />
-      <FontPickerContent side="left" align="start" />
+      <FontPickerContent side="start" align="start" />
     </FontPicker>
   );
 }
@@ -332,10 +332,10 @@ export function LayoutPanel({ ctx }: { ctx: NodeCtx }) {
       ) : null}
 
       <Section title="Style">
-        <Field label="Fill"><ColorInput label="Fill" value={S.fill ?? null} onChange={(v) => setS({ fill: v })} /></Field>
+        <Field label="Fill"><InspectorColorInput label="Fill" value={S.fill ?? null} onChange={(v) => setS({ fill: v })} /></Field>
         <NumberInput label="Radius" value={S.radius ?? 0} min={0} max={400} step={1} unit="px" onBegin={ctx.begin} onChange={(v, live) => setS({ radius: v }, live)} />
         <NumberInput label="Border" value={S.borderWidth ?? 0} min={0} max={40} step={0.5} unit="px" onBegin={ctx.begin} onChange={(v, live) => setS({ borderWidth: v }, live)} />
-        {S.borderWidth ? <Field label="Border color"><ColorInput label="Border color" value={S.borderColor ?? null} onChange={(v) => setS({ borderColor: v })} /></Field> : null}
+        {S.borderWidth ? <Field label="Border color"><InspectorColorInput label="Border color" value={S.borderColor ?? null} onChange={(v) => setS({ borderColor: v })} /></Field> : null}
         <Field label="Shadow">
           <ChoiceInput label="Shadow" value={S.shadow ?? 'none'} onChange={(v) => setS({ shadow: v as Shadow })} options={[{ id: 'none', label: 'None' }, { id: 'sm', label: 'Small' }, { id: 'md', label: 'Medium' }, { id: 'lg', label: 'Large' }]} />
         </Field>

@@ -10,8 +10,8 @@
 
      <SidebarProvider>
        <Sidebar variant="rail">
-         <SidebarHeader><SidebarWorkspace title="Northwind" description="Sales" /></SidebarHeader>
-         <SidebarContent aria-label="Workspace">
+         <SidebarHeader><SidebarAccount title="Northwind" description="Sales" /></SidebarHeader>
+         <SidebarContent aria-label="Pipeline">
            <SidebarSearch shortcut="/" onClick={openSearch} />
            <SidebarSection title="Pipeline">
              <SidebarItem icon="tray" title="Inbox" trailing={6} current />
@@ -21,7 +21,7 @@
        <SidebarInset><SidebarTrigger shortcut="mod+b" />…</SidebarInset>
      </SidebarProvider>
 
-   The rows, sections, search and workspace also work on their own, outside a Sidebar (a shell's own panel). It
+   The rows, sections, search and account also work on their own, outside a Sidebar (a shell's own panel). It
    follows the surrounding theme; a `workbench` theme scope (`<ThemeScope scope="workbench">`) gives it the
    Workbench palette. ══ */
 import { createContext, useContext, useId, useMemo, useRef, useState } from 'react';
@@ -123,7 +123,7 @@ export function useSidebarCollapsed() {
   return useContext(SidebarPanelContext)?.collapsed ?? false;
 }
 
-export interface SidebarProps {
+export interface SidebarProps extends Omit<ComponentProps<'div'>, 'className' | 'style' | 'children' | 'aria-label'> {
   /** The look. Default `docked`. */
   variant?: SidebarVariant;
   /** Where it shows. Default `auto`: a drawer while the provider is compact, a column otherwise. */
@@ -134,14 +134,16 @@ export interface SidebarProps {
   railWidth?: number;
   /** The drawer's accessible name. Default "Sidebar". */
   'aria-label'?: string;
-  /** Classes of the sidebar's box: the column, or the drawer's panel. A function gets the sidebar's state. */
+  /** Classes of the sidebar's box: the column, or the drawer's panel. A function gets the sidebar's state. `ref`,
+   *  `id` and the other props go on the panel inside it (`data-slot="sidebar-panel"`), the same element in both
+   *  presentations. */
   className?: string | ((state: SidebarState) => string | undefined);
   style?: CSSProperties | ((state: SidebarState) => CSSProperties | undefined);
   children?: ReactNode;
 }
 
 export function Sidebar({
-  variant = 'docked', presentation = 'auto', width = 228, railWidth = 52, 'aria-label': label = 'Sidebar', className, style, children,
+  variant = 'docked', presentation = 'auto', width = 228, railWidth = 52, 'aria-label': label = 'Sidebar', className, style, children, ...props
 }: SidebarProps) {
   const c = useSidebar();
   const scope = useSizeClassScope() ?? c.sizeClass;
@@ -188,6 +190,7 @@ export function Sidebar({
             its own width on the same spring, so its inner edge stays on the content's edge. A rail only narrows,
             uncovering its labels from the start. Closed, its rows leave the tab order and the a11y tree. */}
         <SidebarPanelPart
+          {...props}
           data-variant={variant}
           data-presentation={shown}
           data-collapsed={collapsed ? '' : undefined}
@@ -393,27 +396,31 @@ export function SidebarSection({ title, className, children, ...props }: Sidebar
   );
 }
 
-export interface SidebarWorkspaceProps extends Omit<ComponentProps<'div'>, 'title'> {
-  /** The workspace's name. */
+export interface SidebarAccountProps extends Omit<ComponentProps<'div'>, 'title'> {
+  /** The account's, team's or app's name. */
   title: ReactNode;
   /** A second line: a plan, a branch. */
   description?: ReactNode;
-  /** The 28px tile: a logo, an Avatar. Default the title's first letter on the brand gradient. */
+  /** The tile (28px, 32px in a compact provider): a logo, an Avatar. Default the title's first letter on the brand
+   *  gradient. */
   icon?: ReactNode;
 }
 
-/** Who or where this is: a tile, a name and a second line. In a collapsed rail, the tile alone. */
-export function SidebarWorkspace({ title, description, icon, className, ...props }: SidebarWorkspaceProps) {
+/** Who or where this is (the account, team or app the sidebar belongs to): a tile, a name and a second line. In a
+ *  collapsed rail, the tile alone. In a compact provider it grows with the rows under it, so the drawer's heading is
+ *  never smaller than its rows. */
+export function SidebarAccount({ title, description, icon, className, ...props }: SidebarAccountProps) {
+  const compact = useContext(SidebarPanelContext)?.compact ?? false;
   return (
-    <div data-slot="sidebar-workspace" className={cn('flex min-w-0 shrink-0 items-center gap-2 overflow-hidden px-1 py-0.5', className)} {...props}>
+    <div data-slot="sidebar-account" className={cn('flex min-w-0 shrink-0 items-center overflow-hidden px-1 py-0.5', compact ? 'gap-2.5' : 'gap-2', className)} {...props}>
       {icon ?? (
-        <span aria-hidden="true" className={cn(brandTile, 'grid size-7 shrink-0 place-items-center rounded-lg text-footnote font-bold text-primary-foreground')}>
+        <span aria-hidden="true" className={cn(brandTile, 'grid shrink-0 place-items-center rounded-lg font-bold text-primary-foreground', compact ? 'size-8 text-subhead' : 'size-7 text-footnote')}>
           {typeof title === 'string' ? title.slice(0, 1).toUpperCase() : null}
         </span>
       )}
       <div className="min-w-0 flex-1 leading-tight whitespace-nowrap">
-        <div className="truncate text-footnote font-semibold text-foreground">{title}</div>
-        {description != null ? <div className="truncate text-caption text-muted-foreground">{description}</div> : null}
+        <div className={cn('truncate font-semibold text-foreground', compact ? 'text-subhead' : 'text-footnote')}>{title}</div>
+        {description != null ? <div className={cn('truncate text-muted-foreground', compact ? 'text-footnote' : 'text-caption')}>{description}</div> : null}
       </div>
     </div>
   );

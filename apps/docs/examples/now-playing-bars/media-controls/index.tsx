@@ -6,7 +6,7 @@ import { Icon } from '@/lib/icon'
 const fmt = (s: number) =>
   `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`
 
-// Media controls over dark glass: `variant="on-dark"` for translucent white tracks,
+// Media controls over dark glass: `variant="overlay" appearance="dark"` for translucent white tracks,
 // `size="sm"` for the scrubber's small thumb (it grows while you drag).
 export default function MediaControls() {
   const [pos, setPos] = useState(78)
@@ -48,7 +48,7 @@ export default function MediaControls() {
       <div>
         <Slider
           aria-label="Playback position"
-          variant="on-dark"
+          variant="overlay" appearance="dark"
           size="sm"
           min={0}
           max={dur}
@@ -79,7 +79,7 @@ export default function MediaControls() {
         <Icon name="speaker-low" size={16} />
         <Slider
           aria-label="Volume"
-          variant="on-dark"
+          variant="overlay" appearance="dark"
           size="sm"
           value={volume}
           onValueChange={setVolume}

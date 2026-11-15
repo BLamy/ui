@@ -113,7 +113,7 @@ describe('Slider', () => {
 
   it('names a thumb you place yourself, and takes its size and variant', () => {
     const { container } = render(
-      <Slider aria-label="Time" size="sm" variant="on-dark" defaultValue={5} max={60}>
+      <Slider aria-label="Time" size="sm" variant="overlay" appearance="dark" defaultValue={5} max={60}>
         <SliderValue />
         <SliderControl><SliderTrack><SliderIndicator /><SliderThumb /></SliderTrack></SliderControl>
       </Slider>,
@@ -121,8 +121,11 @@ describe('Slider', () => {
     expect(screen.getByRole('slider', { name: 'Time' })).toBeTruthy();
     const root = container.querySelector('[data-slot="slider"]')!;
     expect(root.getAttribute('data-size')).toBe('sm');
-    expect(root.getAttribute('data-variant')).toBe('on-dark');
-    expect(root.className).toContain('[--bl-slider-fill:--alpha(white/88%)]');
+    expect(root.getAttribute('data-variant')).toBe('overlay');
+    expect(root.className).toContain('[--bl-slider-fill:light-dark(--alpha(black/72%),--alpha(white/88%))]');
+    // `appearance="dark"` puts the slider in the dark scheme, so `overlay` resolves to white.
+    expect(root.getAttribute('data-appearance')).toBe('dark');
+    expect(root.className.split(' ')).toEqual(expect.arrayContaining(['dark', 'scheme-dark']));
     expect(root.querySelector('[data-slot="slider-value"]')!.textContent).toBe('5');
   });
 
@@ -148,5 +151,17 @@ describe('Slider', () => {
     const { container } = render(<form data-testid="form"><Slider aria-label="Warmth" name="warmth" defaultValue={62} className="[--bl-slider-fill:orange]" /></form>);
     expect((container.querySelector('[data-slot="slider"]') as HTMLElement).className).toContain('[--bl-slider-fill:orange]');
     expect(new FormData(screen.getByTestId('form') as HTMLFormElement).get('warmth')).toBe('62');
+  });
+
+  it('follows the page scheme by default and stands up with orientation="vertical"', () => {
+    const { container } = render(<Slider aria-label="Gain" orientation="vertical" defaultValue={40} />);
+    const root = container.querySelector('[data-slot="slider"]')!;
+    expect(root.hasAttribute('data-appearance')).toBe(false);
+    expect(root.className.split(' ')).not.toContain('dark');
+    expect(root.getAttribute('data-orientation')).toBe('vertical');
+    expect(screen.getByRole('slider', { name: 'Gain' }).getAttribute('aria-orientation') ?? 'vertical').toBe('vertical');
+    const track = container.querySelector('[data-slot="slider-track"]')!;
+    expect(track.getAttribute('data-orientation')).toBe('vertical');
+    expect(track.className).toContain('data-[orientation=vertical]:w-1');
   });
 });

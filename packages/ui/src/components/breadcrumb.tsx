@@ -17,13 +17,13 @@ import {
 /* ══ Breadcrumb — the path to the current page: a `nav` with an ordered list of links ══
    Every item is pressable: give it an `href` (a link) and/or `onClick` (a button, when it has no `href`). The last
    item is the current page (`aria-current="page"`); it is plain text unless it has a handler. An item that carries
-   `siblings` is a picker like VS Code's breadcrumb: pressing it opens a menu of its siblings (the `currentSibling`
+   `siblings` is a picker like VS Code's breadcrumb: pressing it opens a menu of its siblings (the `siblingValue`
    one is checked) instead. The menus are DropdownMenus.
 
    <Breadcrumb items={[
-     { id: 'home', label: 'Home', icon: 'house', href: '/' },
-     { id: 'ui', label: 'Components', siblings: [{ id: 'ui', label: 'Components', href: '/ui' }, …], currentSibling: 'ui' },
-     { id: 'bc', label: 'Breadcrumb' },
+     { value: 'home', label: 'Home', icon: 'house', href: '/' },
+     { value: 'ui', label: 'Components', siblings: [{ value: 'ui', label: 'Components', href: '/ui' }, …], siblingValue: 'ui' },
+     { value: 'bc', label: 'Breadcrumb' },
    ]} />
 
    …or composed:
@@ -98,7 +98,8 @@ const SEPARATOR_SIZE = { sm: 12, default: 13, lg: 15 } as const;
 /** A sibling, or an entry of the `…` menu. `aria-haspopup` / `aria-expanded` / `aria-controls` make the item's
  *  button the trigger of a popup the caller owns (a picker dialog, say). */
 export interface BreadcrumbEntry extends Pick<AriaAttributes, 'aria-haspopup' | 'aria-expanded' | 'aria-controls'> {
-  id: string | number;
+  /** Names the entry: the menu row a `siblingValue` checks, and the item's React key in `items`. */
+  value: string | number;
   /** The plain-text name: what shows, unless `children` gives richer content, and what the menu's type-to-select
    *  and an agent read. */
   label: string;
@@ -118,8 +119,8 @@ export interface BreadcrumbItemData extends BreadcrumbEntry {
   /** The entries of this item's parent. When given, pressing the item opens them as a menu (the item's own
    *  `href` / `onClick` are not used). */
   siblings?: BreadcrumbEntry[];
-  /** The id of the `siblings` entry that is the current one; it is checked in the menu. */
-  currentSibling?: string | number;
+  /** The `value` of the `siblings` entry that is the current one; it is checked in the menu. */
+  siblingValue?: string | number;
 }
 
 type SizeVariant = NonNullable<VariantProps<typeof breadcrumbVariants>['size']>;
@@ -171,14 +172,14 @@ function MenuEntry({ entry, picker }: { entry: BreadcrumbItemData; picker: boole
     return (
       <DropdownMenuSub>
         <DropdownMenuSubTrigger className={MENU_ITEM}>{content}</DropdownMenuSubTrigger>
-        <BreadcrumbMenu sub entries={entry.siblings} current={entry.currentSibling} />
+        <BreadcrumbMenu sub entries={entry.siblings} current={entry.siblingValue} />
       </DropdownMenuSub>
     );
   }
   const link = entry.href ? <a href={entry.href} /> : undefined;
   // In a picker the rows are radio items, so the current sibling reads as checked; its group fires the chosen entry.
   return picker ? (
-    <DropdownMenuRadioItem value={String(entry.id)} label={label} icon={icon} closeOnSelect render={link} className={MENU_ITEM}>
+    <DropdownMenuRadioItem value={String(entry.value)} label={label} icon={icon} closeOnSelect render={link} className={MENU_ITEM}>
       {content}
     </DropdownMenuRadioItem>
   ) : (
@@ -190,14 +191,14 @@ function MenuEntry({ entry, picker }: { entry: BreadcrumbItemData; picker: boole
 
 function BreadcrumbMenu({ entries, current, sub }: { entries: readonly BreadcrumbItemData[]; current?: string | number; sub?: boolean }) {
   const picker = current != null;
-  const rows = entries.map((entry) => <MenuEntry key={entry.id} entry={entry} picker={picker} />);
+  const rows = entries.map((entry) => <MenuEntry key={entry.value} entry={entry} picker={picker} />);
   const Content = sub ? DropdownMenuSubContent : DropdownMenuContent;
   return (
     <Content sideOffset={sub ? undefined : 4} className="min-w-44">
       {picker ? (
         <DropdownMenuRadioGroup
           value={String(current)}
-          onValueChange={(value, details) => entries.find((entry) => String(entry.id) === value)?.onClick?.(details.event ?? new Event('select'))}
+          onValueChange={(value, details) => entries.find((entry) => String(entry.value) === value)?.onClick?.(details.event ?? new Event('select'))}
         >
           {rows}
         </DropdownMenuRadioGroup>
@@ -208,8 +209,9 @@ function BreadcrumbMenu({ entries, current, sub }: { entries: readonly Breadcrum
 
 /* ── Item ── */
 
-export interface BreadcrumbItemProps extends Omit<BreadcrumbItemData, 'id' | 'label'> {
-  id?: string | number;
+export interface BreadcrumbItemProps extends Omit<BreadcrumbItemData, 'value' | 'label'> {
+  /** Names the item (default: its React key). */
+  value?: string | number;
   /** The plain-text name (so a `BreadcrumbItemData` spreads straight in). Shown when there are no children; given
    *  children that are not a string, it is what the trail's menus and an agent read. */
   label?: string;
@@ -232,7 +234,7 @@ function ItemFace({ icon, children }: { icon?: ReactNode; children?: ReactNode }
 const itemClass = (isCurrent: boolean, className?: string) => cn('flex min-w-0 items-center', isCurrent ? 'shrink' : 'shrink-0', className);
 
 function BreadcrumbItemContent({
-  isCurrent, icon, href, onClick, siblings, currentSibling, children,
+  isCurrent, icon, href, onClick, siblings, siblingValue, children,
   'aria-haspopup': hasPopup, 'aria-expanded': expanded, 'aria-controls': controls,
 }: BreadcrumbItemProps & { isCurrent: boolean }) {
   const { size } = useContext(BreadcrumbContext);
@@ -244,7 +246,7 @@ function BreadcrumbItemContent({
     control = (
       <DropdownMenu>
         <DropdownMenuTrigger aria-current={current} className={breadcrumbItemVariants({ size })}>{face}</DropdownMenuTrigger>
-        <BreadcrumbMenu entries={siblings} current={currentSibling} />
+        <BreadcrumbMenu entries={siblings} current={siblingValue} />
       </DropdownMenu>
     );
   } else if (href) {
@@ -325,17 +327,17 @@ type ItemElement = ReactElement<BreadcrumbItemProps>;
 
 const entryOf = (el: ItemElement): BreadcrumbItemData => {
   const {
-    id, label, children, icon, href, onClick, siblings, currentSibling,
+    value, label, children, icon, href, onClick, siblings, siblingValue,
     'aria-haspopup': hasPopup, 'aria-expanded': expanded, 'aria-controls': controls,
   } = el.props;
   return {
-    id: id ?? el.key ?? '', label: label ?? (typeof children === 'string' ? children : ''), children, icon, href, onClick, siblings, currentSibling,
+    value: value ?? el.key ?? '', label: label ?? (typeof children === 'string' ? children : ''), children, icon, href, onClick, siblings, siblingValue,
     'aria-haspopup': hasPopup, 'aria-expanded': expanded, 'aria-controls': controls,
   };
 };
 
-/** The key an item goes by: its `id`, else the key React gave it. */
-const valueOf = (el: ItemElement) => String(el.props.id ?? el.key ?? '');
+/** The key an item goes by: its `value`, else the key React gave it. */
+const valueOf = (el: ItemElement) => String(el.props.value ?? el.key ?? '');
 
 export interface BreadcrumbProps extends Omit<ComponentProps<'nav'>, 'children'>, VariantProps<typeof breadcrumbVariants> {
   /** The data-driven form: one item per entry (instead of `children`). */
@@ -361,7 +363,7 @@ export function Breadcrumb({
   const sizeKey: SizeVariant = size ?? 'default';
   const nodes = useMemo<ItemElement[]>(
     () => (items
-      ? items.map((item) => <BreadcrumbItem key={item.id} {...item} />)
+      ? items.map((item) => <BreadcrumbItem key={item.value} {...item} />)
       : (Children.toArray(children).filter(isValidElement) as ItemElement[])),
     [items, children],
   );

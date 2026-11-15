@@ -3,7 +3,7 @@ import { cleanup, screen } from '@testing-library/react';
 import { createAgent } from '@ui-sdk/react/agent';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ColorPicker, ColorPickerContent, ColorPickerTrigger } from '@/components/ui/color-picker';
-import { DatePicker, DatePickerContent, DatePickerField } from '@/components/ui/date-picker';
+import { DatePicker, DatePickerContent, DatePickerInputGroup } from '@/components/ui/date-picker';
 import { Field, FieldLabel } from '@/components/ui/field';
 import { FileUpload } from '@/components/ui/file-upload';
 import { Popover } from '@/components/ui/popover';
@@ -24,7 +24,7 @@ describe('DatePicker is agent-ready', () => {
       <Field>
         <FieldLabel>Due date</FieldLabel>
         <DatePicker locale="en-US" defaultMonth="2026-09" onValueChange={onValueChange}>
-          <DatePickerField />
+          <DatePickerInputGroup />
           <DatePickerContent />
         </DatePicker>
       </Field>,
@@ -46,7 +46,7 @@ describe('DatePicker is agent-ready', () => {
       <Field>
         <FieldLabel>Start date</FieldLabel>
         <DatePicker locale="en-US" defaultMonth="2026-09">
-          <DatePickerField />
+          <DatePickerInputGroup />
           <DatePickerContent />
         </DatePicker>
       </Field>,

@@ -1,5 +1,5 @@
 'use client';
-import { useRef, type CSSProperties, type HTMLAttributes, type ReactNode, type Ref } from 'react';
+import { useLayoutEffect, useRef, type CSSProperties, type HTMLAttributes, type ReactNode, type Ref } from 'react';
 import { useEnterExit, usePresenceList, type PresenceEntry } from '@/lib/presence';
 import { cn } from '@/lib/utils';
 
@@ -63,8 +63,9 @@ const frames = cn(
   'data-ending-style:opacity-0 data-ending-style:blur-(--swap-blur) data-ending-style:scale-(--swap-scale)',
 );
 const layout = {
-  // The leaving view is lifted out of the flow at the top, so the arriving one takes its place at once.
-  block: 'w-full data-ending-style:absolute data-ending-style:inset-x-0 data-ending-style:top-0',
+  // The leaving view is lifted out of the flow where it stood (inside the root's padding, measured as it leaves), so
+  // the arriving one takes its place at once and the old one fades in place.
+  block: 'w-full data-ending-style:absolute data-ending-style:top-[var(--swap-top,0px)] data-ending-style:left-[var(--swap-left,0px)] data-ending-style:w-[var(--swap-width,100%)]',
   inline: 'relative grid place-items-center',
 };
 
@@ -72,6 +73,15 @@ type Item = { id: string; node: ReactNode };
 
 function View({ entry, inline, className }: { entry: PresenceEntry<Item>; inline: boolean; className: string }) {
   const ref = useRef<HTMLElement>(null);
+  // An absolute box is placed against the root's padding edge, so the leaving view keeps the offset and width it had
+  // in the flow (a padded root would otherwise make it jump to the corner).
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (inline || entry.present || !el) return;
+    el.style.setProperty('--swap-top', `${el.offsetTop}px`);
+    el.style.setProperty('--swap-left', `${el.offsetLeft}px`);
+    el.style.setProperty('--swap-width', `${el.offsetWidth}px`);
+  }, [entry.present, inline]);
   useEnterExit(ref, entry.present, { appear: entry.appear, exited: entry.exited });
   const Tag = inline ? 'span' : 'div';
   return (

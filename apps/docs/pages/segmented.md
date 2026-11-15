@@ -1,6 +1,6 @@
 # Segmented
 
-The iOS segmented control: a short row of mutually exclusive options in a tinted track, with one card under the selected option that slides (and resizes) to the next on a spring. It is UI SDK's `SegmentedControl`, a radio group, so it picks a *value* — a time range, a filter, a view mode — and does not own any panels. If each option reveals its own content, use [Tabs](https://blamy.github.io/ui/#/tabs), which has the same look (`variant="segmented"`) with tab and panel semantics; for the bottom navigation bar use [Tabs](https://blamy.github.io/ui/#/tabs) with `variant="bar"`. A [ToggleGroup](https://blamy.github.io/ui/#/toggle) with `variant="filled"` draws the same track for buttons that press (several at once, or none), where arrow keys only move focus; a choice inside a form with longer labels is a [RadioGroup](https://blamy.github.io/ui/#/radio-group).
+The iOS segmented control: a short row of mutually exclusive options in a tinted track, with one card under the selected option that slides (and resizes) to the next on a spring. It is UI SDK's `SegmentedControl`, a radio group, so it picks a *value* — a time range, a filter, a view mode — and does not own any panels. If each option reveals its own content, use [Tabs](https://blamy.github.io/ui/#/tabs), which has the same look (`variant="segmented"`) with tab and panel semantics; for the bottom navigation bar use [Tabs](https://blamy.github.io/ui/#/tabs) with `variant="bar"`. A [ToggleGroup](https://blamy.github.io/ui/#/toggle) with `variant="segmented"` draws the same track for buttons that press (several at once, or none), where arrow keys only move focus; a choice inside a form with longer labels is a [RadioGroup](https://blamy.github.io/ui/#/radio-group).
 
 {% tabs title="Installation" sync="install" %}
 {% tab title="shadcn CLI" %}
@@ -15,12 +15,12 @@ import { Segmented, SegmentedItem } from '@/components/ui/segmented'
 {% tab title="npm" %}
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 
-Import the stylesheet once at your app's entry, then the parts from the package root:
+Import the stylesheet once at your app's entry, then the parts from their module:
 
 ```tsx
 import '@brett_lamy/ui/styles.css'
 
-import { Segmented, SegmentedItem } from '@brett_lamy/ui'
+import { Segmented, SegmentedItem } from '@brett_lamy/ui/segmented'
 ```
 {% endtab %}
 {% endtabs %}
@@ -101,7 +101,7 @@ It renders UI SDK's `SegmentedControl` (`role="radiogroup"`), and each `Segmente
 
 The track is `data-slot="segmented-control"` (with `data-size`), each segment `data-slot="segmented-control-item"`, and the sliding card UI SDK's `SegmentedControlIndicator` (`data-slot="segmented-control-indicator"`), which the root renders for you. The checked item has `data-checked` (the others `data-unchecked`); `data-disabled`, `data-readonly`, `data-required` and `data-orientation` are there for selectors, and hover, press and keyboard focus are plain `hover:`, `active:` and `focus-visible:`. The indicator is positioned from the CSS variables UI SDK writes on it (`--segmented-control-indicator-left`, `-top`, `-width`, `-height`).
 
-The look is four exports, shared with [Tabs](https://blamy.github.io/ui/#/tabs) `variant="segmented"` and [ToggleGroup](https://blamy.github.io/ui/#/toggle) `variant="filled"`, so the three are pixel-alike at the same size:
+The look is four exports, shared with [Tabs](https://blamy.github.io/ui/#/tabs) `variant="segmented"` and [ToggleGroup](https://blamy.github.io/ui/#/toggle) `variant="segmented"`, so the three are pixel-alike at the same size:
 
 | Export | What it draws |
 | --- | --- |
@@ -135,7 +135,7 @@ group/segments relative isolate gap-0.5 bg-secondary p-0.5 data-[orientation=ver
 Defined in `@/components/ui/segmented`. Base classes:
 
 ```text
-[ 'bl-btn relative box-border flex flex-1 cursor-pointer items-center justify-center gap-1.5 border-0 bg-transparent [font-family:inherit] font-medium whitespace-nowrap text-foreground outline-none [&_svg]:shrink-0', 'data-checked:font-semibold data-selected:font-semibold data-pressed:font-semibold', // Stacked, each segment keeps its height instead of sharing the track's. 'group-data-[orientation=vertical]/segments:flex-none', // The solid ring of every control, without the offset: the neighbours are 2px away. 'focus-visible:ring-2 focus-visible:ring-ring', 'pointer-coarse:group-data-[orientation=horizontal]/segments:after:absolute pointer-coarse:group-data-[orientation=horizontal]/segments:after:inset-x-0', 'data-disabled:cursor-default not-in-data-disabled:data-disabled:opacity-40', ]
+[ 'bl-btn relative box-border flex flex-1 cursor-pointer items-center justify-center gap-1.5 border-0 bg-transparent [font-family:inherit] font-medium whitespace-nowrap text-foreground outline-none [&_svg]:shrink-0', 'data-checked:font-semibold data-selected:font-semibold data-pressed:font-semibold', // An unselected segment dims under the finger (as on iOS) until the card slides to it. 'transition-opacity duration-spring-snappy ease-spring-snappy motion-reduce:transition-none', 'active:not-data-disabled:not-data-checked:not-data-selected:not-data-pressed:opacity-60', // Stacked, each segment keeps its height instead of sharing the track's. 'group-data-[orientation=vertical]/segments:flex-none', // The solid ring of every control, without the offset: the neighbours are 2px away. 'focus-visible:ring-2 focus-visible:ring-ring', 'pointer-coarse:group-data-[orientation=horizontal]/segments:after:absolute pointer-coarse:group-data-[orientation=horizontal]/segments:after:inset-x-0', 'data-disabled:cursor-default not-in-data-disabled:data-disabled:opacity-40', ]
 ```
 
 **`size`** — default `default`
@@ -144,7 +144,7 @@ Defined in `@/components/ui/segmented`. Base classes:
 | --- | --- |
 | `sm` | `h-7 px-2.5 text-footnote leading-[inherit] rounded-[calc(var(--radius-lg)-2px)] pointer-coarse:after:-inset-y-2` |
 | `default` (default) | `h-8 px-3 text-subhead leading-[inherit] rounded-[calc(var(--radius-ctl)-2px)] pointer-coarse:after:-inset-y-1.5` |
-| `lg` | `h-10 px-3.5 text-body leading-[inherit] rounded-[calc(var(--radius-xl)-2px)] pointer-coarse:after:-inset-y-0.5` |
+| `lg` | `h-10 px-3.5 text-callout leading-[inherit] rounded-[calc(var(--radius-xl)-2px)] pointer-coarse:after:-inset-y-0.5` |
 
 ### `segmentIndicatorVariants`
 

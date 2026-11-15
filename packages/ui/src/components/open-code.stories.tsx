@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { OpenCode } from '@/components/ui/open-code';
+import { OpenCode, type OpenCodeBaseProps, type OpenCodeProps } from '@/components/ui/open-code';
 import type { OpenCodeHostBridge, OpenCodeRuntime } from '@/lib/open-code-host';
 import { BLProvider } from '@/lib/theme';
 import { Phone } from '../stories/frame';
@@ -13,6 +13,9 @@ const meta: Meta<typeof OpenCode> = {
 };
 export default meta;
 type Story = StoryObj<typeof OpenCode>;
+
+/** The story's args without a host: each story passes the stub `host`. */
+const base = ({ host: _host, createHost: _createHost, ...args }: OpenCodeProps): OpenCodeBaseProps => args;
 
 /* No live runtime: a stub host and a recorded-looking runtime that draws a still frame into the terminal's mount point,
    so every state is a pure function of the story. */
@@ -71,29 +74,29 @@ function Page({ children, dark, h = 520 }: { children: ReactNode; dark?: boolean
   );
 }
 
-/** Waiting at Start (`autoStart={false}`). */
+/** Waiting at Start (`autoStart={false}`): the empty terminal says what it is for and holds the Start button. */
 export const Idle: Story = {
   args: { autoStart: false },
-  render: (args) => <Page><OpenCode {...args} host={host} loadRuntime={async () => runtime} className="h-full" /></Page>,
+  render: (args) => <Page><OpenCode {...base(args)} host={host} loadRuntime={async () => runtime} className="h-full" /></Page>,
 };
 
 /** The runtime is loading. */
 export const Starting: Story = {
-  render: (args) => <Page><OpenCode {...args} host={host} loadRuntime={never} className="h-full" /></Page>,
+  render: (args) => <Page><OpenCode {...base(args)} host={host} loadRuntime={never} className="h-full" /></Page>,
 };
 
 /** Running: the terminal drawn by the runtime. */
 export const Running: Story = {
-  render: (args) => <Page><OpenCode {...args} host={host} loadRuntime={async () => runtime} className="h-full" /></Page>,
+  render: (args) => <Page><OpenCode {...base(args)} host={host} loadRuntime={async () => runtime} className="h-full" /></Page>,
 };
 
 export const RunningDark: Story = {
-  render: (args) => <Page dark><OpenCode {...args} host={host} loadRuntime={async () => runtime} className="h-full" /></Page>,
+  render: (args) => <Page dark><OpenCode {...base(args)} host={host} loadRuntime={async () => runtime} className="h-full" /></Page>,
 };
 
-/** The runtime failed to load: an alert above the terminal, and Start tries again. */
+/** The runtime failed to load: a destructive callout above the terminal, and Start in the empty terminal tries again. */
 export const LoadError: Story = {
-  render: (args) => <Page><OpenCode {...args} host={host} loadRuntime={broken} className="h-full" /></Page>,
+  render: (args) => <Page><OpenCode {...base(args)} host={host} loadRuntime={broken} className="h-full" /></Page>,
 };
 
 /** `variant="plain"` filling a phone-sized pane: no border or radius, and the preview would stack under the terminal. */
@@ -102,7 +105,7 @@ export const PlainInPhone: Story = {
   render: (args) => (
     <Phone>
       <div className="absolute inset-0 flex flex-col">
-        <OpenCode {...args} host={host} loadRuntime={async () => runtime} className="min-h-0 flex-1" />
+        <OpenCode {...base(args)} host={host} loadRuntime={async () => runtime} className="min-h-0 flex-1" />
       </div>
     </Phone>
   ),

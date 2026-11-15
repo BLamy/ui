@@ -15,12 +15,12 @@ import { Checkbox, CheckboxGroup } from '@/components/ui/checkbox'
 {% tab title="npm" %}
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 
-Import the stylesheet once at your app's entry, then the parts from the package root:
+Import the stylesheet once at your app's entry, then the parts from their module:
 
 ```tsx
 import '@brett_lamy/ui/styles.css'
 
-import { Checkbox, CheckboxGroup } from '@brett_lamy/ui'
+import { Checkbox, CheckboxGroup } from '@brett_lamy/ui/checkbox'
 ```
 {% endtab %}
 {% endtabs %}
@@ -101,7 +101,7 @@ Generated from the source. Call a recipe on any element to borrow a component's 
 Defined in `@/components/ui/checkbox`. Base classes:
 
 ```text
-[ 'box-border grid size-[22px] shrink-0 cursor-pointer place-items-center border-[1.5px] border-control-border bg-transparent p-0 text-primary-foreground', 'transition-[background-color,border-color,scale] duration-spring-snappy ease-spring-snappy motion-reduce:transition-none', 'data-checked:border-primary data-checked:bg-primary', 'data-indeterminate:border-primary data-indeterminate:bg-primary', 'active:not-data-disabled:scale-90', pressableFocusRing, // Invalid: the box itself (`aria-invalid`, which a Field writes on its control) or the group around it. 'aria-invalid:border-destructive group-aria-invalid:border-destructive', 'aria-invalid:data-checked:border-destructive aria-invalid:data-checked:bg-destructive group-aria-invalid:data-checked:border-destructive group-aria-invalid:data-checked:bg-destructive', 'data-disabled:cursor-default data-disabled:opacity-40', ]
+[ 'box-border grid size-[22px] shrink-0 cursor-pointer place-items-center border-[1.5px] border-control-border bg-transparent p-0 text-primary-foreground', 'transition-[background-color,border-color,scale] duration-spring-snappy ease-spring-snappy motion-reduce:transition-none', 'data-checked:border-primary data-checked:bg-primary', 'data-indeterminate:border-primary data-indeterminate:bg-primary', 'active:not-data-disabled:scale-90', pressableFocusRing, // Invalid: the box itself (`aria-invalid`, which a Field writes on its control) or the group around it. 'aria-invalid:border-destructive group-aria-invalid/checkbox-group:border-destructive', 'aria-invalid:data-checked:border-destructive aria-invalid:data-checked:bg-destructive group-aria-invalid/checkbox-group:data-checked:border-destructive group-aria-invalid/checkbox-group:data-checked:bg-destructive', 'data-disabled:cursor-default data-disabled:opacity-40', ]
 ```
 
 **`shape`** — default `circle`

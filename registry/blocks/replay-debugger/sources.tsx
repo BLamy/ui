@@ -72,9 +72,9 @@ export function DebuggerSourceBreadcrumbs({ model }: { model: DebuggerModel }) {
         size="sm"
         aria-label="Source path"
         items={[
-          { id: 'sources', label: 'Sources', onClick: () => open(), ...popup },
+          { value: 'sources', label: 'Sources', onClick: () => open(), ...popup },
           ...trail.filter((item) => item.id !== 'framework').map((item) => ({
-            id: item.id,
+            value: item.id,
             label: item.name,
             icon: item.id.startsWith('source:') ? <FileBadgeIcon name={item.name} size={14} /> : undefined,
             onClick: () => open(item.id),

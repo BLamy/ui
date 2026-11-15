@@ -66,6 +66,21 @@ export const Variants: Story = {
   ),
 };
 
+/** The head of a connection panel in each state, driven by props (no provider): connected, on the way, waiting for
+    an admin, and not connected. */
+export const SummaryStates: Story = {
+  render: () => (
+    <Pad w={320}>
+      <div className="grid gap-4">
+        <TailscaleSummary status="connected" tailnet="tail1234.ts.net" selfName="iphone.tail1234.ts.net." detail="4 pages and 17 requests this session." />
+        <TailscaleSummary status="starting" tailnet="tail1234.ts.net" />
+        <TailscaleSummary status="needs-approval" selfName="iphone" />
+        <TailscaleSummary status="idle" />
+      </div>
+    </Pad>
+  ),
+};
+
 function LiveDemo(args: Story['args']) {
   const [fake] = useState(() => createFakeTailscaleClient({ tailnet: 'demo-tailnet.ts.net', approveAfterMs: 1200 }));
   return (

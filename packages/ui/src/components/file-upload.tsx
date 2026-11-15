@@ -8,7 +8,7 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Icon, type IconName } from '@/lib/icon';
-import { formatFileSize } from '@ui-sdk/core/file-input';
+import { formatFileSize } from '@/lib/file-size';
 import { cn, cx, type ClassProp } from '@/lib/utils';
 import { describeRules, fileKind, type FileKind, type FileUploadRules, type UploadFile } from '@/lib/file-upload-model';
 import type { FileUploadOptions } from '@/lib/file-upload-primitive';
@@ -36,7 +36,7 @@ import { useFileUpload, useFilePreview, type FileUploadState } from '@/lib/use-f
      <Field name="docs"><FieldLabel>Documents</FieldLabel><FileUpload required /><FieldError /></Field> */
 
 /** What a part outside a `FileUpload` hands over: the files it took and FileInput's change details. */
-export type OnFiles = (files: File[], details: FileInputValueChangeDetails) => void;
+export type FileUploadFilesHandler = (files: File[], details: FileInputValueChangeDetails) => void;
 
 /* ── Context ── */
 
@@ -125,7 +125,7 @@ export function FileUpload({
 const NO_FILES: File[] = [];
 
 interface OwnInputProps {
-  onFiles?: OnFiles;
+  onFiles?: FileUploadFilesHandler;
   onReject?: (rejected: FileRejection[]) => void;
   rules?: ZoneRules;
   multiple?: boolean;
@@ -173,7 +173,7 @@ export const fileUploadDropzoneVariants = cva(
       /** `vertical`: icon, title and button stacked in a tall target. `horizontal`: one row, for a form or a panel. */
       orientation: {
         vertical: 'min-h-40 flex-col items-center justify-center gap-2 rounded-card p-6',
-        horizontal: 'flex-row items-center justify-start gap-3 rounded-panel p-3 text-left',
+        horizontal: 'flex-row items-center justify-start gap-3 rounded-panel p-3 text-start',
       },
     },
     defaultVariants: { orientation: 'vertical' },
@@ -186,7 +186,7 @@ export interface FileUploadDropzoneProps
   extends Omit<ComponentProps<typeof FileInputDropzone>, 'children' | 'className' | 'title'>,
     VariantProps<typeof fileUploadDropzoneVariants> {
   /** Takes the files itself, with a FileInput of its own (also inside a `FileUpload`, which then doesn't list them). */
-  onFiles?: OnFiles;
+  onFiles?: FileUploadFilesHandler;
   /** With `onFiles`: the files the rules turned away. */
   onReject?: (rejected: FileRejection[]) => void;
   /** What the zone takes: the hint under the title, and (with `onFiles`) the checks. Defaults to the `FileUpload`'s rules. */
@@ -267,7 +267,7 @@ export interface FileUploadTriggerProps
   extends Omit<ComponentProps<typeof FileInputTrigger>, 'className'>,
     VariantProps<typeof buttonVariants> {
   /** Takes the files itself, with a FileInput of its own (also inside a `FileUpload`, which then doesn't list them). */
-  onFiles?: OnFiles;
+  onFiles?: FileUploadFilesHandler;
   onReject?: (rejected: FileRejection[]) => void;
   /** With `onFiles`: the types the chooser offers and accepts. */
   accept?: string | readonly string[];
@@ -304,9 +304,16 @@ const KIND_ICON: Record<FileKind, IconName> = {
 };
 
 /** The row's leading tile: an image's own thumbnail (object URL, revoked when the row goes), else an icon for its kind. */
-export function FileUploadThumbnail({ file, disabled, className }: { file: File; disabled?: boolean; className?: string }) {
+export interface FileUploadThumbnailProps {
+  file: File;
+  /** Draw an image file's own thumbnail (default true); `false` shows its kind's icon without reading the file. */
+  preview?: boolean;
+  className?: string;
+}
+
+export function FileUploadThumbnail({ file, preview = true, className }: FileUploadThumbnailProps) {
   const kind = fileKind(file);
-  const url = useFilePreview(file, kind === 'image' && !disabled);
+  const url = useFilePreview(file, kind === 'image' && preview);
   return (
     <span
       data-slot="file-upload-thumbnail"
@@ -321,7 +328,8 @@ export const fileUploadItemVariants = cva(
   'box-border flex items-center gap-3 rounded-panel border border-border bg-card p-3 text-card-foreground outline-none transition-colors duration-spring-snappy motion-reduce:transition-none focus-visible:ring-2 focus-visible:ring-ring data-[status=error]:border-destructive data-[status=rejected]:border-destructive',
 );
 
-const removeClass = cn(buttonVariants({ variant: 'ghost', size: 'icon' }), 'size-8 text-muted-foreground');
+// The row action: the 28px `icon-sm` tool (its hit area reaches 44px on touch), quiet until hovered.
+const removeClass = buttonVariants({ variant: 'quiet', size: 'icon-sm' });
 const removeLabel = ({ status, file }: UploadFile) =>
   status === 'uploading' ? `Cancel upload of ${file.name}` : status === 'rejected' ? `Dismiss ${file.name}` : `Remove ${file.name}`;
 
@@ -333,7 +341,7 @@ function FileUploadItemBody({ item, nameId, onRetry, remove }: { item: UploadFil
   const folder = path.includes('/') ? path.slice(0, path.lastIndexOf('/')) : '';
   return (
     <>
-      <FileUploadThumbnail file={file} disabled={status === 'rejected'} />
+      <FileUploadThumbnail file={file} preview={status !== 'rejected'} />
       <div className="flex min-w-0 flex-1 flex-col gap-1">
         <span id={nameId} title={path} className="truncate text-subhead font-medium text-foreground">
           {name}
@@ -434,7 +442,7 @@ export function FileUploadItem({ item, onRemove, onRetry, children, className, s
     <div role="group" aria-labelledby={nameId} data-slot="file-upload-item" data-file-id={item.id} data-status={item.status} className={cn(fileUploadItemVariants(), className)} style={style}>
       {content(
         dismiss ? (
-          <Button data-file-item-remove="" variant="ghost" size="icon" className="size-8 text-muted-foreground" aria-label={removeLabel(item)} onClick={dismiss}>
+          <Button data-file-item-remove="" variant="quiet" size="icon-sm" aria-label={removeLabel(item)} onClick={dismiss}>
             <Icon name="xmark" size={16} sw={2.2} />
           </Button>
         ) : null,

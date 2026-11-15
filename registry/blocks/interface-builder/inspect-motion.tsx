@@ -10,7 +10,7 @@ import { Segmented, SegmentedItem } from '@/components/ui/segmented';
 import { Icon } from '@/lib/icon';
 import { TransitionButton } from './curves';
 import { physicsSpec, springSpec, tweenSpec, type TransitionSpec } from './easing';
-import { AddButton, ChoiceInput, CodeLine, ColorInput, ExprInput, Field, Help, IconAction, NameInput, NumberInput, Section, SwitchInput, TextInput } from './fields';
+import { AddButton, ChoiceInput, CodeLine, InspectorColorInput, ExprInput, Field, Help, IconAction, NameInput, NumberInput, Section, SwitchInput, TextInput } from './fields';
 import type { NodeCtx } from './inspect-node';
 import { specOf } from './catalog';
 import type { DragSpec, Effect, Motion, MotionKey, MotionValue, Node, Target } from './model';
@@ -59,7 +59,7 @@ export function TargetEditor({ target, onChange, onBegin, help }: { target: Targ
             ) : k === 'backgroundColor' ? (
               <div className="grid min-w-0 flex-1 grid-cols-[84px_minmax(0,1fr)] items-center gap-1.5">
                 <span className="text-caption text-muted-foreground">{ki.label}</span>
-                <ColorInput label={ki.label} allowNone={false} value={String(v)} onChange={(c) => set(k, c ?? '$primary')} />
+                <InspectorColorInput label={ki.label} allowNone={false} value={String(v)} onChange={(c) => set(k, c ?? '$primary')} />
               </div>
             ) : (
               <NumberInput className="min-w-0 flex-1" label={ki.label} value={Number(v)} unit={ki.unit} step={ki.step} min={ki.min} max={ki.max} onBegin={onBegin} onChange={(n, live) => set(k, n, live)} />

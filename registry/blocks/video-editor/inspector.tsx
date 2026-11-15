@@ -94,7 +94,7 @@ function ProjectInspector() {
         </p>
       </Section>
       <Section title="Format">
-        <ToggleGroup aria-label="Frame size" variant="filled" size="sm" deselectable={false} className="w-full flex-wrap"
+        <ToggleGroup aria-label="Frame size" variant="segmented" size="sm" deselectable={false} className="w-full flex-wrap"
           value={current ? [current] : []}
           onValueChange={([id]) => {
             const f = FORMATS.find((x) => x.id === id);
@@ -104,7 +104,7 @@ function ProjectInspector() {
         </ToggleGroup>
         <p className="m-0 text-caption text-muted-foreground tabular-nums">{p.format.width} × {p.format.height} pixels</p>
         <Row label="Frame rate">
-          <ToggleGroup aria-label="Frame rate" variant="filled" size="sm" deselectable={false}
+          <ToggleGroup aria-label="Frame rate" variant="segmented" size="sm" deselectable={false}
             value={[String(p.format.fps)]}
             onValueChange={([next]) => { const fps = Number(next); if (fps) ed.commit({ ...p, format: { ...p.format, fps } }); }}>
             {[24, 25, 30, 60].map((f) => <ToggleGroupItem key={f} value={String(f)}>{f}</ToggleGroupItem>)}
@@ -179,7 +179,7 @@ function ClipInspector({ clip, track, index, clock }: { clip: TimelineClip; trac
           <Section title="Title">
             <Textarea rows={2} value={titleData(clip).text} disabled={locked} aria-label="Title text"
               onValueChange={(text) => set({ data: { ...clip.data, text } }, 'text')} />
-            <ToggleGroup<TitleStyle> aria-label="Title style" variant="filled" size="sm" deselectable={false} className="w-full" disabled={locked}
+            <ToggleGroup<TitleStyle> aria-label="Title style" variant="segmented" size="sm" deselectable={false} className="w-full" disabled={locked}
               value={[titleData(clip).style]}
               onValueChange={([style]) => { if (style) set({ data: { ...clip.data, style } }); }}>
               {titleStyles.map((s) => <ToggleGroupItem key={s.id} value={s.id} className="flex-1">{s.label}</ToggleGroupItem>)}
@@ -197,7 +197,7 @@ function ClipInspector({ clip, track, index, clock }: { clip: TimelineClip; trac
         ) : null}
         {!title && m?.kind !== 'image' ? (
           <Section title="Speed">
-            <ToggleGroup aria-label="Speed" variant="filled" size="sm" deselectable={false} className="w-full" disabled={locked}
+            <ToggleGroup aria-label="Speed" variant="segmented" size="sm" deselectable={false} className="w-full" disabled={locked}
               value={[String(clip.speed ?? 1)]}
               onValueChange={([next]) => { const s = Number(next); if (s) set({ speed: s === 1 ? undefined : s }); }}>
               {SPEEDS.map((s) => <ToggleGroupItem key={s} value={String(s)} className="flex-1">{s}×</ToggleGroupItem>)}

@@ -193,7 +193,7 @@ describe('QRCode', () => {
     for (const level of LEVELS) {
       for (const rounded of [true, false]) {
         it(`decodes ${name} @ ${level} (${rounded ? 'rounded' : 'square'})`, () => {
-          const svg = renderToStaticMarkup(<QRCode value={text} level={level} rounded={rounded} />);
+          const svg = renderToStaticMarkup(<QRCode value={text} level={level} shape={rounded ? 'rounded' : 'square'} />);
           expect(decode(svg)).toBe(text);
         });
       }
@@ -206,7 +206,7 @@ describe('QRCode', () => {
     expect(decode(renderToStaticMarkup(<QRCode value={big} level="L" />))).toBe(big);
     const max = 'z'.repeat(2900);
     expect(encodeQR(max, { level: 'L' }).version).toBe(40);
-    expect(decode(renderToStaticMarkup(<QRCode value={max} level="L" rounded={false} />))).toBe(max);
+    expect(decode(renderToStaticMarkup(<QRCode value={max} level="L" shape="square" />))).toBe(max);
   });
 
   it('honours margin', () => {

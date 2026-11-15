@@ -1,9 +1,10 @@
 import { useState, type ReactNode } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { Button } from '@/components/ui/button';
+import { buttonVariants } from '@/components/ui/button';
 import { Segmented, SegmentedItem } from '@/components/ui/segmented';
 import {
-  AdaptivePane, AdaptivePaneClose, AdaptivePaneHeader, AdaptivePaneTitle, adaptivePanePageClass, type AdaptivePanePresentation,
+  AdaptivePane, AdaptivePaneClose, AdaptivePaneHeader, AdaptivePaneTitle, AdaptivePaneTrigger, adaptivePanePageClass,
+  createAdaptivePaneController, type AdaptivePaneController, type AdaptivePanePresentation,
 } from '@/components/ui/adaptive-pane';
 import { SizeClassProvider, useSizeClass } from '@/lib/container';
 import { BLProvider } from '@/lib/theme';
@@ -37,12 +38,12 @@ function Activity() {
   );
 }
 
-/** The page beside or under the pane, with the button that shows it. */
-function Page({ open, setOpen, note }: { open: boolean; setOpen: (open: boolean) => void; note?: ReactNode }) {
+/** The page beside or under the pane, with the trigger that shows it (`aria-expanded`, `aria-controls`). */
+function Page({ pane, note }: { pane: AdaptivePaneController; note?: ReactNode }) {
   return (
     <main className={cn('flex min-w-0 flex-1 flex-col items-center justify-center gap-3 bg-muted p-6 text-center', adaptivePanePageClass)}>
       <div className="text-title font-semibold">Maya Lindqvist</div>
-      <Button variant="secondary" aria-pressed={open} onClick={() => setOpen(!open)}>Activity</Button>
+      <AdaptivePaneTrigger controller={pane} className={buttonVariants({ variant: 'secondary' })}>Activity</AdaptivePaneTrigger>
       {note ? <div className="text-footnote text-muted-foreground">{note}</div> : null}
     </main>
   );
@@ -51,12 +52,12 @@ function Page({ open, setOpen, note }: { open: boolean; setOpen: (open: boolean)
 function Inspector({ presentation, dark, w, h, defaultOpen = true }: {
   presentation: AdaptivePanePresentation; dark?: boolean; w: number; h: number; defaultOpen?: boolean;
 }) {
-  const [open, setOpen] = useState(defaultOpen);
+  const [pane] = useState(createAdaptivePaneController);
   return (
     <Frame w={w} h={h} dark={dark}>
       <div className="absolute inset-0 flex">
-        <Page open={open} setOpen={setOpen} note={`presentation="${presentation}"`} />
-        <AdaptivePane side="end" presentation={presentation} open={open} onOpenChange={setOpen} columnWidth={300} drawerWidth={300}
+        <Page pane={pane} note={`presentation="${presentation}"`} />
+        <AdaptivePane controller={pane} side="end" presentation={presentation} defaultOpen={defaultOpen} columnWidth={300} drawerWidth={300}
           className={({ presentation: shown }) => (shown === 'column' ? 'border-s border-border bg-background' : undefined)}>
           <AdaptivePaneHeader>
             <AdaptivePaneTitle>Activity</AdaptivePaneTitle>
@@ -85,7 +86,7 @@ export const Closed: Story = { render: () => <Inspector presentation="drawer" w=
 function AutoDemo() {
   const [width, setWidth] = useState(820);
   const [ref, sizeClass] = useSizeClass({ breakpoints: { medium: 440, regular: 640 } });
-  const [open, setOpen] = useState(true);
+  const [pane] = useState(createAdaptivePaneController);
   return (
     <div className="flex flex-col items-start gap-3 font-sans">
       <Segmented aria-label="Host width" value={String(width)} onValueChange={(v) => setWidth(Number(v))}>
@@ -94,8 +95,8 @@ function AutoDemo() {
       <Frame w={width} h={560}>
         <div ref={ref} className="absolute inset-0 flex">
           <SizeClassProvider value={sizeClass}>
-            <Page open={open} setOpen={setOpen} note={`size class: ${sizeClass}`} />
-            <AdaptivePane side="end" open={open} onOpenChange={setOpen} columnWidth={280} drawerWidth={300}
+            <Page pane={pane} note={`size class: ${sizeClass}`} />
+            <AdaptivePane controller={pane} side="end" defaultOpen columnWidth={280} drawerWidth={300}
               className={({ presentation }) => (presentation === 'column' ? 'border-s border-border bg-background' : undefined)}>
               <AdaptivePaneHeader>
                 <AdaptivePaneTitle>Activity</AdaptivePaneTitle>
@@ -117,10 +118,11 @@ const MODES: AdaptivePanePresentation[] = ['column', 'drawer', 'push', 'cover', 
 function ModesDemo() {
   const [mode, setMode] = useState<AdaptivePanePresentation>('column');
   const [open, setOpen] = useState(true);
+  const [pane] = useState(createAdaptivePaneController);
   return (
     <Frame w={720} h={460}>
       <div className="absolute inset-0 flex">
-        <AdaptivePane presentation={mode} open={open} onOpenChange={setOpen} columnWidth={220} drawerWidth={260} zIndex={20}
+        <AdaptivePane controller={pane} presentation={mode} open={open} onOpenChange={setOpen} columnWidth={220} drawerWidth={260} zIndex={20}
           className="border-e border-border bg-card">
           <AdaptivePaneHeader>
             <AdaptivePaneTitle>Pane</AdaptivePaneTitle>
@@ -132,7 +134,7 @@ function ModesDemo() {
           <Segmented aria-label="Presentation" value={mode} onValueChange={(v) => { setMode(v as AdaptivePanePresentation); setOpen(true); }}>
             {MODES.map((m) => <SegmentedItem key={m} value={m}>{m}</SegmentedItem>)}
           </Segmented>
-          {!open ? <Button variant="secondary" className="self-start" onClick={() => setOpen(true)}>Show pane</Button> : null}
+          {!open ? <AdaptivePaneTrigger controller={pane} className={cn(buttonVariants({ variant: 'secondary' }), 'self-start')}>Show pane</AdaptivePaneTrigger> : null}
         </div>
       </div>
     </Frame>

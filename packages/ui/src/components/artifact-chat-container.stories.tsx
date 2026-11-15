@@ -2,6 +2,15 @@ import { useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { BLProvider } from '@/lib/theme';
 import { Composer, ComposerCard, ComposerFooter, ComposerInput, ComposerSend, ComposerSpacer } from '@/components/ui/composer/composer';
+import {
+  Conversation,
+  ConversationAssistantMessage,
+  ConversationMarkdown,
+  ConversationMessages,
+  ConversationToolCall,
+  ConversationUserMessage,
+  ConversationWorkLog,
+} from '@/components/ui/conversation';
 import '../styles.css';
 import {
   ArtifactChatContainer,
@@ -149,8 +158,51 @@ export const Working: Story = { args: { frame: 'phone', working: true, peek: 120
 export const FloatingSheetVariant: Story = { name: 'Floating (sheet variant)', args: { frame: 'phone', variant: 'sheet', peek: 180 } };
 /** `layout="floating"` floats the chat even on a wide container (maps, canvases). */
 export const AlwaysFloating: Story = { args: { layout: 'floating', peek: 180 } };
-/** A dark chat over a light page. */
+/** A dark chat over a light page: only the chat column (and its composer) is dark; the artifact keeps the page's
+    light theme. */
 export const DarkChatOnLightPage: Story = { args: { appearance: 'dark' } };
+/** The same, floating on a phone: the sheet is dark, the artifact under it light. */
+export const DarkChatOnLightPageFloating: Story = { args: { appearance: 'dark', frame: 'phone', peek: 180 } };
+
+/* The kit's own transcript in the shell: a Conversation whose messages are a MessageScroller. */
+function ConversationDemo({ frame = 'desktop', ...props }: DemoProps) {
+  return (
+    <BLProvider>
+      <div className={frame === 'phone' ? 'h-[min(760px,100dvh)] w-full max-w-[430px] overflow-hidden' : 'h-[min(680px,100dvh)] w-full max-w-[1100px] overflow-hidden'}>
+        <ArtifactChatContainer {...props}>
+          <ArtifactChatContainerContent><Artifact /></ArtifactChatContainerContent>
+          <ArtifactChatContainerChat>
+            <Conversation>
+              <ConversationMessages threadKey="quarterly" aria-label="Chat messages">
+                {TURNS.map(([author, copy], index) =>
+                  author === 'You' ? (
+                    <ConversationUserMessage key={index} value={`m${index}`}>{copy}</ConversationUserMessage>
+                  ) : (
+                    <ConversationAssistantMessage key={index} value={`m${index}`}>
+                      {index === 1 ? (
+                        <ConversationWorkLog summary="Worked for 6s">
+                          <ConversationToolCall icon="doc-text" title="Read" description="sales/q3.csv" />
+                          <ConversationToolCall title="Updated the artifact" description="regional breakdown" />
+                        </ConversationWorkLog>
+                      ) : null}
+                      <ConversationMarkdown markdown={copy} />
+                    </ConversationAssistantMessage>
+                  ),
+                )}
+              </ConversationMessages>
+            </Conversation>
+          </ArtifactChatContainerChat>
+          <ArtifactChatContainerComposer><ChatComposer /></ArtifactChatContainerComposer>
+        </ArtifactChatContainer>
+      </div>
+    </BLProvider>
+  );
+}
+/** With the kit's transcript: `Conversation` in the Chat part, docked beside the artifact. */
+export const WithConversation: Story = { render: (args) => <ConversationDemo {...args} /> };
+/** With the kit's transcript, floating at a peek: resting, the transcript sits at its newest reply (no anchor
+    spacer) above the composer. */
+export const WithConversationFloatingPeek: Story = { render: (args) => <ConversationDemo {...args} />, args: { frame: 'phone', peek: 220 } };
 
 /** Resize across the breakpoint: the column becomes the floating chat and back, as the same composer and transcript
     (type a draft first: it survives the switch). */

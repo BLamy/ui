@@ -1,10 +1,11 @@
 {
   "name": "utils",
   "title": "Utilities",
-  "description": "BL UI's class-name helpers: cn (clsx + tailwind-merge that knows the token utilities), the pressable and brandTile class fragments, and the FONT and BARH constants.",
+  "description": "BL UI's class-name helpers: cn (clsx + tailwind-merge that knows the token utilities) and cx (the same under a UI SDK part's className), the pressable and brandTile class fragments, and the FONT and BARH constants.",
   "page": "utilities",
   "exports": [
     "cn",
+    "cx",
     "pressable",
     "brandTile",
     "FONT",
@@ -12,6 +13,7 @@
   ],
   "imports": [
     "cn",
+    "cx",
     "pressable",
     "brandTile"
   ]

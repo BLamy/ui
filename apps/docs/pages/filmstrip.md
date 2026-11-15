@@ -15,12 +15,12 @@ import { Filmstrip } from '@/components/ui/filmstrip'
 {% tab title="npm" %}
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 
-Import the stylesheet once at your app's entry, then the parts from the package root:
+Import the stylesheet once at your app's entry, then the parts from their module:
 
 ```tsx
 import '@brett_lamy/ui/styles.css'
 
-import { Filmstrip } from '@brett_lamy/ui'
+import { Filmstrip } from '@brett_lamy/ui/filmstrip'
 ```
 {% endtab %}
 {% endtabs %}
@@ -37,11 +37,12 @@ const frames = useMediaFrames(file, { count: 24, height: 64 })
 </div>
 ```
 
-The strip fills its box: give the box a height. Cells keep the media's aspect, measured from the first frame unless you pass `aspect`. While the frames are still coming (`frames={[]}`), the same cells show as shimmering placeholders (`data-loading` on the strip; still under reduced motion), so a clip keeps its rhythm, and the frames fade in when they land. It's decorative and hidden from assistive technology; label what it sits in (a timeline clip names itself). For sound use [Waveform](https://blamy.github.io/ui/#/waveform); for a single poster frame, an `<img>`.
+The strip fills its box: give the box a height. Cells keep the media's aspect, measured from the first frame unless you pass `aspect`. While the frames are still coming (`loading`, which defaults to "`frames` is empty"), the same cells show as shimmering placeholders (`data-loading` on the strip; still under reduced motion), so a clip keeps its rhythm, and the frames fade in when they land. Pass the extraction's own state, `loading={useMediaFrames(file).loading}`, so a file with no decodable frames (or an FFmpeg error) settles on a plain tint instead of shimmering forever. It's decorative and hidden from assistive technology; label what it sits in (a timeline clip names itself). For sound use [Waveform](https://blamy.github.io/ui/#/waveform); for a single poster frame, an `<img>`.
 
 | Prop | Default | Effect |
 | --- | --- | --- |
 | `frames` | required | `{ time, src }[]`, in any order. Empty while loading. |
+| `loading` | `frames` is empty | Placeholder cells instead of frames. `false` with no frames: a plain tint. |
 | `from` / `to` | the first / last frame's time | The media range across the strip. |
 | `aspect` | the first frame's, else 16 / 9 | Width over height of a cell. |
 | `className` / `style` / `ref` | — | On the strip. |

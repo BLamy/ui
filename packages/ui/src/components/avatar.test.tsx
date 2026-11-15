@@ -175,7 +175,7 @@ describe('AvatarGroup', () => {
   });
 
   it('folds the avatars past max into a +N bubble', () => {
-    render(<AvatarGroup max={2} label="Authors">{people}</AvatarGroup>);
+    render(<AvatarGroup max={2} aria-label="Authors">{people}</AvatarGroup>);
     const group = screen.getByRole('group', { name: 'Authors' });
     expect(Array.from(group.children).map((child) => child.textContent)).toEqual(['AL', 'GH', '+2']);
     expect(group.lastElementChild!.hasAttribute('data-overflow')).toBe(true);

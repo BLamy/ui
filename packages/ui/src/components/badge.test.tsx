@@ -25,4 +25,11 @@ describe('Badge', () => {
     expect(link.getAttribute('data-slot')).toBe('badge');
     expect(link.className).toContain('bg-destructive');
   });
+
+  it('puts black text on the light fills (success, warning) and white only where it clears 3:1', () => {
+    render(<><Badge variant="success">Live</Badge><Badge variant="warning">Beta</Badge></>);
+    expect(screen.getByText('Live').className).toContain('text-black');
+    expect(screen.getByText('Beta').className).toContain('text-black');
+    expect(screen.getByText('Live').className).not.toContain('text-white');
+  });
 });

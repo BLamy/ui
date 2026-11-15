@@ -3,7 +3,7 @@ import type { ComponentProps } from 'react';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
-  Combobox, ComboboxChip, ComboboxChips, ComboboxClear, ComboboxContent, ComboboxEmpty, ComboboxField, ComboboxGroup, ComboboxGroupLabel,
+  Combobox, ComboboxChip, ComboboxChips, ComboboxClear, ComboboxContent, ComboboxEmpty, ComboboxInputGroup, ComboboxGroup, ComboboxGroupLabel,
   ComboboxInput, ComboboxItem, ComboboxLabel, ComboboxList, ComboboxStatus, ComboboxTrigger, createComboboxController,
 } from '@/components/ui/combobox';
 import { Field, FieldDescription, FieldLabel } from '@/components/ui/field';
@@ -24,10 +24,10 @@ function City(props: Partial<ComponentProps<typeof Combobox<string>>>) {
   return (
     <Combobox {...props}>
       <ComboboxLabel variant="field">City</ComboboxLabel>
-      <ComboboxField>
+      <ComboboxInputGroup>
         <ComboboxInput placeholder="Search cities" />
         <ComboboxTrigger />
-      </ComboboxField>
+      </ComboboxInputGroup>
       <ComboboxContent>
         <ComboboxEmpty>No cities found.</ComboboxEmpty>
         <ComboboxList>
@@ -128,7 +128,7 @@ describe('Combobox', () => {
       <Field name="assignee">
         <FieldLabel>Assignee</FieldLabel>
         <Combobox defaultValue="kim">
-          <ComboboxField />
+          <ComboboxInputGroup />
           <ComboboxContent>
             <ComboboxList>
               <ComboboxItem value="kim" description="kim@example.com">Kim Park</ComboboxItem>
@@ -151,7 +151,7 @@ describe('Combobox', () => {
   it('names an option by its label and describes it by its description', async () => {
     render(
       <Combobox defaultOpen>
-        <ComboboxField aria-label="Assignee" />
+        <ComboboxInputGroup aria-label="Assignee" />
         <ComboboxContent>
           <ComboboxList>
             <ComboboxItem value="kim" description="kim@example.com">Kim Park</ComboboxItem>
@@ -167,10 +167,10 @@ describe('Combobox', () => {
   it('draws the field box in three sizes, with the input and its button by default', () => {
     render(
       <Combobox>
-        <ComboboxField size="sm" />
+        <ComboboxInputGroup size="sm" />
       </Combobox>,
     );
-    const field = document.querySelector<HTMLElement>('[data-slot=combobox-field]')!;
+    const field = document.querySelector<HTMLElement>('[data-slot=combobox-input-group]')!;
     expect(field.dataset.size).toBe('sm');
     expect(field.className).toContain('h-8');
     expect(field.querySelector('[data-slot=combobox-input]')).toBeTruthy();
@@ -188,10 +188,10 @@ describe('Combobox', () => {
           { type: 'group', label: 'Asia', items: [{ value: 'tyo', label: 'Tokyo' }] },
         ]}
       >
-        <ComboboxField>
+        <ComboboxInputGroup>
           <ComboboxInput aria-label="City" />
           <ComboboxTrigger />
-        </ComboboxField>
+        </ComboboxInputGroup>
         <ComboboxContent />
       </Combobox>,
     );
@@ -212,10 +212,10 @@ describe('Combobox', () => {
   it('composes groups by hand', async () => {
     render(
       <Combobox defaultOpen>
-        <ComboboxField>
+        <ComboboxInputGroup>
           <ComboboxInput aria-label="City" />
           <ComboboxTrigger />
-        </ComboboxField>
+        </ComboboxInputGroup>
         <ComboboxContent>
           <ComboboxList>
             <ComboboxGroup>
@@ -245,10 +245,10 @@ describe('Combobox', () => {
     render(
       <Combobox multiple defaultValue={['Berlin', 'Lisbon']} onValueChange={onValueChange}>
         <ComboboxLabel variant="field">Cities</ComboboxLabel>
-        <ComboboxField>
+        <ComboboxInputGroup>
           <ComboboxChips><ComboboxInput placeholder="Add a city" /></ComboboxChips>
           <ComboboxTrigger />
-        </ComboboxField>
+        </ComboboxInputGroup>
         <ComboboxContent>
           <ComboboxList>{cities.map((city) => <ComboboxItem key={city} value={city}>{city}</ComboboxItem>)}</ComboboxList>
         </ComboboxContent>
@@ -276,13 +276,13 @@ describe('Combobox', () => {
     render(
       <Combobox multiple defaultValue={['Berlin']} onValueChange={onValueChange}>
         <ComboboxLabel variant="field">Cities</ComboboxLabel>
-        <ComboboxField>
+        <ComboboxInputGroup>
           <ComboboxChips
             renderChips={(state) => (state.value as string[]).map((value) => <ComboboxChip key={value} value={value} removeLabel={`Drop ${value}`}>{value.toUpperCase()}</ComboboxChip>)}
           />
           <ComboboxClear aria-label="Clear cities" />
           <ComboboxTrigger />
-        </ComboboxField>
+        </ComboboxInputGroup>
         <ComboboxContent>
           <ComboboxList>{cities.map((city) => <ComboboxItem key={city} value={city}>{city}</ComboboxItem>)}</ComboboxList>
         </ComboboxContent>
@@ -300,7 +300,7 @@ describe('Combobox', () => {
     render(
       <Combobox items={[]} status="loading" defaultOpen filter={false}>
         <ComboboxLabel variant="field">Movie</ComboboxLabel>
-        <ComboboxField />
+        <ComboboxInputGroup />
         <ComboboxContent>
           <ComboboxStatus>{(state) => (state.loading ? 'Searching…' : null)}</ComboboxStatus>
           <ComboboxList />
@@ -309,5 +309,42 @@ describe('Combobox', () => {
     );
     await settle();
     expect(document.querySelector('[data-slot=combobox-status]')!.textContent).toBe('Searching…');
+  });
+});
+
+describe('Combobox row size and empty state', () => {
+  it('opens dense rows under a small field, as Select does', async () => {
+    render(
+      <Combobox defaultOpen>
+        <ComboboxInputGroup size="sm" />
+        <ComboboxContent>
+          <ComboboxList>
+            <ComboboxItem value="a">Alpha</ComboboxItem>
+          </ComboboxList>
+        </ComboboxContent>
+      </Combobox>,
+    );
+    await settle();
+    expect(screen.getByRole('option', { name: 'Alpha' }).className).toContain('min-h-8');
+  });
+
+  it('takes the same empty props as CommandMenuEmpty', async () => {
+    render(
+      <Combobox>
+        <ComboboxInputGroup>
+          <ComboboxInput aria-label="Person" />
+        </ComboboxInputGroup>
+        <ComboboxContent>
+          <ComboboxList>
+            <ComboboxItem value="a">Alpha</ComboboxItem>
+          </ComboboxList>
+          <ComboboxEmpty icon={<svg data-testid="glyph" />} title="No one" description="Try another name." />
+        </ComboboxContent>
+      </Combobox>,
+    );
+    await type(screen.getByRole('combobox', { name: 'Person' }) as HTMLInputElement, 'zz');
+    const empty = document.querySelector('[data-slot=empty-state]')!;
+    expect(empty.textContent).toBe('No oneTry another name.');
+    expect(empty.querySelector('[data-testid=glyph]')).toBeTruthy();
   });
 });

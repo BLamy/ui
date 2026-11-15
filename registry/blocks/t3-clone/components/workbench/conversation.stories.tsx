@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { Conversation, ConversationEmpty, ConversationMessages, ConversationComposer, ConversationSuggestions, Suggestion, UserMessage, AssistantMessage, MessageMarkdown, WorkLog, ToolCall } from '@/components/ui/conversation';
+import { Conversation, ConversationEmpty, ConversationMessages, ConversationComposer, ConversationSuggestions, ConversationSuggestion, ConversationUserMessage, ConversationAssistantMessage, ConversationMarkdown, ConversationWorkLog, ConversationToolCall } from '@/components/ui/conversation';
 import { SettledBanner } from '../settled-banner';
 import { ThemeScope } from '@/lib/theme';
 import { WorkbenchComposer } from './workbench-composer';
@@ -32,12 +32,12 @@ function ThreadDemo({ thread, streaming, onUnsettle }: { thread: ThreadData | nu
       <ConversationMessages threadKey={thread?.id} streaming={streaming}>
         {thread?.messages.map((m) =>
           m.role === 'user' ? (
-            <UserMessage key={m.id}>{m.text}</UserMessage>
+            <ConversationUserMessage key={m.id}>{m.text}</ConversationUserMessage>
           ) : (
-            <AssistantMessage key={m.id}>
-              {m.summary ? <WorkLog summary={m.summary}>{m.steps?.map((s, i) => <ToolCall key={i} {...s} />)}</WorkLog> : null}
-              <MessageMarkdown markdown={m.text} streaming={m.live} />
-            </AssistantMessage>
+            <ConversationAssistantMessage key={m.id}>
+              {m.summary ? <ConversationWorkLog summary={m.summary}>{m.steps?.map((s, i) => <ConversationToolCall key={i} {...s} />)}</ConversationWorkLog> : null}
+              <ConversationMarkdown markdown={m.text} streaming={m.live} />
+            </ConversationAssistantMessage>
           ),
         )}
       </ConversationMessages>
@@ -47,7 +47,7 @@ function ThreadDemo({ thread, streaming, onUnsettle }: { thread: ThreadData | nu
       </ConversationComposer>
       <ConversationSuggestions>
         {SUGGESTIONS.map((s) => (
-          <Suggestion key={s}>{s}</Suggestion>
+          <ConversationSuggestion key={s}>{s}</ConversationSuggestion>
         ))}
       </ConversationSuggestions>
     </Conversation>
@@ -88,14 +88,14 @@ export const Streaming: Story = {
   ),
 };
 
-/* the standalone SettledBanner + WorkLog rows (static, and with tool calls behind it) */
+/* the standalone SettledBanner + ConversationWorkLog rows (static, and with tool calls behind it) */
 export const BannerAndTrace: Story = {
   render: () => (
     <ThemeScope scope="workbench" style={{ minHeight: 320, padding: 24, display: 'grid', placeItems: 'center' }}>
       <div style={{ width: 560, maxWidth: '100%', display: 'grid', gap: 18 }}>
         <SettledBanner onUnsettle={() => {}} />
-        <WorkLog summary="Worked for 1m 4s">{THREADS[0].messages[1].steps?.map((s, i) => <ToolCall key={i} {...s} />)}</WorkLog>
-        <WorkLog summary="Stopped" />
+        <ConversationWorkLog summary="Worked for 1m 4s">{THREADS[0].messages[1].steps?.map((s, i) => <ConversationToolCall key={i} {...s} />)}</ConversationWorkLog>
+        <ConversationWorkLog summary="Stopped" />
       </div>
     </ThemeScope>
   ),
@@ -112,7 +112,7 @@ export const EmptyThreadStreaming: Story = {
         </ConversationComposer>
         <ConversationSuggestions>
           {SUGGESTIONS.map((s) => (
-            <Suggestion key={s}>{s}</Suggestion>
+            <ConversationSuggestion key={s}>{s}</ConversationSuggestion>
           ))}
         </ConversationSuggestions>
       </Conversation>
@@ -120,16 +120,16 @@ export const EmptyThreadStreaming: Story = {
   ),
 };
 
-/* WorkLog expanded: the tool calls behind a reply — titles, details, and command wells */
+/* ConversationWorkLog expanded: the tool calls behind a reply — titles, details, and command wells */
 export const WorkLogOpen: Story = {
   render: () => (
     <ThemeScope scope="workbench" style={{ minHeight: 420, padding: 24, display: 'grid', placeItems: 'center' }}>
       <div style={{ width: 560, maxWidth: '100%' }}>
-        <WorkLog summary="Worked for 1m 4s" defaultOpen>
-          {THREADS[0].messages[1].steps?.map((s, i) => <ToolCall key={i} {...s} />)}
-          <ToolCall icon="network" title="Opened the browser surface" description="localhost:3000" status="running" />
-          <ToolCall title="Ran the e2e suite" description="2 failed" status="error" />
-        </WorkLog>
+        <ConversationWorkLog summary="Worked for 1m 4s" defaultOpen>
+          {THREADS[0].messages[1].steps?.map((s, i) => <ConversationToolCall key={i} {...s} />)}
+          <ConversationToolCall icon="network" title="Opened the browser surface" description="localhost:3000" status="running" />
+          <ConversationToolCall title="Ran the e2e suite" description="2 failed" status="error" />
+        </ConversationWorkLog>
       </div>
     </ThemeScope>
   ),

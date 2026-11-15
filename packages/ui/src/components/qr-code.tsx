@@ -25,10 +25,10 @@ export interface QRCodeProps extends Omit<ComponentProps<'svg'>, 'children' | 'o
   /** A fill painted behind the code inside the SVG, so a saved or copied image keeps its quiet zone. */
   background?: string;
   /**
-   * iOS-style rounded module dots and rounded finder "eyes" (default true). Modules still fill ~85% of
-   * their cell and finder rings stay solid, so the code remains scannable. `false` renders square modules.
+   * The modules' look: `rounded` (default), iOS-style dots and rounded finder "eyes" (modules still fill ~85% of
+   * their cell and finder rings stay solid, so the code remains scannable), or classic `square` modules.
    */
-  rounded?: boolean;
+  shape?: 'rounded' | 'square';
   /** The value does not fit in a QR code (over version 40 at this `level`). */
   onError?: (error: Error) => void;
 }
@@ -64,12 +64,13 @@ export function QRCode({
   level = 'M',
   margin = 0,
   background,
-  rounded = true,
+  shape = 'rounded',
   onError,
   className,
   'aria-label': label,
   ...props
 }: QRCodeProps) {
+  const rounded = shape === 'rounded';
   const drawn = useMemo(() => {
     let qr: QRMatrix;
     try {

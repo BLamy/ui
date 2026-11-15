@@ -1,5 +1,5 @@
 'use client';
-import { createContext, useContext, type ComponentProps } from 'react';
+import { Children, createContext, useContext, type ComponentProps, type ReactNode } from 'react';
 import {
   Listbox as SdkListbox,
   ListboxGroup as SdkListboxGroup,
@@ -12,11 +12,12 @@ import {
   type ListboxState,
 } from '@ui-sdk/react/listbox';
 import { cva, type VariantProps } from 'class-variance-authority';
+import { renderEmptyState } from '@/components/ui/empty-state';
 import {
   ListDataItems, OptionRow, optionGroupClass, optionGroupLabelClass, optionLabel, optionSeparatorClass, useOptionDescription,
   type ListDataParts, type OptionRowProps,
 } from '@/lib/option-row';
-import { cx } from '@/lib/utils';
+import { cn, cx } from '@/lib/utils';
 
 /* ══ Listbox — UI SDK's Listbox: an always-visible list to choose one option from, or several ══
    `value` / `defaultValue` / `onValueChange` hold the choice (`multiple` makes it a list); arrow keys, Home / End and
@@ -66,13 +67,28 @@ const ListboxVariantCtx = createContext<ListboxVariant>('inset');
 /* ── Listbox ── */
 
 export type ListboxProps<T = string, Multiple extends boolean | undefined = false> =
-  SdkListboxProps<T, Multiple> & VariantProps<typeof listboxVariants>;
+  SdkListboxProps<T, Multiple> & VariantProps<typeof listboxVariants> & {
+    /** Shown in the list's place while it has no options (no `items`, no children), read through `renderEmptyState`:
+     *  a string is the title of a small `EmptyState` (default "No options"), `null` shows nothing, any other node is
+     *  drawn as is. It is a polite status, so a filter that empties the list is announced. */
+    emptyState?: ReactNode;
+  };
 
 export function Listbox<T = string, Multiple extends boolean | undefined = false>({
-  className, variant, children, ...props
+  className, variant, children, emptyState, ...props
 }: ListboxProps<T, Multiple>) {
   const v = variant ?? 'inset';
   const list = props as SdkListboxProps<unknown, boolean>;
+  const empty = typeof children === 'function' ? false
+    : children === undefined || children === null ? !list.items?.length
+    : Children.count(children) === 0;
+  if (empty) {
+    return (
+      <div data-slot="listbox-empty" data-variant={v} className={cn(listboxVariants({ variant: v }), typeof className === 'string' ? className : undefined)}>
+        {renderEmptyState(emptyState, { title: 'No options' })}
+      </div>
+    );
+  }
   return (
     <ListboxVariantCtx.Provider value={v}>
       <SdkListbox<unknown, boolean> data-variant={v} {...list} className={cx(listboxVariants({ variant: v }), className)}>

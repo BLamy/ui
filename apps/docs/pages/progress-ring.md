@@ -17,12 +17,14 @@ import {
 {% tab title="npm" %}
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 
-Import the stylesheet once at your app's entry, then the parts from the package root:
+Import the stylesheet once at your app's entry, then the parts from their module:
 
 ```tsx
 import '@brett_lamy/ui/styles.css'
 
-import { ProgressRing, CountdownRing } from '@brett_lamy/ui'
+import {
+  ProgressRing, CountdownRing,
+} from '@brett_lamy/ui/progress-ring'
 ```
 {% endtab %}
 {% endtabs %}
@@ -66,7 +68,7 @@ The ring has `role="timer"` and an `aria-label` of "N seconds left" (override wi
 | `size` | `default` | `sm` 20 · `default` 28 · `lg` 44 · `xl` 72 px, or any number of px. |
 | `thickness` | scales with size | Stroke width in px. |
 | `tone` | `default` | `success`, `warning`, `destructive`. |
-| `color` / `trackColor` | tint / fill | Any CSS colors. |
+| `tint` / `trackTint` | primary / fill | The arc's and the track's color, any CSS colors (`tint` overrides `tone`): the kit's caller-color prop, as on Avatar. |
 | `showValue` | `false` | The rolling percentage (`lg`, `xl`, or 40px and up; ignored below). |
 | `children` | — | Custom content in the middle. |
 | `ref`, DOM props | — | Passed to the root (UI SDK `Progress`). |
@@ -79,8 +81,8 @@ The ring has `role="timer"` and an `aria-label` of "N seconds left" (override wi
 | `duration` | `30` | Seconds in a full period. |
 | `urgentAt` | `5` | Turn the urgent color at or below this; `0` never. |
 | `size` / `thickness` | `default` | As for ProgressRing. |
-| `color` / `urgentColor` / `trackColor` | tint / red / fill | Any CSS colors. |
-| `showLabel` | on from 26px | The seconds in the middle, sized with the ring (36% of its diameter). |
+| `tint` / `urgentTint` / `trackTint` | primary / red / fill | The arc's color, its color in the last seconds (the seconds too), and the track's: any CSS colors. |
+| `showValue` | on from 26px | The seconds in the middle, sized with the ring (36% of its diameter), as ProgressRing's `showValue`. |
 | `ref`, DOM props | — | Passed to the root `span`. |
 
 A ProgressRing is UI SDK's Progress root, so it carries `data-slot="progress"` and its state attributes (`data-indeterminate`, `data-progressing`, `data-complete`); the value in the middle is `progress-value`. A CountdownRing carries `data-slot="countdown-ring"` (with `data-urgent` for the last seconds); the arc of either is `data-slot="progress-ring-arc"`.
@@ -106,7 +108,7 @@ relative inline-grid size-(--ring-px) shrink-0 place-items-center align-middle
 | `warning` | `[--ring-color:var(--color-warning)]` |
 | `destructive` | `[--ring-color:var(--destructive)]` |
 
-### `countdownRingLabelVariants`
+### `countdownRingValueVariants`
 
 Defined in `@/components/ui/progress-ring`. Base classes:
 

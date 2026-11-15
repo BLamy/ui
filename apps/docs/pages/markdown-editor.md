@@ -1,8 +1,8 @@
 # MarkdownEditor
 
-A Markdown field on the `@brett_lamy/docstream-editor` WYSIWYG editor. It reads and writes the same GitBook-flavored Markdown that [MarkdownView](https://blamy.github.io/ui/#/docstream) renders, so what you type is what readers get. Type `/` for blocks, paste Markdown to get structure, and paste or drop images as inline image blocks or as attachment chips.
+A Markdown field on the `@brett_lamy/docstream-editor` WYSIWYG editor. It reads and writes the same GitBook-flavored Markdown that [MarkdownView](https://blamy.github.io/ui/#/markdown-view) renders, so what you type is what readers get. Type `/` for blocks, paste Markdown to get structure, and paste or drop images as inline image blocks or as attachment chips.
 
-Use a sibling when the job differs: [MarkdownView](https://blamy.github.io/ui/#/docstream) shows Markdown nobody edits (a reply, release notes), [Textarea](https://blamy.github.io/ui/#/textarea) takes plain text with no formatting, and [CodeEditor](https://blamy.github.io/ui/#/code-editor) edits source code.
+Use a sibling when the job differs: [MarkdownView](https://blamy.github.io/ui/#/markdown-view) shows Markdown nobody edits (a reply, release notes), [Textarea](https://blamy.github.io/ui/#/textarea) takes plain text with no formatting, and [CodeEditor](https://blamy.github.io/ui/#/code-editor) edits source code.
 
 {% tabs title="Installation" sync="install" %}
 {% tab title="shadcn CLI" %}
@@ -17,12 +17,12 @@ import { MarkdownEditor } from '@/components/ui/markdown-editor'
 {% tab title="npm" %}
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 
-Import the stylesheet once at your app's entry, then the parts from the package root:
+Import the stylesheet once at your app's entry, then the parts from their module:
 
 ```tsx
 import '@brett_lamy/ui/styles.css'
 
-import { MarkdownEditor } from '@brett_lamy/ui'
+import { MarkdownEditor } from '@brett_lamy/ui/markdown-editor'
 ```
 {% endtab %}
 {% endtabs %}
@@ -60,6 +60,24 @@ A controlled editor beside a `MarkdownView` of the same value. Every edit serial
 `imagePaste="chip"` turns pasted or dropped images into compact chips. You store the files: `onAttachmentAdd` hands you each image as a data URL, `onAttachmentRemove` reports chips the user deleted, and `attachments` feeds the chips their thumbnails. Chips serialize as `![name](attachment:id)`. ⌘/Ctrl+Enter calls `onSubmit`.
 
 {% demo src="markdown-editor/comment-box" %}
+
+### A toolbar of your own
+
+`toolbar` (`true`) shows the built-in row: bold, italic, strike, code and link. Pass a node instead to choose the tools: a kit [Toolbar](https://blamy.github.io/ui/#/toolbar) of `MarkdownEditorToolbarButton`s, each running a TipTap `command` on the editor. With a `mark` (and its `attributes`) a button is a toggle, pressed while the selection is in that mark or block. It takes ToolbarButton's props (default size `icon-sm`).
+
+```tsx
+<MarkdownEditor
+  aria-label="Release notes"
+  toolbar={
+    <Toolbar aria-label="Formatting" size="sm">
+      <MarkdownEditorToolbarButton command="toggleBold" mark="bold" aria-label="Bold"><strong>B</strong></MarkdownEditorToolbarButton>
+      <MarkdownEditorToolbarButton command="toggleItalic" mark="italic" aria-label="Italic"><em>I</em></MarkdownEditorToolbarButton>
+      <ToolbarSeparator />
+      <MarkdownEditorToolbarButton command="toggleTaskList" mark="taskList" aria-label="Checklist"><Icon name="checklist" /></MarkdownEditorToolbarButton>
+    </Toolbar>
+  }
+/>
+```
 
 ### Read-only and rendered
 
@@ -102,10 +120,10 @@ Fences labelled `xstate` or `tscircuit` use the same source-and-preview cards as
 | `onValueChange` | `(markdown, details) => void` | — | Called with serialized Markdown on every edit. `details.reason` is `input-change` (typing, paste, a toolbar or "/" command) or `imperative` (the ref's `setMarkdown`, `insertMarkdown`, `clear`), with `event` and `source`; `details.cancel()` puts the document back. |
 | `onSubmit` | `(markdown) => void` | — | ⌘/Ctrl+Enter. |
 | `placeholder` | `string` | — | Shown while the document is empty. |
-| `variant` | `'default' \| 'ghost' \| 'card'` | `'default'` | The kit's filled field box (Input's and Textarea's), no chrome, or a card with a hairline. |
+| `variant` | `'default' \| 'plain' \| 'card'` | `'default'` | The kit's filled field box (Input's and Textarea's), no chrome, or a card with a hairline. |
 | `size` | `'sm' \| 'default' \| 'lg'` | `'default'` | Type size, padding and default minimum height. |
 | `minHeight` / `maxHeight` | `number \| string` | size-based / none | Writing-area bounds; content scrolls past `maxHeight`. |
-| `toolbar` | `boolean` | `false` | Bold, italic, strike, code and link buttons. Hidden while read-only or disabled. |
+| `toolbar` | `boolean \| ReactNode` | `false` | `true`: bold, italic, strike, code and link buttons. A node: your own toolbar in the same place (a `Toolbar` of `MarkdownEditorToolbarButton`s). Hidden while read-only or disabled. |
 | `slashMenu` | `boolean \| { items }` | `true` | The `/` block menu, or a custom item list. |
 | `references` | `boolean \| ReferenceSources` | `false` | `@` / `#` / `$` pickers that insert reference chips. |
 | `demoResolver` | `DemoResolver` | — | Resolves live demo blocks to components, source files, and metadata. |
@@ -120,7 +138,7 @@ Fences labelled `xstate` or `tscircuit` use the same source-and-preview cards as
 | `autoFocus` | `boolean` | `false` | Focus on mount. |
 | `name` | `string` | — | Submit the Markdown with a form. |
 | `handleKeyDown` / `handlePaste` | `(event) => boolean` | — | ProseMirror's hooks: run before the editor's own handling; return `true` when you handled it. |
-| `onFocus` / `onBlur` | `(event: FocusEvent) => void` | — | The writing area took or lost focus. |
+| `onEditorFocus` / `onEditorBlur` | `(event: FocusEvent) => void` | — | The writing area took or lost focus (the DOM event). React's `onFocus` / `onBlur` go on the root and also fire for the toolbar. |
 | `onEditorReady` | `(editor \| null) => void` | — | The TipTap editor once mounted. |
 | `classNames` | `MarkdownEditorClassNames` | — | Classes for parts of the document: `title`, `heading`, `paragraph`, `list`, `checklist`, `checklistItem`, `checkbox`, `table`, `tableHeader`, `tableCell`, `blockquote`, `codeBlock`, `link`, `toolbar`, `editor`, `content`. |
 | `ref` | `MarkdownEditorHandle` | — | `editor`, `commands`, `chain()`, `focus()`, `blur()`, `getMarkdown()`, `setMarkdown()`, `insertMarkdown()`, `clear()`, `isEmpty()`. |
@@ -141,7 +159,7 @@ The Docstream editor's stylesheet ships inside `@brett_lamy/ui/styles.css` in a 
 
 ```tsx
 <MarkdownEditor
-  variant="ghost"
+  variant="plain"
   classNames={{
     title: 'text-[28px] leading-[1.2] font-bold tracking-[-.4px] mb-2',
     checklist: 'pl-0',
@@ -172,7 +190,7 @@ Defined in `@/components/ui/markdown-editor`. Base classes:
 | Value | Adds |
 | --- | --- |
 | `default` (default) | — |
-| `ghost` | `rounded-none bg-transparent` |
+| `plain` | `rounded-none bg-transparent` |
 | `card` | `rounded-card bg-card shadow-hairline focus-within:shadow-[inset_0_0_0_1.5px_var(--primary)] data-invalid:shadow-[inset_0_0_0_1.5px_var(--destructive)]` |
 
 **`size`** — default `default`

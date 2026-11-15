@@ -1,9 +1,10 @@
 // @vitest-environment happy-dom
 import { useState } from 'react';
-import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import {
-  AdaptivePane, AdaptivePaneClose, AdaptivePaneHeader, AdaptivePaneTitle, adaptivePanePageClass, type AdaptivePanePresentation,
+  AdaptivePane, AdaptivePaneClose, AdaptivePaneHeader, AdaptivePaneTitle, AdaptivePaneTrigger, adaptivePanePageClass,
+  createAdaptivePaneController, type AdaptivePanePresentation,
 } from '@/components/ui/adaptive-pane';
 import { SizeClassProvider, type SizeClass } from '@/lib/container';
 
@@ -334,8 +335,10 @@ describe('AdaptivePane header parts', () => {
     render(<Pane presentation="push" />);
     const header = document.querySelector('[data-slot=adaptive-pane-header]')!;
     expect(header.getAttribute('data-presentation')).toBe('push');
-    const back = screen.getByRole('button', { name: 'Inbox' });
-    expect(back.className).toContain('col-start-1');
+    // NavigationStack's back button (lib/nav-bar): named "Back to" where it goes, first in the bar, over barSurface.
+    const back = screen.getByRole('button', { name: 'Back to Inbox' });
+    expect(header.querySelector('button')).toBe(back);
+    expect(header.querySelector('[data-side=top]')?.className).toContain('bg-bar');
     expect(screen.getByRole('region', { name: 'Activity' })).toBeTruthy();
   });
 
@@ -409,7 +412,7 @@ describe('AdaptivePane push', () => {
     act(() => { fireEvent.click(opener); });
     await act(() => new Promise<void>((resolve) => setTimeout(resolve, 50)));
     expect(screen.getByRole('region', { name: 'Activity' }).contains(document.activeElement)).toBe(true);
-    act(() => { fireEvent.click(screen.getByRole('button', { name: 'Inbox' })); });
+    act(() => { fireEvent.click(screen.getByRole('button', { name: 'Back to Inbox' })); });
     await act(() => new Promise<void>((resolve) => setTimeout(resolve, 50)));
     expect(document.activeElement).toBe(opener);
   });
@@ -424,7 +427,7 @@ describe('AdaptivePane push', () => {
     const main = screen.getByRole('main', { hidden: true });
     expect(main.getAttribute('style')).toBeNull();
     expect(main.hasAttribute('inert')).toBe(true);
-    act(() => { fireEvent.click(screen.getByRole('button', { name: 'Inbox' })); });
+    act(() => { fireEvent.click(screen.getByRole('button', { name: 'Back to Inbox' })); });
     expect(onOpenChange).toHaveBeenLastCalledWith(false, expect.objectContaining({ reason: 'close-press' }));
   });
 
@@ -527,5 +530,53 @@ describe('AdaptivePane push', () => {
     rerender(<Host presentation="column" />);
     expect(screen.getByRole('textbox', { name: 'Comment' })).toBe(input);
     expect(input.value).toBe('kept');
+  });
+});
+
+describe('AdaptivePaneTrigger', () => {
+  // A drag that ended above (the resize tests) leaves UI SDK's one-shot "swallow the click after a drag" listener
+  // armed, as a real pointerup is always followed by a click: give it that click.
+  beforeEach(() => { document.body.click(); });
+
+  it('opens and closes the pane through its controller, saying whether it shows and what it controls', () => {
+    const onOpenChange = vi.fn();
+    const pane = createAdaptivePaneController();
+    render(
+      <div>
+        <AdaptivePaneTrigger controller={pane}>Activity</AdaptivePaneTrigger>
+        <AdaptivePane controller={pane} presentation="column" aria-label="Activity" onOpenChange={onOpenChange}>x</AdaptivePane>
+      </div>,
+    );
+    const trigger = screen.getByRole('button', { name: 'Activity' });
+    const root = document.querySelector<HTMLElement>('[data-slot=adaptive-pane]')!;
+    expect(trigger.getAttribute('aria-expanded')).toBe('false');
+    expect(trigger.getAttribute('aria-controls')).toBe(root.id);
+    act(() => { fireEvent.click(trigger); });
+    expect(onOpenChange).toHaveBeenLastCalledWith(true, expect.objectContaining({ reason: 'trigger-press' }));
+    expect(trigger.getAttribute('aria-expanded')).toBe('true');
+    expect(root.hasAttribute('data-open')).toBe(true);
+    act(() => { fireEvent.click(trigger); });
+    expect(onOpenChange).toHaveBeenLastCalledWith(false, expect.objectContaining({ reason: 'trigger-press' }));
+    expect(trigger.getAttribute('aria-expanded')).toBe('false');
+  });
+
+  it('follows a controlled pane, and an onClick that prevents default keeps it as it is', () => {
+    const pane = createAdaptivePaneController();
+    function Host() {
+      const [open, setOpen] = useState(true);
+      return (
+        <div>
+          <AdaptivePaneTrigger controller={pane} onClick={(e) => { if (e.shiftKey) e.preventDefault(); }}>Pane</AdaptivePaneTrigger>
+          <AdaptivePane controller={pane} presentation="column" aria-label="Side" open={open} onOpenChange={setOpen}>x</AdaptivePane>
+        </div>
+      );
+    }
+    render(<Host />);
+    const trigger = screen.getByRole('button', { name: 'Pane' });
+    expect(trigger.getAttribute('aria-expanded')).toBe('true');
+    act(() => { fireEvent.click(trigger, { shiftKey: true }); });
+    expect(trigger.getAttribute('aria-expanded')).toBe('true');
+    act(() => { fireEvent.click(trigger); });
+    expect(trigger.getAttribute('aria-expanded')).toBe('false');
   });
 });

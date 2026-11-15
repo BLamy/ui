@@ -15,12 +15,12 @@ import { DebugToolbar } from '@/components/ui/debug-toolbar'
 {% tab title="npm" %}
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 
-Import the stylesheet once at your app's entry, then the parts from the package root:
+Import the stylesheet once at your app's entry, then the parts from their module:
 
 ```tsx
 import '@brett_lamy/ui/styles.css'
 
-import { DebugToolbar } from '@brett_lamy/ui'
+import { DebugToolbar } from '@brett_lamy/ui/debug-toolbar'
 ```
 {% endtab %}
 {% endtabs %}
@@ -38,7 +38,7 @@ import { DebugToolbar } from '@brett_lamy/ui'
 />
 ```
 
-`onAction` receives the action of the pressed control. `disabledActions` lists the ones the debugger can't run right now: they stay focusable (`aria-disabled`) so people can still find them, and fade like any disabled button. `actions` picks and orders the controls (default: all eight), for a debugger without reverse execution, say:
+`onAction(action, details)` receives the action of the pressed control and `{ reason: 'trigger-press', event }`, the kit's action contract; a control's own `onClick` runs first, and `event.preventDefault()` there keeps `onAction` from running. `disabledActions` lists the ones the debugger can't run right now: they stay focusable (`aria-disabled`) so people can still find them, and go grey like any unavailable tool (their tone color is for available actions only). `actions` picks and orders the controls (default: all eight), for a debugger without reverse execution, say:
 
 ```tsx
 <DebugToolbar actions={['continue', 'step-over', 'step-into', 'step-out', 'restart', 'stop']} onAction={dispatch} />
@@ -77,11 +77,11 @@ Every [Toolbar](https://blamy.github.io/ui/#/toolbar) prop (`variant`, `size`, `
 
 | Prop | Default | Effect |
 | --- | --- | --- |
-| `onAction` | — | `(action) => void`, called with the pressed control's action. |
+| `onAction` | — | `(action, details) => unknown`, called with the pressed control's action and `{ reason, event }`. |
 | `actions` | all eight | The controls to show, in order. Ignored when children are given. |
 | `disabledActions` | `[]` | Actions that are unavailable: focusable, `aria-disabled`, faded. |
 | `variant` | `floating` | `floating`, `plain` or `bar` (Toolbar's looks). |
-| `size` | `default` | `sm` (28px tools), `default` (36px), `lg` (44px). |
+| `size` | `default` | `sm` (28px tools, 16px glyphs), `default` (36px, 20px), `lg` (44px, 24px). |
 | `children` | — | Your own row instead of `actions`. |
 
 ### DebugToolbarButton

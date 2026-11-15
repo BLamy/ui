@@ -9,7 +9,7 @@ import {
   SidebarSearch,
   SidebarSection,
   SidebarTrigger,
-  SidebarWorkspace,
+  SidebarAccount,
   type SidebarPresentation,
   type SidebarVariant,
 } from '@/components/ui/sidebar'
@@ -59,7 +59,7 @@ export default function SidebarPlayground() {
         <SidebarProvider key={variant + presentation} defaultOpen={presentation !== 'drawer'} breakpoint={430}>
           <Sidebar variant={variant} presentation={presentation}>
             <SidebarHeader>
-              <SidebarWorkspace title="Creamery Ops" description="Production workspace" />
+              <SidebarAccount title="Creamery Ops" description="Production workspace" />
             </SidebarHeader>
             <SidebarContent aria-label="Creamery Ops">
               <SidebarSearch shortcut="/" />

@@ -62,7 +62,7 @@ export function StatusBar({ store }: { store: VSCodeStore }) {
             <Icon name={TONE_ICON[status.tone ?? 'neutral']} size={12} className="shrink-0" />
             <span className="truncate" data-slot="vscode-runtime-status">{status.text}</span>
           </PopoverTrigger>
-          <PopoverContent variant="surface" side="top" align="start" className="outline-none">
+          <PopoverContent variant="plain" side="top" align="start" className="outline-none">
             <RuntimeDetails status={status} />
           </PopoverContent>
         </Popover>
@@ -75,7 +75,7 @@ export function StatusBar({ store }: { store: VSCodeStore }) {
             <TailscaleMark size={12} />
             <span>{tailnet.status === 'connected' ? 'Tailscale: Connected' : 'Tailscale'}</span>
           </PopoverTrigger>
-          <PopoverContent variant="surface" side="top" align="start" className="w-72 p-3.5 outline-none">
+          <PopoverContent variant="plain" side="top" align="start" className="w-72 p-3.5 outline-none">
             <div className="flex flex-col gap-3">
               <TailscaleSummary />
               <TailscaleExitNodes />

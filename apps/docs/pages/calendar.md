@@ -15,12 +15,12 @@ import { Calendar } from '@/components/ui/calendar'
 {% tab title="npm" %}
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 
-Import the stylesheet once at your app's entry, then the parts from the package root:
+Import the stylesheet once at your app's entry, then the parts from their module:
 
 ```tsx
 import '@brett_lamy/ui/styles.css'
 
-import { Calendar } from '@brett_lamy/ui'
+import { Calendar } from '@brett_lamy/ui/calendar'
 ```
 {% endtab %}
 {% endtabs %}
@@ -82,7 +82,7 @@ No date library is needed. For arithmetic and labels use the helpers in `@ui-sdk
 
 ## More than one month
 
-`months` shows that many months side by side, each in its own grid, and the arrow keys cross from one to the next. The previous and next buttons move by one month; `pageBy="page"` moves by all the months on show. The grids sit in a row while they fit and wrap one under the other in a narrow container (a phone, a sidebar), with the header's buttons kept at its edges. `fixedWeeks` gives every month six rows so the height never changes, and `showOutsideDays` fills the edges with the days of the months around (hidden by default here: each grid shows its own month only).
+`months` shows that many months side by side, each in its own grid, and the arrow keys cross from one to the next. The previous and next buttons move by one month; `pageBy="page"` moves by all the months on show. The grids sit in a row while they fit and wrap one under the other, centred, in a narrow container (a phone, a sidebar). In a compact (phone-sized) scope the days are 44px touch targets while they fit: a month is 308px wide and never wider than its container, so in a narrow sidebar or a 320px phone its seven columns share the room (the `card` keeps its padding) and the header keeps to one month's width, with Previous and Next beside it. `fixedWeeks` gives every month six rows so the height never changes, and `showOutsideDays` fills the edges with the days of the months around (hidden by default here: each grid shows its own month only).
 
 {% demo src="calendar/two-months" %}
 

@@ -53,7 +53,7 @@ A recipe is a function from options to a class string. Put a button's look on a 
 import { Link } from 'react-router'
 import { Button, buttonVariants } from '@/components/ui/button'
 
-<a href="/docs" className={buttonVariants({ variant: 'link' })}>Docs</a>
+<a href="/docs" className={buttonVariants({ variant: 'outline' })}>Docs</a>
 
 <Link to="/pricing" className={buttonVariants({ size: 'lg' })}>
   See pricing

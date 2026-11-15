@@ -24,16 +24,16 @@ export interface TraceColors {
   card: string;
   warning: string;
   success: string;
-  error: string;
+  destructive: string;
   chart: readonly string[];
 }
 
 export function toneColor(colors: TraceColors, tone: TraceTone | undefined): string {
   switch (tone) {
-    case 'error': return colors.error;
+    case 'destructive': return colors.destructive;
     case 'warning': return colors.warning;
     case 'success': return colors.success;
-    case 'info': return colors.primary;
+    case 'muted': return colors.faint;
     default: return colors.muted;
   }
 }
@@ -42,7 +42,8 @@ export interface TraceFrame {
   ctx: CanvasRenderingContext2D;
   dpr: number;
   vertical: boolean;
-  side: 'left' | 'right';
+  /** The rail's edge, on the page: `side` resolved for the text direction. */
+  edge: 'left' | 'right';
   /** The canvas, in CSS px. */
   width: number;
   height: number;
@@ -137,9 +138,9 @@ const ALPHA_STEPS = 32;
 const TAU = Math.PI * 2;
 
 /** Makes the canvas's coordinates (along, across). */
-function orient({ ctx, dpr, vertical, side, width }: TraceFrame) {
+function orient({ ctx, dpr, vertical, edge, width }: TraceFrame) {
   if (!vertical) ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  else if (side === 'left') ctx.setTransform(0, dpr, dpr, 0, 0, 0);
+  else if (edge === 'left') ctx.setTransform(0, dpr, dpr, 0, 0, 0);
   else ctx.setTransform(0, dpr, -dpr, 0, width * dpr, 0);
 }
 
@@ -196,7 +197,7 @@ function fillRuns(f: TraceFrame, at: number, alpha: Uint8Array, reach: Uint8Arra
 /** Each lane's own colour: what the host passed, or else a chart token by position. A rail's columns have no labels for
  *  colours to tell apart, so there it's the tint for the lane in focus and gray for the rest, as calm as the dashes. */
 function laneColor(f: TraceFrame, s: TraceScene, lane: TraceLane, index: number): string {
-  if (lane.color) return s.color(lane.color);
+  if (lane.tint) return s.color(lane.tint);
   if (f.vertical) return lane.key === s.focusedLane ? f.colors.primary : f.colors.muted;
   return f.colors.chart[index % f.colors.chart.length];
 }
@@ -230,7 +231,7 @@ function drawDiamonds(f: TraceFrame, s: TraceScene, row: TraceRow, b: TraceBuffe
   label(f, diamonds.label, row);
   b.flags.fill(0);
   poolPresence(sortedTimes(diamonds.times), lane.offset ?? 0, b.edges, b.flags, 1);
-  const color = diamonds.color ? s.color(diamonds.color) : colors.warning;
+  const color = diamonds.tint ? s.color(diamonds.tint) : colors.warning;
   const mid = row.at + row.size / 2;
   ctx.fillStyle = color;
   ctx.globalAlpha = 0.18;
@@ -287,7 +288,7 @@ function drawDensity(f: TraceFrame, s: TraceScene, row: TraceRow, b: TraceBuffer
       b.alpha[c] = Math.round((0.45 + (0.55 * Math.log1p(count)) / logMax) * ALPHA_STEPS);
       b.reach[c] = Math.round((density.depths ? least + (room * pool.depths[c]) / deepest : least + room) * dpr);
     }
-    ctx.fillStyle = density.color ? s.color(density.color) : laneColor(f, s, lane, row.laneIndex ?? 0);
+    ctx.fillStyle = density.tint ? s.color(density.tint) : laneColor(f, s, lane, row.laneIndex ?? 0);
     fillRuns(f, row.at + inset, b.alpha, b.reach, base);
   }
   drawMarks(f, s, row, b);
@@ -305,7 +306,7 @@ function drawMarks(f: TraceFrame, s: TraceScene, row: TraceRow, b: TraceBuffers)
     if (dot && thin) continue;
     b.flags.fill(0);
     poolPresence(sortedTimes(series.times), offset, b.edges, b.flags, 1);
-    ctx.fillStyle = series.color ? s.color(series.color) : toneColor(colors, series.tone);
+    ctx.fillStyle = series.tint ? s.color(series.tint) : toneColor(colors, series.tone);
     if (dot) ctx.beginPath();
     for (let c = 0; c < columns; c++) {
       if (!b.flags[c]) continue;
@@ -337,7 +338,7 @@ function drawThread(f: TraceFrame, s: TraceScene, row: TraceRow, b: TraceBuffers
   track(f, row, focused);
   label(f, thread?.label, row, selected ? colors.foreground : colors.muted);
   const color = thread
-    ? thread.color ? s.color(thread.color) : colors.chart[hashKey(thread.id) % colors.chart.length]
+    ? thread.tint ? s.color(thread.tint) : colors.chart[hashKey(thread.id) % colors.chart.length]
     : laneColor(f, s, lane, row.laneIndex ?? 0);
   if (thread && !f.vertical && start >= 6) {
     ctx.fillStyle = color;
@@ -458,8 +459,8 @@ function drawStops(f: TraceFrame, s: TraceScene, row: TraceRow) {
   const mid = row.at + row.size / 2;
   for (const mark of s.stopMarks) {
     const length = waveDashLength(0, mark.stop.level ?? 1);
-    ctx.fillStyle = mark.tone === 'default' ? colors.faint : toneColor(colors, mark.tone);
-    ctx.globalAlpha = mark.dim ? 0.55 : 1;
+    ctx.fillStyle = mark.stop.tint ? s.color(mark.stop.tint) : mark.tone === 'default' ? colors.faint : toneColor(colors, mark.tone);
+    ctx.globalAlpha = mark.disabled ? 0.55 : 1;
     ctx.fillRect(start + mark.along - 1, mid - length / 2, 2, length);
   }
   ctx.globalAlpha = 1;

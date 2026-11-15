@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { cloneElement, isValidElement, type ReactNode } from 'react';
 import { renderElement, type PartProps } from '@ui-sdk/react/primitive';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { cn, cx } from '@/lib/utils';
@@ -6,7 +6,9 @@ import { cn, cx } from '@/lib/utils';
 /* ══ EmptyState — what a collection, pane or search shows when it has nothing to show ══
    iOS's "content unavailable" view: an optional glyph, a title, a line of explanation and an optional action, centred.
    `sm` sits inside a list, table, tree or popup; `default` fills a pane (a SplitView column with nothing selected);
-   `lg` fills a page. The data components' `emptyState` prop defaults to `<EmptyState size="sm" title="…" />`. */
+   `lg` fills a page. Every data component reads its `emptyState` prop through `renderEmptyState` (below), so a string,
+   a node, `null` and the default mean the same thing everywhere. The text is AA on every surface: titles are
+   `foreground`, descriptions `foreground/70`; only the decorative glyph is the faint tertiary label. */
 export const emptyStateVariants = cva('flex flex-col items-center justify-center text-center text-balance', {
   variants: {
     size: {
@@ -21,9 +23,9 @@ export const emptyStateVariants = cva('flex flex-col items-center justify-center
 const iconVariants = cva('grid place-items-center text-tertiary-foreground', {
   variants: {
     size: {
-      sm: 'mb-1 [&_svg]:size-5',
-      default: 'mb-1.5 [&_svg]:size-7',
-      lg: 'mb-2 [&_svg]:size-11',
+      sm: 'mb-1 [&_svg]:size-6',
+      default: 'mb-2 [&_svg]:size-11',
+      lg: 'mb-2.5 [&_svg]:size-14',
     },
   },
 });
@@ -31,7 +33,7 @@ const iconVariants = cva('grid place-items-center text-tertiary-foreground', {
 const titleVariants = cva('m-0', {
   variants: {
     size: {
-      sm: 'text-footnote font-medium text-muted-foreground',
+      sm: 'text-footnote font-semibold text-foreground',
       default: 'text-callout font-semibold text-foreground',
       lg: 'text-title font-semibold text-foreground',
     },
@@ -41,9 +43,9 @@ const titleVariants = cva('m-0', {
 const descriptionVariants = cva('m-0 max-w-sm', {
   variants: {
     size: {
-      sm: 'text-caption text-tertiary-foreground',
-      default: 'text-footnote text-muted-foreground',
-      lg: 'text-subhead text-muted-foreground',
+      sm: 'text-footnote text-foreground/70',
+      default: 'text-footnote text-foreground/70',
+      lg: 'text-subhead text-foreground/70',
     },
   },
 });
@@ -85,4 +87,21 @@ export function EmptyState({ icon, title, description, action, size, className, 
     },
     render,
   );
+}
+
+/** How every data component reads its `emptyState` prop, so one value means one thing kit-wide:
+ *  - `undefined`: the component's default, `<EmptyState size="sm" {...defaults} />`;
+ *  - a string or number: the title of a small `EmptyState` (with the default's icon, not its description);
+ *  - `null`, `false` or `''`: nothing;
+ *  - any other node: drawn as it is.
+ *  The result is a polite `status` region (an `EmptyState` gets `role="status"`, any other node is wrapped in one), so
+ *  a filter that empties the collection is announced. */
+export function renderEmptyState(value: ReactNode, defaults: EmptyStateProps = {}): ReactNode {
+  if (value === undefined) return <EmptyState size="sm" role="status" {...defaults} />;
+  if (value === null || value === false || value === '') return null;
+  if (typeof value === 'string' || typeof value === 'number')
+    return <EmptyState size={defaults.size ?? 'sm'} role="status" icon={defaults.icon} title={value} />;
+  if (isValidElement<EmptyStateProps>(value) && value.type === EmptyState)
+    return value.props.role ? value : cloneElement(value, { role: 'status' });
+  return <div role="status" data-slot="empty-state-region" className="contents">{value}</div>;
 }

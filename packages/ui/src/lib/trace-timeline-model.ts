@@ -32,10 +32,11 @@ export interface TraceAxis {
   uniform?: boolean;
 }
 
-export type TraceTone = 'default' | 'info' | 'success' | 'warning' | 'error';
+/** What a mark means, on the kit's one tone set. A color of your own (a category, an "info" blue) is a `tint`. */
+export type TraceTone = 'default' | 'muted' | 'success' | 'warning' | 'destructive';
 export type TraceKey = string | number;
 
-/** A landmark on the timeline: an `IndexBarItem` plus a time and a tone. */
+/** A landmark on the timeline: an `IndexBarItem` plus a time, a tone and a tint. */
 export interface TraceStop<K extends TraceKey = TraceKey> {
   key?: K;
   time: number;
@@ -44,11 +45,14 @@ export interface TraceStop<K extends TraceKey = TraceKey> {
   preview?: ReactNode;
   /** Colours the dash. A cluster wears its most severe member's. */
   tone?: TraceTone;
+  /** Any CSS colour for the dash; wins over `tone`. */
+  tint?: string;
   /** 1 (default) and up: lower levels win the room when there's too little, and level 2 and up get a shorter dash. */
   level?: number;
   /** Preview card: something at the end of the title line (a badge, a glyph). */
   trailing?: ReactNode;
-  dim?: boolean;
+  /** Nothing to jump to here, as an IndexBar item: drawn dim, still a stop. */
+  disabled?: boolean;
 }
 
 /** A row of diamonds, each with a faint guide down the rest of the timeline. `times` are sorted. */
@@ -56,7 +60,7 @@ export interface TraceDiamonds {
   label?: string;
   times: ArrayLike<number>;
   /** Any CSS colour. Default: the warning token. */
-  color?: string;
+  tint?: string;
 }
 
 /** Per pixel, how much happened (opacity) and how deep it went (reach across the row). `times` are sorted, and `depths`
@@ -66,7 +70,7 @@ export interface TraceDensity {
   times: ArrayLike<number>;
   depths?: ArrayLike<number>;
   /** Any CSS colour. Default: the lane's. */
-  color?: string;
+  tint?: string;
 }
 
 /** Marks drawn over a lane's density row. `bar` runs the full height of the row, `dot` sits along its far edge. */
@@ -78,14 +82,14 @@ export interface TraceMarkSeries {
   shape?: 'bar' | 'dot';
   tone?: TraceTone;
   /** Any CSS colour; wins over `tone`. */
-  color?: string;
+  tint?: string;
 }
 
 export interface TraceThread {
   id: TraceKey;
   label?: string;
   /** Any CSS colour. Default: one of the chart tokens, by id. */
-  color?: string;
+  tint?: string;
 }
 
 export interface TraceLane {
@@ -95,7 +99,7 @@ export interface TraceLane {
   /** Added to this lane's own times to put them on the shared clock. */
   offset?: number;
   /** Any CSS colour for this lane's density. Default: one of the chart tokens. */
-  color?: string;
+  tint?: string;
   diamonds?: TraceDiamonds;
   density?: TraceDensity;
   marks?: TraceMarkSeries[];
@@ -116,7 +120,7 @@ export interface TraceRequest {
   from?: number;
   to?: number;
   /** Any CSS colour; wins over `tone`. */
-  color?: string;
+  tint?: string;
   tone?: TraceTone;
 }
 
@@ -492,7 +496,7 @@ export function poolBuckets(bucketEdges: ArrayLike<number>, counts: ArrayLike<nu
 
 /* ── Stops: which fit, and which merge ── */
 
-const SEVERITY: Record<TraceTone, number> = { default: 0, success: 1, info: 2, warning: 3, error: 4 };
+const SEVERITY: Record<TraceTone, number> = { default: 0, muted: 0, success: 1, warning: 3, destructive: 4 };
 
 export function mostSevere(a: TraceTone, b: TraceTone): TraceTone {
   return SEVERITY[b] > SEVERITY[a] ? b : a;
@@ -510,8 +514,8 @@ export interface TraceStopMark<K extends TraceKey = TraceKey> {
   /** The earliest and latest stops in the cluster. */
   first: number;
   last: number;
-  /** Every stop in the cluster is dim. */
-  dim: boolean;
+  /** Every stop in the cluster is disabled. */
+  disabled: boolean;
 }
 
 interface PreparedStops<K extends TraceKey> {
@@ -589,10 +593,10 @@ export function selectStops<K extends TraceKey>(
       mark.tone = mostSevere(mark.tone, tone);
       if (stop.time < mark.first) mark.first = stop.time;
       if (stop.time > mark.last) mark.last = stop.time;
-      mark.dim = mark.dim && !!stop.dim;
+      mark.disabled = mark.disabled && !!stop.disabled;
     } else {
       grid[cell] = marks.length;
-      marks.push({ stop, along, count: 1, tone, first: stop.time, last: stop.time, dim: !!stop.dim });
+      marks.push({ stop, along, count: 1, tone, first: stop.time, last: stop.time, disabled: !!stop.disabled });
     }
   }
   return marks.sort((a, b) => a.along - b.along);
@@ -902,15 +906,15 @@ export function sameLanes(a: readonly TraceLane[], b: readonly TraceLane[]): boo
     const x = a[i];
     const y = b[i];
     if (x === y) continue;
-    if (x.key !== y.key || x.title !== y.title || x.offset !== y.offset || x.color !== y.color) return false;
-    if (x.diamonds?.times !== y.diamonds?.times || x.diamonds?.label !== y.diamonds?.label || x.diamonds?.color !== y.diamonds?.color) return false;
-    if (x.density?.times !== y.density?.times || x.density?.depths !== y.density?.depths || x.density?.label !== y.density?.label || x.density?.color !== y.density?.color) return false;
+    if (x.key !== y.key || x.title !== y.title || x.offset !== y.offset || x.tint !== y.tint) return false;
+    if (x.diamonds?.times !== y.diamonds?.times || x.diamonds?.label !== y.diamonds?.label || x.diamonds?.tint !== y.diamonds?.tint) return false;
+    if (x.density?.times !== y.density?.times || x.density?.depths !== y.density?.depths || x.density?.label !== y.density?.label || x.density?.tint !== y.density?.tint) return false;
     const xm = x.marks ?? [];
     const ym = y.marks ?? [];
-    if (xm.length !== ym.length || xm.some((m, k) => m.key !== ym[k].key || m.times !== ym[k].times || m.shape !== ym[k].shape || m.tone !== ym[k].tone || m.color !== ym[k].color)) return false;
+    if (xm.length !== ym.length || xm.some((m, k) => m.key !== ym[k].key || m.times !== ym[k].times || m.shape !== ym[k].shape || m.tone !== ym[k].tone || m.tint !== ym[k].tint)) return false;
     const xt = x.threads ?? [];
     const yt = y.threads ?? [];
-    if (xt.length !== yt.length || xt.some((t, k) => t.id !== yt[k].id || t.label !== yt[k].label || t.color !== yt[k].color)) return false;
+    if (xt.length !== yt.length || xt.some((t, k) => t.id !== yt[k].id || t.label !== yt[k].label || t.tint !== yt[k].tint)) return false;
   }
   return true;
 }

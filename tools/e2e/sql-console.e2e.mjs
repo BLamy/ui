@@ -9,7 +9,7 @@ import { openDemo } from './helpers.mjs';
 const AXE = readFileSync(createRequire(import.meta.url).resolve('axe-core/axe.min.js'), 'utf8');
 
 const READY = '[data-slot=sql-console][data-status=ready]';
-const editor = (page) => page.locator('[data-slot=sql-editor] textarea');
+const editor = (page) => page.locator('[data-slot=sql-console-editor] textarea');
 const results = (page) => page.locator('[data-slot=sql-console-results]');
 /** Opens the header's Database menu and returns one of its items, to click while waiting for what it starts. */
 async function databaseItem(page, name) {
@@ -70,7 +70,7 @@ test.describe('queries', () => {
     await expect(alert).toContainText('SQLSTATE 42P01');
     await expect(alert).toContainText('LINE 2: select * from nope');
     await expect(alert).toContainText('none of its 2 statements were applied');
-    await expect(page.locator('[data-slot=sql-editor-highlight] .underline')).toHaveText('nope');
+    await expect(page.locator('[data-slot=sql-console-editor-highlight] .underline')).toHaveText('nope');
     // fixing the SQL clears it
     await setSql(page, 'select 1');
     await run(page);
@@ -200,22 +200,22 @@ test.describe('export and import', () => {
     // into a brand-new database (another context: nothing shared)
     const fresh = await (await browser.newContext()).newPage();
     await openConsole(fresh);
-    await fresh.locator('[data-slot=sql-editor] textarea').fill('select * from kept');
-    await fresh.locator('[data-slot=sql-editor] textarea').press('ControlOrMeta+Enter');
+    await fresh.locator('[data-slot=sql-console-editor] textarea').fill('select * from kept');
+    await fresh.locator('[data-slot=sql-console-editor] textarea').press('ControlOrMeta+Enter');
     await expect(fresh.locator('[data-slot=sql-console-error]')).toContainText('relation "kept" does not exist');
     // importing a dump into a database that already holds those objects changes nothing and says why…
     const [clash] = await Promise.all([fresh.waitForEvent('filechooser'), (await databaseItem(fresh, 'Import…')).click()]);
     await clash.setFiles(sqlPath);
     await expect(fresh.locator('[data-slot=sql-console-error]', { hasText: 'Could not finish' })).toContainText('nothing was changed');
     // …so empty the (seeded) database first, as you would a fresh one
-    await fresh.locator('[data-slot=sql-editor] textarea').fill('drop schema public cascade; create schema public;');
-    await fresh.locator('[data-slot=sql-editor] textarea').press('ControlOrMeta+Enter');
+    await fresh.locator('[data-slot=sql-console-editor] textarea').fill('drop schema public cascade; create schema public;');
+    await fresh.locator('[data-slot=sql-console-editor] textarea').press('ControlOrMeta+Enter');
     await expect(fresh.locator('[data-slot=sql-console-results]')).toContainText('CREATE');
     const [chooser] = await Promise.all([fresh.waitForEvent('filechooser'), (await databaseItem(fresh, 'Import…')).click()]);
     await chooser.setFiles(sqlPath);
     await expect(fresh.locator('[data-slot=sql-console-notice]')).toContainText(/Imported database-pg\d+\.sql \(dumped from Postgres \d+\.\d+\)/);
-    await fresh.locator('[data-slot=sql-editor] textarea').fill('select * from kept order by id');
-    await fresh.locator('[data-slot=sql-editor] textarea').press('ControlOrMeta+Enter');
+    await fresh.locator('[data-slot=sql-console-editor] textarea').fill('select * from kept order by id');
+    await fresh.locator('[data-slot=sql-console-editor] textarea').press('ControlOrMeta+Enter');
     const grid = fresh.locator('[data-slot=sql-console-results]').getByRole('grid');
     await expect(grid).toContainText("it's fine");
     await expect(grid.getByRole('row')).toHaveCount(3);
@@ -318,8 +318,8 @@ test.describe('two tabs', () => {
     await expect(b.getByText('This database is open in another tab.')).toBeVisible({ timeout: 30_000 });
     await expect(b.locator('[data-slot=sql-console]')).toHaveCount(0);
     // the first tab is untouched and still works
-    await a.locator('[data-slot=sql-editor] textarea').fill('select 1 as still_here');
-    await a.locator('[data-slot=sql-editor] textarea').press('ControlOrMeta+Enter');
+    await a.locator('[data-slot=sql-console-editor] textarea').fill('select 1 as still_here');
+    await a.locator('[data-slot=sql-console-editor] textarea').press('ControlOrMeta+Enter');
     await expect(a.locator('[data-slot=sql-console-results]')).toContainText('still_here');
 
     await b.getByRole('button', { name: 'Use it here instead' }).click();
@@ -327,8 +327,8 @@ test.describe('two tabs', () => {
     await expect(a.getByText('This database is open in another tab.')).toBeVisible();
     await expect(a.locator('[data-slot=sql-console]')).toHaveCount(0);
     // the data is the same database
-    await b.locator('[data-slot=sql-editor] textarea').fill('select count(*)::int as n from notes');
-    await b.locator('[data-slot=sql-editor] textarea').press('ControlOrMeta+Enter');
+    await b.locator('[data-slot=sql-console-editor] textarea').fill('select count(*)::int as n from notes');
+    await b.locator('[data-slot=sql-console-editor] textarea').press('ControlOrMeta+Enter');
     await expect(b.locator('[data-slot=sql-console-results]').getByRole('grid')).toContainText('1');
   });
 

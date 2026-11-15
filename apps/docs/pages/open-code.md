@@ -15,12 +15,12 @@ import { OpenCode } from '@/components/ui/open-code'
 {% tab title="npm" %}
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 
-Import the stylesheet once at your app's entry, then the parts from the package root:
+Import the stylesheet once at your app's entry, then the parts from their module:
 
 ```tsx
 import '@brett_lamy/ui/styles.css'
 
-import { OpenCode } from '@brett_lamy/ui'
+import { OpenCode } from '@brett_lamy/ui/open-code'
 ```
 {% endtab %}
 {% endtabs %}
@@ -29,11 +29,9 @@ import { OpenCode } from '@brett_lamy/ui'
 **Which terminal?** [Terminal](https://blamy.github.io/ui/#/terminal) is an emulator for a process you run (a shell, a REPL, a log stream). [TuiPreview](https://blamy.github.io/ui/#/tui-preview) runs one small OpenTUI program from source, such as a code fence in an AI reply. `OpenCode` is the full agent with a workspace and app previews.
 {% endhint %}
 
-## Installation
+## Setting up a host
 
-{% command %}npx shadcn@latest add https://blamy.github.io/ui/r/open-code.json{% endcommand %}
-
-The registry includes the component and host bridge. Install `@agent-wasm/core` for the runtime used in this example. The `@brett_lamy/ui/opencode` package export is also available from the current source build; it requires a package release containing this component.
+The registry item includes the component and the host bridge. Install `@agent-wasm/core` for the runtime used in this example. The `@brett_lamy/ui/opencode` package export is also available from the current source build; it requires a package release containing this component.
 
 ```tsx
 import { OpenCode } from '@/components/ui/open-code';
@@ -50,7 +48,7 @@ async function createHost() {
 
 `createAlmostNodeOpenCodeHost` accepts the same container interface. The adapter supplies filesystem methods, shell execution, server ownership filtering and preview events. It never launches a native process or shell on your computer. The container's runtime determines which Node APIs and commands work.
 
-Keep `createHost` stable between renders. A factory creates a fresh workspace on each Start and the component disposes it on Stop, errors or unmounting. Alternatively pass `host={bridge}` to borrow an existing workspace; the caller owns its lifetime. Each workspace needs a unique absolute directory (the default is `/workspaces/<container.id>`).
+Keep `createHost` stable between renders. A factory creates a fresh workspace on each Start and the component disposes it on Stop, errors or unmounting. Alternatively pass `host={bridge}` to borrow an existing workspace; the caller owns its lifetime. The two are exclusive in the type (`OpenCodeHostProps`): pass one or the other. Each workspace needs a unique absolute directory (the default is `/workspaces/<container.id>`).
 
 ## Usage
 
@@ -65,7 +63,7 @@ Give it a host (or a factory that makes one on Start) and a size. Everything els
 
 ## States
 
-The header says where it is, and `data-state` on the root carries the same value (`idle`, `starting`, `running`, `error`, `stopped`); `onStateChange` reports it. With `autoStart={false}` it waits at **Start OpenCode**. While the runtime loads, the terminal says so. An error (a runtime that cannot load, or one missing a capability a store needs) stops the session and shows the message in an alert above the terminal; Start tries again. Each open port adds a toggle in the preview toolbar.
+The header says where it is, and `data-state` on the root carries the same value (`idle`, `starting`, `running`, `error`, `stopped`); `onStateChange` reports it. While it isn't running (`autoStart={false}`, stopped, or after an error) the terminal is an [EmptyState](https://blamy.github.io/ui/#/empty-state) that says what OpenCode is for, with **Start OpenCode** as its action; while it runs, **Stop OpenCode** sits at the end of the header. While the runtime loads, the terminal says so. An error (a runtime that cannot load, or one missing a capability a store needs) stops the session and shows the message in a destructive callout above the terminal; Start tries again. Each open port adds a toggle in the preview toolbar.
 
 ## Appearance and size
 
@@ -89,7 +87,7 @@ A runtime advertising `capabilities.credentialStore = 1` and `capabilities.conne
 
 | Prop | Default | Purpose |
 | --- | --- | --- |
-| `host` / `createHost` | | Borrow a host, or create an owned one on each Start (disposed on Stop). Choose one. |
+| `host` / `createHost` | | Borrow a host, or create an owned one on each Start (disposed on Stop). One or the other (`OpenCodeHostProps`). |
 | `credentialStore` | | Supported encrypted host store. Never prompts or falls back to plaintext. Locking it stops the terminal. |
 | `connectionStore` | | Encrypted connection choice, Tailscale node session and exit node. |
 | `runtimeUrl` / `loadRuntime` | hosted module | Hosted browser module or custom runtime loader. |

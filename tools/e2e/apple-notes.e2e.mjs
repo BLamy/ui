@@ -142,7 +142,7 @@ test('folders push the stack and file leaves only open the note', async ({ page 
   await row(page, 'readme.mdx').click(); await sourceMode(page);
   await expect(editor(page, 'readme.mdx')).toHaveValue('# Nested');
   expect(await path(page)).toEqual(['folder:Work', 'folder:Work/Projects', 'folder:Work/Projects/Components']);
-  await current(page).getByRole('button', { name: 'Projects', exact: true }).click();
+  await current(page).getByRole('button', { name: 'Back to Projects', exact: true }).click();
   await expect(title(page)).toHaveText('Projects');
 });
 
@@ -339,7 +339,7 @@ test('phone folder navigation stays in the master stack when a leaf opens and th
   await seed(page, { 'nested/phone.md': '# Phone note' }, 'Work');
   await page.evaluate(() => { window.__nextFolder = 'Work'; });
   // The phone opens on the list; the + is in the Folders column behind it.
-  await current(page).getByRole('button', { name: /^(Folders|Back)$/ }).click();
+  await current(page).getByRole('button', { name: 'Back to Folders', exact: true }).click();
   await action(page, 'Add Folder…');
   await current(page).getByRole('button', { name: 'Open folder nested', exact: true }).click();
   await expect(current(page)).toHaveAttribute('data-value', 'folder:Work/nested');
@@ -537,7 +537,7 @@ test('the filter shows Markdown files by default, hiding folders without notes, 
   await folderRow('src').click();
   await expect(others.getByRole('listitem')).toHaveText([/app\.ts$/]);
   await expect(current(page).getByRole('heading', { name: 'No Notes' })).toHaveCount(0);
-  await current(page).getByRole('button', { name: 'Project', exact: true }).click();
+  await current(page).getByRole('button', { name: 'Back to Project', exact: true }).click();
   await expect(title(page)).toHaveText('Project');
 
   await current(page).getByRole('radio', { name: 'Tree view', exact: true }).click();
@@ -582,7 +582,7 @@ test('images open in an image viewer, JSON in visual-json (edits save to the fil
   await expect(image).toBeVisible();
   await expect(page.locator('[aria-label="Image"]')).toContainText('40 × 20');
 
-  await current(page).getByRole('button', { name: 'Project', exact: true }).click();
+  await current(page).getByRole('button', { name: 'Back to Project', exact: true }).click();
   await filter.click();
   await page.getByRole('menuitemradio', { name: 'JSON & YAML' }).click();
   await expect(current(page).getByRole('button', { name: 'Open folder art', exact: true })).toHaveCount(0);
@@ -601,7 +601,7 @@ test('images open in an image viewer, JSON in visual-json (edits save to the fil
   await expect(yaml.getByRole('textbox', { name: 'ci.yaml' })).toHaveValue('# CI\nname: build\n');
   await page.getByRole('radio', { name: 'Visual' }).check({ force: true });
 
-  await current(page).getByRole('button', { name: 'Project', exact: true }).click();
+  await current(page).getByRole('button', { name: 'Back to Project', exact: true }).click();
   await filter.click();
   await page.getByRole('menuitemradio', { name: 'Spreadsheets (CSV)' }).click();
   await current(page).getByRole('button', { name: 'Open folder data', exact: true }).click();
@@ -611,7 +611,7 @@ test('images open in an image viewer, JSON in visual-json (edits save to the fil
   await expect(sheet.getByRole('columnheader', { name: 'qty' })).toBeVisible();
   await expect(sheet.getByRole('gridcell', { name: 'nozzle' })).toBeVisible();
 
-  await current(page).getByRole('button', { name: 'Project', exact: true }).click();
+  await current(page).getByRole('button', { name: 'Back to Project', exact: true }).click();
   await filter.click();
   await page.getByRole('menuitemradio', { name: 'Code & Text' }).click();
   await current(page).getByRole('button', { name: 'Open folder src', exact: true }).click();

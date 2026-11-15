@@ -20,7 +20,7 @@ import {
 {% tab title="npm" %}
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 
-Import the stylesheet once at your app's entry, then the parts from the package root:
+Import the stylesheet once at your app's entry, then the parts from their module:
 
 ```tsx
 import '@brett_lamy/ui/styles.css'
@@ -28,7 +28,7 @@ import '@brett_lamy/ui/styles.css'
 import {
   Workspace, WorkspaceTab, WorkspaceTabTrigger, WorkspaceTabClose,
   WorkspaceToolbar, createWorkspaceController,
-} from '@brett_lamy/ui'
+} from '@brett_lamy/ui/workspace'
 ```
 {% endtab %}
 {% endtabs %}
@@ -100,7 +100,7 @@ renderTab={(tab) => (
 )}
 ```
 
-`renderTabsetToolbar(tabset, state)` draws what follows a tabset's tabs; `state` has `active`, `maximized`, `only`, `empty`, `selectedTabId` and `tabSide`. `WorkspaceToolbar` lays out your actions followed by `WorkspaceMaximize`, which maximizes and restores its tabset and renders nothing in the only one. `renderEmptyTabset(tabset)` fills a tabset without tabs: the root of an empty workspace, or one with `keepWhenEmpty`.
+`renderTabsetToolbar(tabset, state)` draws what follows a tabset's tabs; `state` has `current` (the tabset last used), `maximized`, `only`, `empty`, `selectedTabId` and `tabSide`. `WorkspaceToolbar` lays out your actions followed by `WorkspaceMaximize`, which maximizes and restores its tabset and renders nothing in the only one. `renderEmptyTabset(tabset)` fills a tabset without tabs: the root of an empty workspace, or one with `keepWhenEmpty`.
 
 ## Moving tabs
 
@@ -110,7 +110,9 @@ Drag a tab along its strip, into another strip, onto the middle of a tabset's co
 
 `tabSide` (`top`, `bottom`, `start`, `end`) puts every tabset's strip on that side, and a tabset's own `tabSide` overrides it; `start` and `end` follow the reading direction, and their strips run down the pane (Up and Down move between tabs). `tabsetMinWidth` and `tabsetMinHeight` (in `px` or `rem`) bound every tabset, and a tabset's `minWidth`/`minHeight` override them.
 
-`presentation` decides how the layout is shown. `docked` lays the tabsets out in their splits. `tabs` shows every tab of every tabset in one strip along the bottom, one tab at a time, with nothing to drag or drop: picking a tab selects it in its tabset and makes that tabset the active one, and each tab keeps its state. `auto` (the default) is `tabs` while the workspace's own box is compact (narrower than 640px, measured on the workspace, not the viewport) and `docked` otherwise. The layout itself never changes, so a window that grows again gets its panes back. The root carries `data-presentation` (`docked` or `tabs`).
+`presentation` decides how the layout is shown. `docked` lays the tabsets out in their splits. `tabs` shows every tab of every tabset in one strip along the bottom, one tab at a time, with nothing to drag or drop: picking a tab selects it in its tabset and makes that tabset the current one, and each tab keeps its state. `auto` (the default) is `tabs` while the workspace's own box is compact (narrower than 640px, measured on the workspace, not the viewport) and `docked` otherwise. The layout itself never changes, so a window that grows again gets its panes back. The root carries `data-presentation` (`docked` or `tabs`).
+
+Why its own box and not the size-class scope around, as Tabs, Sidebar, AdaptivePane and the popups resolve `auto`: a Workspace is a container, like [SplitView](https://blamy.github.io/ui/#/split-view) and [NavigationStack](https://blamy.github.io/ui/#/navigation-stack), not a component placed in one. It usually fills one pane of a wider shell (an editor beside a file tree), and that pane can be phone-narrow while the window around is regular, so only its own width says whether its splits fit. Like the other containers it then provides that size class as the scope of everything it renders: a Dialog or Popover opened from a tab's content, or a `Tabs presentation="auto"` inside one, follows the workspace's size, not the window's.
 
 ## Styling
 

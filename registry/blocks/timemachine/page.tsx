@@ -6,6 +6,7 @@
    so the recorder never records a replay of itself replaying. Resting on a session in the sidebar previews it in a hover
    card (detail.tsx's SessionPeek): its last frame, its page and what happened, before you open it. */
 import { useEffect, useMemo, useState } from 'react';
+import { EmptyState } from '@/components/ui/empty-state';
 import { AlertDialog, AlertDialogBackdrop, AlertDialogClose, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/dialog';
 import { Button as SdkButton } from '@ui-sdk/react/button';
 import { Popover, PopoverContent, PopoverTitle, PopoverTrigger } from '@/components/ui/popover';
@@ -131,7 +132,7 @@ function Sidebar({ sessions }: { sessions: SessionInfo[] }) {
             </ul>
           </section>
         ))}
-        {!sessions.length ? <p className="m-0 px-2 py-8 text-center text-footnote text-muted-foreground">Nothing recorded yet.</p> : null}
+        {!sessions.length ? <EmptyState size="sm" title="Nothing recorded yet." /> : null}
       </div>
       <footer className="flex shrink-0 flex-col gap-1.5 border-t border-border px-4 py-3">
         <div className="flex items-center justify-between text-caption text-muted-foreground">

@@ -17,12 +17,14 @@ import {
 {% tab title="npm" %}
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 
-Import the stylesheet once at your app's entry, then the parts from the package root:
+Import the stylesheet once at your app's entry, then the parts from their module:
 
 ```tsx
 import '@brett_lamy/ui/styles.css'
 
-import { ProgressStepper, ProgressStep } from '@brett_lamy/ui'
+import {
+  ProgressStepper, ProgressStep,
+} from '@brett_lamy/ui/progress-stepper'
 ```
 {% endtab %}
 {% endtabs %}
@@ -61,11 +63,11 @@ const steps = [
 
 ## Variants
 
-`variant="bars"` (default) draws a short segment under each icon that fills as the step completes; `variant="line"` joins the icons with one line, with no segment after the last. `labels` shows each step's label under its track; off, the labels are screen-reader only. `animated` (default on) sweeps a highlight along the current segment; off, or under reduced motion, the current segment is a still, partly filled bar.
+`variant="bars"` (default) draws a short segment under each icon that fills as the step completes; `variant="line"` joins the icons with one line, with no segment after the last. `labels` shows each step's label under its track (centred under a bar; start-aligned under the icon in `line`, on a second row), wrapping to two lines before it is cut, so "Order placed" stays readable at phone width; off, the labels are screen-reader only. `animated` (default on) sweeps a highlight along the current segment; off, or under reduced motion, the current segment is a still, partly filled bar.
 
 ## Accessibility
 
-The root is an `ol` named "Progress" by default; name each stepper with `aria-label` (or `aria-labelledby`) when a page has more than one. Each step is an `li` with `aria-current="step"` on the current one, and its label is always present as text (visually hidden unless `labels` is on); complete steps add a hidden ", completed", so a screen reader hears "Placed, completed". The icon and tracks are `aria-hidden`, so the state is conveyed by text and `aria-current`, not colour alone. It is not a `progressbar`: there is no value to announce.
+The root is an `ol` named "Progress" by default; name each stepper with `aria-label` (or `aria-labelledby`) when a page has more than one. Each step is an `li` with `aria-current="step"` on the current one, and its label is always present as text (visually hidden unless `labels` is on); complete steps add a hidden ", completed" (`completedLabel` sets the word in your app's language), so a screen reader hears "Placed, completed". The icon and tracks are `aria-hidden`, so the state is conveyed by text and `aria-current`, not colour alone. It is not a `progressbar`: there is no value to announce.
 
 ## Props
 
@@ -75,7 +77,8 @@ The root is an `ol` named "Progress" by default; name each stepper with `aria-la
 | `current` | — | Index of the step in progress; earlier ones are complete, later ones upcoming. `steps.length` for all complete. |
 | `variant` | `bars` | `bars` or `line`. |
 | `animated` | `true` | Shimmer the current segment. |
-| `labels` | `false` | Show labels (and descriptions) under the steps. |
+| `labels` | `false` | Show labels (and descriptions) under the steps; a label wraps to two lines. |
+| `completedLabel` | `"completed"` | What a complete step adds to its name for screen readers. |
 | `aria-label` / `aria-labelledby` | `"Progress"` | The list's name. Name each stepper when a page has more than one (an order and a deploy). |
 | `className` / `style` | — | Merged onto the `ol`, which takes the other `ol` attributes (and `ref`) too. |
 

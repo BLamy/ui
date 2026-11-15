@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { Toggle, ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle';
+import { Toggle, ToggleGroup, ToggleGroupItem, type ToggleGroupVariant } from '@/components/ui/toggle';
 import { Icon } from '@/lib/icon';
 import { Panel } from '../stories/primitive-frame';
 
@@ -57,7 +57,7 @@ const I = () => <span className="font-serif italic">I</span>;
 const U = () => <span className="underline">U</span>;
 const S = () => <span className="line-through">S</span>;
 
-function Format({ variant }: { variant: 'default' | 'filled' | 'outline' | 'quiet' }) {
+function Format({ variant }: { variant: ToggleGroupVariant }) {
   return (
     <ToggleGroup variant={variant} multiple defaultValue={['bold', 'italic']} aria-label="Text formatting">
       <ToggleGroupItem value="bold" aria-label="Bold"><B /></ToggleGroupItem>
@@ -68,9 +68,9 @@ function Format({ variant }: { variant: 'default' | 'filled' | 'outline' | 'quie
   );
 }
 
-function Align({ variant }: { variant: 'default' | 'filled' | 'outline' }) {
+function Align({ variant, orientation }: { variant: ToggleGroupVariant; orientation?: 'horizontal' | 'vertical' }) {
   return (
-    <ToggleGroup variant={variant} deselectable={false} defaultValue={['left']} aria-label="Alignment">
+    <ToggleGroup variant={variant} orientation={orientation} deselectable={false} defaultValue={['left']} aria-label="Alignment">
       <ToggleGroupItem value="left">Left</ToggleGroupItem>
       <ToggleGroupItem value="center">Center</ToggleGroupItem>
       <ToggleGroupItem value="right">Right</ToggleGroupItem>
@@ -84,8 +84,14 @@ const groups = (
     <Format variant="quiet" />
     <Format variant="filled" />
     <Format variant="outline" />
-    <Align variant="filled" />
+    <Format variant="segmented" />
+    <Align variant="segmented" />
     <Align variant="outline" />
+    <div className="flex items-start gap-4">
+      <Align variant="outline" orientation="vertical" />
+      <Align variant="segmented" orientation="vertical" />
+      <Align variant="filled" orientation="vertical" />
+    </div>
     <ToggleGroup size="sm" variant="outline" defaultValue={['day']} aria-label="Range">
       <ToggleGroupItem value="day">Day</ToggleGroupItem>
       <ToggleGroupItem value="week">Week</ToggleGroupItem>
@@ -96,8 +102,8 @@ const groups = (
 
 /** ToggleGroup with `multiple`: formatting toggles that press independently but share one tab stop. */
 export const Group: Story = { render: () => <Format variant="default" /> };
-/** ToggleGroup pressing one at a time: in a `filled` tray the pressed card slides between items. */
-export const GroupSingle: Story = { render: () => <Align variant="filled" /> };
-/** Every ToggleGroup variant, multiple and single, and a disabled item. */
+/** ToggleGroup pressing one at a time: in a `segmented` tray the pressed card slides between items. */
+export const GroupSingle: Story = { render: () => <Align variant="segmented" /> };
+/** Every ToggleGroup variant, multiple and single, stacked, and a disabled item. The pressed items show in each. */
 export const GroupVariants: Story = { render: () => groups };
 export const GroupDark: Story = { decorators: [(Story) => <Panel dark><Story /></Panel>], render: () => groups };

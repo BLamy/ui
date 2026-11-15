@@ -1,6 +1,6 @@
 # SqlConsole
 
-A SQL workbench for a PGlite database: a highlighted editor, the schema, a result table per statement, errors that point at the offending token, history, and SQL / data-directory export and import. It is made of parts you can leave out, reorder or add to: `SqlConsoleHeader`, `SqlConsoleSidebar` (the schema, a [Tree](https://blamy.github.io/ui/#/tree) over `schemaTreeItems(schema)`, and the history), `SqlConsoleEditor` (the console's `SqlEditor`) and `SqlConsoleResults` (a [DataTable](https://blamy.github.io/ui/#/data-table) per statement). It reads its database from a [PGliteProvider](https://blamy.github.io/ui/#/pglite), so read that page first for installing the engine, the WebAssembly download and where data is stored.
+A SQL workbench for a PGlite database: a highlighted editor, the schema, a result table per statement, errors that point at the offending token, history, and SQL / data-directory export and import. It is made of parts you can leave out, reorder or add to: `SqlConsoleHeader`, `SqlConsoleSidebar` (the schema, a [Tree](https://blamy.github.io/ui/#/tree) over `schemaTreeItems(schema)`, and the history), `SqlConsoleEditor` (the SQL editor) and `SqlConsoleResults` (a [DataTable](https://blamy.github.io/ui/#/data-table) per statement). It reads its database from a [PGliteProvider](https://blamy.github.io/ui/#/pglite), so read that page first for installing the engine, the WebAssembly download and where data is stored.
 
 Use a sibling instead for a code box that isn't SQL ([CodeEditor](https://blamy.github.io/ui/#/code-editor)), for a table of rows you already have ([DataTable](https://blamy.github.io/ui/#/data-table)) or cells people edit ([Spreadsheet](https://blamy.github.io/ui/#/spreadsheet)), or for a shell ([Terminal](https://blamy.github.io/ui/#/terminal)).
 
@@ -17,12 +17,12 @@ import { SqlConsole } from '@/components/ui/sql-console'
 {% tab title="npm" %}
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 
-Import the stylesheet once at your app's entry, then the parts from the package root:
+Import the stylesheet once at your app's entry, then the parts from their module:
 
 ```tsx
 import '@brett_lamy/ui/styles.css'
 
-import { SqlConsole } from '@brett_lamy/ui'
+import { SqlConsole } from '@brett_lamy/ui/sql-console'
 ```
 {% endtab %}
 {% endtabs %}
@@ -63,18 +63,26 @@ With no children the console is the whole workbench. Write its parts out to leav
 - `SqlConsoleHeader`: the versions and where the data lives, then its children at the end (default `<SqlConsoleDatabaseMenu />`; `{false}` for nothing), and the notices of an export or import under it.
 - `SqlConsoleDatabaseMenu`: Export SQL, Export data directory and Import…, in one menu.
 - `SqlConsoleSidebar`: the Schema and History tabs. It fills the height the editor and the results make, and the schema scrolls inside it. With a sidebar, the console puts it beside the editor from its `medium` size class up; without one, the console is one column at any width.
-- `SqlConsoleEditor`: the console's `SqlEditor` (below), with its text, Run, history and error squiggle wired to the console. It takes the editor's own props (`rows`, `highlight`, `children` for the footer…).
+- `SqlConsoleEditor`: the SQL editor (below), with its text, Run, history and error squiggle wired to the console. It takes the editor's own props (`rows`, `highlight`, `placeholder`, `children` for the footer…).
 - `SqlConsoleResults`: the last run, a table per statement or the error.
 
 The layout follows the console's own width (its size class, written as `data-size-class`), not the viewport's, so a narrow column on a wide screen is one column.
 
+The text in the editor is the console's: `defaultValue` to start with, or `value` with `onValueChange(value, details)` to own it, to open a saved query or put one in from a button outside the console. Pressing a table in the schema or an entry in the history writes the text too, as an `imperative` change.
+
+```tsx
+const [sql, setSql] = useState(saved.sql)
+
+<SqlConsole value={sql} onValueChange={setSql} historyKey="my-app" />
+```
+
 ## Errors
 
-An error shows the message, the SQLSTATE, the line with a caret under the column (like psql's `LINE 2:`), Postgres's detail and hint, and — when the text that ran is still what is in the editor — a wavy underline under the token. A database that cannot be opened because it was written by another Postgres major shows both versions and that the data was left untouched, with a retry button.
+An error shows the message, the SQLSTATE, the line with a caret under the column (like psql's `LINE 2:`), Postgres's detail and hint, and — when the text that ran is still what is in the editor — a wavy underline under the token, with the editor in its invalid state: a destructive ring, `aria-invalid`, and `aria-describedby` pointing at the error, so a screen reader hears it again when focus returns to the editor. A database that cannot be opened because it was written by another Postgres major shows both versions and that the data was left untouched, with a retry button.
 
 ## Results
 
-Each statement's result is a [DataTable](https://blamy.github.io/ui/#/data-table) named "Result 1", "Result 2"…: one column per field, its header labelled with the type (`int4 books`), numbers lined up at the end in tabular figures (with the header). Cells are type-aware: `NULL` in italics, `numeric` kept as exact text, dates as ISO (`date` as `YYYY-MM-DD`, `timestamp` as local time, `timestamptz` as UTC), bytea as hex, arrays and JSON compact in the cell. A value that is long, multi-line or structured has a button that shows all of it in a popover (JSON pretty-printed), with Copy. Columns start at the width of their values, and sort, resize and scroll like any DataTable's: a hundred thousand rows only render the ones in view. The toolbar says how many rows came back and how long it took, and copies the rows as CSV (RFC 4180) or JSON. A write shows its summary (`INSERT · 2 rows affected`) instead of a table, and a script captions each table with its statement.
+Each statement's result is a [DataTable](https://blamy.github.io/ui/#/data-table) named "Result 1", "Result 2"…: one column per field, its header labelled with the type (`int4 books`), numbers lined up at the end in tabular figures (with the header). In a compact console the rows stack: the first field is the row's title and the others follow as `name value` pairs, so a value never loses its column. Cells are type-aware: `NULL` in italics, `numeric` kept as exact text, dates as ISO (`date` as `YYYY-MM-DD`, `timestamp` as local time, `timestamptz` as UTC), bytea as hex, arrays and JSON compact in the cell. A value that is long, multi-line or structured has a button that shows all of it in a popover (JSON pretty-printed), with Copy. Columns start at the width of their values, and sort, resize and scroll like any DataTable's: a hundred thousand rows only render the ones in view. The toolbar says how many rows came back and how long it took, and copies the rows as CSV (RFC 4180) or JSON. A write shows its summary (`INSERT · 2 rows affected`) instead of a table, and a script captions each table with its statement.
 
 Each table is at most 18rem tall; set `--sql-console-result-height` on the console (or the results) to change it. Two columns with the same name collapse into one, because PGlite returns rows as objects; alias them.
 
@@ -96,21 +104,26 @@ const items = schemaTreeItems(schema)
   }} />
 ```
 
-## SqlEditor
+## The editor
 
-The console's editor, shipped with it and usable on its own: a `<textarea>` (UI SDK's `Textarea`) over a highlighted copy of its own text, so selection, IME, undo and mobile keyboards are the browser's and no editor library ships. Highlighting is `lib/sql-lex`, a small PostgreSQL lexer: keywords, types, functions, `'strings'`, `$$ bodies $$`, numbers and nested comments, computed synchronously. It isn't [CodeEditor](https://blamy.github.io/ui/#/code-editor) because CodeEditor's lexers are C-family shaped (`--` comments and `select` / `where` aren't recognised) and it doesn't yet take a tokenizer of your own; both paint with the same `bl-tok-*` colors.
+`SqlConsoleEditor` is a `<textarea>` (UI SDK's `Textarea`) over a highlighted copy of its own text, so selection, IME, undo, spell-check, mobile keyboards and accessibility are the browser's, and no editor library ships. That editing model is why it is not a [CodeEditor](https://blamy.github.io/ui/#/code-editor), which draws its own selection to stay smooth on huge files; both paint with the same `bl-tok-*` colors. Highlighting is `lib/sql-lex`, a small PostgreSQL lexer: keywords, types, functions, `'strings'`, `$$ bodies $$`, numbers and nested comments, computed synchronously.
 
-Tab keeps its job of moving focus, so there is no indenting; that is deliberate (a keyboard trap fails accessibility). `ref` exposes `focus()` and `insert(text)`. `useSqlHistory(key?)` keeps the statements you ran, in localStorage when you pass a key (read after mount, so it is SSR-safe).
-
-Its footer is a part: with no children the editor shows `<SqlEditorFooter />` (the shortcut hint, shown once the editor has room for it, and Run). Put your controls before Run with `<SqlEditorFooter>…</SqlEditorFooter>`, build a footer of your own around `<SqlEditorRun />`, or pass `{false}` for none.
+Inside a `SqlConsole` it takes its text, Run, pending state, history and the last error from the console. Outside one it is a SQL box of its own, controlled or uncontrolled, for a query field in a form or a saved-report editor:
 
 ```tsx
-<SqlEditor value={sql} onValueChange={setSql} onRun={run} pending={running} rows={6}>
-  <SqlEditorFooter>
+const history = useSqlHistory('reports')
+
+<SqlConsoleEditor value={sql} onValueChange={setSql} onRun={run} pending={running} history={history.entries} rows={6}
+  errorPosition={error?.position} aria-describedby={error ? 'report-error' : undefined}>
+  <SqlConsoleEditorFooter>
     <Button variant="ghost" size="sm" onClick={format}>Format</Button>
-  </SqlEditorFooter>
-</SqlEditor>
+  </SqlConsoleEditorFooter>
+</SqlConsoleEditor>
 ```
+
+Tab keeps its job of moving focus, so there is no indenting; that is deliberate (a keyboard trap fails accessibility). `ref` exposes `focus()` and `insert(text)`. `useSqlHistory(key?)` keeps the statements you ran, in localStorage when you pass a key (read after mount, so it is SSR-safe). `errorPosition` is Postgres's 1-based character `position`: it underlines the token there and makes the editor invalid; an invalid `Field` around it does the same.
+
+Its footer is a part: with no children the editor shows `<SqlConsoleEditorFooter />` (the shortcut hint, shown once the editor has room for it, and Run). Put your controls before Run with `<SqlConsoleEditorFooter>…</SqlConsoleEditorFooter>`, build a footer of your own around `<SqlConsoleEditorRun />`, or pass `{false}` for none.
 
 ## Accessibility
 
@@ -122,7 +135,7 @@ Each result table is a DataTable grid (`role="grid"`, one tab stop, ↑ ↓ betw
 
 | Prop | Default | Effect |
 | --- | --- | --- |
-| `defaultValue` | `''` | The editor's initial text. |
+| `value` / `defaultValue` / `onValueChange` | — / `''` | The editor's text, controlled or uncontrolled; `onValueChange(value, details)`. |
 | `historyKey` | — | Keep history in localStorage under this key (it follows runs in other tabs too). |
 | `autoRun` | `false` | Run `defaultValue` once the database is ready. |
 | `timing` | `true` | Show durations (turn off where the screen must be reproducible). |
@@ -130,9 +143,11 @@ Each result table is a DataTable grid (`role="grid"`, one tab stop, ↑ ↓ betw
 | `children` | header, sidebar, editor, results | The parts, in order. |
 | `className` / `style` / `ref` | — | On the root (`data-slot="sql-console"`, with `data-status` and `data-size-class`). |
 
-`SqlConsoleHeader` takes `children` (default `<SqlConsoleDatabaseMenu />`) and the `<header>`'s props; `SqlConsoleSidebar` and `SqlConsoleResults` take their element's props; `SqlConsoleEditor` takes SqlEditor's props but the ones the console owns (`value`, `onValueChange`, `onRun`, `pending`, `history`, `error`). All of them must be inside a `SqlConsole`.
+`SqlConsoleHeader` takes `children` (default `<SqlConsoleDatabaseMenu />`) and the `<header>`'s props; `SqlConsoleSidebar` and `SqlConsoleResults` take their element's props; All of them but `SqlConsoleEditor` must be inside a `SqlConsole`.
 
-### SqlEditor
+### SqlConsoleEditor
+
+Inside a console, `value`, `defaultValue`, `onRun`, `pending`, `history` and `errorPosition` are the console's (set the text on `SqlConsole`); `onValueChange` is called as well as the console's.
 
 | Prop | Default | Effect |
 | --- | --- | --- |
@@ -141,12 +156,13 @@ Each result table is a DataTable grid (`role="grid"`, one tab stop, ↑ ↓ betw
 | `pending` | `false` | A run is in flight: Run is disabled and reads "Running…" (`data-pending` on the root). |
 | `disabled` / `readOnly` | `false` | The textarea's own states (`data-disabled` on the editor root). |
 | `history` | — | Earlier statements, newest first (↑ on the first line, ↓ on the last). |
-| `error` | — | `{ position }` — underlines that character position. |
+| `errorPosition` | — | Postgres's 1-based `position`: underlines the token there; the editor is invalid (`aria-invalid`, `data-invalid`, a destructive ring). |
+| `aria-label` / `aria-describedby` | `"SQL"` / — | The textarea's name and description (in a console, its error is added). |
 | `highlight` | `true` | SQL highlighting (skipped past 200,000 characters). |
 | `rows` | `8` | Lines shown before the text scrolls. |
-| `children` | `<SqlEditorFooter />` | The footer; `{false}` for none. |
+| `children` | `<SqlConsoleEditorFooter />` | The footer; `{false}` for none. |
 
-`SqlEditorFooter` takes `children` (before Run) and a div's props; `SqlEditorRun` takes Button's props (default `variant="contrast"`, `size="sm"`, children "Run").
+`SqlConsoleEditorFooter` takes `children` (before Run) and a div's props; `SqlConsoleEditorRun` takes Button's props (default `variant="contrast"`, `size="sm"`, children "Run").
 
 ### `schemaTreeItems(schema)`
 
@@ -154,4 +170,4 @@ Takes a `SchemaInfo` from `useSchema()` / `loadSchema()` (or `null` while loadin
 
 ## Styling
 
-Slots: `sql-console`, `sql-console-header`, `sql-console-notice`, `sql-console-sidebar`, `sql-console-results`, `sql-console-summary` (a result's summary line), `sql-console-error`, `sql-editor` (with `data-pending` and `data-disabled`), `textarea` (the editor's input), `sql-editor-highlight` and `sql-editor-footer`. A result table is a DataTable (`data-table` and its parts), whose cells carry `data-kind` (`null`, `number`, `text`, `date`, `json`, `bytea`, `boolean`); the schema tree is a Tree's `tree-view`.
+Slots: `sql-console`, `sql-console-header`, `sql-console-notice`, `sql-console-sidebar`, `sql-console-results`, `sql-console-summary` (a result's summary line), `sql-console-error`, `sql-console-stacked-fields` (a stacked row's `name value` line), `sql-console-editor` (with `data-pending`, `data-disabled` and `data-invalid`), `textarea` (the editor's input), `sql-console-editor-highlight` and `sql-console-editor-footer`. A result table is a DataTable (`data-table` and its parts), whose cells carry `data-kind` (`null`, `number`, `text`, `date`, `json`, `bytea`, `boolean`); the schema tree is a Tree's `tree-view`.

@@ -77,7 +77,7 @@ function UpNext() {
               icon={<Artwork title={t} />}
               title={t}
               description={`Track ${LIBRARY.indexOf(t) + 1}`}
-              trailingActions={
+              endActions={
                 editing
                   ? undefined
                   : [

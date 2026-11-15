@@ -17,12 +17,12 @@ import { IndexBar } from '@/components/ui/index-bar'
 {% tab title="npm" %}
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 
-Import the stylesheet once at your app's entry, then the parts from the package root:
+Import the stylesheet once at your app's entry, then the parts from their module:
 
 ```tsx
 import '@brett_lamy/ui/styles.css'
 
-import { IndexBar } from '@brett_lamy/ui'
+import { IndexBar } from '@brett_lamy/ui/index-bar'
 ```
 {% endtab %}
 {% endtabs %}
@@ -48,13 +48,13 @@ The rail fills the height of the nearest positioned ancestor (`top-0 bottom-0`) 
 
 ## Custom stops
 
-`items` is an array of stops; a bare `string | number` is shorthand for a stop with that key. A stop is `key` (handed back untouched to `onJump`, so a number stays a number), `label` (printed on the rail; leave it out for a dot), `caption` (the accessible name, and the heading of the bubble), `preview` (any node, shown in the bubble while you hover or scrub) and `disabled` (dimmed, still reachable). `onJump(key, { index, item, reason, event })` fires on a press, on each stop the pointer scrubs across, and on keyboard moves.
+`items` is an array of stops; a bare `string | number` is shorthand for a stop with that value. A stop is `value` (handed back untouched to `onJump`, so a number stays a number), `label` (printed on the rail; leave it out for a dot), `caption` (the accessible name, and the heading of the bubble), `preview` (any node, shown in the bubble while you hover or scrub) and `disabled` (dimmed, still reachable). `onJump(value, { index, item, reason, event })` fires on a press, on each stop the pointer scrubs across, and on keyboard moves.
 
 {% demo src="index-bar/turns" %}
 
 ```tsx
 const stops: IndexBarItem<number>[] = turns.map((t, i) => ({
-  key: t.id,
+  value: t.id,
   label: i % 3 === 0 ? String(i + 1) : undefined,
   caption: t.author,
   preview: t.text,
@@ -65,7 +65,7 @@ const stops: IndexBarItem<number>[] = turns.map((t, i) => ({
 
 ## Wave
 
-`variant="wave"` draws one dash per stop; dashes near the pointer grow with a cosine falloff, like the macOS Dock, and `current` (the key of the stop you are at) draws that dash full length in the tint and sets `aria-current` on it. Two ways to read it: hover a dash for a card with that stop's `caption`, `preview` (`previewLines`, `previewWidth`) and a `trailing` node; or add `panel` and hovering the rail opens one card listing every stop as an outline, with `panelTitle` on top, `level` (1 and up) indenting nested stops, and the current stop marked. Put it on the reading side with `side="start"`. The wave, its card and the row inset are `lib/wave-rail`, shared with TraceTimeline's rail.
+`variant="wave"` draws one dash per stop; dashes near the pointer grow with a cosine falloff, like the macOS Dock, and `current` (the value of the stop you are at) draws that dash full length in the tint and sets `aria-current` on it. Two ways to read it: hover a dash for a card with that stop's `caption`, `preview` (`previewLines`, `previewWidth`) and a `trailing` node; or add `panel` and hovering the rail opens one card listing every stop as an outline, with `panelTitle` on top, `level` (1 and up) indenting nested stops, and the current stop marked. Put it on the reading side with `side="start"`. The wave, its card and the row inset are `lib/wave-rail`, shared with TraceTimeline's rail.
 
 {% demo src="index-bar/wave" %}
 
@@ -76,7 +76,7 @@ const stops: IndexBarItem<number>[] = turns.map((t, i) => ({
   panel
   panelTitle="On this page"
   aria-label="Sections"
-  items={headings.map((h) => ({ key: h.id, caption: h.text, level: h.depth }))}
+  items={headings.map((h) => ({ value: h.id, caption: h.text, level: h.depth }))}
   current={sectionInView}
   onJump={(id) => scrollTo(id)}
 />
@@ -94,8 +94,8 @@ Every `div` prop (`id`, `aria-label`, `className`, `style`, `ref`, `data-*`…) 
 
 | Prop | Default | Effect |
 | --- | --- | --- |
-| `items` | — | Stops: `K` (string or number) or `{ key?, label?, caption?, preview?, disabled?, level?, trailing? }`. `alphabetItems(available?)` builds the A–Z rail. |
-| `onJump` | — | `(key, { index, item, reason, event })` each time the rail lands on another stop. `reason` is `drag` (press or scrub), `list-navigation` (keys), `item-press` (a `panel` row, or a stop clicked by assistive tech) or `imperative` (the agent bridge). |
+| `items` | — | Stops: `K` (string or number) or `{ value?, label?, caption?, preview?, disabled?, level?, trailing? }`. `alphabetItems(available?)` builds the A–Z rail. |
+| `onJump` | — | `(value, { index, item, reason, event })` each time the rail lands on another stop. `reason` is `drag` (press or scrub), `list-navigation` (keys), `item-press` (a `panel` row, or a stop clicked by assistive tech) or `imperative` (the agent bridge). |
 | `variant` | `default` | `default` letters and dots with a bubble; `wave` dashes. |
 | `side` | `end` | `start` or `end`: the edge the rail sits on; previews open on the inner side. |
 | `current` | — | Key of the stop you are at: `aria-current`, and the tinted dash in the wave. |

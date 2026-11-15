@@ -61,7 +61,7 @@ function ShellDemo({ width, height, defaultNavOpen }: FrameArgs) {
     <Frame width={width} height={height}>
       <ChatShell breakpoint={880} defaultNavOpen={defaultNavOpen}>
         <ChatShellNav>
-          <Tabs variant="workspace" defaultValue="blui" className="contents">
+          <Tabs variant="switcher" defaultValue="blui" className="contents">
             <TabsBar>
               <TabsList aria-label="Workspaces">
                 <TabsTab value="blui" aria-label="BL UI HQ">

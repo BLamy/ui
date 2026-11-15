@@ -67,7 +67,7 @@ function TeamDirectory() {
         >
           {compact && (
             <Button
-              variant="link"
+              variant="plain"
               style={{ display: 'block' }}
               onClick={() => setSel(null)}
             >

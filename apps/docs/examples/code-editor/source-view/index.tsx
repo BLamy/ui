@@ -31,7 +31,7 @@ const LINES = splitCodeLines(SOURCE)
 export default function Basic() {
   return (
     <div className="mx-auto h-80 w-full max-w-2xl overflow-hidden rounded-card border border-border">
-      <CodeEditor readOnly variant="ghost" lines={LINES} aria-label="use-poll.js" />
+      <CodeEditor readOnly variant="plain" lines={LINES} aria-label="use-poll.js" />
     </div>
   )
 }

@@ -25,6 +25,14 @@ export const Default: Story = { args: { defaultValue: '2026-09-09' } };
 
 export const Card: Story = { args: { variant: 'card', defaultValue: '2026-09-16' } };
 
+/** A card in a 280px sidebar (a compact scope): the days share the width (44px while they fit, narrower here), and the card keeps its
+    padding instead of the Saturday column running past its edge. */
+export const CardNarrow: Story = {
+  name: 'Card, narrow',
+  parameters: { panelWidth: 280 },
+  args: { variant: 'card', defaultValue: '2026-09-16' },
+};
+
 export const Empty: Story = {};
 
 export const Today: Story = { args: { today: '2026-09-16', defaultValue: '2026-09-09' } };

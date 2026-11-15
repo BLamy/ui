@@ -308,6 +308,19 @@ describe('Canvas API', () => {
     expect(onCanvasPointerDown).toHaveBeenCalledTimes(1);
     expect(onCanvasPointerUp).toHaveBeenCalledTimes(1);
   });
+
+  it('converts a board point to the canvas\'s own pixels with toLocal, and to client pixels with toScreen, as its controller does', () => {
+    const controller = createCanvasController();
+    let ctx: ReturnType<typeof useCanvas> | null = null;
+    function Probe() {
+      ctx = useCanvas();
+      return null;
+    }
+    render(<Canvas aria-label="Board" controller={controller} viewport={{ x: 10, y: 20, zoom: 2 }}><Probe /></Canvas>);
+    vi.spyOn(board(), 'getBoundingClientRect').mockReturnValue({ left: 100, top: 50, right: 500, bottom: 350, width: 400, height: 300, x: 100, y: 50, toJSON: () => ({}) });
+    expect(ctx!.toLocal({ x: 5, y: 5 })).toEqual({ x: 20, y: 30 });
+    expect(ctx!.toScreen({ x: 5, y: 5 })).toEqual(controller.toScreen({ x: 5, y: 5 }));
+  });
 });
 
 describe('Canvas overlay parts', () => {

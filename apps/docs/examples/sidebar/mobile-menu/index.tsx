@@ -8,7 +8,7 @@ import {
   SidebarProvider,
   SidebarSection,
   SidebarTrigger,
-  SidebarWorkspace,
+  SidebarAccount,
 } from '@/components/ui/sidebar'
 
 const pages = [
@@ -29,7 +29,7 @@ export default function NarrowContainer() {
         <SidebarProvider breakpoint={560}>
           <Sidebar width={260}>
             <SidebarHeader>
-              <SidebarWorkspace title="Creamery Ops" description="Production" />
+              <SidebarAccount title="Creamery Ops" description="Production" />
             </SidebarHeader>
             <SidebarContent aria-label="Creamery Ops">
               <SidebarItem icon="plus" title="New task" tint="var(--primary)" />

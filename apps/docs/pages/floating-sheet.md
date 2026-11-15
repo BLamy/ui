@@ -12,7 +12,7 @@ Copies the source into your project's `components/ui/` (with the parts it is bui
 
 ```tsx
 import {
-  FloatingSheet, FloatingSheetBody, FloatingSheetFoot,
+  FloatingSheet, FloatingSheetBody, FloatingSheetFooter,
   FloatingSheetFab,
 } from '@/components/ui/floating-sheet'
 ```
@@ -20,42 +20,42 @@ import {
 {% tab title="npm" %}
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 
-Import the stylesheet once at your app's entry, then the parts from the package root:
+Import the stylesheet once at your app's entry, then the parts from their module:
 
 ```tsx
 import '@brett_lamy/ui/styles.css'
 
 import {
-  FloatingSheet, FloatingSheetBody, FloatingSheetFoot,
+  FloatingSheet, FloatingSheetBody, FloatingSheetFooter,
   FloatingSheetFab,
-} from '@brett_lamy/ui'
+} from '@brett_lamy/ui/floating-sheet'
 ```
 {% endtab %}
 {% endtabs %}
 
 ```tsx
-import { Button, FloatingSheet, FloatingSheetBody, FloatingSheetFoot } from '@brett_lamy/ui'
+import { Button, FloatingSheet, FloatingSheetBody, FloatingSheetFooter } from '@brett_lamy/ui'
 
 <div style={{ position: 'relative', height: 560 }}>
   <Map />
   <FloatingSheet peek={190} aria-label="Order">
     <FloatingSheetBody><OrderStatus /></FloatingSheetBody>
-    <FloatingSheetFoot>
+    <FloatingSheetFooter>
       <Button size="pill">Continue</Button>
-    </FloatingSheetFoot>
+    </FloatingSheetFooter>
   </FloatingSheet>
 </div>
 ```
 
-The host must be positioned (`relative`, `absolute`, …) and sized; the sheet measures it, not the viewport. Only the geometry waits for that measurement: the surface, the Body and the Foot render from the first (server) render, closed until the host has a height, and a host that measures 0 (a hidden tab, a closed panel) keeps its last geometry, so the Body never unmounts or loses its state.
+The host must be positioned (`relative`, `absolute`, …) and sized; the sheet measures it, not the viewport. Only the geometry waits for that measurement: the surface, the Body and the Footer render from the first (server) render, closed until the host has a height, and a host that measures 0 (a hidden tab, a closed panel) keeps its last geometry, so the Body never unmounts or loses its state.
 
 ## Looks
 
 | Look | Props |
 | --- | --- |
-| Glass | `variant="glass"` (default) with a `gutter`. Blurs whatever is behind it. |
-| Peeking | Any look with `peek`: part of the body stays visible above the foot while resting. |
-| Card | `variant="sheet"` with a `gutter`: an opaque card surface with a soft shadow. |
+| Glass | `variant="glass"` (default), inset by its `gutter`. Blurs whatever is behind it. |
+| Peeking | Any look with `peek`: part of the body stays visible above the footer while resting. |
+| Card | `variant="sheet"`: an opaque card surface with a soft shadow. At rest it is the same floating card as Dialog's `variant="tray"` on a phone: 10px in from the edges, `--radius-sheet` corners. |
 | Docked sheet | `variant="sheet"` with `gutter={0}`: edge to edge with square bottom corners, like a system sheet. |
 | Open | `defaultOpen` or a controlled `open`: the cap meets the top of the host and the host dims behind it. |
 
@@ -65,17 +65,17 @@ The material is mixed from the theme's own tokens (`--card`, `--foreground`), so
 
 ## Drag behavior
 
-The sheet is UI SDK's Drawer with a snap point at the peek, one per entry of `snapPoints` and one at full height. The FloatingSheet's own box is its layer host, so the drawer fills that box, not the app.
+The sheet is UI SDK's Drawer with a snap point at the peek, one per entry of `snapPoints` and one at full height. It is a [contained Sheet](https://blamy.github.io/ui/#/sheet) (its layer host fills the FloatingSheet's box), so the drawer fills that box, not the app.
 
 - **One surface.** The drawer moves a panel as tall as the grown sheet; the surface grows taller, wider and squarer with it as it rises past the peek (`--fs-grown`, 0 → 1), so there is no second card fading in.
 - **Release keeps its momentum.** UI SDK projects the pointer's velocity forward: a flick goes to the next stop in the direction it was thrown, a slow drag settles at the nearest stop, and the tray spring carries the surface there from the finger's speed.
 - **Snap points.** `snapPoints={[0.5]}` adds resting heights between the peek and full (fractions of the grown body, or `'70%'` for a share of the host).
 - **The cap is a handle.** A press steps to the next stop; the arrow keys, Home and End move through them. `Escape` and the scrim bring a grown sheet back to rest (reported to `onOpenChange` with reason `escape-key` / `outside-press`, cancelable).
 - **The page stays usable at rest.** Up to the peek the sheet is not modal (`modalAbove`): no dim, nothing inert, focus left alone. Above it the scrim dims the host and Tab stays in the sheet.
-- **Below rest, `collapse` decides.** `fab` (default): the surface folds into a round FAB at `fabSide` / `fabAlign`, and pressing the FAB brings the resting sheet back. `hide`: the surface slides off the bottom edge (`onVisibleChange(false, details)`); `visible` brings it back. `none`: it springs back to rest.
-- **Scroll hides it.** While it rests on its cap and foot alone, `hideOnScroll` slides it away when the shared BL UI chrome hides (the same signal the `Tabs` bar follows) or when `scrollRef`'s scroller moves down.
+- **Below rest, `collapse` decides.** `fab` (default): the surface folds into a round FAB (placed by `FloatingSheetFab`'s `side` / `align`), and pressing the FAB brings the resting sheet back. `hide`: the surface slides off the bottom edge (`onVisibleChange(false, details)`); `visible` brings it back. `none`: it springs back to rest.
+- **Scroll hides it.** While it rests on its cap and footer alone, `hideOnScroll` slides it away when the shared BL UI chrome hides (the same signal the `Tabs` bar follows) or when `scrollRef`'s scroller moves down.
 
-`useFloatingSheet()` reads the sheet's state from inside it. This example drives the same sheet from its own foot and prints the context as it settles:
+`useFloatingSheet()` reads the sheet's state from inside it. This example drives the same sheet from its own footer and prints the context as it settles:
 
 {% demo src="floating-sheet/drag-snap-minimize" %}
 
@@ -116,7 +116,7 @@ Changing `variant` or `appearance` changes the material of the same surface: bac
 
 ## Trays
 
-A flow in one sheet, after Family's trays: each step sets its own `peek`, so the sheet's height morphs between steps while the content slides the way the flow moves.
+A flow in one sheet, after Family's trays, in the kit's one flow grammar: each step sets its own `peek`, so the sheet's height springs between steps; the title and the content travel with [Swap](https://blamy.github.io/ui/#/swap) in the direction of the flow; and the back chevron is `SheetBack` folding into a `bar` header (`surfaceHeaderVariants({ variant: 'bar' })`), the same way back as a Dialog or Sheet flow.
 
 {% demo src="floating-sheet/trays" %}
 
@@ -125,9 +125,9 @@ A flow in one sheet, after Family's trays: each step sets its own `peek`, so the
 | Part | Role |
 | --- | --- |
 | `FloatingSheet` | The layer and its drawer. Write the parts inside it. |
-| `FloatingSheetBody` | The growing region (`div` props). Laid out at its full grown height behind a window that slides with the drag, so content never reflows mid-gesture; `inert` while the sheet rests on its cap and foot alone. |
-| `FloatingSheetFoot` | Pinned to the bottom of the surface at every height (`div` props): a composer, action buttons. Write it after the Body. |
-| `FloatingSheetFab` | The round button the sheet folds into (Button props). Its children are its face and `aria-label` its name; without one the sheet shows a dot named "Open " + the sheet's name. It renders on the host's edge wherever you write it. |
+| `FloatingSheetBody` | The growing region (`div` props). Laid out at its full grown height behind a window that slides with the drag, so content never reflows mid-gesture; `inert` while the sheet rests on its cap and footer alone. |
+| `FloatingSheetFooter` | Pinned to the bottom of the surface at every height (`div` props): a composer, action buttons. Write it after the Body. |
+| `FloatingSheetFab` | The round button the sheet folds into (Button props). Its children are its face and `aria-label` its name; without one the sheet shows a dot named "Open " + the sheet's name. It renders on the host's edge wherever you write it: `side` (`'top' \| 'bottom' \| 'start' \| 'end'`, default `'bottom'`; `start` / `end` are the inline edges) and `align` along it (`'start' \| 'center' \| 'end'`, default `'center'`). |
 
 ## Props
 
@@ -135,20 +135,18 @@ A flow in one sheet, after Family's trays: each step sets its own `peek`, so the
 | --- | --- | --- | --- |
 | `variant` | `'glass' \| 'sheet'` | `'glass'` | Translucent blur over the host, or an opaque card. |
 | `appearance` | `'auto' \| 'light' \| 'dark'` | `'auto'` | Colour scheme of the surface: the page's, or the `sheet` scope in that appearance. |
-| `gutter` | `number` | `20` | Inset from the host edges while resting. `0` docks it edge to edge. |
-| `radius` | `number` | `28` | Corner radius while resting; squares off as the sheet fills the host. |
-| `peek` | `number \| '${number}%'` | `0` | Body height visible above the foot while resting; `'52%'` sizes the whole resting sheet as a share of the host. Capped at three quarters of the host. |
+| `gutter` | `number` | `10` | Inset from the host edges while resting, px (Dialog's tray inset). `0` docks it edge to edge. |
+| `radius` | `number \| string` | `'var(--radius-sheet)'` | Corner radius while resting (px or a CSS length; the radius of every modal sheet); squares off as the sheet fills the host. |
+| `peek` | `number \| '${number}%'` | `0` | Body height visible above the footer while resting; `'52%'` sizes the whole resting sheet as a share of the host. Capped at three quarters of the host. |
 | `topGap` | `number \| '${number}%'` | `0` | Space left above the fully grown sheet; keeps the top corners round. |
 | `snapPoints` | `(number \| '${number}%')[]` | — | Extra resting stops between the peek and full: fractions of the grown body, or shares of the host. |
-| `bodyAlign` | `'start' \| 'end'` | `'start'` | `start` keeps a card's header under the cap; `end` pins the body to the foot so a transcript grows upward. |
+| `bodyAlign` | `'start' \| 'end'` | `'start'` | `start` keeps a card's header under the cap; `end` pins the body to the footer so a transcript grows upward. |
 | `open` / `defaultOpen` / `onOpenChange(open, details)` | `boolean` | `false` | The fully grown state. `details.reason`: `swipe`, `handle-press`, `handle-key`, `escape-key`, `outside-press`, `imperative`; `details.cancel()` keeps it where it is. |
 | `collapse` | `'fab' \| 'hide' \| 'none'` | `'fab'` | What a drag below rest does. |
 | `minimized` / `defaultMinimized` / `onMinimizedChange(minimized, details)` | `boolean` | `false` | The fold into the FAB (`collapse="fab"`). `details.reason`: `swipe`, `trigger-press`, `imperative`. |
 | `visible` / `defaultVisible` / `onVisibleChange(visible, details)` | `boolean` | `true` | Whether a `collapse="hide"` sheet is on screen. |
-| `fabSide` | `'top' \| 'bottom' \| 'start' \| 'end'` | `'bottom'` | The host edge the FAB rests on (`start` / `end` are the inline edges). |
-| `fabAlign` | `'start' \| 'center' \| 'end'` | `'center'` | Where along that edge. |
 | `scrim` | `boolean` | `true` | Dim the host as the sheet grows. |
-| `hideOnScroll` | `boolean` | `true` | Hide while resting on its cap and foot when the shared chrome or `scrollRef` scrolls down. |
+| `hideOnScroll` | `boolean` | `true` | Hide while resting on its cap and footer when the shared chrome or `scrollRef` scrolls down. |
 | `scrollRef` | `RefObject<HTMLElement>` | — | A scroller whose direction also hides and restores the resting sheet. |
 | `aria-label` | `string` | `'Sheet'` | Accessible name of the sheet. |
 | `className` / `style` | | | Merged onto the root layer. |
@@ -158,11 +156,11 @@ A flow in one sheet, after Family's trays: each step sets its own `peek`, so the
 
 `useFloatingSheet()` returns `{ open, setOpen, progress, peek, minimized, setMinimized }`. `progress` is the stop it rests on, from 0 at the peek to 1 fully grown (a snap point in between); while it moves, the live value is the `--fs-grown` CSS variable on the surface. The setters take an optional `{ reason, event }` and go through `onOpenChange` / `onMinimizedChange`. `useHideOnScroll(hideOnScroll, scrollRef)` (from `@/lib/scroll-edge`, see [Layout hooks](https://blamy.github.io/ui/#/hooks-layout)) is the hide-on-scroll signal on its own, for other floating chrome.
 
-The root carries `data-slot="floating-sheet"` (and `data-layer-host`) with `data-variant`, `data-appearance` (an explicit one), `data-body-align`, `data-open`, `data-expanded`, `data-minimized` and `data-dismissed`. The drawer panel is `drawer-content` (`role="dialog"`, named by `aria-label`), the cap is `drawer-handle` and the scrim `drawer-backdrop`; inside, `floating-sheet-surface` adds `data-peeking`, `data-dragging` and `data-hidden`, then `floating-sheet-reveal`, `floating-sheet-body` and `floating-sheet-foot`. The FAB is a UI SDK button hooked by `data-floating-sheet-fab` (its `data-slot` is `button`) and `data-folded` while it is hidden. The surface's geometry is CSS off UI SDK's `--drawer-progress` (`--fs-extent`, `--fs-grown`); its material reads `--ck-sheet-bg-alpha`, `--ck-sheet-border-alpha`, `--ck-sheet-shadow-*` and `--ck-sheet-divider-alpha`, so hosts restyle it with plain CSS. `floatingSheetVariants`, `floatingSheetSurfaceVariants({ variant, hidden })` and `floatingSheetFabVariants({ variant, side, align })` are the recipes.
+The root carries `data-slot="floating-sheet"` (the contained Sheet's `sheet-host` inside it is the layer host) with `data-variant`, `data-appearance` (an explicit one), `data-body-align`, `data-open`, `data-expanded`, `data-minimized` and `data-dismissed`. The drawer panel is `drawer-content` (`role="dialog"`, named by `aria-label`), the cap is `drawer-handle` and the scrim `drawer-backdrop`; inside, `floating-sheet-surface` adds `data-peeking`, `data-dragging` and `data-hidden`, then `floating-sheet-reveal`, `floating-sheet-body` and `floating-sheet-footer`. The FAB is a UI SDK button hooked by `data-floating-sheet-fab` (its `data-slot` is `button`) and `data-folded` while it is hidden. The surface's geometry is CSS off UI SDK's `--drawer-progress` (`--fs-extent`, `--fs-grown`); its material reads `--ck-sheet-bg-alpha`, `--ck-sheet-border-alpha`, `--ck-sheet-shadow-*` and `--ck-sheet-divider-alpha`, so hosts restyle it with plain CSS. `floatingSheetVariants`, `floatingSheetSurfaceVariants({ variant, hidden })` and `floatingSheetFabVariants({ variant, side, align })` are the recipes.
 
 ## Accessibility
 
-The sheet is a dialog named by `aria-label`. The cap is UI SDK's drawer handle ("Expand" / "Collapse"): Enter or Space steps to the next stop, the arrow keys, Home and End move between stops; it shows the kit's focus ring. The body is `inert` while the sheet rests on its cap and foot alone. At rest the page around the sheet stays usable and focus is never moved; grown, the sheet is modal to its own box and `Escape` brings it back to rest. The FAB is out of the tab order and the accessibility tree until the sheet folds into it.
+The sheet is a dialog named by `aria-label`. The cap is UI SDK's drawer handle ("Expand" / "Collapse"): Enter or Space steps to the next stop, the arrow keys, Home and End move between stops; it shows the kit's focus ring. The body is `inert` while the sheet rests on its cap and footer alone. At rest the page around the sheet stays usable and focus is never moved; grown, the sheet is modal to its own box and `Escape` brings it back to rest. The FAB is out of the tab order and the accessibility tree until the sheet folds into it.
 
 ## cva recipes
 

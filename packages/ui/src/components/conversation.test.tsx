@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { act, cleanup, render, screen } from '@testing-library/react';
 import {
   Conversation, ConversationComposer, ConversationEmpty, ConversationMessages, ConversationSuggestions,
-  Suggestion, UserMessage,
+  ConversationSuggestion, ConversationUserMessage,
 } from '@/components/ui/conversation';
 
 declare global { var __UI_SDK_STRICT__: boolean | undefined }
@@ -40,13 +40,13 @@ function Thread({ empty }: { empty: boolean }) {
     <Conversation empty={empty}>
       <ConversationEmpty title="What are we building?" />
       <ConversationMessages threadKey="t1">
-        {empty ? null : <UserMessage key="u1">Build a map</UserMessage>}
+        {empty ? null : <ConversationUserMessage key="u1">Build a map</ConversationUserMessage>}
       </ConversationMessages>
       <ConversationComposer>
         <textarea aria-label="Message" />
       </ConversationComposer>
       <ConversationSuggestions>
-        <Suggestion>Plan a trip</Suggestion>
+        <ConversationSuggestion>Plan a trip</ConversationSuggestion>
       </ConversationSuggestions>
     </Conversation>
   );
@@ -99,17 +99,17 @@ describe('Conversation', () => {
   });
 });
 
-describe('UserMessage', () => {
+describe('ConversationUserMessage', () => {
   it('shows what the Composer sent: images by name, other files as chips', () => {
     render(
-      <UserMessage
+      <ConversationUserMessage
         attachments={[
           { id: 'i', name: 'shot.png', type: 'image/png', src: 'data:image/png;base64,AAAA' },
           { id: 'f', name: 'notes.pdf', type: 'application/pdf', size: 2048 },
         ]}
       >
         Look
-      </UserMessage>,
+      </ConversationUserMessage>,
     );
     expect(screen.getByRole('img', { name: 'shot.png' })).toBeTruthy();
     expect(screen.getByText('notes.pdf')).toBeTruthy();

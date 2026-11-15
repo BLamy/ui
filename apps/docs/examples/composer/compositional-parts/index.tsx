@@ -159,7 +159,7 @@ function CompositionalParts({ variant = 'full' }: { variant?: string }) {
       }
       defaultCollapsed={variant === 'compact' ? 'compact' : undefined}
       collapseOnScroll={variant === 'scroll' ? scroller : undefined}
-      collapseTo="fab"
+      collapse="fab"
       onSubmit={() => {
         setStreaming(true)
         clearTimeout(timer.current)
@@ -173,7 +173,7 @@ function CompositionalParts({ variant = 'full' }: { variant?: string }) {
     >
       {full ? (
         <ComposerBump side="top" draggable maxReveal={160}>
-          <ComposerBumpContent label="Dev server log">
+          <ComposerBumpContent aria-label="Dev server log">
             <div
               style={{
                 padding: '10px 14px',
@@ -224,7 +224,7 @@ function CompositionalParts({ variant = 'full' }: { variant?: string }) {
             <ComposerSelect aria-label="Access" icon="lock-rounded" items={access} />
           </ComposerOptions>
           <ComposerSpacer />
-          <ComposerAdd icon="paperclip-diagonal" label="Attach files" />
+          <ComposerAdd icon="paperclip-diagonal" aria-label="Attach files" />
           <ComposerStop variant="solid" />
           <ComposerSend morph={false} />
         </ComposerFooter>

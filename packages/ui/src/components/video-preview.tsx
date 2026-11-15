@@ -207,7 +207,7 @@ export function VideoPreviewControls({ playback: clock, fps = 30, timecode = tru
   return (
     <Toolbar aria-label="Playback" size={size} {...rest}>
       <ToolbarButton size="icon-sm" aria-label="Go to start" onClick={() => { clock.pause(); clock.seek(0); }}>
-        <Icon name="backward" size={16} />
+        <Icon name="backward-end" size={16} />
       </ToolbarButton>
       <ToolbarButton size="icon-sm" aria-label="Previous frame" onClick={() => step(-1)}>
         <Icon name="chevL" size={16} />
@@ -219,7 +219,7 @@ export function VideoPreviewControls({ playback: clock, fps = 30, timecode = tru
         <Icon name="chev" size={16} />
       </ToolbarButton>
       <ToolbarButton size="icon-sm" aria-label="Go to end" onClick={() => { clock.pause(); clock.seek(clock.getState().duration); }}>
-        <Icon name="forward" size={16} />
+        <Icon name="forward-end" size={16} />
       </ToolbarButton>
       {timecode ? <VideoPreviewTimecode playback={clock} fps={fps} showDuration className="ms-2" /> : null}
     </Toolbar>

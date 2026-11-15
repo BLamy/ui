@@ -13,7 +13,7 @@ import { cn } from '@/lib/utils';
 import { GENERATED_MAX_LINE, STORE_SOURCE, UNICODE_SOURCE, generatedLine, minifiedCode } from '../stories/code-samples';
 import { Phone as Frame } from '../stories/frame';
 
-/* CodeEditor as a source view: the windowed renderer, read-only, in a pane. `variant="ghost"` is what a pane wants: no card
+/* CodeEditor as a source view: the windowed renderer, read-only, in a pane. `variant="plain"` is what a pane wants: no card
    around it. */
 
 const meta: Meta = {
@@ -57,7 +57,7 @@ export const Desktop: Story = {
   render: () => (
     <WindowFrame>
       <Pane title="src/store.js" detail={`${LINES.length} lines`}>
-        <CodeEditor readOnly variant="ghost" lines={LINES} aria-label="store.js" />
+        <CodeEditor readOnly variant="plain" lines={LINES} aria-label="store.js" />
       </Pane>
     </WindowFrame>
   ),
@@ -67,7 +67,7 @@ export const Dark: Story = {
   render: () => (
     <WindowFrame dark>
       <Pane title="src/store.js" detail={`${LINES.length} lines`}>
-        <CodeEditor readOnly variant="ghost" className="bg-card" lines={LINES} aria-label="store.js" />
+        <CodeEditor readOnly variant="plain" className="bg-card" lines={LINES} aria-label="store.js" />
       </Pane>
     </WindowFrame>
   ),
@@ -77,7 +77,7 @@ export const Phone: Story = {
   render: () => (
     <PhoneFrame>
       <Pane title="src/store.js">
-        <CodeEditor readOnly variant="ghost" lines={LINES} aria-label="store.js" />
+        <CodeEditor readOnly variant="plain" lines={LINES} aria-label="store.js" />
       </Pane>
     </PhoneFrame>
   ),
@@ -87,7 +87,7 @@ export const Wrapped: Story = {
   render: () => (
     <PhoneFrame>
       <Pane title="src/store.js" detail="wrapped">
-        <CodeEditor readOnly variant="ghost" lines={LINES} wrap aria-label="store.js" />
+        <CodeEditor readOnly variant="plain" lines={LINES} wrap aria-label="store.js" />
       </Pane>
     </PhoneFrame>
   ),
@@ -97,7 +97,7 @@ export const NoHighlighter: Story = {
   render: () => (
     <WindowFrame>
       <Pane title="src/store.js" detail="highlight={null}">
-        <CodeEditor readOnly variant="ghost" lines={LINES} highlight={null} aria-label="store.js" />
+        <CodeEditor readOnly variant="plain" lines={LINES} highlight={null} aria-label="store.js" />
       </Pane>
     </WindowFrame>
   ),
@@ -107,7 +107,7 @@ export const TabsAndWideCharacters: Story = {
   render: () => (
     <WindowFrame>
       <Pane title="unicode.js" detail="tabSize 4">
-        <CodeEditor readOnly variant="ghost" lines={UNICODE_SOURCE} tabSize={4} aria-label="unicode.js" />
+        <CodeEditor readOnly variant="plain" lines={UNICODE_SOURCE} tabSize={4} aria-label="unicode.js" />
       </Pane>
     </WindowFrame>
   ),
@@ -137,7 +137,7 @@ function HitCount({ line, current, onGo }: { line: number; current: { line: numb
       >
         <span className="ml-auto">{formatHits(hits)}</span>
       </PopoverTrigger>
-      <PopoverContent variant="surface" side="bottom" align="start" sideOffset={4} className="flex w-auto items-center gap-1 p-1.5 outline-none">
+      <PopoverContent variant="plain" side="bottom" align="start" sideOffset={4} className="flex w-auto items-center gap-1 p-1.5 outline-none">
         <PopoverTitle className="sr-only">{`Executions of line ${line}`}</PopoverTitle>
         <Button size="icon-sm" variant="quiet" aria-label="Previous execution" disabled={hit <= 1} onClick={() => onGo(line, hit - 1)}>
           <Icon name="chevron-left" size={14} />
@@ -275,7 +275,7 @@ function DebuggerDemo({ wide = true }: { wide?: boolean }) {
       <div className="min-h-0 flex-1">
         <CodeEditor
           readOnly
-          variant="ghost"
+          variant="plain"
           className="bg-card"
           lines={LINES}
           aria-label="store.js"
@@ -314,7 +314,7 @@ function MegabyteLineDemo({ column, phone, ...props }: { column?: number; phone?
   return (
     <Size>
       <Pane title="bundle.js" detail="1,048,576 characters on line 3">
-        <CodeEditor readOnly variant="ghost" lines={lines} aria-label="bundle.js" revealLine={scrollTo} {...props} />
+        <CodeEditor readOnly variant="plain" lines={lines} aria-label="bundle.js" revealLine={scrollTo} {...props} />
       </Pane>
     </Size>
   );
@@ -331,7 +331,7 @@ function HalfMillionDemo({ line, phone }: { line?: number; phone?: boolean }) {
       <Pane title="generated.js" detail="500,000 lines">
         <CodeEditor
           readOnly
-          variant="ghost"
+          variant="plain"
           lineCount={500_000}
           getLine={generatedLine}
           maxLineLength={GENERATED_MAX_LINE}
@@ -359,7 +359,7 @@ function SelectedDemo() {
   return (
     <WindowFrame>
       <Pane title="src/store.js" detail="selection, not focused">
-        <CodeEditor readOnly variant="ghost" ref={ref} lines={LINES} aria-label="store.js" />
+        <CodeEditor readOnly variant="plain" ref={ref} lines={LINES} aria-label="store.js" />
       </Pane>
     </WindowFrame>
   );
@@ -387,7 +387,7 @@ function ScrollingDemo() {
         <div className="min-h-0 flex-1">
           <CodeEditor
           readOnly
-          variant="ghost"
+          variant="plain"
             ref={editor}
             lineCount={500_000}
             getLine={generatedLine}
@@ -413,7 +413,7 @@ export const GpuLexer: Story = {
   render: () => (
     <WindowFrame>
       <Pane title="src/store.js" detail="highlight={createGpuCodeHighlight()}">
-        <CodeEditor readOnly variant="ghost" lines={LINES} highlight={gpuHighlight} aria-label="store.js" />
+        <CodeEditor readOnly variant="plain" lines={LINES} highlight={gpuHighlight} aria-label="store.js" />
       </Pane>
     </WindowFrame>
   ),
@@ -424,7 +424,7 @@ export const TwoMillionLines: Story = {
   render: () => (
     <WindowFrame>
       <Pane title="generated.js" detail="2,000,000 lines">
-        <CodeEditor readOnly variant="ghost" lineCount={2_000_000} getLine={generatedLine} maxLineLength={GENERATED_MAX_LINE} aria-label="generated.js" revealLine={1_900_000} currentLine={1_900_000} />
+        <CodeEditor readOnly variant="plain" lineCount={2_000_000} getLine={generatedLine} maxLineLength={GENERATED_MAX_LINE} aria-label="generated.js" revealLine={1_900_000} currentLine={1_900_000} />
       </Pane>
     </WindowFrame>
   ),

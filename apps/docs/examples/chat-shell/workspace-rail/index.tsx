@@ -71,7 +71,7 @@ function Window({ width, children }: { width?: number; children: ReactNode }) {
   )
 }
 
-// The workspace rail is a vertical Tabs with the `workspace` bar. Hover a
+// The workspace rail is a vertical Tabs with the `switcher` bar. Hover a
 // tile: it rounds from a circle to a squircle and the pill on its edge grows
 // from the unread nub. Select one: the pill runs full height on a springy
 // curve. Up / Down move between tiles.
@@ -80,7 +80,7 @@ export default function Rail() {
     <Window width={320}>
       <ChatShell style={{ height: 300 }}>
         <Tabs
-          variant="workspace"
+          variant="switcher"
           defaultValue="blui"
           className="contents"
         >

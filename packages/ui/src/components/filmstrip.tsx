@@ -7,8 +7,9 @@ import { cn } from '@/lib/utils';
    Give it frames (`time` and an image `src`, e.g. from `useMediaFrames`) and the media range it stands for (`from`…`to`,
    a clip's in and out points); it tiles its width with frame-shaped cells, each showing the frame nearest the time it
    covers, so it reads right at any width or zoom. Cells keep the media's aspect (`aspect`, else the first frame's).
-   While there are no frames yet (`frames=[]`, FFmpeg still decoding) it tiles the same cells as shimmering
-   placeholders (`data-loading`), so a clip keeps its rhythm, and the frames fade in when they arrive. Decorative: it is hidden from assistive tech; the clip it sits in carries the label. ══ */
+   While the frames are loading (`loading`, by default while `frames` is empty) it tiles the same cells as shimmering
+   placeholders (`data-loading`), so a clip keeps its rhythm, and the frames fade in when they arrive. With
+   `loading={false}` and no frames (nothing decodable, an FFmpeg error) the strip is a plain tint. Decorative: it is hidden from assistive tech; the clip it sits in carries the label. ══ */
 
 export interface FilmstripFrame {
   /** Media time, seconds. */
@@ -24,12 +25,15 @@ export interface FilmstripProps {
   to?: number;
   /** Width over height of a frame. Default: measured from the first frame, else 16 / 9. */
   aspect?: number;
+  /** The frames aren't here yet: shimmering placeholder cells. Default: while `frames` is empty. Pass the extraction's
+   *  own state (`useMediaFrames(…).loading`) so a failed or empty one stops shimmering. */
+  loading?: boolean;
   className?: string;
   style?: CSSProperties;
   ref?: Ref<HTMLDivElement>;
 }
 
-export function Filmstrip({ frames, from, to, aspect, className, style, ref: refProp }: FilmstripProps) {
+export function Filmstrip({ frames, from, to, aspect, loading: loadingProp, className, style, ref: refProp }: FilmstripProps) {
   const ref = useRef<HTMLDivElement | null>(null);
   const setRef = useCallback((el: HTMLDivElement | null) => {
     ref.current = el;
@@ -60,7 +64,7 @@ export function Filmstrip({ frames, from, to, aspect, className, style, ref: ref
 
   const ratio = aspect ?? measured ?? 16 / 9;
   const cell = Math.max(8, box.h * ratio);
-  const loading = frames.length === 0;
+  const loading = loadingProp ?? frames.length === 0;
   const count = box.w ? Math.ceil(box.w / cell) : 0;
   const a = from ?? frames[0]?.time ?? 0;
   const b = to ?? frames[frames.length - 1]?.time ?? a;
@@ -77,8 +81,8 @@ export function Filmstrip({ frames, from, to, aspect, className, style, ref: ref
 
   return (
     <div ref={setRef} data-slot="filmstrip" data-loading={loading ? '' : undefined} aria-hidden
-      className={cn('relative flex h-full w-full overflow-hidden', className)} style={style}>
-      {loading ? Array.from({ length: count }, (_, i) => (
+      className={cn('relative flex h-full w-full overflow-hidden bg-muted', className)} style={style}>
+      {!loading && frames.length === 0 ? null : loading ? Array.from({ length: count }, (_, i) => (
         // A placeholder per cell, a hairline apart, so the strip keeps its rhythm.
         <div key={i} className={cn(skeletonVariants({ shape: 'default' }), 'h-full w-(--cell) shrink-0 rounded-none border-e border-background/40')}
           style={{ '--cell': `${cell}px` } as CSSProperties} />

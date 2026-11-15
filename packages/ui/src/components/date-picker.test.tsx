@@ -2,12 +2,12 @@
 import { useState } from 'react';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { CalendarGrid, CalendarHeader } from '@/components/ui/calendar';
+import { CalendarGrid, CalendarHeader, CalendarMonths } from '@/components/ui/calendar';
 import {
   DatePicker,
   DatePickerClear,
   DatePickerContent,
-  DatePickerField,
+  DatePickerInputGroup,
   DatePickerHint,
   DatePickerInput,
   DatePickerPreset,
@@ -41,7 +41,7 @@ const pick = async (name: string) => {
 /** The default composition: the field (an input and the calendar button) and the popup. */
 const picker = (props: DatePickerProps = {}) => (
   <DatePicker locale="en-US" defaultValue="2026-09-09" {...props}>
-    <DatePickerField />
+    <DatePickerInputGroup />
     <DatePickerContent />
   </DatePicker>
 );
@@ -138,7 +138,7 @@ describe('DatePicker', () => {
         <Field name="due">
           <FieldLabel>Due date</FieldLabel>
           <DatePicker locale="en-US" required>
-            <DatePickerField size="lg" />
+            <DatePickerInputGroup size="lg" />
             <DatePickerHint />
             <DatePickerContent />
           </DatePicker>
@@ -153,7 +153,7 @@ describe('DatePicker', () => {
     expect(field.required).toBe(true);
     const described = field.getAttribute('aria-describedby')!.split(' ').map((id) => document.getElementById(id)?.textContent);
     expect(described).toEqual(expect.arrayContaining(['MM/DD/YYYY', 'Required.']));
-    expect((container.querySelector('[data-slot=date-picker-field]') as HTMLElement).className).toContain('h-[50px]');
+    expect((container.querySelector('[data-slot=date-picker-input-group]') as HTMLElement).className).toContain('h-[50px]');
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
     await settle();
     expect(container.querySelector('[data-slot=field-error]')?.textContent).toBe('Choose a due date.');
@@ -171,11 +171,11 @@ describe('DatePicker', () => {
     const onValueChange = vi.fn();
     render(
       <DatePicker locale="en-US" defaultValue="2026-09-09" controller={controller} onValueChange={onValueChange}>
-        <DatePickerField>
+        <DatePickerInputGroup>
           <DatePickerInput aria-label="Due date" />
           <DatePickerClear />
           <DatePickerTrigger />
-        </DatePickerField>
+        </DatePickerInputGroup>
         <DatePickerContent>
           <CalendarHeader />
           <CalendarGrid />
@@ -212,7 +212,7 @@ describe('DatePicker', () => {
         <Field name="due">
           <FieldLabel>Due date</FieldLabel>
           <DatePicker locale="en-US" required defaultMonth="2026-09">
-            <DatePickerField />
+            <DatePickerInputGroup />
             <DatePickerContent />
           </DatePicker>
           <FieldError match="valueMissing">Choose a due date.</FieldError>
@@ -254,7 +254,7 @@ describe('DatePicker', () => {
           <Field name="due">
             <FieldLabel>Due date</FieldLabel>
             <DatePicker locale="en-US" required defaultMonth="2026-09" value={due} onValueChange={setDue} controller={controller}>
-              <DatePickerField />
+              <DatePickerInputGroup />
               <DatePickerContent />
             </DatePicker>
             <FieldError match="valueMissing">Choose a due date.</FieldError>
@@ -287,7 +287,7 @@ describe('DatePicker mode="range"', () => {
     const { container } = render(
       <DatePicker mode="range" locale="en-US" defaultValue={['2026-09-08', '2026-09-13']} startName="from" endName="to" onValueChange={onValueChange}>
         <form>
-          <DatePickerField />
+          <DatePickerInputGroup />
         </form>
         <DatePickerContent />
       </DatePicker>,
@@ -317,17 +317,41 @@ describe('DatePicker mode="range"', () => {
     expect(within(popup).getByRole('heading').textContent).toBe('September – October 2026');
   });
 
-  it('sizes its default field from the root, and a DatePickerField\'s own size wins', async () => {
-    const { unmount } = render(<DatePicker size="sm" locale="en-US" />);
-    const field = () => document.querySelector<HTMLElement>('[data-slot=date-picker-field]')!;
-    expect(field().dataset.size).toBe('sm');
-    expect(field().className).toContain('h-8');
-    unmount();
+  it('sizes the field on the DatePickerInputGroup, the box part, as every compound picker does', async () => {
     render(
-      <DatePicker size="sm" locale="en-US">
-        <DatePickerField size="lg" />
+      <DatePicker locale="en-US">
+        <DatePickerInputGroup size="sm" />
       </DatePicker>,
     );
-    expect(field().dataset.size).toBe('lg');
+    const field = document.querySelector<HTMLElement>('[data-slot=date-picker-input-group]')!;
+    expect(field.dataset.size).toBe('sm');
+    expect(field.className).toContain('h-8');
+  });
+
+  it('names each input by the Field\'s label and its own end ("Stay Start date")', async () => {
+    render(
+      <Field>
+        <FieldLabel>Stay</FieldLabel>
+        <DatePicker mode="range" locale="en-US" defaultValue={['2026-09-08', '2026-09-13']} />
+      </Field>,
+    );
+    await settle();
+    expect(screen.getByRole('textbox', { name: 'Stay Start date' })).toBeTruthy();
+    expect(screen.getByRole('textbox', { name: 'Stay End date' })).toBeTruthy();
+  });
+
+  it('gives its months to a composed CalendarMonths, without passing them again', async () => {
+    render(
+      <DatePicker mode="range" months={2} locale="en-US" defaultValue={['2026-09-24', '2026-10-06']}>
+        <DatePickerInputGroup />
+        <DatePickerContent>
+          <CalendarHeader />
+          <CalendarMonths />
+        </DatePickerContent>
+      </DatePicker>,
+    );
+    await settle();
+    const popup = await open();
+    expect(within(popup).getAllByRole('grid')).toHaveLength(2);
   });
 });

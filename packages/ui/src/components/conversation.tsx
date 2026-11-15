@@ -4,10 +4,11 @@ import { animate } from 'framer-motion';
 import { Collapsible, CollapsiblePanel, CollapsibleTrigger, type CollapsibleOptions } from '@ui-sdk/react/collapsible';
 import { Button, type ButtonProps } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
-import { MarkdownView } from '@/components/ui/markdown-view';
+import { MarkdownView, type MarkdownViewProps } from '@/components/ui/markdown-view';
 import { MessageScroller, MessageScrollerItem, useInMessageScroller, type MessageScrollerProps } from '@/components/ui/message-scroller';
 import type { ComposerAttachment } from '@/components/ui/composer/composer';
-import { attachmentKind, formatFileSize } from '@/components/ui/composer/composer-files';
+import { attachmentKind } from '@/components/ui/composer/composer-files';
+import { formatFileSize } from '@/lib/file-size';
 import { cn, pressable, brandTile } from '@/lib/utils';
 import { Chevron, Icon, type IconName } from '@/lib/icon';
 import { springs } from '@/lib/motion';
@@ -18,11 +19,11 @@ import { prefersReducedMotion } from '@/lib/reduced-motion';
    <Conversation empty={!thread}>
      <ConversationEmpty title="What are we building?" description="Ask anything about this workspace." />
      <ConversationMessages threadKey={thread.id} streaming={busy}>
-       <UserMessage key="u1">…</UserMessage>
-       <AssistantMessage key="a1"><WorkLog summary="Worked for 42s">…</WorkLog><MessageMarkdown markdown="…" /></AssistantMessage>
+       <ConversationUserMessage key="u1">…</ConversationUserMessage>
+       <ConversationAssistantMessage key="a1"><ConversationWorkLog summary="Worked for 42s">…</ConversationWorkLog><ConversationMarkdown markdown="…" /></ConversationAssistantMessage>
      </ConversationMessages>
      <ConversationComposer><Composer>…</Composer></ConversationComposer>
-     <ConversationSuggestions><Suggestion>…</Suggestion></ConversationSuggestions>
+     <ConversationSuggestions><ConversationSuggestion>…</ConversationSuggestion></ConversationSuggestions>
    </Conversation>
 
    Empty, the title sits above a centred composer with suggestions under it. The first message turns it into the
@@ -185,7 +186,7 @@ export interface ConversationSuggestionsProps extends React.HTMLAttributes<HTMLD
   ref?: React.Ref<HTMLDivElement>;
 }
 
-/** Suggestion chips under the empty composer; they leave with the empty state. */
+/** ConversationSuggestion chips under the empty composer; they leave with the empty state. */
 export function ConversationSuggestions({ className, ref, children, ...props }: ConversationSuggestionsProps) {
   const { empty } = React.useContext(ConversationContext);
   const presence = usePresence<HTMLDivElement>(empty);
@@ -209,10 +210,10 @@ export function ConversationSuggestions({ className, ref, children, ...props }: 
   );
 }
 
-export type SuggestionProps = Omit<ButtonProps, 'variant' | 'size'>;
+export type ConversationSuggestionProps = Omit<ButtonProps, 'variant' | 'size'>;
 
 /** A suggestion chip: the kit's `outline` Button, small and round (it takes `onClick`, `disabled` and the rest). */
-export function Suggestion({ className, ...props }: SuggestionProps) {
+export function ConversationSuggestion({ className, ...props }: ConversationSuggestionProps) {
   return <Button variant="outline" size="sm" className={cn('rounded-full font-normal text-muted-foreground', className)} {...props} />;
 }
 
@@ -233,21 +234,21 @@ function MessageRoot({
   );
 }
 
-export interface MessageProps extends React.HTMLAttributes<HTMLDivElement> {
+export interface ConversationAssistantMessageProps extends React.HTMLAttributes<HTMLDivElement> {
   /** The message's id in the thread (default: a stable generated one). */
   value?: string;
-  /** Whether the message starts a turn: it scrolls near the top when it arrives (UserMessage default `true`). */
+  /** Whether the message starts a turn: it scrolls near the top when it arrives (default `false`; a user message's is `true`). */
   anchor?: boolean;
   ref?: React.Ref<HTMLDivElement>;
 }
 
-export interface UserMessageProps extends MessageProps {
+export interface ConversationUserMessageProps extends ConversationAssistantMessageProps {
   /** What was sent with it (a Composer's `onSubmit` attachments): images show as thumbnails, other files as chips. */
   attachments?: ComposerAttachment[];
 }
 
 /** The user's turn: a right-aligned bubble, its attachments above it. */
-export function UserMessage({ attachments, anchor = true, className, children, ...props }: UserMessageProps) {
+export function ConversationUserMessage({ attachments, anchor = true, className, children, ...props }: ConversationUserMessageProps) {
   const images = attachments?.filter((a) => a.src && (a.kind ?? attachmentKind(a.type, a.name)) === 'image') ?? [];
   const files = attachments?.filter((a) => !images.includes(a)) ?? [];
   return (
@@ -276,15 +277,19 @@ export function UserMessage({ attachments, anchor = true, className, children, .
 }
 
 /** The agent's turn: its work log, its reply. */
-export function AssistantMessage({ anchor = false, className, ...props }: MessageProps) {
+export function ConversationAssistantMessage({ anchor = false, className, ...props }: ConversationAssistantMessageProps) {
   return <MessageRoot data-slot="assistant-message" anchor={anchor} className={cn('mt-1 mb-3.5', className)} {...props} />;
 }
 
 /* The three typing dots: a soft wave, staggered by .18s. */
 const DOT_ANIM = ['animate-[wbPulse_1s_0s_infinite]', 'animate-[wbPulse_1s_0.18s_infinite]', 'animate-[wbPulse_1s_0.36s_infinite]'];
 
-/** "Thinking": three dots, until the first token of a reply. */
-export function ConversationTyping({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
+export interface ConversationTypingProps extends React.HTMLAttributes<HTMLDivElement> {
+  ref?: React.Ref<HTMLDivElement>;
+}
+
+/** "Thinking": three dots, until the first token of a reply. ConversationMarkdown shows them while `streaming` has no text yet. */
+export function ConversationTyping({ className, ...props }: ConversationTypingProps) {
   return (
     <div data-slot="typing-indicator" role="status" aria-label="Thinking" className={cn('flex gap-[5px] py-1.5', className)} {...props}>
       {DOT_ANIM.map((anim, j) => (
@@ -294,41 +299,41 @@ export function ConversationTyping({ className, ...props }: React.HTMLAttributes
   );
 }
 
-export interface MessageMarkdownProps {
+export interface ConversationMarkdownProps extends Omit<MarkdownViewProps, 'markdown' | 'streaming'> {
   markdown?: string;
   /** The reply is still arriving: the view renders it as it streams, and the typing dots show until the first token. */
   streaming?: boolean;
 }
 
-/** The reply body: streaming markdown, and the typing dots until the first token. */
-export function MessageMarkdown({ markdown = '', streaming }: MessageMarkdownProps) {
+/** The reply body: a MarkdownView (it takes MarkdownView's props, `className` and `ref`), and the typing dots until the first token. */
+export function ConversationMarkdown({ markdown = '', streaming, ...props }: ConversationMarkdownProps) {
   return (
     <>
-      <MarkdownView markdown={markdown} streaming={streaming} />
+      <MarkdownView markdown={markdown} streaming={streaming} {...props} />
       {streaming && !markdown ? <ConversationTyping /> : null}
     </>
   );
 }
 
 /* ── Work log ── */
-export interface WorkLogProps {
+export interface ConversationWorkLogProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'title' | 'onToggle'> {
   /** The collapsed row, e.g. "Worked for 1m 4s". */
   summary: React.ReactNode;
   defaultOpen?: boolean;
   open?: boolean;
   onOpenChange?: CollapsibleOptions['onOpenChange'];
-  /** ToolCall rows; with none the row is static (no chevron, not a button). */
+  /** ConversationToolCall rows; with none the row is static (no chevron, not a button). */
   children?: React.ReactNode;
-  className?: string;
+  ref?: React.Ref<HTMLDivElement>;
 }
 
 /** "Worked for Ns" — a UI SDK Collapsible that opens (on a spring) into the tool calls behind the reply. */
-export function WorkLog({ summary, defaultOpen = false, open, onOpenChange, children, className }: WorkLogProps) {
+export function ConversationWorkLog({ summary, defaultOpen = false, open, onOpenChange, children, className, ref, ...props }: ConversationWorkLogProps) {
   const has = React.Children.count(children) > 0;
   const row = 'flex items-center gap-[5px] text-caption text-tertiary-foreground';
   if (!has) {
     return (
-      <div data-slot="work-log" className={cn('mt-0.5 mb-1.5', className)}>
+      <div ref={ref} data-slot="work-log" className={cn('mt-0.5 mb-1.5', className)} {...props}>
         <div className={row}>
           <Icon name="clock-dial" size={12.5} sw={2} />
           {summary}
@@ -337,7 +342,7 @@ export function WorkLog({ summary, defaultOpen = false, open, onOpenChange, chil
     );
   }
   return (
-    <div data-slot="work-log" className={cn('mt-0.5 mb-1.5', className)}>
+    <div ref={ref} data-slot="work-log" className={cn('mt-0.5 mb-1.5', className)} {...props}>
       <Collapsible defaultOpen={defaultOpen} open={open} onOpenChange={onOpenChange}>
         <CollapsibleTrigger className={cn(row, pressable, 'group/work-log cursor-pointer rounded-sm border-0 bg-transparent p-0 leading-[inherit] outline-none focus-visible:ring-2 focus-visible:ring-ring')}>
           <Icon name="clock-dial" size={12.5} sw={2} />
@@ -354,7 +359,7 @@ export function WorkLog({ summary, defaultOpen = false, open, onOpenChange, chil
   );
 }
 
-export interface ToolCallProps {
+export interface ConversationToolCallProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'title'> {
   icon?: IconName | (string & {});
   /** What the agent did. */
   title: React.ReactNode;
@@ -363,13 +368,13 @@ export interface ToolCallProps {
   /** A command or snippet, shown in a mono well. */
   code?: string;
   status?: 'done' | 'running' | 'error';
-  className?: string;
+  ref?: React.Ref<HTMLDivElement>;
 }
 
-/** One step in a WorkLog. */
-export function ToolCall({ icon = 'checkmark', title, description, code, status = 'done', className }: ToolCallProps) {
+/** One step in a ConversationWorkLog. */
+export function ConversationToolCall({ icon = 'checkmark', title, description, code, status = 'done', className, ref, ...props }: ConversationToolCallProps) {
   return (
-    <div data-slot="tool-call" data-status={status} className={cn('grid gap-1 text-caption text-muted-foreground', className)}>
+    <div ref={ref} data-slot="tool-call" data-status={status} className={cn('grid gap-1 text-caption text-muted-foreground', className)} {...props}>
       <div className="flex min-w-0 items-center gap-2">
         {status === 'running' ? (
           <span role="img" aria-label="Running" className="grid size-[13px] shrink-0 place-items-center">

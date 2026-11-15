@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { DatePicker, DatePickerContent, DatePickerField } from '@/components/ui/date-picker'
+import { DatePicker, DatePickerContent, DatePickerInputGroup } from '@/components/ui/date-picker'
 import { Field, FieldDescription, FieldLabel } from '@/components/ui/field'
 import { ThemeScope } from '@/lib/theme'
 
@@ -23,7 +23,7 @@ export default function Range() {
           value={stay}
           onValueChange={setStay}
         >
-          <DatePickerField />
+          <DatePickerInputGroup />
           <DatePickerContent />
         </DatePicker>
         <FieldDescription>

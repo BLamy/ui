@@ -184,8 +184,8 @@ export type SchemaTreeNode = {
   value: string;
   label: string;
   /** After the label: a schema's table count; a table's kind and row count; a column's type, reference and `not null`. */
-  detail?: string;
-  detailTitle?: string;
+  trailing?: string;
+  description?: string;
   /** A primary key's column wears a key. */
   icon?: IconName;
   children?: SchemaTreeNode[];
@@ -208,15 +208,15 @@ export function schemaTreeItems(schema: SchemaInfo | null | undefined): SchemaTr
       kind: 'schema',
       schema: s,
       label: s.name,
-      detail: String(s.tables.length),
-      detailTitle: `${s.tables.length} tables`,
+      trailing: String(s.tables.length),
+      description: `${s.tables.length} tables`,
       children: s.tables.map((t): SchemaTreeNode => ({
         value: `table:${t.schema}.${t.name}`,
         kind: 'table',
         table: t,
         label: t.name,
-        detail: [RELATION_DETAIL[t.kind], t.rowCount !== null ? t.rowCount.toLocaleString('en-US') : ''].filter(Boolean).join(' · '),
-        ...(t.rowCount !== null ? { detailTitle: `${t.rowCount} rows` } : {}),
+        trailing: [RELATION_DETAIL[t.kind], t.rowCount !== null ? t.rowCount.toLocaleString('en-US') : ''].filter(Boolean).join(' · '),
+        ...(t.rowCount !== null ? { description: `${t.rowCount} rows` } : {}),
         children: t.columns.map((c): SchemaTreeNode => ({
           value: `column:${t.schema}.${t.name}.${c.name}`,
           kind: 'column',
@@ -224,8 +224,8 @@ export function schemaTreeItems(schema: SchemaInfo | null | undefined): SchemaTr
           column: c,
           label: c.name,
           ...(c.isPrimaryKey ? { icon: 'key' as const } : {}),
-          detail: [c.references ? `→ ${c.references.table}.${c.references.column}` : '', c.type, c.nullable ? '' : 'not null'].filter(Boolean).join(' '),
-          ...(c.references ? { detailTitle: `References ${c.references.schema}.${c.references.table}(${c.references.column})` } : {}),
+          trailing: [c.references ? `→ ${c.references.table}.${c.references.column}` : '', c.type, c.nullable ? '' : 'not null'].filter(Boolean).join(' '),
+          ...(c.references ? { description: `References ${c.references.schema}.${c.references.table}(${c.references.column})` } : {}),
         })),
       })),
     }));

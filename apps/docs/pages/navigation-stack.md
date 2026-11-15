@@ -28,7 +28,7 @@ import {
 {% tab title="npm" %}
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 
-Import the stylesheet once at your app's entry, then the parts from the package root:
+Import the stylesheet once at your app's entry, then the parts from their module:
 
 ```tsx
 import '@brett_lamy/ui/styles.css'
@@ -37,7 +37,7 @@ import {
   NavigationStack, NavigationStackPage, NavigationStackBar,
   NavigationStackTitle, NavigationStackContent,
   NavigationStackLargeTitle,
-} from '@brett_lamy/ui'
+} from '@brett_lamy/ui/navigation-stack'
 ```
 {% endtab %}
 {% endtabs %}
@@ -91,7 +91,7 @@ Pages are the stack's direct children (fragments and arrays are fine), each with
 | `NavigationStackTitle` | The bar's centered title, and the page's name: the next page's back label and the large title read it. `showOnScroll` fades it in only once the content has scrolled. While it is faded out it is out of the accessibility tree (the large title is the page's heading). |
 | `NavigationStackLeading` / `NavigationStackTrailing` | Bar items at either edge. Leading items give way to the back button. |
 | `NavigationStackBack` | A back button of your own (the bar already has one): pops its page, or runs `rootBack` on the first page. The bar's own is named "Back to *title*", whatever its label shows. |
-| `NavigationStackContent` | The scrolling content under the bar. `onRefresh` adds pull to refresh, `maxWidth` a readable width, `bottomInset` room for bars that ride over it. |
+| `NavigationStackContent` | The scrolling content under the bar. `onRefresh` adds pull to refresh, `maxWidth` a readable width. It keeps room under its last row for a tab bar around it by itself (`--tabs-bar-h`, published by a Tabs `bar` or a SplitView sidebar that became a tab bar, safe area included); `bottomInset` (px, default the stack's, 0) adds room for something else that rides over it, a mini player or a toolbar of your own. |
 | `NavigationStackLargeTitle` | iOS's large title at the top of the content, the page's level-1 heading; it collapses into the bar as you scroll. Its text defaults to the page's title. |
 | `NavigationStackSubheader` | Under the large title: a search field, a segmented control. |
 

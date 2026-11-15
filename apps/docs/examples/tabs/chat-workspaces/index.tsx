@@ -49,7 +49,7 @@ function WorkspaceTile({
   )
 }
 
-// A Discord server rail: a vertical Tabs with a `workspace` bar. Home is
+// A Discord server rail: a vertical Tabs with a `switcher` bar. Home is
 // the first tab, over a separator; Add is an action, not a tab.
 function ServerRail({
   server,
@@ -62,7 +62,7 @@ function ServerRail({
 }) {
   return (
     <Tabs
-      variant="workspace"
+      variant="switcher"
       value={server}
       onValueChange={(next) => {
         if (next) setServer(next)

@@ -17,18 +17,18 @@ import { StrudelPlayer } from '@/components/ui/strudel-player'
 {% tab title="npm" %}
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 
-Import the stylesheet once at your app's entry, then the parts from the package root:
+Import the stylesheet once at your app's entry, then the parts from their module:
 
 ```tsx
 import '@brett_lamy/ui/styles.css'
 
-import { StrudelPlayer } from '@brett_lamy/ui'
+import { StrudelPlayer } from '@brett_lamy/ui/strudel-player'
 ```
 {% endtab %}
 {% endtabs %}
 
 {% hint style="info" %}
-The player lives in [`@brett_lamy/docstream`](https://blamy.github.io/ui/#/docstream) (`@brett_lamy/docstream/strudel`), where a ` ```strudel ` fence or a `{% embed url="song.strudel" %}` renders it. The registry item adds that package and a one-line module that re-exports the player and the playback functions below. The rack, its hardware and the syntax tree come straight from `@brett_lamy/docstream/strudel`.
+The player lives in [`@brett_lamy/docstream`](https://github.com/BLamy/docstream) (`@brett_lamy/docstream/strudel`), where a ` ```strudel ` fence or a `{% embed url="song.strudel" %}` renders it. The registry item adds that package and a one-line module that re-exports the player and the playback functions below. The rack, its hardware and the syntax tree come straight from `@brett_lamy/docstream/strudel`.
 {% endhint %}
 
 ## Inline code

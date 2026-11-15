@@ -15,19 +15,19 @@ import { Badge } from '@/components/ui/badge'
 {% tab title="npm" %}
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 
-Import the stylesheet once at your app's entry, then the parts from the package root:
+Import the stylesheet once at your app's entry, then the parts from their module:
 
 ```tsx
 import '@brett_lamy/ui/styles.css'
 
-import { Badge } from '@brett_lamy/ui'
+import { Badge } from '@brett_lamy/ui/badge'
 ```
 {% endtab %}
 {% endtabs %}
 
 ## Variants
 
-Seven variants. `default` is the solid accent, `secondary` a gray fill, `tinted` a 15% accent wash with accent text, `outline` a hairline ring with foreground text, and `destructive`, `success` and `warning` are solid red, green and orange (warning with black text, for contrast). An `svg` child (an [Icon](https://blamy.github.io/ui/#/icons)) is sized to 12px (10px at `sm`) and sits before the text with a 4px gap. Badge keeps shadcn's `variant` for these colours rather than the kit's `tone`.
+Seven variants. `default` is the solid accent, `secondary` a gray fill, `tinted` a 15% accent wash with accent text, `outline` a hairline ring with foreground text, and `destructive`, `success` and `warning` are solid red, green and orange (success and warning with black text: white on the light iOS green or yellow would be about 2:1). An `svg` child (an [Icon](https://blamy.github.io/ui/#/icons)) is sized to 12px (10px at `sm`) and sits before the text with a 4px gap. Badge keeps shadcn's `variant` for these colours rather than the kit's `tone`.
 
 {% demo src="badge/variants" %}
 
@@ -95,7 +95,7 @@ box-border inline-flex shrink-0 items-center justify-center gap-1 rounded-full l
 | `tinted` | `bg-primary/15 text-primary` |
 | `outline` | `text-foreground shadow-hairline` |
 | `destructive` | `bg-destructive text-white` |
-| `success` | `bg-success text-white` |
+| `success` | `bg-success text-black` |
 | `warning` | `bg-warning text-black` |
 
 **`size`** — default `default`

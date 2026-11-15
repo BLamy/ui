@@ -68,8 +68,8 @@ function build() {
     density: { label: 'JS', ...data },
     marks: [
       { key: 'breakpoints', times: pick(seed + 1, data.times, marks[0]), shape: 'bar', tone: 'warning' },
-      { key: 'logpoints', times: pick(seed + 2, data.times, marks[1]), shape: 'bar', color: 'var(--chart-5)' },
-      { key: 'console', times: pick(seed + 3, data.times, marks[2]), shape: 'dot', tone: 'info' },
+      { key: 'logpoints', times: pick(seed + 2, data.times, marks[1]), shape: 'bar', tint: 'var(--chart-5)' },
+      { key: 'console', times: pick(seed + 3, data.times, marks[2]), shape: 'dot', tint: 'var(--primary)' },
     ],
     threads: threads[key].map(({ id }) => ({ id, label: `T${id}` })),
   })
@@ -82,21 +82,21 @@ function build() {
   const random = seeded(101)
   const at = () => browser.times[Math.floor(random() * browser.times.length)]
   const stops: Array<TraceStop<string>> = [
-    { key: 'error', time: at(), tone: 'error', level: 1, caption: 'TypeError: order is undefined', preview: 'at renderTotals (orders.tsx:88)' },
+    { key: 'error', time: at(), tone: 'destructive', level: 1, caption: 'TypeError: order is undefined', preview: 'at renderTotals (orders.tsx:88)' },
   ]
   const requests: TraceRequest[] = []
   NAVIGATIONS.forEach((path, i) => {
-    stops.push({ key: `nav-${i}`, time: 40_000 + (i * (HOUR - 200_000)) / NAVIGATIONS.length + random() * 90_000, tone: 'info', level: 1, caption: `Navigated to ${path}`, preview: 'A full page load' })
+    stops.push({ key: `nav-${i}`, time: 40_000 + (i * (HOUR - 200_000)) / NAVIGATIONS.length + random() * 90_000, tint: 'var(--primary)', level: 1, caption: `Navigated to ${path}`, preview: 'A full page load' })
   })
   for (let i = 0; i < 40; i++) {
     const time = at()
     const latency = 20 + random() * 160
     stops.push({ key: `req-${i}`, time, level: 2, caption: REQUESTS[i % REQUESTS.length], preview: `200 in ${Math.round(latency * 3)} ms` })
-    requests.push({ id: `req-${i}`, time, from: time + latency, to: time + latency + 30 + random() * 400, color: `var(--chart-${(i % 4) + 1})` })
+    requests.push({ id: `req-${i}`, time, from: time + latency, to: time + latency + 30 + random() * 400, tint: `var(--chart-${(i % 4) + 1})` })
   }
   while (stops.length < 300) {
     const i = stops.length
-    stops.push({ key: `log-${i}`, time: at(), level: 3, dim: i % 7 === 0, caption: CONSOLE[i % CONSOLE.length] })
+    stops.push({ key: `log-${i}`, time: at(), level: 3, disabled: i % 7 === 0, caption: CONSOLE[i % CONSOLE.length] })
   }
   stops.sort((a, b) => a.time - b.time)
 

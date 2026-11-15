@@ -23,7 +23,7 @@ const meta: Meta<typeof ProgressStepper> = {
     variant: { control: 'inline-radio', options: ['bars', 'line'] },
     current: { control: { type: 'range', min: 0, max: steps.length, step: 1 } },
   },
-  decorators: [(Story) => <Panel w={420}><Story /></Panel>],
+  decorators: [(Story, { parameters }) => <Panel w={parameters.panelWidth ?? 420} dark={parameters.dark}><Story /></Panel>],
 };
 export default meta;
 type Story = StoryObj<typeof ProgressStepper>;
@@ -69,7 +69,7 @@ export const WithProgress: Story = {
 };
 
 export const Dark: Story = {
-  decorators: [(Story) => <Panel dark w={420}><Story /></Panel>],
+  parameters: { dark: true },
   render: (args) => (
     <div className="grid gap-6">
       <Caption>Bars</Caption>
@@ -82,7 +82,7 @@ export const Dark: Story = {
 
 /** A 320px-wide row: labels truncate rather than push the steps apart. */
 export const Narrow: Story = {
-  decorators: [(Story) => <Panel w={320}><Story /></Panel>],
+  parameters: { panelWidth: 320 },
   args: {
     steps: [
       { id: 'a', label: 'Order placed', icon: <Icon name="check-circle" size={18} /> },

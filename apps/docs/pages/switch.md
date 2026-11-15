@@ -15,12 +15,12 @@ import { Switch } from '@/components/ui/switch'
 {% tab title="npm" %}
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 
-Import the stylesheet once at your app's entry, then the parts from the package root:
+Import the stylesheet once at your app's entry, then the parts from their module:
 
 ```tsx
 import '@brett_lamy/ui/styles.css'
 
-import { Switch } from '@brett_lamy/ui'
+import { Switch } from '@brett_lamy/ui/switch'
 ```
 {% endtab %}
 {% endtabs %}
@@ -77,7 +77,7 @@ UI SDK's `Switch` props, the main ones:
 
 ## Styling
 
-The root is the track, `data-slot="switch"` (a `group` with `data-size`: `bg-secondary-strong`, `bg-success` when `data-checked`), and `SwitchThumb` is `data-slot="switch-thumb"`; it reads the size with `group-data-[size=sm]:`. `switchVariants({ size })` returns the track's classes. Keyboard focus draws the kit's solid focus ring. Both carry `data-checked` / `data-unchecked`, `data-disabled`, `data-readonly` and `data-required`; the thumb's stretch while held is `group-active:`.
+The root is the track, `data-slot="switch"` (a named group, `group/switch`, with `data-size`: `bg-secondary-strong`, `bg-success` when `data-checked`), and `SwitchThumb` is `data-slot="switch-thumb"`; it reads the size with `group-data-[size=sm]:`. `switchVariants({ size })` returns the track's classes. Keyboard focus draws the kit's solid focus ring. Both carry `data-checked` / `data-unchecked`, `data-disabled`, `data-readonly` and `data-required`; the thumb's stretch while held is `group-active:`.
 
 ## cva recipes
 
@@ -88,7 +88,7 @@ Generated from the source. Call a recipe on any element to borrow a component's 
 Defined in `@/components/ui/switch`. Base classes:
 
 ```text
-[ 'group relative inline-block shrink-0 cursor-pointer rounded-full border-0 bg-secondary-strong p-0 transition-[background-color] duration-spring-smooth ease-spring-smooth', pressableFocusRing, 'data-checked:bg-success data-disabled:cursor-default data-disabled:opacity-40', ]
+[ 'group/switch relative inline-block shrink-0 cursor-pointer rounded-full border-0 bg-secondary-strong p-0 transition-[background-color] duration-spring-smooth ease-spring-smooth', pressableFocusRing, 'data-checked:bg-success data-disabled:cursor-default data-disabled:opacity-40', ]
 ```
 
 **`size`** — default `default`

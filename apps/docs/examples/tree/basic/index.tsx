@@ -4,11 +4,11 @@ import { Tree, type TreeNode } from '@/components/ui/tree'
 const MAILBOXES: TreeNode[] = [
   {
     value: 'icloud', label: 'iCloud', children: [
-      { value: 'inbox', label: 'Inbox', icon: 'tray', detail: '12' },
-      { value: 'drafts', label: 'Drafts', icon: 'doc', detail: '3' },
+      { value: 'inbox', label: 'Inbox', icon: 'tray', trailing: '12' },
+      { value: 'drafts', label: 'Drafts', icon: 'doc', trailing: '3' },
       {
         value: 'projects', label: 'Projects', children: [
-          { value: 'launch', label: 'Launch', icon: 'folder', detail: '4' },
+          { value: 'launch', label: 'Launch', icon: 'folder', trailing: '4' },
           { value: 'archive', label: 'Archive', icon: 'folder', dimmed: true },
         ],
       },

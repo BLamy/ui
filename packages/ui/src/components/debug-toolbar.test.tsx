@@ -46,7 +46,7 @@ describe('DebugToolbar', () => {
     act(() => { buttons[0].dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true })); });
     expect(document.activeElement).toBe(buttons[1]);
     act(() => buttons[1].click());
-    expect(onAction).toHaveBeenCalledWith('step-over');
+    expect(onAction).toHaveBeenCalledWith('step-over', expect.objectContaining({ reason: 'trigger-press', event: expect.any(Event) }));
     const stop = buttons[7];
     expect(stop.getAttribute('aria-disabled')).toBe('true');
     act(() => stop.click());
@@ -77,7 +77,7 @@ describe('DebugToolbar', () => {
     expect(onAction).not.toHaveBeenCalled();
     act(() => buttons[6].focus());
     act(() => buttons[6].click());
-    expect(onAction).toHaveBeenLastCalledWith('restart');
+    expect(onAction).toHaveBeenLastCalledWith('restart', expect.objectContaining({ reason: 'trigger-press' }));
   });
 
   it('shows only the given actions, in the given order, and forwards style', () => {
@@ -89,7 +89,7 @@ describe('DebugToolbar', () => {
     expect(buttons.map((b) => b.dataset.action)).toEqual(['stop', 'continue', 'step-back']);
     expect(buttons.map(accessibleName)).toEqual(['Stop', 'Continue', 'Step back']);
     act(() => buttons[2].click());
-    expect(onAction).toHaveBeenCalledWith('step-back');
+    expect(onAction).toHaveBeenCalledWith('step-back', expect.objectContaining({ reason: 'trigger-press', event: expect.any(Event) }));
   });
 
   it('has no title attributes, colors by tone, and is a floating card unless told otherwise', () => {
@@ -126,7 +126,18 @@ describe('DebugToolbar', () => {
     expect(document.activeElement).toBe(buttons[2]);
     act(() => buttons[0].click());
     act(() => buttons[2].click());
-    expect(onAction).toHaveBeenCalledWith('continue');
+    expect(onAction).toHaveBeenCalledWith('continue', expect.objectContaining({ reason: 'trigger-press', event: expect.any(Event) }));
     expect(onDevTools).toHaveBeenCalledTimes(1);
+  });
+
+  it('an onClick that calls preventDefault keeps onAction from running', () => {
+    const onAction = vi.fn();
+    const el = mount(
+      <DebugToolbar onAction={onAction}>
+        <DebugToolbarButton action="restart" onClick={(event) => event.preventDefault()} />
+      </DebugToolbar>,
+    );
+    act(() => el.querySelector<HTMLButtonElement>('[data-action="restart"]')!.click());
+    expect(onAction).not.toHaveBeenCalled();
   });
 });

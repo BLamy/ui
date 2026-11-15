@@ -59,13 +59,13 @@ const money = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD
 const TONE = { Paid: 'success', Pending: 'warning', Refunded: 'secondary' } as const;
 
 const COLUMNS: DataTableColumn<Order>[] = [
-  { id: 'number', title: 'Order', width: 84, render: (o) => `#${o.number}`, sortValue: (o) => o.number, className: 'tabular-nums text-muted-foreground' },
-  { id: 'customer', title: 'Customer', flex: 2, minWidth: 140 },
-  { id: 'city', title: 'City', flex: 1, minWidth: 100, hideBelow: 'regular' },
-  { id: 'status', title: 'Status', width: 96, render: (o) => <Badge size="sm" variant={TONE[o.status]}>{o.status}</Badge>, sortValue: (o) => o.status },
-  { id: 'items', title: 'Items', width: 64, align: 'end' },
-  { id: 'total', title: 'Total', width: 96, align: 'end', render: (o) => money.format(o.total), sortValue: (o) => o.total },
-  { id: 'placed', title: 'Placed', width: 104, hideBelow: 'regular', className: 'tabular-nums' },
+  { id: 'number', header: 'Order', width: 84, cell: (o) => `#${o.number}`, sortValue: (o) => o.number, className: 'tabular-nums text-muted-foreground' },
+  { id: 'customer', header: 'Customer', flex: 2, minWidth: 140 },
+  { id: 'city', header: 'City', flex: 1, minWidth: 100, hideBelow: 'regular' },
+  { id: 'status', header: 'Status', width: 96, cell: (o) => <Badge size="sm" variant={TONE[o.status]}>{o.status}</Badge>, sortValue: (o) => o.status },
+  { id: 'items', header: 'Items', width: 64, align: 'end' },
+  { id: 'total', header: 'Total', width: 96, align: 'end', cell: (o) => money.format(o.total), sortValue: (o) => o.total },
+  { id: 'placed', header: 'Placed', width: 104, hideBelow: 'regular', className: 'tabular-nums' },
 ];
 
 function Desktop({ children, dark }: { children?: ReactNode; dark?: boolean }) {
@@ -113,7 +113,7 @@ function ToolbarDemo() {
       aria-label="Orders"
       rows={rows}
       columns={COLUMNS}
-      selectionMode="none"
+      mode="none"
       onAction={(id) => setOpened(id)}
       className="min-h-0 flex-1"
       toolbar={(
@@ -143,6 +143,24 @@ export const Empty: Story = {
       />
     </Desktop>
   ),
+};
+
+/** A query in flight: placeholder rows at the rows' height, not "No rows", and the grid is `aria-busy`. */
+export const Loading: Story = {
+  render: () => <Desktop><DataTable aria-label="Orders" rows={[]} columns={COLUMNS} loading className="min-h-0 flex-1" /></Desktop>,
+};
+
+export const LoadingDark: Story = {
+  render: () => <Desktop dark><DataTable aria-label="Orders" rows={[]} columns={COLUMNS} loading className="min-h-0 flex-1" /></Desktop>,
+};
+
+export const LoadingPhone: Story = {
+  render: () => <PhoneWindow><DataTable aria-label="Orders" rows={[]} columns={COLUMNS} loading className="min-h-0 flex-1" /></PhoneWindow>,
+};
+
+/** `focus="row"`: the arrow keys move whole rows (← → scroll sideways), for a list of things more than a table of values. */
+export const RowFocus: Story = {
+  render: () => <Desktop><DataTable aria-label="Orders" rows={ORDERS} columns={COLUMNS} focus="row" className="min-h-0 flex-1" /></Desktop>,
 };
 
 let many: Order[] | undefined;

@@ -19,12 +19,14 @@ import {
 {% tab title="npm" %}
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 
-Import the stylesheet once at your app's entry, then the parts from the package root:
+Import the stylesheet once at your app's entry, then the parts from their module:
 
 ```tsx
 import '@brett_lamy/ui/styles.css'
 
-import { MessageScroller, MessageScrollerItem } from '@brett_lamy/ui'
+import {
+  MessageScroller, MessageScrollerItem,
+} from '@brett_lamy/ui/message-scroller'
 ```
 {% endtab %}
 {% endtabs %}
@@ -43,7 +45,7 @@ import { MessageScroller, MessageScrollerItem } from '@/components/ui/message-sc
 </MessageScroller>
 ```
 
-Items can sit anywhere under the scroller (in a fragment, a wrapper `div`, a component of yours): the scroller reads them from the log after each render. [Conversation](https://blamy.github.io/ui/#/conversation)'s `UserMessage` and `AssistantMessage` are items already, so inside a scroller you write them directly.
+Items can sit anywhere under the scroller (in a fragment, a wrapper `div`, a component of yours): the scroller reads them from the log after each render. [Conversation](https://blamy.github.io/ui/#/conversation)'s `ConversationUserMessage` and `ConversationAssistantMessage` are items already, so inside a scroller you write them directly.
 
 ## Behaviors
 
@@ -53,6 +55,7 @@ Items can sit anywhere under the scroller (in a fragment, a wrapper `div`, a com
 4. **Jump to latest**: the floating pill returns to the live edge and re-engages following; while streaming it widens to say so. It stays mounted and fades out when it isn't needed, `inert` so Tab skips it.
 5. **Open at last anchor**: switching `threadKey` opens at the last anchor, not the absolute bottom, falling back to the end.
 6. **New turns rise in**: items that arrive while a thread is open rise into place (an anchor up from the composer, a reply under it); the ones a thread opens with are simply there.
+7. **Rest at a peek**: inside a peek host that is resting (the nearest ancestor with `data-peek-host` while it has `data-peeking`: a [FloatingSheet](https://blamy.github.io/ui/#/floating-sheet)'s surface, so [ArtifactChatContainer](https://blamy.github.io/ui/#/artifact-chat-container)'s floating chat, or a draggable ComposerBump's content), only the bottom edge of the transcript shows, so the anchor room goes and the view sits at the newest line. Give your own peeking surface the two attributes to get the same.
 
 ## Props
 
@@ -85,7 +88,7 @@ The column is `--message-column-width` (780px) wide and centred, with `--message
 <MessageScroller style={{ '--message-gutter': '12px', '--message-column-width': '100%' } as React.CSSProperties}>…</MessageScroller>
 ```
 
-The parts have `data-slot`s: `message-scroller`, `message-scroller-viewport` (with `data-resting` inside a peeking composer bump), `message-scroller-content`, `message-scroller-item` (with `data-anchor`), `message-scroller-jump` (`data-open` / `data-closed`) and `message-scroller-jump-button` (`data-streaming`).
+The parts have `data-slot`s: `message-scroller`, `message-scroller-viewport` (with `data-resting` inside a resting peek host), `message-scroller-content`, `message-scroller-item` (with `data-anchor`), `message-scroller-jump` (`data-open` / `data-closed`) and `message-scroller-jump-button` (`data-streaming`).
 
 ## Accessibility
 

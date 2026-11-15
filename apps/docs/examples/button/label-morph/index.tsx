@@ -53,7 +53,7 @@ export default function LabelMorph() {
         >
           {LABEL[step]}
         </Button>
-        <Button variant="link" onClick={() => setStep('continue')}>
+        <Button variant="plain" onClick={() => setStep('continue')}>
           Start over
         </Button>
       </div>

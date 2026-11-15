@@ -398,7 +398,7 @@ it('unmounts hidden content when it is not kept, and tracks the pane last used',
 
   fireEvent.focusIn(screen.getByRole('textbox', { name: 'Draft' }));
   expect(controller.getActiveTabsetId()).toBe('right');
-  expect(screen.getByRole('group', { name: 'Pane 2' }).hasAttribute('data-active')).toBe(true);
+  expect(screen.getByRole('group', { name: 'Pane 2' }).hasAttribute('data-current')).toBe(true);
   act(() => void controller.addTab({ id: 'new', title: 'New', data: null }));
   expect(strips()).toEqual([['Counter', 'Log'], ['Notes', 'New']]);
 });

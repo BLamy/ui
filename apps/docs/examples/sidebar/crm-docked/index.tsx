@@ -11,7 +11,7 @@ import {
   SidebarSearch,
   SidebarSection,
   SidebarTrigger,
-  SidebarWorkspace,
+  SidebarAccount,
 } from '@/components/ui/sidebar'
 
 const pipeline = [
@@ -46,7 +46,7 @@ export default function DockedCrm() {
         <SidebarProvider breakpoint={520}>
           <Sidebar width={220}>
             <SidebarHeader>
-              <SidebarWorkspace title="Northwind" description="Sales · Pro plan" />
+              <SidebarAccount title="Northwind" description="Sales · Pro plan" />
             </SidebarHeader>
             <SidebarContent aria-label="Northwind">
               <SidebarSearch placeholder="Search deals" shortcut="/" />

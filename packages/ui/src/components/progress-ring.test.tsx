@@ -51,7 +51,7 @@ describe('ProgressRing', () => {
   });
 
   it('takes a tone, or colors of its own as variables', () => {
-    render(<ProgressRing aria-label="Done" value={100} tone="success" color="teal" trackColor="gray" />);
+    render(<ProgressRing aria-label="Done" value={100} tone="success" tint="teal" trackTint="gray" />);
     const ring = screen.getByRole('progressbar');
     expect(ring.className).toContain('[--ring-color:var(--color-success)]');
     expect(ring.style.getPropertyValue('--ring-color')).toBe('teal');
@@ -86,9 +86,9 @@ describe('CountdownRing', () => {
     expect(screen.getByRole('timer', { name: '1 second left' }).hasAttribute('data-urgent')).toBe(true);
   });
 
-  it('takes urgentAt, urgentColor, a ref and DOM props', () => {
+  it('takes urgentAt, urgentTint, a ref and DOM props', () => {
     let node: HTMLSpanElement | null = null;
-    render(<CountdownRing remaining={12} urgentAt={15} urgentColor="purple" ref={(n) => { node = n; }} id="otp" />);
+    render(<CountdownRing remaining={12} urgentAt={15} urgentTint="purple" ref={(n) => { node = n; }} id="otp" />);
     const ring = screen.getByRole('timer');
     expect(node).toBe(ring);
     expect(ring.id).toBe('otp');

@@ -22,12 +22,12 @@ import { List, ListSection, ListRow } from '@/components/ui/list'
 {% tab title="npm" %}
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 
-Import the stylesheet once at your app's entry, then the parts from the package root:
+Import the stylesheet once at your app's entry, then the parts from their module:
 
 ```tsx
 import '@brett_lamy/ui/styles.css'
 
-import { List, ListSection, ListRow } from '@brett_lamy/ui'
+import { List, ListSection, ListRow } from '@brett_lamy/ui/list'
 ```
 {% endtab %}
 {% endtabs %}
@@ -124,13 +124,13 @@ A `header` sticks to the top of the list and is measured with a ResizeObserver, 
 
 ## Swipe actions
 
-`leadingActions` are revealed by swiping right, `trailingActions` by swiping left (UI SDK's `createSwipeActions`). A release past half the actions keeps them open and a flick decides sooner; a press anywhere else closes the row. Only one row on the page is open at a time: opening another (by swipe, key or controller) closes it. Past about half the row, the outermost action (index 0) takes the whole strip and runs: turn that off with `fullSwipe={false}` (or limit it to `'leading'` / `'trailing'`).
+`startActions` sit at the row's start and are revealed by swiping toward its end (right, in left-to-right text), `endActions` at its end by swiping toward the start (UI SDK's `createSwipeActions`, which flips both in right-to-left text). A release past half the actions keeps them open and a flick decides sooner; a press anywhere else closes the row. Only one row on the page is open at a time: opening another (by swipe, key or controller) closes it. Past about half the row, the outermost action (index 0) takes the whole strip and runs: turn that off with `fullSwipe={false}` (or limit it to `'start'` / `'end'`).
 
 ```tsx
 <ListRow
   title="Launch checklist"
-  leadingActions={[{ label: 'Unread', icon: 'mail', onAction: markUnread }]}
-  trailingActions={[
+  startActions={[{ label: 'Unread', icon: 'mail', onAction: markUnread }]}
+  endActions={[
     { label: 'Trash', icon: 'trash', destructive: true, onAction: trash }, // outermost: a full swipe runs it
     { label: 'Flag', icon: 'starF', tint: 'var(--warning)', onAction: flag },
   ]}
@@ -145,7 +145,7 @@ A `header` sticks to the top of the list and is measured with a ResizeObserver, 
 | `destructive` | `boolean` | The row slides away and collapses (its exit: `data-removing` with `data-ending-style`) before `onAction` runs; Delete runs it from the keyboard |
 | `onAction` | `(details) => void` | Called on tap, full swipe or Delete; `details.reason` is `action-press`, `full-swipe` or `delete-key` |
 
-**Keyboard and assistive tech.** Focus a row and press ← to reveal the trailing actions (→ for the leading ones), the way a swipe would move the row; focus moves to the first button, the arrows walk them, and heading back toward the row or Esc closes them. Delete runs the destructive trailing action. Drive a row from outside with `controller={createListRowController()}` (`show('trailing')`, `close()`). The row describes its actions to screen readers and lists its shortcuts in `aria-keyshortcuts`. With reduced motion, rows move without springing.
+**Keyboard and assistive tech.** Focus a row and press ← to reveal the end actions (→ for the start ones), the way a swipe would move the row; focus moves to the first button, the arrows walk them, and heading back toward the row or Esc closes them. Delete runs the destructive end action. Drive a row from outside with `controller={createListRowController()}` (`show('end')`, `close()`). The row describes its actions to screen readers and lists its shortcuts in `aria-keyshortcuts`. With reduced motion, rows move without springing.
 
 {% demo src="lists/swipe-actions" %}
 
@@ -206,9 +206,9 @@ All three take `className`, `style`, `ref` and any DOM attribute (`id`, `aria-*`
 | `current` | `false` | A wash and `aria-current`: the row for what is open now. |
 | `disabled` | `false` | Dims the content; the button is disabled and the row doesn't swipe, run actions or flip its switch. |
 | `editing` | `false` | Slides in the edit-mode check and turns swipes off. |
-| `leadingActions` / `trailingActions` | — | Swipe actions (see above). |
-| `fullSwipe` | `true` | A long swipe runs the outermost action: `true`, `false`, `"leading"` or `"trailing"`. |
-| `controller` | — | `createListRowController()`: `show(side)` / `close()` from outside. |
+| `startActions` / `endActions` | — | Swipe actions (see above). |
+| `fullSwipe` | `true` | A long swipe runs the outermost action: `true`, `false`, `"start"` or `"end"`. |
+| `controller` | — | `createListRowController()`: `show('start' \| 'end')` / `close()` from outside. |
 | `tone` | `"default"` | Text color: `"default"` · `"success"` · `"warning"` · `"destructive"`. |
 | `justify` | `"start"` | `"center"` centers the title (a button row). |
 | `align` | `"center"` | `"top"` pins the icon to the first line of a multi-line row. |
@@ -256,7 +256,7 @@ Defined in `@/components/ui/list`. Base classes:
 Defined in `@/components/ui/list`. Base classes:
 
 ```text
-[ // Type metrics a <button> would reset, so a host's body line-height or tracking doesn't reach the row. 'relative z-1 box-border flex w-full touch-pan-y items-center gap-3 py-0 pl-4 text-left text-body leading-[normal] tracking-[normal] outline-none', 'focus-visible:[box-shadow:inset_0_0_0_2px_var(--primary)]', // Trailing inset clears an IndexBar overlaying the list (it publishes --bl-index-bar-inset on its parent). 'pr-[max(16px,calc(var(--bl-index-bar-inset,0px)+6px))]', // The swipe offset (`--swipe-x`, from UI SDK) moves the surface; it springs back unless a finger holds it. 'translate-x-(--swipe-x) transition-[translate] duration-spring-snappy ease-spring-snappy group-data-swiping/row:transition-none motion-reduce:transition-none', ]
+[ // Type metrics a <button> would reset, so a host's body line-height or tracking doesn't reach the row. 'relative z-1 box-border flex w-full touch-pan-y items-center gap-3 py-0 ps-4 text-start text-body leading-[normal] tracking-[normal] outline-none', 'focus-visible:[box-shadow:inset_0_0_0_2px_var(--primary)]', // Trailing inset clears an IndexBar overlaying the list (it publishes --bl-index-bar-inset on its parent). 'pe-[max(16px,calc(var(--bl-index-bar-inset,0px)+6px))]', // The swipe offset (`--swipe-x`, from UI SDK) moves the surface; it springs back unless a finger holds it. 'translate-x-(--swipe-x) transition-[translate] duration-spring-snappy ease-spring-snappy group-data-swiping/row:transition-none motion-reduce:transition-none', ]
 ```
 
 **`align`** — default `center`
@@ -271,7 +271,7 @@ Defined in `@/components/ui/list`. Base classes:
 | Value | Adds |
 | --- | --- |
 | `start` (default) | — |
-| `center` | — |
+| `center` | `[&_[data-slot=list-row-body]]:justify-center [&_[data-slot=list-row-title]]:flex-none` |
 
 **`density`** — default `default`
 

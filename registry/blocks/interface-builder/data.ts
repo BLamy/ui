@@ -86,7 +86,7 @@ const signIn = scene('sign-in', 'SignIn', COL * 2, 0, n('Screen', {
   layout: { axis: 'vertical', gap: 16, padding: [8, 20, 24, 20], align: 'start', distribute: 'start', width: 'fill', height: 'fill' },
   motion: { stagger: { each: 0.06, delay: 0.05, from: 'first' } },
   slots: {
-    leading: [n('Button', { id: 'sign-in-cancel', props: { children: 'Cancel', variant: 'link', size: 'default' }, on: { onClick: [act({ do: 'back' })] } })],
+    leading: [n('Button', { id: 'sign-in-cancel', props: { children: 'Cancel', variant: 'plain', size: 'default' }, on: { onClick: [act({ do: 'back' })] } })],
     trailing: [],
   },
   children: [
@@ -396,10 +396,10 @@ const addPlant = scene('add-plant', 'AddPlant', COL * 4, 0, n('Screen', {
   props: { title: 'New Plant', largeTitle: false },
   layout: { axis: 'vertical', gap: 18, padding: [12, 20, 24, 20], align: 'center', distribute: 'start', width: 'fill', height: 'fill' },
   slots: {
-    leading: [n('Button', { id: 'add-cancel', props: { children: 'Cancel', variant: 'link', size: 'default' }, on: { onClick: [act({ do: 'back' })] } })],
+    leading: [n('Button', { id: 'add-cancel', props: { children: 'Cancel', variant: 'plain', size: 'default' }, on: { onClick: [act({ do: 'back' })] } })],
     trailing: [n('Button', {
       id: 'add-done',
-      props: { children: 'Add', variant: 'link', size: 'default' },
+      props: { children: 'Add', variant: 'plain', size: 'default' },
       bind: { disabled: '!name.trim()' },
       on: { onClick: [act({ do: 'send', command: 'add' })] },
     })],

@@ -45,12 +45,12 @@ function SchemaBrowser({ schema, loading, onAction, all }: {
 describe('schemaTreeItems', () => {
   it('maps schemas, tables and columns, with what each row stands for', () => {
     const [schema] = schemaTreeItems(PUBLIC);
-    expect(schema).toMatchObject({ value: 'schema:public', kind: 'schema', label: 'public', detail: '1' });
+    expect(schema).toMatchObject({ value: 'schema:public', kind: 'schema', label: 'public', trailing: '1' });
     const [tableNode] = schema!.children!;
-    expect(tableNode).toMatchObject({ value: 'table:public.books', kind: 'table', table: books, detail: '3', detailTitle: '3 rows' });
+    expect(tableNode).toMatchObject({ value: 'table:public.books', kind: 'table', table: books, trailing: '3', description: '3 rows' });
     const [id, title] = tableNode!.children!;
-    expect(id).toMatchObject({ value: 'column:public.books.id', kind: 'column', column: books.columns[0], icon: 'key', detail: 'integer not null' });
-    expect(title).toMatchObject({ kind: 'column', detail: 'text' });
+    expect(id).toMatchObject({ value: 'column:public.books.id', kind: 'column', column: books.columns[0], icon: 'key', trailing: 'integer not null' });
+    expect(title).toMatchObject({ kind: 'column', trailing: 'text' });
     expect(title!.icon).toBeUndefined();
   });
 
@@ -63,8 +63,8 @@ describe('schemaTreeItems', () => {
     const view = { ...table('public', 'recent'), kind: 'view' as const, rowCount: null };
     const ref = col('author_id', { references: { schema: 'public', table: 'authors', column: 'id' } });
     const [schema] = schemaTreeItems({ schemas: [{ name: 'public', tables: [view, { ...books, columns: [ref] }] }] });
-    expect(schema!.children![0]!.detail).toBe('view');
-    expect(schema!.children![1]!.children![0]).toMatchObject({ detail: '→ authors.id integer', detailTitle: 'References public.authors(id)' });
+    expect(schema!.children![0]!.trailing).toBe('view');
+    expect(schema!.children![1]!.children![0]).toMatchObject({ trailing: '→ authors.id integer', description: 'References public.authors(id)' });
   });
 });
 

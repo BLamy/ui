@@ -16,11 +16,11 @@ type Story = StoryObj<typeof Breadcrumb>;
 const go = (where: string) => () => console.info('breadcrumb →', where);
 
 const PATH: BreadcrumbItemData[] = [
-  { id: 'home', label: 'Home', icon: 'house', href: '#home' },
-  { id: 'projects', label: 'Projects', href: '#projects' },
-  { id: 'design', label: 'Design system', href: '#design' },
-  { id: 'components', label: 'Components', onClick: go('components') },
-  { id: 'breadcrumb', label: 'Breadcrumb' },
+  { value: 'home', label: 'Home', icon: 'house', href: '#home' },
+  { value: 'projects', label: 'Projects', href: '#projects' },
+  { value: 'design', label: 'Design system', href: '#design' },
+  { value: 'components', label: 'Components', onClick: go('components') },
+  { value: 'breadcrumb', label: 'Breadcrumb' },
 ];
 
 /** Every item but the last is a link (`href`) or a button (`onClick`); the last is the current page. */
@@ -51,18 +51,18 @@ export const CustomSeparator: Story = {
 };
 
 const siblings = (current: string, ...labels: string[]) => ({
-  siblings: labels.map((label) => ({ id: label, label, icon: 'doc', onClick: go(label) })),
-  currentSibling: current,
+  siblings: labels.map((label) => ({ value: label, label, icon: 'doc', onClick: go(label) })),
+  siblingValue: current,
 });
 
 /** Like VS Code's: an item with `siblings` opens the other entries of its parent. The checked one is the current. */
 export const WithSiblingMenus: Story = {
   args: {
     items: [
-      { id: 'home', label: 'Home', icon: 'house', href: '#home' },
-      { id: 'ui', label: 'ui', icon: 'folder', ...siblings('ui', 'ui', 'docs', 'catalog', 'registry') },
-      { id: 'components', label: 'components', icon: 'folder', ...siblings('components', 'components', 'lib', 'stories') },
-      { id: 'breadcrumb.tsx', label: 'breadcrumb.tsx', icon: 'doc', ...siblings('breadcrumb.tsx', 'avatar.tsx', 'badge.tsx', 'breadcrumb.tsx', 'button.tsx', 'card.tsx') },
+      { value: 'home', label: 'Home', icon: 'house', href: '#home' },
+      { value: 'ui', label: 'ui', icon: 'folder', ...siblings('ui', 'ui', 'docs', 'catalog', 'registry') },
+      { value: 'components', label: 'components', icon: 'folder', ...siblings('components', 'components', 'lib', 'stories') },
+      { value: 'breadcrumb.tsx', label: 'breadcrumb.tsx', icon: 'doc', ...siblings('breadcrumb.tsx', 'avatar.tsx', 'badge.tsx', 'breadcrumb.tsx', 'button.tsx', 'card.tsx') },
     ],
   },
 };
@@ -89,7 +89,7 @@ export const CurrentPagePressable: Story = {
   args: {
     items: [
       ...PATH.slice(0, 2),
-      { id: 'report', label: 'Weekly report', onClick: go('reload report') },
+      { value: 'report', label: 'Weekly report', onClick: go('reload report') },
     ],
   },
 };
@@ -104,11 +104,11 @@ export const CollapsingWithPickers: Story = {
   decorators: [(Story) => <Panel w={300} className="min-h-96"><Story /></Panel>],
   args: {
     items: [
-      { id: 'home', label: 'Home', icon: 'house', href: '#home' },
-      { id: 'ui', label: 'ui', icon: 'folder', ...siblings('ui', 'ui', 'docs', 'catalog', 'registry') },
-      { id: 'packages', label: 'packages', icon: 'folder', ...siblings('packages', 'apps', 'packages', 'tools') },
-      { id: 'components', label: 'components', icon: 'folder', ...siblings('components', 'components', 'lib', 'stories') },
-      { id: 'breadcrumb.tsx', label: 'breadcrumb.tsx', icon: 'doc', ...siblings('breadcrumb.tsx', 'avatar.tsx', 'breadcrumb.tsx', 'button.tsx') },
+      { value: 'home', label: 'Home', icon: 'house', href: '#home' },
+      { value: 'ui', label: 'ui', icon: 'folder', ...siblings('ui', 'ui', 'docs', 'catalog', 'registry') },
+      { value: 'packages', label: 'packages', icon: 'folder', ...siblings('packages', 'apps', 'packages', 'tools') },
+      { value: 'components', label: 'components', icon: 'folder', ...siblings('components', 'components', 'lib', 'stories') },
+      { value: 'breadcrumb.tsx', label: 'breadcrumb.tsx', icon: 'doc', ...siblings('breadcrumb.tsx', 'avatar.tsx', 'breadcrumb.tsx', 'button.tsx') },
     ],
   },
 };

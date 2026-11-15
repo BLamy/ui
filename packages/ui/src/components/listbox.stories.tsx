@@ -53,3 +53,37 @@ export const PopupWithGroups: Story = {
 export const FromData: Story = {
   render: () => <Listbox aria-label="Ringtone" defaultValue="Apex" items={ringtones} />,
 };
+
+/** A disabled option: dimmed, skipped by the arrow keys and not selectable. */
+export const Disabled: Story = {
+  render: () => (
+    <Listbox aria-label="Ringtone" defaultValue="Reflection">
+      <ListboxItem value="Reflection">Reflection</ListboxItem>
+      <ListboxItem value="Apex" disabled>Apex (download to use)</ListboxItem>
+      <ListboxItem value="Beacon">Beacon</ListboxItem>
+    </Listbox>
+  ),
+};
+
+/** The inset card with groups: each group is named by the menu section label. */
+export const InsetGroups: Story = {
+  render: () => (
+    <Listbox aria-label="Alert tone" defaultValue="tritone">
+      <ListboxGroup>
+        <ListboxGroupLabel>Alert tones</ListboxGroupLabel>
+        <ListboxItem value="tritone">Tri-tone</ListboxItem>
+        <ListboxItem value="chord">Chord</ListboxItem>
+      </ListboxGroup>
+      <ListboxGroup>
+        <ListboxGroupLabel>Classic</ListboxGroupLabel>
+        <ListboxItem value="bell">Bell</ListboxItem>
+        <ListboxItem value="glass">Glass</ListboxItem>
+      </ListboxGroup>
+    </Listbox>
+  ),
+};
+
+/** No options: the list shows its `emptyState` (here a string, the title of a small EmptyState) as a polite status. */
+export const Empty: Story = {
+  render: () => <Listbox aria-label="Files" items={[]} emptyState="No files match." />,
+};

@@ -10,6 +10,12 @@ test.beforeEach(async ({ page }) => {
 const layers = (page) => page.locator('[data-slot=toast]');
 const stack = (page) => page.locator('[data-slot=toast-region]');
 const front = (page) => page.locator('[data-slot=toast][data-front]');
+/** The pile at rest: its transitions (springs whose tails sit under half a pixel for a while) have finished, then
+    two reads agree. The banners measure 65.5px, so a read mid-tail rounds the other way. */
+const still = async (page) => {
+  await expect.poll(() => stack(page).evaluate((el) => el.getAnimations({ subtree: true }).length)).toBe(0);
+  await settled(page, () => read(page));
+};
 const send = async (page, n) => {
   for (let i = 0; i < n; i++) await page.getByRole('button', { name: 'Banner', exact: true }).click();
 };
@@ -25,7 +31,7 @@ const read = (page) => layers(page).evaluateAll((els) =>
 test('banners pile up: the newest in front, the ones behind peek out smaller with their content hidden', async ({ page }) => {
   await send(page, 3);
   await expect(layers(page)).toHaveCount(3);
-  await settled(page, () => read(page));
+  await still(page);
   const [front, mid, back] = await read(page);
   // Placed from the top edge, each one further in sits PEEK (14px) lower, and narrower.
   expect(mid.top - front.top).toBeGreaterThan(8);
@@ -46,12 +52,12 @@ test('banners pile up: the newest in front, the ones behind peek out smaller wit
 
 test('hovering the pile spreads it into a list, and leaving puts it back', async ({ page }) => {
   await send(page, 3);
-  await settled(page, () => read(page));
+  await still(page);
   const piled = await read(page);
   const box = await stack(page).boundingBox();
   await page.mouse.move(box.x + box.width / 2, box.y + 20);
   await expect(stack(page)).toHaveAttribute('data-expanded', '');
-  await settled(page, () => read(page));
+  await still(page);
   const spread = await read(page);
   // Full size, a 10px gap between cards, every card readable.
   for (const c of spread) { expect(c.width).toBe(spread[0].width); expect(c.textOpacity).toBe(1); }
@@ -63,20 +69,20 @@ test('hovering the pile spreads it into a list, and leaving puts it back', async
   await expect(stack(page)).toHaveAttribute('data-expanded', '');
   await page.mouse.move(2, 2);
   await expect(stack(page)).not.toHaveAttribute('data-expanded');
-  await settled(page, () => read(page));
+  await still(page);
   expect(await read(page)).toEqual(piled);
 });
 
 test('moving keyboard focus into the pile spreads it', async ({ page }) => {
   await send(page, 3);
-  await settled(page, () => read(page));
+  await still(page);
   await front(page).getByRole('button', { name: /close|dismiss/i }).focus();
   await expect(stack(page)).toHaveAttribute('data-expanded', '');
 });
 
 test('closing the front card promotes the next one', async ({ page }) => {
   await send(page, 3);
-  await settled(page, () => read(page));
+  await still(page);
   await page.mouse.move(2, 2);
   await front(page).getByRole('button', { name: /close|dismiss/i }).click();
   await expect(layers(page)).toHaveCount(2);
@@ -87,7 +93,7 @@ test('closing the front card promotes the next one', async ({ page }) => {
   await page.mouse.move(2, 2);
   await page.evaluate(() => document.activeElement?.blur());
   await expect(stack(page)).not.toHaveAttribute('data-expanded');
-  await settled(page, () => read(page));
+  await still(page);
   const [first, second] = await read(page);
   expect(first.textOpacity).toBe(1);
   expect(second.textOpacity).toBe(0);
@@ -95,7 +101,7 @@ test('closing the front card promotes the next one', async ({ page }) => {
 
 test('swiping a card toward the edge dismisses it', async ({ page }) => {
   await send(page, 2);
-  await settled(page, () => read(page));
+  await still(page);
   // The region sits at the top center, so a card is swiped away upward.
   const card = await front(page).boundingBox();
   const x = card.x + 40;
@@ -112,7 +118,7 @@ test('swiping a card toward the edge dismisses it', async ({ page }) => {
 
 test('a single banner is a plain card, not a pile', async ({ page }) => {
   await send(page, 1);
-  await settled(page, () => read(page));
+  await still(page);
   const [only] = await read(page);
   const pile = await stack(page).boundingBox();
   expect(only.textOpacity).toBe(1);

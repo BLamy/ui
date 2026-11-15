@@ -10,7 +10,7 @@ import { SearchInput } from '@/components/ui/search-input';
 import { FileBadgeIcon } from '@/lib/file-icons';
 import type { MarkdownEditorHandle } from '@/components/ui/markdown-editor';
 import { EmptyState } from '@/components/ui/empty-state';
-import { SplitViewContent, SplitViewDetail, SplitViewHeader, SplitViewSupplementary, SplitViewToggle, useSplitView } from '@/components/ui/split-view';
+import { SplitViewContent, SplitViewDetail, SplitViewHeader, SplitViewSupplementary, SplitViewSidebarTrigger, useSplitView } from '@/components/ui/split-view';
 import { Chevron, Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
 import type { Folder } from './data';
@@ -112,7 +112,7 @@ export function ListColumn({ notes }: { notes: NotesState }) {
     const active = i === visibleTrail.length - 1;
     return <NavigationStackPage key={folder.id} value={folder.id}>
       <NavigationStackBar hideOnScroll={false}>
-        {i === 0 ? <NavigationStackLeading><SplitViewToggle /></NavigationStackLeading> : null}
+        {i === 0 ? <NavigationStackLeading><SplitViewSidebarTrigger /></NavigationStackLeading> : null}
         <NavigationStackTitle>{notes.rootFolder ? folder.title : 'Notes'}</NavigationStackTitle>
         <NavigationStackTrailing><ViewToggle view={notes.view} onChange={notes.setView} /></NavigationStackTrailing>
       </NavigationStackBar>
@@ -182,7 +182,7 @@ export function NoteColumn({ notes }: { notes: NotesState }) {
       {s.collapsed ? null : compose}
     </> : compose} />
     {n ? <SplitViewContent key={n.id}><NoteEditor notes={notes} n={n} source={source} format={format} editorRef={editorRef} /></SplitViewContent>
-      : <EmptyState icon={<Icon name="note" size={48} sw={1.2} />} title="No Note Selected" />}
+      : <EmptyState icon={<Icon name="note" sw={1.2} />} title="No Note Selected" />}
     {s.collapsed && n ? <BottomBar className="justify-between px-3">{tools}{compose}</BottomBar> : null}
   </SplitViewDetail>;
 }

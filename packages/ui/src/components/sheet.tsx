@@ -1,5 +1,6 @@
 'use client';
-import { createContext, useContext, type ComponentProps } from 'react';
+import { createContext, useContext, useState, type ComponentProps } from 'react';
+import { supportsTopLayer } from '@ui-sdk/core';
 import {
   Drawer as SdkDrawer,
   DrawerBackdrop as SdkDrawerBackdrop,
@@ -14,7 +15,10 @@ import { Icon } from '@/lib/icon';
 import { springs } from '@/lib/motion';
 import { cn, cx } from '@/lib/utils';
 import { scopeStyle, useLayerHost, useThemeScopeProps } from '@/lib/theme';
-import { DialogBody, DialogHeader, DialogView, SurfaceFlow, SurfaceFlowTitle, type DialogViewProps } from '@/components/ui/dialog';
+import {
+  DialogBack, DialogBody, DialogHeader, DialogView, type DialogBackProps, type DialogFooterProps, type DialogHeaderProps, type DialogViewProps,
+} from '@/components/ui/dialog';
+import { SurfaceFlow, SurfaceFlowTitle, useSurfaceFlow, useSurfaceHeader } from '@/lib/surface-flow';
 import { closeButtonVariants, sheetGrabberVariants, surfaceDescriptionVariants, surfaceFooterVariants, surfaceTitleVariants } from '@/lib/surface';
 
 /* ══ Sheet — UI SDK's Drawer as the kit's edge-pinned modal ══
@@ -22,12 +26,26 @@ import { closeButtonVariants, sheetGrabberVariants, surfaceDescriptionVariants, 
    behavior: the sheet follows a drag and springs back or away, rests on `snapPoints`, and has a dialog's focus trap,
    Esc, outside press and focus return. It renders into BLProvider's root (see `useLayerHost`), so it slides inside
    the app's frame; `contained` keeps it inside its positioned parent instead (a layer host of its own), the way
-   AdaptivePane's drawer and Sidebar's overlay use it. Inside: SheetHeader / SheetTitle / SheetDescription /
-   SheetBody / SheetFooter / SheetClose; `SheetContent variant="panel"` is a full-height edge panel without chrome.
+   AdaptivePane's drawer, Sidebar's overlay and FloatingSheet use it. Inside: SheetHeader / SheetTitle /
+   SheetDescription / SheetBody / SheetFooter / SheetClose; `SheetContent variant="panel"` is a full-height edge panel
+   without chrome.
    <Sheet side="bottom">
      <SheetTrigger className={buttonVariants({ variant: 'secondary' })}>Filters</SheetTrigger>
      <SheetBackdrop />
      <SheetContent>…</SheetContent>
+   </Sheet>
+   A flow (pick a plan → confirm) is Dialog's: the root's `view`, a `bar` header with SheetBack, SheetTitle and
+   SheetClose in one row, and the current step in a SheetView.
+   <Sheet view={step}>
+     <SheetBackdrop />
+     <SheetContent>
+       <SheetHeader variant="bar">
+         <SheetBack hidden={step === 'plan'} onClick={() => setStep('plan')} />
+         <SheetTitle>{TITLES[step]}</SheetTitle>
+         <SheetClose />
+       </SheetHeader>
+       <SheetView>…the current step…</SheetView>
+     </SheetContent>
    </Sheet> ══ */
 
 export { DrawerTrigger as SheetTrigger, createDrawerController as createSheetController } from '@ui-sdk/react/drawer';
@@ -46,7 +64,8 @@ const SheetResizableContext = createContext(false);
 export type SheetProps = ComponentProps<typeof SdkDrawer> & {
   /** Keep the sheet inside its positioned parent rather than BLProvider's root: the Sheet renders a layer host
    *  (`absolute inset-0`, `contain: layout`, `z-index: var(--sheet-z, 30)`) that its scrim, panel and focus trap
-   *  stay in, so the rest of the page outside that box stays usable. Default false. */
+   *  stay in, so the rest of the page outside that box stays usable. In a browser without the top layer (UI SDK
+   *  would portal to the body) the sheet renders into that host instead. Default false. */
   contained?: boolean;
   /** Key of the current view of a flow (pick a plan → confirm): a new key springs the sheet to its SheetView's height
    *  and slides the view in from the right, with its SheetTitle; a key seen before comes back from the left. */
@@ -57,13 +76,15 @@ export type SheetProps = ComponentProps<typeof SdkDrawer> & {
     `dismissible` / `modal`. */
 export function Sheet({ container, physics, snapPoints, contained = false, view, ...props }: SheetProps) {
   const host = useLayerHost();
+  // Contained, the sheet renders in place: the host below is its box. Without the top layer, UI SDK would take
+  // "in place" for the body, so the host is named as the container (it exists from the second render on).
+  const [box, setBox] = useState<HTMLDivElement | null>(null);
   const sheet = (
     <SurfaceFlow view={view} dismissible={props.dismissible !== false}>
       <SheetResizableContext.Provider value={(snapPoints?.length ?? 0) > 1}>
         <SdkDrawer
-          // Contained, the sheet renders in place: the host below is its box. A contained panel sits on an edge of
-          // the page, where iOS Safari's back swipe would otherwise start.
-          container={contained ? null : container === undefined ? host : container}
+          // A contained panel sits on an edge of the page, where iOS Safari's back swipe would otherwise start.
+          container={contained ? (supportsTopLayer() ? null : box) : container === undefined ? host : container}
           preventEdgeSwipe={contained || undefined}
           physics={{ ...trayPhysics, ...physics }}
           snapPoints={snapPoints}
@@ -76,7 +97,7 @@ export function Sheet({ container, physics, snapPoints, contained = false, view,
   // A layer host (UI SDK's `data-layer-host`, with the `contain: layout` it needs), marked in the markup, so a
   // sheet open on the first render is already contained. It lets presses through where the sheet isn't.
   return (
-    <div data-slot="sheet-host" data-layer-host="" className="pointer-events-none absolute inset-0 z-[var(--sheet-z,30)] overflow-clip [contain:layout]">
+    <div ref={setBox} data-slot="sheet-host" data-layer-host="" className="pointer-events-none absolute inset-0 z-[var(--sheet-z,30)] overflow-clip [contain:layout]">
       {sheet}
     </div>
   );
@@ -149,6 +170,7 @@ export function SheetContent<Payload = unknown>({
 }: SheetContentProps<Payload>) {
   const scope = useThemeScopeProps();
   const resizable = useContext(SheetResizableContext);
+  const { dismissible } = useSurfaceFlow();
   return (
     <SdkDrawerContent<Payload>
       data-theme-scope={scope['data-theme-scope']}
@@ -162,7 +184,8 @@ export function SheetContent<Payload = unknown>({
         const content = typeof children === 'function' ? children(state) : children;
         // A panel's children are the whole panel: its own classes lay them out.
         if (variant === 'panel') return content;
-        const showGrabber = state.side === 'bottom' && grabber;
+        // A sheet that can't be dismissed has no grabber to invite the drag it refuses (snap points still get one).
+        const showGrabber = state.side === 'bottom' && grabber && (dismissible || resizable);
         return (
           <>
             {showGrabber && !resizable ? <span data-slot="sheet-grabber" aria-hidden="true" className={sheetGrabberVariants()} /> : null}
@@ -184,10 +207,12 @@ export function SheetHandle({ className, 'aria-label': label = 'Resize', ...prop
   return <SdkDrawerHandle aria-label={label} className={cx(sheetGrabberVariants({ handle: true }), className)} {...props} />;
 }
 
-/** Names the sheet. Under a Sheet with a `view`, a new title travels in with its view. */
+/** Names the sheet. In a stacked header it leaves room for the pinned ×; in a `bar` header it takes the row's free
+    width. Under a Sheet with a `view`, a new title travels in with its view. */
 export function SheetTitle({ className, children, ...props }: ComponentProps<typeof SdkDrawerTitle>) {
+  const bar = useSurfaceHeader() === 'bar';
   return (
-    <SdkDrawerTitle className={cx(cn(surfaceTitleVariants(), 'pe-8'), className)} {...props}>
+    <SdkDrawerTitle className={cx(cn(surfaceTitleVariants(), bar ? 'min-w-0 flex-1 py-px' : 'pe-8'), className)} {...props}>
       {typeof children === 'function' ? children : <SurfaceFlowTitle>{children}</SurfaceFlowTitle>}
     </SdkDrawerTitle>
   );
@@ -207,22 +232,37 @@ export function SheetDescription({ className, ...props }: ComponentProps<typeof 
   return <SdkDrawerDescription className={cx(surfaceDescriptionVariants(), className)} {...props} />;
 }
 
-/** Closes the sheet. On its own it is the round × pinned to the top-right corner; with children or `render` it is
-    whatever you make it (`<SheetClose render={<Button size="pill" />}>Apply</SheetClose>`). */
+/** Closes the sheet. On its own it is the round × (pinned to the top-end corner, or in the row of a `bar` header),
+    left out while the sheet isn't `dismissible`; with children or `render` it is whatever you make it
+    (`<SheetClose render={<Button size="pill" />}>Apply</SheetClose>`), and closes even a sheet that isn't dismissible. */
 export function SheetClose({ className, children, render, ...props }: ComponentProps<typeof SdkDrawerClose>) {
+  const { dismissible } = useSurfaceFlow();
+  const header = useSurfaceHeader();
   if (children !== undefined || render !== undefined) {
     return <SdkDrawerClose className={className} render={render} {...props}>{children}</SdkDrawerClose>;
   }
+  if (!dismissible) return null;
   return (
-    <SdkDrawerClose aria-label="Close" className={cx(closeButtonVariants({ layout: 'pinned' }), className)} {...props}>
+    <SdkDrawerClose aria-label="Close" className={cx(closeButtonVariants({ layout: header === 'bar' ? 'inline' : 'pinned' }), className)} {...props}>
       <Icon name="x" size={15} sw={2.6} />
     </SdkDrawerClose>
   );
 }
 
-/** The title block: Dialog's header look, under its own slot. */
-export function SheetHeader(props: ComponentProps<'div'>) {
+export type SheetHeaderProps = DialogHeaderProps;
+
+/** The title block, Dialog's: the title and description stacked (`default`), or the bar of a flow (`bar`): SheetBack,
+    SheetTitle and SheetClose in one row. */
+export function SheetHeader(props: SheetHeaderProps) {
   return <DialogHeader data-slot="sheet-header" {...props} />;
+}
+
+export type SheetBackProps = DialogBackProps;
+
+/** The back chevron of a `bar` header, Dialog's DialogBack: it stays mounted and folds in or out with `hidden`, so
+    the title slides over as it goes. Its `onClick` steps the root's `view` back. */
+export function SheetBack(props: SheetBackProps) {
+  return <DialogBack {...props} />;
 }
 
 /** The scrolling body between the header and the footer: Dialog's body look, under its own slot. */
@@ -230,7 +270,17 @@ export function SheetBody(props: ComponentProps<'div'>) {
   return <DialogBody data-slot="sheet-body" {...props} />;
 }
 
-/** Pinned bottom area for a sheet's actions. */
-export function SheetFooter({ className, ...props }: ComponentProps<'div'>) {
-  return <div data-slot="sheet-footer" className={cn(surfaceFooterVariants({ orientation: 'vertical' }), 'mt-auto pb-2', className)} {...props} />;
+export type SheetFooterProps = DialogFooterProps;
+
+/** Pinned bottom area for a sheet's actions: full-width buttons stacked (`vertical`, the default), or side by side
+    sharing the width (`horizontal`), as in a Dialog presented as a sheet. */
+export function SheetFooter({ className, orientation = 'vertical', ...props }: SheetFooterProps) {
+  return (
+    <div
+      data-slot="sheet-footer"
+      data-orientation={orientation}
+      className={cn(surfaceFooterVariants({ orientation }), orientation === 'horizontal' && '*:flex-1', 'mt-auto pb-2', className)}
+      {...props}
+    />
+  );
 }

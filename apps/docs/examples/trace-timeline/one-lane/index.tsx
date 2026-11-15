@@ -12,9 +12,9 @@ const times = Float64Array.from({ length: 20_000 }, (_, i) => {
 }).sort()
 
 const STOPS: Array<TraceStop<string>> = [
-  { key: 'open', time: 1 * MINUTE, caption: 'Page opened', tone: 'info' },
+  { key: 'open', time: 1 * MINUTE, caption: 'Page opened', tint: 'var(--primary)' },
   { key: 'click', time: 4 * MINUTE, caption: 'Clicked Save', preview: 'Sent the draft to the server' },
-  { key: 'fail', time: 7.5 * MINUTE, caption: 'Save failed', preview: '500 from POST /drafts', tone: 'error' },
+  { key: 'fail', time: 7.5 * MINUTE, caption: 'Save failed', preview: '500 from POST /drafts', tone: 'destructive' },
 ]
 
 // The smallest useful timeline: one lane of plain data, holding its own zoom. `value` is yours, in milliseconds.

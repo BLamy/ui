@@ -27,7 +27,7 @@ const SIZES: Record<ProgressRingSize, { px: number; stroke: number; font: number
 const VALUE_MIN_PX = 40;
 
 /** The ring's box and arc color. Geometry (px, stroke, font) is computed and fed in as --ring-* variables; a
- *  `color` / `trackColor` prop overrides --ring-color / --ring-track. */
+ *  `tint` / `trackTint` prop overrides --ring-color / --ring-track. */
 export const progressRingVariants = cva(
   'relative inline-grid size-(--ring-px) shrink-0 place-items-center align-middle',
   {
@@ -45,11 +45,11 @@ export const progressRingVariants = cva(
 export type ProgressRingTone = NonNullable<VariantProps<typeof progressRingVariants>['tone']>;
 
 /** Runtime ring geometry and caller colors as CSS variables. */
-const ringVars = (d: { px: number; font: number }, color?: string, trackColor?: string, style?: CSSProperties) => ({
+const ringVars = (d: { px: number; font: number }, tint?: string, trackTint?: string, style?: CSSProperties) => ({
   '--ring-px': d.px + 'px',
   ...(d.font ? { '--ring-font': d.font + 'px' } : null),
-  ...(color ? { '--ring-color': color } : null),
-  ...(trackColor ? { '--ring-track': trackColor } : null),
+  ...(tint ? { '--ring-color': tint } : null),
+  ...(trackTint ? { '--ring-track': trackTint } : null),
   ...style,
 }) as CSSProperties;
 
@@ -92,10 +92,10 @@ export type ProgressRingProps = Omit<ComponentProps<typeof SdkProgress>, 'childr
   size?: ProgressRingSize | number;
   /** Stroke width in px (defaults scale with the size). */
   thickness?: number;
-  /** Any CSS color for the arc (overrides `tone`). */
-  color?: string;
-  /** Any CSS color for the track. */
-  trackColor?: string;
+  /** The arc's color, any CSS color (overrides `tone`): the kit's caller-color prop, as on Avatar. */
+  tint?: string;
+  /** The track's color, any CSS color. */
+  trackTint?: string;
   /** Show the value in the middle (the default percentage rolls its digits). Needs `lg` (or 40px) or larger:
    *  smaller rings have no room for "100%" inside the stroke, and ignore it. */
   showValue?: boolean;
@@ -107,7 +107,7 @@ export type ProgressRingProps = Omit<ComponentProps<typeof SdkProgress>, 'childr
 const ringCenter = 'absolute inset-0 grid place-items-center font-semibold tabular-nums text-foreground';
 
 export function ProgressRing({
-  size, thickness, tone, color, trackColor, showValue, children, className, style, ...props
+  size, thickness, tone, tint, trackTint, showValue, children, className, style, ...props
 }: ProgressRingProps) {
   const d = dims(size, thickness);
   // A custom format shows UI SDK's text as is; the default percentage rolls.
@@ -117,7 +117,7 @@ export function ProgressRing({
     <SdkProgress
       {...props}
       className={cx(progressRingVariants({ tone }), className)}
-      style={ringVars(d, color, trackColor, style)}
+      style={ringVars(d, tint, trackTint, style)}
     >
       {(state) => {
         const indeterminate = state.status === 'indeterminate';
@@ -143,8 +143,8 @@ export function ProgressRing({
   );
 }
 
-/** CountdownRing's seconds label, sized by the ring (--ring-font); `urgent` turns it the urgent color. */
-export const countdownRingLabelVariants = cva(
+/** CountdownRing's seconds in the middle, sized by the ring (--ring-font); `urgent` turns them the urgent color. */
+export const countdownRingValueVariants = cva(
   'absolute inset-0 grid place-items-center font-semibold tabular-nums text-(length:--ring-font) transition-colors duration-300',
   {
     variants: {
@@ -154,7 +154,7 @@ export const countdownRingLabelVariants = cva(
   },
 );
 
-export interface CountdownRingProps extends Omit<HTMLAttributes<HTMLSpanElement>, 'children' | 'color'> {
+export interface CountdownRingProps extends Omit<HTMLAttributes<HTMLSpanElement>, 'children'> {
   /** Seconds left. */
   remaining: number;
   /** Seconds in a full period (default 30). */
@@ -164,20 +164,21 @@ export interface CountdownRingProps extends Omit<HTMLAttributes<HTMLSpanElement>
   /** `sm` 20 · `default` 28 · `lg` 44 · `xl` 72 px, or a number of px. */
   size?: ProgressRingSize | number;
   thickness?: number;
-  /** The arc color while not urgent (default the tint). */
-  color?: string;
-  /** The arc and label color for the last seconds (default `--destructive`, red). */
-  urgentColor?: string;
-  trackColor?: string;
-  /** Seconds in the middle (default: when the ring is 26px or larger). */
-  showLabel?: boolean;
+  /** The arc's color while not urgent, any CSS color (default the theme's primary). */
+  tint?: string;
+  /** The arc's and the seconds' color for the last seconds (default `--destructive`, red). */
+  urgentTint?: string;
+  /** The track's color, any CSS color. */
+  trackTint?: string;
+  /** The seconds in the middle, as ProgressRing's `showValue` (default: when the ring is 26px or larger). */
+  showValue?: boolean;
   /** Accessible label; default "N seconds left". */
   'aria-label'?: string;
   ref?: Ref<HTMLSpanElement>;
 }
 
 export function CountdownRing({
-  remaining, duration = 30, urgentAt = 5, size, thickness, color, urgentColor, trackColor, showLabel, className, style,
+  remaining, duration = 30, urgentAt = 5, size, thickness, tint, urgentTint, trackTint, showValue, className, style,
   'aria-label': label, ...props
 }: CountdownRingProps) {
   const d = dims(size, thickness);
@@ -187,7 +188,7 @@ export function CountdownRing({
   // Counting up means the period restarted: jump, don't drain backwards through the turnover.
   const jump = left > prev.current;
   useEffect(() => { prev.current = left; }, [left]);
-  const label_ = showLabel ?? d.font > 0;
+  const valueShown = showValue ?? d.font > 0;
   return (
     <span
       {...props}
@@ -200,16 +201,16 @@ export function CountdownRing({
         '[--ring-urgent:var(--destructive)] data-urgent:[--ring-color:var(--ring-urgent)]',
         className,
       )}
-      style={ringVars({ px: d.px, font: d.font || Math.max(9, d.px * 0.36) }, color,
-        trackColor, urgentColor ? { '--ring-urgent': urgentColor, ...style } as CSSProperties : style)}
+      style={ringVars({ px: d.px, font: d.font || Math.max(9, d.px * 0.36) }, tint,
+        trackTint, urgentTint ? { '--ring-urgent': urgentTint, ...style } as CSSProperties : style)}
     >
       <RingSvg
         {...d}
         fraction={left / duration}
         transition={jump ? '[transition:none]' : '[transition:stroke-dashoffset_1s_linear,stroke_.3s]'}
       />
-      {label_ ? (
-        <span aria-hidden="true" className={countdownRingLabelVariants({ urgent })}>
+      {valueShown ? (
+        <span aria-hidden="true" className={countdownRingValueVariants({ urgent })}>
           <NumberMorph value={left} />
         </span>
       ) : null}

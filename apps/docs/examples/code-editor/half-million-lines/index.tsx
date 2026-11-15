@@ -27,7 +27,7 @@ export default function HalfMillionLines() {
         <Button size="sm" variant="secondary" onClick={() => editor.current?.scrollToLine(1200, { smooth: true })}>Smoothly to 1,200</Button>
       </div>
       <div className="h-72 overflow-hidden rounded-card border border-border">
-        <CodeEditor ref={editor} readOnly variant="ghost" lineCount={500_000} getLine={getLine} maxLineLength={64} aria-label="generated.js" />
+        <CodeEditor ref={editor} readOnly variant="plain" lineCount={500_000} getLine={getLine} maxLineLength={64} aria-label="generated.js" />
       </div>
     </div>
   )

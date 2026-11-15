@@ -5,6 +5,7 @@ import { createParts } from '@ui-sdk/react/primitive';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { Icon } from '@/lib/icon';
 import { selectableText } from '@/lib/primitives';
+import { fieldFocusRing } from '@/components/ui/input';
 import { searchInput, type SearchInputSubmitDetails } from '@/lib/search-input-primitive';
 import { cn } from '@/lib/utils';
 
@@ -18,7 +19,8 @@ const { Root, Input: QueryInput } = createParts(searchInput, { root: 'div', inpu
 export const searchInputVariants = cva(
   [
     'box-border flex min-w-0 items-center bg-secondary text-foreground transition-[box-shadow] duration-spring-snappy ease-spring-snappy',
-    'focus-within:shadow-[inset_0_0_0_1.5px_var(--primary)] has-[input:disabled]:opacity-50',
+    // The fill stays on focus, as on iOS; the focus line is the field's.
+    fieldFocusRing, 'has-[input:disabled]:opacity-50',
   ],
   {
     variants: {
@@ -74,7 +76,7 @@ export function SearchInput({
             {...props} />
         } />
         {clearable ? (
-          <InputClear aria-label="Clear search" tabIndex={-1} className="bl-btn grid shrink-0 cursor-pointer border-0 bg-transparent p-0 text-tertiary-foreground">
+          <InputClear aria-label="Clear search" tabIndex={-1} className="bl-btn relative grid shrink-0 cursor-pointer border-0 bg-transparent p-0 text-tertiary-foreground after:absolute after:-inset-2 after:content-[''] pointer-coarse:after:-inset-3">
             <Icon name="xcirc" size={CLEAR_SIZE[step]} />
           </InputClear>
         ) : null}

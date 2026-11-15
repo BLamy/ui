@@ -8,6 +8,7 @@
     "AdaptivePaneHeader",
     "AdaptivePaneTitle",
     "AdaptivePaneClose",
+    "AdaptivePaneTrigger",
     "createAdaptivePaneController",
     "adaptivePanePageClass"
   ],
@@ -15,6 +16,7 @@
     "AdaptivePane",
     "AdaptivePaneHeader",
     "AdaptivePaneTitle",
-    "AdaptivePaneClose"
+    "AdaptivePaneClose",
+    "AdaptivePaneTrigger"
   ]
 }

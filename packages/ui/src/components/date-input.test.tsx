@@ -115,7 +115,7 @@ describe('DateInput', () => {
     expect(root().className).toContain('bg-input');
     expect(root().hasAttribute('data-invalid')).toBe(false);
     expect(spins()[0].className).toContain('focus:bg-primary');
-    rerender(<DateInput aria-label="Due" locale="en-US" variant="bare" value="2026-08-20" min="2026-09-01" className="custom" />);
+    rerender(<DateInput aria-label="Due" locale="en-US" variant="plain" value="2026-08-20" min="2026-09-01" className="custom" />);
     await settle();
     expect(root().className).not.toContain('bg-input');
     expect(root().className).toContain('custom');

@@ -17,14 +17,14 @@ import {
 {% tab title="npm" %}
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 
-Import the stylesheet once at your app's entry, then the parts from the package root:
+Import the stylesheet once at your app's entry, then the parts from their module:
 
 ```tsx
 import '@brett_lamy/ui/styles.css'
 
 import {
   FileUpload, FileUploadDropzone, FileUploadList,
-} from '@brett_lamy/ui'
+} from '@brett_lamy/ui/file-upload'
 ```
 {% endtab %}
 {% endtabs %}
@@ -84,7 +84,7 @@ Every file is checked by FileInput, in this order: **type** (`accept`), **size**
 
 {% demo src="file-upload/validation" %}
 
-`rejectionMessage(reason, context, messages)` gives the same text for your own UI, and UI SDK's `formatFileSize(n)` the sizes (decimal units in the reader's locale: "1.5 kB", "5 MB").
+`rejectionMessage(reason, context, messages)` gives the same text for your own UI, and the kit's `formatFileSize(n)` (`@/lib/file-size`) the sizes: decimal units in the reader's locale ("280 B", "1.5 kB", "5 MB"), the one formatter FileUpload, the Composer, RequestTable and the SQL console share.
 
 > **The browser's `accept` is a hint, and these rules are a convenience.** `<input accept>` only filters the chooser (and is ignored by drag and drop and paste), and anything checked in the browser can be bypassed. Validate type, size and content again on the server. Never trust `file.type`: it comes from the file's extension, not its bytes.
 
@@ -250,7 +250,7 @@ FileInput's trigger with the `Button` look (`variant`, `size`). Inside a `FileUp
 
 ### `<FileUploadList>` and `<FileUploadItem>`
 
-`FileUploadList` renders the context's files (or `files`) as `FileUploadItem`s, and nothing while empty; `children={(item) => <FileUploadItem item={item} … />}` renders your own row. Inside a `FileUpload`, listed files are `FileInputItem`s (`data-slot="file-input-item"`) of FileInput's list, and rejected files follow in a list of their own (`data-slot="file-upload-list-rejected"`) as groups (`data-slot="file-upload-item"`). `FileUploadItem` takes an `item` and optional `onRemove` / `onRetry` (defaults come from the context); its children replace the row's contents. `FileUploadThumbnail` is the leading tile. Rows carry `data-status` and `data-file-id`.
+`FileUploadList` renders the context's files (or `files`) as `FileUploadItem`s, and nothing while empty; `children={(item) => <FileUploadItem item={item} … />}` renders your own row. Inside a `FileUpload`, listed files are `FileInputItem`s (`data-slot="file-input-item"`) of FileInput's list, and rejected files follow in a list of their own (`data-slot="file-upload-list-rejected"`) as groups (`data-slot="file-upload-item"`). `FileUploadItem` takes an `item` and optional `onRemove` / `onRetry` (defaults come from the context); its children replace the row's contents. `FileUploadThumbnail` (`file`, `preview`) is the leading tile: an image's own thumbnail, or with `preview={false}` (a rejected file) its kind's icon without reading the file. The remove button is the 28px `icon-sm` tool (its hit area reaches 44px on touch). Rows carry `data-status` and `data-file-id`.
 
 ### `useFileUpload(options)` and the `fileUpload` primitive
 
@@ -277,7 +277,7 @@ It returns `{ files, add, remove, retry, clear, uploadAll, busy, counts, rules, 
 
 ### Helpers
 
-`describeAccept(accept)`, `describeRules(rules)`, `fileKind(file)`, `rejectionMessage(reason, context, messages)`, `useFilePreview(file)`. UI SDK's `relativePath(file)` and `formatFileSize(n)` come from `@ui-sdk/react/file-input`.
+`describeAccept(accept)`, `describeRules(rules)`, `fileKind(file)`, `rejectionMessage(reason, context, messages)`, `useFilePreview(file)`, and `formatFileSize(bytes, locale?)` from `@/lib/file-size` (on npm, the package root). UI SDK's `relativePath(file)` comes from `@ui-sdk/react/file-input`.
 
 ## Limits
 
@@ -305,7 +305,7 @@ Defined in `@/components/ui/file-upload`. Base classes:
 | Value | Adds |
 | --- | --- |
 | `vertical` (default) | `min-h-40 flex-col items-center justify-center gap-2 rounded-card p-6` |
-| `horizontal` | `flex-row items-center justify-start gap-3 rounded-panel p-3 text-left` |
+| `horizontal` | `flex-row items-center justify-start gap-3 rounded-panel p-3 text-start` |
 
 ### `fileUploadItemVariants`
 

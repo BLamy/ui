@@ -138,7 +138,7 @@ describe('FilterInput', () => {
     type('priority high');
     await waitFor(() => expect(spoken()).toContain('Priority is High'));
     fireEvent.keyDown(box(), { key: 'Enter' });
-    expect(onApply).toHaveBeenCalledWith([expect.objectContaining({ field: 'priority', value: ['high'] })]);
+    expect(onApply).toHaveBeenCalledWith([expect.objectContaining({ field: 'priority', value: ['high'] })], expect.objectContaining({ reason: 'apply' }));
   });
 
   it('reports every change to the phrase with its reason, and Escape claims the key only when there is text', async () => {

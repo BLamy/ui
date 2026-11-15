@@ -228,8 +228,8 @@ describe('ToggleGroup', () => {
     expect(list.className).toContain('size-9');
   });
 
-  it('slides one card behind the pressed item of a filled group that presses one at a time', async () => {
-    const { container } = render(<Views variant="filled" defaultValue={['grid']} />);
+  it('slides one card behind the pressed item of a segmented group that presses one at a time', async () => {
+    const { container } = render(<Views variant="segmented" defaultValue={['grid']} />);
     const indicator = container.querySelector<HTMLElement>('[data-slot="selection-indicator"]')!;
     expect(indicator).toBeTruthy();
     expect(indicator.getAttribute('role')).toBe('presentation');
@@ -244,7 +244,7 @@ describe('ToggleGroup', () => {
   });
 
   it('has no sliding card where several can be pressed, or in the other variants', () => {
-    const many = render(<Views variant="filled" multiple defaultValue={['grid']} />);
+    const many = render(<Views variant="segmented" multiple defaultValue={['grid']} />);
     expect(many.container.querySelector('[data-slot="selection-indicator"]')).toBeNull();
     // Each pressed item wears Segmented's card; the others stay bare.
     expect(screen.getByRole('button', { name: 'Grid' }).className).toContain('bg-segment');
@@ -252,5 +252,32 @@ describe('ToggleGroup', () => {
     many.unmount();
     const outline = render(<Views variant="outline" defaultValue={['grid']} />);
     expect(outline.container.querySelector('[data-slot="selection-indicator"]')).toBeNull();
+  });
+
+  it('shows the pressed item in every variant, and draws segments only from the group', () => {
+    for (const variant of ['default', 'filled', 'outline', 'quiet'] as const) {
+      const r = render(<Views variant={variant} defaultValue={['grid']} />);
+      const grid = screen.getByRole('button', { name: 'Grid' });
+      expect(grid.getAttribute('aria-pressed')).toBe('true');
+      expect(grid.className).toMatch(/data-pressed:bg-/);
+      expect(grid.className).not.toContain('bg-segment');
+      r.unmount();
+    }
+    // An item's own variant picks a Toggle look; it never makes a bare segment outside a segmented group.
+    render(
+      <ToggleGroup aria-label="Mixed" defaultValue={['a']}>
+        <ToggleGroupItem value="a" variant="filled">A</ToggleGroupItem>
+      </ToggleGroup>,
+    );
+    expect(screen.getByRole('button', { name: 'A' }).className).toContain('bg-secondary');
+  });
+
+  it('joins an outline group along its orientation', () => {
+    render(<Views variant="outline" orientation="vertical" />);
+    expect(screen.getByRole('group').className).toContain('data-[orientation=vertical]:flex-col');
+    const list = screen.getByRole('button', { name: 'List' });
+    expect(list.getAttribute('data-orientation')).toBe('vertical');
+    expect(list.className).toContain('data-[orientation=vertical]:first:rounded-t-ctl');
+    expect(list.className).toContain('data-[orientation=vertical]:not-first:shadow-hairline-t');
   });
 });

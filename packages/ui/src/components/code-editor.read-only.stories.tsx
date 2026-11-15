@@ -86,7 +86,7 @@ const meta: Meta<CodeEditorProps> = {
   component: CodeEditor,
   args: { readOnly: true, value: TS, language: 'ts', title: 'use-poll.ts', showCopy: true, lineNumbers: true, variant: 'default' },
   argTypes: {
-    variant: { control: 'inline-radio', options: ['default', 'ghost', 'inline'] },
+    variant: { control: 'inline-radio', options: ['default', 'plain', 'inline'] },
     wrap: { control: 'boolean' },
     engine: { control: 'inline-radio', options: ['auto', 'gpu', 'fallback'] },
   },
@@ -136,15 +136,15 @@ export const url = 'https://example.com/a/very/long/path/that/keeps/going/and/go
   },
 };
 
-export const GhostAndInline: Story = {
+export const PlainAndInline: Story = {
   render: () => (
     <div className="grid gap-4 text-[15px] leading-6 text-foreground">
       <p className="m-0">
         Call <CodeEditor readOnly variant="inline" value="usePoll<User>('/api/me', 10_000)" language="ts" /> inside a component, or read
         a flag with <CodeEditor readOnly variant="inline" value='process.env.FEATURE === "on"' language="js" />.
       </p>
-      <Caption>Ghost</Caption>
-      <CodeEditor readOnly variant="ghost" value={SAMPLES[0].value} language="tsx" />
+      <Caption>Plain</Caption>
+      <CodeEditor readOnly variant="plain" value={SAMPLES[0].value} language="tsx" />
     </div>
   ),
 };

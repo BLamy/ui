@@ -6,7 +6,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { timelineMediaType } from '@/components/ui/video-timeline';
 import { Waveform } from '@/components/ui/waveform';
 import { useMediaFrames, useMediaPeaks } from '@/lib/ffmpeg/react';
-import { formatFileSize } from '@ui-sdk/react/file-input';
+import { formatFileSize } from '@/lib/file-size';
 import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
 import { formatTimecode } from '@/lib/video-timeline-model';

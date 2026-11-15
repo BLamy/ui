@@ -1,7 +1,7 @@
 {
   "name": "slider",
   "title": "Slider",
-  "description": "UI SDK Slider with the iOS look: a 4px track, tint fill and 26px thumb, one or two thumbs, plus on-dark and on-light variants, a small scrubber size and --bl-slider-* color variables.",
+  "description": "UI SDK Slider with the iOS look: a 4px track, tint fill and 26px thumb, one or two thumbs, horizontal or vertical, plus a translucent overlay look for media controls that follows the color scheme (or a fixed appearance), a small scrubber size and --bl-slider-* color variables.",
   "page": "slider",
   "exports": [
     "Slider",

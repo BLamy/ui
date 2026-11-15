@@ -25,15 +25,17 @@ import {
   type ComboboxValueState,
 } from '@ui-sdk/react/combobox';
 import type { VariantProps } from 'class-variance-authority';
-import { EmptyState } from '@/components/ui/empty-state';
+import { EmptyState, type EmptyStateProps } from '@/components/ui/empty-state';
 import { fieldSurfaceVariants } from '@/components/ui/input';
 import { labelVariants } from '@/components/ui/label';
 import { listboxItemVariants, listboxVariants } from '@/components/ui/listbox';
 import { Icon } from '@/lib/icon';
 import {
-  ListDataItems, OptionRow, optionGroupClass, optionGroupLabelClass, optionLabel, optionSeparatorClass, optionSheetClass, useOptionDescription,
-  type ListDataParts, type OptionRowProps,
+  ListDataItems, OptionRow, OptionRowSizeContext, PickerFieldSizeContext, optionGroupClass, optionGroupLabelClass, optionLabel, optionRowSizes,
+  optionSeparatorClass, optionSheetClass, useOptionDescription, useOptionRowSize, usePickerFieldSize, useReportFieldSize,
+  type ListDataParts, type OptionRowProps, type OptionRowSize,
 } from '@/lib/option-row';
+import { useTriggerPalette, type PopupPalette } from '@/lib/trigger-palette';
 import { popoverMotion, popoverSurface, selectableText, valueChip } from '@/lib/primitives';
 import { scopeStyle, useLayerHost, useThemeScopeProps } from '@/lib/theme';
 import { usePresentation } from '@/lib/container';
@@ -46,10 +48,10 @@ import { cn, cx } from '@/lib/utils';
    <Field>
      <FieldLabel>City</FieldLabel>
      <Combobox>
-       <ComboboxField>
+       <ComboboxInputGroup>
          <ComboboxInput placeholder="Search cities" />
          <ComboboxTrigger />
-       </ComboboxField>
+       </ComboboxInputGroup>
        <ComboboxContent>
          <ComboboxEmpty>No cities found.</ComboboxEmpty>
          <ComboboxList>{cities.map((c) => <ComboboxItem key={c} value={c}>{c}</ComboboxItem>)}</ComboboxList>
@@ -57,7 +59,7 @@ import { cn, cx } from '@/lib/utils';
      </Combobox>
    </Field>
    Options can be data too: `<Combobox items={cities}>` with an empty `<ComboboxContent />`, and an empty
-   `<ComboboxField />` is an input and its disclosure button. With `multiple`, put the input in a `ComboboxChips` to
+   `<ComboboxInputGroup />` is an input and its disclosure button. With `multiple`, put the input in a `ComboboxChips` to
    show the chosen options as removable chips before the text; a `ComboboxClear` empties the choice and the text.
    `ComboboxStatus` is the loading or error line of an async list. ══ */
 
@@ -76,12 +78,15 @@ export function Combobox<T = string, Multiple extends boolean | undefined = fals
   // "auto" follows the nearest size class around (a sheet when compact), even when the content is portaled.
   const shown = usePresentation(presentation, 'popover');
   const field = useState<HTMLElement | null>(null);
+  const fieldSize = usePickerFieldSize();
   return (
     <AnchorContext.Provider value={field}>
-      <SdkCombobox<T, Multiple> container={container === undefined ? host : container} presentation={shown} {...(props as ComboboxProps<T, Multiple>)}>
-        {children}
-        {props.items ? <PlacedContent><SdkComboboxContent /></PlacedContent> : null}
-      </SdkCombobox>
+      <PickerFieldSizeContext.Provider value={fieldSize}>
+        <SdkCombobox<T, Multiple> container={container === undefined ? host : container} presentation={shown} {...(props as ComboboxProps<T, Multiple>)}>
+          {children}
+          {props.items ? <PlacedContent><SdkComboboxContent /></PlacedContent> : null}
+        </SdkCombobox>
+      </PickerFieldSizeContext.Provider>
     </AnchorContext.Provider>
   );
 }
@@ -108,14 +113,15 @@ const comboboxField = [
   'has-data-[slot=combobox-chips]:h-auto has-data-[slot=combobox-chips]:ps-1.5',
 ];
 
-export interface ComboboxFieldProps extends ComponentProps<'div'>, VariantProps<typeof fieldSurfaceVariants> {}
+export interface ComboboxInputGroupProps extends ComponentProps<'div'>, VariantProps<typeof fieldSurfaceVariants> {}
 
 /** The field: the kit's filled field box (`fieldSurfaceVariants`, `size` sm / default / lg), which the popup hangs
  *  from and matches in width, and which keeps its edge while the list is open. Without children it is a `ComboboxInput` and a
  *  `ComboboxTrigger`; pass children to lay out your own (`ComboboxChips`, `ComboboxInput`, `ComboboxClear`,
  *  `ComboboxTrigger`). */
-export function ComboboxField({ className, size, children, ref, ...props }: ComboboxFieldProps) {
+export function ComboboxInputGroup({ className, size, children, ref, ...props }: ComboboxInputGroupProps) {
   const field = useContext(AnchorContext);
+  useReportFieldSize(size);
   return (
     <div
       ref={(el) => {
@@ -123,7 +129,7 @@ export function ComboboxField({ className, size, children, ref, ...props }: Comb
         if (typeof ref === 'function') return ref(el);
         if (ref) ref.current = el;
       }}
-      data-slot="combobox-field"
+      data-slot="combobox-input-group"
       data-size={size ?? 'default'}
       className={cn(fieldSurfaceVariants({ size }), comboboxField, chipsHeight[size ?? 'default'], className)}
       {...props}
@@ -138,7 +144,7 @@ export function ComboboxField({ className, size, children, ref, ...props }: Comb
   );
 }
 
-/** The text input, bare: the ComboboxField draws the box around it. In a Field the label names it. */
+/** The text input, bare: the ComboboxInputGroup draws the box around it. In a Field the label names it. */
 export function ComboboxInput({ className, ...props }: ComponentProps<typeof SdkComboboxInput>) {
   return (
     <SdkComboboxInput
@@ -195,7 +201,7 @@ export type ComboboxChipsProps = Omit<ComponentProps<typeof SdkComboboxChips>, '
 };
 
 /** With `multiple`: the chosen options as chips, then the input (its children). The arrow keys move between chips,
- *  and Backspace in the empty input removes the last. Put it in a ComboboxField. */
+ *  and Backspace in the empty input removes the last. Put it in a ComboboxInputGroup. */
 export function ComboboxChips({ className, children, renderChips = defaultChips, ...props }: ComboboxChipsProps) {
   return (
     <SdkComboboxChips className={cx('flex min-w-0 flex-1 flex-wrap items-center gap-1 py-1.5', className)} {...props}>
@@ -205,33 +211,47 @@ export function ComboboxChips({ className, children, renderChips = defaultChips,
   );
 }
 
-export type ComboboxContentProps = ComponentProps<typeof SdkComboboxContent>;
+export type ComboboxContentProps = ComponentProps<typeof SdkComboboxContent> & {
+  /** `sm`: 32px rows in footnote text. Default: the field's (a `sm` ComboboxInputGroup opens `sm` rows), as in Select. */
+  size?: OptionRowSize;
+  /** Where the colors come from: the ThemeScope it was opened from (`scope`, the default), or the field's element
+      (`trigger`), for a field on a surface that CSS paints rather than a ThemeScope (see `useTriggerPalette`). */
+  palette?: PopupPalette;
+};
 
 /** The popup: 8px under the field and as wide as it. Put a `ComboboxList` in it, and a `ComboboxEmpty` beside the
  *  list; without children it is a `ComboboxList` of the combobox's `items`. As a sheet (`presentation` on the
  *  Combobox) it is full width, with the input in its header. */
-export function ComboboxContent({ className, style, sideOffset = 8, anchor, children, ...props }: ComboboxContentProps) {
+export function ComboboxContent({ className, style, sideOffset = 8, anchor, size: sizeProp, palette = 'scope', ref, children, ...props }: ComboboxContentProps) {
+  const size = useOptionRowSize(sizeProp);
   const scope = useThemeScopeProps();
   const field = useContext(AnchorContext);
+  // The field box is the "trigger" a combobox's popup takes its palette from.
+  const trigger = useTriggerPalette(palette === 'trigger', ref, field?.[0]);
+  const colors = trigger.props ?? scope;
   return (
-    <SdkComboboxContent
-      data-theme-scope={scope['data-theme-scope']}
-      sideOffset={sideOffset}
-      anchor={anchor ?? field?.[0]}
-      className={cx(
-        [
-          popoverSurface, popoverMotion, 'box-border flex w-(--anchor-width) flex-col',
-          // Nothing to show (no option matches and no empty or status message): no empty bubble.
-          '[&:not(:has([data-slot=combobox-item]:not([hidden]),[data-empty],[data-slot=combobox-status]:not(:empty)))]:hidden',
-          optionSheetClass, scope.className,
-        ],
-        className,
-      )}
-      style={scopeStyle(scope.style, style)}
-      {...props}
-    >
-      {children ?? <ComboboxList />}
-    </SdkComboboxContent>
+    <OptionRowSizeContext.Provider value={size}>
+      <SdkComboboxContent
+        ref={trigger.ref}
+        data-theme-scope={colors['data-theme-scope']}
+        data-size={size}
+        sideOffset={sideOffset}
+        anchor={anchor ?? field?.[0]}
+        className={cx(
+          [
+            popoverSurface, popoverMotion, 'box-border flex w-(--anchor-width) flex-col',
+            // Nothing to show (no option matches and no empty or status message): no empty bubble.
+            '[&:not(:has([data-slot=combobox-item]:not([hidden]),[data-empty],[data-slot=combobox-status]:not(:empty)))]:hidden',
+            optionSheetClass, colors.className,
+          ],
+          className,
+        )}
+        style={scopeStyle(colors.style, style)}
+        {...props}
+      >
+        {children ?? <ComboboxList />}
+      </SdkComboboxContent>
+    </OptionRowSizeContext.Provider>
   );
 }
 
@@ -288,12 +308,23 @@ export function ComboboxStatus({ className, ...props }: ComponentProps<typeof Sd
   return <SdkComboboxStatus className={cx('px-3 py-2 text-subhead text-muted-foreground empty:hidden', className)} {...props} />;
 }
 
-/** Shown, and announced, while no option matches: text children are the title of the kit's `EmptyState`; any other
- *  node is shown as it is. */
-export function ComboboxEmpty({ className, children, ...props }: ComponentProps<typeof SdkComboboxEmpty>) {
+export type ComboboxEmptyProps = Omit<ComponentProps<typeof SdkComboboxEmpty>, 'title'> & Pick<EmptyStateProps, 'icon' | 'description' | 'action'> & {
+  /** What is missing (default "No results"). Text children say the same thing. */
+  title?: ReactNode;
+};
+
+/** Shown, and announced, while no option matches: the kit's `EmptyState` (`icon`, `title`, `description`,
+    `action`), the same props as `CommandMenuEmpty`. It goes beside the list, not in it. */
+export function ComboboxEmpty({ className, icon, title, description, action, children, ...props }: ComboboxEmptyProps) {
   return (
     <SdkComboboxEmpty className={cx('empty:hidden', className)} {...props}>
-      {typeof children === 'string' ? <EmptyState size="sm" title={children} /> : children}
+      <EmptyState
+        size="sm"
+        icon={icon}
+        title={title ?? (typeof children === 'function' ? undefined : children) ?? 'No results'}
+        description={description}
+        action={action}
+      />
     </SdkComboboxEmpty>
   );
 }
@@ -303,12 +334,13 @@ export type ComboboxItemProps<T = string> = Omit<ComponentProps<typeof SdkCombob
 /** An option. `value` is what the combobox's value becomes; `label` is the text the input shows and filtering matches
  *  when the children are not plain text, and `keywords` are more words that match. */
 export function ComboboxItem<T = string>({ className, icon, description, label, children, ...props }: ComboboxItemProps<T>) {
+  const size = useContext(OptionRowSizeContext);
   const described = useOptionDescription(description);
   return (
     <SdkComboboxItem<T>
       label={optionLabel(label, children)}
       aria-describedby={described.describedBy}
-      className={cx(listboxItemVariants({ variant: 'popup' }), className)}
+      className={cx([listboxItemVariants({ variant: 'popup' }), optionRowSizes[size]], className)}
       {...props}
     >
       <OptionRow variant="popup" icon={icon} description={description} descriptionId={described.id} Indicator={ComboboxItemIndicator} ItemIcon={ComboboxItemIcon}>

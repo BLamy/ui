@@ -1,6 +1,6 @@
 # ColorPicker
 
-UI SDK's color picker, as parts you compose. `ColorPicker` is a group that holds one color and hands it to whatever sits inside: a `ColorPickerArea` (saturation and brightness together), `ColorPickerSlider`s (hue, opacity, any one channel), a row of `ColorPickerSwatches` presets, a `ColorPickerField` holding a typed `ColorPickerInput` or `ColorPickerChannelInput`s, a `ColorPickerEyeDropper`, and the `ColorPickerSwatch` or `ColorPickerTrigger` that show it. The usual arrangement, a button showing the color that opens a popover with all of those, is two parts inside the root: `ColorPickerTrigger` and `ColorPickerContent`. `ColorInput` is the one-line preset for typing a color: a swatch and a text box in the kit's filled field. Use the popover for accent colors, labels and tints people want to see and drag through; use `ColorInput` when they know the value (a hex from a brand sheet), and a [Select](https://blamy.github.io/ui/#/select) or [Segmented](https://blamy.github.io/ui/#/segmented) when the choice is a handful of named colors.
+UI SDK's color picker, as parts you compose. `ColorPicker` is a group that holds one color and hands it to whatever sits inside: a `ColorPickerArea` (saturation and brightness together), `ColorPickerSlider`s (hue, opacity, any one channel), a row of `ColorPickerSwatches` presets, a `ColorPickerInputGroup` holding a typed `ColorPickerInput` or `ColorPickerChannelInput`s, a `ColorPickerEyeDropper`, and the `ColorPickerSwatch` or `ColorPickerTrigger` that show it. The usual arrangement, a button showing the color that opens a popover with all of those, is two parts inside the root: `ColorPickerTrigger` and `ColorPickerContent`. `ColorInput` is the one-line preset for typing a color: a swatch and a text box in the kit's filled field. Use the popover for accent colors, labels and tints people want to see and drag through; use `ColorInput` when they know the value (a hex from a brand sheet), and a [Select](https://blamy.github.io/ui/#/select) or [Segmented](https://blamy.github.io/ui/#/segmented) when the choice is a handful of named colors.
 
 {% tabs title="Installation" sync="install" %}
 {% tab title="shadcn CLI" %}
@@ -17,14 +17,14 @@ import {
 {% tab title="npm" %}
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 
-Import the stylesheet once at your app's entry, then the parts from the package root:
+Import the stylesheet once at your app's entry, then the parts from their module:
 
 ```tsx
 import '@brett_lamy/ui/styles.css'
 
 import {
   ColorPicker, ColorPickerTrigger, ColorPickerContent, ColorInput,
-} from '@brett_lamy/ui'
+} from '@brett_lamy/ui/color-picker'
 ```
 {% endtab %}
 {% endtabs %}
@@ -68,7 +68,7 @@ const color = parseColor(accent) // { space: 'srgb', coords: [0.4, 0.2, 0.6], al
 
 ## In a popover
 
-`ColorPickerTrigger` is the kit's filled field box as a button: a swatch, the value in the picker's `format` (hex by default: `#7f5af0`, or the eight-digit form once the opacity is below 1) and the up-down glyph of a pop-up button. It keeps the field's primary edge while the popover is open. `showValue={false}` shows the swatch alone, and `size` is `sm`, `default` or `lg`. Give a trigger without a visible label an `aria-label`. The dialog is named after the picker (its Field's label or `aria-label`), else "Color picker"; `aria-label` on `ColorPickerContent` renames it. In a themed area wrap the demo in a [ThemeScope](https://blamy.github.io/ui/#/theming) (or put `BLProvider` at your root) so the popover wears the same theme.
+`ColorPickerTrigger` is the kit's filled field box as a button: a swatch, the value exactly as its `ColorPickerInput` shows it (so one widget never shows two notations: the value you pass, then each edit in the picker's `format`, hex by default with eight digits below full opacity) and the up-down glyph of a pop-up button. It keeps the field's primary edge while the popover is open. `showValue={false}` shows the swatch alone, and `size` is `sm`, `default` or `lg`. Give a trigger without a visible label an `aria-label`. The dialog is named after the picker (its Field's label or `aria-label`), else "Color picker"; `aria-label` on `ColorPickerContent` renames it. In a themed area wrap the demo in a [ThemeScope](https://blamy.github.io/ui/#/theming) (or put `BLProvider` at your root) so the popover wears the same theme.
 
 {% demo src="color-picker/popover" %}
 
@@ -91,13 +91,13 @@ The text is edited freely, and the value changes when Enter is pressed or the in
 
 ## One channel as a number
 
-`ColorPickerChannelInput` is a number box for one `channel` of the color, in the units people read it in, with the unit after it: degrees for `hue`, a percentage for `saturation`, `lightness`, `brightness` and `alpha`, 0 to 255 for `red`, `green` and `blue`. The channels come from the root's `space` (see below). Enter, leaving the box or its arrow keys set the channel. Several boxes under one root edit the same color; draw each in a `ColorPickerField`, the filled field as a plain box (the picker holds the color), so three of them make an HSL editor:
+`ColorPickerChannelInput` is a number box for one `channel` of the color, in the units people read it in, with the unit right after the digits (the box is as wide as its number): degrees for `hue`, a percentage for `saturation`, `lightness`, `brightness` and `alpha`, 0 to 255 for `red`, `green` and `blue`. The channels come from the root's `space` (see below). Enter, leaving the box or its arrow keys set the channel. Several boxes under one root edit the same color; draw each in a `ColorPickerInputGroup`, the filled field as a plain box (the picker holds the color), so three of them make an HSL editor:
 
 {% demo src="color-picker/channels" %}
 
 ## Composing the parts
 
-Every part edits the color of the `ColorPicker` around it, so you can put them anywhere inside it: in a panel, a sheet, a settings row. `ColorPickerArea` plots two channels, `x` across and `y` up (saturation and brightness by default), and renders its own thumb; size it with `className`. `ColorPickerSlider` is one `channel` as a gradient track with its thumb: `"hue"`, `"alpha"`, `"saturation"`…; `label` and `showValue` add a caption and the number above the track, and without a `label` the thumb is named after its channel. For typing the value, put a `ColorPickerInput` (with a `ColorPickerSwatch` if you like) in a `ColorPickerField`. The swatch is 24px, and 20px in a `size="sm"` field.
+Every part edits the color of the `ColorPicker` around it, so you can put them anywhere inside it: in a panel, a sheet, a settings row. `ColorPickerArea` plots two channels, `x` across and `y` up (saturation and brightness by default), and renders its own thumb; size it with `className`. `ColorPickerSlider` is one `channel` as a gradient track with its thumb: `"hue"`, `"alpha"`, `"saturation"`…; `label` and `showValue` add a caption and the number above the track, and without a `label` the thumb is named after its channel. For typing the value, put a `ColorPickerInput` (with a `ColorPickerSwatch` if you like) in a `ColorPickerInputGroup`. The swatch is 24px, and 20px in a `size="sm"` field.
 
 {% demo src="color-picker/composed" %}
 
@@ -178,7 +178,7 @@ UI SDK's `ColorPicker` root: a `<div>` with the `group` role, and the hidden inp
 | `onValueChange` | — | `(value, details)` on every change: `details.reason`, `details.color`, `details.cancel()`. |
 | `onValueCommit` | — | `(value, details)` once an interaction ends. |
 | `space` | `hsv` | The channels the parts edit: `hsv`, `hsl`, `srgb` or `oklch`. |
-| `format` | hex, or the `space` | How the value is written (and shown on the trigger): `hex`, `srgb`, `hsl`, `oklch`… |
+| `format` | hex, or the `space` | How an edit writes the value (the trigger and the text box both show it): `hex`, `srgb`, `hsl`, `oklch`… |
 | `gamut` | `srgb` | `srgb`, `p3`, or `false` for any color. |
 | `disabled` / `readOnly` / `required` | `false` | State. A disabled picker can't be focused and submits nothing; a read-only one stays focusable. |
 | `name` / `form` | — | Submits the value. |
@@ -208,7 +208,7 @@ The [Popover](https://blamy.github.io/ui/#/popover)'s trigger, a `<button>` in t
 
 ### ColorPickerContent
 
-The popover's content (256px wide, `w-64`); `PopoverContent`'s props pass through.
+The popover's content (256px wide, `w-64`, and never narrower than its trigger); `PopoverContent`'s props pass through.
 
 | Prop | Default | Effect |
 | --- | --- | --- |
@@ -229,7 +229,7 @@ The popover's content (256px wide, `w-64`); `PopoverContent`'s props pass throug
 | `ColorPickerSliderThumb` | A slider's handle. Takes `aria-label`. |
 | `ColorPickerSwatches` | The preset list. Name it with `aria-label`. |
 | `ColorPickerSwatchItem` | `value` (required): the preset, as any CSS color. |
-| `ColorPickerField` | `<div>`: the filled field as a plain box for the parts below; `size` `sm` / `default` / `lg`. Dims with the picker. |
+| `ColorPickerInputGroup` | `<div>`: the filled field as a plain box for the parts below; `size` `sm` / `default` / `lg`. Dims with the picker. |
 | `ColorPickerInput` | `<input>`: any CSS color, read on Enter or blur. Named "Color" unless you give it `aria-label` or an `id` a label points at. |
 | `ColorPickerChannelInput` | `<input type="number">` for one `channel`, followed by its unit. |
 | `ColorPickerSwatch` | `<div>`: a chip of the picker's color, named by it. |
@@ -238,7 +238,7 @@ The popover's content (256px wide, `w-64`); `PopoverContent`'s props pass throug
 
 ## Styling
 
-The parts carry UI SDK's slots: `color-picker`, `color-picker-area`, `color-picker-area-thumb`, `color-picker-area-canvas`, `color-picker-slider`, `color-picker-slider-thumb`, `color-picker-input`, `color-picker-channel-input`, `color-picker-swatch`, `color-picker-swatches`, `color-picker-swatch-item` and `color-picker-eye-dropper`; the kit's own are `color-picker-field` and `color-swatch`, and the trigger and content are the popover's (`popover-trigger`, `popover-content`). Every part has `data-disabled`, `data-readonly`, `data-required` and `data-out-of-gamut`; a slider and its thumb add `data-channel` and `data-orientation`, a preset `data-selected`, and the eye dropper `data-unsupported`. `ColorInput`, `ColorPickerField` and the trigger are the kit's filled field (`fieldSurfaceVariants` from [Input](https://blamy.github.io/ui/#/input)): a 1.5px primary edge while anything in them has focus (and while the trigger's popover is open), a destructive edge when their Field is invalid, and a `data-size` the swatch follows. A preset's selection ring and its offset take the popover's surface color. Thumbs have a white ring in both appearances, since they sit on any color. The colors themselves are CSS variables the parts write, since they are computed from the value: `--color-area-background` and `--color-slider-background` (the gradients) and `--color-picker-color` (a swatch, a preset, and the color under a thumb).
+The parts carry UI SDK's slots: `color-picker`, `color-picker-area`, `color-picker-area-thumb`, `color-picker-area-canvas`, `color-picker-slider`, `color-picker-slider-thumb`, `color-picker-input`, `color-picker-channel-input`, `color-picker-swatch`, `color-picker-swatches`, `color-picker-swatch-item` and `color-picker-eye-dropper`; the kit's own are `color-picker-input-group` and `color-swatch`, and the trigger and content are the popover's (`popover-trigger`, `popover-content`). Every part has `data-disabled`, `data-readonly`, `data-required` and `data-out-of-gamut`; a slider and its thumb add `data-channel` and `data-orientation`, a preset `data-selected`, and the eye dropper `data-unsupported`. `ColorInput`, `ColorPickerInputGroup` and the trigger are the kit's filled field (`fieldSurfaceVariants` from [Input](https://blamy.github.io/ui/#/input)): a 1.5px primary edge while anything in them has focus (and while the trigger's popover is open), a destructive edge when their Field is invalid, and a `data-size` the swatch follows. A preset's selection ring and its offset take the popover's surface color. Thumbs have a white ring in both appearances, since they sit on any color. The colors themselves are CSS variables the parts write, since they are computed from the value: `--color-area-background` and `--color-slider-background` (the gradients) and `--color-picker-color` (a swatch, a preset, and the color under a thumb).
 
 ## cva recipes
 

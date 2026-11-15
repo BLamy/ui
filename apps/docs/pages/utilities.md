@@ -9,18 +9,18 @@ The small helpers every BL UI component is built from. `cn` merges class names w
 Copies the source into your project's `lib/` (with the parts it is built from) and adds BL UI's tokens to your CSS — no runtime package. It is yours to edit. Import from your alias:
 
 ```tsx
-import { cn, pressable, brandTile } from '@/lib/utils'
+import { cn, cx, pressable, brandTile } from '@/lib/utils'
 ```
 {% endtab %}
 {% tab title="npm" %}
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 
-Import the stylesheet once at your app's entry, then the parts from the package root:
+Import the stylesheet once at your app's entry, then the parts from their module:
 
 ```tsx
 import '@brett_lamy/ui/styles.css'
 
-import { cn, pressable, brandTile } from '@brett_lamy/ui'
+import { cn, cx, pressable, brandTile } from '@brett_lamy/ui/lib/utils'
 ```
 {% endtab %}
 {% endtabs %}
@@ -54,7 +54,7 @@ If you add a token of your own to `tokens.css`, regenerate the list (`node tools
 <SelectTrigger className={cx('h-row rounded-ctl px-3', className)} />
 ```
 
-`cx(ours, className)` merges a component's classes under the `className` a caller passed to a UI SDK part. A part's `className` may be a string or a function of the part's state (`({ open }) => open ? 'bg-muted' : ''`); `cx` returns a string for a string and a function for a function, with the caller's classes merged last by `cn` either way. Use it wherever you wrap a UI SDK part; `cn` is for plain elements. It is in `@/lib/utils` (registry) and not re-exported from the package root.
+`cx(ours, className)` merges a component's classes under the `className` a caller passed to a UI SDK part. A part's `className` may be a string or a function of the part's state (`({ open }) => open ? 'bg-muted' : ''`); `cx` returns a string for a string and a function for a function, with the caller's classes merged last by `cn` either way. Use it wherever you wrap a UI SDK part; `cn` is for plain elements. Both are on the package root (`@brett_lamy/ui`) as well as in `@/lib/utils`.
 
 ## pressable
 
@@ -72,6 +72,8 @@ It is for plain elements and [unstyled UI SDK buttons](https://blamy.github.io/u
 
 `brandTile` is `bg-[linear-gradient(135deg,var(--primary),#5E5CE6)]`: the accent fading into iOS indigo. The indigo is a fixed brand color; the start follows `--primary` (and so a `tint`). Use it for a logo tile or an avatar square, as the greeting in [Conversation](https://blamy.github.io/ui/#/conversation) does.
 
+`pressable`, `brandTile` and the constants below are helpers for your own markup, not part of a component's API, so they stay off the package root: with npm, import them from the module, `import { pressable, brandTile } from '@brett_lamy/ui/lib/utils'`.
+
 ## Constants
 
 | Name | Value | Notes |
@@ -85,11 +87,11 @@ It is for plain elements and [unstyled UI SDK buttons](https://blamy.github.io/u
 
 | Module | Public? | What it is |
 | --- | --- | --- |
-| `lib/container.ts` | yes | `useSizeClass()` returns `[ref, sizeClass]`, the `compact` / `medium` / `regular` class of an element's own box (`bindSizeClass` from `lib/size-class.ts`, which also writes `data-size-class` on it), or the nearest size-class scope's before the ref is attached; reach for it first. `SizeClassProvider`, `useSizeClassScope()` and `usePresentation()` are the size-class scope that `presentation="auto"` popups follow (see [Layout hooks](https://blamy.github.io/ui/#/hooks-layout)). `useContainerWidth()` and `useContainerSize()` measure an element with a `ResizeObserver` and return `[ref, width]` or `[ref, { width, height }]` (a `ContainerSize`), so a shell sizes itself from its own box instead of the viewport. The `initial` argument (1200, or 1200 by 800) is used until the first measurement. `defineSlot(name)` and `collectSlots(children)` are the slot pattern behind marker-slot parts: a slot renders nothing itself, and its parent reads the children by name. |
+| `lib/container.ts` | yes | `useSizeClass()` returns `[ref, sizeClass]`, the `compact` / `medium` / `regular` class of an element's own box (`bindSizeClass` from `lib/size-class.ts`, which also writes `data-size-class` on it), or the nearest size-class scope's before the ref is attached; reach for it first. `SizeClassProvider`, `useSizeClassScope()` and `usePresentation()` are the size-class scope that `presentation="auto"` popups follow (see [Layout hooks](https://blamy.github.io/ui/#/hooks-layout)). `useContainerWidth()` and `useContainerSize()` measure an element with a `ResizeObserver` and return `[ref, width]` or `[ref, { width, height }]` (a `ContainerSize`), so a shell sizes itself from its own box instead of the viewport. The `initial` argument (1200, or 1200 by 800) is used until the first measurement. |
 | `lib/qr.ts` | yes | `encodeQR(text, { level, minVersion, maxVersion, mask })` returns `{ size, version, level, mask, modules }` with `modules[y][x]` true for a dark module. Byte mode only; throws a `RangeError` when the text does not fit. It is what `QRCode` draws, so use that component unless you need the matrix. |
 | `lib/primitives.ts` | internal | Shared class fragments for the primitives: `focusRing` and `pressableFocusRing`, `popoverSurface`, `popoverSheet`, `popoverMotion`, `popoverArrow`, `popoverArrowGlyph`, `selectableText`, the group header `sectionLabelVariants({ variant: 'grouped' \| 'sidebar' \| 'menu' })`, the iOS bar `barSurface`, the dense-row layers `dataRowLayers`, `tableHeaderCellClass`, `columnResizerClass` and `valueChip`. The file says it is not exported from the package; copy one in if you need it. |
 | `lib/surface.ts` | yes (through `dialog` and `sheet`) | The modal-surface recipes every surface shares, hook-free so Card can use them on the server: `surfaceHeaderVariants`, `surfaceTitleVariants`, `surfaceDescriptionVariants`, `surfaceBodyVariants`, `surfaceFooterVariants`, `closeButtonVariants` and `sheetGrabberVariants`. |
 | `lib/row-label.ts` | internal | `RowLabelContext` and `useRowLabel`. A list row publishes its title's id so a Switch or Slider inside it is labelled by the row title unless it has its own label. |
-| `lib/persistent-host.tsx` | internal | How `ArtifactChatContainer` moves one composer and transcript between its docked column and its floating layer without remounting them: detached host elements portalled into, then re-attached to the current dock. |
+| `lib/kept-children.ts` | yes | `useKeptChildren(children, { slot })`: children rendered once through a portal into a detached element that the current home docks, so they stay mounted (draft, caret, scroll, a streaming reply) while a region moves between presentations. AdaptivePane, Sidebar and `ArtifactChatContainer` use it; see [State hooks](https://blamy.github.io/ui/#/hooks-state). |
 
 `lib/motion.ts`, `lib/theme.tsx`, `lib/icon.tsx` and `lib/syntax.ts` have their own pages: [Motion](https://blamy.github.io/ui/#/motion), [Theming](https://blamy.github.io/ui/#/theming), [Icons](https://blamy.github.io/ui/#/icons) and [CodeEditor](https://blamy.github.io/ui/#/code-editor).

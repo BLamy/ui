@@ -9,23 +9,20 @@
     "ConversationMessages",
     "ConversationComposer",
     "ConversationSuggestions",
-    "Suggestion",
-    "UserMessage",
-    "AssistantMessage",
-    "MessageMarkdown",
+    "ConversationSuggestion",
+    "ConversationUserMessage",
+    "ConversationAssistantMessage",
+    "ConversationMarkdown",
     "ConversationTyping",
-    "WorkLog",
-    "ToolCall"
+    "ConversationWorkLog",
+    "ConversationToolCall"
   ],
   "imports": [
     "Conversation",
     "ConversationEmpty",
     "ConversationMessages",
     "ConversationComposer",
-    "UserMessage",
-    "AssistantMessage"
-  ],
-  "types": [
-    "MessageProps"
+    "ConversationUserMessage",
+    "ConversationAssistantMessage"
   ]
 }

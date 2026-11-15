@@ -1,5 +1,5 @@
 'use client';
-import { Children, createContext, createElement, isValidElement, useContext, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from 'react';
+import { createContext, createElement, useContext, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from 'react';
 import { bindSizeClass, type SizeClass, type SizeClassBreakpoints } from '@/lib/size-class';
 
 /* ══ Container primitives shared by every adaptive shell ══
@@ -126,27 +126,4 @@ export function useContainerSize<T extends HTMLElement = HTMLDivElement>(
     return () => ro.disconnect();
   }, []);
   return [ref, size];
-}
-
-export interface SlotProps {
-  children?: ReactNode;
-}
-/** A marker component: renders nothing itself; its parent reads the children with `collectSlots`. */
-export type SlotComponent = ((props: SlotProps) => null) & { __tkSlot: string };
-
-export function defineSlot(name: string): SlotComponent {
-  const Slot = (() => null) as unknown as SlotComponent;
-  Slot.__tkSlot = name;
-  return Slot;
-}
-
-/** Maps each `defineSlot` child to its children by slot name. Other children are ignored. */
-export function collectSlots(children: ReactNode): Record<string, ReactNode> {
-  const slots: Record<string, ReactNode> = {};
-  Children.forEach(children, (child) => {
-    if (!isValidElement(child) || typeof child.type !== 'function') return;
-    const name = (child.type as Partial<SlotComponent>).__tkSlot;
-    if (name) slots[name] = (child.props as SlotProps).children ?? null;
-  });
-  return slots;
 }

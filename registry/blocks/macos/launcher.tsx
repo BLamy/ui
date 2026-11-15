@@ -105,9 +105,7 @@ function Body({ wide, width, listHeight }: { wide: boolean; width: number; listH
   return (
     <div className="flex min-h-0 border-t border-border/70">
       <div className="min-w-0 flex-1" style={{ '--alfred-list-min': `${Math.min(300, listHeight)}px` } as CSSProperties}>
-        <CommandMenuEmpty>
-          <span className="flex flex-col items-center gap-2"><Hat size={34} className="text-tertiary-foreground" />No results — try the web search</span>
-        </CommandMenuEmpty>
+        <CommandMenuEmpty icon={<Hat />} title="No results — try the web search" />
         {/* The room the desktop leaves is measured, so the list's height is a runtime value. */}
         <CommandMenuList stickyHeadings={false} className={preview ? 'min-h-(--alfred-list-min)' : undefined} style={{ maxHeight: listHeight }}>
           {renderPage(page, columns)}

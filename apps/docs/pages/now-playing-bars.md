@@ -16,12 +16,13 @@ import { Slider } from '@/components/ui/slider'
 {% tab title="npm" %}
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 
-Import the stylesheet once at your app's entry, then the parts from the package root:
+Import the stylesheet once at your app's entry, then the parts from their module:
 
 ```tsx
 import '@brett_lamy/ui/styles.css'
 
-import { NowPlayingBars, Slider } from '@brett_lamy/ui'
+import { NowPlayingBars } from '@brett_lamy/ui/now-playing-bars'
+import { Slider } from '@brett_lamy/ui/slider'
 ```
 {% endtab %}
 {% endtabs %}
@@ -38,13 +39,13 @@ Tap a track to play it, tap it again to pause:
 
 ## In a mini player
 
-Beside the artwork and a scrubber: the bars mark what is playing, and the [Slider](https://blamy.github.io/ui/#/slider)s use its `variant="on-dark"` for translucent tracks over dark glass (the Slider page documents its variants).
+Beside the artwork and a scrubber: the bars mark what is playing, and the [Slider](https://blamy.github.io/ui/#/slider)s use its `variant="overlay" appearance="dark"` for translucent tracks over dark glass (the Slider page documents its variants).
 
 {% demo src="now-playing-bars/media-controls" %}
 
 ```tsx
 <NowPlayingBars size={16} playing={playing} className="text-white" />
-<Slider aria-label="Playback position" variant="on-dark" size="sm" max={duration} value={position} onValueChange={(value) => seek(value)} />
+<Slider aria-label="Playback position" variant="overlay" appearance="dark" size="sm" max={duration} value={position} onValueChange={(value) => seek(value)} />
 ```
 
 ## Accessibility

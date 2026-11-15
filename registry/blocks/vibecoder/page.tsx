@@ -189,8 +189,7 @@ function Workspace({
         title={title}
         appearance={appearance}
         style={{ flex: 1, minHeight: 360, ...style }}
-        host={host}
-        createHost={createHost ?? (host ? undefined : createStarter)}
+        {...(host ? { host } : { createHost: createHost ?? createStarter })}
         autoStart
         onReady={(session, readyHost) => {
           current.current = readyHost;

@@ -1,6 +1,6 @@
 # Popover
 
-A floating panel anchored to its trigger, on [UI SDK](https://ui-sdk.dev)'s Popover: it positions itself beside the button, flips when there is no room, closes on Esc or an outside press, and returns focus to where it came from. `PopoverContent` is the kit's floating surface — the same one [Select](https://blamy.github.io/ui/#/select), [Combobox](https://blamy.github.io/ui/#/combobox) and [DropdownMenu](https://blamy.github.io/ui/#/dropdown-menu) draw their lists in — as a padded panel for arbitrary content (a small form, a color picker, a "what's this"), or bare with `variant="surface"`. Use a Popover for light, anchored, non-blocking content; use a [Dialog](https://blamy.github.io/ui/#/dialog) or [Sheet](https://blamy.github.io/ui/#/sheet) when the task should take over the screen, and a [Hover Card](https://blamy.github.io/ui/#/hover-card) for the same surface opened by resting the pointer on a reference.
+A floating panel anchored to its trigger, on [UI SDK](https://ui-sdk.dev)'s Popover: it positions itself beside the button, flips when there is no room, closes on Esc or an outside press, and returns focus to where it came from. `PopoverContent` is the kit's floating surface — the same one [Select](https://blamy.github.io/ui/#/select), [Combobox](https://blamy.github.io/ui/#/combobox) and [DropdownMenu](https://blamy.github.io/ui/#/dropdown-menu) draw their lists in — as a padded panel for arbitrary content (a small form, a color picker, a "what's this"), or bare with `variant="plain"`. Use a Popover for light, anchored, non-blocking content; use a [Dialog](https://blamy.github.io/ui/#/dialog) or [Sheet](https://blamy.github.io/ui/#/sheet) when the task should take over the screen, and a [Hover Card](https://blamy.github.io/ui/#/hover-card) for the same surface opened by resting the pointer on a reference.
 
 {% tabs title="Installation" sync="install" %}
 {% tab title="shadcn CLI" %}
@@ -17,12 +17,14 @@ import {
 {% tab title="npm" %}
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 
-Import the stylesheet once at your app's entry, then the parts from the package root:
+Import the stylesheet once at your app's entry, then the parts from their module:
 
 ```tsx
 import '@brett_lamy/ui/styles.css'
 
-import { Popover, PopoverTrigger, PopoverContent } from '@brett_lamy/ui'
+import {
+  Popover, PopoverTrigger, PopoverContent,
+} from '@brett_lamy/ui/popover'
 ```
 {% endtab %}
 {% endtabs %}
@@ -49,10 +51,10 @@ import { Popover, PopoverTrigger, PopoverContent } from '@brett_lamy/ui'
 
 `PopoverContent` opens on the trigger's `side` (`bottom` by default; `top`, `left`, `right`, and the logical `start` and `end`), lined up by `align` (`center` by default; `start`, `end`), 8px away (`sideOffset`) and shifted along the trigger by `alignOffset`. It flips and shifts to stay in its host, and is never taller than the room beside the trigger (`--available-height`), so a long list inside it scrolls. The resolved side is `data-side`, the alignment `data-align`.
 
-The default `variant="panel"` is 288px wide (`w-72`) with 16px padding; override with `className`. `variant="surface"` is the bare surface, at least as wide as its trigger (`min-w-(--anchor-width)`), for a list or a layout that pads itself. UI SDK writes `--anchor-width`, `--anchor-height`, `--available-width`, `--available-height` and `--transform-origin` on the content for your own sizing.
+The default `variant="panel"` is 288px wide (`w-72`) with 16px padding; override with `className`. `variant="plain"` is the bare surface, at least as wide as its trigger (`min-w-(--anchor-width)`), for a list or a layout that pads itself. UI SDK writes `--anchor-width`, `--anchor-height`, `--available-width`, `--available-height` and `--transform-origin` on the content for your own sizing.
 
 ```tsx
-<PopoverContent variant="surface" side="bottom" align="end" className="w-56">
+<PopoverContent variant="plain" side="bottom" align="end" className="w-56">
   <PopoverTitle className="sr-only">Filters</PopoverTitle>
   …
 </PopoverContent>
@@ -94,7 +96,7 @@ The surface's corners follow the `--radius` scale (`rounded-card`, 14px at the d
 When the trigger sits on a surface that CSS paints rather than a ThemeScope (a host app's own `[data-theme-scope]` rule, a block's stylesheet, a shell that sets `.dark` and variables on a plain element), pass `palette="trigger"` to `PopoverContent`: each time it opens, it copies the theme variables resolved at its trigger, the trigger's appearance and its named scope. `DropdownMenuContent` takes the same prop, and `useTriggerPalette(enabled, ref)` is the hook behind it, for a popup part of your own.
 
 ```tsx
-<PopoverContent variant="surface" palette="trigger" className="rounded-panel bg-card">…</PopoverContent>
+<PopoverContent variant="plain" palette="trigger" className="rounded-panel bg-card">…</PopoverContent>
 ```
 
 ## Accessibility
@@ -127,7 +129,7 @@ When the trigger sits on a surface that CSS paints rather than a ThemeScope (a h
 
 | Prop | Default | Effect |
 | --- | --- | --- |
-| `variant` | `panel` | `panel` (padded, 288px) or `surface` (bare, as wide as the trigger). |
+| `variant` | `panel` | `panel` (padded, 288px) or `plain` (no padding or width of its own, as wide as the trigger). |
 | `arrow` | `false` | Draw a pointer toward the trigger. |
 | `palette` | `scope` | `trigger` copies the trigger's palette when it opens (see above). |
 | `side` / `align` | `bottom` / `center` | Where it opens relative to the trigger. |
@@ -159,4 +161,4 @@ Defined in `@/components/ui/popover`. Base classes:
 | Value | Adds |
 | --- | --- |
 | `panel` (default) | `w-72 p-4` |
-| `surface` | `min-w-(--anchor-width)` |
+| `plain` | `min-w-(--anchor-width)` |

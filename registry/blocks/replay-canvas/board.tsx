@@ -12,7 +12,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Canvas, CanvasFrame, CanvasMiniMap, useCanvas, type CanvasController, type CanvasViewportChangeDetails } from '@/components/ui/canvas';
 import { HoverCard, HoverCardContent, HoverCardHeader, HoverCardTrigger, createHoverCardController } from '@/components/ui/hover-card';
-import { formatReplayTime } from '@/components/ui/replay-preview';
+import { formatReplayTime } from '@brett_lamy/docstream/replay';
 import { unionRect, type Rect, type Viewport } from '@/lib/canvas-math';
 import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';

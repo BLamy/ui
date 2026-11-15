@@ -2,16 +2,19 @@
 /* Writes each component page's `## Installation` section into apps/docs/pages/<page>.md as plain docstream
  * Markdown from the page's registry entry (registry/components/<name>.json, `page` field): a titled tab set — the
  * "Installation" heading with the npm | shadcn CLI switch on its right — whose tabs each hold a `{% command %}` box
- * (docstream derives the pnpm / yarn / bun forms), a line of prose and the import code.
+ * (docstream derives the pnpm / yarn / bun forms), a line of prose and the import code. The npm tab imports each
+ * module from its own package entry (`@brett_lamy/ui/dialog`, tools/registry/package-exports.mjs); the root import
+ * (`@brett_lamy/ui`) is shown once, on the Installation page.
  *
  *   node tools/docs/install-md.mjs           → rewrite the sections in place
  *   node tools/docs/install-md.mjs --check   → exit 1 if any page's section is stale (pages-md runs this)
  *
  * The section is the one `{% tabs title="Installation" %}` set; everything else in the page is left alone. A page without one gets it after its lead (the H1 and the paragraph under it). */
-import { readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { SRC, aliasOf, buildGraph, moduleExports } from '../registry/graph.mjs';
+import { npmSpecifier } from '../registry/package-exports.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const PAGES = join(ROOT, 'apps/docs/pages');
@@ -65,6 +68,13 @@ export function installSection(entry) {
     byModule.set(mod, [...(byModule.get(mod) ?? []), n]);
   }
   const items = [entry.name, ...new Set([...byModule.keys()].map((m) => graph.owner.get(m)))].filter((v, i, a) => a.indexOf(v) === i);
+  // npm: each module's own entry point, the registry path under the package name (`@/components/ui/dialog` ↔
+  // `@brett_lamy/ui/dialog`); a module without one comes from the root.
+  const byEntry = new Map();
+  for (const [mod, ns] of byModule) {
+    const from = npmSpecifier(graph, mod);
+    byEntry.set(from, [...(byEntry.get(from) ?? []), ...ns]);
+  }
   const files = graph.items.get(entry.name)?.files ?? [];
   const where = files.some((f) => f.startsWith('lib/')) ? '`lib/`' : '`components/ui/`';
   return [
@@ -81,9 +91,9 @@ export function installSection(entry) {
     '{% tab title="npm" %}',
     command('npm install @brett_lamy/ui'),
     '',
-    "Import the stylesheet once at your app's entry, then the parts from the package root:",
+    "Import the stylesheet once at your app's entry, then the parts from their module:",
     '',
-    IMPORT_FENCE, `import '@brett_lamy/ui/styles.css'`, '', importLine(names, '@brett_lamy/ui'), '```',
+    IMPORT_FENCE, `import '@brett_lamy/ui/styles.css'`, '', [...byEntry.entries()].map(([from, ns]) => importLine(ns, from)).join('\n'), '```',
     '{% endtab %}',
     '{% endtabs %}',
   ].join('\n');
@@ -136,6 +146,9 @@ if (isMain) {
   for (const f of readdirSync(COMPONENTS).filter((f) => f.endsWith('.json')).sort()) {
     const entry = JSON.parse(readFileSync(join(COMPONENTS, f), 'utf8'));
     if (!entry.page) continue; // a lib item documented on another component's page (filter-model, filter-query, gpu-query)
+    // A second item documented on the same page (avatar-group on avatar, filter-input on filter): the page's own item
+    // writes its one Installation section.
+    if (entry.name !== entry.page && existsSync(join(COMPONENTS, `${entry.page}.json`))) continue;
     const file = join(PAGES, `${entry.page}.md`);
     let md;
     try { md = readFileSync(file, 'utf8'); } catch { console.error(`install-md: ${f} names page "${entry.page}", which has no ${file}`); process.exit(1); }

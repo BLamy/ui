@@ -2,6 +2,7 @@
    underline tabs, a line-numbered code view, a unified diff view and a file tree. Code is highlighted by the
    library's CodeEditor (gpu-lexer on WebGPU), recolored with Primer's syntax palette below. */
 import { useMemo, type CSSProperties, type ReactNode } from 'react';
+import { EmptyState } from '@/components/ui/empty-state';
 import { Collapsible, CollapsiblePanel, CollapsibleTrigger } from '@ui-sdk/react/collapsible';
 import { Badge } from '@/components/ui/badge';
 import { CodeEditor, SyntaxTokens, useSyntaxTokens } from '@/components/ui/code-editor';
@@ -246,7 +247,7 @@ export const githubMarkdown = cn(
 /* ── Code view ── GitHub's blob view: 12px mono, 20px lines, a line-number gutter (CodeEditor, ghost). */
 export function CodeView({ path, code }: { path: string; code: string }) {
   return (
-    <CodeEditor readOnly variant="ghost" value={code} language={languageFromPath(path)} lineNumbers aria-label={path}
+    <CodeEditor readOnly variant="plain" value={code} language={languageFromPath(path)} lineNumbers aria-label={path}
       className="[--bl-syntax-font-size:12px] [--bl-syntax-line-height:20px] [--bl-syntax-padding-y:8px]" />
   );
 }
@@ -312,7 +313,7 @@ export function DiffView({ path, patch, add, del, note }: { path: string; patch:
       </div>
       <CollapsiblePanel hiddenUntilFound className="h-(--collapsible-panel-height) overflow-clip transition-[height] duration-spring-tray ease-spring-tray data-starting-style:h-0 data-ending-style:h-0 motion-reduce:transition-none">
       {!patch ? (
-        <div className="px-4 py-6 text-center text-caption text-muted-foreground">{note ?? 'No changes to show.'}</div>
+        <EmptyState size="sm" title={note ?? 'No changes to show.'} />
       ) : (
         <div className="overflow-x-auto font-mono text-caption leading-5">
           <table className="w-full border-collapse" data-highlighter={highlighter} data-language={languageFromPath(path)}>

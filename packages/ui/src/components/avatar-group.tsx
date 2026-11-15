@@ -39,13 +39,13 @@ export interface AvatarGroupProps extends Omit<ComponentProps<'div'>, 'children'
   /** Make the stack one button that lists everyone in a menu (default false: a plain stack whose avatars keep
    *  their own hover cards). */
   menu?: boolean;
-  /** The group's accessible name (default "N people"). */
-  label?: string;
   /** With `menu`: a person was chosen. `value` is their avatar's `key` (or its index when it has none). */
   onAction?: (value: string, details: Parameters<NonNullable<DropdownMenuProps['onAction']>>[1]) => void;
 }
 
-export function AvatarGroup({ children, max = 5, size = 32, overlap, menu = false, label, onAction, className, style, ...props }: AvatarGroupProps) {
+export function AvatarGroup({
+  children, max = 5, size = 32, overlap, menu = false, onAction, className, style, 'aria-label': ariaLabel, ...props
+}: AvatarGroupProps) {
   const people = Children.toArray(children).filter((child): child is AvatarElement => isValidElement(child));
   const shown = people.slice(0, Math.max(0, max));
   const extra = people.length - shown.length;
@@ -73,11 +73,12 @@ export function AvatarGroup({ children, max = 5, size = 32, overlap, menu = fals
       )}
     </>
   );
-  const name = label ?? `${people.length} ${people.length === 1 ? 'person' : 'people'}`;
+  // Named by `aria-label`, else "N people": the same name on the group, or on the menu's trigger and its menu.
+  const name = ariaLabel ?? `${people.length} ${people.length === 1 ? 'person' : 'people'}`;
 
   if (!menu) {
     return (
-      <div data-slot="avatar-group" role="group" aria-label={name} className={cn(avatarGroupVariants(), className)} style={groupStyle} {...props}>
+      <div data-slot="avatar-group" role="group" {...props} aria-label={name} className={cn(avatarGroupVariants(), className)} style={groupStyle}>
         {stack}
       </div>
     );

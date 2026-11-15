@@ -3,7 +3,7 @@ import { useState, type ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { getReplayDevtools, replayDevtoolsAt } from '@brett_lamy/docstream/replay';
-import { LogList, LogRowContent, createLogListController, type LogRowState } from '@/components/ui/log-list';
+import { LogList, LogListRowContent, createLogListController, type LogRowState } from '@/components/ui/log-list';
 import { RequestTable } from '@/components/ui/request-table';
 import type { LogRow } from '@/lib/log-list-model';
 
@@ -149,7 +149,7 @@ describe('the position marker', () => {
     const renders = vi.fn();
     const renderRow = (r: LogRow, state: LogRowState): ReactNode => {
       renders(state.index);
-      return <LogRowContent row={r} />;
+      return <LogListRowContent row={r} />;
     };
     const rows = makeRows(1000);
     const { rerender } = render(<LogList rows={rows} currentTime={1000} renderRow={renderRow} />);
@@ -173,7 +173,7 @@ describe('the position marker', () => {
 
   it('moves with no React at all through the controller', () => {
     const renders = vi.fn();
-    const renderRow = (r: LogRow): ReactNode => { renders(); return <LogRowContent row={r} />; };
+    const renderRow = (r: LogRow): ReactNode => { renders(); return <LogListRowContent row={r} />; };
     const controller = createLogListController();
     render(<LogList controller={controller} rows={makeRows(1000)} renderRow={renderRow} />);
     renders.mockClear();
@@ -410,7 +410,7 @@ describe('keyboard', () => {
     act(() => { row(1).focus(); });
     await key({ key: 'c', metaKey: true });
     expect(writeText).toHaveBeenLastCalledWith('0:00.100 [log] Message 1 (app.js:1)');
-    expect(onRowCopy).toHaveBeenLastCalledWith(rows[1], '0:00.100 [log] Message 1 (app.js:1)');
+    expect(onRowCopy).toHaveBeenLastCalledWith('0:00.100 [log] Message 1 (app.js:1)', rows[1]);
     rerender(<LogList rows={rows} getRowText={(r) => `row ${r.id}`} />);
     await key({ key: 'c', ctrlKey: true });
     expect(writeText).toHaveBeenLastCalledWith('row r1');

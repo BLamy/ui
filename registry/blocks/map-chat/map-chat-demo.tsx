@@ -10,7 +10,7 @@ import { HoverCard, HoverCardContent, HoverCardHeader, HoverCardTrigger } from '
 import { Button } from '@ui-sdk/react/button';
 import { Composer, ComposerAddon, ComposerAttachments, ComposerCard, ComposerFooter, ComposerInput, ComposerSend, ComposerSpacer } from '@/components/ui/composer/composer';
 import { MarkdownView, type ReferenceNode } from '@/components/ui/markdown-view';
-import { useAppearance, type Appearance } from '@/lib/theme';
+import { themeScopeClass, useAppearance, type Appearance } from '@/lib/theme';
 import { cn } from '@/lib/utils';
 
 
@@ -100,8 +100,8 @@ function Icon({ name, size = 16, stroke = 2 }: { name: MapIconName; size?: numbe
 
 /** `font: inherit` for buttons, leaving size, weight and line-height to the caller. */
 const FONT_INHERIT = '[font-family:inherit] [font-style:inherit] [font-variant:inherit] [font-stretch:inherit]';
-/* The demo's own chrome, on the theme: it reads the chat's tone through `dark:` (the container's `sheet` scope and
-   the Composer's `glass` scope both carry the appearance class). */
+/* The demo's own chrome, on the theme: it reads the demo's tone through `dark:` (the chat's `sheet` scope, the
+   Composer's `glass` scope and the map pane all carry the appearance class). */
 const CHROME = {
   spinner:
     'inline-block size-3 animate-[ck-map-chat-spin_.8s_linear_infinite] rounded-[50%] border-2 border-black/12 border-t-foreground align-middle dark:border-white/18 dark:border-t-foreground',
@@ -433,10 +433,11 @@ export function MapChatDemo({
       workingLabel={working ?? undefined}
       hideOnScroll={false}
       appearance={light ? 'light' : 'dark'}
-      className={cn('ck-map-chat group/map-chat bg-(--map-backdrop) [&_[data-slot=artifact-chat-content]]:overflow-hidden [&_[data-slot=artifact-chat-content]]:bg-(--map-backdrop)', className)}
+      className={cn('ck-map-chat group/map-chat bg-(--map-backdrop)', className)}
       style={{ '--map-backdrop': MAP_BACKDROP[light ? 'light' : 'dark'], ...style } as CSSProperties}
     >
-      <ArtifactChatContainerContent>
+      {/* The map is in the demo's appearance too (the container paints only the chat in it). */}
+      <ArtifactChatContainerContent className={cn('overflow-hidden bg-(--map-backdrop) text-foreground', themeScopeClass(light ? 'light' : 'dark'))}>
         <TileMap
           className="absolute inset-0"
           view={view}

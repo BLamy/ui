@@ -3,7 +3,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Avatar } from '@/components/ui/avatar';
 import {
   Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarInset, SidebarItem, SidebarProvider, SidebarSearch,
-  SidebarSection, SidebarTrigger, SidebarWorkspace, type SidebarPresentation, type SidebarVariant,
+  SidebarSection, SidebarTrigger, SidebarAccount, type SidebarPresentation, type SidebarVariant,
 } from '@/components/ui/sidebar';
 import { BLProvider, ThemeScope } from '@/lib/theme';
 
@@ -54,7 +54,7 @@ function CrmShell({ variant, presentation, open: initial, breakpoint = 560 }: Om
     <SidebarProvider open={open} onOpenChange={setOpen} breakpoint={breakpoint}>
       <Sidebar variant={variant} presentation={presentation} width={236}>
         <SidebarHeader>
-          <SidebarWorkspace title="Northwind" description="Sales · Pro plan" />
+          <SidebarAccount title="Northwind" description="Sales · Pro plan" />
         </SidebarHeader>
         <SidebarContent aria-label="Northwind">
           <SidebarSearch placeholder="Search deals" shortcut="/" />

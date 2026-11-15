@@ -97,7 +97,9 @@ export function CalendarYearSelect({ className, render = withGlyph, ...props }: 
     (a CalendarMonthSelect and a CalendarYearSelect, say); keep a CalendarHeading in it so the grids stay named. */
 export function CalendarHeader({ className, children, ...props }: ComponentProps<'header'>) {
   return (
-    <header data-slot="calendar-header" className={cn('flex items-center gap-1 pb-2', className)} {...props}>
+    // In a compact scope months always stack (two 308px grids need 640px, where compact ends), so the header keeps to
+    // one grid's width, centred over the column, and Previous and Next stay beside the month they change.
+    <header data-slot="calendar-header" className={cn('flex w-full items-center gap-1 pb-2 in-data-[size-class=compact]:mx-auto in-data-[size-class=compact]:max-w-77', className)} {...props}>
       {children ?? (
         <>
           <CalendarPrevious />
@@ -131,8 +133,8 @@ export function CalendarDay({ className, children, ...props }: CalendarDayProps)
     <SdkCalendarDay
       className={cx(
         [
-          // 36px days, and 44px touch targets in a compact (phone) container.
-          'group/day relative size-9 cursor-default p-0 text-center text-subhead outline-none in-data-[size-class=compact]:size-11',
+          // 36px days; in a compact (phone) container, a seventh of the grid's width: 44px touch targets while they fit.
+          'group/day relative size-9 cursor-default p-0 text-center text-subhead outline-none in-data-[size-class=compact]:size-auto',
           'data-outside:text-muted-foreground data-disabled:not-data-unavailable:opacity-30',
           'before:absolute before:inset-0 before:hidden before:bg-primary/15 data-range-start:before:block data-range-middle:before:block data-range-end:before:block data-range-start:before:start-1/2 data-range-end:before:end-1/2',
           // The band is rounded where a week row cuts it, and an end at a row's edge has no half-cell tab beside it.
@@ -147,7 +149,8 @@ export function CalendarDay({ className, children, ...props }: CalendarDayProps)
         return (
           <span
             className={cn(
-              'relative z-1 grid size-9 place-items-center rounded-full tabular-nums transition-colors duration-spring-snappy ease-spring-snappy in-data-[size-class=compact]:size-11',
+              'relative z-1 grid size-9 place-items-center rounded-full tabular-nums transition-colors duration-spring-snappy ease-spring-snappy',
+              'in-data-[size-class=compact]:mx-auto in-data-[size-class=compact]:aspect-square in-data-[size-class=compact]:size-auto in-data-[size-class=compact]:w-full in-data-[size-class=compact]:max-w-11',
               'cursor-pointer not-group-data-selected/day:not-group-data-disabled/day:group-hover/day:bg-secondary-strong group-focus-visible/day:ring-2 group-focus-visible/day:ring-ring',
               'group-data-unavailable/day:text-destructive group-data-unavailable/day:line-through group-data-disabled/day:cursor-default',
               day.today && 'font-semibold text-primary',
@@ -167,10 +170,15 @@ export function CalendarWeeks({ children, ...props }: ComponentProps<typeof SdkC
   return <SdkCalendarWeeks {...props}>{children ?? ((cell) => <CalendarDay value={cell.date} />)}</SdkCalendarWeeks>;
 }
 
+/* In a compact (phone-sized) scope a month is as wide as seven 44px touch days (308px), and no wider than the room
+   it has: its columns share that width, so in a narrow sidebar or a 320px phone the days shrink toward 36px
+   instead of running past the card's edge. */
+const compactGrid = 'border-separate border-spacing-0 in-data-[size-class=compact]:w-77 in-data-[size-class=compact]:max-w-full in-data-[size-class=compact]:table-fixed';
+
 /** A month: the weekday row and its days. `offset` picks which of the months on show it is, from 0. */
 export function CalendarGrid({ className, children, ...props }: ComponentProps<typeof SdkCalendarGrid>) {
   return (
-    <SdkCalendarGrid className={cx('border-separate border-spacing-0', className)} {...props}>
+    <SdkCalendarGrid className={cx(compactGrid, className)} {...props}>
       {children ?? (
         <>
           <CalendarWeekdays />
@@ -181,21 +189,22 @@ export function CalendarGrid({ className, children, ...props }: ComponentProps<t
   );
 }
 
-/* How many months the Calendar shows, for CalendarMonths. */
-const MonthsContext = createContext(1);
+/** How many months the host shows, for CalendarMonths: a Calendar and a DatePicker provide their `months`, so
+    CalendarMonths draws the right number of grids in either without being told again. */
+export const CalendarMonthsContext = createContext(1);
 
 export interface CalendarMonthsProps extends ComponentProps<'div'> {
-  /** How many grids. Default: the Calendar's `months` (pass the DatePicker's inside a DatePickerContent). */
+  /** How many grids. Default: the `months` of the Calendar or DatePicker it is in. */
   months?: number;
 }
 
-/** The month grids on show, one CalendarGrid per month, side by side while they fit and wrapping onto rows in a
-    narrow container (a phone, a sidebar) rather than running past its edge. */
+/** The month grids on show, one CalendarGrid per month, side by side while they fit and wrapping onto rows,
+    centred under the header, in a narrow container (a phone, a sidebar) rather than running past its edge. */
 export function CalendarMonths({ months, className, ...props }: CalendarMonthsProps) {
-  const fromCalendar = useContext(MonthsContext);
+  const fromCalendar = useContext(CalendarMonthsContext);
   const shown = Math.max(1, Math.floor(months ?? fromCalendar));
   return (
-    <div data-slot="calendar-months" className={cn('flex flex-wrap gap-x-6 gap-y-3', className)} {...props}>
+    <div data-slot="calendar-months" className={cn('flex flex-wrap justify-center gap-x-6 gap-y-3', className)} {...props}>
       {Array.from({ length: shown }, (_, offset) => <CalendarGrid key={offset} offset={offset} />)}
     </div>
   );
@@ -228,7 +237,7 @@ export function Calendar<Mode extends CalendarMode = 'single'>({
   // The size class it sits in (the day cells grow to touch size in a compact one).
   const sizeClass = useSizeClassScope();
   return (
-    <MonthsContext.Provider value={months}>
+    <CalendarMonthsContext.Provider value={months}>
       <SdkCalendar data-size-class={sizeClass} months={months} showOutsideDays={showOutsideDays} weekdayFormat={weekdayFormat} className={cx(calendarVariants({ variant }), className)} {...(props as SdkCalendarProps)}>
         {children ?? (
           <>
@@ -237,7 +246,7 @@ export function Calendar<Mode extends CalendarMode = 'single'>({
           </>
         )}
       </SdkCalendar>
-    </MonthsContext.Provider>
+    </CalendarMonthsContext.Provider>
   );
 }
 

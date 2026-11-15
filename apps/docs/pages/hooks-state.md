@@ -2,16 +2,16 @@
 
 Small utilities for state that survives a reload, the system back gesture, labelling controls inside list rows, and moving one DOM element between homes. The other hooks are in the [Hooks overview](https://blamy.github.io/ui/#/hooks).
 
-`usePersistentState` and `useControllableChange` are public. `usePersistentHost`, `useAttachHost` and `useRowLabel` are **registry-only**: they are not in `@brett_lamy/ui`. A component that uses one brings it along when you add the component, and you can add one by itself.
+`usePersistentState`, `useControllableChange` and `useKeptChildren` are public. `useRowLabel` is **registry-only**: it is not in `@brett_lamy/ui`. A component that uses it brings it along when you add the component, and you can add it by itself.
 
 ```tsx
-// npm (the two public hooks)
-import { usePersistentState, useControllableChange } from '@brett_lamy/ui'
+// npm (the public hooks)
+import { usePersistentState, useControllableChange, useKeptChildren } from '@brett_lamy/ui'
 
 // shadcn registry (aliases)
 import { usePersistentState, loadJSON, saveJSON } from '@/lib/persistent-state'   // …/r/persistent-state.json
 import { useControllableChange } from '@/lib/controllable-state'             // …/r/controllable-state.json
-import { usePersistentHost, useAttachHost } from '@/lib/persistent-host'         // …/r/persistent-host.json (registry-only)
+import { useKeptChildren } from '@/lib/kept-children'                          // …/r/kept-children.json
 import { useRowLabel } from '@/lib/row-label'                                    // …/r/row-label.json (registry-only)
 ```
 
@@ -124,54 +124,41 @@ function Shell() {
 
 Keys are written like `mod+k` or `mod+shift+o`; `mod` is Command on Apple platforms and Ctrl elsewhere. The latest `handler` always runs, so it need not be stable. Components that take a shortcut use the same format: a menu item's `shortcut="mod+r"`, `Tooltip shortcut`, `DialogTrigger shortcut="mod+k"` (the ⌘K command menu's), `Kbd keys="mod+k"`. See [Behaviors](https://blamy.github.io/ui/#/behaviors) for the rest of UI SDK's behaviors you can use beside the kit.
 
-## `usePersistentHost`
+## `useKeptChildren`
 
-Registry-only. A stable, detached element to portal into, so one piece of UI can move between homes without remounting. `ArtifactChatContainer` uses it to keep a composer and transcript (the draft, the caret, a streaming reply) alive while it moves them between a docked column and a floating sheet.
+Children that survive a change of home. A region that moves between a column, a drawer and a pushed page (AdaptivePane, Sidebar), or a chat that moves between a docked column and a floating sheet (ArtifactChatContainer), renders its children once, through a portal, into a detached `display: contents` element, and the current home docks that element. The same React tree and the same DOM nodes, so a draft, the caret, selection, scroll and a streaming reply carry over. It is the kit's one way to keep children mounted across presentations.
 
-- **Export:** not in `@brett_lamy/ui`. Registry item `persistent-host` (`@/lib/persistent-host`), installed with `artifact-chat-container`.
+- **Export:** public, with the `KeptChildren` type. Registry item `kept-children` (`@/lib/kept-children`).
 - **Needs:** nothing.
 
 ```ts
-function usePersistentHost(slot: string): HTMLElement | null
+function useKeptChildren(children: ReactNode, options?: { slot?: string }): {
+  dock: (el: HTMLElement | null) => void   // a ref for the element the children show in now
+  portal: ReactNode                        // render once, at a stable place under the component
+  inline: ReactNode                        // render inside the dock: the children before hydration, else nothing
+}
 ```
-
-It creates one `<div data-slot={slot} style="display: contents">` the first time the component renders on the client and returns the same element for the life of the component. `display: contents` means the host adds no box. On the server (no `document`) it returns `null`, so guard the portal.
-
-## `useAttachHost`
-
-Registry-only. Moves a host element into a dock whenever the dock changes.
-
-- **Export:** not in `@brett_lamy/ui`. Registry item `persistent-host`.
-- **Needs:** nothing.
-
-```ts
-function useAttachHost(host: HTMLElement | null, dock: HTMLElement | null): void
-```
-
-Together:
 
 ```tsx
 function Player({ compact }: { compact: boolean }) {
-  const host = usePersistentHost('player')
-  const [full, setFull] = useState<HTMLElement | null>(null)
-  const [mini, setMini] = useState<HTMLElement | null>(null)
-  useAttachHost(host, compact ? mini : full)
+  const kept = useKeptChildren(<VideoPlayer />)
   return (
     <>
-      {compact ? <div ref={setMini} /> : <aside ref={setFull} />}
-      {host ? createPortal(<VideoPlayer />, host) : null}
+      {kept.portal}
+      {compact ? <div ref={kept.dock}>{kept.inline}</div> : <aside ref={kept.dock}>{kept.inline}</aside>}
     </>
   )
 }
 ```
 
-Docks are state set by a callback ref, so the hook re-runs when a dock mounts. The React tree of `VideoPlayer` is the portal's, so its state is unaffected by where the host lands.
+`slot` sets a `data-slot` on the detached element, as a styling hook.
 
 Gotchas:
 
-- **A `null` dock does not detach the host.** The host is appended only when both `host` and `dock` exist and the host is not already in the dock. If the dock goes away the host stays where it was, until it is moved or the component unmounts, which removes it.
-- It runs in a layout effect, so the move happens before paint.
-- A portal's React context is the context of where `createPortal` is called, not of the dock: components inside a persistent host see the providers of the component that owns it. That is why `useArtifactChatContainer()` works inside the container's Chat and Composer wherever they are docked, and why a hook of the layout they are docked in (`useFloatingSheet`) does not reach them.
+- **A dock only claims.** When a dock unmounts the children stay where they were, still mounted, until another dock claims them, so a presentation that is animating out never takes them back from the one arriving. They are removed when the component unmounts.
+- **Before hydration** the children render in the dock (`inline`), so the server's markup matches; after it they move into the portal once.
+- **Context comes from the portal's place**, not the dock's: the children see the providers of the component that calls the hook. That is why `useArtifactChatContainer()` works inside the container's Chat and Composer wherever they are docked, and why a hook of the layout they are docked in (`useFloatingSheet`) does not reach them.
+- **A compound component** whose slot part owns the children and whose root owns the docks calls the hook in the part and hands `kept.dock` to the root through context (ArtifactChatContainer does this).
 
 ## The system back gesture
 

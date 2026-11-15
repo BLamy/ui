@@ -18,7 +18,7 @@ import {
   NavigationStack, NavigationStackBar, NavigationStackContent, NavigationStackLeading, NavigationStackPage, NavigationStackTitle,
   NavigationStackTrailing, useNavigationStack,
 } from '@/components/ui/navigation-stack';
-import { SplitView, SplitViewContent, SplitViewDetail, SplitViewHeader, SplitViewItem, SplitViewSection, SplitViewSidebar, SplitViewSupplementary, SplitViewToggle, useSplitView, type SplitViewProps } from '@/components/ui/split-view';
+import { SplitView, SplitViewContent, SplitViewDetail, SplitViewHeader, SplitViewItem, SplitViewSection, SplitViewSidebar, SplitViewSupplementary, SplitViewSidebarTrigger, useSplitView, type SplitViewProps } from '@/components/ui/split-view';
 import { Switch } from '@/components/ui/switch';
 import { useContainerWidth } from '@/lib/container';
 import { Icon } from '@/lib/icon';
@@ -78,8 +78,8 @@ export function DemoGlyph({ name, size = 20, sw = 1.9 }: { name: string; size?: 
 
 function BarButton({ label, children, onClick }: { label: string; children: ReactNode; onClick?: () => void }) {
   return (
-    <Button variant="link" size="icon-sm" aria-label={label} onClick={onClick}
-      className="rounded-ctl px-2.5 py-2 transition-[background,scale] duration-150 hover:bg-secondary active:not-aria-expanded:not-data-disabled:scale-[.94] focus-visible:ring-offset-0">
+    <Button variant="plain" size="icon-sm" aria-label={label} onClick={onClick}
+      className="rounded-ctl px-2.5 py-2 transition-[background,scale] duration-150 hover:bg-secondary hover:not-data-disabled:opacity-100 active:not-aria-expanded:not-data-disabled:scale-[.94] focus-visible:ring-offset-0">
       {children}
     </Button>
   );
@@ -142,7 +142,7 @@ function MailList() {
   const msgs = (MAIL[box.id] ?? []).filter((m) => !q || (m.subject + m.preview + m.from.join(' ')).toLowerCase().includes(q.toLowerCase()));
   return (
     <SplitViewSupplementary aria-label={box.title}>
-      <SplitViewHeader title={box.title} leading={<SplitViewToggle />}
+      <SplitViewHeader title={box.title} leading={<SplitViewSidebarTrigger />}
         trailing={<BarButton label="New message"><DemoGlyph name="compose" size={21} /></BarButton>} />
       <SplitViewContent>
         <div className="px-4 pt-2.5 pb-2"><SearchInput value={q} onValueChange={setQ} /></div>
@@ -222,7 +222,7 @@ function MailMessage() {
           </article>
         </SplitViewContent>
       ) : (
-        <EmptyState icon={<DemoGlyph name="inbox" size={48} sw={1.2} />} title="No Message Selected" />
+        <EmptyState icon={<DemoGlyph name="inbox" sw={1.2} />} title="No Message Selected" />
       )}
     </SplitViewDetail>
   );
@@ -271,7 +271,7 @@ function NotesEditor() {
   const n = NOTES.find((x) => x.id === s.value.sidebar);
   return (
     <SplitViewDetail aria-label="Note">
-      <SplitViewHeader leading={<SplitViewToggle />} trailing={<BarButton label="Share"><DemoGlyph name="send" /></BarButton>} />
+      <SplitViewHeader leading={<SplitViewSidebarTrigger />} trailing={<BarButton label="Share"><DemoGlyph name="send" /></BarButton>} />
       {n ? (
         <SplitViewContent>
           <div className="mx-auto max-w-[680px] px-7 pt-4 pb-10">
@@ -280,7 +280,7 @@ function NotesEditor() {
             <p className="m-0 text-body leading-[1.55]">{n.body}</p>
           </div>
         </SplitViewContent>
-      ) : <EmptyState icon={<DemoGlyph name="note" size={48} sw={1.2} />} title="No Note Selected" />}
+      ) : <EmptyState icon={<DemoGlyph name="note" sw={1.2} />} title="No Note Selected" />}
     </SplitViewDetail>
   );
 }
@@ -305,7 +305,7 @@ function SettingsPane() {
   const flip = (k: string) => (v: boolean) => setOn((o) => ({ ...o, [k]: v }));
   return (
     <SplitViewDetail aria-label={cur?.title ?? 'Settings'} className="bg-muted">
-      <SplitViewHeader title={cur?.title} leading={<SplitViewToggle />} className="bg-muted" />
+      <SplitViewHeader title={cur?.title} leading={<SplitViewSidebarTrigger />} className="bg-muted" />
       {cur ? (
         <SplitViewContent>
           <div className="mx-auto max-w-[620px] px-5 pt-5 pb-10">
@@ -457,7 +457,7 @@ function RemindersList({ scrolled }: { scrolled?: boolean }) {
   }, [scrolled]);
   return (
     <SplitViewDetail aria-label={l.title}>
-      <SplitViewHeader title={l.title} largeTitle leading={<SplitViewToggle />}
+      <SplitViewHeader title={l.title} largeTitle leading={<SplitViewSidebarTrigger />}
         trailing={<BarButton label="Add reminder"><DemoGlyph name="plus" size={22} /></BarButton>} />
       <SplitViewContent key={id} className="text-(--list-color)" style={{ '--list-color': l.color } as CSSProperties}>
         <div ref={marker} className="pb-8 text-foreground">
@@ -585,7 +585,7 @@ function AlbumPage({ value, a }: { value: string; a: Album }) {
           </div>
           <div className="mt-6">
             {a.tracks.map((t, i) => (
-              <Button key={t} variant="link" onClick={(event) => stack.push(`credits:${a.id}:${i}`, { reason: 'trigger-press', event: event.nativeEvent })}
+              <Button key={t} variant="plain" onClick={(event) => stack.push(`credits:${a.id}:${i}`, { reason: 'trigger-press', event: event.nativeEvent })}
                 className="flex h-auto w-full justify-start gap-4 rounded-none px-1 py-3 text-left text-callout font-normal whitespace-normal text-foreground shadow-hairline-b active:not-aria-expanded:not-data-disabled:scale-100 active:bg-accent focus-visible:ring-offset-0">
                 <span className="w-5 text-right text-detail text-muted-foreground tabular-nums">{i + 1}</span>
                 <span className="min-w-0 flex-1 truncate">{t}</span>
@@ -607,7 +607,7 @@ function LibraryRoot({ value }: { value: string }) {
   return (
     <NavigationStackPage value={value}>
       <NavigationStackBar>
-        <NavigationStackLeading><SplitViewToggle /></NavigationStackLeading>
+        <NavigationStackLeading><SplitViewSidebarTrigger /></NavigationStackLeading>
         <NavigationStackTitle>{sec.title}</NavigationStackTitle>
       </NavigationStackBar>
       <NavigationStackContent>
@@ -615,13 +615,13 @@ function LibraryRoot({ value }: { value: string }) {
           {ALBUMS.map((a) => (
             <HoverCard key={a.id}>
               <HoverCardTrigger
-                render={<Button variant="link" onClick={(event) => stack.push(`album:${a.id}`, { reason: 'trigger-press', event: event.nativeEvent })}
+                render={<Button variant="plain" onClick={(event) => stack.push(`album:${a.id}`, { reason: 'trigger-press', event: event.nativeEvent })}
                   className="flex h-auto w-full flex-col items-stretch justify-start gap-1.5 rounded-ctl text-left font-normal whitespace-normal text-foreground focus-visible:ring-offset-0" />}>
                 <Cover a={a} className="aspect-square w-full" />
                 <span className="mt-0.5 truncate text-detail font-medium">{a.title}</span>
                 <span className="-mt-1 truncate text-footnote text-muted-foreground">{a.artist}</span>
               </HoverCardTrigger>
-              <HoverCardContent side="right" align="start" className="w-64"><AlbumCard a={a} /></HoverCardContent>
+              <HoverCardContent side="end" align="start" className="w-64"><AlbumCard a={a} /></HoverCardContent>
             </HoverCard>
           ))}
         </div>
@@ -686,13 +686,13 @@ function GalleryDetail() {
   const n = NOTES.find((x) => x.id === s.value.supplementary);
   return (
     <SplitViewDetail aria-label={gallery ? 'Gallery' : 'Note'}>
-      <SplitViewHeader title={gallery ? 'Notes' : undefined} leading={gallery ? <SplitViewToggle /> : null}
+      <SplitViewHeader title={gallery ? 'Notes' : undefined} leading={gallery ? <SplitViewSidebarTrigger /> : null}
         trailing={<>{gallery ? <ViewSwitch /> : null}<BarButton label="New note"><DemoGlyph name="compose" size={21} /></BarButton></>} />
       {gallery ? (
         <SplitViewContent>
           <div className="grid grid-cols-[repeat(auto-fill,minmax(170px,1fr))] gap-4 px-5 pt-5 pb-10">
             {NOTES.map((x) => (
-              <Button key={x.id} variant="link" onClick={() => { s.select('supplementary', x.id); s.setSupplementaryOpen(true); }}
+              <Button key={x.id} variant="plain" onClick={() => { s.select('supplementary', x.id); s.setSupplementaryOpen(true); }}
                 className="flex h-auto flex-col items-stretch justify-start gap-2 rounded-panel p-0 text-left font-normal whitespace-normal text-foreground active:not-aria-expanded:not-data-disabled:scale-100 focus-visible:ring-offset-0">
                 <span className={cn('block h-[150px] overflow-hidden rounded-panel bg-card p-3 text-caption2 leading-[1.45] text-muted-foreground',
                   x.id === s.value.supplementary ? 'shadow-[0_0_0_2.5px_var(--primary)]' : 'shadow-[0_0_0_1px_var(--border)]')}>
@@ -714,7 +714,7 @@ function GalleryDetail() {
             <p className="m-0 text-body leading-[1.55]">{n.body}</p>
           </div>
         </SplitViewContent>
-      ) : <EmptyState icon={<DemoGlyph name="note" size={48} sw={1.2} />} title="No Note Selected" />}
+      ) : <EmptyState icon={<DemoGlyph name="note" sw={1.2} />} title="No Note Selected" />}
     </SplitViewDetail>
   );
 }
@@ -733,7 +733,7 @@ export function SplitViewGalleryDemo({ defaultValue, ...props }: DemoProps) {
         </SplitViewContent>
       </SplitViewSidebar>
       <SplitViewSupplementary aria-label="Notes" width={320}>
-        <SplitViewHeader title="Notes" leading={<SplitViewToggle />} trailing={<ViewSwitch />} />
+        <SplitViewHeader title="Notes" leading={<SplitViewSidebarTrigger />} trailing={<ViewSwitch />} />
         <SplitViewContent className="px-2.5 pt-1 pb-4">
           <div className="flex flex-col gap-0.5">{NOTES.map((n) => (
             <SplitViewItem key={n.id} value={n.id} variant="pill" title={<span className="font-semibold">{n.title}</span>}

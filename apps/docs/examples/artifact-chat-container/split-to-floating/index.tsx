@@ -284,7 +284,7 @@ export default function SplitToFloating({
                     <ComposerAttachments />
                     <ComposerInput placeholder="Do anything" />
                     <ComposerFooter>
-                      <ComposerAdd icon="paperclip-diagonal" label="Attach files" />
+                      <ComposerAdd icon="paperclip-diagonal" aria-label="Attach files" />
                       <ComposerSpacer />
                       <ComposerSend />
                     </ComposerFooter>

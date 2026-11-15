@@ -8,7 +8,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
 import { NumberMorph } from '@/components/ui/number-morph';
 import { Button as SdkButton } from '@ui-sdk/react/button';
-import { SplitViewContent, SplitViewDetail, SplitViewHeader, SplitViewToggle, useSplitView } from '@/components/ui/split-view';
+import { SplitViewContent, SplitViewDetail, SplitViewHeader, SplitViewSidebarTrigger, useSplitView } from '@/components/ui/split-view';
 import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
 import { Input } from '@ui-sdk/react/input';
@@ -73,7 +73,7 @@ export function ListView() {
 
   return (
     <SplitViewDetail aria-label={view.title}>
-      <SplitViewHeader title={<span style={{ color: view.color }}>{view.title}</span>} largeTitle leading={<SplitViewToggle />} backLabel="Lists"
+      <SplitViewHeader title={<span style={{ color: view.color }}>{view.title}</span>} largeTitle leading={<SplitViewSidebarTrigger />} backLabel="Lists"
         trailing={list ? (
           <DropdownMenu>
             <DropdownMenuTrigger render={<Button variant="ghost" size="icon" aria-label="List options" className="size-9 text-primary" />}>

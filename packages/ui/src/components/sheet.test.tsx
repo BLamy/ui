@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { Button, buttonVariants } from '@/components/ui/button';
 import {
-  Sheet, SheetBackdrop, SheetBody, SheetClose, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle,
+  Sheet, SheetBack, SheetBackdrop, SheetBody, SheetClose, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle,
   SheetTrigger, SheetView, createSheetController,
 } from '@/components/ui/sheet';
 import { BLProvider } from '@/lib/theme';
@@ -209,5 +209,66 @@ describe('Sheet', () => {
     const swap = document.querySelector<HTMLElement>('[data-slot=swap]:has([data-slot=dialog-view])')!;
     expect(swap.style.getPropertyValue('--swap-enter')).toBe('40px');
     expect(document.querySelector<HTMLElement>('[data-slot=drawer-title] [data-slot=swap]')!.style.getPropertyValue('--swap-enter')).toBe('18px');
+  });
+
+  it('a flow header is the bar: SheetBack folds in, the title takes the row, the × sits in it', async () => {
+    function Flow() {
+      const [step, setStep] = useState('pick');
+      return (
+        <Sheet defaultOpen view={step}>
+          <SheetContent>
+            <SheetHeader variant="bar">
+              <SheetBack hidden={step === 'pick'} onClick={() => setStep('pick')} />
+              <SheetTitle>{step === 'pick' ? 'Choose a plan' : 'Confirm'}</SheetTitle>
+              <SheetClose />
+            </SheetHeader>
+            <SheetView>
+              {step === 'pick' ? <Button onClick={() => setStep('confirm')}>Continue</Button> : <p>Billed today.</p>}
+            </SheetView>
+          </SheetContent>
+        </Sheet>
+      );
+    }
+    render(<BLProvider><Flow /></BLProvider>);
+    await settle();
+    const header = document.querySelector('[data-slot=sheet-header]')!;
+    expect(header.getAttribute('data-variant')).toBe('bar');
+    const close = screen.getByRole('button', { name: 'Close' });
+    expect(close.parentElement).toBe(header);
+    expect(close.className.split(' ')).not.toContain('absolute');
+    expect(document.querySelector('[data-slot=drawer-title]')!.className).toContain('flex-1');
+    // Folded away on the first step: out of reach.
+    expect(screen.queryByRole('button', { name: 'Back' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    await settle();
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    await settle();
+    expect(screen.getByRole('dialog', { name: 'Choose a plan' })).toBeTruthy();
+  });
+
+  it('not dismissible: no bare ×, no grabber; a Close with children still closes it', async () => {
+    const onOpenChange = vi.fn();
+    render(
+      <BLProvider>
+        <Sheet defaultOpen dismissible={false} onOpenChange={onOpenChange}>
+          <SheetContent>
+            <SheetClose />
+            <SheetHeader><SheetTitle>Terms</SheetTitle></SheetHeader>
+            <SheetFooter orientation="horizontal">
+              <SheetClose render={<Button variant="secondary" />}>Later</SheetClose>
+              <SheetClose render={<Button />}>Accept</SheetClose>
+            </SheetFooter>
+          </SheetContent>
+        </Sheet>
+      </BLProvider>,
+    );
+    await settle();
+    expect(screen.queryByRole('button', { name: 'Close' })).toBeNull();
+    expect(document.querySelector('[data-slot=sheet-grabber]')).toBeNull();
+    const footer = document.querySelector('[data-slot=sheet-footer]')!;
+    expect(footer.getAttribute('data-orientation')).toBe('horizontal');
+    fireEvent.click(screen.getByRole('button', { name: 'Accept' }));
+    await settle();
+    expect(onOpenChange).toHaveBeenLastCalledWith(false, expect.objectContaining({ reason: 'close-press' }));
   });
 });

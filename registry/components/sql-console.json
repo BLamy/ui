@@ -1,22 +1,17 @@
 {
   "name": "sql-console",
   "title": "SqlConsole",
-  "description": "A SQL workbench for a PGlite database, made of parts: a header with the versions and a Database menu (SQL / data-directory export and import), a sidebar with the schema (a Tree over schemaTreeItems) and the history, the console's SqlEditor (a highlighted textarea on UI SDK's Textarea: ⌘/Ctrl+Enter runs, ↑/↓ history, an error squiggle, a footer part) and a DataTable per statement with typed headers, type-aware cells and CSV / JSON copy, or the error with its line, caret, SQLSTATE and hint.",
+  "description": "A SQL workbench for a PGlite database, made of parts: a header with the versions and a Database menu (SQL / data-directory export and import), a sidebar with the schema (a Tree over schemaTreeItems) and the history, the SqlConsoleEditor (a highlighted textarea on UI SDK's Textarea: ⌘/Ctrl+Enter runs, ↑/↓ history, an error squiggle and invalid state, a footer part; also usable on its own) and a DataTable per statement with typed headers, type-aware cells, labelled stacked rows and CSV / JSON copy, or the error with its line, caret, SQLSTATE and hint. Its text is controlled or uncontrolled (value / defaultValue / onValueChange).",
   "page": "sql-console",
-  "files": [
-    "components/sql-console.tsx",
-    "components/sql-editor.tsx"
-  ],
   "exports": [
     "SqlConsole",
     "SqlConsoleHeader",
     "SqlConsoleDatabaseMenu",
     "SqlConsoleSidebar",
     "SqlConsoleEditor",
+    "SqlConsoleEditorFooter",
+    "SqlConsoleEditorRun",
     "SqlConsoleResults",
-    "SqlEditor",
-    "SqlEditorFooter",
-    "SqlEditorRun",
     "useSqlHistory"
   ],
   "imports": [
@@ -26,10 +21,9 @@
     "SqlConsoleProps",
     "SqlConsoleHeaderProps",
     "SqlConsoleEditorProps",
-    "SqlEditorProps",
-    "SqlEditorFooterProps",
-    "SqlEditorRunProps",
-    "SqlEditorHandle",
+    "SqlConsoleEditorFooterProps",
+    "SqlConsoleEditorRunProps",
+    "SqlConsoleEditorHandle",
     "SqlHistory"
   ]
 }

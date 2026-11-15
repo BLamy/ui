@@ -2,7 +2,6 @@
 import { useMemo, type ComponentProps, type CSSProperties, type ReactNode } from 'react';
 import { Button as SdkButton } from '@ui-sdk/react/button';
 import { DataTable, DataTableCell, type DataTableColumn, type DataTableOverlayState, type DataTableProps } from '@/components/ui/data-table';
-import { EmptyState } from '@/components/ui/empty-state';
 import type { DataTableTimeRange } from '@/lib/data-table-model';
 import { Icon } from '@/lib/icon';
 import {
@@ -12,14 +11,15 @@ import {
 import { formatDuration } from '@/lib/sql-format';
 import { cn, cx } from '@/lib/utils';
 
-/* ══ RequestTable — a network pane: 10,000 requests, a waterfall and a playhead ══
-   <RequestTable rows={rows} playhead={t} value={id} onAction={(id, { row }) => seek(row.time)} />
+/* ══ RequestTable — a network pane: 10,000 requests, a waterfall and the current time ══
+   <RequestTable rows={rows} currentTime={t} value={id} onAction={(id, { row }) => seek(row.time)} />
 
-   A preset of DataTable: the request columns (name, method, status, type, size, time and a waterfall), the playhead's
-   line across the waterfall with the rows sent after it dimmed, and `renderLink` for links to the other end of a call
-   (`RequestLink`). Everything else, sorting, resizing, the keyboard, virtual rows, its own size class and the props
-   for them, is DataTable's. The waterfall's bars share one time range. The playhead writes one element's position and
-   a few attributes and renders nothing, so it can follow a clock on every frame.
+   A preset of DataTable: the request columns (name, method, status, type, size, time and a waterfall), the current
+   time's line across the waterfall with the rows sent after it dimmed, and `renderLink` for links to the other end of a
+   call (`RequestTableLink`). Everything else, sorting, resizing, the keyboard, virtual rows, its own size class and the
+   props for them, is DataTable's. The waterfall's bars share one time range, and each says when its request started to
+   a screen reader. The current time writes one element's position and a few attributes and renders nothing, so it can
+   follow a clock on every frame.
 
    Compact (under 480 px of its own width) it becomes two-line rows: the name, then status, method and duration, with a
    small waterfall beside them and sorting in a menu. Under 760 px the columns with `hideBelow: 'regular'` (`type` and
@@ -27,41 +27,43 @@ import { cn, cx } from '@/lib/utils';
 
 export type RequestColumnId = 'name' | 'url' | 'method' | 'status' | 'type' | 'size' | 'duration' | 'waterfall';
 
-/** The built-in columns' sizes and titles. `type` and `size` go first when the table is narrow: below its regular size
+/** The built-in columns' sizes and headers. `type` and `size` go first when the table is narrow: below its regular size
  *  class. Their cells and sort values come with them when you name one by id in `columns`. */
 export const REQUEST_COLUMNS: Record<RequestColumnId, DataTableColumn<RequestRow>> = {
-  name: { id: 'name', title: 'Name', flex: 3, minWidth: 160 },
-  url: { id: 'url', title: 'URL', flex: 3, minWidth: 200 },
-  method: { id: 'method', title: 'Method', width: 66, minWidth: 48 },
-  status: { id: 'status', title: 'Status', width: 76, minWidth: 48 },
-  type: { id: 'type', title: 'Type', width: 72, minWidth: 48, hideBelow: 'regular' },
-  size: { id: 'size', title: 'Size', width: 72, minWidth: 48, align: 'end', hideBelow: 'regular' },
-  duration: { id: 'duration', title: 'Time', width: 72, minWidth: 48, align: 'end' },
-  waterfall: { id: 'waterfall', title: 'Waterfall', label: 'Start time', flex: 2, minWidth: 120 },
+  name: { id: 'name', header: 'Name', flex: 3, minWidth: 160 },
+  url: { id: 'url', header: 'URL', flex: 3, minWidth: 200 },
+  method: { id: 'method', header: 'Method', width: 66, minWidth: 48 },
+  status: { id: 'status', header: 'Status', width: 76, minWidth: 48 },
+  type: { id: 'type', header: 'Type', width: 72, minWidth: 48, hideBelow: 'regular' },
+  size: { id: 'size', header: 'Size', width: 72, minWidth: 48, align: 'end', hideBelow: 'regular' },
+  duration: { id: 'duration', header: 'Time', width: 72, minWidth: 48, align: 'end' },
+  waterfall: { id: 'waterfall', header: 'Waterfall', label: 'Start time', flex: 2, minWidth: 120 },
 };
 
 const DEFAULT_COLUMNS: readonly RequestColumnId[] = ['name', 'method', 'status', 'type', 'size', 'duration', 'waterfall'];
 
 const BAR_CLASS = [
+  // The waterfall runs left to right in either direction, as a time axis does.
   'absolute top-1/2 left-(--bar-left) h-2 w-(--bar-width) min-w-0.5 -translate-y-1/2 rounded-xs bg-primary',
-  'data-[tone=accent]:bg-chart-5 data-[tone=danger]:bg-destructive data-[tone=neutral]:bg-muted-foreground/60 data-[tone=success]:bg-success data-[tone=warning]:bg-warning',
+  'data-[tone=destructive]:bg-destructive data-[tone=muted]:bg-muted-foreground/60 data-[tone=success]:bg-success data-[tone=warning]:bg-warning',
+  'data-tint:bg-(--bar-tint)',
   'data-pending:opacity-50',
 ].join(' ');
 
 const NAME_CLASS = 'min-w-0 truncate font-mono group-data-failed/row:text-destructive';
 const STATUS_CLASS = 'tabular-nums group-data-failed/row:text-destructive group-data-pending/row:text-muted-foreground';
 const MUTED_CLASS = 'text-muted-foreground';
-// Beside both lines rather than in the second, so the one playhead line goes through every row without crossing a name or a link.
+// Beside both lines rather than in the second, so the one current-time line goes through every row without crossing a name or a link.
 const STACKED_WATERFALL_CLASS = 'relative h-3 w-24 shrink-0 rounded-sm bg-secondary';
 
-export type RequestLinkProps = ComponentProps<typeof SdkButton> & {
+export type RequestTableLinkProps = ComponentProps<typeof SdkButton> & {
   /** An Icon name after the text. Default `arrow-right`; null for none. */
   icon?: 'arrow-right' | 'arrow-up-right' | null;
 };
 
 /** A link to the other end of a call, for `renderLink`: UI SDK's Button, small enough for a row, and a press on it
  *  doesn't press the row. */
-export function RequestLink({ icon = 'arrow-right', className, children, ...props }: RequestLinkProps) {
+export function RequestTableLink({ icon = 'arrow-right', className, children, ...props }: RequestTableLinkProps) {
   return (
     <SdkButton
       data-slot="request-table-link"
@@ -81,17 +83,29 @@ export function RequestLink({ icon = 'arrow-right', className, children, ...prop
   );
 }
 
+/** When a request started, from the start of the range: "0 ms", "1.2 s". */
+function startText(row: RequestRow, range: DataTableTimeRange): string {
+  const at = Math.max(0, (row.time ?? range[0]) - range[0]);
+  return at === 0 ? '0 ms' : formatDuration(at);
+}
+
 function Bar({ row, range }: { row: RequestRow; range: DataTableTimeRange }) {
   const bar = requestBar(row, range);
   if (!bar) return null;
   return (
-    <div
-      data-slot="request-table-bar"
-      data-tone={requestTone(row)}
-      data-pending={row.pending || undefined}
-      className={BAR_CLASS}
-      style={{ '--bar-left': `${bar.left}%`, '--bar-width': `${bar.width}%` } as CSSProperties}
-    />
+    <>
+      <div
+        data-slot="request-table-bar"
+        data-tone={requestTone(row)}
+        data-tint={row.tint ? '' : undefined}
+        data-pending={row.pending || undefined}
+        aria-hidden="true"
+        className={BAR_CLASS}
+        style={{ '--bar-left': `${bar.left}%`, '--bar-width': `${bar.width}%`, '--bar-tint': row.tint } as CSSProperties}
+      />
+      {/* The bar is the only place a request's start shows; this says it. */}
+      <span className="sr-only">{`Starts at ${startText(row, range)}`}</span>
+    </>
   );
 }
 
@@ -111,25 +125,25 @@ function builtIn<T extends RequestRow>(id: RequestColumnId, range: DataTableTime
       return {
         sortValue,
         className: 'flex items-center gap-1.5',
-        render: (row) => (
+        cell: (row) => (
           <>
             <span data-slot="request-table-name" title={nameTitle(row)} className={NAME_CLASS}>{id === 'url' ? row.url : requestDisplayName(row)}</span>
             {links(renderLink?.(row))}
           </>
         ),
       };
-    case 'method': return { sortValue, className: MUTED_CLASS, render: (row) => row.method };
-    case 'status': return { sortValue, className: STATUS_CLASS, render: requestStatusText };
-    case 'type': return { sortValue, className: MUTED_CLASS, render: (row) => row.type };
-    case 'size': return { sortValue, className: MUTED_CLASS, render: requestSizeText };
-    case 'duration': return { sortValue, render: requestDurationText };
+    case 'method': return { sortValue, className: MUTED_CLASS, cell: (row) => row.method };
+    case 'status': return { sortValue, className: STATUS_CLASS, cell: requestStatusText };
+    case 'type': return { sortValue, className: MUTED_CLASS, cell: (row) => row.type };
+    case 'size': return { sortValue, className: MUTED_CLASS, cell: requestSizeText };
+    case 'duration': return { sortValue, cell: requestDurationText };
     case 'waterfall': {
       const span = range[1] - range[0];
       return {
         sortValue,
         className: 'relative mx-2 h-full px-0',
         headerEnd: span > 0 ? formatDuration(span) : undefined,
-        render: (row) => <Bar row={row} range={range} />,
+        cell: (row) => <Bar row={row} range={range} />,
       };
     }
   }
@@ -140,9 +154,12 @@ export interface RequestTableProps<T extends RequestRow = RequestRow>
   /** Which columns, in order: a built-in's id, or a column of your own (with a built-in's `id` to adjust that one). */
   columns?: readonly (RequestColumnId | DataTableColumn<T>)[];
   /** The waterfall's range, in ms. Default: from the first request to the last answer. Give the recording's own range if
-   *  rows come and go with a playhead, or every bar moves when they do. */
+   *  rows come and go with the current time, or every bar moves when they do. */
   timeRange?: DataTableTimeRange;
-  /** Links to the other end of a call, usually `RequestLink`s, after the name (or the second line of a two-line row).
+  /** `row` (default): focus moves by request, as in a network pane, where a row is one thing to open or seek to. `cell`
+   *  steps through a request's values too, as DataTable does. */
+  focus?: 'cell' | 'row';
+  /** Links to the other end of a call, usually `RequestTableLink`s, after the name (or the second line of a two-line row).
    *  Must be stable (`useCallback`). */
   renderLink?: (row: T) => ReactNode;
 }
@@ -150,13 +167,13 @@ export interface RequestTableProps<T extends RequestRow = RequestRow>
 const rowTime = (row: RequestRow) => row.time;
 const countLabel = (count: number) => `${count.toLocaleString('en-US')} ${count === 1 ? 'request' : 'requests'}`;
 
-/** The playhead's line: across the waterfall column in a table, across the small waterfall of a two-line row. */
-function playheadLine<T extends RequestRow>({ columns, stacked }: DataTableOverlayState<T>): ReactNode {
+/** The current time's line: across the waterfall column in a table, across the small waterfall of a two-line row. */
+function currentTimeLine<T extends RequestRow>({ columns, stacked }: DataTableOverlayState<T>): ReactNode {
   const at = columns.findIndex((column) => column.id === 'waterfall');
   if (at < 0) return null;
-  // Shown only while the playhead is on the range (the grid's `data-playhead`).
+  // Shown only while the current time is on the range (the grid's `data-current-time`).
   return (
-    <div data-slot="request-table-playhead" className="hidden group-data-playhead/grid:block">
+    <div data-slot="request-table-current-time" className="hidden group-data-current-time/grid:block">
       <div
         className={cn(
           'absolute inset-x-0',
@@ -164,7 +181,7 @@ function playheadLine<T extends RequestRow>({ columns, stacked }: DataTableOverl
         )}
       >
         <div className={stacked ? 'relative w-24' : 'relative mx-2'} style={stacked ? undefined : { gridColumnStart: at + 1 }}>
-          <div className="absolute inset-y-0 left-[calc(var(--data-table-playhead,0)*100%)] w-px bg-primary" />
+          <div className="absolute inset-y-0 left-[calc(var(--data-table-current-time,0)*100%)] w-px bg-primary" />
         </div>
       </div>
     </div>
@@ -172,7 +189,8 @@ function playheadLine<T extends RequestRow>({ columns, stacked }: DataTableOverl
 }
 
 export function RequestTable<T extends RequestRow = RequestRow>({
-  rows, columns: columnsProp = DEFAULT_COLUMNS, timeRange, renderLink, density = 'compact', emptyState, 'aria-label': ariaLabel = 'Requests', ...props
+  rows, columns: columnsProp = DEFAULT_COLUMNS, timeRange, renderLink, density = 'compact', focus = 'row', emptyState, rowProps: ownRowProps,
+  'aria-label': ariaLabel = 'Requests', ...props
 }: RequestTableProps<T>) {
   const from = timeRange?.[0];
   const to = timeRange?.[1];
@@ -206,6 +224,8 @@ export function RequestTable<T extends RequestRow = RequestRow>({
       ) : null}
     </>
   ), [has, range, renderLink]);
+  // A caller's own attributes come along with the request's.
+  const rowProps = useMemo(() => (ownRowProps ? (row: T) => ({ ...ownRowProps(row), ...requestRowProps(row) }) : requestRowProps), [ownRowProps]);
 
   return (
     <DataTable<T>
@@ -214,18 +234,19 @@ export function RequestTable<T extends RequestRow = RequestRow>({
       rows={rows}
       columns={columns}
       density={density}
+      focus={focus}
       timeRange={range}
       rowTime={rowTime}
-      overlay={playheadLine}
+      overlay={currentTimeLine}
       renderStackedRow={renderStackedRow}
       countLabel={countLabel}
-      emptyState={emptyState === undefined ? <EmptyState size="sm" title="No requests" /> : emptyState}
+      emptyState={emptyState === undefined ? 'No requests' : emptyState}
       rowProps={rowProps}
     />
   );
 }
 
 /** A row's state as attributes the cells' classes read: failed and pending. */
-function rowProps(row: RequestRow) {
+function requestRowProps(row: RequestRow) {
   return { 'data-failed': isRequestFailed(row) || undefined, 'data-pending': row.pending || undefined };
 }

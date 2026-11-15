@@ -1,10 +1,11 @@
 import { useState, type ReactNode } from 'react'
 import { Button } from '@/components/ui/button'
-import { FloatingSheet, FloatingSheetBody, FloatingSheetFoot } from '@/components/ui/floating-sheet'
+import { FloatingSheet, FloatingSheetBody, FloatingSheetFooter } from '@/components/ui/floating-sheet'
 import { ProgressStepper } from '@/components/ui/progress-stepper'
-import { AnimatePresence, motion } from 'framer-motion'
-import { springs } from '@/lib/motion'
-import { useAppearance } from '@/lib/theme'
+import { SheetBack } from '@/components/ui/sheet'
+import { Swap } from '@/components/ui/swap'
+import { surfaceHeaderVariants, surfaceTitleVariants } from '@/lib/surface'
+import { cn } from '@/lib/utils'
 
 const steps = [
   { id: 'placed', label: 'Placed' },
@@ -12,21 +13,19 @@ const steps = [
   { id: 'ready', label: 'Ready' },
 ]
 
-const row = { display: 'flex', justifyContent: 'space-between' } as const
-
-// Each tray sets its own peek, so the sheet's height morphs between them.
+// Each tray sets its own peek, so the sheet's height springs between them.
 const trays: { id: string; title: string; peek: number; body: ReactNode }[] = [
   {
     id: 'review',
     title: 'Review order',
-    peek: 130,
+    peek: 120,
     body: (
-      <div style={{ display: 'grid', gap: 8, fontSize: 14 }}>
-        <div style={row}>
+      <div className="grid gap-2 text-subhead">
+        <div className="flex justify-between">
           <span>2× Flat white</span>
           <strong>$9.00</strong>
         </div>
-        <div style={row}>
+        <div className="flex justify-between">
           <span>1× Almond croissant</span>
           <strong>$4.75</strong>
         </div>
@@ -36,20 +35,11 @@ const trays: { id: string; title: string; peek: number; body: ReactNode }[] = [
   {
     id: 'pay',
     title: 'Pay with',
-    peek: 250,
+    peek: 230,
     body: (
-      <div style={{ display: 'grid', gap: 8 }}>
+      <div className="grid gap-2">
         {['Apple Pay', 'Visa ···· 4242', 'Add a card'].map((m, i) => (
-          <div
-            key={m}
-            style={{
-              padding: '12px 14px',
-              borderRadius: 12,
-              background: 'rgba(120,120,128,.14)',
-              fontSize: 14,
-              fontWeight: i === 0 ? 700 : 500,
-            }}
-          >
+          <div key={m} className={cn('rounded-ctl bg-secondary px-3.5 py-3 text-subhead', i === 0 && 'font-semibold')}>
             {m}
           </div>
         ))}
@@ -64,152 +54,64 @@ const trays: { id: string; title: string; peek: number; body: ReactNode }[] = [
   },
 ]
 
-// Content slides the way the flow moves: forward from the right, back from the
-// left.
-const slide = {
-  enter: (dir: number) => ({ x: dir * 60, opacity: 0, filter: 'blur(3px)' }),
-  center: { x: 0, opacity: 1, filter: 'blur(0px)' },
-  exit: (dir: number) => ({ x: dir * -60, opacity: 0, filter: 'blur(3px)' }),
-}
-
-/** A 430×560 host with colour for the glass to blur; follows the appearance. */
+/** A 430×560 host with colour behind the sheet, in the page's tokens. */
 function Host({ children, note }: { children?: ReactNode; note: string }) {
-  const dark = useAppearance() === 'dark'
   return (
-    <div style={{ maxWidth: 430, margin: '0 auto' }}>
-      <div
-        style={{
-          position: 'relative',
-          height: 560,
-          borderRadius: 12,
-          overflow: 'hidden',
-          fontFamily: 'var(--bl-font)',
-          background: dark
-            ? 'radial-gradient(circle at 70% 18%, #2b2f4a, #0f1017 62%)'
-            : 'radial-gradient(circle at 70% 18%, #fff4e6, #e8ecf3 62%)',
-          color: dark ? '#f5f5f7' : '#1c1c1e',
-          boxShadow: 'inset 0 0 0 1px var(--border)',
-        }}
-      >
-        <div style={{ padding: 22 }}>
-          <div
-            style={{
-              fontSize: 11.5,
-              fontWeight: 700,
-              letterSpacing: '.08em',
-              opacity: 0.6,
-            }}
-          >
-            HOST CONTENT
-          </div>
-          <p
-            style={{
-              margin: '8px 0 0',
-              maxWidth: 340,
-              lineHeight: 1.5,
-              opacity: 0.8,
-              fontSize: 14,
-            }}
-          >
-            {note}
-          </p>
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(3, 1fr)',
-              gap: 10,
-              marginTop: 18,
-            }}
-          >
-            {[
-              '#0A84FF',
-              '#FF9F0A',
-              '#30D158',
-              '#BF5AF2',
-              '#FF375F',
-              '#64D2FF',
-            ].map((c) => (
-              <div
-                key={c}
-                style={{
-                  height: 64,
-                  borderRadius: 14,
-                  background: c,
-                  opacity: dark ? 0.75 : 0.6,
-                }}
-              />
-            ))}
-          </div>
+    <div className="relative mx-auto h-[560px] max-w-[430px] overflow-hidden rounded-card bg-muted font-sans text-foreground shadow-hairline">
+      <div aria-hidden className="absolute -top-16 -right-10 size-72 rounded-full bg-warning/30 blur-3xl" />
+      <div className="relative p-5">
+        <div className="text-caption font-bold tracking-wider text-muted-foreground uppercase">Host content</div>
+        <p className="mt-2 mb-0 max-w-[340px] text-subhead text-muted-foreground">{note}</p>
+        <div className="mt-4 grid grid-cols-3 gap-2.5">
+          {['bg-primary/60', 'bg-warning/60', 'bg-success/60', 'bg-primary/30', 'bg-destructive/50', 'bg-success/30'].map((c) => (
+            <div key={c} className={cn('h-16 rounded-card', c)} />
+          ))}
         </div>
-        {children}
       </div>
+      {children}
     </div>
   )
 }
 
-// One sheet, several trays: the height springs between steps rather than
-// jumping.
+// One sheet, several trays: the kit's flow grammar on a FloatingSheet. Each
+// step sets its `peek`, so the height springs between steps; the title and the
+// content travel with Swap in the direction of the flow (forward from the
+// right, back from the left); SheetBack folds into the header bar once there is
+// a step to go back to.
 export default function Trays() {
   const [step, setStep] = useState(0)
-  const [dir, setDir] = useState(1)
+  const [direction, setDirection] = useState<1 | -1>(1)
   const go = (next: number) => {
-    setDir(next > step ? 1 : -1)
+    setDirection(next > step ? 1 : -1)
     setStep(next)
   }
   const tray = trays[step]
   const last = step === trays.length - 1
   return (
-    <Host
-      note={
-        'Continue and Back move through the trays: each has its own height, ' +
-        'and the sheet morphs between them while the content slides the way ' +
-        'the flow moves.'
-      }
-    >
-      <FloatingSheet
-        peek={tray.peek}
-        variant="sheet"
-        collapse="none"
-        gutter={12}
-        radius={26}
-        aria-label="Checkout"
-        hideOnScroll={false}
-      >
+    <Host note="Continue and the back chevron move through the trays: each has its own height, and the sheet springs between them while the content travels the way the flow moves.">
+      <FloatingSheet peek={tray.peek} variant="sheet" collapse="none" aria-label="Checkout" hideOnScroll={false}>
         <FloatingSheetBody>
-          <div style={{ padding: '2px 20px 20px', overflow: 'hidden' }}>
-            <AnimatePresence mode="popLayout" initial={false} custom={dir}>
-              <motion.div
-                key={tray.id}
-                custom={dir}
-                variants={slide}
-                initial="enter"
-                animate="center"
-                exit="exit"
-                transition={springs.smooth}
-              >
-                <h3 style={{ margin: '0 0 12px', fontSize: 19 }}>
-                  {tray.title}
-                </h3>
-                {tray.body}
-              </motion.div>
-            </AnimatePresence>
+          <div className={cn(surfaceHeaderVariants({ variant: 'bar' }), 'pt-1')}>
+            <SheetBack hidden={step === 0} onClick={() => go(step - 1)} />
+            <h3 className={cn(surfaceTitleVariants(), 'min-w-0 flex-1 py-px')}>
+              <Swap value={tray.id} direction={direction} distance={18} blur={3} inline>
+                {tray.title}
+              </Swap>
+            </h3>
+          </div>
+          <div className="overflow-x-clip px-5 pb-5">
+            <Swap value={tray.id} direction={direction}>
+              {tray.body}
+            </Swap>
           </div>
         </FloatingSheetBody>
-        <FloatingSheetFoot>
-          <div style={{ display: 'flex', gap: 8, padding: '8px 16px 16px' }}>
-            <Button
-              className="flex-1"
-              variant="secondary"
-              disabled={step === 0}
-              onClick={() => go(step - 1)}
-            >
-              Back
-            </Button>
-            <Button className="flex-1" onClick={() => go(last ? 0 : step + 1)}>
+        <FloatingSheetFooter>
+          <div className="flex px-4 pt-2 pb-4">
+            <Button size="pill" className="flex-1" onClick={() => go(last ? 0 : step + 1)}>
               {last ? 'Start over' : 'Continue'}
             </Button>
           </div>
-        </FloatingSheetFoot>
+        </FloatingSheetFooter>
       </FloatingSheet>
     </Host>
   )

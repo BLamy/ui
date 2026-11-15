@@ -374,7 +374,7 @@ describe('Dialog header bar', () => {
     expect(dialog.contains(document.activeElement)).toBe(true);
     const close = screen.getByRole('button', { name: 'Close' });
     expect(close.parentElement?.getAttribute('data-slot')).toBe('dialog-header');
-    expect(close.className).not.toContain('absolute');
+    expect(close.className.split(' ')).not.toContain('absolute');
     done();
   });
 

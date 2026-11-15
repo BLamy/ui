@@ -6,7 +6,7 @@
   "exports": [
     "FloatingSheet",
     "FloatingSheetBody",
-    "FloatingSheetFoot",
+    "FloatingSheetFooter",
     "FloatingSheetFab",
     "useFloatingSheet",
     "floatingSheetVariants",
@@ -16,7 +16,7 @@
   "imports": [
     "FloatingSheet",
     "FloatingSheetBody",
-    "FloatingSheetFoot",
+    "FloatingSheetFooter",
     "FloatingSheetFab"
   ]
 }

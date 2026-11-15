@@ -17,12 +17,12 @@ import { CronEditor } from '@/components/ui/cron-editor'
 {% tab title="npm" %}
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 
-Import the stylesheet once at your app's entry, then the parts from the package root:
+Import the stylesheet once at your app's entry, then the parts from their module:
 
 ```tsx
 import '@brett_lamy/ui/styles.css'
 
-import { CronEditor } from '@brett_lamy/ui'
+import { CronEditor } from '@brett_lamy/ui/cron-editor'
 ```
 {% endtab %}
 {% endtabs %}
@@ -56,7 +56,7 @@ Without WebGPU the box is left out (the expression's description says why), and 
 
 ### Raw only, and your own presets
 
-`naturalLanguage={false}` never loads gpu-cron or asks for WebGPU. `presets` takes your own chips (or `false` for none), and `variant="plain"` drops the filled panels.
+`naturalLanguage={false}` never loads gpu-cron or asks for WebGPU. `presets` takes your own chips (or `false` for none), and `variant="plain"` drops the outline around the Next runs panel.
 
 {% demo src="cron-editor/raw-only" %}
 
@@ -144,7 +144,7 @@ The expression and the plain-English box are UI SDK fields (`Field` + `Input`) w
 | `naturalLanguageLabel` | "Describe the schedule" | Label of the plain-English box. |
 | `locale` | the browser's | BCP 47 locale of the run times. |
 | `parse` | — | `{ debounceMs }`: the wait after typing before asking the model (default 0, every keystroke). |
-| `variant` | `card` | `card` puts the next runs on a filled panel; `plain` has no surface. |
+| `variant` | `card` | `card` puts the next runs in an outlined well (not the field fill, so it never reads as another input); `plain` has no surface. |
 | `disabled` | `false` | Disables the fields and chips. |
 | `className`, `style` | — | Merged onto the root (`data-slot="cron-editor"`). Other div props pass through. |
 

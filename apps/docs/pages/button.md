@@ -1,6 +1,6 @@
 # Button
 
-The action button: UI SDK's `Button` dressed in BL UI's look, with eight variants, seven sizes, a pending state while its action runs, a press that sinks a little on a spring, and a text label that morphs into the next one instead of swapping. Use it for anything the reader presses to *do* something. A control that stays on or off when pressed (bold, star, show the sidebar) is a [Toggle](https://blamy.github.io/ui/#/toggle), not a Button; one choice from a few is a [Segmented](https://blamy.github.io/ui/#/segmented) control; a pressable whose look is all your own is UI SDK's unstyled Button ([below](#unstyled)).
+The action button: UI SDK's `Button` dressed in BL UI's look, with nine variants, seven sizes, a pending state while its action runs, a press that sinks a little on a spring, and a text label that morphs into the next one instead of swapping. Use it for anything the reader presses to *do* something. A control that stays on or off when pressed (bold, star, show the sidebar) is a [Toggle](https://blamy.github.io/ui/#/toggle), not a Button; one choice from a few is a [Segmented](https://blamy.github.io/ui/#/segmented) control; a pressable whose look is all your own is UI SDK's unstyled Button ([below](#unstyled)).
 
 {% tabs title="Installation" sync="install" %}
 {% tab title="shadcn CLI" %}
@@ -15,12 +15,12 @@ import { Button } from '@/components/ui/button'
 {% tab title="npm" %}
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 
-Import the stylesheet once at your app's entry, then the parts from the package root:
+Import the stylesheet once at your app's entry, then the parts from their module:
 
 ```tsx
 import '@brett_lamy/ui/styles.css'
 
-import { Button } from '@brett_lamy/ui'
+import { Button } from '@brett_lamy/ui/button'
 ```
 {% endtab %}
 {% endtabs %}
@@ -44,13 +44,14 @@ import { Button } from '@brett_lamy/ui'
 | `ghost` | text only, a fill on hover | low-emphasis actions in content |
 | `quiet` | muted text, a fill on hover | toolbar tools and row actions |
 | `destructive` | red fill | an action that deletes or cannot be undone |
-| `link` | primary text, no padding | an action that reads as a link |
+| `plain` | tint text, no fill, the size's height and padding | the iOS bar button: Cancel, Edit, Done |
+| `link` | link text in the line it sits in, underlined on hover | an action inside a sentence: "Change plan", "Forgot password?" |
 
 | `size` | Height | Shape |
 | --- | --- | --- |
-| `sm` · `default` · `lg` | 32 · 36 · 44px | rounded, a text label (13 · 15 · 16px) |
+| `sm` · `default` · `lg` | 32 · 36 · 44px | rounded, a text label (13 · 15 · 16px, the same steps as Toggle and Segmented) |
 | `pill` | 44px, full width | the card radius: the iOS action row |
-| `icon-sm` | 28px | a rounded square: the toolbar tool |
+| `icon-sm` | 28px | a rounded square: the toolbar tool (its hit area grows to 44px on a touch screen) |
 | `icon` · `icon-lg` | 36 · 44px | a circle for a lone glyph; `icon-lg` is a full touch target |
 
 ```tsx
@@ -61,7 +62,24 @@ import { Button } from '@brett_lamy/ui'
 <Button size="icon" aria-label="Add contact"><Icon name="plus" /></Button>
 ```
 
-An icon size has no label of its own, so pass `aria-label` (and `title` for a tooltip). For a round `icon-sm` or a square `icon`, add `className="rounded-full"` or `"rounded-lg"`.
+An icon size has no label of its own, so pass `aria-label` (and `title` for a tooltip). For a round `icon-sm` or a square `icon`, add `className="rounded-full"` or `"rounded-lg"`. The filled variants brighten a little under a pointer; `outline`, `ghost` and `quiet` gain a fill, `plain` dims. A button never shrinks below its label in a crowded row.
+
+## Text buttons: `plain` and `link`
+
+Two looks have no fill. `plain` is the iOS bar button: it keeps its size's height and padding (so it lines up with the bar's other buttons and has a real hit area), draws its label in the tint, and dims while hovered and pressed. iOS sets Cancel in the regular weight and the confirming action in semibold: add `className="font-normal"` to the first.
+
+`link` is a link inside running text. It takes the line it sits in: its size, weight and height, with no padding or radius of its own, in `--link` (the tint unless the theme sets one), underlined while hovered. `size` does not apply to it; set the text with a class when the sentence around it is not the size you want. With `render={<a href="…" />}` it is a real link.
+
+```tsx
+<Button variant="plain" className="font-normal">Cancel</Button>
+<Button variant="plain">Add</Button>
+
+<p className="text-footnote">
+  Your plan renews on 1 March. <Button variant="link" onClick={edit}>Change plan</Button>
+</p>
+```
+
+Calling the recipe yourself for `link` (`buttonVariants({ variant: 'link' })` on another element)? Pass the result through `cn()`, as Button does, so the link's "no box" classes replace the size's.
 
 ## Icon buttons and toolbars
 
@@ -136,17 +154,17 @@ All of UI SDK's `Button` props are accepted (`onClick`, `disabled`, `focusableWh
 
 | Prop | Default | Effect |
 | --- | --- | --- |
-| `variant` | `default` | `default` · `secondary` · `outline` · `contrast` · `ghost` · `quiet` · `destructive` · `link` (table above). |
+| `variant` | `default` | `default` · `secondary` · `outline` · `contrast` · `ghost` · `quiet` · `destructive` · `plain` · `link` (table above). |
 | `size` | `default` | `sm` 32px · `default` 36px · `lg` 44px · `pill` (44px, full width) · `icon-sm` (28px square) · `icon` (36px circle) · `icon-lg` (44px circle). |
 | `title` | — | Native tooltip. |
 | `className` | — | String or a function of the state (`disabled`, `pending`); merged after the variant classes, so yours win. |
 | `children` | — | A string morphs between values; other nodes render as given. |
 
-The `link` variant keeps its size's height and radius; it only drops the padding and fill. `ButtonVariant` and `ButtonSize` are the value types.
+`plain` keeps its size's height, padding and radius; `link` drops them all (a `compoundVariants` entry), so `size` does not change a link. `ButtonVariant` and `ButtonSize` are the value types.
 
 ## Styling
 
-The element carries `data-slot="button"` and the `bl-btn` class. State comes from UI SDK's `data-disabled` and `data-pending`; hover, a held press and keyboard focus are the native `hover:`, `active:` and `focus-visible:`. The press scale, the focus ring and the 40% disabled opacity are in the base classes; `ghost`, `outline` and `quiet` add a hover fill.
+The element carries `data-slot="button"` and the `bl-btn` class. State comes from UI SDK's `data-disabled` and `data-pending`; hover, a held press and keyboard focus are the native `hover:`, `active:` and `focus-visible:`. The press scale, the focus ring, `shrink-0` and the 40% disabled opacity are in the base classes; the filled variants brighten on hover (`hover:brightness-[.95]`, `[1.12]` in dark), `ghost`, `outline` and `quiet` add a hover fill, and `plain` and `link` dim.
 
 ## cva recipes
 
@@ -157,21 +175,22 @@ Generated from the source. Call a recipe on any element to borrow a component's 
 Defined in `@/components/ui/button`. Base classes:
 
 ```text
-[ 'bl-btn box-border inline-flex cursor-pointer items-center justify-center gap-2 border-0 [font-family:inherit] whitespace-nowrap [&_svg]:shrink-0', 'transition-[scale,background-color,opacity] duration-spring-snappy ease-spring-snappy active:not-aria-expanded:not-data-disabled:scale-[.97] motion-reduce:transition-none', pressableFocusRing, 'data-disabled:cursor-default data-disabled:opacity-40 data-pending:cursor-progress', ]
+[ 'bl-btn box-border inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 border-0 [font-family:inherit] whitespace-nowrap [&_svg]:shrink-0', 'transition-[scale,background-color,opacity,filter] duration-spring-snappy ease-spring-snappy active:not-aria-expanded:not-data-disabled:scale-[.97] motion-reduce:transition-none', pressableFocusRing, 'data-disabled:cursor-default data-disabled:opacity-40 data-pending:cursor-progress', ]
 ```
 
 **`variant`** — default `default`
 
 | Value | Adds |
 | --- | --- |
-| `default` (default) | `bg-primary text-primary-foreground` |
-| `secondary` | `bg-secondary text-secondary-foreground` |
+| `default` (default) | `['bg-primary text-primary-foreground', filledHover]` |
+| `secondary` | `['bg-secondary text-secondary-foreground', filledHover]` |
 | `outline` | `bg-transparent text-foreground shadow-hairline hover:not-data-disabled:bg-accent` |
-| `contrast` | `bg-foreground text-background` |
+| `contrast` | `['bg-foreground text-background', filledHover]` |
 | `ghost` | `bg-transparent text-foreground hover:not-data-disabled:bg-accent` |
 | `quiet` | `bg-transparent text-muted-foreground hover:not-data-disabled:bg-secondary hover:not-data-disabled:text-foreground` |
-| `destructive` | `bg-destructive text-destructive-foreground` |
-| `link` | `bg-transparent p-0 text-primary` |
+| `destructive` | `['bg-destructive text-destructive-foreground', filledHover]` |
+| `plain` | `bg-transparent text-primary hover:not-data-disabled:opacity-70 active:not-data-disabled:opacity-50` |
+| `link` | `bg-transparent text-link no-underline underline-offset-4 hover:not-data-disabled:underline active:not-data-disabled:opacity-60` |
 
 **`size`** — default `default`
 
@@ -181,6 +200,8 @@ Defined in `@/components/ui/button`. Base classes:
 | `default` (default) | `h-9 rounded-ctl px-4 text-subhead font-semibold` |
 | `lg` | `h-11 rounded-xl px-5 text-callout font-semibold` |
 | `pill` | `h-11 w-full rounded-card px-4 text-callout font-semibold` |
-| `icon-sm` | `size-7 rounded-lg p-0` |
+| `icon-sm` | `['relative size-7 rounded-lg p-0', coarseHitArea]` |
 | `icon` | `size-9 rounded-full p-0` |
 | `icon-lg` | `size-11 rounded-full p-0` |
+
+1 compound variant — see the source.

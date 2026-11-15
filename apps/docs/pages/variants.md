@@ -1,6 +1,6 @@
 # Variants reference
 
-Every BL UI component is a [cva](https://cva.style) recipe. This page is generated from the source (97 recipes) — the same functions you can call on any element, and the defaults you can edit in your installed copy. See [Styling and variants](https://blamy.github.io/ui/#/styling) for how to use, compose and change them.
+Every BL UI component is a [cva](https://cva.style) recipe. This page is generated from the source (98 recipes) — the same functions you can call on any element, and the defaults you can edit in your installed copy. See [Styling and variants](https://blamy.github.io/ui/#/styling) for how to use, compose and change them.
 
 ```tsx
 import { buttonVariants } from '@/components/ui/button'
@@ -99,7 +99,7 @@ box-border inline-flex shrink-0 items-center justify-center gap-1 rounded-full l
 | `tinted` | `bg-primary/15 text-primary` |
 | `outline` | `text-foreground shadow-hairline` |
 | `destructive` | `bg-destructive text-white` |
-| `success` | `bg-success text-white` |
+| `success` | `bg-success text-black` |
 | `warning` | `bg-warning text-black` |
 
 **`size`** — default `default`
@@ -157,21 +157,22 @@ Defined in `@/components/ui/breadcrumb`. Base classes:
 Defined in `@/components/ui/button`. Base classes:
 
 ```text
-[ 'bl-btn box-border inline-flex cursor-pointer items-center justify-center gap-2 border-0 [font-family:inherit] whitespace-nowrap [&_svg]:shrink-0', 'transition-[scale,background-color,opacity] duration-spring-snappy ease-spring-snappy active:not-aria-expanded:not-data-disabled:scale-[.97] motion-reduce:transition-none', pressableFocusRing, 'data-disabled:cursor-default data-disabled:opacity-40 data-pending:cursor-progress', ]
+[ 'bl-btn box-border inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 border-0 [font-family:inherit] whitespace-nowrap [&_svg]:shrink-0', 'transition-[scale,background-color,opacity,filter] duration-spring-snappy ease-spring-snappy active:not-aria-expanded:not-data-disabled:scale-[.97] motion-reduce:transition-none', pressableFocusRing, 'data-disabled:cursor-default data-disabled:opacity-40 data-pending:cursor-progress', ]
 ```
 
 **`variant`** — default `default`
 
 | Value | Adds |
 | --- | --- |
-| `default` (default) | `bg-primary text-primary-foreground` |
-| `secondary` | `bg-secondary text-secondary-foreground` |
+| `default` (default) | `['bg-primary text-primary-foreground', filledHover]` |
+| `secondary` | `['bg-secondary text-secondary-foreground', filledHover]` |
 | `outline` | `bg-transparent text-foreground shadow-hairline hover:not-data-disabled:bg-accent` |
-| `contrast` | `bg-foreground text-background` |
+| `contrast` | `['bg-foreground text-background', filledHover]` |
 | `ghost` | `bg-transparent text-foreground hover:not-data-disabled:bg-accent` |
 | `quiet` | `bg-transparent text-muted-foreground hover:not-data-disabled:bg-secondary hover:not-data-disabled:text-foreground` |
-| `destructive` | `bg-destructive text-destructive-foreground` |
-| `link` | `bg-transparent p-0 text-primary` |
+| `destructive` | `['bg-destructive text-destructive-foreground', filledHover]` |
+| `plain` | `bg-transparent text-primary hover:not-data-disabled:opacity-70 active:not-data-disabled:opacity-50` |
+| `link` | `bg-transparent text-link no-underline underline-offset-4 hover:not-data-disabled:underline active:not-data-disabled:opacity-60` |
 
 **`size`** — default `default`
 
@@ -181,9 +182,11 @@ Defined in `@/components/ui/button`. Base classes:
 | `default` (default) | `h-9 rounded-ctl px-4 text-subhead font-semibold` |
 | `lg` | `h-11 rounded-xl px-5 text-callout font-semibold` |
 | `pill` | `h-11 w-full rounded-card px-4 text-callout font-semibold` |
-| `icon-sm` | `size-7 rounded-lg p-0` |
+| `icon-sm` | `['relative size-7 rounded-lg p-0', coarseHitArea]` |
 | `icon` | `size-9 rounded-full p-0` |
 | `icon-lg` | `size-11 rounded-full p-0` |
+
+1 compound variant — see the source.
 
 ## Calendar
 
@@ -227,7 +230,7 @@ flex flex-col overflow-hidden rounded-panel text-card-foreground
 Defined in `@/components/ui/checkbox`. Base classes:
 
 ```text
-[ 'box-border grid size-[22px] shrink-0 cursor-pointer place-items-center border-[1.5px] border-control-border bg-transparent p-0 text-primary-foreground', 'transition-[background-color,border-color,scale] duration-spring-snappy ease-spring-snappy motion-reduce:transition-none', 'data-checked:border-primary data-checked:bg-primary', 'data-indeterminate:border-primary data-indeterminate:bg-primary', 'active:not-data-disabled:scale-90', pressableFocusRing, // Invalid: the box itself (`aria-invalid`, which a Field writes on its control) or the group around it. 'aria-invalid:border-destructive group-aria-invalid:border-destructive', 'aria-invalid:data-checked:border-destructive aria-invalid:data-checked:bg-destructive group-aria-invalid:data-checked:border-destructive group-aria-invalid:data-checked:bg-destructive', 'data-disabled:cursor-default data-disabled:opacity-40', ]
+[ 'box-border grid size-[22px] shrink-0 cursor-pointer place-items-center border-[1.5px] border-control-border bg-transparent p-0 text-primary-foreground', 'transition-[background-color,border-color,scale] duration-spring-snappy ease-spring-snappy motion-reduce:transition-none', 'data-checked:border-primary data-checked:bg-primary', 'data-indeterminate:border-primary data-indeterminate:bg-primary', 'active:not-data-disabled:scale-90', pressableFocusRing, // Invalid: the box itself (`aria-invalid`, which a Field writes on its control) or the group around it. 'aria-invalid:border-destructive group-aria-invalid/checkbox-group:border-destructive', 'aria-invalid:data-checked:border-destructive aria-invalid:data-checked:bg-destructive group-aria-invalid/checkbox-group:data-checked:border-destructive group-aria-invalid/checkbox-group:data-checked:bg-destructive', 'data-disabled:cursor-default data-disabled:opacity-40', ]
 ```
 
 **`shape`** — default `circle`
@@ -252,7 +255,7 @@ bl-syntax
 | Value | Adds |
 | --- | --- |
 | `default` (default) | `bl-syntax-card` |
-| `ghost` | `bl-syntax-ghost` |
+| `plain` | `bl-syntax-plain` |
 | `inline` | `bl-syntax-inline` |
 
 ## Code Editor Window
@@ -366,7 +369,7 @@ relative box-border flex min-w-0 flex-col text-caption text-muted-foreground
 | --- | --- |
 | `attached` (default) | `border border-border bg-popover` |
 | `detached` | `rounded-lg bg-secondary` |
-| `flush` | — |
+| `plain` | — |
 
 6 compound variants — see the source.
 
@@ -398,12 +401,12 @@ Defined in `@/components/ui/date-input`. Base classes:
 flex min-w-0 items-center text-foreground tabular-nums [font-family:inherit] whitespace-nowrap
 ```
 
-**`variant`** — default `field`
+**`variant`** — default `default`
 
 | Value | Adds |
 | --- | --- |
-| `field` (default) | `w-full` |
-| `bare` | `flex-1` |
+| `default` (default) | `w-full` |
+| `plain` | `flex-1` |
 
 **`size`** — default `default`
 
@@ -415,7 +418,7 @@ flex min-w-0 items-center text-foreground tabular-nums [font-family:inherit] whi
 
 ## DatePicker
 
-### `datePickerFieldVariants`
+### `datePickerInputGroupVariants`
 
 Defined in `@/components/ui/date-picker`. Base classes:
 
@@ -553,7 +556,7 @@ Defined in `@/components/ui/file-upload`. Base classes:
 | Value | Adds |
 | --- | --- |
 | `vertical` (default) | `min-h-40 flex-col items-center justify-center gap-2 rounded-card p-6` |
-| `horizontal` | `flex-row items-center justify-start gap-3 rounded-panel p-3 text-left` |
+| `horizontal` | `flex-row items-center justify-start gap-3 rounded-panel p-3 text-start` |
 
 ### `fileUploadItemVariants`
 
@@ -645,12 +648,12 @@ No variants.
 
 ## FontPicker
 
-### `fontStackPickerVariants`
+### `fontStackPickerInputGroupVariants`
 
 Defined in `@/components/ui/font-picker`. Base classes:
 
 ```text
-h-auto w-full flex-wrap gap-1.5
+h-auto w-full flex-wrap gap-1.5 aria-invalid:shadow-[inset_0_0_0_1.5px_var(--destructive)]
 ```
 
 **`size`** — default `default`
@@ -747,7 +750,7 @@ Defined in `@/components/ui/list`. Base classes:
 Defined in `@/components/ui/list`. Base classes:
 
 ```text
-[ // Type metrics a <button> would reset, so a host's body line-height or tracking doesn't reach the row. 'relative z-1 box-border flex w-full touch-pan-y items-center gap-3 py-0 pl-4 text-left text-body leading-[normal] tracking-[normal] outline-none', 'focus-visible:[box-shadow:inset_0_0_0_2px_var(--primary)]', // Trailing inset clears an IndexBar overlaying the list (it publishes --bl-index-bar-inset on its parent). 'pr-[max(16px,calc(var(--bl-index-bar-inset,0px)+6px))]', // The swipe offset (`--swipe-x`, from UI SDK) moves the surface; it springs back unless a finger holds it. 'translate-x-(--swipe-x) transition-[translate] duration-spring-snappy ease-spring-snappy group-data-swiping/row:transition-none motion-reduce:transition-none', ]
+[ // Type metrics a <button> would reset, so a host's body line-height or tracking doesn't reach the row. 'relative z-1 box-border flex w-full touch-pan-y items-center gap-3 py-0 ps-4 text-start text-body leading-[normal] tracking-[normal] outline-none', 'focus-visible:[box-shadow:inset_0_0_0_2px_var(--primary)]', // Trailing inset clears an IndexBar overlaying the list (it publishes --bl-index-bar-inset on its parent). 'pe-[max(16px,calc(var(--bl-index-bar-inset,0px)+6px))]', // The swipe offset (`--swipe-x`, from UI SDK) moves the surface; it springs back unless a finger holds it. 'translate-x-(--swipe-x) transition-[translate] duration-spring-snappy ease-spring-snappy group-data-swiping/row:transition-none motion-reduce:transition-none', ]
 ```
 
 **`align`** — default `center`
@@ -762,7 +765,7 @@ Defined in `@/components/ui/list`. Base classes:
 | Value | Adds |
 | --- | --- |
 | `start` (default) | — |
-| `center` | — |
+| `center` | `[&_[data-slot=list-row-body]]:justify-center [&_[data-slot=list-row-title]]:flex-none` |
 
 **`density`** — default `default`
 
@@ -867,7 +870,7 @@ Defined in `@/components/ui/markdown-editor`. Base classes:
 | Value | Adds |
 | --- | --- |
 | `default` (default) | — |
-| `ghost` | `rounded-none bg-transparent` |
+| `plain` | `rounded-none bg-transparent` |
 | `card` | `rounded-card bg-card shadow-hairline focus-within:shadow-[inset_0_0_0_1.5px_var(--primary)] data-invalid:shadow-[inset_0_0_0_1.5px_var(--destructive)]` |
 
 **`size`** — default `default`
@@ -910,7 +913,7 @@ Defined in `@/components/ui/popover`. Base classes:
 | Value | Adds |
 | --- | --- |
 | `panel` (default) | `w-72 p-4` |
-| `surface` | `min-w-(--anchor-width)` |
+| `plain` | `min-w-(--anchor-width)` |
 
 ## Primitives
 
@@ -929,6 +932,23 @@ m-0 min-w-0
 | `grouped` (default) | `text-footnote leading-[18px] font-normal tracking-[.02em] text-foreground/70 uppercase` |
 | `sidebar` | `text-caption2 leading-4 font-bold tracking-[.06em] whitespace-nowrap text-muted-foreground uppercase` |
 | `menu` | `text-footnote leading-[18px] font-semibold text-muted-foreground` |
+
+### `calloutVariants`
+
+Defined in `@/lib/primitives`. Base classes:
+
+```text
+m-0 flex items-start gap-2 rounded-ctl px-3 py-2.5 text-footnote text-foreground [&>[data-slot=icon]]:mt-px [&>[data-slot=icon]]:shrink-0
+```
+
+**`tone`** — default `default`
+
+| Value | Adds |
+| --- | --- |
+| `default` (default) | `bg-secondary [&>[data-slot=icon]]:text-muted-foreground` |
+| `success` | `bg-success/12 [&>[data-slot=icon]]:text-success` |
+| `warning` | `bg-warning/14 [&>[data-slot=icon]]:text-warning` |
+| `destructive` | `bg-destructive/10 [&>[data-slot=icon]]:text-destructive` |
 
 ## Progress
 
@@ -984,7 +1004,7 @@ relative inline-grid size-(--ring-px) shrink-0 place-items-center align-middle
 | `warning` | `[--ring-color:var(--color-warning)]` |
 | `destructive` | `[--ring-color:var(--destructive)]` |
 
-### `countdownRingLabelVariants`
+### `countdownRingValueVariants`
 
 Defined in `@/components/ui/progress-ring`. Base classes:
 
@@ -1023,7 +1043,7 @@ m-0 flex list-none p-0 [--stepper-accent:var(--primary)] [--stepper-track:var(--
 Defined in `@/components/ui/radio-group`. Base classes:
 
 ```text
-group flex
+group/radio-group flex
 ```
 
 **`orientation`** — default `vertical`
@@ -1038,7 +1058,7 @@ group flex
 Defined in `@/components/ui/radio-group`. Base classes:
 
 ```text
-[ 'box-border grid size-[22px] shrink-0 cursor-pointer rounded-full border-[1.5px] border-control-border bg-transparent p-0', 'transition-[border-width,border-color,scale] duration-spring-snappy ease-spring-snappy motion-reduce:transition-none', 'data-checked:border-[7px] data-checked:border-primary', 'active:not-data-disabled:scale-90', pressableFocusRing, // Invalid: the radio itself (`aria-invalid`, which a Field writes on its control) or the group around it. 'aria-invalid:border-destructive group-aria-invalid:border-destructive', 'data-disabled:cursor-default data-disabled:opacity-40', ]
+[ 'box-border grid size-[22px] shrink-0 cursor-pointer rounded-full border-[1.5px] border-control-border bg-transparent p-0', 'transition-[border-width,border-color,scale] duration-spring-snappy ease-spring-snappy motion-reduce:transition-none', 'data-checked:border-[7px] data-checked:border-primary', 'active:not-data-disabled:scale-90', pressableFocusRing, // Invalid: the radio itself (`aria-invalid`, which a Field writes on its control) or the group around it. 'aria-invalid:border-destructive group-aria-invalid/radio-group:border-destructive', 'data-disabled:cursor-default data-disabled:opacity-40', ]
 ```
 
 No variants.
@@ -1057,7 +1077,7 @@ flex min-w-0 flex-col gap-2
 
 | Value | Adds |
 | --- | --- |
-| `card` (default) | `rounded-panel bg-secondary p-3` |
+| `card` (default) | `rounded-panel p-3 shadow-hairline` |
 | `plain` | `px-1` |
 
 ## ScrollArea
@@ -1085,7 +1105,7 @@ bl-scroll min-h-0 flex-1 overscroll-contain rounded-[inherit] outline-none focus
 Defined in `@/components/ui/search-input`. Base classes:
 
 ```text
-[ 'box-border flex min-w-0 items-center bg-secondary text-foreground transition-[box-shadow] duration-spring-snappy ease-spring-snappy', 'focus-within:shadow-[inset_0_0_0_1.5px_var(--primary)] has-[input:disabled]:opacity-50', ]
+[ 'box-border flex min-w-0 items-center bg-secondary text-foreground transition-[box-shadow] duration-spring-snappy ease-spring-snappy', // The fill stays on focus, as on iOS; the focus line is the field's. fieldFocusRing, 'has-[input:disabled]:opacity-50', ]
 ```
 
 **`size`** — default `default`
@@ -1118,7 +1138,7 @@ group/segments relative isolate gap-0.5 bg-secondary p-0.5 data-[orientation=ver
 Defined in `@/components/ui/segmented`. Base classes:
 
 ```text
-[ 'bl-btn relative box-border flex flex-1 cursor-pointer items-center justify-center gap-1.5 border-0 bg-transparent [font-family:inherit] font-medium whitespace-nowrap text-foreground outline-none [&_svg]:shrink-0', 'data-checked:font-semibold data-selected:font-semibold data-pressed:font-semibold', // Stacked, each segment keeps its height instead of sharing the track's. 'group-data-[orientation=vertical]/segments:flex-none', // The solid ring of every control, without the offset: the neighbours are 2px away. 'focus-visible:ring-2 focus-visible:ring-ring', 'pointer-coarse:group-data-[orientation=horizontal]/segments:after:absolute pointer-coarse:group-data-[orientation=horizontal]/segments:after:inset-x-0', 'data-disabled:cursor-default not-in-data-disabled:data-disabled:opacity-40', ]
+[ 'bl-btn relative box-border flex flex-1 cursor-pointer items-center justify-center gap-1.5 border-0 bg-transparent [font-family:inherit] font-medium whitespace-nowrap text-foreground outline-none [&_svg]:shrink-0', 'data-checked:font-semibold data-selected:font-semibold data-pressed:font-semibold', // An unselected segment dims under the finger (as on iOS) until the card slides to it. 'transition-opacity duration-spring-snappy ease-spring-snappy motion-reduce:transition-none', 'active:not-data-disabled:not-data-checked:not-data-selected:not-data-pressed:opacity-60', // Stacked, each segment keeps its height instead of sharing the track's. 'group-data-[orientation=vertical]/segments:flex-none', // The solid ring of every control, without the offset: the neighbours are 2px away. 'focus-visible:ring-2 focus-visible:ring-ring', 'pointer-coarse:group-data-[orientation=horizontal]/segments:after:absolute pointer-coarse:group-data-[orientation=horizontal]/segments:after:inset-x-0', 'data-disabled:cursor-default not-in-data-disabled:data-disabled:opacity-40', ]
 ```
 
 **`size`** — default `default`
@@ -1127,7 +1147,7 @@ Defined in `@/components/ui/segmented`. Base classes:
 | --- | --- |
 | `sm` | `h-7 px-2.5 text-footnote leading-[inherit] rounded-[calc(var(--radius-lg)-2px)] pointer-coarse:after:-inset-y-2` |
 | `default` (default) | `h-8 px-3 text-subhead leading-[inherit] rounded-[calc(var(--radius-ctl)-2px)] pointer-coarse:after:-inset-y-1.5` |
-| `lg` | `h-10 px-3.5 text-body leading-[inherit] rounded-[calc(var(--radius-xl)-2px)] pointer-coarse:after:-inset-y-0.5` |
+| `lg` | `h-10 px-3.5 text-callout leading-[inherit] rounded-[calc(var(--radius-xl)-2px)] pointer-coarse:after:-inset-y-0.5` |
 
 ### `segmentIndicatorVariants`
 
@@ -1262,7 +1282,7 @@ Defined in `@/components/ui/sidebar`. Base classes:
 Defined in `@/components/ui/skeleton`. Base classes:
 
 ```text
-block bg-secondary-strong [background-image:linear-gradient(90deg,transparent_25%,color-mix(in_oklab,var(--card)_55%,transparent)_50%,transparent_75%)] [background-size:200%_100%] [background-position:150%_0] [background-repeat:no-repeat] animate-bl-shimmer motion-reduce:animate-none
+[ // The sheen is lighter than the bar in both appearances: the card color in light, a whisper of the foreground in // dark (the dark card is darker than the bar, and would sweep a shadow across it). '[--skeleton-sheen:color-mix(in_oklab,var(--card)_55%,transparent)] dark:[--skeleton-sheen:color-mix(in_oklab,var(--foreground)_8%,transparent)]', 'block bg-secondary-strong [background-image:linear-gradient(90deg,transparent_25%,var(--skeleton-sheen)_50%,transparent_75%)] [background-size:200%_100%] [background-position:150%_0] [background-repeat:no-repeat] animate-bl-shimmer motion-reduce:animate-none', ]
 ```
 
 **`shape`** — default `default`
@@ -1281,7 +1301,7 @@ block bg-secondary-strong [background-image:linear-gradient(90deg,transparent_25
 Defined in `@/components/ui/slider`. Base classes:
 
 ```text
-group grid w-full grid-cols-[1fr_auto] items-center gap-x-3 gap-y-1 data-disabled:opacity-40
+[ 'group/slider grid w-full grid-cols-[1fr_auto] items-center gap-x-3 gap-y-1 data-disabled:opacity-40', // Stood up: the label and value over a control that takes the rest of the parent's height. 'data-[orientation=vertical]:flex data-[orientation=vertical]:h-full data-[orientation=vertical]:w-fit data-[orientation=vertical]:flex-col', ]
 ```
 
 **`variant`** — default `default`
@@ -1289,8 +1309,7 @@ group grid w-full grid-cols-[1fr_auto] items-center gap-x-3 gap-y-1 data-disable
 | Value | Adds |
 | --- | --- |
 | `default` (default) | — |
-| `on-dark` | `[--bl-slider-track:--alpha(white/22%)] [--bl-slider-fill:--alpha(white/88%)]` |
-| `on-light` | `[--bl-slider-track:--alpha(black/14%)] [--bl-slider-fill:--alpha(black/72%)]` |
+| `overlay` | `[--bl-slider-track:light-dark(--alpha(black/14%),--alpha(white/22%))] [--bl-slider-fill:light-dark(--alpha(black/72%),--alpha(white/88%))]` |
 
 ## SplitView
 
@@ -1299,7 +1318,7 @@ group grid w-full grid-cols-[1fr_auto] items-center gap-x-3 gap-y-1 data-disable
 Defined in `@/components/ui/split-view`. Base classes:
 
 ```text
-[ 'bl-btn group/item relative flex w-full cursor-pointer items-center gap-3 border-0 text-left [font-family:inherit] text-subhead text-foreground outline-none', 'transition-[background-color,color] duration-150', 'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset', 'disabled:cursor-default disabled:opacity-45', ]
+[ 'bl-btn group/item relative flex w-full cursor-pointer items-center gap-3 border-0 text-start [font-family:inherit] text-subhead text-foreground outline-none', 'transition-[background-color,color] duration-150', 'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset', 'disabled:cursor-default disabled:opacity-45', ]
 ```
 
 **`variant`** — default `pill`
@@ -1420,14 +1439,14 @@ flex gap-2 px-5 pt-3 pb-5
 Defined in `@/lib/surface`. Base classes:
 
 ```text
-cn( 'bl-btn grid size-[30px] shrink-0 cursor-pointer place-items-center rounded-full border-0 bg-secondary p-0 text-muted-foreground transition-[background-color,color] duration-exit hover:text-foreground active:bg-secondary-strong disabled:cursor-default disabled:opacity-40', focusRing, )
+cn( "bl-btn grid size-[30px] shrink-0 after:absolute after:-inset-[7px] after:rounded-full after:content-[''] cursor-pointer place-items-center rounded-full border-0 bg-secondary p-0 text-muted-foreground transition-[background-color,color] duration-exit hover:text-foreground active:bg-secondary-strong disabled:cursor-default disabled:opacity-40", focusRing, )
 ```
 
 **`layout`** — default `inline`
 
 | Value | Adds |
 | --- | --- |
-| `inline` (default) | — |
+| `inline` (default) | `relative` |
 | `pinned` | `absolute top-4 end-4 z-2` |
 
 ### `sheetGrabberVariants`
@@ -1452,7 +1471,7 @@ mx-auto mt-[5px] mb-px block h-[5px] w-9 shrink-0 rounded-full bg-secondary-stro
 Defined in `@/components/ui/switch`. Base classes:
 
 ```text
-[ 'group relative inline-block shrink-0 cursor-pointer rounded-full border-0 bg-secondary-strong p-0 transition-[background-color] duration-spring-smooth ease-spring-smooth', pressableFocusRing, 'data-checked:bg-success data-disabled:cursor-default data-disabled:opacity-40', ]
+[ 'group/switch relative inline-block shrink-0 cursor-pointer rounded-full border-0 bg-secondary-strong p-0 transition-[background-color] duration-spring-smooth ease-spring-smooth', pressableFocusRing, 'data-checked:bg-success data-disabled:cursor-default data-disabled:opacity-40', ]
 ```
 
 **`size`** — default `default`
@@ -1489,7 +1508,7 @@ flex min-h-0 min-w-0 [&>[data-slot=tabs-panels]~[data-slot=tabs-bar]]:-order-1 [
 | `underline` | `gap-4` |
 | `bar` | — |
 | `rail` | — |
-| `workspace` | — |
+| `switcher` | — |
 | `plain` | — |
 
 ### `tabsBarVariants`
@@ -1508,7 +1527,7 @@ box-border
 | `underline` | `inline` |
 | `bar` | `cn( 'absolute inset-x-0 bottom-0 z-120 flex data-[side=top]:top-0 data-[side=top]:bottom-auto transition-transform duration-spring-smooth ease-spring-s…` |
 | `rail` | `relative flex w-19 shrink-0 flex-col gap-1 bg-bar py-2 data-[side=end]:border-s data-[side=start]:border-e border-border` |
-| `workspace` | `flex w-13 shrink-0 flex-col items-center gap-2 border-e border-border bg-muted px-0 py-2.5` |
+| `switcher` | `flex w-13 shrink-0 flex-col items-center gap-2 border-e border-border bg-muted px-0 py-2.5` |
 | `plain` (default) | `inline` |
 
 ### `tabsListVariants`
@@ -1523,11 +1542,11 @@ relative outline-none
 
 | Value | Adds |
 | --- | --- |
-| `segmented` (default) | `cn('flex', segmentTrackVariants())` |
+| `segmented` (default) | `flex` |
 | `underline` | `isolate flex gap-5 shadow-hairline-b data-[orientation=vertical]:flex-col data-[orientation=vertical]:gap-0 data-[orientation=vertical]:border-e data-[orientat…` |
 | `bar` | `flex flex-1` |
 | `rail` | `flex flex-col gap-1 px-1.5` |
-| `workspace` | `flex min-h-0 w-full flex-col items-center gap-2 overflow-y-auto overscroll-contain -mt-1 -mb-1.5 pt-1 pb-1.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidd…` |
+| `switcher` | `flex min-h-0 w-full flex-col items-center gap-2 overflow-y-auto overscroll-contain -mt-1 -mb-1.5 pt-1 pb-1.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidd…` |
 | `plain` | `flex data-[orientation=vertical]:flex-col` |
 
 ### `tabsTabVariants`
@@ -1542,12 +1561,14 @@ group/tab relative box-border cursor-pointer border-0 bg-transparent [font-famil
 
 | Value | Adds |
 | --- | --- |
-| `segmented` (default) | `segmentItemVariants()` |
-| `underline` | `cn( 'bl-btn -mb-px flex h-10 items-center justify-center gap-1.5 px-0.5 py-0 text-subhead leading-[inherit] font-semibold whitespace-nowrap hover:not…` |
+| `segmented` (default) | — |
+| `underline` | `cn( 'bl-btn -mb-px flex items-center justify-center gap-1.5 px-0.5 py-0 leading-[inherit] font-semibold whitespace-nowrap hover:not-data-selected:not…` |
 | `bar` | `cn( 'bl-btn flex flex-1 flex-col items-center justify-center gap-[3px] p-0 text-center leading-[normal] data-selected:text-primary focus-visible:roun…` |
 | `rail` | `cn( 'bl-btn flex flex-col items-center justify-center gap-[3px] rounded-panel px-1 pt-[7px] pb-1.5 text-center leading-[normal] hover:not-data-select…` |
-| `workspace` | `group flex w-full shrink-0 justify-center p-0 text-inherit pointer-coarse:after:absolute pointer-coarse:after:inset-x-0 pointer-coarse:after:-inset-y-1.5` |
+| `switcher` | `group flex w-full shrink-0 justify-center p-0 text-inherit pointer-coarse:after:absolute pointer-coarse:after:inset-x-0 pointer-coarse:after:-inset-y-1.5` |
 | `plain` | `p-0 text-inherit` |
+
+4 compound variants — see the source.
 
 ### `tabsIndicatorVariants`
 
@@ -1561,11 +1582,11 @@ absolute
 
 | Value | Adds |
 | --- | --- |
-| `segmented` (default) | `cn('inset-0', segmentIndicatorVariants())` |
+| `segmented` (default) | `inset-0` |
 | `underline` | `bg-primary` |
 | `bar` | `bg-primary` |
 | `rail` | `bg-primary` |
-| `workspace` | `bg-primary` |
+| `switcher` | `bg-primary` |
 | `plain` | `bg-primary` |
 
 **`orientation`** — default `horizontal`
@@ -1575,7 +1596,7 @@ absolute
 | `horizontal` (default) | — |
 | `vertical` | — |
 
-4 compound variants — see the source.
+5 compound variants — see the source.
 
 ### `tabsPillVariants`
 
@@ -1603,7 +1624,7 @@ cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-ring/45 data
 | `underline` | `bl-btn border-0 bg-transparent p-0 [font-family:inherit] text-muted-foreground hover:not-data-disabled:text-foreground` |
 | `bar` | `bl-btn flex flex-1 flex-col items-center justify-center gap-[3px] border-0 bg-transparent p-0 leading-[normal] [font-family:inherit] text-muted-foreground acti…` |
 | `rail` | `bl-btn mx-1.5 flex flex-col items-center justify-center gap-[3px] rounded-panel border-0 bg-transparent px-1 pt-[7px] pb-1.5 leading-[normal] [font-family:inhe…` |
-| `workspace` | `relative grid size-[34px] shrink-0 place-items-center rounded-[17px] border border-dashed border-border bg-transparent text-muted-foreground [transition:border…` |
+| `switcher` | `relative grid size-[34px] shrink-0 place-items-center rounded-[17px] border border-dashed border-border bg-transparent text-muted-foreground [transition:border…` |
 | `plain` (default) | `bl-btn border-0 bg-transparent p-0 [font-family:inherit]` |
 
 ## Tailscale controls
@@ -1681,7 +1702,7 @@ group/toasts outline-none data-[side=top]:top-[calc(env(safe-area-inset-top,0px)
 Defined in `@/components/ui/toast`. Base classes:
 
 ```text
-flex outline-none focus-visible:ring-2 focus-visible:ring-primary
+['flex', pressableFocusRing]
 ```
 
 **`variant`** — default `banner`
@@ -1717,7 +1738,7 @@ grid shrink-0 place-items-center
 Defined in `@/components/ui/toggle`. Base classes:
 
 ```text
-[ 'bl-btn box-border inline-flex cursor-pointer items-center justify-center gap-1.5 border-0 [font-family:inherit] font-semibold whitespace-nowrap [&_svg]:shrink-0', 'transition-[background-color,color,box-shadow,scale] duration-spring-snappy ease-spring-snappy active:not-aria-expanded:not-data-disabled:scale-[.97] motion-reduce:transition-none', pressableFocusRing, 'data-disabled:cursor-default data-disabled:opacity-40', ]
+[ 'bl-btn box-border inline-flex shrink-0 cursor-pointer items-center justify-center gap-1.5 border-0 [font-family:inherit] font-semibold whitespace-nowrap [&_svg]:shrink-0', 'transition-[background-color,color,box-shadow,scale] duration-spring-snappy ease-spring-snappy active:not-aria-expanded:not-data-disabled:scale-[.97] motion-reduce:transition-none', pressableFocusRing, 'data-disabled:cursor-default data-disabled:opacity-40', ]
 ```
 
 **`variant`** — default `default`
@@ -1735,8 +1756,8 @@ Defined in `@/components/ui/toggle`. Base classes:
 | --- | --- |
 | `sm` | `h-8 min-w-8 rounded-lg px-2 text-footnote` |
 | `default` (default) | `h-9 min-w-9 rounded-ctl px-2.5 text-subhead` |
-| `lg` | `h-11 min-w-11 rounded-xl px-3.5 text-body` |
-| `icon-sm` | `size-7 rounded-lg p-0` |
+| `lg` | `h-11 min-w-11 rounded-xl px-3.5 text-callout` |
+| `icon-sm` | `['relative size-7 rounded-lg p-0', coarseHitArea]` |
 | `icon` | `size-9 rounded-full p-0` |
 | `icon-lg` | `size-11 rounded-full p-0` |
 
@@ -1745,7 +1766,7 @@ Defined in `@/components/ui/toggle`. Base classes:
 Defined in `@/components/ui/toggle`. Base classes:
 
 ```text
-relative isolate inline-flex w-fit items-center
+group/toggle-group relative isolate inline-flex w-fit items-center data-[orientation=vertical]:flex-col data-[orientation=vertical]:items-stretch
 ```
 
 **`variant`** — default `default`
@@ -1753,9 +1774,10 @@ relative isolate inline-flex w-fit items-center
 | Value | Adds |
 | --- | --- |
 | `default` (default) | `gap-1` |
+| `filled` | `gap-1` |
 | `quiet` | `gap-1` |
-| `filled` | — |
 | `outline` | `gap-0 rounded-ctl shadow-hairline` |
+| `segmented` | — |
 
 ## Toolbar
 
@@ -1802,12 +1824,12 @@ font-sans touch-none select-none
 | `horizontal` (default) | `relative block h-(--tt-height) w-full cursor-crosshair rounded-[inherit] bg-background -outline-offset-2 [outline:2px_solid_transparent] focus-visible:[outline…` |
 | `vertical` | `absolute top-0 bottom-0 z-80 w-11 cursor-pointer rounded-lg -outline-offset-2 [outline:2px_solid_transparent] focus-visible:[outline:2px_solid_var(--primary)]` |
 
-**`side`** — default `right`
+**`side`** — default `end`
 
 | Value | Adds |
 | --- | --- |
-| `right` (default) | — |
-| `left` | — |
+| `end` (default) | — |
+| `start` | — |
 
 2 compound variants — see the source.
 
@@ -1834,14 +1856,14 @@ text-footnote text-foreground
 Defined in `@/components/ui/tree`. Base classes:
 
 ```text
-[ 'group/tree-row relative box-border flex h-(--tree-row-height) w-full min-w-0 cursor-default items-center gap-(--tree-gap) rounded-ctl pr-(--tree-pad-x) leading-(--tree-row-height) select-none', 'pl-[calc(var(--tree-pad-x)+(var(--tree-level,1)-1)*var(--tree-indent))]', 'hover:not-data-disabled:not-data-selected:bg-secondary data-selected:bg-primary/16 data-current:font-medium data-disabled:opacity-50 data-pending:cursor-progress', 'group-focus-visible/tree-item:[box-shadow:inset_0_0_0_2px_var(--ring)]', 'group-data-dimmed/tree-item:opacity-60 group-data-drop-target/tree-item:bg-secondary group-data-drop-target/tree-item:[box-shadow:inset_0_0_0_2px_var(--primary)]', ]
+[ 'group/tree-row relative box-border flex h-(--tree-row-height) w-full min-w-0 cursor-default items-center gap-(--tree-gap) rounded-ctl pe-(--tree-pad-x) leading-(--tree-row-height) select-none', // Logical, so a row's own `ps-*` (ObjectTree's capped indent) merges with it, and the indent follows the text direction. 'ps-[calc(var(--tree-pad-x)+(var(--tree-level,1)-1)*var(--tree-indent))]', 'hover:not-data-disabled:not-data-selected:bg-secondary data-selected:bg-primary/16 data-current:font-medium data-disabled:opacity-50 data-pending:cursor-progress', 'group-focus-visible/tree-item:[box-shadow:inset_0_0_0_2px_var(--ring)]', 'group-data-dimmed/tree-item:opacity-60 group-data-drop-target/tree-item:bg-secondary group-data-drop-target/tree-item:[box-shadow:inset_0_0_0_2px_var(--primary)]', ]
 ```
 
 No variants.
 
 ## Vault Gate
 
-### `recoveryKeyVariants`
+### `vaultRecoveryKeyVariants`
 
 Defined in `@/components/ui/vault-gate`. Base classes:
 

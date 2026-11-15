@@ -11,7 +11,7 @@ import {
   SplitViewSection,
   SplitViewSidebar,
   SplitViewSupplementary,
-  SplitViewToggle,
+  SplitViewSidebarTrigger,
   createSplitViewController,
   useSplitView,
   type SplitViewProps,
@@ -60,7 +60,7 @@ function Mail(props: Partial<SplitViewProps>) {
         </SplitViewContent>
       </SplitViewSidebar>
       <SplitViewSupplementary aria-label="Inbox">
-        <SplitViewHeader title="Inbox" leading={<SplitViewToggle />} />
+        <SplitViewHeader title="Inbox" leading={<SplitViewSidebarTrigger />} />
         <SplitViewContent>
           <SplitViewItem value="m1" title="Hello" />
           <SplitViewItem value="m2" title="Review" />
@@ -752,4 +752,96 @@ it('provides its size class to what is inside, popups included', async () => {
   );
   await settle();
   expect(seen).toBe('compact');
+});
+
+function Music({ sizeClass, onValueChange }: { sizeClass: 'compact' | 'regular'; onValueChange?: SplitViewProps['onValueChange'] }) {
+  return (
+    <SplitView aria-label="Music" sizeClass={sizeClass} defaultValue={{ sidebar: 'albums' }} onValueChange={onValueChange}>
+      <SplitViewSidebar aria-label="Library" compactPresentation="tabs">
+        <SplitViewContent>
+          <SplitViewItem value="listen" title="Listen Now" icon="play-circle" tab />
+          <SplitViewItem value="radio" title="Radio" icon="radiowaves" tab />
+          <SplitViewSection title="Library" tab value="library" icon="books-vertical">
+            <SplitViewItem value="albums" title="Albums" />
+            <SplitViewItem value="songs" title="Songs" />
+          </SplitViewSection>
+        </SplitViewContent>
+      </SplitViewSidebar>
+      <SplitViewDetail aria-label="Detail">
+        <SplitViewHeader title="Detail" />
+        <SplitViewContent><p>Body</p></SplitViewContent>
+      </SplitViewDetail>
+    </SplitView>
+  );
+}
+
+it('compactPresentation="tabs": collapsed, the sidebar is a tab bar over the detail, in the sidebar\'s order', async () => {
+  const onValueChange = vi.fn();
+  render(<Music sizeClass="compact" onValueChange={onValueChange} />);
+  await settle();
+  const list = screen.getByRole('tablist', { name: 'Library' });
+  const tabs = [...list.querySelectorAll('[role=tab]')];
+  expect(tabs.map((t) => t.textContent)).toEqual(['Listen Now', 'Radio', 'Library']);
+  // The Library section is one tab, current while one of its rows is the selection.
+  expect(screen.getByRole('tab', { name: 'Library' }).getAttribute('aria-selected')).toBe('true');
+  // The sidebar is out of the stack: the detail is on top, with nothing to go back to.
+  expect(column('sidebar').hasAttribute('inert')).toBe(true);
+  expect(column('detail').hasAttribute('data-top')).toBe(true);
+  expect(screen.queryByRole('button', { name: /^Back/ })).toBeNull();
+  // The bar's room is published for what scrolls under it.
+  expect(screen.getByRole('group', { name: 'Music' }).style.getPropertyValue('--tabs-bar-h')).toContain('--spacing-bar');
+  await act(async () => screen.getByRole('tab', { name: 'Radio' }).click());
+  await settle();
+  expect(onValueChange).toHaveBeenLastCalledWith({ sidebar: 'radio' }, expect.objectContaining({ reason: 'item-press', column: 'sidebar' }));
+  expect(screen.getByRole('tab', { name: 'Radio' }).getAttribute('aria-selected')).toBe('true');
+  expect(column('detail').hasAttribute('data-top')).toBe(true);
+});
+
+it('compactPresentation="tabs" is a sidebar like any other while tiled: no tab bar', async () => {
+  render(<Music sizeClass="regular" />);
+  await settle();
+  expect(screen.queryByRole('tablist')).toBeNull();
+  expect(column('sidebar').hasAttribute('inert')).toBe(false);
+  expect(screen.getByRole('button', { name: 'Albums' }).getAttribute('aria-current')).toBe('true');
+});
+
+it('a header has the scroll-edge look: its hairline shows once its content scrolls, or at rest with scrollEdge={false}', async () => {
+  render(
+    <SplitView aria-label="Edges" sizeClass="regular">
+      <SplitViewSidebar>
+        <SplitViewHeader title="Pinned" scrollEdge={false} />
+        <SplitViewContent><p>Rows</p></SplitViewContent>
+      </SplitViewSidebar>
+      <SplitViewDetail>
+        <SplitViewHeader title="Scrolls" />
+        <SplitViewContent><p>Body</p></SplitViewContent>
+      </SplitViewDetail>
+    </SplitView>,
+  );
+  await settle();
+  const header = (name: string) => [...document.querySelectorAll<HTMLElement>('[data-slot="split-view-header"]')].find((h) => h.textContent?.includes(name))!;
+  expect(header('Pinned').className).toContain('shadow-hairline-b');
+  expect(header('Scrolls').className).not.toContain('shadow-hairline-b');
+  const content = column('detail').querySelector<HTMLElement>('[data-slot="split-view-content"]')!;
+  content.scrollTop = 40;
+  await act(async () => { content.dispatchEvent(new Event('scroll')); });
+  await settle();
+  expect(header('Scrolls').hasAttribute('data-scrolled')).toBe(true);
+  expect(header('Scrolls').className).toContain('shadow-hairline-b');
+});
+
+it('the sidebar trigger takes a glyph of its own and a shortcut, announced as aria-keyshortcuts', async () => {
+  render(
+    <SplitView aria-label="Mail" sizeClass="regular">
+      <SplitViewSidebar><SplitViewContent /></SplitViewSidebar>
+      <SplitViewDetail>
+        <SplitViewHeader title="Inbox" leading={<SplitViewSidebarTrigger shortcut="mod+alt+s"><span data-testid="glyph" /></SplitViewSidebarTrigger>} />
+      </SplitViewDetail>
+    </SplitView>,
+  );
+  await settle();
+  const trigger = screen.getByRole('button', { name: 'Hide sidebar' });
+  expect(trigger.getAttribute('data-slot')).toBe('split-view-sidebar-trigger');
+  expect(trigger.getAttribute('aria-keyshortcuts')).toBeTruthy();
+  expect(screen.getByTestId('glyph').parentElement).toBe(trigger);
 });

@@ -36,10 +36,10 @@ const books: Book[] = [
   { id: 'b3', title: 'A Wizard of Earthsea', author: 'Le Guin', pages: 183, year: 1968 },
 ];
 const COLUMNS: DataTableColumn<Book>[] = [
-  { id: 'title', title: 'Title', flex: 2, minWidth: 120 },
-  { id: 'author', title: 'Author', width: 100 },
-  { id: 'pages', title: 'Pages', width: 64, align: 'end' },
-  { id: 'year', title: 'Year', width: 64, align: 'end', hideBelow: 'regular' },
+  { id: 'title', header: 'Title', flex: 2, minWidth: 120 },
+  { id: 'author', header: 'Author', width: 100 },
+  { id: 'pages', header: 'Pages', width: 64, align: 'end' },
+  { id: 'year', header: 'Year', width: 64, align: 'end', hideBelow: 'regular' },
 ];
 
 const grid = () => screen.getByRole('grid');
@@ -76,7 +76,7 @@ describe('DataTable', () => {
   });
 
   it('renders a cell with `render`, classes from the column, and row attributes from `rowProps`', () => {
-    const columns: DataTableColumn<Book>[] = [{ id: 'title', title: 'Title', render: (b) => <em>{b.title}</em>, className: 'font-mono' }];
+    const columns: DataTableColumn<Book>[] = [{ id: 'title', header: 'Title', cell: (b) => <em>{b.title}</em>, className: 'font-mono' }];
     render(<DataTable rows={books} columns={columns} rowProps={(b) => ({ 'data-old': b.year < 1965, 'data-author': b.author })} />);
     expect(row(0).querySelector('[data-column=title] em')?.textContent).toBe('Solaris');
     expect(row(0).querySelector('[data-column=title]')?.className).toContain('font-mono');
@@ -98,7 +98,7 @@ describe('DataTable', () => {
   });
 
   it('a column with a render and no sortValue does not sort', () => {
-    const columns: DataTableColumn<Book>[] = [{ id: 'title', title: 'Title', render: (b) => b.title }, { id: 'year', title: 'Year', render: (b) => b.year, sortValue: (b) => -b.year }];
+    const columns: DataTableColumn<Book>[] = [{ id: 'title', header: 'Title', cell: (b) => b.title }, { id: 'year', header: 'Year', cell: (b) => b.year, sortValue: (b) => -b.year }];
     render(<DataTable rows={books} columns={columns} />);
     expect(column('title').getAttribute('aria-sort')).toBeNull();
     fireEvent.click(column('year'));
@@ -116,7 +116,7 @@ describe('DataTable', () => {
     unmount();
     onAction.mockClear();
     onValueChange.mockClear();
-    render(<DataTable rows={books} columns={COLUMNS} selectionMode="none" onAction={onAction} onValueChange={onValueChange} />);
+    render(<DataTable rows={books} columns={COLUMNS} mode="none" onAction={onAction} onValueChange={onValueChange} />);
     fireEvent.click(row(1).querySelector('[data-column=author]') as Element);
     expect(onAction).toHaveBeenCalledTimes(1);
     expect(onValueChange).not.toHaveBeenCalled();
@@ -124,9 +124,54 @@ describe('DataTable', () => {
     expect(row(1).hasAttribute('data-selected')).toBe(false);
   });
 
-  it('is one tab stop: rows by arrow, headers above, Enter presses and sorts', () => {
+  it('is one tab stop on cells: the arrows move between them, Home and End to a row\'s ends, headers above', () => {
     const onAction = vi.fn();
     render(<DataTable rows={books} columns={COLUMNS} onAction={onAction} />);
+    const at = (index: number, id: string) => row(index).querySelector(`[data-column=${id}]`) as HTMLElement;
+    tabIn();
+    expect(document.activeElement).toBe(at(0, 'title'));
+    expect(at(0, 'title').getAttribute('tabindex')).toBe('0');
+    expect(row(0).getAttribute('tabindex')).toBe('-1');
+    press('ArrowRight');
+    expect(document.activeElement).toBe(at(0, 'author'));
+    expect(at(0, 'title').getAttribute('tabindex')).toBe('-1');
+    press('ArrowDown');
+    expect(document.activeElement).toBe(at(1, 'author'));
+    press('End');
+    expect(document.activeElement).toBe(at(1, 'year'));
+    press('ArrowRight');
+    expect(document.activeElement).toBe(at(1, 'year'));
+    press('Home');
+    expect(document.activeElement).toBe(at(1, 'title'));
+    press('End', { ctrlKey: true });
+    expect(document.activeElement).toBe(at(2, 'title'));
+    press('Enter');
+    expect(onAction).toHaveBeenCalledWith('b3', expect.anything());
+    expect(row(2).getAttribute('aria-selected')).toBe('true');
+    press('Home', { ctrlKey: true });
+    press('ArrowRight');
+    // Up from the first row goes to the header of the same column, and down comes back to the cell.
+    press('ArrowUp');
+    expect(document.activeElement).toBe(column('author'));
+    press('ArrowRight');
+    press('ArrowDown');
+    expect(document.activeElement).toBe(at(0, 'pages'));
+  });
+
+  it('makes a cell the active one when it is focused some other way, as a press does', () => {
+    render(<DataTable rows={books} columns={COLUMNS} />);
+    const target = row(2).querySelector('[data-column=pages]') as HTMLElement;
+    act(() => { target.focus(); });
+    expect(target.getAttribute('tabindex')).toBe('0');
+    expect(row(2).getAttribute('data-active')).toBe('');
+    press('ArrowUp');
+    expect(document.activeElement).toBe(row(1).querySelector('[data-column=pages]'));
+  });
+
+  it('keeps focus on whole rows with focus="row": rows by arrow, headers above, Enter presses and sorts', () => {
+    const onAction = vi.fn();
+    render(<DataTable rows={books} columns={COLUMNS} focus="row" onAction={onAction} />);
+    expect(row(0).querySelector('[data-column=title]')?.hasAttribute('tabindex')).toBe(false);
     expect(grid().getAttribute('tabindex')).toBe('0');
     tabIn();
     expect(document.activeElement).toBe(row(0));
@@ -155,6 +200,28 @@ describe('DataTable', () => {
     expect(onColumnWidthsChange).toHaveBeenLastCalledWith({ author: 112 }, expect.objectContaining({ reason: 'resize-key' }));
     act(() => { fireEvent.doubleClick(edge); });
     expect(onColumnWidthsChange).toHaveBeenLastCalledWith({}, expect.objectContaining({ reason: 'handle-press' }));
+  });
+
+  it('names a column by its header alone, not its resize handle or what follows the header', () => {
+    render(<DataTable rows={books} columns={[...COLUMNS.slice(0, 2), { id: 'pages', header: 'Pages', headerEnd: 'pp.' }]} />);
+    expect(screen.getByRole('columnheader', { name: 'Author' })).toBe(column('author'));
+    expect(screen.getByRole('columnheader', { name: 'Pages' })).toBe(column('pages'));
+  });
+
+  it('shows placeholder rows while loading with none, not the empty state, and is busy', () => {
+    const { rerender } = render(<DataTable rows={[]} columns={COLUMNS} loading />);
+    expect(grid().getAttribute('aria-busy')).toBe('true');
+    expect(document.querySelector('[data-slot=data-table-empty]')).toBeNull();
+    expect(document.querySelector('[data-slot=data-table-loading]')?.getAttribute('aria-hidden')).toBe('true');
+    expect(document.querySelectorAll('[data-slot=data-table-loading] [data-slot=skeleton]').length).toBeGreaterThan(0);
+    // Rows that are here show, still busy while more load.
+    rerender(<DataTable rows={books} columns={COLUMNS} loading />);
+    expect(document.querySelector('[data-slot=data-table-loading]')).toBeNull();
+    expect(row(0)).toBeTruthy();
+    expect(grid().getAttribute('aria-busy')).toBe('true');
+    rerender(<DataTable rows={[]} columns={COLUMNS} />);
+    expect(grid().hasAttribute('aria-busy')).toBe(false);
+    expect(document.querySelector('[data-slot=data-table-empty]')).toBeTruthy();
   });
 
   it('shows an EmptyState by default, or the one it is given, and a toolbar and footer', () => {
@@ -190,7 +257,7 @@ describe('DataTable', () => {
     expect(row(2).querySelector('[role=gridcell]')).toBeTruthy();
   });
 
-  it('dims the rows after the playhead and writes its share for an overlay, with the controller too', () => {
+  it('dims the rows after the current time and writes its share for an overlay, with the controller too', () => {
     const controller = createDataTableController();
     render(
       <DataTable
@@ -199,19 +266,19 @@ describe('DataTable', () => {
         controller={controller}
         timeRange={[1950, 1990]}
         rowTime={(b) => b.year}
-        playhead={1970}
+        currentTime={1970}
         overlay={() => <div data-testid="line" />}
       />,
     );
-    expect(grid().hasAttribute('data-playhead')).toBe(true);
-    expect(grid().style.getPropertyValue('--data-table-playhead')).toBe('0.5');
+    expect(grid().hasAttribute('data-current-time')).toBe(true);
+    expect(grid().style.getPropertyValue('--data-table-current-time')).toBe('0.5');
     expect(row(1).hasAttribute('data-future')).toBe(true);
     expect(row(0).hasAttribute('data-future')).toBe(false);
     expect(document.querySelector('[data-slot=data-table-overlay]')?.getAttribute('aria-hidden')).toBe('true');
-    act(() => { controller.setPlayhead(1960); });
+    act(() => { controller.setCurrentTime(1960); });
     expect(row(2).hasAttribute('data-future')).toBe(true);
-    act(() => { controller.setPlayhead(null); });
-    expect(grid().hasAttribute('data-playhead')).toBe(false);
+    act(() => { controller.setCurrentTime(null); });
+    expect(grid().hasAttribute('data-current-time')).toBe(false);
   });
 
   it('takes the density scale', () => {

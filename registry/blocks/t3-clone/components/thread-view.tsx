@@ -1,4 +1,4 @@
-import { AssistantMessage, Conversation, ConversationComposer, ConversationEmpty, ConversationMessages, ConversationSuggestions, MessageMarkdown, Suggestion, ToolCall, UserMessage, WorkLog } from '@/components/ui/conversation';
+import { ConversationAssistantMessage, Conversation, ConversationComposer, ConversationEmpty, ConversationMessages, ConversationSuggestions, ConversationMarkdown, ConversationSuggestion, ConversationToolCall, ConversationUserMessage, ConversationWorkLog } from '@/components/ui/conversation';
 import { SettledBanner } from './settled-banner';
 import { WorkbenchComposer, stripAttachmentRefs } from './workbench/workbench-composer';
 import { SUGGESTIONS } from '../lib/data';
@@ -14,18 +14,18 @@ export function ThreadView({ state }: { state: ThreadsState }) {
       <ConversationMessages threadKey={thread?.id} streaming={state.streaming}>
         {thread?.messages.map((m) =>
           m.role === 'user' ? (
-            <UserMessage key={m.id} attachments={m.images?.map((src, i) => ({ id: `${m.id}-${i}`, name: `Image ${i + 1}`, src, kind: 'image' }))}>
+            <ConversationUserMessage key={m.id} attachments={m.images?.map((src, i) => ({ id: `${m.id}-${i}`, name: `Image ${i + 1}`, src, kind: 'image' }))}>
               {m.text}
-            </UserMessage>
+            </ConversationUserMessage>
           ) : (
-            <AssistantMessage key={m.id}>
+            <ConversationAssistantMessage key={m.id}>
               {m.summary && (
-                <WorkLog summary={m.summary}>
-                  {m.steps?.map((s, i) => <ToolCall key={i} {...s} />)}
-                </WorkLog>
+                <ConversationWorkLog summary={m.summary}>
+                  {m.steps?.map((s, i) => <ConversationToolCall key={i} {...s} />)}
+                </ConversationWorkLog>
               )}
-              <MessageMarkdown markdown={m.text} streaming={m.live} />
-            </AssistantMessage>
+              <ConversationMarkdown markdown={m.text} streaming={m.live} />
+            </ConversationAssistantMessage>
           ),
         )}
       </ConversationMessages>
@@ -42,9 +42,9 @@ export function ThreadView({ state }: { state: ThreadsState }) {
 
       <ConversationSuggestions>
         {SUGGESTIONS.map((s) => (
-          <Suggestion key={s} onClick={() => state.send(s)}>
+          <ConversationSuggestion key={s} onClick={() => state.send(s)}>
             {s}
-          </Suggestion>
+          </ConversationSuggestion>
         ))}
       </ConversationSuggestions>
     </Conversation>

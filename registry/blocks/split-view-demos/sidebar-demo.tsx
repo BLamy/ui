@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Toggle as SdkToggle } from '@ui-sdk/react/toggle';
 import {
   Sidebar, SidebarContent, SidebarHeader, SidebarInset, SidebarItem, SidebarProvider, SidebarSearch, SidebarSection,
-  SidebarTrigger, SidebarWorkspace, useSidebar, type SidebarPresentation, type SidebarVariant,
+  SidebarTrigger, SidebarAccount, useSidebar, type SidebarPresentation, type SidebarVariant,
 } from '@/components/ui/sidebar';
 import { ToggleGroup } from '@/components/ui/toggle';
 import { themeScopeProps } from '@/lib/theme';
@@ -26,7 +26,7 @@ export function SidebarNav({ variant = 'docked', presentation, page, onPageChang
   return (
     <Sidebar variant={variant} presentation={presentation}>
       <SidebarHeader>
-        <SidebarWorkspace title="Creamery Ops" description="Production workspace" />
+        <SidebarAccount title="Creamery Ops" description="Production workspace" />
       </SidebarHeader>
       <SidebarContent aria-label="Creamery Ops">
         <SidebarSearch shortcut="/" />

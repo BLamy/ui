@@ -17,12 +17,12 @@ import { NaturalTimeInput } from '@/components/ui/natural-time-input'
 {% tab title="npm" %}
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 
-Import the stylesheet once at your app's entry, then the parts from the package root:
+Import the stylesheet once at your app's entry, then the parts from their module:
 
 ```tsx
 import '@brett_lamy/ui/styles.css'
 
-import { NaturalTimeInput } from '@brett_lamy/ui'
+import { NaturalTimeInput } from '@brett_lamy/ui/natural-time-input'
 ```
 {% endtab %}
 {% endtabs %}
@@ -132,7 +132,7 @@ The box is the kit's [Input](https://blamy.github.io/ui/#/input); inside a [Fiel
 | `parse` | — | gpu-time's options: `dateOrder` (`MDY` · `DMY`, for ambiguous numeric dates), `backend` (`auto` · `cpu` · `webgpu`), `debounceMs` (default 120, the wait after typing), and `weekStart`, `bareWeekday`, `bareWeekdays`, `nextWeekday`, `dayParts`, `until` (see its README). |
 | `locale` | the browser's | BCP 47 locale of the dates and times in the preview. |
 | `showBackend` | `false` | Show a "CPU" or "GPU" badge. |
-| `variant` | `card` | `card` puts the preview on a filled panel; `plain` has no surface. |
+| `variant` | `card` | `card` puts the preview in an outlined well (not the field fill, so it never reads as another input); `plain` has no surface. |
 | `size` | `default` | The text field's size: `sm`, `default` or `lg`. |
 | `placeholder` | "e.g. tomorrow at 3pm" | Placeholder text. |
 | `className`, `style` | — | Merged onto the root (`data-slot="natural-time-input"`). |

@@ -1,5 +1,5 @@
 'use client';
-import { useId, type ComponentType, type ReactNode } from 'react';
+import { createContext, useContext, useId, useLayoutEffect, useState, type ComponentType, type Dispatch, type ReactNode, type SetStateAction } from 'react';
 import type { ListData } from '@ui-sdk/react/listbox';
 import { Icon } from '@/lib/icon';
 import { sectionLabelVariants } from '@/lib/primitives';
@@ -109,3 +109,35 @@ export const optionSeparatorClass = 'my-1.5 h-px bg-border';
     a layer host (BLProvider is one) the sheet has no scrim behind it. */
 export const optionSheetClass =
   'data-[presentation=sheet]:max-h-[calc(100%-48px)] data-[presentation=sheet]:w-full data-[presentation=sheet]:min-w-0 data-[presentation=sheet]:rounded-t-card data-[presentation=sheet]:rounded-b-none data-[presentation=sheet]:pb-[max(16px,env(safe-area-inset-bottom))] data-[presentation=sheet]:[--sheet-backdrop:var(--overlay,color-mix(in_oklab,black_40%,transparent))]';
+
+/* ── Row density in a popup list (Select, Combobox) ──
+   A picker's field and its popup's rows share one size: the box part (SelectTrigger, ComboboxInputGroup) reports
+   its `size` to the root, and the popup's rows default to dense (32px, footnote) when the field is `sm`. An explicit
+   `size` on the content still wins. */
+
+export type OptionRowSize = 'sm' | 'default';
+export const optionRowSizes = { sm: 'min-h-8 py-1.5 text-footnote leading-[18px]', default: '' } as const;
+/** The rows' size, provided by the popup content and read by each item. */
+export const OptionRowSizeContext = createContext<OptionRowSize>('default');
+
+type FieldSize = 'sm' | 'default' | 'lg';
+/** The field's size, held by a picker's root. */
+export const PickerFieldSizeContext = createContext<[FieldSize, Dispatch<SetStateAction<FieldSize>>] | null>(null);
+
+/** The root's state for its field's size. */
+export function usePickerFieldSize() {
+  return useState<FieldSize>('default');
+}
+
+/** Called by the box part: tells the root what size the field is. */
+export function useReportFieldSize(size: FieldSize | null | undefined) {
+  const set = useContext(PickerFieldSizeContext)?.[1];
+  const shown = size ?? 'default';
+  useLayoutEffect(() => { set?.(shown); }, [set, shown]);
+}
+
+/** The popup's row size: its own `size`, else dense under a small field. */
+export function useOptionRowSize(size: OptionRowSize | undefined): OptionRowSize {
+  const field = useContext(PickerFieldSizeContext)?.[0];
+  return size ?? (field === 'sm' ? 'sm' : 'default');
+}

@@ -1,16 +1,16 @@
 import { useEffect, useRef, useState } from 'react'
 import {
-  AssistantMessage,
+  ConversationAssistantMessage,
   Conversation,
   ConversationComposer,
   ConversationEmpty,
   ConversationMessages,
   ConversationSuggestions,
-  MessageMarkdown,
-  Suggestion,
-  ToolCall,
-  UserMessage,
-  WorkLog,
+  ConversationMarkdown,
+  ConversationSuggestion,
+  ConversationToolCall,
+  ConversationUserMessage,
+  ConversationWorkLog,
 } from '@/components/ui/conversation'
 import {
   Composer,
@@ -93,17 +93,17 @@ function Thread() {
             description="Ask about your code, or start from a suggestion." />
         <ConversationMessages threadKey="demo" streaming={streaming}>
           {turns.map((t) => [
-            <UserMessage key={`${t.id}-u`}>{t.prompt}</UserMessage>,
-            <AssistantMessage key={`${t.id}-a`}>
-              <WorkLog summary={t.worked}>
-                <ToolCall icon="doc-text" title="Read" description="src/app.tsx" />
-                <ToolCall title="Ran" code="pnpm nx test ui" description="42 passed" />
-              </WorkLog>
-              <MessageMarkdown
+            <ConversationUserMessage key={`${t.id}-u`}>{t.prompt}</ConversationUserMessage>,
+            <ConversationAssistantMessage key={`${t.id}-a`}>
+              <ConversationWorkLog summary={t.worked}>
+                <ConversationToolCall icon="doc-text" title="Read" description="src/app.tsx" />
+                <ConversationToolCall title="Ran" code="pnpm nx test ui" description="42 passed" />
+              </ConversationWorkLog>
+              <ConversationMarkdown
                 markdown={t === last && streaming ? reply : t.reply}
                 streaming={t === last && streaming}
               />
-            </AssistantMessage>,
+            </ConversationAssistantMessage>,
           ])}
         </ConversationMessages>
         <ConversationComposer>
@@ -119,9 +119,9 @@ function Thread() {
         </ConversationComposer>
         <ConversationSuggestions>
           {SUGGESTIONS.map((s) => (
-            <Suggestion key={s} onClick={() => send(s)}>
+            <ConversationSuggestion key={s} onClick={() => send(s)}>
               {s}
-            </Suggestion>
+            </ConversationSuggestion>
           ))}
         </ConversationSuggestions>
       </Conversation>

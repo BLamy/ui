@@ -32,7 +32,7 @@
     "ValueProperty",
     "ValueMapEntry",
     "ValueType",
-    "ValueTint",
+    "ValueTokenType",
     "ValueToken",
     "ValuePreviewOptions"
   ]

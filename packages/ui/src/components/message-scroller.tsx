@@ -16,7 +16,7 @@ import { messageScroller } from '@/lib/message-scroller-primitive';
    New turns (anchor items) scroll near the top with a peek of the one before, the reply grows below without moving
    the view, the scroller follows the live edge only while the reader is there (UI SDK's createStickToBottom) and
    lets go on scroll intent; a jump pill brings the reader back (and says when a reply is streaming); a thread opens
-   at its last anchor. Items can sit anywhere under the scroller (UserMessage and AssistantMessage are items), so a
+   at its last anchor. Items can sit anywhere under the scroller (ConversationUserMessage and ConversationAssistantMessage are items), so a
    wrapped message still anchors. The behavior is `lib/message-scroller-primitive.ts`.
    The column is `--message-column-width` wide (780px) with `--message-gutter` (22px) at its sides: set them on the
    scroller (or any ancestor) to fit it to a narrower or wider host. */
@@ -27,7 +27,7 @@ interface ScrollerContextValue {
 }
 const ScrollerContext = React.createContext<ScrollerContextValue | null>(null);
 
-/** Whether an element is inside a MessageScroller (UserMessage / AssistantMessage render as items there). */
+/** Whether an element is inside a MessageScroller (ConversationUserMessage / ConversationAssistantMessage render as items there). */
 export function useInMessageScroller(): boolean {
   return React.useContext(ScrollerContext) !== null;
 }
@@ -42,7 +42,7 @@ export interface MessageScrollerProps extends Omit<React.HTMLAttributes<HTMLDivE
   /** The scroll region's name (default "Messages"): name each one when a page shows two transcripts. */
   'aria-label'?: string;
   'aria-labelledby'?: string;
-  /** MessageScrollerItems (or parts that render one, such as UserMessage and AssistantMessage). */
+  /** MessageScrollerItems (or parts that render one, such as ConversationUserMessage and ConversationAssistantMessage). */
   children?: React.ReactNode;
   /** The root element. */
   ref?: React.Ref<HTMLDivElement>;

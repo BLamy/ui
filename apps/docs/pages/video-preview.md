@@ -18,14 +18,15 @@ import { usePlaybackClock } from '@/lib/playback'
 {% tab title="npm" %}
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 
-Import the stylesheet once at your app's entry, then the parts from the package root:
+Import the stylesheet once at your app's entry, then the parts from their module:
 
 ```tsx
 import '@brett_lamy/ui/styles.css'
 
 import {
-  VideoPreview, VideoPreviewControls, usePlaybackClock,
-} from '@brett_lamy/ui'
+  VideoPreview, VideoPreviewControls,
+} from '@brett_lamy/ui/video-preview'
+import { usePlaybackClock } from '@brett_lamy/ui/lib/playback'
 ```
 {% endtab %}
 {% endtabs %}

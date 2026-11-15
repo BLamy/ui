@@ -42,7 +42,7 @@ function FriendsTab() {
           <NavigationStackBar hideOnScroll={false}>
             <NavigationStackTitle>Friends</NavigationStackTitle>
           </NavigationStackBar>
-          <NavigationStackContent bottomInset={62}>
+          <NavigationStackContent>
             <NavigationStackLargeTitle />
             <List variant="inset">
               <ListSection>

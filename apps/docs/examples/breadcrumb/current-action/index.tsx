@@ -9,9 +9,9 @@ export default function CurrentAction() {
     <div className="mx-auto grid max-w-md gap-3 p-2">
       <Breadcrumb
         items={[
-          { id: 'home', label: 'Home', icon: 'house', href: '#home' },
-          { id: 'reports', label: 'Reports', href: '#reports' },
-          { id: 'weekly', label: 'Weekly report', onClick: () => setLoads((n) => n + 1) },
+          { value: 'home', label: 'Home', icon: 'house', href: '#home' },
+          { value: 'reports', label: 'Reports', href: '#reports' },
+          { value: 'weekly', label: 'Weekly report', onClick: () => setLoads((n) => n + 1) },
         ]}
       />
       <p className="text-footnote text-foreground/70">Loaded {loads} {loads === 1 ? 'time' : 'times'}. Press the current page to reload it.</p>

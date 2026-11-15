@@ -17,14 +17,14 @@ import {
 {% tab title="npm" %}
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 
-Import the stylesheet once at your app's entry, then the parts from the package root:
+Import the stylesheet once at your app's entry, then the parts from their module:
 
 ```tsx
 import '@brett_lamy/ui/styles.css'
 
 import {
   Select, SelectTrigger, SelectContent, SelectItem,
-} from '@brett_lamy/ui'
+} from '@brett_lamy/ui/select'
 ```
 {% endtab %}
 {% endtabs %}
@@ -129,7 +129,7 @@ UI SDK's `Select` props. The popup renders into BLProvider's root unless you pas
 | `side` / `align` | `bottom` / `start` | Starting position; it flips to fit. |
 | `sideOffset` | `8` | Gap to the button, px. |
 | `keepMounted` | `false` | Keep the closed list in the DOM, hidden. |
-| `size` | `default` | `sm`: dense 32px rows in footnote text. |
+| `size` | the trigger's | `sm`: dense 32px rows in footnote text. The rows follow the trigger: a `sm` `SelectTrigger` opens `sm` rows; an explicit `size` wins. |
 | `palette` | `scope` | Where the colors come from: the ThemeScope it was opened from, or `trigger`: the trigger's own surface (for a trigger on a surface CSS paints, see [Popover](https://blamy.github.io/ui/#/popover)). |
 | `className` | — | Classes for the popup (at least as wide as the button and 200px; scrolls past 320px). |
 | `SelectItem` `value` / `label` | — | The option's value; its text when the children are not plain text. |

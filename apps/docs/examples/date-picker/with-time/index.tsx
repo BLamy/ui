@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { TimeInput } from '@/components/ui/date-input'
-import { DatePicker, DatePickerContent, DatePickerField } from '@/components/ui/date-picker'
+import { DatePicker, DatePickerContent, DatePickerInputGroup } from '@/components/ui/date-picker'
 import { Field, FieldDescription, FieldLabel } from '@/components/ui/field'
 import { ThemeScope } from '@/lib/theme'
 
@@ -19,7 +19,7 @@ export default function WithTime() {
         <Field className="min-w-0 flex-1">
           <FieldLabel>Starts</FieldLabel>
           <DatePicker locale="en-US" value={date} onValueChange={setDate}>
-            <DatePickerField />
+            <DatePickerInputGroup />
             <DatePickerContent />
           </DatePicker>
         </Field>

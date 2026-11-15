@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react'
-import { AssistantMessage, Conversation, ConversationComposer, ConversationMessages, MessageMarkdown, UserMessage } from '@/components/ui/conversation'
-import { SidebarContent, SidebarHeader, SidebarItem, SidebarSection, SidebarWorkspace } from '@/components/ui/sidebar'
+import { ConversationAssistantMessage, Conversation, ConversationComposer, ConversationMessages, ConversationMarkdown, ConversationUserMessage } from '@/components/ui/conversation'
+import { SidebarContent, SidebarHeader, SidebarItem, SidebarSection, SidebarAccount } from '@/components/ui/sidebar'
 import { ThemeScope } from '@/lib/theme'
 import { TerminalBody, TerminalHeader } from '@/components/blocks/t3-clone/components/workbench/terminal'
 import { useWorkbenchShell, WorkbenchActions, WorkbenchContent, WorkbenchDock, WorkbenchDockClose, WorkbenchDockTrigger, WorkbenchHeader, WorkbenchMain, WorkbenchShell, WorkbenchSidebar, WorkbenchSidebarClose, WorkbenchSidebarTrigger, WorkbenchTitle } from '@/components/blocks/t3-clone/components/workbench/workbench-shell'
@@ -62,7 +62,7 @@ function Threads() {
       <SidebarHeader>
         <div className="flex items-center gap-1">
           <div className="min-w-0 flex-1">
-            <SidebarWorkspace title="Workbench" />
+            <SidebarAccount title="Workbench" />
           </div>
           <WorkbenchSidebarClose />
         </div>
@@ -95,17 +95,17 @@ function PhoneWorkbench() {
           <WorkbenchContent>
             <Conversation>
               <ConversationMessages threadKey="build" streaming>
-                <UserMessage key="u1">
+                <ConversationUserMessage key="u1">
                   Build it and tell me the bundle size.
-                </UserMessage>
-                <AssistantMessage key="a1">
-                  <MessageMarkdown
+                </ConversationUserMessage>
+                <ConversationAssistantMessage key="a1">
+                  <ConversationMarkdown
                     markdown={
                       'Building now — the log is in the terminal sheet. ' +
                       'Drag it down to dismiss, or up for more.'
                     }
                   />
-                </AssistantMessage>
+                </ConversationAssistantMessage>
               </ConversationMessages>
               <ConversationComposer>
                 <WorkbenchComposer

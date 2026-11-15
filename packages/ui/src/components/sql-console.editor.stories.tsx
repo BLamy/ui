@@ -1,18 +1,18 @@
 import { useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Button } from '@/components/ui/button';
-import { SqlEditor, SqlEditorFooter, type SqlEditorProps } from '@/components/ui/sql-editor';
+import { SqlConsoleEditor, SqlConsoleEditorFooter, type SqlConsoleEditorProps } from '@/components/ui/sql-console';
 import { Panel } from '../stories/primitive-frame';
 
-/* The SQL console's editor on its own (it ships with the console). A textarea over a highlighted copy of its text. */
+/* The SQL console's editor on its own, outside a console. A textarea over a highlighted copy of its text. */
 
-const meta: Meta<typeof SqlEditor> = {
-  title: 'Molecules/SqlEditor',
-  component: SqlEditor,
+const meta: Meta<typeof SqlConsoleEditor> = {
+  title: 'Organisms/SqlConsole/Editor',
+  component: SqlConsoleEditor,
   decorators: [(Story) => <Panel w={640}><Story /></Panel>],
 };
 export default meta;
-type Story = StoryObj<typeof SqlEditor>;
+type Story = StoryObj<typeof SqlConsoleEditor>;
 
 const script = `-- Authors with the most books
 select a.name, count(*)::int as books
@@ -22,15 +22,24 @@ where b.price < 15.00 and b.title <> 'Solaris'
 group by a.name
 order by books desc;`;
 
-function Editor(props: SqlEditorProps) {
+function Editor(props: SqlConsoleEditorProps) {
   const [value, setValue] = useState(props.defaultValue ?? '');
-  return <SqlEditor {...props} defaultValue={undefined} value={value} onValueChange={setValue} onRun={() => {}} />;
+  return <SqlConsoleEditor {...props} defaultValue={undefined} value={value} onValueChange={setValue} onRun={() => {}} />;
 }
 
 export const Default: Story = { render: (args) => <Editor {...args} />, args: { defaultValue: script } };
 export const Empty: Story = { render: (args) => <Editor {...args} />, args: { placeholder: 'select now();' } };
-/** `error.position` underlines the token Postgres stopped at. */
-export const Invalid: Story = { render: (args) => <Editor {...args} />, args: { defaultValue: 'select * from boooks;', error: { position: 15 } } };
+/** `errorPosition` (Postgres' 1-based `position`) underlines the token it stopped at and rings the box in the destructive
+    color; the textarea is `aria-invalid` and described by your error text. */
+export const Invalid: Story = {
+  render: (args) => (
+    <div className="flex flex-col gap-2">
+      <Editor {...args} aria-describedby="sql-editor-story-error" />
+      <p id="sql-editor-story-error" className="m-0 text-footnote text-destructive">relation &quot;boooks&quot; does not exist</p>
+    </div>
+  ),
+  args: { defaultValue: 'select * from boooks;', errorPosition: 15 },
+};
 /** A run in flight: Run reads "Running…" and is disabled. */
 export const Pending: Story = { render: (args) => <Editor {...args} />, args: { defaultValue: script, pending: true } };
 export const Disabled: Story = { render: (args) => <Editor {...args} />, args: { defaultValue: script, disabled: true } };
@@ -39,7 +48,7 @@ export const WithHistory: Story = { render: (args) => <Editor {...args} />, args
 export const CustomFooter: Story = {
   render: (args) => (
     <Editor {...args}>
-      <SqlEditorFooter><Button variant="ghost" size="sm">Format</Button></SqlEditorFooter>
+      <SqlConsoleEditorFooter><Button variant="ghost" size="sm">Format</Button></SqlConsoleEditorFooter>
     </Editor>
   ),
   args: { defaultValue: script, rows: 4 },

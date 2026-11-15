@@ -22,11 +22,11 @@ const fieldSizes = ['sm', 'default', 'lg'] as const;
 
 export const dateInputVariants = cva('flex min-w-0 items-center text-foreground tabular-nums [font-family:inherit] whitespace-nowrap', {
   variants: {
-    /** `field`: the kit's filled field (`fieldSurfaceVariants`, the box every text-shaped control shares). `bare`: just
-        the segments, for a field you draw yourself around them. */
+    /** `default`: the kit's filled field (`fieldSurfaceVariants`, the box every text-shaped control shares). `plain`: just
+        the segments, no chrome, for a field you draw yourself around them. */
     variant: {
-      field: 'w-full',
-      bare: 'flex-1',
+      default: 'w-full',
+      plain: 'flex-1',
     },
     size: {
       sm: 'text-subhead',
@@ -35,8 +35,8 @@ export const dateInputVariants = cva('flex min-w-0 items-center text-foreground 
     },
   },
   // The segments sit side by side: the surface's gap would space them apart.
-  compoundVariants: fieldSizes.map((size) => ({ variant: 'field' as const, size, class: [fieldSurfaceVariants({ size }), 'gap-0'] })),
-  defaultVariants: { variant: 'field', size: 'default' },
+  compoundVariants: fieldSizes.map((size) => ({ variant: 'default' as const, size, class: [fieldSurfaceVariants({ size }), 'gap-0'] })),
+  defaultVariants: { variant: 'default', size: 'default' },
 });
 
 /* An editable part is a real input, 24px at least each way (WCAG target size) and as wide as its digits; the one

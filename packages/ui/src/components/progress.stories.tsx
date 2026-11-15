@@ -10,7 +10,7 @@ const meta: Meta<typeof Progress> = {
     size: { control: 'inline-radio', options: ['sm', 'default', 'lg'] },
     tone: { control: 'inline-radio', options: ['default', 'success', 'warning', 'destructive'] },
   },
-  decorators: [(Story) => <Panel><Story /></Panel>],
+  decorators: [(Story, { parameters }) => <Panel dark={parameters.dark}><Story /></Panel>],
 };
 export default meta;
 type Story = StoryObj<typeof Progress>;
@@ -30,7 +30,7 @@ const all = (
 export const Variants: Story = { render: () => all };
 /** No `value`: how far along is unknown, so the bar slides. */
 export const Indeterminate: Story = { args: { value: undefined } };
-export const Dark: Story = { decorators: [(Story) => <Panel dark><Story /></Panel>], render: () => all };
+export const Dark: Story = { parameters: { dark: true }, render: () => all };
 
 /** The parts, placed by hand, and a `format` of its own for the value. */
 export const Composed: Story = {

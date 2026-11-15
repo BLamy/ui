@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Button } from '@/components/ui/button';
 import { Spinner, spinnerAnimations, type SpinnerProps } from '@/components/ui/spinner';
@@ -75,15 +76,31 @@ export const Tinted: Story = {
   ),
 };
 
-/** A pending action: the spinner sits beside the label in the button's text color. */
+/** A pending action: `onClick` returns a Promise, so the Button is pending (busy, ignoring presses, keeping focus,
+    at full strength) and the spinner sits beside the label in its text color. These two never settle. */
 export const InButton: Story = {
-  render: () => (
-    <div className="flex items-center gap-3">
-      <Button disabled><Spinner size={16} />Saving…</Button>
-      <Button variant="secondary" disabled><Spinner size={16} />Loading</Button>
-    </div>
-  ),
+  render: () => {
+    const forever = () => new Promise<void>(() => {});
+    return (
+      <div className="flex items-center gap-3">
+        <PendingButton onPress={forever}>Saving…</PendingButton>
+        <PendingButton variant="secondary" onPress={forever}>Loading</PendingButton>
+      </div>
+    );
+  },
 };
+
+function PendingButton({ onPress, children, variant }: { onPress: () => Promise<void>; children: string; variant?: 'secondary' }) {
+  const [pending, setPending] = useState(false);
+  // Pressed once on mount, so the story opens in the pending state.
+  const ref = useRef<HTMLButtonElement>(null);
+  useEffect(() => { ref.current?.click(); }, []);
+  return (
+    <Button ref={ref} variant={variant} onClick={() => { setPending(true); return onPress(); }}>
+      {pending ? <Spinner size={16} /> : null}{children}
+    </Button>
+  );
+}
 
 export const Dark: Story = {
   parameters: { pad: { dark: true, tone: 'text-foreground' } },

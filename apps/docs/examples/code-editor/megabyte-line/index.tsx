@@ -41,7 +41,7 @@ export default function MegabyteLine() {
         <Button size="sm" variant="secondary" onClick={() => editor.current?.selectAll()}>Select all</Button>
       </div>
       <div className="h-40 overflow-hidden rounded-card border border-border">
-        <CodeEditor ref={editor} readOnly variant="ghost" lines={lines} aria-label="bundle.js" />
+        <CodeEditor ref={editor} readOnly variant="plain" lines={lines} aria-label="bundle.js" />
       </div>
     </div>
   )

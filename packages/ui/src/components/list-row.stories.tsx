@@ -54,7 +54,7 @@ function StateRows() {
       <ListRow title="Rest" description="Pressable, drills in" accessory="chevron" onClick={() => undefined} />
       <ListRow title="Current" description="The open item: a wash and aria-current" accessory="chevron" current onClick={() => undefined} />
       <ListRow title="Disabled" description="Can't be pressed or swiped" accessory="chevron" disabled onClick={() => undefined}
-        trailingActions={[{ label: 'Delete', destructive: true, onAction: () => undefined }]} />
+        endActions={[{ label: 'Delete', destructive: true, onAction: () => undefined }]} />
       <ListRow title="Checked" accessory="check" checked onClick={() => undefined} />
       <ListRow title="Connected" tone="success" trailing={<Icon name="check" size={15} sw={2.6} className="text-success" />} />
       <ListRow title="Sign Out" tone="destructive" justify="center" onClick={() => undefined} divider={false} />
@@ -92,7 +92,7 @@ export const SwipeToDelete: Story = {
       <>
         {people.map(([f, l], i) => (
           <ListRow key={f} title={f + ' ' + l} icon={<Avatar name={`${f} ${l}`} size={34} />}
-            trailingActions={[{ label: 'Delete', destructive: true, onAction: () => setGone((g) => new Set([...g, f])) }]}
+            endActions={[{ label: 'Delete', destructive: true, onAction: () => setGone((g) => new Set([...g, f])) }]}
             onClick={() => undefined}
             divider={i < people.length - 1} />
         ))}
@@ -152,7 +152,7 @@ function MailRows() {
           <ListRow key={from} title={<span style={{ fontWeight: unread.has(from) ? 600 : 400 }}>{from}</span>} description={subject}
             icon={<span aria-hidden style={{ width: 9, height: 9, borderRadius: 5, background: unread.has(from) ? 'var(--primary)' : 'transparent' }} />}
             trailing={flag.has(from) ? <Icon name="starF" size={13} className="text-warning" /> : null}
-            leadingActions={leading} trailingActions={trailing}
+            startActions={leading} endActions={trailing}
             onClick={() => undefined} divider={i < rows.length - 1} />
         );
       })}
@@ -164,7 +164,7 @@ function MailRows() {
   );
 }
 
-/** `leadingActions` / `trailingActions`: index 0 is the outermost button, the one a full swipe triggers. */
+/** `startActions` / `endActions`: index 0 is the outermost button, the one a full swipe triggers. */
 export const SwipeActions: Story = { render: () => <MailRows /> };
 
 /** The trailing actions revealed from the keyboard (focus the row, press ←). */

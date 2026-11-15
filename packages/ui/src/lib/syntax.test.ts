@@ -52,6 +52,14 @@ describe('normalizeSpans', () => {
     expect(sortedAndDisjoint(out)).toBe(true);
   });
 
+  it('turns brackets, commas and semicolons the GPU called operators plain, as the other lexers leave them', () => {
+    const code = 'f({ a, b });';
+    const out = normalizeSpans(code, [at(code, '({', 'operator'), at(code, ',', 'operator'), at(code, '});', 'operator')]);
+    expect(out).toEqual([]);
+    const arrow = 'x => y';
+    expect(labels(arrow, normalizeSpans(arrow, [at(arrow, '=>', 'operator')]))).toEqual([['=>', 'operator']]);
+  });
+
   it('turns lone dots, colons and brackets plain but keeps multi-char operators', () => {
     const code = 'a.b: c::d -> e === f !== g && h || i';
     const out = normalizeSpans(code, [{ type: 'constant', start: 0, end: code.length }]);

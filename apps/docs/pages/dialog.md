@@ -18,7 +18,7 @@ import {
 {% tab title="npm" %}
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 
-Import the stylesheet once at your app's entry, then the parts from the package root:
+Import the stylesheet once at your app's entry, then the parts from their module:
 
 ```tsx
 import '@brett_lamy/ui/styles.css'
@@ -26,7 +26,7 @@ import '@brett_lamy/ui/styles.css'
 import {
   Dialog, DialogTrigger, DialogBackdrop, DialogContent,
   DialogTitle,
-} from '@brett_lamy/ui'
+} from '@brett_lamy/ui/dialog'
 ```
 {% endtab %}
 {% endtabs %}
@@ -101,7 +101,7 @@ A `Dialog` closes on Esc, on a press outside the card and (as a sheet) on a swip
 
 `presentation` defaults to `"auto"`: the Dialog reads the nearest size-class scope where it is **written** (BLProvider's root, a SplitView column, a NavigationStack…; see `SizeClassProvider` in [Layout hooks](https://blamy.github.io/ui/#/hooks-layout)) and opens as a centered card in a medium or regular one, as a sheet in a compact one. Context crosses portals, so a Dialog with no trigger, written inside a compact column of a wide app, is a sheet even though it renders into BLProvider's root. Outside every scope, UI SDK's own rule decides (a small touch screen). The choice is made each time it opens.
 
-As a sheet it is dragged down to dismiss (`details.reason === 'swipe'`; a dialog that isn't `dismissible` springs back), it rides above the on-screen keyboard, its grabber shows while it can be dismissed, and a horizontal `DialogFooter` shares the width between its buttons, as iOS does. `DialogContent`'s `variant` shapes it: `default` is attached to the bottom edge like the kit's [Sheet](https://blamy.github.io/ui/#/sheet), `tray` floats inset from the edges. The centered card is the same for both variants.
+As a sheet it is dragged down to dismiss (`details.reason === 'swipe'`; a dialog that isn't `dismissible` springs back), it rides above the on-screen keyboard, its grabber shows while it can be dismissed, and a horizontal `DialogFooter` shares the width between its buttons, as iOS does. `DialogContent`'s `variant` shapes it: `default` is attached to the bottom edge like the kit's [Sheet](https://blamy.github.io/ui/#/sheet), `tray` floats 10px in from the edges (`trayInset` in `@/lib/surface`) with `--radius-sheet` corners, the same card as a resting [FloatingSheet](https://blamy.github.io/ui/#/floating-sheet). The centered card is the same for both variants.
 
 {% demo src="dialog/responsive" %}
 
@@ -222,7 +222,7 @@ UI SDK traps focus inside the dialog, makes the rest of its host inert, closes o
 
 The header, title, description, body, footer and round buttons are shared by the kit's surfaces ([Sheet](https://blamy.github.io/ui/#/sheet) and [AdaptivePane](https://blamy.github.io/ui/#/adaptive-pane) build their parts from them; [Card](https://blamy.github.io/ui/#/card), [Popover](https://blamy.github.io/ui/#/popover) and [HoverCard](https://blamy.github.io/ui/#/hover-card) take the `sm` title and description). Use them to make a surface of your own look like one of ours: `surfaceHeaderVariants({ variant: 'default' | 'bar' })`, `surfaceTitleVariants({ size: 'sm' | 'default' })`, `surfaceDescriptionVariants({ size })`, `surfaceBodyVariants()`, `surfaceFooterVariants({ orientation })`, `closeButtonVariants({ layout: 'inline' | 'pinned' })` (30px, `pinned` at the top-end corner) and `sheetGrabberVariants({ handle })`. They live in `@/lib/surface`, a module without hooks, so a Server Component can call them too; `@/components/ui/dialog` re-exports them (`@brett_lamy/ui` exports them from the root).
 
-For a surface root of your own with a flow (Sheet's `view` is built this way), `SurfaceFlow` (`view`, `dismissible`) gives `DialogView`, `DialogBack` and `SurfaceFlowTitle` (a flow title's travelling text) the direction of each change of `view`.
+A [Sheet](https://blamy.github.io/ui/#/sheet) takes the same flow: `Sheet view`, `SheetHeader variant="bar"`, `SheetBack` (this `DialogBack`) and `SheetView` (this `DialogView`), so a flow steps back the same way whichever surface holds it. The round × and ‹ are drawn at 30px and hit-tested at 44px (a `::after` 7px past each edge), for the sheet presentation on a touch screen.
 
 ## Styling
 

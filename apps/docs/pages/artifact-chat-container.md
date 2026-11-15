@@ -20,7 +20,7 @@ import {
 {% tab title="npm" %}
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 
-Import the stylesheet once at your app's entry, then the parts from the package root:
+Import the stylesheet once at your app's entry, then the parts from their module:
 
 ```tsx
 import '@brett_lamy/ui/styles.css'
@@ -28,7 +28,7 @@ import '@brett_lamy/ui/styles.css'
 import {
   ArtifactChatContainer, ArtifactChatContainerContent,
   ArtifactChatContainerChat, ArtifactChatContainerComposer,
-} from '@brett_lamy/ui'
+} from '@brett_lamy/ui/artifact-chat-container'
 ```
 {% endtab %}
 {% endtabs %}
@@ -76,7 +76,7 @@ The column is an `aside` landmark named by `chatLabel` ("Chat"), `chatWidth` wid
 
 The floating chat is a `FloatingSheet` (`variant="glass"` by default, `bodyAlign="end"` so the transcript grows upward out of the cap):
 
-- **Rest.** With `peek={0}` it rests on the composer alone; a `peek` (px, or `'30%'` of the container) keeps the newest replies readable above it, fading at the top edge.
+- **Rest.** With `peek={0}` it rests on the composer alone; a `peek` (px, or `'30%'` of the container) keeps the newest replies readable above it, fading at the top edge. A `Conversation` or `MessageScroller` in the Chat part sits at its newest line while the chat rests, and anchors new turns again once it grows.
 - **Grow.** Drag the cap up, press it, or use the arrow keys on it: the transcript grows over the artifact and the container dims. `Escape` and a press on the scrim bring it back to rest. `open` / `defaultOpen` / `onOpenChange(open, details)` control it (`details.reason`: `swipe`, `handle-press`, `handle-key`, `escape-key`, `outside-press`, `imperative`).
 - **Fold.** Drag it below rest and it folds into a FAB on the `fabSide` edge at `fabAlign` (bottom center by default), with `fabIcon` as its face; the FAB, named "Open " + `chatLabel`, brings it back. `minimized` / `defaultMinimized` / `onMinimizedChange(minimized, details)` control it (`swipe`, `trigger-press`, `imperative`).
 - **Scroll.** Resting on the composer alone, it slides away while the artifact scrolls down (or the shared chrome hides) and comes back on a scroll up; `hideOnScroll={false}` keeps it.
@@ -89,7 +89,11 @@ While `working` is true, the floating composer's card becomes a tappable status 
 
 ## Appearance
 
-`appearance` is the chat's colour scheme: `auto` (default) follows the page; `light` and `dark` put the bl-theme's `sheet` scope on the container so the chat can disagree with the page (a dark chat over a light map). The composer wears the `glass` scope in the same appearance. `variant` is the floating chat's look: `glass` (default) blurs the artifact behind it, `sheet` is an opaque card.
+`appearance` is the chat's colour scheme: `auto` (default) follows the page; `light` and `dark` put the bl-theme's `sheet` scope on the chat surfaces only (the docked column, the floating sheet) so the chat can disagree with the page (a dark chat over a light map). The artifact keeps the page's theme, and popups opened from the chat wear the chat's. The composer wears the `glass` scope in the same appearance. To put the artifact in the same scheme as the chat, scope the `ArtifactChatContainerContent` yourself (a `className` of `dark` / `light`, or a `ThemeScope` inside it). `variant` is the floating chat's look: `glass` (default) blurs the artifact behind it, `sheet` is an opaque card.
+
+## Resting, peeking and folding: the words
+
+The shell's resting states have one meaning each. **Peek** is how much transcript stays visible above the resting composer (`peek`, here and on FloatingSheet; MessageScroller's own `peek` is the slice of the previous turn above a new anchor, a different thing). **Open** is the chat grown over the artifact. **Minimized** is the chat folded into its FAB (FloatingSheet's word; a Composer's own fold is `collapsed="fab"`). **Collapse** is the policy of how far a drag or a scroll may fold it (`collapse` on FloatingSheet and on Composer).
 
 ## Parts
 
@@ -137,11 +141,11 @@ function TranscriptHeader() {
 
 ## Accessibility
 
-Docked, the chat is a named `complementary` landmark. Floating, it is a dialog named by `chatLabel`: at rest it is not modal and focus is never moved, so the artifact stays usable beside it; grown, it is modal to the container and `Escape` brings it back. The cap is UI SDK's drawer handle ("Expand" / "Collapse"; Enter, Space, the arrow keys, Home and End). The FAB is out of the tab order and the accessibility tree until the chat folds into it. The working status is one button whose name includes its text and "Add something new".
+Docked, the chat is a named `complementary` landmark. Floating, it is a dialog named by `chatLabel`: at rest it is not modal and focus is never moved, so the artifact stays usable beside it; grown, it is modal to the container and `Escape` brings it back. The cap is UI SDK's drawer handle ("Expand" / "Collapse"; Enter, Space, the arrow keys, Home and End). The FAB is out of the tab order and the accessibility tree until the chat folds into it. The working status is one button named for what it does, "Write a message", with the status text (`workingLabel`) as its description. On a touch screen the 18px cap answers presses 44px tall over the transcript's faded top edge, and the padding around the floating composer passes presses through to it.
 
 ## Styling
 
-The root carries `data-slot="artifact-chat-container"`, `data-layout` (`split` / `floating`), `data-size-class`, `data-chat-side` and, for an explicit appearance, `data-appearance` with `data-theme-scope="sheet"`. Docked, `artifact-chat-column` holds the `artifact-chat-chat` aside with its `artifact-chat-transcript-dock` and `artifact-chat-composer-dock`; floating, the FloatingSheet's own slots (`floating-sheet`, `floating-sheet-body`, `floating-sheet-foot`) hold the same docks. The artifact is `artifact-chat-content`. `ck-artifact-chat`, `ck-artifact-chat__chat` and `ck-artifact-chat__content` stay as class hooks. `artifactChatContainerVariants({ layout, chatSide })` is the root's recipe.
+The root carries `data-slot="artifact-chat-container"`, `data-layout` (`split` / `floating`), `data-size-class`, `data-chat-side` and, for an explicit appearance, `data-appearance`; the docked aside and the floating sheet carry `data-theme-scope="sheet"` and the appearance class. Docked, `artifact-chat-column` holds the `artifact-chat-chat` aside with its `artifact-chat-transcript-dock` and `artifact-chat-composer-dock`; floating, the FloatingSheet's own slots (`floating-sheet`, `floating-sheet-body`, `floating-sheet-footer`) hold the same docks. The artifact is `artifact-chat-content`. `ck-artifact-chat`, `ck-artifact-chat__chat` and `ck-artifact-chat__content` stay as class hooks. `artifactChatContainerVariants({ layout, chatSide })` is the root's recipe.
 
 ## Blocks built on it
 

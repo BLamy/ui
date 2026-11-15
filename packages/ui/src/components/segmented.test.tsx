@@ -116,11 +116,11 @@ describe('Segmented', () => {
   });
 });
 
-/** Tabs `segmented` and ToggleGroup `filled` are drawn by the same recipes, so the three are pixel-alike. */
+/** Tabs and ToggleGroup `variant="segmented"` are drawn by the same recipes, so the three are pixel-alike. */
 describe('the segment track', () => {
   const has = (el: Element, recipe: string) => recipe.split(' ').every((c) => el.className.split(' ').includes(c));
 
-  it('draws Segmented, segmented Tabs and a filled ToggleGroup with the same track, segments and card', () => {
+  it('draws Segmented, segmented Tabs and a segmented ToggleGroup with the same track, segments and card', () => {
     const { container } = render(
       <>
         <Range defaultValue="week" />
@@ -130,7 +130,7 @@ describe('the segment track', () => {
             <TabsTab value="week">Week</TabsTab>
           </TabsList>
         </Tabs>
-        <ToggleGroup variant="filled" aria-label="Range toggles" defaultValue={['week']}>
+        <ToggleGroup variant="segmented" aria-label="Range toggles" defaultValue={['week']}>
           <ToggleGroupItem value="day">Day</ToggleGroupItem>
           <ToggleGroupItem value="week">Week</ToggleGroupItem>
         </ToggleGroup>

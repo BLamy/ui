@@ -18,14 +18,15 @@ import { VaultGate } from '@/components/ui/vault-gate'
 {% tab title="npm" %}
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 
-Import the stylesheet once at your app's entry, then the parts from the package root:
+Import the stylesheet once at your app's entry, then the parts from their module:
 
 ```tsx
 import '@brett_lamy/ui/styles.css'
 
 import {
-  VaultProvider, useVault, useEncryptedState, VaultGate,
-} from '@brett_lamy/ui'
+  VaultProvider, useVault, useEncryptedState,
+} from '@brett_lamy/ui/lib/vault-react'
+import { VaultGate } from '@brett_lamy/ui/vault-gate'
 ```
 {% endtab %}
 {% endtabs %}
@@ -329,7 +330,7 @@ Sets up the passkey, then shows the recovery key once. It is a [Dialog](https://
 </VaultEnrollDialog>
 ```
 
-`RecoveryKey` renders a key in groups of four, read letter by letter by a screen reader, and is exported for your own flow (for instance after `regenerateRecoveryKey()`); `recoveryKeyVariants({ layout: 'grid' | 'row' })` sets two or four columns, packed to the centre.
+`VaultRecoveryKey` renders a key in groups of four (slot `vault-recovery-key`, a `group` named "Recovery key"), read letter by letter by a screen reader, and is exported for your own flow (for instance after `regenerateRecoveryKey()`); `vaultRecoveryKeyVariants({ layout: 'grid' | 'row' })` sets two or four columns, packed to the centre. Copy uses the kit's `useCopy` (it announces "Copied"); Copy and Save as file share the row and are 44px tall where the dialog is a sheet on a touch screen.
 
 ### VaultSetup, VaultUnlock, VaultUnsupported, VaultStatusBadge
 

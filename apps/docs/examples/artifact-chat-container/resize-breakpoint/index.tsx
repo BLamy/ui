@@ -113,7 +113,7 @@ function ChatComposer({
         <ComposerAttachments />
         <ComposerInput placeholder={placeholder} />
         <ComposerFooter>
-          <ComposerAdd icon="paperclip-diagonal" label="Attach files" />
+          <ComposerAdd icon="paperclip-diagonal" aria-label="Attach files" />
           <ComposerSpacer />
           <ComposerSend />
         </ComposerFooter>

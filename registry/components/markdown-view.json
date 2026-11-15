@@ -2,7 +2,7 @@
   "name": "markdown-view",
   "title": "MarkdownView",
   "description": "Read-only GitBook-flavored Markdown rendered by Docstream: headings, lists, tables, hints, tabs, highlighted code, live demos and reference chips, whole or streamed.",
-  "page": "docstream",
+  "page": "markdown-view",
   "exports": [
     "MarkdownView"
   ],

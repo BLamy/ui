@@ -270,7 +270,7 @@ function ValuePopover({ controller, row, onClose, onCopy, copied }: {
   return (
     <Popover controller={controller} onOpenChangeComplete={(open) => { if (!open) onClose(); }}>
       <PopoverContent
-        variant="surface"
+        variant="plain"
         side="bottom"
         align="end"
         aria-label={row?.node.name ? `The value of ${row.node.name}` : 'The whole value'}

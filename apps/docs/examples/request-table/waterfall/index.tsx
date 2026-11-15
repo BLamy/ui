@@ -2,15 +2,15 @@ import { useState } from 'react'
 import { RequestTable } from '@/components/ui/request-table'
 import { Slider } from '@/components/ui/slider'
 import { formatLogTime } from '@/lib/log-list-model'
-import type { RequestRow, RequestTone } from '@/lib/request-table-model'
+import type { RequestRow } from '@/lib/request-table-model'
 
-const ROUTES: { path: string; method: string; type: string; size: number; tone: RequestTone }[] = [
-  { path: 'api/cart', method: 'GET', type: 'fetch', size: 1840, tone: 'primary' },
-  { path: 'api/products', method: 'GET', type: 'fetch', size: 5200, tone: 'primary' },
-  { path: 'assets/chunk-a81.js', method: 'GET', type: 'script', size: 88_000, tone: 'warning' },
-  { path: 'img/product.webp', method: 'GET', type: 'img', size: 240_000, tone: 'success' },
-  { path: 'api/checkout', method: 'POST', type: 'fetch', size: 420, tone: 'primary' },
-  { path: 'styles/app.css', method: 'GET', type: 'css', size: 34_000, tone: 'accent' },
+const ROUTES: { path: string; method: string; type: string; size: number; look: Pick<RequestRow, 'tone' | 'tint'> }[] = [
+  { path: 'api/cart', method: 'GET', type: 'fetch', size: 1840, look: {} },
+  { path: 'api/products', method: 'GET', type: 'fetch', size: 5200, look: {} },
+  { path: 'assets/chunk-a81.js', method: 'GET', type: 'script', size: 88_000, look: { tone: 'warning' } },
+  { path: 'img/product.webp', method: 'GET', type: 'img', size: 240_000, look: { tone: 'success' } },
+  { path: 'api/checkout', method: 'POST', type: 'fetch', size: 420, look: {} },
+  { path: 'styles/app.css', method: 'GET', type: 'css', size: 34_000, look: { tint: 'var(--chart-5)' } },
 ]
 
 const ROWS: RequestRow[] = Array.from({ length: 200 }, (_, i) => {
@@ -24,7 +24,7 @@ const ROWS: RequestRow[] = Array.from({ length: 200 }, (_, i) => {
     size: route.size + i * 17,
     time: i * 95 + (i % 7) * 11,
     duration: 20 + ((i * 53) % 600),
-    tone: route.tone,
+    ...route.look,
   }
 })
 
@@ -40,7 +40,7 @@ export default function Waterfall() {
         <Slider<number> aria-label="Time" size="sm" className="min-w-0 flex-1" min={0} max={END} value={time} onValueChange={(value) => setTime(value)} />
         <span className="shrink-0 text-caption text-muted-foreground tabular-nums">{formatLogTime(time)}</span>
       </div>
-      <RequestTable aria-label="Requests" rows={ROWS} timeRange={[0, END]} playhead={time} onAction={(_id, { row }) => setTime(row.time ?? 0)} className="min-h-0 flex-1" />
+      <RequestTable aria-label="Requests" rows={ROWS} timeRange={[0, END]} currentTime={time} onAction={(_id, { row }) => setTime(row.time ?? 0)} className="min-h-0 flex-1" />
     </div>
   )
 }

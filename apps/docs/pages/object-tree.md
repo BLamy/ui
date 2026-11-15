@@ -17,12 +17,14 @@ import { nodeFromValue } from '@/lib/object-tree-model'
 {% tab title="npm" %}
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 
-Import the stylesheet once at your app's entry, then the parts from the package root:
+Import the stylesheet once at your app's entry, then the parts from their module:
 
 ```tsx
 import '@brett_lamy/ui/styles.css'
 
-import { ObjectTree, ObjectValue, nodeFromValue } from '@brett_lamy/ui'
+import { ObjectTree } from '@brett_lamy/ui/object-tree'
+import { ObjectValue } from '@brett_lamy/ui/object-value'
+import { nodeFromValue } from '@brett_lamy/ui/lib/object-tree-model'
 ```
 {% endtab %}
 {% endtabs %}

@@ -135,7 +135,7 @@ export function Conversation({ ui, pr, checks }: { ui: Layout; pr: PullDetail; c
           {participants.length ? (
             <div className={side}>
               <div className={sideTitle}>Participants</div>
-              <AvatarGroup size={26} label="Participants">
+              <AvatarGroup size={26} aria-label="Participants">
                 {participants.map((u) => <Avatar key={u.login} name={`${u.f} ${u.l}`} src={u.avatar} card={<UserCard user={u} />} />)}
               </AvatarGroup>
             </div>

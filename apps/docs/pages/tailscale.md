@@ -18,7 +18,7 @@ import {
 {% tab title="npm" %}
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 
-Import the stylesheet once at your app's entry, then the parts from the package root:
+Import the stylesheet once at your app's entry, then the parts from their module:
 
 ```tsx
 import '@brett_lamy/ui/styles.css'
@@ -26,12 +26,12 @@ import '@brett_lamy/ui/styles.css'
 import {
   TailscaleLoginButton, TailscaleStatusBadge, TailscaleSummary,
   TailscaleExitNodes,
-} from '@brett_lamy/ui'
+} from '@brett_lamy/ui/tailscale-controls'
 ```
 {% endtab %}
 {% endtabs %}
 
-{% demo src="tailscale-login/sign-in" %}
+{% demo src="tailscale/sign-in" %}
 
 The demos on this page are real: they run Tailscale's client (`createTailscaleConnectClient`, about 26 MB of WebAssembly fetched on the first press) and the popup is Tailscale's own sign-in page. Approve it and this tab joins your tailnet as a device named `bl-ui-docs`, kept for this tab only (`sessionStorage`); sign out to remove it, or remove it in your admin console. You need a Tailscale account to try them. Read [Limits](#limits) before you rely on the real client.
 
@@ -63,7 +63,7 @@ Five parts in one module (`@/components/ui/tailscale-controls`). Each reads the 
 
 ### TailscaleLoginButton
 
-{% demo src="tailscale-login/states" %}
+{% demo src="tailscale/states" %}
 
 The kit's [Button](https://blamy.github.io/ui/#/button), so it takes Button's `variant` and `size` and sits beside other buttons at the same height. By state: **Sign in with Tailscale** (idle, signed out) with the mark; **Signing in…** / **Connecting…** / **Waiting for approval…** with a spinner, where a press cancels (`aria-busy` and `data-pending` are set, and the accessible name ends with "Press to cancel."); **Sign out of Tailscale** (connected); **Try again** after a failure, with a warning glyph (its accessible name is "Try again to sign in to Tailscale"). The label and glyph carry the state, never colour alone, and the button keeps the `variant` you chose in every state.
 
@@ -96,7 +96,7 @@ The nine-dot mark in `currentColor`, `aria-hidden`: `size` (px, default 16) and 
 
 Once connected, a popover or a menu-bar extra shows where you are, lets you choose the exit node, and signs out. There is no wrapper for it: write the three parts in the popup, in the order you want.
 
-{% demo src="tailscale-login/panel" %}
+{% demo src="tailscale/panel" %}
 
 The demo is real: it runs Tailscale's client and needs a Tailscale account; approve the sign-in popup and the panel lists the exit nodes of your tailnet.
 
@@ -118,22 +118,31 @@ The demo is real: it runs Tailscale's client and needs a Tailscale account; appr
 
 ### TailscaleSummary
 
-"Connected to *tailnet*" and "As *this device*", with an optional `detail` line under them (Safari: how many pages and requests this session went through the tailnet). `tailscale` and `className`; `data-slot="tailscale-summary"`.
+Where the connection stands, in words, over this device's name, with an optional `detail` line under them (Safari: how many pages and requests this session went through the tailnet). By state: "Connected to *tailnet*" and "As *this device*"; "Connecting to *tailnet*" while signing in or starting; "Waiting for approval" until an admin approves the device; "Not connected" otherwise. Like the badge, it can be driven without a provider.
+
+| Prop | Default | Effect |
+| --- | --- | --- |
+| `detail` | — | A line of your own under the summary. |
+| `status` / `tailnet` / `selfName` | the controller's | Show these instead. |
+| `tailscale` | the provider's | The controller. |
+
+It carries `data-slot="tailscale-summary"` and `data-status`.
 
 ### TailscaleExitNodes
 
-The exit node chooser, read like a Wi-Fi menu: which device carries your traffic to the public internet. A [Listbox](https://blamy.github.io/ui/#/listbox) under an "Exit node" heading that names it: **None** first, a leading check on the node in use, each device's name and a trailing glyph, offline devices dimmed, marked "Offline" and not selectable. The arrow keys move without switching (`activation="manual"`); a press, Space or Enter switches. While a switch runs its row says **Connecting…** with a spinner and the list ignores further presses; if it fails, the message shows under the list in the error colour. With no exit node on the tailnet it says how to offer one instead.
+The exit node chooser, read like a Wi-Fi menu: which device carries your traffic to the public internet. A [Listbox](https://blamy.github.io/ui/#/listbox) under an "Exit node" heading that names it: **None** first, a leading check on the node in use, each device's name and a trailing glyph, offline devices dimmed, marked "Offline" and not selectable. The arrow keys move without switching (`activation="manual"`); a press, Space or Enter switches. While a switch runs its row says **Connecting…** with a spinner and the list ignores further presses; if it fails, the message shows under the list in the error colour. With no exit node on the tailnet the heading stays and an [EmptyState](https://blamy.github.io/ui/#/empty-state) takes the list's place: "No exit node", and how to offer one.
 
 | Prop | Default | Effect |
 | --- | --- | --- |
 | `value` | the controller's | The exit node shown as chosen: an id, or `null` for None. |
 | `onValueChange(value, details)` | — | Called first when a row is chosen; `details.cancel()` stops the switch. |
-| `onAction(value)` | `tailscale.setExitNode` | Does the switch. Return a Promise to show the row as connecting until it settles; a rejection shows its message. |
-| `glyph(peer, state)` | signal / warning / spinner | The trailing glyph of a row; `state` is `{ selected, connecting, online }`. |
-| `labels` | English | `group` (the heading and the list's name), `none`, `noneDetail`, `offline`, `connecting`, `empty`, `failed`. |
+| `onAction(value, details)` | `tailscale.setExitNode` | Does the switch, with the same `details` as `onValueChange`. Return a Promise to show the row as connecting until it settles; a rejection shows its message. |
+| `trailing(peer, state)` | signal / warning / spinner | What a row shows at its trailing edge; `state` is `{ selected, connecting, online }`. |
+| `emptyState` | an `EmptyState` | Shown in place of the list when the tailnet has no exit node: a node, a string (the title), or `null` for nothing. |
+| `labels` | English | `group` (the heading and the list's name), `none`, `noneDetail`, `offline`, `connecting`, `failed`. |
 | `tailscale` | the provider's | The controller. |
 
-It carries `data-slot="tailscale-exit-nodes"` and `aria-busy` while a switch runs.
+Every `div` prop passes to the root (`id`, `aria-*`, `style`), with or without exit nodes. It carries `data-slot="tailscale-exit-nodes"`, `data-empty` when there are none, and `aria-busy` while a switch runs.
 
 ### Choosing an exit node
 
@@ -171,7 +180,7 @@ What BL UI keeps: the client package and its call sequence, the two sign-in mode
 
 ### Auth key
 
-{% demo src="tailscale-login/auth-key" %}
+{% demo src="tailscale/auth-key" %}
 
 ```tsx
 <TailscaleProvider

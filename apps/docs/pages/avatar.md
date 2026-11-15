@@ -15,12 +15,12 @@ import { Avatar } from '@/components/ui/avatar'
 {% tab title="npm" %}
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 
-Import the stylesheet once at your app's entry, then the parts from the package root:
+Import the stylesheet once at your app's entry, then the parts from their module:
 
 ```tsx
 import '@brett_lamy/ui/styles.css'
 
-import { Avatar } from '@brett_lamy/ui'
+import { Avatar } from '@brett_lamy/ui/avatar'
 ```
 {% endtab %}
 {% endtabs %}
@@ -73,7 +73,7 @@ With no children an Avatar renders an `AvatarImage` for `src` and an `AvatarFall
 {% demo src="avatar/group" %}
 
 ```tsx
-<AvatarGroup label="Reviewers">
+<AvatarGroup aria-label="Reviewers">
   {people.map((p) => <Avatar key={p.id} name={p.name} card={<PersonCard person={p} />} />)}
 </AvatarGroup>
 
@@ -88,7 +88,7 @@ The rings (around each avatar in a stack, and around the presence dot) take `--a
 
 ## Accessibility
 
-A named avatar is an image (`role="img"`) called after the person, with their presence: "Ada Lovelace, Online". The initials and the dot are hidden from screen readers, so nothing is read twice. In a row that already shows the name beside it, pass `aria-hidden` to the avatar. Pass `aria-label` to name it something else. With a `card`, the avatar is a button named after the person (UI SDK's interactive avatar): it is in the Tab order, and keyboard focus opens the card after the same delay as the pointer; Esc closes it. The image (`AvatarImage`) is decorative (`alt=""`) unless you give it `alt`. A plain stack is a `group` named "N people" unless you set `label`, and the `+N` bubble says "N more". With `menu`, the stack is one button with that name that opens a [DropdownMenu](https://blamy.github.io/ui/#/dropdown-menu) whose items are named by the people's names: arrow keys, typeahead, Esc and focus return come with it.
+A named avatar is an image (`role="img"`) called after the person, with their presence: "Ada Lovelace, Online". The initials and the dot are hidden from screen readers, so nothing is read twice. In a row that already shows the name beside it, pass `aria-hidden` to the avatar. Pass `aria-label` to name it something else. With a `card`, the avatar is a button named after the person (UI SDK's interactive avatar): it is in the Tab order, and keyboard focus opens the card after the same delay as the pointer; Esc closes it. The image (`AvatarImage`) is decorative (`alt=""`) unless you give it `alt`. A plain stack is a `group` named "N people" unless you set `aria-label`, and the `+N` bubble says "N more". With `menu`, the stack is one button with that name that opens a [DropdownMenu](https://blamy.github.io/ui/#/dropdown-menu) whose items are named by the people's names: arrow keys, typeahead, Esc and focus return come with it.
 
 ## Props
 
@@ -121,7 +121,7 @@ Any `div` attribute (`id`, `aria-*`, `data-*`, `ref`) passes to the root (the me
 | `size` | `32` | Size of every avatar (an avatar's own `size` wins). |
 | `overlap` | 28% of `size` | How far each avatar tucks under the one before, in px. |
 | `menu` | `false` | Make the stack one button that lists everyone in a menu. |
-| `label` | `N people` | Accessible name of the group. |
+| `aria-label` | `N people` | Accessible name of the group (and, with `menu`, of its button and menu). |
 | `onAction` | — | With `menu`: `(value, details)` when someone is chosen; `value` is their avatar's `key` (its index when it has none). |
 
 ## Styling
@@ -131,6 +131,16 @@ The root is UI SDK's Avatar, with `data-slot="avatar"` and `data-loading-status`
 ## cva recipes
 
 Generated from the source. Call a recipe on any element to borrow a component's look; in a registry-installed copy, change `defaultVariants` to change the default. All recipes are listed in the [Variants reference](https://blamy.github.io/ui/#/variants).
+
+### `avatarGroupVariants`
+
+Defined in `@/components/ui/avatar-group`. Base classes:
+
+```text
+inline-flex items-center rounded-full outline-none [&>*]:ring-2 [&>*]:ring-(--avatar-ring,var(--background)) [&>*+*]:-ml-(--avatar-overlap)
+```
+
+No variants.
 
 ### `avatarVariants`
 

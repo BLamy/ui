@@ -180,7 +180,7 @@ export function WorkbenchSidebar({ width = 242, drawerWidth = 280, children }: W
   return (
     <AdaptivePane
       presentation={compact ? 'drawer' : 'column'}
-      side="left"
+      side="start"
       aria-label="Sidebar"
       open={sidebarOpen}
       onOpenChange={(open) => setSidebarOpen(open)}
@@ -494,7 +494,7 @@ export function WorkbenchPanel({ className, style, children }: WorkbenchPanelPro
   const pane = (
     <AdaptivePane
       presentation={mode}
-      side="right"
+      side="end"
       aria-label="Panel"
       open={panelOpen}
       onOpenChange={(open) => setPanelOpen(open)}

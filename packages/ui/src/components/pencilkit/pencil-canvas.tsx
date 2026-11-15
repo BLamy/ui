@@ -29,7 +29,12 @@ import { StrokePath } from '@/components/ui/pencilkit/stroke-path';
 export type PencilStrokesChangeReason = 'draw' | 'erase';
 export type PencilStrokesChangeDetails = ChangeDetails<PencilStrokesChangeReason>;
 
-export interface PencilCanvasProps extends Omit<React.ComponentProps<'div'>, 'onChange'> {
+/** On its own, PencilCanvas is a `div` (with the drawing's `svg` inside) and takes a div's props. On a Canvas it is
+ *  the drawing's `svg` alone: `ref`, `className`, `style`, `id`, `aria-*` and `data-*` reach it, and `children`,
+ *  `emptyState` and the other div props don't apply (a board item has no box to hold them). */
+export interface PencilCanvasProps extends Omit<React.ComponentProps<'div'>, 'onChange' | 'ref'> {
+  /** The root: the `div` on its own, the `svg` on a Canvas. */
+  ref?: React.Ref<HTMLDivElement | SVGSVGElement>;
   /** Active tool. Default `pen`. */
   tool?: PencilTool;
   /** Ink for new strokes, any CSS color. Default the theme-following black (`pencilInks[0].value`). */
@@ -43,7 +48,7 @@ export interface PencilCanvasProps extends Omit<React.ComponentProps<'div'>, 'on
   /** Called with the new strokes and why (`details.reason`: `draw` or `erase`), before anything moves. When
    *  uncontrolled, `details.cancel()` keeps the strokes as they were. */
   onStrokesChange?: (strokes: PencilStroke[], details: PencilStrokesChangeDetails) => void;
-  /** Shown centered while there are no strokes (an `EmptyState`, a line of text). */
+  /** Shown centered while there are no strokes (an `EmptyState`, a line of text). Not on a Canvas. */
   emptyState?: React.ReactNode;
   /** `freehand` (default) draws perfect-freehand's pressure outlines; `plain` draws the raw polylines. */
   variant?: 'freehand' | 'plain';
@@ -69,6 +74,7 @@ export function PencilCanvas({
   className,
   style,
   children,
+  ref,
   ...rest
 }: PencilCanvasProps) {
   const board = useCanvas({ optional: true });
@@ -195,10 +201,24 @@ export function PencilCanvas({
     </>
   );
 
+  // The div keeps its own ref (`box`, for pointer positions) and the caller's.
+  const setBox = React.useCallback(
+    (el: HTMLDivElement | null) => {
+      box.current = el;
+      if (typeof ref === 'function') ref(el);
+      else if (ref) (ref as React.RefObject<HTMLDivElement | null>).current = el;
+    },
+    [ref],
+  );
+
   if (board) {
-    // In board units: a zero-sized svg at the board's origin whose ink overflows it, like every board item.
+    // In board units: a zero-sized svg at the board's origin whose ink overflows it, like every board item. Only the
+    // props an svg can carry reach it.
+    const svgProps = Object.fromEntries(Object.entries(rest).filter(([k]) => k === 'id' || k.startsWith('aria-') || k.startsWith('data-')));
     return (
       <svg
+        {...svgProps}
+        ref={ref as React.Ref<SVGSVGElement>}
         data-slot="pencil-canvas"
         role="img"
         aria-label={ariaLabel}
@@ -216,7 +236,7 @@ export function PencilCanvas({
   const empty = !strokes.length && !live.current;
   return (
     <div
-      ref={box}
+      ref={setBox}
       data-slot="pencil-canvas"
       data-empty={empty ? '' : undefined}
       data-disabled={disabled ? '' : undefined}

@@ -2,7 +2,7 @@
 
 Code you can edit, by default, and read-only code of any shape: a snippet on a docs page, inline code in a sentence, or a debugger's source pane on half a million lines. It's one component with one API, and it draws in one of two ways, because those jobs need opposite things from the page.
 
-Use a sibling when the job differs: [MarkdownEditor](https://blamy.github.io/ui/#/markdown-editor) for prose people format, [MarkdownView](https://blamy.github.io/ui/#/docstream) for rendered Markdown, the [SQL console](https://blamy.github.io/ui/#/sql-console) for a SQL box with Run, history and results, and [Terminal](https://blamy.github.io/ui/#/terminal) for a shell or a REPL.
+Use a sibling when the job differs: [MarkdownEditor](https://blamy.github.io/ui/#/markdown-editor) for prose people format, [MarkdownView](https://blamy.github.io/ui/#/markdown-view) for rendered Markdown, the [SQL console](https://blamy.github.io/ui/#/sql-console) for a SQL box with Run, history and results, and [Terminal](https://blamy.github.io/ui/#/terminal) for a shell or a REPL.
 
 {% tabs title="Installation" sync="install" %}
 {% tab title="shadcn CLI" %}
@@ -17,12 +17,12 @@ import { CodeEditor } from '@/components/ui/code-editor'
 {% tab title="npm" %}
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 
-Import the stylesheet once at your app's entry, then the parts from the package root:
+Import the stylesheet once at your app's entry, then the parts from their module:
 
 ```tsx
 import '@brett_lamy/ui/styles.css'
 
-import { CodeEditor } from '@brett_lamy/ui'
+import { CodeEditor } from '@brett_lamy/ui/code-editor'
 ```
 {% endtab %}
 {% endtabs %}
@@ -39,12 +39,12 @@ import { CodeEditor } from '@brett_lamy/ui'
 <CodeEditor readOnly variant="inline" value="usePoll<User>('/api/me')" language="ts" />
 
 // Read-only: a source view, for a debugger
-<CodeEditor readOnly variant="ghost" lineCount={n} getLine={(i) => decoded.line(i)} gutters={gutters} currentLine={25} currentColumn={12} markers={markers} ref={ref} />
+<CodeEditor readOnly variant="plain" lineCount={n} getLine={(i) => decoded.line(i)} gutters={gutters} currentLine={25} currentColumn={12} markers={markers} ref={ref} />
 ```
 
 {% demo src="code-editor/editable" %}
 
-Windowed, it fills its parent when the parent has a height, and follows its content when it doesn't, scrolling past 8,192 px. `maxHeight` makes it as tall as its text, up to that. A `variant` of `default` is a card and `ghost` has no chrome, for a pane that already has edges.
+Windowed, it fills its parent when the parent has a height, and follows its content when it doesn't, scrolling past 8,192 px. `maxHeight` makes it as tall as its text, up to that. A `variant` of `default` is a card and `plain` has no chrome, for a pane that already has edges.
 
 ## Two renderers
 
@@ -56,7 +56,9 @@ Windowed, it fills its parent when the parent has a height, and follows its cont
 | **⌘F** | Finds everything | Only sees what's rendered |
 | **Server rendering** | Yes | Measures itself first, so it's empty on the server |
 | **Size** | Up to the limits below | A megabyte on one line, half a million lines |
-| **Labels from** | gpu-lexer | A small lexer that can resume anywhere |
+| **Labels from** | gpu-lexer | A small lexer that can resume anywhere; a read-only text that fits the page, the page's own labels |
+
+The two label the same way: brackets, commas and semicolons stay plain, and capitalized words, type parameters (`T`) and built-in types (`string`, `number`…) are types, so a snippet in the page and the same file in an editor look alike, as do their line-number gutters (no rule after line numbers alone; a rule after gutters of your own). A read-only text drawn windowed (a source view, `windowed`) that would fit the page takes the page's labels outright.
 
 You get the windowed renderer when it's editable, when a prop only it can honor is used, or when the text is too big to put in the page. Otherwise you get the page. `windowed` overrides that where it can: `windowed` on a read-only text always windows it, and `windowed={false}` keeps it in the page however big it is. It can't be `false` on an editor, or `true` on `variant="inline"`, and the types won't let you ask.
 
@@ -166,7 +168,7 @@ A filename header with a copy button, a line-number gutter, and a highlighted ra
 
 ### Theming
 
-Token colors are CSS classes (`bl-tok-keyword`, `bl-tok-string`, …) that read `--bl-syntax-*` custom properties, in both renderers. The defaults use `light-dark()`, so they follow `BLProvider`, the docs' `AppearanceProvider`, or any `color-scheme`. Override the properties on the block or on any ancestor. `appearance="light" | "dark"` forces one palette.
+Token colors are CSS classes (`bl-tok-keyword`, `bl-tok-string`, …) that read `--bl-syntax-*` custom properties, in both renderers. The defaults use `light-dark()`, so they follow `BLProvider`, the docs' `AppearanceProvider`, or any `color-scheme`. Override the properties on the block or on any ancestor. `appearance="light" | "dark"` forces one palette; `auto` (the default) follows the ambient one.
 
 {% demo src="code-editor/custom-theme" %}
 
@@ -224,7 +226,7 @@ Read-only, and windowed: a debugger's source pane. A megabyte on one line and ha
 Give it lines and a height. `splitCodeLines` splits a source where JS engines count a new line, which isn't only at `\n`.
 
 ```tsx
-<CodeEditor readOnly variant="ghost" lines={splitCodeLines(source)} aria-label="app.js" className="h-96" />
+<CodeEditor readOnly variant="plain" lines={splitCodeLines(source)} aria-label="app.js" className="h-96" />
 ```
 
 {% demo src="code-editor/source-view" %}
@@ -260,7 +262,7 @@ const gutters = useMemo(() => [
 
 <CodeEditor
   readOnly
-  variant="ghost"
+  variant="plain"
   lines={lines}
   gutters={gutters}
   lineNumbers={{ onClick: (event, { line }) => jumpToLine(line), clickable: ranAtLeastOnce }}
@@ -277,7 +279,7 @@ A stepping debugger re-renders on every step. With `gutters` memoized and the ca
 
 `lineDecoration(lineNumber)` gives a line a `tint` (`info`, `success`, `warning`, `danger`, `muted`), or classes for its band, its text and its gutter cells, like dimming lines that never ran. It's only called for rows on screen.
 
-`markers` puts things to press at a column inside a line, like column-level breakpoints: an array of `{ line, column, label, onClick, active }` (`onClick(event, details)`, with `details.marker` and `details.line`), or a function from a line to its markers when there are many. A line of a bundle can have tens of thousands, and only those in the rendered part of the line are in the page. A marker sits over the grid and never moves the text. `children` replaces the default notch.
+`markers` puts things to press at a column inside a line, like column-level breakpoints: an array of `{ line, column, label, onClick, pressed }` (`onClick(event, details)`, with `details.marker` and `details.line`), or a function from a line to its markers when there are many. A line of a bundle can have tens of thousands, and only those in the rendered part of the line are in the page. A marker sits over the grid and never moves the text. `children` replaces the default notch.
 
 ### Scrolling
 
@@ -386,7 +388,7 @@ The code is a list of lines, each announcing its place in the whole file with `a
 | `contentKey` | — | Changes when `getLine`'s content does. Without it a new `getLine` means new content. |
 | `windowed` | automatic | Which renderer, where you have a choice. See [Two renderers](#two-renderers). |
 | `language` | — | `ts`, `tsx`, `json`, `bash`, … Shown as `data-language`. `text` / `plaintext` turns highlighting off. gpu-lexer works out the language itself. |
-| `variant` | `'default'` | `default`: a bordered card. `ghost`: no chrome. `inline`: a `<code>` span. |
+| `variant` | `'default'` | `default`: a bordered card. `plain`: no chrome. `inline`: a `<code>` span. |
 | `title` | — | Header title, usually a filename. It also names the code for screen readers. |
 | `showCopy` | `false` | The one shorthand: a `CodeEditorCopyButton` in the header, or floating when there is no title. Compose the parts for anything else. |
 | `lineNumbers` | depends | A line-number gutter. On in an editor and for `lines` or `getLine`, off for a read-only text. Windowed, `start` puts it first and `end` next to the code. An object `{ side, onClick, clickable, label, title }` makes the numbers buttons (windowed): `onClick(event, { line, source })`, on the lines `clickable(line)` allows, named by `label(line)` (default `Line N`), with `title(line)` as a tooltip. |
@@ -400,7 +402,7 @@ The code is a list of lines, each announcing its place in the whole file with `a
 | `engine` | `'auto'` | `auto` uses the GPU only on a hardware adapter. `gpu` uses it on software adapters too. `fallback` never uses it. |
 | `tabSize` | `2` | Cells between tab stops. |
 | `lineHeight` | `20` windowed | Height of a line, in px. In the page it's 1.6 times the font unless you say. |
-| `appearance` | ambient | Force the token palette. It defaults to the `AppearanceProvider` value, and otherwise follows the color scheme. |
+| `appearance` | `'auto'` | `'auto' \| 'light' \| 'dark'`. `auto` follows the `AppearanceProvider` value, and otherwise the color scheme; `light` / `dark` force the token palette. |
 | `gutters` | `[]` | `CodeEditorGutter[]`, in order. Memoize it. |
 | `currentLine` / `currentColumn` | — | The line and column execution is on. |
 | `revealCurrentLine` | `true` | Keep the current line in view. `{ smooth: true }` animates it. |
@@ -431,7 +433,7 @@ The code is a list of lines, each announcing its place in the whole file with `a
 | `line` | The line, in the array form of `markers`. |
 | `column` | UTF-16 code units from the start of the line. Past the end, it's shown at the end. |
 | `label` | Its accessible name. |
-| `onClick` / `active` | Makes it a button, `onClick(event, { marker, line, source })`; filled in, and announced as pressed. |
+| `onClick` / `pressed` | Makes it a button, `onClick(event, { marker, line, source })`; `pressed` makes it a toggle (a set breakpoint): filled in, `aria-pressed`, `data-pressed`. |
 | `title` / `className` / `children` | A tooltip, a class, and something to draw instead of the notch. |
 
 ### CodeEditorHandle
@@ -469,7 +471,7 @@ The code is a list of lines, each announcing its place in the whole file with `a
 | --- | --- |
 | `--bl-syntax-keyword`, `-type`, `-function`, `-string`, `-number`, `-constant`, `-operator`, `-comment` | Token colors, in both renderers. `--bl-syntax-comment-style` sets the comment font style (default `italic`). |
 | `--bl-syntax-fg` | Plain text (default `--foreground`). |
-| `--bl-syntax-surface` | Block background and the sticky gutter (default `--card`; transparent for `ghost`). |
+| `--bl-syntax-surface` | Block background and the sticky gutter (default `--card`; transparent for `plain`). |
 | `--bl-syntax-border`, `--bl-syntax-radius`, `--bl-syntax-header-bg` | Card chrome. |
 | `--bl-syntax-line-number` | Gutter numbers, in the page (default `--tertiary-foreground`). |
 | `--bl-syntax-highlight`, `--bl-syntax-highlight-bar` | Highlighted lines (default: a tint wash and a tint bar). |
@@ -498,5 +500,5 @@ bl-syntax
 | Value | Adds |
 | --- | --- |
 | `default` (default) | `bl-syntax-card` |
-| `ghost` | `bl-syntax-ghost` |
+| `plain` | `bl-syntax-plain` |
 | `inline` | `bl-syntax-inline` |

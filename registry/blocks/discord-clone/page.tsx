@@ -70,7 +70,7 @@ export default function DiscordClone({
     <ChatUsersProvider users={USERS} presence={PRESENCE}>
       <ChatShell tint={tint} appearance={appearance} className={className} style={style}>
         <ChatShellNav>
-          <Tabs variant="workspace" defaultValue="blui" className="contents">
+          <Tabs variant="switcher" defaultValue="blui" className="contents">
             <TabsBar>
               <TabsList aria-label="Workspaces">
                 {WORKSPACES.map((w) => (

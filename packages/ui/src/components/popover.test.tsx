@@ -113,7 +113,7 @@ describe('Popover', () => {
         <PopoverTrigger controller={editor} payload="Notes">Edit notes</PopoverTrigger>
         <PopoverTrigger controller={editor} payload="Tasks">Edit tasks</PopoverTrigger>
         <Popover controller={editor}>
-          <PopoverContent<string> variant="surface">
+          <PopoverContent<string> variant="plain">
             {(state) => <PopoverTitle>Edit {state.payload}</PopoverTitle>}
           </PopoverContent>
         </Popover>

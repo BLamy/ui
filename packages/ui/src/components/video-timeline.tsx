@@ -281,6 +281,8 @@ function TimelineBody({ state, handle, clock, header: HEADER, compact, fps, medi
                       className="relative flex h-7 max-w-[calc(var(--header)-8px)] cursor-pointer items-center gap-0.5 rounded-md border-0 bg-transparent px-1 text-caption font-semibold text-foreground/70 hover:bg-secondary data-disabled:cursor-default pointer-coarse:after:absolute pointer-coarse:after:-inset-2">
                       <span className="truncate">{shortTrackName(track, ti)}</span>
                       {track.hidden || track.muted || track.locked ? <Icon name={track.locked ? 'lock-fill' : track.hidden ? 'eye-slash' : 'speaker-slash'} size={11} className="shrink-0" /> : null}
+                      {/* It opens a menu: say so before it is pressed. */}
+                      {editable ? <Icon name="chevron-down" size={9} sw={2.4} className="shrink-0 text-foreground/50" /> : null}
                     </DropdownMenuTrigger>
                     <DropdownMenuContent size="sm" align="start">
                       {track.kind === 'video' ? (

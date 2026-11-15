@@ -18,13 +18,15 @@ class FakeResizeObserver {
   unobserve() { /* the boxes never change */ }
   disconnect() { observers.delete(this.entry); }
   fire(el: Element) {
-    this.entry.cb([{ target: el, contentRect: { ...size, x: 0, y: 0, top: 0, left: 0, right: size.width, bottom: size.height }, borderBoxSize: [{ inlineSize: size.width, blockSize: size.height }], contentBoxSize: [{ inlineSize: size.width, blockSize: size.height }] } as unknown as ResizeObserverEntry], this as unknown as ResizeObserver);
+    this.entry.cb([entry(el)], this as unknown as ResizeObserver);
   }
 }
+/** What every observer reports for an element: the size the test set, as each box. */
+const entry = (el: Element) => ({ target: el, contentRect: { ...size, x: 0, y: 0, top: 0, left: 0, right: size.width, bottom: size.height }, borderBoxSize: [{ inlineSize: size.width, blockSize: size.height }], contentBoxSize: [{ inlineSize: size.width, blockSize: size.height }] }) as unknown as ResizeObserverEntry;
 async function resize(width: number, height = 800) {
   size = { width, height };
   await act(async () => {
-    for (const o of [...observers]) for (const el of o.els) o.cb([{ target: el, contentRect: { ...size } } as unknown as ResizeObserverEntry], {} as ResizeObserver);
+    for (const o of [...observers]) for (const el of o.els) o.cb([entry(el)], {} as ResizeObserver);
   });
   await settle();
 }
@@ -36,6 +38,8 @@ beforeEach(() => {
   (globalThis as { __UI_SDK_STRICT__?: boolean }).__UI_SDK_STRICT__ = true;
   vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
   vi.stubGlobal('ResizeObserver', FakeResizeObserver);
+  // The SplitView reads its size class from its own box's clientWidth.
+  Object.defineProperty(HTMLElement.prototype, 'clientWidth', { configurable: true, get: () => size.width });
   size = { width: 1200, height: 800 };
   element = document.createElement('div');
   document.body.append(element);
@@ -46,6 +50,7 @@ afterEach(async () => {
   element.remove();
   observers.clear();
   vi.unstubAllGlobals();
+  delete (HTMLElement.prototype as { clientWidth?: number }).clientWidth;
 });
 
 const dialog = () => element.querySelector<HTMLElement>('[role="dialog"]');
@@ -96,10 +101,14 @@ it('keeps the open album across the compact boundary, both ways', async () => {
   expect(detailPages()).toHaveLength(2);
   expect(albumTitle()).toContain('Neon Tidewater');
 
+  // Phone: the same SplitView (nothing remounts), its sidebar now the tab bar, the Library tab current, and the
+  // album over Albums over the Library page.
+  const split = element.querySelector('[data-slot="split-view"]');
   await resize(390, 844);
-  expect(element.querySelector('[data-slot="split-view"]')).toBeNull();
+  expect(element.querySelector('[data-slot="split-view"]')).toBe(split);
   const tab = element.querySelector('[role="tab"][aria-selected="true"]');
   expect(tab?.textContent).toContain('Library');
+  expect(detailPages()).toHaveLength(3);
   expect(albumTitle()).toContain('Neon Tidewater');
 
   await resize(1200);

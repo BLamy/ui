@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button'
 import {
   FloatingSheet,
   FloatingSheetBody,
-  FloatingSheetFoot,
+  FloatingSheetFooter,
   useFloatingSheet,
 } from '@/components/ui/floating-sheet'
 import { useAppearance } from '@/lib/theme'
@@ -216,9 +216,9 @@ export default function DragSnapMinimize() {
         <FloatingSheetBody>
           <Readout />
         </FloatingSheetBody>
-        <FloatingSheetFoot>
+        <FloatingSheetFooter>
           <Actions />
-        </FloatingSheetFoot>
+        </FloatingSheetFooter>
       </FloatingSheet>
     </Host>
   )

@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Popover, PopoverContent, PopoverDescription, PopoverTitle, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
-import { AppearanceProvider, BLProvider, ThemeScope, useThemeScope, type Appearance } from '@/lib/theme';
+import { AppearanceProvider, BLProvider, ThemeScope, contrastRatio, tintForeground, useThemeScope, type Appearance } from '@/lib/theme';
 
 const meta: Meta<typeof ThemeScope> = {
   title: 'Atoms/ThemeScope',
@@ -47,9 +47,9 @@ function Sample({ open }: { open?: boolean }) {
   );
 }
 
-function Frame({ children, dark, h = 300 }: { children: ReactNode; dark?: boolean; h?: number }) {
+function Frame({ children, dark, h = 300, w = 760 }: { children: ReactNode; dark?: boolean; h?: number; w?: number }) {
   return (
-    <div style={{ width: 760, height: h }} className="overflow-hidden rounded-xl">
+    <div style={{ width: w, height: h }} className="overflow-hidden rounded-xl">
       <BLProvider dark={dark}>
         <div className="grid h-full grid-cols-2 gap-4 p-4">{children}</div>
       </BLProvider>
@@ -83,15 +83,35 @@ export const WorkbenchDefaultAppearance: Story = {
   ),
 };
 
-/** `tint` replaces --primary and --ring inside the scope. */
+/** `tint` replaces --primary and --ring inside the scope, and picks the ink on it (--primary-foreground): white while it
+    reaches 3:1, else a near-black. Each swatch is a primary Button in the scope, with the ratio of its label on its fill. */
 export const WorkbenchTint: Story = {
   render: () => (
-    <Frame dark>
+    <Frame dark h={420} w={840}>
       <Scope appearance="dark" tint="#30d158" />
       <Scope appearance="light" tint="#ff9f0a" />
+      <TintSwatches appearance="dark" />
+      <TintSwatches appearance="light" />
     </Frame>
   ),
 };
+
+const TINTS = ['#0a84ff', '#ff453a', '#bf5af2', '#30d158', '#ff9f0a', '#ffd60a', '#64d2ff', '#ac8e68'];
+
+function TintSwatches({ appearance }: { appearance: Appearance }) {
+  return (
+    <ThemeScope scope="workbench" appearance={appearance} className="grid grid-cols-2 content-start gap-2 rounded-card p-3 shadow-hairline">
+      {TINTS.map((tint) => (
+        <ThemeScope key={tint} tint={tint} className="flex items-center gap-2">
+          <Button size="sm">Apply</Button>
+          <span className="font-mono text-caption whitespace-nowrap text-muted-foreground tabular-nums">
+            {tint} {contrastRatio(tint, tintForeground(tint))?.toFixed(1)}:1
+          </span>
+        </ThemeScope>
+      ))}
+    </ThemeScope>
+  );
+}
 
 /** A popover opened inside a dark workbench on a light page wears the scope, not the page. */
 export const WorkbenchPopover: Story = {

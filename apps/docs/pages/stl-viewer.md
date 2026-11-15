@@ -15,18 +15,18 @@ import { StlViewer } from '@/components/ui/stl-viewer'
 {% tab title="npm" %}
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 
-Import the stylesheet once at your app's entry, then the parts from the package root:
+Import the stylesheet once at your app's entry, then the parts from their module:
 
 ```tsx
 import '@brett_lamy/ui/styles.css'
 
-import { StlViewer } from '@brett_lamy/ui'
+import { StlViewer } from '@brett_lamy/ui/stl-viewer'
 ```
 {% endtab %}
 {% endtabs %}
 
 {% hint style="info" %}
-`StlViewer` lives in [`@brett_lamy/docstream`](https://blamy.github.io/ui/#/docstream) (`@brett_lamy/docstream/stl`), where `{% embed url="part.stl" %}` renders it. The registry item adds that package and a one-line module that re-exports the viewer and its props type. The mesh reader below comes straight from `@brett_lamy/docstream/stl`.
+`StlViewer` lives in [`@brett_lamy/docstream`](https://github.com/BLamy/docstream) (`@brett_lamy/docstream/stl`), where `{% embed url="part.stl" %}` renders it. The registry item adds that package and a one-line module that re-exports the viewer and its props type. The mesh reader below comes straight from `@brett_lamy/docstream/stl`.
 {% endhint %}
 
 ## A model by URL

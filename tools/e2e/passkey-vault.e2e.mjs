@@ -47,7 +47,7 @@ async function enroll(page, { confirm = true } = {}) {
   const dialog = page.getByRole('dialog');
   await expect(dialog).toBeVisible();
   await dialog.getByRole('button', { name: 'Create passkey' }).click();
-  const key = dialog.locator('[data-slot=recovery-key]');
+  const key = dialog.locator('[data-slot=vault-recovery-key]');
   await expect(key).toBeVisible({ timeout: 15_000 });
   const recoveryKey = (await key.locator('span[aria-hidden]').allTextContents()).join('-');
   expect(recoveryKey).toMatch(/^([0-9A-HJKMNP-TV-Z]{4}-){7}[0-9A-HJKMNP-TV-Z]{4}$/);
@@ -177,7 +177,7 @@ test.describe('with a PRF-capable authenticator', () => {
     await notice.getByRole('button', { name: 'Get a new key' }).click();
     const dialog2 = page.getByRole('dialog');
     await dialog2.getByRole('button', { name: 'Continue with passkey' }).click();
-    await expect(dialog2.locator('[data-slot=recovery-key]')).toBeVisible({ timeout: 15_000 });
+    await expect(dialog2.locator('[data-slot=vault-recovery-key]')).toBeVisible({ timeout: 15_000 });
     await dialog2.getByText('I saved my recovery key').click();
     await dialog2.getByRole('button', { name: 'Done' }).click();
     await expect(page.getByRole('region', { name: 'Recovery key' })).toHaveCount(0);
@@ -195,7 +195,7 @@ test.describe('with a PRF-capable authenticator', () => {
     await auth.remove();
     await authenticator(page);
     await page.getByRole('dialog').getByRole('button', { name: 'Create passkey' }).click();
-    await expect(page.getByRole('dialog').locator('[data-slot=recovery-key]')).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByRole('dialog').locator('[data-slot=vault-recovery-key]')).toBeVisible({ timeout: 15_000 });
   });
 });
 
@@ -305,7 +305,7 @@ test.describe('without usable passkeys', () => {
     await page.getByRole('button', { name: 'Set up passkey' }).click();
     await page.getByRole('dialog').getByRole('button', { name: 'Create passkey' }).click();
     await expect(page.getByRole('dialog').getByRole('alert')).toContainText("doesn't support the PRF extension", { timeout: 15_000 });
-    await expect(page.locator('[data-slot=recovery-key]')).toHaveCount(0);
+    await expect(page.locator('[data-slot=vault-recovery-key]')).toHaveCount(0);
     expect(await status(page)).toBe('empty');
   });
 });
@@ -344,7 +344,7 @@ for (const theme of ['light', 'dark']) {
     await expect(page.getByRole('dialog')).toBeVisible();
     await check('dialog, explanation');
     await page.getByRole('dialog').getByRole('button', { name: 'Create passkey' }).click();
-    await expect(page.locator('[data-slot=recovery-key]')).toBeVisible({ timeout: 15_000 });
+    await expect(page.locator('[data-slot=vault-recovery-key]')).toBeVisible({ timeout: 15_000 });
     await check('dialog, recovery key');
     await page.getByText('I saved my recovery key').click();
     await page.getByRole('button', { name: 'Done' }).click();

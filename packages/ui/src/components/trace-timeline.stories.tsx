@@ -88,9 +88,9 @@ function hourSession() {
   const requests: TraceRequest[] = [];
   const at = () => browser.times[Math.floor(random() * browser.times.length)];
   // One error, six navigations, forty requests, and the rest console messages.
-  stops.push({ key: 'error', time: at(), tone: 'error', level: 1, caption: 'TypeError: order is undefined', preview: 'at renderTotals (orders.tsx:88), while rendering /checkout/payment' });
+  stops.push({ key: 'error', time: at(), tone: 'destructive', level: 1, caption: 'TypeError: order is undefined', preview: 'at renderTotals (orders.tsx:88), while rendering /checkout/payment' });
   NAVIGATIONS.forEach((path, i) => {
-    stops.push({ key: `nav-${i}`, time: 40_000 + (i * (HOUR - 200_000)) / NAVIGATIONS.length + random() * 90_000, tone: 'info', level: 1, caption: `Navigated to ${path}`, preview: 'A full page load, with its own document request' });
+    stops.push({ key: `nav-${i}`, time: 40_000 + (i * (HOUR - 200_000)) / NAVIGATIONS.length + random() * 90_000, tint: 'var(--primary)', level: 1, caption: `Navigated to ${path}`, preview: 'A full page load, with its own document request' });
   });
   for (let i = 0; i < 40; i++) {
     const name = REQUESTS[i % REQUESTS.length];
@@ -98,11 +98,11 @@ function hourSession() {
     const status = i % 13 === 7 ? 500 : 200;
     const latency = 20 + random() * 160;
     stops.push({ key: `req-${i}`, time, tone: status === 500 ? 'warning' : 'default', level: 2, caption: name, preview: `${status} in ${Math.round(latency * 3)} ms` });
-    requests.push({ id: `req-${i}`, time, from: time + latency, to: time + latency + 30 + random() * 400, color: REQUEST_COLORS[i % REQUEST_COLORS.length] });
+    requests.push({ id: `req-${i}`, time, from: time + latency, to: time + latency + 30 + random() * 400, tint: REQUEST_COLORS[i % REQUEST_COLORS.length] });
   }
   while (stops.length < 300) {
     const i = stops.length;
-    stops.push({ key: `log-${i}`, time: at(), level: 3, dim: i % 7 === 0, caption: CONSOLE[i % CONSOLE.length], preview: `console.log, from chunk-${(i * 31) % 97}.js:${(i * 17) % 400}` });
+    stops.push({ key: `log-${i}`, time: at(), level: 3, disabled: i % 7 === 0, caption: CONSOLE[i % CONSOLE.length], preview: `console.log, from chunk-${(i * 31) % 97}.js:${(i * 17) % 400}` });
   }
   stops.sort((a, b) => a.time - b.time);
 
@@ -114,8 +114,8 @@ function hourSession() {
     density: { label: 'JS', ...data },
     marks: [
       { key: 'breakpoints', label: 'Breakpoints', times: pick(seed + 1, data.times, marks.breakpoints), shape: 'bar', tone: 'warning' },
-      { key: 'logpoints', label: 'Logpoints', times: pick(seed + 2, data.times, marks.logpoints), shape: 'bar', color: 'var(--chart-5)' },
-      { key: 'console', label: 'Console', times: pick(seed + 3, data.times, marks.console), shape: 'dot', tone: 'info' },
+      { key: 'logpoints', label: 'Logpoints', times: pick(seed + 2, data.times, marks.logpoints), shape: 'bar', tint: 'var(--chart-5)' },
+      { key: 'console', label: 'Console', times: pick(seed + 3, data.times, marks.console), shape: 'dot', tint: 'var(--primary)' },
     ],
     threads: threadTimes[key].map(({ id }) => ({ id, label: `T${id}` })),
   });
@@ -142,7 +142,7 @@ function hourSession() {
   };
 
   const markCount = lanes.reduce((n, l) => n + (l.density?.times.length ?? 0) + (l.marks ?? []).reduce((m, s) => m + s.times.length, 0), 0);
-  const firstError = stops.find((s) => s.tone === 'error') as TraceStop<string>;
+  const firstError = stops.find((s) => s.tone === 'destructive') as TraceStop<string>;
   return { lanes, stops, requests, fetchActivity, markCount, firstError, stopAxis: stopAxis(stops, RANGE) };
 }
 
@@ -273,11 +273,11 @@ const CONSOLE_ROWS = [
 
 /** A debugger's console, as the thing a rail sits over. A left rail has no inset to publish, as rows have no trailing
  *  accessory on that side, so what's under it makes its own room. */
-function FakePanel({ title = 'Console', clearLeft }: { title?: string; clearLeft?: boolean }) {
+function FakePanel({ title = 'Console', clearStart }: { title?: string; clearStart?: boolean }) {
   return (
     <div className="absolute inset-0 flex flex-col bg-card">
       <div className="flex h-toolbar shrink-0 items-center px-4 text-body font-semibold text-foreground shadow-hairline-b">{title}</div>
-      <div className={cn('bl-scroll min-h-0 flex-1 overflow-y-auto', clearLeft && 'pl-11')}>
+      <div className={cn('bl-scroll min-h-0 flex-1 overflow-y-auto', clearStart && 'ps-11')}>
         <List>
           <ListSection>
             {CONSOLE_ROWS.map((row, i) => (
@@ -290,10 +290,10 @@ function FakePanel({ title = 'Console', clearLeft }: { title?: string; clearLeft
   );
 }
 
-function PhoneRail({ dark, clearLeft, children }: { dark?: boolean; clearLeft?: boolean; children?: ReactNode }) {
+function PhoneRail({ dark, clearStart, children }: { dark?: boolean; clearStart?: boolean; children?: ReactNode }) {
   return (
     <Phone w={390} h={844} dark={dark}>
-      <FakePanel clearLeft={clearLeft} />
+      <FakePanel clearStart={clearStart} />
       {children}
     </Phone>
   );
@@ -357,8 +357,8 @@ export const RailDark: Story = {
   render: () => <PhoneRail dark><HourTimeline orientation="vertical" className="top-15 bottom-4" /></PhoneRail>,
 };
 
-export const RailLeft: Story = {
-  render: () => <PhoneRail clearLeft><HourTimeline orientation="vertical" side="left" className="top-15 bottom-4" /></PhoneRail>,
+export const RailStart: Story = {
+  render: () => <PhoneRail clearStart><HourTimeline orientation="vertical" side="start" className="top-15 bottom-4" /></PhoneRail>,
 };
 
 /** `stopAxis`: an axis by what happened. Stops sit evenly, bursts open out and idle time closes up. */
@@ -400,8 +400,8 @@ function thousandStops(): Array<TraceStop<string>> {
   const random = seeded(7);
   const out: Array<TraceStop<string>> = [];
   for (let i = 0; i < 5_000; i++) {
-    const tone: TraceTone = i % 1250 === 600 ? 'error' : i % 90 === 17 ? 'warning' : 'default';
-    out.push({ key: `s${i}`, time: random() * HOUR, tone, level: tone === 'error' ? 1 : i % 400 === 3 ? 1 : i % 40 === 3 ? 2 : 3, caption: tone === 'error' ? 'Unhandled rejection' : i % 400 === 3 ? 'Navigation' : 'console.log', preview: `Stop ${i}` });
+    const tone: TraceTone = i % 1250 === 600 ? 'destructive' : i % 90 === 17 ? 'warning' : 'default';
+    out.push({ key: `s${i}`, time: random() * HOUR, tone, level: tone === 'destructive' ? 1 : i % 400 === 3 ? 1 : i % 40 === 3 ? 2 : 3, caption: tone === 'destructive' ? 'Unhandled rejection' : i % 400 === 3 ? 'Navigation' : 'console.log', preview: `Stop ${i}` });
   }
   return out;
 }
@@ -485,8 +485,8 @@ export const LaneColors: Story = {
     const session = hour();
     const lanes = session.lanes.map((lane, i) => ({
       ...lane,
-      color: ['var(--success)', 'var(--destructive)', 'var(--foreground)'][i],
-      threads: lane.threads?.map((t) => ({ ...t, color: ['var(--success)', 'var(--destructive)', 'var(--foreground)'][i] })),
+      tint: ['var(--success)', 'var(--destructive)', 'var(--foreground)'][i],
+      threads: lane.threads?.map((t) => ({ ...t, tint: ['var(--success)', 'var(--destructive)', 'var(--foreground)'][i] })),
     }));
     return (
       <Desktop h={stripHeight(lanes)}>

@@ -2,7 +2,7 @@
 
 A session replay in a browser window. `ReplayPreview` plays an [rrweb](https://github.com/rrweb-io/rrweb) recording with docstream's headless `ReplayStage` and wraps it in browser chrome: a URL bar that follows the recording's navigations, play/pause, a plain seek bar (with `markers`, the recording's moments on a rail above it), a speed control, fullscreen, and a drawn cursor whose clicks ripple. Until the player is ready, a page-shaped skeleton holds the frame at the recording's aspect ratio, so nothing jumps when the page appears.
 
-`ReplayPreview` lives in [`@brett_lamy/docstream`](https://blamy.github.io/ui/#/docstream) (since 1.7.0, `@brett_lamy/docstream/replay`), next to the rrweb stage and the marker helpers it is built on. BL UI keeps a thin re-export, so `@/components/ui/replay-preview` (and the package root) resolves like every other part: the component, the types of its props and handle (`ReplayPreviewProps`, `ReplayPreviewHandle`, `ReplayEvent`, `ReplayMarker`, `ReplayInspection`, …) and `formatReplayTime`. Everything else, the headless `ReplayStage`, the readers (`getReplayMeta`, `getReplayMarkers`, `getReplayDevtools`, …) and the demo recording, you import from `@brett_lamy/docstream/replay` and `@brett_lamy/docstream/replay/demo`. The registry item adds `@brett_lamy/docstream` as its one npm dependency.
+`ReplayPreview` lives in [`@brett_lamy/docstream`](https://github.com/BLamy/docstream) (since 1.7.0, `@brett_lamy/docstream/replay`), next to the rrweb stage and the marker helpers it is built on. BL UI keeps a thin re-export, so `@/components/ui/replay-preview` (and the package root) resolves like every other part: the component, the types of its props and handle (`ReplayPreviewProps`, `ReplayPreviewHandle`, `ReplayEvent`, `ReplayMarker`, `ReplayInspection`, …). Everything else, the headless `ReplayStage`, the readers (`getReplayMeta`, `getReplayMarkers`, `getReplayDevtools`, …), `formatReplayTime` and the demo recording, you import from `@brett_lamy/docstream/replay` and `@brett_lamy/docstream/replay/demo`. The registry item adds `@brett_lamy/docstream` as its one npm dependency.
 
 Use a sibling for a different job: [VideoPreview](https://blamy.github.io/ui/#/video-preview) plays a video file, and the [Replay Canvas block](https://blamy.github.io/ui/#/blocks/replay-canvas) lays many recordings out as one map of the app.
 
@@ -19,12 +19,12 @@ import { ReplayPreview } from '@/components/ui/replay-preview'
 {% tab title="npm" %}
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 
-Import the stylesheet once at your app's entry, then the parts from the package root:
+Import the stylesheet once at your app's entry, then the parts from their module:
 
 ```tsx
 import '@brett_lamy/ui/styles.css'
 
-import { ReplayPreview } from '@brett_lamy/ui'
+import { ReplayPreview } from '@brett_lamy/ui/replay-preview'
 ```
 {% endtab %}
 {% endtabs %}
@@ -150,7 +150,7 @@ Pass `markers` to put your own moments on the rail (an agent's findings, a test'
 
 ## Recordings
 
-Record with rrweb (`record({ emit })`) and pass the events. To embed instead of hold the recording, pass `source`: a public Loop QA URL, `{ kind: 'events-url', url }` for an events endpoint, or an event array. `events` and `source` are alternatives; both render the same player. Local and private-network assets in a recording (`localhost`, `10.x`, `192.168.x`…) are swapped for blanks before playback, so a replay never makes the viewer's browser fetch from their own network. Custom events become markers by tag (`record.addCustomEvent(tag, payload)`): `error` and `network` map to those kinds, `navigation` to a navigation, anything else is a checkpoint labelled by `payload.label`. The helpers, from `@brett_lamy/docstream/replay` (`formatReplayTime` also from `@/components/ui/replay-preview`), read a recording without loading rrweb:
+Record with rrweb (`record({ emit })`) and pass the events. To embed instead of hold the recording, pass `source`: a public Loop QA URL, `{ kind: 'events-url', url }` for an events endpoint, or an event array. `events` and `source` are alternatives; both render the same player. Local and private-network assets in a recording (`localhost`, `10.x`, `192.168.x`…) are swapped for blanks before playback, so a replay never makes the viewer's browser fetch from their own network. Custom events become markers by tag (`record.addCustomEvent(tag, payload)`): `error` and `network` map to those kinds, `navigation` to a navigation, anything else is a checkpoint labelled by `payload.label`. The helpers, from `@brett_lamy/docstream/replay`, read a recording without loading rrweb:
 
 | Helper | Returns |
 | --- | --- |

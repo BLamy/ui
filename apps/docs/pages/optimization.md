@@ -16,7 +16,7 @@ Numbers from production builds of a fresh shadcn app (`shadcn create --base aria
 
 What the numbers say:
 
-- **JavaScript is the same either way.** The npm package is built with one output module per source module and `sideEffects` limited to CSS, so a bundler drops what you don't import. Importing `Button` from the root does not pull the Composer.
+- **JavaScript is the same either way.** The npm package is built with one output module per source module and `sideEffects` limited to CSS, so a bundler drops what you don't import. Importing `Button` (from `@brett_lamy/ui/button` or from the root) does not pull the Composer.
 - **CSS is where they differ.** The registry adds Tailwind utilities only for the classes in the files you copied, because Tailwind scans your source. The npm stylesheet is precompiled for the whole library, including the Markdown and KaTeX styles, so it is roughly 3–4× larger in gzip whatever you import.
 - **Motion is the real cost.** `Button` alone adds about 210 kB raw (67 kB gzip) of JavaScript, because its label morph uses `framer-motion`. That is the price of the springs; it is shared by every other part, so `SplitView` adds only 49 kB raw on top of `Button`.
 
@@ -33,11 +33,11 @@ Your numbers will differ with your app, plugins and browser targets. To measure 
 | Updates | `shadcn add … -o` and review the diff | `npm update` |
 | Best for | a product you will restyle | trying it, prototypes, several apps sharing one version |
 
-Start with the registry for a product. Use npm when you want the parts unmodified, and switch later: the components import each other by alias (`@/components/ui/…`) in the registry copy and by relative path in the package, so your own code only changes its import line.
+Start with the registry for a product. Use npm when you want the parts unmodified, and switch later: every module is a package entry at the registry's path (`@/components/ui/dialog` ↔ `@brett_lamy/ui/dialog`, `@/lib/theme` ↔ `@brett_lamy/ui/lib/theme`), so your own code only changes the prefix of its imports.
 
 ## Vite
 
-- **Keep it on the registry, or import by name.** With the package, import from the root: `import { Button } from '@brett_lamy/ui'`. There is no need for deep imports; the build is tree-shakeable.
+- **Import from the module.** With the package, import each part from its module's entry: `import { Button } from '@brett_lamy/ui/button'`. A production build tree-shakes the root (`@brett_lamy/ui`) just as well, but the dev server and the type checker then load the whole index to resolve one name; a module entry loads only that module and what it imports.
 - **Split the heavy parts.** The Composer (a TipTap editor), the Markdown renderer with syntax highlighting, maps and session replay load libraries you may not need on first paint. Load them lazily:
 
   ```tsx
@@ -47,6 +47,8 @@ Start with the registry for a product. Use npm when you want the parts unmodifie
     import('@/components/ui/composer/composer').then((m) => ({ default: m.Composer })),
   )
   ```
+
+  With the package it is the same line on `@brett_lamy/ui/composer/composer`. A lazy import of the root would put the whole library behind the split point.
 
   Composer is a family of parts, so lazy-load the module that renders the whole composition (your `PromptBox` component) rather than one part at a time.
 - **Pre-bundle in dev.** Vite discovers dependencies as they are first imported, and a late discovery reloads the page. The docs app lists the TipTap packages in `optimizeDeps.include` for that reason (`apps/docs/vite.config.mts`); do the same for any package Vite reports as newly found.
@@ -66,7 +68,7 @@ Start with the registry for a product. Use npm when you want the parts unmodifie
     { ssr: false },
   )
   ```
-- **Barrel imports (npm).** `experimental.optimizePackageImports: ['@brett_lamy/ui']` in `next.config` makes Next rewrite root imports to the module that defines each name.
+- **Root imports (npm).** Module entries (`@brett_lamy/ui/button`) need nothing. If you import from the root, `experimental.optimizePackageImports: ['@brett_lamy/ui']` in `next.config` makes Next rewrite those imports to the module that defines each name.
 - **Tailwind sources.** With the registry, your copied files are already in your project, so nothing extra is needed. With npm, import `@brett_lamy/ui/styles.css` once in the root layout, and add `@source '../node_modules/@brett_lamy/ui'` only if you want Tailwind to generate utilities for class names you pass into its components.
 - **`transpilePackages`** is not needed: the package ships compiled ESM.
 

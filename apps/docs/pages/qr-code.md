@@ -15,12 +15,12 @@ import { QRCode } from '@/components/ui/qr-code'
 {% tab title="npm" %}
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 
-Import the stylesheet once at your app's entry, then the parts from the package root:
+Import the stylesheet once at your app's entry, then the parts from their module:
 
 ```tsx
 import '@brett_lamy/ui/styles.css'
 
-import { QRCode } from '@brett_lamy/ui'
+import { QRCode } from '@brett_lamy/ui/qr-code'
 ```
 {% endtab %}
 {% endtabs %}
@@ -36,14 +36,14 @@ Pass the text as `value` (required). By default modules are iOS-style rounded do
   <QRCode value="https://example.com/albums/summer-2026" aria-label="Open shared album" />
 </div>
 
-<QRCode value={wifi} level="Q" rounded={false} margin={2} background="white" className="text-black" />
+<QRCode value={wifi} level="Q" shape="square" margin={2} background="white" className="text-black" />
 ```
 
 ## Choices that affect scanning
 
 - **Contrast.** Dark modules on a light ground scan best; the modules are `currentColor` (a `text-*` class) and `background` takes any CSS colour. Some scanners do not read inverted (light-on-dark) codes, so keep the card light even in a dark theme, as the demo does.
 - **Level.** `level` is `M` by default. L recovers about 7% of damage, M 15%, Q 25%, H 30%. Higher levels make denser codes, so use Q or H only if the code may be covered (a logo overlay) or worn.
-- **Rounded.** `rounded` (default on) fills about 85% of each cell and keeps the finder rings solid, so the code stays scannable; `rounded={false}` draws square modules, merging horizontal runs into single rectangles with crisp edges.
+- **Shape.** `shape="rounded"` (the default) fills about 85% of each cell and keeps the finder rings solid, so the code stays scannable; `shape="square"` draws square modules, merging horizontal runs into single rectangles with crisp edges.
 - **Size.** The code scales to `size` (168px by default) and its version grows with the text, so a long URL is denser at the same size.
 - **Quiet zone.** `margin` defaults to `0`; scanners want one to four modules of light space around the code.
 
@@ -60,7 +60,7 @@ Without an `aria-label` the SVG is `aria-hidden`, as it is a machine-readable im
 | `level` | `M` | Error correction: `L`, `M`, `Q` or `H`. |
 | `margin` | `0` | Quiet zone in modules, added inside the SVG. |
 | `background` | none | A fill painted inside the SVG behind the whole code, including the margin, so a saved image keeps its quiet zone. |
-| `rounded` | `true` | Rounded modules and finder eyes; `false` for square. |
+| `shape` | `rounded` | `rounded` modules and finder eyes, or classic `square` modules. |
 | `aria-label` | — | Accessible name; adds `role="img"` and a `<title>`. |
 | `onError` | — | `(error)` when the text does not fit in a QR code (over version 40 at this `level`). |
 | `className` / `style` | — | Merged onto the `svg`; every other SVG attribute (`id`, `data-*`, `ref`) passes through. The modules are `currentColor`. |

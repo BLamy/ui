@@ -15,12 +15,12 @@ import { Swap } from '@/components/ui/swap'
 {% tab title="npm" %}
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 
-Import the stylesheet once at your app's entry, then the parts from the package root:
+Import the stylesheet once at your app's entry, then the parts from their module:
 
 ```tsx
 import '@brett_lamy/ui/styles.css'
 
-import { Swap } from '@brett_lamy/ui'
+import { Swap } from '@brett_lamy/ui/swap'
 ```
 {% endtab %}
 {% endtabs %}
@@ -97,4 +97,4 @@ Both effects fade opacity and blur on the entry tokens (`--duration-enter`, `--e
 
 ## Styling
 
-Slots: `swap` (with `data-effect`, and `data-direction` for a slide) and each `swap-view` inside it, which has `data-starting-style` for its first frame and `data-ending-style` while it leaves. The start and end frames read variables on the root (`--swap-enter`, `--swap-exit`, `--swap-scale`, `--swap-blur`), so a stylesheet can restyle a swap without JavaScript. Both effects use `currentColor`, so colour the content from a parent or with a `text-*` class.
+Slots: `swap` (with `data-effect`, and `data-direction` for a slide) and each `swap-view` inside it, which has `data-starting-style` for its first frame and `data-ending-style` while it leaves. The start and end frames read variables on the root (`--swap-enter`, `--swap-exit`, `--swap-scale`, `--swap-blur`), so a stylesheet can restyle a swap without JavaScript. Swap draws nothing and adds no colour: style the content. Padding on the root is fine: a leaving view fades where it stood, inside it.

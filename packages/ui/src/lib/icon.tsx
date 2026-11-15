@@ -100,6 +100,9 @@ const SHAPES = {
     { d: 'M21.4 6.6c0-.8-.9-1.3-1.6-.9l-7.6 5.4c-.6.4-.6 1.3 0 1.8l7.6 5.4c.7.4 1.6-.1 1.6-.9z', f: 1 },
     { d: 'M12 6.6c0-.8-.9-1.3-1.6-.9l-7.6 5.4c-.6.4-.6 1.3 0 1.8l7.6 5.4c.7.4 1.6-.1 1.6-.9z', f: 1 },
   ],
+  // SF Symbols' forward.end / backward.end: go to the end or the start (forward / backward scan).
+  'forward-end': [{ d: 'M5 6.6c0-.8.9-1.3 1.6-.9l8.6 5.4c.6.4.6 1.3 0 1.8l-8.6 5.4c-.7.4-1.6-.1-1.6-.9z', f: 1 }, { r: [16.8, 5.4, 2.6, 13.2, 1], f: 1 }],
+  'backward-end': [{ d: 'M19 6.6c0-.8-.9-1.3-1.6-.9l-8.6 5.4c-.6.4-.6 1.3 0 1.8l8.6 5.4c.7.4 1.6-.1 1.6-.9z', f: 1 }, { r: [4.6, 5.4, 2.6, 13.2, 1], f: 1 }],
   'play-circle': [RING, { d: PLAY_SMALL, f: 1 }],
   'play-circle-fill': [DISC, { d: PLAY_SMALL, f: 1, k: 1 }],
   shuffle: [
@@ -507,7 +510,7 @@ export const ICON_CATEGORIES: Record<IconCategory, readonly IconCanonicalName[]>
 /** Extra search words per icon (SF Symbols names and common synonyms). */
 export const ICON_KEYWORDS: Partial<Record<IconCanonicalName, string>> = {
   play: 'start resume transport', pause: 'transport', stop: 'transport square', forward: 'next skip fast-forward',
-  backward: 'previous back rewind', shuffle: 'random', repeat: 'loop', 'repeat-1': 'loop once',
+  backward: 'previous back rewind', 'forward-end': 'go to end last skip', 'backward-end': 'go to start first beginning', shuffle: 'random', repeat: 'loop', 'repeat-1': 'loop once',
   'quote-bubble': 'lyrics quote', queue: 'up next list play', airplay: 'cast screen', speaker: 'volume sound audio',
   'speaker-low': 'volume sound', 'speaker-high': 'volume loud sound', 'speaker-slash': 'mute silent volume',
   mic: 'microphone record dictate voice', 'music-note': 'song audio', 'music-notes': 'song music audio',

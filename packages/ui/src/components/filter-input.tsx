@@ -3,7 +3,8 @@ import { useEffect, useId, useState, type ComponentProps, type ReactNode } from 
 import { announce } from '@ui-sdk/core';
 import { createInputController, type InputOptions } from '@ui-sdk/react/input';
 import { Button } from '@/components/ui/button';
-import { FilterChip, useOptionalFilterBar } from '@/components/ui/filter';
+import { FilterChip, useOptionalFilterBar, type FilterChangeDetails, type FilterChangeReason } from '@/components/ui/filter';
+import { changeDetails } from '@/lib/change-details';
 import { SearchInput } from '@/components/ui/search-input';
 import { describeFilter, type Filter, type FilterField } from '@/lib/filter-model';
 import { FILTER_QUERY_MAX_LENGTH, useFilterQuery, warmFilterQuery, type UseFilterQueryOptions } from '@/lib/filter-query';
@@ -38,8 +39,10 @@ const DESCRIPTION = 'Experimental: a small model that runs in your browser and r
 export interface FilterInputProps extends Omit<ComponentProps<'div'>, 'onChange' | 'defaultValue' | 'children'> {
   /** What can be filtered. Default: the enclosing FilterBar's fields. */
   fields?: readonly FilterField[];
-  /** Called with the understood filters when the user applies them. Default: the enclosing FilterBar's `apply`. */
-  onApply?: (filters: Filter[]) => void;
+  /** Called with the understood filters when the user applies them, and `details` (`reason: 'apply'`, the Enter key
+   *  or the Apply press as `event`, `cancel()` to keep the phrase in the box). Default: the enclosing FilterBar's
+   *  `apply`. */
+  onApply?: (filters: Filter[], details: FilterChangeDetails) => void;
   /** With a FilterBar: `merge` (default) replaces the filter of a field it names and adds the rest; `replace` swaps them all. */
   mode?: 'merge' | 'replace';
   /** The phrase, controlled. */
@@ -77,22 +80,25 @@ export function FilterInput({
   const settled = trimmed !== '' && !pending && status === 'ready';
   const canApply = settled && filters.length > 0 && !!(onApply ?? bar);
 
-  const apply = () => {
+  const apply = (event?: Event) => {
     if (!canApply) return;
-    if (onApply) onApply(filters);
-    else bar?.apply(filters, mode);
+    if (onApply) {
+      const details = changeDetails<FilterChangeReason>({ reason: 'apply', event });
+      onApply(filters, details);
+      if (details.canceled) return;
+    } else bar?.apply(filters, mode, { event });
     input.clear();
     setNote('');
   };
 
-  const submit = () => {
+  const submit = (_value: string, details?: { event?: Event }) => {
     if (!trimmed) return;
     if (pending || status === 'loading') {
       // Show what was understood before anything is applied: a second Enter applies it.
       result.refresh();
       setNote('Reading your sentence… press Enter again to apply what it shows.');
     } else if (status === 'ready' && !filters.length) setNote('Nothing to apply: no filter was understood.');
-    else if (settled) apply();
+    else if (settled) apply(details?.event);
   };
 
   const sentence = (list: Filter[]) => list.map((f) => describeFilter(f, fields, bar?.locale)).join('; ');
@@ -134,7 +140,7 @@ export function FilterInput({
           onFocus={() => { void warmFilterQuery(); }}
           className="flex-1"
         />
-        <Button variant="secondary" size="sm" disabled={!canApply} onClick={apply}>Apply</Button>
+        <Button variant="secondary" size="sm" disabled={!canApply} onClick={(event) => apply(event.nativeEvent)}>Apply</Button>
       </div>
 
       {trimmed ? (

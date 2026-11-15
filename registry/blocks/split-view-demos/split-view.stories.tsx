@@ -296,3 +296,60 @@ export const ItemStates: Story = {
     </div>
   ),
 };
+
+/* ── The sidebar as a tab bar (compactPresentation="tabs") ── */
+
+const PODCAST_TITLES: Record<string, string> = { home: 'Home', new: 'New', search: 'Search', library: 'Library', shows: 'Shows', saved: 'Saved', downloads: 'Downloaded' };
+
+function PodcastsDemo() {
+  const [section, setSection] = useState('shows');
+  return (
+    <SplitView aria-label="Podcasts" value={{ sidebar: section }} onValueChange={(v) => { if (v.sidebar) setSection(v.sidebar); }}>
+      <SplitViewSidebar compactPresentation="tabs" aria-label="Podcasts">
+        <SplitViewHeader title="Podcasts" />
+        <SplitViewContent className="px-2.5">
+          <SplitViewSection>
+            <SplitViewItem value="home" title="Home" icon="house" tab />
+            <SplitViewItem value="new" title="New" icon="star" tab />
+            <SplitViewItem value="search" title="Search" icon="magnifyingglass" tab />
+          </SplitViewSection>
+          <SplitViewSection title="Library" tab value="library" icon="books-vertical">
+            <SplitViewItem value="shows" title="Shows" icon="layers" />
+            <SplitViewItem value="saved" title="Saved" icon="bookmark" />
+            <SplitViewItem value="downloads" title="Downloaded" icon="arrow-down-circle" />
+          </SplitViewSection>
+        </SplitViewContent>
+      </SplitViewSidebar>
+      <SplitViewDetail>
+        <NavigationStack defaultPages={['root']} resetKey={section}>
+          <NavigationStackPage value="root">
+            <NavigationStackBar><NavigationStackTitle>{PODCAST_TITLES[section]}</NavigationStackTitle></NavigationStackBar>
+            <NavigationStackContent>
+              <NavigationStackLargeTitle />
+              <div className="flex flex-col gap-2 px-4">
+                {Array.from({ length: 14 }, (_, i) => (
+                  <div key={i} className="rounded-panel bg-secondary px-3 py-2.5 text-subhead">Episode {i + 1}</div>
+                ))}
+              </div>
+            </NavigationStackContent>
+          </NavigationStackPage>
+        </NavigationStack>
+      </SplitViewDetail>
+    </SplitView>
+  );
+}
+
+/** Compact: the sidebar is the iOS tab bar over the detail. Library is one tab for its section (Shows is selected),
+    and the content keeps room for the bar. */
+export const SidebarTabBar: Story = {
+  render: () => <Phone w={390} h={760}><PodcastsDemo /></Phone>,
+};
+
+export const SidebarTabBarDark: Story = {
+  render: () => <Phone w={390} h={760} dark><PodcastsDemo /></Phone>,
+};
+
+/** The same tree on a tablet: a sidebar, no tab bar. */
+export const SidebarTabBarTablet: Story = {
+  render: () => <Phone w={834} h={700}><PodcastsDemo /></Phone>,
+};

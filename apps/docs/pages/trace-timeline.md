@@ -18,12 +18,15 @@ import { linearAxis, stopAxis } from '@/lib/trace-timeline-model'
 {% tab title="npm" %}
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 
-Import the stylesheet once at your app's entry, then the parts from the package root:
+Import the stylesheet once at your app's entry, then the parts from their module:
 
 ```tsx
 import '@brett_lamy/ui/styles.css'
 
-import { TraceTimeline, linearAxis, stopAxis } from '@brett_lamy/ui'
+import { TraceTimeline } from '@brett_lamy/ui/trace-timeline'
+import {
+  linearAxis, stopAxis,
+} from '@brett_lamy/ui/lib/trace-timeline-model'
 ```
 {% endtab %}
 {% endtabs %}
@@ -41,7 +44,7 @@ const lanes = [{
   density: { label: 'JS', times: stepTimes, depths: stepDepths },
   marks: [
     { key: 'breakpoints', times: hitTimes, shape: 'bar', tone: 'warning' },
-    { key: 'console', times: messageTimes, shape: 'dot', tone: 'info' },
+    { key: 'console', times: messageTimes, shape: 'dot', tint: 'var(--primary)' },
   ],
   threads: [{ id: 1, label: 'T1' }],
 }]
@@ -72,11 +75,11 @@ const [view, setView] = useState(range)
   range={range} lanes={lanes} stops={stops} value={time} onValueChange={setTime}
   view={view} onViewChange={setView}
   orientation={width < 600 ? 'vertical' : 'horizontal'}
-  side="right" className={width < 600 ? 'inset-y-2' : undefined}
+  side="end" className={width < 600 ? 'inset-y-2' : undefined}
 />
 ```
 
-The strip fills the width of its parent and is as tall as its rows want, unless you give it a height: thread rows share what's there, from 4 to 14 px each. The rail is positioned like IndexBar: absolute on an edge (`side`) of the nearest positioned ancestor, the full height of it and 44 px wide, so put it next to your scroller and not inside it. Move or size it with classes: `className="inset-y-2"` keeps it 8 px from the top and bottom, `w-14` widens it. A right-hand rail publishes how far list rows run under it as `--bl-index-bar-inset` on its parent, with the same meaning as IndexBar's, so `ListRow`s keep their accessories clear of it (`insetContent={false}` opts out).
+The strip fills the width of its parent and is as tall as its rows want, unless you give it a height: thread rows share what's there, from 4 to 14 px each. The rail is positioned like IndexBar: absolute on an edge (`side`: `end`, the default, or `start`, which follow the text direction) of the nearest positioned ancestor, the full height of it and 44 px wide, so put it next to your scroller and not inside it. Move or size it with classes: `className="inset-y-2"` keeps it 8 px from the top and bottom, `w-14` widens it. A rail on the `end` side publishes how far list rows run under it as `--bl-index-bar-inset` on its parent, with the same meaning as IndexBar's, so `ListRow`s keep their accessories clear of it (`insetContent={false}` opts out).
 
 | On a strip | On a rail |
 | --- | --- |
@@ -93,13 +96,13 @@ The strip fills the width of its parent and is as tall as its rows want, unless 
 | --- | --- |
 | `key`, `title` | Its name, and a title row when there are several lanes. |
 | `offset` | Added to the lane's own times to put them on the shared clock. |
-| `color` | Any CSS colour for its density. Default: a chart token by position (a tint or gray on a rail). |
-| `diamonds` | `{ label, times, color }`: a row of diamonds, each with a faint guide down to the end of the lane. |
-| `density` | `{ label, times, depths, color }`: per pixel, how many (opacity) and how deep the deepest was (reach). `depths` run parallel to `times`, which have to be sorted. |
-| `marks` | `[{ key, times, shape, tone, color }]`: over the density row. A `bar` runs its full height and a `dot` sits along its far edge. Unsorted `times` are sorted once and remembered. |
-| `threads` | `[{ id, label, color }]`: a row of activity each, from `fetchActivity`. |
+| `tint` | Any CSS colour for its density. Default: a chart token by position (a tint or gray on a rail). |
+| `diamonds` | `{ label, times, tint }`: a row of diamonds, each with a faint guide down to the end of the lane. |
+| `density` | `{ label, times, depths, tint }`: per pixel, how many (opacity) and how deep the deepest was (reach). `depths` run parallel to `times`, which have to be sorted. |
+| `marks` | `[{ key, times, shape, tone, tint }]`: over the density row. A `bar` runs its full height and a `dot` sits along its far edge. Unsorted `times` are sorted once and remembered. |
+| `threads` | `[{ id, label, tint }]`: a row of activity each, from `fetchActivity`. |
 
-Requests are for the whole timeline, on the shared clock: `requests={[{ id, time, from, to, color, tone }]}` draws a dot at `time`, a band over `from`…`to` (a range, when that's all that's known) and a line between them. Press one to select it (`selectedRequest`, `onSelectedRequestChange`). Pressing a row focuses its lane (`focusedLane`, `onFocusedLaneChange`) and a thread row selects its thread (`selectedThread`, `onSelectedThreadChange`, whose `details.lane` is the thread's lane), and the gutter picks without seeking. The keyboard picks them too: Alt+↑ / Alt+↓ step through the lanes, `[` / `]` select the request before or after the selected one (or the playhead) and move the playhead to it, and `{` / `}` step through the focused lane's threads; each pick is announced. Each is held for you (`defaultFocusedLane`, `defaultSelectedThread`, `defaultSelectedRequest`) or yours to hold, and each callback gets UI SDK's change details: `reason` is `item-press`, `list-navigation` (a key) or `imperative` (an agent), with `event`, `source` and `cancel()`.
+Requests are for the whole timeline, on the shared clock: `requests={[{ id, time, from, to, tone, tint }]}` draws a dot at `time`, a band over `from`…`to` (a range, when that's all that's known) and a line between them. Press one to select it (`selectedRequest`, `onSelectedRequestChange`). Pressing a row focuses its lane (`focusedLane`, `onFocusedLaneChange`) and a thread row selects its thread (`selectedThread`, `onSelectedThreadChange`, whose `details.lane` is the thread's lane), and the gutter picks without seeking. The keyboard picks them too: Alt+↑ / Alt+↓ step through the lanes, `[` / `]` select the request before or after the selected one (or the playhead) and move the playhead to it, and `{` / `}` step through the focused lane's threads; each pick is announced. Each is held for you (`defaultFocusedLane`, `defaultSelectedThread`, `defaultSelectedRequest`) or yours to hold, and each callback gets UI SDK's change details: `reason` is `item-press`, `list-navigation` (a key) or `imperative` (an agent), with `event`, `source` and `cancel()`.
 
 **Activity** is fetched for the view, not stored up front. `fetchActivity(laneKey, edges, signal)` runs once per lane with bucket edges in that lane's own time, one bucket per 2 px, and answers with `[{ id, counts }]`, a count per bucket per thread. It waits for the view to rest for `activityDebounce` (60 ms), and an answer that's out of date is dropped and its `signal` aborted. Until the new answer comes the old one stays on screen, moved to where its times now are, so zooming stays smooth.
 
@@ -109,9 +112,9 @@ Keep `axis`, `stops` and `requests` stable between renders, with `useMemo` or at
 
 ## Stops
 
-Landmarks: an [IndexBar](https://blamy.github.io/ui/#/index-bar) item plus a time. `{ key, time, caption, preview, tone, level, trailing, dim }`. Each is a dash on the rail's inner side at its place on the axis, with the same proportions, raised-cosine swell and card as IndexBar's wave (both come from `lib/wave-rail`), and a soft snap as you drag past. PageUp and PageDown go from one to the next.
+Landmarks: an [IndexBar](https://blamy.github.io/ui/#/index-bar) item plus a time. `{ key, time, caption, preview, tone, tint, level, trailing, disabled }`: `disabled` draws a stop dim, as on IndexBar. The dash of the stop the playhead is at has `data-current`, and a disabled one `data-disabled`, as IndexBar's options do. Each is a dash on the rail's inner side at its place on the axis, with the same proportions, raised-cosine swell and card as IndexBar's wave (both come from `lib/wave-rail`), and a soft snap as you drag past. PageUp and PageDown go from one to the next.
 
-There can be thousands of them. `selectStops(stops, { axis, win, length, minGap })`, which you can call yourself, chooses what's shown for the view and the rail's length: the lowest `level` first, then the rest, each merging into the nearest dash already placed if it would land less than `minGap` (10 px) from it. A cluster wears its most severe member's `tone` (`error`, then `warning`, `info`, `success`), stands for its lowest-level stop, and its card says how many more are there. Zooming in spreads them out, so more fit.
+There can be thousands of them. `selectStops(stops, { axis, win, length, minGap })`, which you can call yourself, chooses what's shown for the view and the rail's length: the lowest `level` first, then the rest, each merging into the nearest dash already placed if it would land less than `minGap` (10 px) from it. A cluster wears its most severe member's `tone` (`destructive`, then `warning`, `success`; `muted` and `default` are quiet), stands for its lowest-level stop, and its card says how many more are there. Zooming in spreads them out, so more fit.
 
 ## Axes
 
@@ -151,7 +154,7 @@ const stepAxis = (times, range, timeShare = 0.25) => ({
 
 A speed change never moves the playhead: the scrub starts again from where the playhead is, at the new speed. Without this a 600 px rail over an hour moves 6 s a pixel; at the slowest speed it moves about 94 ms. A second finger coming down takes back the first finger's jump, so a pinch leaves the playhead alone. The drag is UI SDK's `bindDrag`, so it keeps the pointer outside the timeline and outside the window; all of it is pointer events, so a mouse, a pen and touch all work.
 
-The preview card appears beside the pointer while hovering or dragging on a rail, showing the stop's `caption` and `preview`, or else the time. On a strip it appears over a stop in the stops row. A `TraceTimelinePreview` child configures it: `lines` of `preview` shown (2), its widest `width` in px (260), and a render function as its children that puts a slot at the top of the card for a thumbnail of that moment, after which a strip shows the card wherever you hover.
+The preview card appears beside the pointer while hovering or dragging on a rail, showing the stop's `caption` and `preview`, or else the time. On a strip it appears over a stop in the stops row. A `TraceTimelinePreview` inside the timeline draws a card of your own, wherever it sits among the children (inside a component of yours too): `lines` of `preview` shown (2), its widest `width` in px (260), and a render function as its children that puts a slot at the top of the card for a thumbnail of that moment, after which a strip shows the card wherever you hover. Without one, the timeline draws the card itself.
 
 ```tsx
 <TraceTimeline range={range} stops={stops} orientation="vertical">
@@ -195,10 +198,10 @@ Each pick by key is announced ("Server lane", "Request 42, 25:06"). The canvases
 | `view` / `defaultView` / `onViewChange(view, details)` | all of `range` | The stretch of time on show; `details.reason` says what moved it. |
 | `axis` | `linearAxis(range)` | Turns times into positions. |
 | `orientation` | `horizontal` | `horizontal` is the strip, `vertical` the rail. |
-| `side` | `right` | Rail: the edge it sits on. Its stops and card are on the inner side. |
-| `insetContent` | `true` | Rail: publish `--bl-index-bar-inset` on its parent (right side only). |
+| `side` | `end` | Rail: the edge it sits on, `start` or `end`, as IndexBar's. Its stops and card are on the inner side. |
+| `insetContent` | `true` | Rail: publish `--bl-index-bar-inset` on its parent (`end` side only). |
 | `gutter` | `64` | Strip: the width of the label gutter, 0 for none. |
-| `requestsLabel` / `stopsLabel` | `requests` / `stops` | Strip: the gutter's labels for those rows. |
+| `requestsLabel` / `stopsLabel` | `Requests` / `Stops` | Strip: the gutter's labels for those rows. |
 | `focusedLane` / `defaultFocusedLane` / `onFocusedLaneChange(lane, details)` | none | The lane in focus. A single lane always is. |
 | `selectedThread` / `defaultSelectedThread` / `onSelectedThreadChange(thread, details)` | none | The selected thread, in the focused lane; `details.lane` is its lane. |
 | `selectedRequest` / `defaultSelectedRequest` / `onSelectedRequestChange(request, details)` | none | The selected request. |
@@ -206,7 +209,7 @@ Each pick by key is announced ("Server lane", "Request 42, 25:06"). The canvases
 | `step` | a pixel's worth | What an arrow key moves the playhead by. |
 | `minSpan` | `1e-5` | The shortest stretch of time the view can show. |
 | `formatTime` | `formatTraceTime` | `(time, resolution) => string`, where `resolution` is how far apart the times worth telling apart are. |
-| `children` | none | A `TraceTimelinePreview` (`lines`, `width`, and a `(time, stop) => node` thumbnail slot) to configure the preview card. |
+| `children` | none | A `TraceTimelinePreview` (`lines`, `width`, and a `(time, stop) => node` thumbnail slot): the preview card, drawn where it sits. |
 | `aria-label` / `aria-labelledby` | `Timeline` | The slider's accessible name. |
 | `onDraw` | none | Called after each canvas redraw with what it took. |
 | `ref` | none | `fit`, `setView`, `pixelTimes`, `redraw`, `focus`. |
@@ -214,9 +217,9 @@ Each pick by key is announced ("Server lane", "Request 42, 25:06"). The canvases
 
 ## Styling
 
-The root is `data-slot="trace-timeline"`, with `data-orientation` and `data-side`, and holds `trace-timeline-canvas` (the rows), `trace-timeline-overlay` (the playhead and hover), and on a rail `trace-timeline-stop` for each dash, `trace-timeline-pill` and `trace-timeline-card`.
+The root is `data-slot="trace-timeline"`, with `data-orientation` and `data-side`, and holds `trace-timeline-canvas` (the rows), `trace-timeline-overlay` (the playhead and hover), and on a rail `trace-timeline-stop` for each dash (with `data-tone`, `data-current` and `data-disabled`), `trace-timeline-pill` and `trace-timeline-card`.
 
-Colours come from the theme's tokens, read from its CSS variables through hidden elements and read again when the kit's appearance changes (an `AppearanceProvider`, or the `dark` class on `<html>`) or a class or style changes on an ancestor, as a `ThemeScope`'s does. Density and threads use `--chart-1` to `--chart-5`, the playhead `--primary`, and tones `--destructive`, `--warning` and `--success`. Any `color` you pass can be any CSS colour, variables included. The strip's height comes from `--tt-height`, so a `className` such as `h-full` takes over.
+Colours come from the theme's tokens, read from its CSS variables through hidden elements and read again when the kit's appearance changes (an `AppearanceProvider`, or the `dark` class on `<html>`) or a class or style changes on an ancestor, as a `ThemeScope`'s does. Density and threads use `--chart-1` to `--chart-5`, the playhead `--primary`, and tones `--destructive`, `--warning` and `--success` (`muted` is `--tertiary-foreground`). Any `tint` you pass can be any CSS colour, variables included: `tint: 'var(--primary)'` for an "info" blue. The strip's height comes from `--tt-height`, so a `className` such as `h-full` takes over.
 
 ## cva recipes
 
@@ -237,11 +240,11 @@ font-sans touch-none select-none
 | `horizontal` (default) | `relative block h-(--tt-height) w-full cursor-crosshair rounded-[inherit] bg-background -outline-offset-2 [outline:2px_solid_transparent] focus-visible:[outline…` |
 | `vertical` | `absolute top-0 bottom-0 z-80 w-11 cursor-pointer rounded-lg -outline-offset-2 [outline:2px_solid_transparent] focus-visible:[outline:2px_solid_var(--primary)]` |
 
-**`side`** — default `right`
+**`side`** — default `end`
 
 | Value | Adds |
 | --- | --- |
-| `right` (default) | — |
-| `left` | — |
+| `end` (default) | — |
+| `start` | — |
 
 2 compound variants — see the source.

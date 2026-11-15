@@ -87,38 +87,24 @@
         "@layer base": {
           ":where([data-slot]),:where([data-slot])::before,:where([data-slot])::after, :where([data-slot]) *,:where([data-slot]) ::before,:where([data-slot]) ::after": {
             "box-sizing": "border-box"
+          },
+          ":where([data-slot][popover])": {
+            "inset": "auto",
+            "width": "auto",
+            "height": "auto",
+            "max-width": "none",
+            "max-height": "none",
+            "margin": "0",
+            "padding": "0",
+            "border": "0",
+            "overflow": "visible",
+            "color": "inherit",
+            "background": "none"
           }
         },
         "@keyframes blSpin": {
           "to": {
             "transform": "rotate(360deg)"
-          }
-        },
-        "@keyframes blRing": {
-          "from": {
-            "transform": "scale(.35)",
-            "opacity": ".85"
-          },
-          "to": {
-            "transform": "scale(2.4)",
-            "opacity": "0"
-          }
-        },
-        "@keyframes blHapIn": {
-          "0%": {
-            "opacity": "0",
-            "transform": "translateY(8px)"
-          },
-          "10%": {
-            "opacity": "1",
-            "transform": "none"
-          },
-          "72%": {
-            "opacity": "1"
-          },
-          "100%": {
-            "opacity": "0",
-            "transform": "translateY(-4px)"
           }
         },
         "@keyframes blBub": {
@@ -165,21 +151,6 @@
         },
         "input:where([data-slot] *,[data-slot]):where(:not(.gb *))::placeholder": {
           "color": "var(--tertiary-foreground, color-mix(in oklab, var(--muted-foreground) 60%, transparent))"
-        },
-        "@keyframes blShimmer": {
-          "from": {
-            "background-position": "200% 0"
-          },
-          "to": {
-            "background-position": "0% 0"
-          }
-        },
-        ".bl-shimmer": {
-          "background": "linear-gradient(90deg,var(--tertiary-foreground, color-mix(in oklab, var(--muted-foreground) 60%, transparent)) 40%,var(--foreground) 50%,var(--tertiary-foreground, color-mix(in oklab, var(--muted-foreground) 60%, transparent)) 60%) 0 0/200% 100%",
-          "-webkit-background-clip": "text",
-          "background-clip": "text",
-          "color": "transparent",
-          "animation": "blShimmer 2.4s linear infinite"
         },
         ".bl-range": {
           "-webkit-appearance": "none",
@@ -1846,7 +1817,7 @@
             "border-top-left-radius": "0",
             "border-top-right-radius": "0"
           },
-          ".bl-syntax-ghost": {
+          ".bl-syntax-plain": {
             "--_bl-syn-surface": "var(--bl-syntax-surface,transparent)"
           },
           ".bl-syntax-pre": {
@@ -1931,7 +1902,7 @@
             "padding": "0 16px"
           },
           ".bl-syntax-pre[data-line-numbers] .bl-syntax-lc": {
-            "padding-left": "8px"
+            "padding-left": "10px"
           },
           ".bl-syntax-pre[data-wrap] .bl-syntax-lc": {
             "flex": "1 1 0",
@@ -1988,31 +1959,6 @@
             "font-weight": "500",
             "color": "var(--foreground)"
           },
-          ".bl-syntax-copy": {
-            "display": "grid",
-            "flex": "none",
-            "place-items": "center",
-            "width": "28px",
-            "height": "28px",
-            "padding": "0",
-            "border": "0",
-            "border-radius": "7px",
-            "background": "transparent",
-            "color": "var(--muted-foreground)",
-            "cursor": "pointer",
-            "outline": "none",
-            "transition": "background-color .15s,color .15s,opacity .15s"
-          },
-          ".bl-syntax-copy:hover": {
-            "background": "var(--secondary)",
-            "color": "var(--foreground)"
-          },
-          ".bl-syntax-copy:focus-visible": {
-            "box-shadow": "0 0 0 2px var(--primary)"
-          },
-          ".bl-syntax-copy[data-copied]": {
-            "color": "var(--success, oklch(0.723 0.191 149.6))"
-          },
           ".bl-syntax-copy-float": {
             "position": "absolute",
             "top": "7px",
@@ -2029,17 +1975,6 @@
             ".bl-syntax-copy-float": {
               "opacity": "1"
             }
-          },
-          ".bl-syntax-sr": {
-            "position": "absolute",
-            "width": "1px",
-            "height": "1px",
-            "margin": "-1px",
-            "padding": "0",
-            "overflow": "hidden",
-            "clip": "rect(0,0,0,0)",
-            "white-space": "nowrap",
-            "border": "0"
           },
           ".bl-syntax[data-windowed]": {
             "font-family": "var(--bl-syntax-font,var(--font-mono,ui-monospace,monospace))",
@@ -2324,14 +2259,6 @@
             "transform": "translateX(200%)"
           }
         },
-        "@keyframes wbBlink": {
-          "0%,55%": {
-            "opacity": "1"
-          },
-          "56%,100%": {
-            "opacity": "0"
-          }
-        },
         "@keyframes wbPulse": {
           "0%,100%": {
             "opacity": "1"
@@ -2377,6 +2304,14 @@
         ".wb-md": {
           "line-height": "1.6",
           "font-size": "14px",
+          "--docs-tok-keyword": "var(--bl-syntax-keyword)",
+          "--docs-tok-type": "var(--bl-syntax-type)",
+          "--docs-tok-function": "var(--bl-syntax-function)",
+          "--docs-tok-string": "var(--bl-syntax-string)",
+          "--docs-tok-number": "var(--bl-syntax-number)",
+          "--docs-tok-constant": "var(--bl-syntax-constant)",
+          "--docs-tok-operator": "var(--bl-syntax-operator)",
+          "--docs-tok-comment": "var(--bl-syntax-comment)\n",
           "--foreground": "currentColor"
         },
         ".wb-md :where(h1)": {
@@ -2494,66 +2429,11 @@
           "max-width": "100%",
           "border-radius": "8px"
         },
-        ":root,[data-theme-scope=\"workbench\"].dark": {
-          "--_wb-code-keyword": "#C792EA",
-          "--_wb-code-string": "#A5D6A7",
-          "--_wb-code-number": "#F78C6C",
-          "--_wb-code-comment": "#777784",
-          "--_wb-code-function": "#82AAFF",
-          "--_wb-code-constant": "#F07178",
-          "--_wb-code-type": "#FFCB6B",
-          "--_wb-code-operator": "#89DDFF",
-          "--_wb-code-deleted": "#FF6B6B",
-          "--_wb-code-added": "#69DB7C\n"
+        ".wb-md .docs-article>[data-docstream-blocks]>:first-child": {
+          "margin-top": "0"
         },
-        "[data-theme-scope=\"workbench\"].light": {
-          "--_wb-code-keyword": "#A626A4",
-          "--_wb-code-string": "#3E8B3A",
-          "--_wb-code-number": "#986801",
-          "--_wb-code-comment": "#9A9AA3",
-          "--_wb-code-function": "#3563D9",
-          "--_wb-code-constant": "#D2403A",
-          "--_wb-code-type": "#B06A00",
-          "--_wb-code-operator": "#0B7FA8",
-          "--_wb-code-deleted": "#D2403A",
-          "--_wb-code-added": "#2F8F46\n"
-        },
-        ".wb-md :where(.hljs-keyword,.hljs-selector-tag,.hljs-built_in,.hljs-type,.hljs-tag,.hljs-name),.wb-tok-keyword": {
-          "color": "var(--bl-syntax-keyword,var(--_wb-code-keyword))"
-        },
-        ".wb-md :where(.hljs-string,.hljs-attr,.hljs-symbol,.hljs-bullet),.wb-tok-string": {
-          "color": "var(--bl-syntax-string,var(--_wb-code-string))"
-        },
-        ".wb-md :where(.hljs-title,.hljs-section,.hljs-function .hljs-title),.wb-tok-function": {
-          "color": "var(--bl-syntax-function,var(--_wb-code-function))"
-        },
-        ".wb-md :where(.hljs-number,.hljs-literal,.hljs-variable,.hljs-template-variable),.wb-tok-number": {
-          "color": "var(--bl-syntax-number,var(--_wb-code-number))"
-        },
-        ".wb-md :where(.hljs-comment,.hljs-quote,.hljs-meta)": {
-          "color": "var(--bl-syntax-comment,var(--_wb-code-comment))",
-          "font-style": "italic"
-        },
-        ".wb-tok-comment": {
-          "color": "var(--bl-syntax-comment,var(--_wb-code-comment))"
-        },
-        ".wb-md :where(.hljs-operator,.hljs-punctuation),.wb-tok-operator": {
-          "color": "var(--bl-syntax-operator,var(--_wb-code-operator))"
-        },
-        ".wb-md :where(.hljs-deletion)": {
-          "color": "var(--_wb-code-deleted)"
-        },
-        ".wb-md :where(.hljs-addition)": {
-          "color": "var(--_wb-code-added)"
-        },
-        ".wb-tok-constant": {
-          "color": "var(--bl-syntax-constant,var(--_wb-code-constant))"
-        },
-        ".wb-tok-type": {
-          "color": "var(--bl-syntax-type,var(--_wb-code-type))"
-        },
-        ".wb-tok-text": {
-          "color": "var(--bl-syntax-fg,var(--code-foreground, var(--foreground)))"
+        ".wb-md .docs-article>[data-docstream-blocks]>:last-child": {
+          "margin-bottom": "0"
         },
         ".wb-composer-doc.gb": {
           "--background": "var(--card)",
@@ -2587,9 +2467,6 @@
         ".wb-composer-doc.gb .ProseMirror :where(h1,h2,h3,h4,h5,h6,p,li)": {
           "color": "inherit"
         },
-        ".wb-composer-doc-wide.gb .ProseMirror": {
-          "min-height": "38px"
-        },
         ".wb-composer-doc-expanded.gb": {
           "max-height": "min(58vh,440px)"
         },
@@ -2607,7 +2484,12 @@
           "float": "left",
           "height": "0",
           "color": "var(--tertiary-foreground, color-mix(in oklab, var(--muted-foreground) 60%, transparent))",
-          "pointer-events": "none"
+          "pointer-events": "none",
+          "max-width": "100%",
+          "white-space": "nowrap",
+          "overflow-x": "clip",
+          "overflow-y": "visible",
+          "text-overflow": "ellipsis"
         },
         ".wb-composer-doc.gb .gb-code": {
           "margin": ".45em 0"
@@ -2633,7 +2515,10 @@
         ".docstream-stl": {
           "--gb-primary": "var(--primary)",
           "--gb-muted": "var(--secondary)",
-          "--gb-border": "var(--border)"
+          "--gb-border": "var(--border)",
+          "--gb-panel": "var(--popover)",
+          "--gb-panel-foreground": "var(--primary)",
+          "--gb-hover": "var(--accent)"
         },
         "[data-slot=\"tree\"]": {
           "--trees-accent-override": "var(--primary)",
@@ -2706,7 +2591,7 @@
             "--mde-px": "16px",
             "--mde-py": "14px"
           },
-          ".bl-mde[data-variant=\"ghost\"]": {
+          ".bl-mde[data-variant=\"plain\"]": {
             "--mde-px": "0px",
             "--mde-py": "0px"
           },
@@ -2843,7 +2728,7 @@
             "font-family": "inherit",
             "color": "var(--muted-foreground)"
           },
-          ".bl-mde[data-variant=\"ghost\"] .bl-mde-doc .gb-toolbar": {
+          ".bl-mde[data-variant=\"plain\"] .bl-mde-doc .gb-toolbar": {
             "padding-left": "0",
             "padding-right": "0",
             "margin-bottom": "8px"
@@ -2896,15 +2781,6 @@
           "pointer-events": "auto",
           "transform": "none",
           "transition": "opacity .2s ease .14s,transform var(--duration-spring-bouncy) var(--ease-spring-bouncy) .1s"
-        },
-        "[data-slot=\"composer\"][data-fab-position=\"end\"][data-collapsed=\"fab\"] [data-slot=\"composer-card\"][data-folded]": {
-          "align-self": "flex-end"
-        },
-        "[data-slot=\"composer\"][data-fab-position=\"center\"][data-collapsed=\"fab\"] [data-slot=\"composer-card\"][data-folded]": {
-          "align-self": "center"
-        },
-        "[data-slot=\"composer\"][data-fab-position=\"start\"][data-collapsed=\"fab\"] [data-slot=\"composer-card\"][data-folded]": {
-          "align-self": "flex-start"
         },
         "[data-slot=\"composer\"][data-collapsed=\"fab\"]:has([data-folded])>[data-slot=\"composer-stack\"]>[data-slot=\"composer-bump\"]": {
           "height": "0",
@@ -3262,6 +3138,7 @@
         "https://blamy.github.io/ui/r/container.json",
         "https://blamy.github.io/ui/r/icon.json",
         "https://blamy.github.io/ui/r/kept-children.json",
+        "https://blamy.github.io/ui/r/nav-bar.json",
         "https://blamy.github.io/ui/r/primitives.json",
         "https://blamy.github.io/ui/r/sheet.json",
         "https://blamy.github.io/ui/r/surface.json",
@@ -3282,6 +3159,7 @@
           "AdaptivePaneHeader",
           "AdaptivePaneTitle",
           "AdaptivePaneClose",
+          "AdaptivePaneTrigger",
           "createAdaptivePaneController",
           "adaptivePanePageClass"
         ]
@@ -3333,8 +3211,8 @@
         "https://blamy.github.io/ui/r/controllable-state.json",
         "https://blamy.github.io/ui/r/floating-sheet.json",
         "https://blamy.github.io/ui/r/icon.json",
+        "https://blamy.github.io/ui/r/kept-children.json",
         "https://blamy.github.io/ui/r/motion.json",
-        "https://blamy.github.io/ui/r/persistent-host.json",
         "https://blamy.github.io/ui/r/presence.json",
         "https://blamy.github.io/ui/r/primitives.json",
         "https://blamy.github.io/ui/r/reduced-motion.json",
@@ -3381,7 +3259,14 @@
           "type": "registry:ui",
           "target": "components/ui/avatar-group.tsx"
         }
-      ]
+      ],
+      "meta": {
+        "page": "avatar",
+        "exports": [
+          "AvatarGroup",
+          "avatarGroupVariants"
+        ]
+      }
     },
     {
       "name": "avatar",
@@ -3483,7 +3368,7 @@
       "name": "button",
       "type": "registry:ui",
       "title": "Button",
-      "description": "The labelled action button: UI SDK's Button with default, secondary, outline, contrast, ghost, quiet, destructive and link variants, seven sizes including the full-width iOS pill and three square icon sizes, a pending state while its onClick Promise runs, a press that sinks on a spring, and a text label that morphs into the next one.",
+      "description": "The labelled action button: UI SDK's Button with default, secondary, outline, contrast, ghost, quiet, destructive, plain (the iOS bar text button) and link (inline, in running text) variants, seven sizes including the full-width iOS pill and three square icon sizes, a pending state while its onClick Promise runs, a press that sinks on a spring, and a text label that morphs into the next one.",
       "dependencies": [
         "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1",
         "class-variance-authority@^0.7.1"
@@ -3787,7 +3672,6 @@
       "title": "CodeEditor",
       "description": "Code you can edit, and read-only code of any shape, with one API and two renderers: in the page for a snippet or inline code, and windowed for an editor or a source view, smooth on a megabyte line and on half a million lines, with gutters, a current line, markers, undo and input methods.",
       "dependencies": [
-        "@ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1",
         "class-variance-authority@^0.7.1"
       ],
       "registryDependencies": [
@@ -3799,6 +3683,7 @@
         "https://blamy.github.io/ui/r/reduced-motion.json",
         "https://blamy.github.io/ui/r/syntax.json",
         "https://blamy.github.io/ui/r/theme.json",
+        "https://blamy.github.io/ui/r/use-copy.json",
         "https://blamy.github.io/ui/r/utils.json"
       ],
       "files": [
@@ -3865,7 +3750,7 @@
           "ColorPickerSliderThumb",
           "ColorPickerSwatches",
           "ColorPickerSwatchItem",
-          "ColorPickerField",
+          "ColorPickerInputGroup",
           "ColorPickerInput",
           "ColorPickerChannelInput",
           "ColorPickerSwatch",
@@ -3897,6 +3782,7 @@
         "https://blamy.github.io/ui/r/option-row.json",
         "https://blamy.github.io/ui/r/primitives.json",
         "https://blamy.github.io/ui/r/theme.json",
+        "https://blamy.github.io/ui/r/trigger-palette.json",
         "https://blamy.github.io/ui/r/utils.json"
       ],
       "files": [
@@ -3911,7 +3797,7 @@
         "exports": [
           "Combobox",
           "ComboboxLabel",
-          "ComboboxField",
+          "ComboboxInputGroup",
           "ComboboxInput",
           "ComboboxTrigger",
           "ComboboxClear",
@@ -4005,7 +3891,9 @@
         "https://blamy.github.io/ui/r/change-details.json",
         "https://blamy.github.io/ui/r/controllable-state.json",
         "https://blamy.github.io/ui/r/dropdown-menu.json",
+        "https://blamy.github.io/ui/r/file-size.json",
         "https://blamy.github.io/ui/r/icon.json",
+        "https://blamy.github.io/ui/r/kept-children.json",
         "https://blamy.github.io/ui/r/markdown-editor.json",
         "https://blamy.github.io/ui/r/morph-path.json",
         "https://blamy.github.io/ui/r/motion.json",
@@ -4084,6 +3972,7 @@
         "https://blamy.github.io/ui/r/button.json",
         "https://blamy.github.io/ui/r/composer.json",
         "https://blamy.github.io/ui/r/empty-state.json",
+        "https://blamy.github.io/ui/r/file-size.json",
         "https://blamy.github.io/ui/r/icon.json",
         "https://blamy.github.io/ui/r/markdown-view.json",
         "https://blamy.github.io/ui/r/message-scroller.json",
@@ -4107,13 +3996,13 @@
           "ConversationMessages",
           "ConversationComposer",
           "ConversationSuggestions",
-          "Suggestion",
-          "UserMessage",
-          "AssistantMessage",
-          "MessageMarkdown",
+          "ConversationSuggestion",
+          "ConversationUserMessage",
+          "ConversationAssistantMessage",
+          "ConversationMarkdown",
           "ConversationTyping",
-          "WorkLog",
-          "ToolCall"
+          "ConversationWorkLog",
+          "ConversationToolCall"
         ]
       }
     },
@@ -4200,7 +4089,7 @@
       "name": "data-table",
       "type": "registry:ui",
       "title": "DataTable",
-      "description": "A virtualized table of rows on UI SDK's virtualizer, grid focus and resize: typed columns (fixed or flexible widths, a cell renderer, a sort value), sort, column resize, single selection or none, density, a size class of its own (bindSizeClass) that hides columns and stacks the rows when it is narrow, a toolbar, a footer and an EmptyState, and an optional playhead for rows on a timeline. An ARIA grid with one tab stop. Stays smooth at 100,000 rows. RequestTable and the SQL console's results are presets of it.",
+      "description": "A virtualized table of rows on UI SDK's virtualizer, grid focus and resize: typed columns (fixed or flexible widths, a header and a cell, as TanStack's ColumnDef, a sort value), sort, column resize, single selection or none, density, a size class of its own (bindSizeClass) that hides columns and stacks the rows when it is narrow, a toolbar, a footer, a loading state and an EmptyState, and an optional current time for rows on a timeline. An APG grid with one tab stop and cell focus (or row focus). Stays smooth at 100,000 rows. RequestTable and the SQL console's results are presets of it.",
       "dependencies": [
         "@ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1",
         "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1",
@@ -4216,6 +4105,7 @@
         "https://blamy.github.io/ui/r/icon.json",
         "https://blamy.github.io/ui/r/log-list-model.json",
         "https://blamy.github.io/ui/r/primitives.json",
+        "https://blamy.github.io/ui/r/skeleton.json",
         "https://blamy.github.io/ui/r/utils.json"
       ],
       "files": [
@@ -4302,14 +4192,14 @@
         "page": "date-picker",
         "exports": [
           "DatePicker",
-          "DatePickerField",
+          "DatePickerInputGroup",
           "DatePickerInput",
           "DatePickerTrigger",
           "DatePickerClear",
           "DatePickerHint",
           "DatePickerPreset",
           "DatePickerContent",
-          "datePickerFieldVariants",
+          "datePickerInputGroupVariants",
           "createDatePickerController"
         ]
       }
@@ -4360,6 +4250,7 @@
         "https://blamy.github.io/ui/r/icon.json",
         "https://blamy.github.io/ui/r/primitives.json",
         "https://blamy.github.io/ui/r/surface.json",
+        "https://blamy.github.io/ui/r/surface-flow.json",
         "https://blamy.github.io/ui/r/swap.json",
         "https://blamy.github.io/ui/r/theme.json",
         "https://blamy.github.io/ui/r/utils.json"
@@ -4386,8 +4277,6 @@
           "DialogClose",
           "DialogBack",
           "DialogView",
-          "SurfaceFlow",
-          "SurfaceFlowTitle",
           "dialogVariants",
           "createDialogController",
           "AlertDialog",
@@ -4506,7 +4395,7 @@
       "name": "empty-state",
       "type": "registry:ui",
       "title": "EmptyState",
-      "description": "What a list, table, tree, popup, pane or page shows when it has nothing: an optional icon, a title, a description and an action, in three sizes. The default of every emptyState prop in the kit.",
+      "description": "What a list, table, tree, popup, pane or page shows when it has nothing: an optional icon, a title, a description and an action, in three sizes, AA on every surface. renderEmptyState(value, defaults) is how every emptyState prop in the kit is read (a string is the title, null nothing), as a polite status.",
       "dependencies": [
         "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1",
         "class-variance-authority@^0.7.1"
@@ -4526,7 +4415,8 @@
         "page": "empty-state",
         "exports": [
           "EmptyState",
-          "emptyStateVariants"
+          "emptyStateVariants",
+          "renderEmptyState"
         ]
       }
     },
@@ -4649,13 +4539,13 @@
       "title": "FileUpload",
       "description": "Pick, drop or paste files on UI SDK's FileInput: a styled dropzone and Browse trigger, a file list with previews, progress, retry and remove (one Tab stop, Delete removes), rejected files listed with their reasons, folder drops, and a concurrency-limited upload queue with an XHR adapter that reports real progress. Put the dropzone in a Field for its invalid state and error.",
       "dependencies": [
-        "@ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1",
         "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1",
         "class-variance-authority@^0.7.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
         "https://blamy.github.io/ui/r/button.json",
+        "https://blamy.github.io/ui/r/file-size.json",
         "https://blamy.github.io/ui/r/icon.json",
         "https://blamy.github.io/ui/r/progress.json",
         "https://blamy.github.io/ui/r/use-file-upload.json",
@@ -4720,6 +4610,7 @@
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
         "https://blamy.github.io/ui/r/button.json",
+        "https://blamy.github.io/ui/r/change-details.json",
         "https://blamy.github.io/ui/r/filter.json",
         "https://blamy.github.io/ui/r/filter-model.json",
         "https://blamy.github.io/ui/r/filter-query.json",
@@ -4733,7 +4624,13 @@
           "type": "registry:ui",
           "target": "components/ui/filter-input.tsx"
         }
-      ]
+      ],
+      "meta": {
+        "page": "filter",
+        "exports": [
+          "FilterInput"
+        ]
+      }
     },
     {
       "name": "filter-model",
@@ -4788,6 +4685,7 @@
         "https://blamy.github.io/ui/r/checkbox.json",
         "https://blamy.github.io/ui/r/controllable-state.json",
         "https://blamy.github.io/ui/r/dropdown-menu.json",
+        "https://blamy.github.io/ui/r/empty-state.json",
         "https://blamy.github.io/ui/r/filter-model.json",
         "https://blamy.github.io/ui/r/icon.json",
         "https://blamy.github.io/ui/r/input.json",
@@ -4841,6 +4739,7 @@
         "https://blamy.github.io/ui/r/primitives.json",
         "https://blamy.github.io/ui/r/scroll-edge.json",
         "https://blamy.github.io/ui/r/sheet.json",
+        "https://blamy.github.io/ui/r/surface.json",
         "https://blamy.github.io/ui/r/theme.json",
         "https://blamy.github.io/ui/r/utils.json"
       ],
@@ -4856,7 +4755,7 @@
         "exports": [
           "FloatingSheet",
           "FloatingSheetBody",
-          "FloatingSheetFoot",
+          "FloatingSheetFooter",
           "FloatingSheetFab",
           "useFloatingSheet",
           "floatingSheetVariants",
@@ -4869,7 +4768,7 @@
       "name": "font-picker",
       "type": "registry:ui",
       "title": "FontPicker",
-      "description": "Google Fonts families picked the way a design tool picks them: a searchable, category-filtered list of the most popular families (the kit's CommandMenu, virtualized), each drawn in its own face (only its name's glyphs are fetched, only while on screen), that previews the highlighted family on your text. FontPicker holds one family (a root, its trigger and its popup), FontStackPicker a font stack as chips you reorder by their handle (drag, or Space and the arrows) or remove, FontList is the list alone; useGoogleFont and fontStack load and set a family without a picker.",
+      "description": "Google Fonts families picked the way a design tool picks them: a searchable, category-filtered list of the most popular families (the kit's CommandMenu, virtualized), each drawn in its own face (only its name's glyphs are fetched, only while on screen), that previews the highlighted family on your text. FontPicker holds one family (a root, its trigger and its popup), FontStackPicker a font stack (a root, its field of chips and its popup) as chips you reorder by their handle (drag, or Space and the arrows) or remove, FontList is the list alone; useGoogleFont and fontStack load and set a family without a picker.",
       "dependencies": [
         "@ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1",
         "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1",
@@ -4905,8 +4804,10 @@
           "FontPickerTrigger",
           "FontPickerContent",
           "FontStackPicker",
+          "FontStackPickerInputGroup",
+          "FontStackPickerContent",
           "FontList",
-          "fontStackPickerVariants"
+          "fontStackPickerInputGroupVariants"
         ]
       }
     },
@@ -5113,7 +5014,8 @@
           "Input",
           "inputVariants",
           "fieldSurfaceVariants",
-          "createInputController"
+          "createInputController",
+          "fieldFocusRing"
         ]
       }
     },
@@ -5148,7 +5050,7 @@
       "name": "kept-children",
       "type": "registry:lib",
       "title": "useKeptChildren",
-      "description": "Keeps the last children of a closing panel mounted while it animates out, so a drawer or pushed page never empties before it leaves.",
+      "description": "Children that survive a change of presentation: rendered once through a portal into a detached element that the current home docks, so a draft, the caret, scroll and a streaming reply stay mounted while a region moves between a column, a drawer, a pushed page or a floating sheet. The kit's one way to keep children mounted (AdaptivePane, Sidebar, ArtifactChatContainer).",
       "dependencies": [],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json"
@@ -5243,6 +5145,7 @@
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/empty-state.json",
         "https://blamy.github.io/ui/r/option-row.json",
         "https://blamy.github.io/ui/r/utils.json"
       ],
@@ -5317,7 +5220,7 @@
         "page": "log-list",
         "exports": [
           "LogList",
-          "LogRowContent",
+          "LogListRowContent",
           "logListVariants",
           "createLogListController"
         ]
@@ -5327,7 +5230,7 @@
       "name": "markdown-editor",
       "type": "registry:ui",
       "title": "MarkdownEditor",
-      "description": "A themed WYSIWYG Markdown editor over docstream-editor: slash menu, Markdown paste, inline or chip images, toolbar.",
+      "description": "A themed WYSIWYG Markdown editor over docstream-editor: slash menu, Markdown paste, inline or chip images, and the built-in formatting toolbar or one of your own (a Toolbar of MarkdownEditorToolbarButtons).",
       "dependencies": [
         "@brett_lamy/docstream@2.0.0",
         "@brett_lamy/docstream-editor@2.0.0",
@@ -5339,6 +5242,7 @@
         "https://blamy.github.io/ui/r/bl-ui.json",
         "https://blamy.github.io/ui/r/change-details.json",
         "https://blamy.github.io/ui/r/input.json",
+        "https://blamy.github.io/ui/r/toolbar.json",
         "https://blamy.github.io/ui/r/utils.json"
       ],
       "files": [
@@ -5352,6 +5256,7 @@
         "page": "markdown-editor",
         "exports": [
           "MarkdownEditor",
+          "MarkdownEditorToolbarButton",
           "markdownEditorVariants",
           "looksLikeMarkdown",
           "insertMarkdown"
@@ -5378,7 +5283,7 @@
         }
       ],
       "meta": {
-        "page": "docstream",
+        "page": "markdown-view",
         "exports": [
           "MarkdownView"
         ]
@@ -5725,10 +5630,12 @@
         "https://blamy.github.io/ui/r/bl-ui.json",
         "https://blamy.github.io/ui/r/button.json",
         "https://blamy.github.io/ui/r/container.json",
+        "https://blamy.github.io/ui/r/empty-state.json",
         "https://blamy.github.io/ui/r/icon.json",
         "https://blamy.github.io/ui/r/open-code-browser.json",
         "https://blamy.github.io/ui/r/open-code-host.json",
         "https://blamy.github.io/ui/r/open-code-preview.json",
+        "https://blamy.github.io/ui/r/primitives.json",
         "https://blamy.github.io/ui/r/theme.json",
         "https://blamy.github.io/ui/r/toggle.json",
         "https://blamy.github.io/ui/r/utils.json"
@@ -5804,7 +5711,7 @@
           "useEncryptedState",
           "vaultErrorMessage",
           "VaultEnrollDialog",
-          "RecoveryKey",
+          "VaultRecoveryKey",
           "VaultGate",
           "VaultUnlock",
           "VaultSetup",
@@ -5817,7 +5724,7 @@
       "name": "pencilkit",
       "type": "registry:ui",
       "title": "PencilKit",
-      "description": "Pressure-aware freehand drawing (perfect-freehand): PencilCanvas on its own or as a Canvas's drawing layer, the PencilKit tool palette (tools, inks, widths, undo/redo) on the kit Toolbar, snapshot undo history, and the image annotator.",
+      "description": "Pressure-aware freehand drawing (perfect-freehand): PencilCanvas on its own or as a Canvas's drawing layer, the PencilKit tool palette (tools, inks, widths, undo/redo) on the kit Toolbar that folds to fit a phone, snapshot undo history, and the ImageAnnotator lightbox that marks up an image and saves it flattened.",
       "dependencies": [
         "@ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1",
         "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1",
@@ -5831,6 +5738,8 @@
         "https://blamy.github.io/ui/r/hover-card.json",
         "https://blamy.github.io/ui/r/icon.json",
         "https://blamy.github.io/ui/r/motion.json",
+        "https://blamy.github.io/ui/r/popover.json",
+        "https://blamy.github.io/ui/r/separator.json",
         "https://blamy.github.io/ui/r/theme.json",
         "https://blamy.github.io/ui/r/toggle.json",
         "https://blamy.github.io/ui/r/toolbar.json",
@@ -6070,7 +5979,7 @@
           "CountdownRing",
           "useCountdown",
           "progressRingVariants",
-          "countdownRingLabelVariants"
+          "countdownRingValueVariants"
         ]
       }
     },
@@ -6221,8 +6130,7 @@
       "meta": {
         "page": "replay-preview",
         "exports": [
-          "ReplayPreview",
-          "formatReplayTime"
+          "ReplayPreview"
         ]
       }
     },
@@ -6231,12 +6139,11 @@
       "type": "registry:lib",
       "title": "RequestTable logic",
       "description": "RequestTable's logic as plain functions: names, sizes, status text, tones, each built-in column's sort value and the time range rows cover.",
-      "dependencies": [
-        "@ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1"
-      ],
+      "dependencies": [],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
         "https://blamy.github.io/ui/r/data-table-model.json",
+        "https://blamy.github.io/ui/r/file-size.json",
         "https://blamy.github.io/ui/r/log-list-model.json",
         "https://blamy.github.io/ui/r/sql-format.json"
       ],
@@ -6252,7 +6159,7 @@
       "name": "request-table",
       "type": "registry:ui",
       "title": "RequestTable",
-      "description": "A network pane, as a preset of DataTable: the request columns (name, method, status, type, size, time), a waterfall on a shared time range, a playhead line that moves without re-rendering a row, links to the other end of a call, and two-line rows with a small waterfall when the table is narrow. Sorting, resizing, selection, the keyboard and virtual rows are DataTable's. Stays smooth at 10,000 rows.",
+      "description": "A network pane, as a preset of DataTable: the request columns (name, method, status, type, size, time), a waterfall on a shared time range, a current-time line that moves without re-rendering a row, links to the other end of a call, and two-line rows with a small waterfall when the table is narrow. Sorting, resizing, selection, the keyboard and virtual rows are DataTable's. Stays smooth at 10,000 rows.",
       "dependencies": [
         "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1"
       ],
@@ -6260,7 +6167,6 @@
         "https://blamy.github.io/ui/r/bl-ui.json",
         "https://blamy.github.io/ui/r/data-table.json",
         "https://blamy.github.io/ui/r/data-table-model.json",
-        "https://blamy.github.io/ui/r/empty-state.json",
         "https://blamy.github.io/ui/r/icon.json",
         "https://blamy.github.io/ui/r/request-table-model.json",
         "https://blamy.github.io/ui/r/sql-format.json",
@@ -6277,7 +6183,7 @@
         "page": "request-table",
         "exports": [
           "RequestTable",
-          "RequestLink",
+          "RequestTableLink",
           "REQUEST_COLUMNS"
         ]
       }
@@ -6330,6 +6236,7 @@
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
         "https://blamy.github.io/ui/r/icon.json",
+        "https://blamy.github.io/ui/r/input.json",
         "https://blamy.github.io/ui/r/primitives.json",
         "https://blamy.github.io/ui/r/search-input-primitive.json",
         "https://blamy.github.io/ui/r/utils.json"
@@ -6462,6 +6369,7 @@
       "title": "Sheet",
       "description": "A modal panel pinned to an edge, on UI SDK's Drawer: the iOS card sheet with a grabber at the bottom, side panels on the left and right, or a drop-down from the top; it follows a drag, rests on snap points and springs away, and a short sheet springs to its content (SheetView), through the views of a flow. `contained` keeps it inside its parent box, and the panel variant is the edge drawer of a sidebar or menu.",
       "dependencies": [
+        "@ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1",
         "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1",
         "class-variance-authority@^0.7.1"
       ],
@@ -6471,6 +6379,7 @@
         "https://blamy.github.io/ui/r/icon.json",
         "https://blamy.github.io/ui/r/motion.json",
         "https://blamy.github.io/ui/r/surface.json",
+        "https://blamy.github.io/ui/r/surface-flow.json",
         "https://blamy.github.io/ui/r/theme.json",
         "https://blamy.github.io/ui/r/utils.json"
       ],
@@ -6495,6 +6404,7 @@
           "SheetBody",
           "SheetFooter",
           "SheetClose",
+          "SheetBack",
           "SheetView",
           "sheetVariants",
           "sheetGrabberVariants",
@@ -6540,7 +6450,7 @@
           "SidebarHeader",
           "SidebarContent",
           "SidebarFooter",
-          "SidebarWorkspace",
+          "SidebarAccount",
           "SidebarSearch",
           "SidebarSection",
           "SidebarItem",
@@ -6559,6 +6469,7 @@
       "title": "Skeleton",
       "description": "Loading placeholders with a soft left-to-right sweep instead of a pulse: text lines, circles, rects and rounded blocks, and a SkeletonText paragraph with a shorter last line.",
       "dependencies": [
+        "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1",
         "class-variance-authority@^0.7.1"
       ],
       "registryDependencies": [
@@ -6585,7 +6496,7 @@
       "name": "slider",
       "type": "registry:ui",
       "title": "Slider",
-      "description": "UI SDK Slider with the iOS look: a 4px track, tint fill and 26px thumb, one or two thumbs, plus on-dark and on-light variants, a small scrubber size and --bl-slider-* color variables.",
+      "description": "UI SDK Slider with the iOS look: a 4px track, tint fill and 26px thumb, one or two thumbs, horizontal or vertical, plus a translucent overlay look for media controls that follows the color scheme (or a fixed appearance), a small scrubber size and --bl-slider-* color variables.",
       "dependencies": [
         "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1",
         "class-variance-authority@^0.7.1"
@@ -6594,6 +6505,7 @@
         "https://blamy.github.io/ui/r/bl-ui.json",
         "https://blamy.github.io/ui/r/label.json",
         "https://blamy.github.io/ui/r/row-label.json",
+        "https://blamy.github.io/ui/r/theme.json",
         "https://blamy.github.io/ui/r/utils.json"
       ],
       "files": [
@@ -6662,6 +6574,7 @@
         "https://blamy.github.io/ui/r/primitives.json",
         "https://blamy.github.io/ui/r/split-view-primitive.json",
         "https://blamy.github.io/ui/r/stack-parent.json",
+        "https://blamy.github.io/ui/r/tabs.json",
         "https://blamy.github.io/ui/r/utils.json"
       ],
       "files": [
@@ -6680,7 +6593,7 @@
           "SplitViewDetail",
           "SplitViewHeader",
           "SplitViewContent",
-          "SplitViewToggle",
+          "SplitViewSidebarTrigger",
           "SplitViewItem",
           "SplitViewSection",
           "useSplitView",
@@ -6754,7 +6667,7 @@
       "name": "sql-console",
       "type": "registry:ui",
       "title": "SqlConsole",
-      "description": "A SQL workbench for a PGlite database, made of parts: a header with the versions and a Database menu (SQL / data-directory export and import), a sidebar with the schema (a Tree over schemaTreeItems) and the history, the console's SqlEditor (a highlighted textarea on UI SDK's Textarea: ⌘/Ctrl+Enter runs, ↑/↓ history, an error squiggle, a footer part) and a DataTable per statement with typed headers, type-aware cells and CSV / JSON copy, or the error with its line, caret, SQLSTATE and hint.",
+      "description": "A SQL workbench for a PGlite database, made of parts: a header with the versions and a Database menu (SQL / data-directory export and import), a sidebar with the schema (a Tree over schemaTreeItems) and the history, the SqlConsoleEditor (a highlighted textarea on UI SDK's Textarea: ⌘/Ctrl+Enter runs, ↑/↓ history, an error squiggle and invalid state, a footer part; also usable on its own) and a DataTable per statement with typed headers, type-aware cells, labelled stacked rows and CSV / JSON copy, or the error with its line, caret, SQLSTATE and hint. Its text is controlled or uncontrolled (value / defaultValue / onValueChange).",
       "dependencies": [
         "@ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1",
         "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1"
@@ -6764,10 +6677,12 @@
         "https://blamy.github.io/ui/r/badge.json",
         "https://blamy.github.io/ui/r/button.json",
         "https://blamy.github.io/ui/r/container.json",
+        "https://blamy.github.io/ui/r/controllable-state.json",
         "https://blamy.github.io/ui/r/data-table.json",
         "https://blamy.github.io/ui/r/data-table-model.json",
         "https://blamy.github.io/ui/r/dropdown-menu.json",
         "https://blamy.github.io/ui/r/empty-state.json",
+        "https://blamy.github.io/ui/r/file-size.json",
         "https://blamy.github.io/ui/r/icon.json",
         "https://blamy.github.io/ui/r/kbd.json",
         "https://blamy.github.io/ui/r/pglite.json",
@@ -6786,11 +6701,6 @@
           "path": "packages/ui/src/components/sql-console.tsx",
           "type": "registry:ui",
           "target": "components/ui/sql-console.tsx"
-        },
-        {
-          "path": "packages/ui/src/components/sql-editor.tsx",
-          "type": "registry:ui",
-          "target": "components/ui/sql-editor.tsx"
         }
       ],
       "meta": {
@@ -6801,10 +6711,9 @@
           "SqlConsoleDatabaseMenu",
           "SqlConsoleSidebar",
           "SqlConsoleEditor",
+          "SqlConsoleEditorFooter",
+          "SqlConsoleEditorRun",
           "SqlConsoleResults",
-          "SqlEditor",
-          "SqlEditorFooter",
-          "SqlEditorRun",
           "useSqlHistory"
         ]
       }
@@ -6954,6 +6863,7 @@
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/container.json",
         "https://blamy.github.io/ui/r/icon.json",
         "https://blamy.github.io/ui/r/primitives.json",
         "https://blamy.github.io/ui/r/segmented.json",
@@ -7022,7 +6932,7 @@
       "name": "tailscale-controls",
       "type": "registry:ui",
       "title": "Tailscale controls",
-      "description": "The Tailscale connection as controls, over useTailscale: a \"Sign in with Tailscale\" button that follows the connection (sign in, signing in and cancel, connected and sign out, error and retry), a status badge (inline, stacked or a pill) with the tailnet, the error and the sign-in link when a popup is blocked, and the parts of a connection panel: TailscaleSummary (tailnet and this device) and TailscaleExitNodes, a listbox of exit nodes like macOS's Wi-Fi menu.",
+      "description": "The Tailscale connection as controls, over useTailscale: a \"Sign in with Tailscale\" button that follows the connection (sign in, signing in and cancel, connected and sign out, error and retry), a status badge (inline, stacked or a pill) with the tailnet, the error and the sign-in link when a popup is blocked, and the parts of a connection panel: TailscaleSummary (tailnet and this device) and TailscaleExitNodes, a listbox of exit nodes like macOS's Wi-Fi menu, with an EmptyState when the tailnet offers none.",
       "dependencies": [
         "@ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1",
         "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1",
@@ -7032,8 +6942,10 @@
         "https://blamy.github.io/ui/r/bl-ui.json",
         "https://blamy.github.io/ui/r/badge.json",
         "https://blamy.github.io/ui/r/button.json",
+        "https://blamy.github.io/ui/r/empty-state.json",
         "https://blamy.github.io/ui/r/icon.json",
         "https://blamy.github.io/ui/r/listbox.json",
+        "https://blamy.github.io/ui/r/primitives.json",
         "https://blamy.github.io/ui/r/spinner.json",
         "https://blamy.github.io/ui/r/tailscale.json",
         "https://blamy.github.io/ui/r/utils.json"
@@ -7046,7 +6958,7 @@
         }
       ],
       "meta": {
-        "page": "tailscale-login",
+        "page": "tailscale",
         "exports": [
           "TailscaleLoginButton",
           "TailscaleStatusBadge",
@@ -7288,6 +7200,7 @@
           "useThemeScope",
           "useScopeAppearance",
           "readThemeVars",
+          "tintForeground",
           "useLayerHost"
         ]
       }
@@ -7304,7 +7217,9 @@
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/button.json",
         "https://blamy.github.io/ui/r/icon.json",
+        "https://blamy.github.io/ui/r/primitives.json",
         "https://blamy.github.io/ui/r/spinner.json",
         "https://blamy.github.io/ui/r/surface.json",
         "https://blamy.github.io/ui/r/text-morph.json",
@@ -7344,7 +7259,7 @@
       "name": "toggle",
       "type": "registry:ui",
       "title": "Toggle",
-      "description": "UI SDK's Toggle, a button that stays pressed: tinted when on, in default, filled, outline and quiet (toolbar) variants with Button's sizes, with ToggleIcon and a controller; and ToggleGroup, toggles that share one value, single or multiple, one tab stop with arrow keys between them.",
+      "description": "UI SDK's Toggle, a button that stays pressed: tinted when on, in default, filled, outline and quiet (toolbar) variants with Button's sizes, with ToggleIcon and a controller; and ToggleGroup, toggles that share one value, single or multiple, one tab stop with arrow keys between them, as spaced toggles, a joined outline frame or Segmented's track (variant=\"segmented\"), in a row or a column.",
       "dependencies": [
         "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1",
         "class-variance-authority@^0.7.1"
@@ -7618,13 +7533,14 @@
       "name": "use-file-upload",
       "type": "registry:lib",
       "title": "useFileUpload",
-      "description": "The file-upload logic behind FileUpload: the fileUpload primitive (definePrimitive) with rows for UI SDK's FileInput (queued, uploading, done, failed, and rejected with the reason in words, duplicates included), a concurrency-limited upload queue with abort, retry and controlled mode, a controller and agent actions (remove, retry, clear, uploadAll), the useFileUpload hook, an XMLHttpRequest adapter that reports real progress, and helpers (describeRules, rejectionMessage; sizes through UI SDK's formatFileSize).",
+      "description": "The file-upload logic behind FileUpload: the fileUpload primitive (definePrimitive) with rows for UI SDK's FileInput (queued, uploading, done, failed, and rejected with the reason in words, duplicates included), a concurrency-limited upload queue with abort, retry and controlled mode, a controller and agent actions (remove, retry, clear, uploadAll), the useFileUpload hook, an XMLHttpRequest adapter that reports real progress, and helpers (describeRules, rejectionMessage; sizes through the kit's formatFileSize).",
       "dependencies": [
         "@ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1",
         "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1"
       ],
       "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json"
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/file-size.json"
       ],
       "files": [
         {
@@ -7676,7 +7592,7 @@
       "name": "utils",
       "type": "registry:lib",
       "title": "Utilities",
-      "description": "BL UI's class-name helpers: cn (clsx + tailwind-merge that knows the token utilities), the pressable and brandTile class fragments, and the FONT and BARH constants.",
+      "description": "BL UI's class-name helpers: cn (clsx + tailwind-merge that knows the token utilities) and cx (the same under a UI SDK part's className), the pressable and brandTile class fragments, and the FONT and BARH constants.",
       "dependencies": [
         "clsx@^2.1.1",
         "tailwind-merge@^3.6.0"
@@ -7696,6 +7612,7 @@
         "page": "utilities",
         "exports": [
           "cn",
+          "cx",
           "pressable",
           "brandTile",
           "FONT",
@@ -7894,7 +7811,9 @@
         "https://blamy.github.io/ui/r/input.json",
         "https://blamy.github.io/ui/r/label.json",
         "https://blamy.github.io/ui/r/passkey-vault.json",
+        "https://blamy.github.io/ui/r/primitives.json",
         "https://blamy.github.io/ui/r/spinner.json",
+        "https://blamy.github.io/ui/r/use-copy.json",
         "https://blamy.github.io/ui/r/utils.json"
       ],
       "files": [
@@ -8199,6 +8118,25 @@
           "path": "packages/ui/src/lib/edge-swipe.ts",
           "type": "registry:lib",
           "target": "lib/edge-swipe.ts"
+        }
+      ]
+    },
+    {
+      "name": "file-size",
+      "type": "registry:lib",
+      "title": "File Size",
+      "description": "File Size — part of BL UI's library (lib/file-size.ts).",
+      "dependencies": [
+        "@ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/file-size.ts",
+          "type": "registry:lib",
+          "target": "lib/file-size.ts"
         }
       ]
     },
@@ -8607,23 +8545,6 @@
           "path": "packages/ui/src/lib/option-search-primitive.ts",
           "type": "registry:lib",
           "target": "lib/option-search-primitive.ts"
-        }
-      ]
-    },
-    {
-      "name": "persistent-host",
-      "type": "registry:lib",
-      "title": "Persistent Host",
-      "description": "Persistent Host — part of BL UI's library (lib/persistent-host.tsx).",
-      "dependencies": [],
-      "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json"
-      ],
-      "files": [
-        {
-          "path": "packages/ui/src/lib/persistent-host.tsx",
-          "type": "registry:lib",
-          "target": "lib/persistent-host.tsx"
         }
       ]
     },
@@ -9040,6 +8961,24 @@
       ]
     },
     {
+      "name": "surface-flow",
+      "type": "registry:lib",
+      "title": "Surface Flow",
+      "description": "Surface Flow — part of BL UI's library (lib/surface-flow.tsx).",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/swap.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/surface-flow.tsx",
+          "type": "registry:lib",
+          "target": "lib/surface-flow.tsx"
+        }
+      ]
+    },
+    {
       "name": "syntax",
       "type": "registry:lib",
       "title": "Syntax",
@@ -9346,6 +9285,7 @@
         "https://blamy.github.io/ui/r/bl-ui.json",
         "https://blamy.github.io/ui/r/container.json",
         "https://blamy.github.io/ui/r/dialog.json",
+        "https://blamy.github.io/ui/r/empty-state.json",
         "https://blamy.github.io/ui/r/hover-card.json",
         "https://blamy.github.io/ui/r/icon.json",
         "https://blamy.github.io/ui/r/morph.json",
@@ -9356,7 +9296,6 @@
         "https://blamy.github.io/ui/r/slider.json",
         "https://blamy.github.io/ui/r/split-view.json",
         "https://blamy.github.io/ui/r/swap.json",
-        "https://blamy.github.io/ui/r/tabs.json",
         "https://blamy.github.io/ui/r/theme.json",
         "https://blamy.github.io/ui/r/utils.json"
       ],
@@ -10251,6 +10190,7 @@
         "https://blamy.github.io/ui/r/container.json",
         "https://blamy.github.io/ui/r/dialog.json",
         "https://blamy.github.io/ui/r/dropdown-menu.json",
+        "https://blamy.github.io/ui/r/empty-state.json",
         "https://blamy.github.io/ui/r/hover-card.json",
         "https://blamy.github.io/ui/r/icon.json",
         "https://blamy.github.io/ui/r/input.json",
@@ -10668,6 +10608,7 @@
         "https://blamy.github.io/ui/r/conversation.json",
         "https://blamy.github.io/ui/r/dialog.json",
         "https://blamy.github.io/ui/r/dropdown-menu.json",
+        "https://blamy.github.io/ui/r/empty-state.json",
         "https://blamy.github.io/ui/r/field.json",
         "https://blamy.github.io/ui/r/filter.json",
         "https://blamy.github.io/ui/r/filter-input.json",
@@ -11411,6 +11352,7 @@
         "https://blamy.github.io/ui/r/combobox.json",
         "https://blamy.github.io/ui/r/container.json",
         "https://blamy.github.io/ui/r/dialog.json",
+        "https://blamy.github.io/ui/r/file-size.json",
         "https://blamy.github.io/ui/r/hover-card.json",
         "https://blamy.github.io/ui/r/icon.json",
         "https://blamy.github.io/ui/r/popover.json",
@@ -11739,6 +11681,7 @@
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
         "https://blamy.github.io/ui/r/dialog.json",
+        "https://blamy.github.io/ui/r/empty-state.json",
         "https://blamy.github.io/ui/r/field.json",
         "https://blamy.github.io/ui/r/hover-card.json",
         "https://blamy.github.io/ui/r/icon.json",
@@ -11842,6 +11785,7 @@
         "https://blamy.github.io/ui/r/container.json",
         "https://blamy.github.io/ui/r/dialog.json",
         "https://blamy.github.io/ui/r/ffmpeg.json",
+        "https://blamy.github.io/ui/r/file-size.json",
         "https://blamy.github.io/ui/r/file-upload.json",
         "https://blamy.github.io/ui/r/filmstrip.json",
         "https://blamy.github.io/ui/r/hover-card.json",

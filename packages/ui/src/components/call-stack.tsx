@@ -79,7 +79,7 @@ function LocationPopover({ controller }: { controller: PopoverController<CallSta
   const full = location ? fullLocation(location) : '';
   return (
     <Popover controller={controller} onPayloadChange={(payload) => setLocation((payload as CallStackLocation | undefined) ?? null)}>
-      <PopoverContent variant="surface" side="bottom" align="end" className="flex max-h-[min(24rem,var(--available-height,24rem))] w-[min(26rem,var(--available-width,26rem))] overflow-auto min-w-0 items-start gap-2 p-3">
+      <PopoverContent variant="plain" side="bottom" align="end" className="flex max-h-[min(24rem,var(--available-height,24rem))] w-[min(26rem,var(--available-width,26rem))] overflow-auto min-w-0 items-start gap-2 p-3">
         <PopoverTitle className="sr-only">Location</PopoverTitle>
         <span className="min-w-0 flex-1 font-mono text-caption break-all text-foreground select-text">{full}</span>
         <Button size="sm" variant="ghost" className="-my-1 h-6 shrink-0 px-2 text-caption" onClick={() => void copy(full, full)}>

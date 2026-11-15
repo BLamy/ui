@@ -22,7 +22,7 @@ export default function Wrapping() {
         Wrap
       </label>
       <div className="h-56 overflow-hidden rounded-card border border-border">
-        <CodeEditor readOnly variant="ghost" lines={LINES} wrap={wrap} aria-label="titles.js" />
+        <CodeEditor readOnly variant="plain" lines={LINES} wrap={wrap} aria-label="titles.js" />
       </div>
     </div>
   )

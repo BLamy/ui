@@ -15,12 +15,12 @@ import { DateInput, TimeInput } from '@/components/ui/date-input'
 {% tab title="npm" %}
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 
-Import the stylesheet once at your app's entry, then the parts from the package root:
+Import the stylesheet once at your app's entry, then the parts from their module:
 
 ```tsx
 import '@brett_lamy/ui/styles.css'
 
-import { DateInput, TimeInput } from '@brett_lamy/ui'
+import { DateInput, TimeInput } from '@brett_lamy/ui/date-input'
 ```
 {% endtab %}
 {% endtabs %}
@@ -121,7 +121,7 @@ The roots are UI SDK's `DateInput` and `TimeInput`; every prop passes through, w
 | `required` / `disabled` / `readOnly` | `false` | State. |
 | `name` / `form` | — | Name of the hidden input (and the id of a form elsewhere on the page). |
 | `controller` | — | From `createDateInputController()` / `createTimeInputController()`. |
-| `variant` | `field` | `field` the kit's filled field · `bare` just the segments, for a field you draw yourself around them. |
+| `variant` | `default` | `default` the kit's filled field · `plain` just the segments, no chrome, for a field you draw yourself around them. |
 | `size` | `default` | `sm` 32px · `default` 44px · `lg` 50px. |
 | `aria-label` | — | The field's name when there is no `FieldLabel`. |
 | `children` | the segments | A function of the state, to render `state.segments` yourself. |
@@ -150,12 +150,12 @@ Defined in `@/components/ui/date-input`. Base classes:
 flex min-w-0 items-center text-foreground tabular-nums [font-family:inherit] whitespace-nowrap
 ```
 
-**`variant`** — default `field`
+**`variant`** — default `default`
 
 | Value | Adds |
 | --- | --- |
-| `field` (default) | `w-full` |
-| `bare` | `flex-1` |
+| `default` (default) | `w-full` |
+| `plain` | `flex-1` |
 
 **`size`** — default `default`
 

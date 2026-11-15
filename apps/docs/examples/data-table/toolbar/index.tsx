@@ -24,15 +24,15 @@ const money = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD
 
 // Columns are data: keep them out of the render (or in a useMemo), so the rows only render again when they change.
 const COLUMNS: DataTableColumn<Order>[] = [
-  { id: 'number', title: 'Order', width: 84, render: (o) => `#${o.number}`, sortValue: (o) => o.number, className: 'text-muted-foreground tabular-nums' },
-  { id: 'customer', title: 'Customer', flex: 2, minWidth: 140 },
-  { id: 'city', title: 'City', flex: 1, minWidth: 100, hideBelow: 'regular' },
-  { id: 'status', title: 'Status', width: 96, render: (o) => <Badge size="sm" variant={o.status === 'Paid' ? 'success' : o.status === 'Pending' ? 'warning' : 'secondary'}>{o.status}</Badge>, sortValue: (o) => o.status },
-  { id: 'items', title: 'Items', width: 64, align: 'end' },
-  { id: 'total', title: 'Total', width: 96, align: 'end', render: (o) => money.format(o.total), sortValue: (o) => o.total },
+  { id: 'number', header: 'Order', width: 84, cell: (o) => `#${o.number}`, sortValue: (o) => o.number, className: 'text-muted-foreground tabular-nums' },
+  { id: 'customer', header: 'Customer', flex: 2, minWidth: 140 },
+  { id: 'city', header: 'City', flex: 1, minWidth: 100, hideBelow: 'regular' },
+  { id: 'status', header: 'Status', width: 96, cell: (o) => <Badge size="sm" variant={o.status === 'Paid' ? 'success' : o.status === 'Pending' ? 'warning' : 'secondary'}>{o.status}</Badge>, sortValue: (o) => o.status },
+  { id: 'items', header: 'Items', width: 64, align: 'end' },
+  { id: 'total', header: 'Total', width: 96, align: 'end', cell: (o) => money.format(o.total), sortValue: (o) => o.total },
 ]
 
-// A filter in the `toolbar`, rows that press (`selectionMode="none"` + `onAction`), and the empty state a filter
+// A filter in the `toolbar`, rows that press (`mode="none"` + `onAction`), and the empty state a filter
 // with no matches gets.
 export default function Toolbar() {
   const [query, setQuery] = useState('')
@@ -44,7 +44,7 @@ export default function Toolbar() {
       rows={rows}
       columns={COLUMNS}
       density="compact"
-      selectionMode="none"
+      mode="none"
       onAction={(_id, { row }) => setOpened(`#${row.number}`)}
       className="h-[360px]"
       toolbar={(

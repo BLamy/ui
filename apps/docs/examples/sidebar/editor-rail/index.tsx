@@ -9,7 +9,7 @@ import {
   SidebarSearch,
   SidebarSection,
   SidebarTrigger,
-  SidebarWorkspace,
+  SidebarAccount,
 } from '@/components/ui/sidebar'
 import { ThemeScope } from '@/lib/theme'
 
@@ -32,7 +32,7 @@ export default function CollapsibleRail() {
         <SidebarProvider defaultOpen={false} breakpoint={420}>
           <Sidebar variant="rail" width={220} railWidth={52}>
             <SidebarHeader>
-              <SidebarWorkspace title="bl-ui" description="main · 3 changes" />
+              <SidebarAccount title="bl-ui" description="main · 3 changes" />
             </SidebarHeader>
             <SidebarContent aria-label="Editor">
               <SidebarSearch />

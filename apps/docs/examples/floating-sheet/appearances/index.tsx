@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button'
 import {
   FloatingSheet,
   FloatingSheetBody,
-  FloatingSheetFoot,
+  FloatingSheetFooter,
   type FloatingSheetCollapse,
   type FloatingSheetVariant,
 } from '@/components/ui/floating-sheet'
@@ -262,11 +262,11 @@ export default function Appearances({
           </div>
         </FloatingSheetBody>
         {p.foot ? (
-          <FloatingSheetFoot>
+          <FloatingSheetFooter>
             <div style={{ padding: '8px 16px 16px' }}>
               <Button size="pill">Continue</Button>
             </div>
-          </FloatingSheetFoot>
+          </FloatingSheetFooter>
         ) : null}
       </FloatingSheet>
     </Host>

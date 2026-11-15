@@ -4,8 +4,7 @@
   "description": "An rrweb session replay in a browser frame: a URL bar that follows the recording, play/pause, a scrubber with click, error, failed-request and navigation markers, speed, fullscreen, Console and Network buttons that open a DevTools panel cut at the playhead (requests, failures, errors), a drawn cursor with click ripples, and a skeleton poster while the player loads.",
   "page": "replay-preview",
   "exports": [
-    "ReplayPreview",
-    "formatReplayTime"
+    "ReplayPreview"
   ],
   "imports": [
     "ReplayPreview"

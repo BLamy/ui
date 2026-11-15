@@ -1,7 +1,10 @@
 // @vitest-environment happy-dom
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { FontList, FontPicker, FontPickerContent, FontPickerTrigger, FontStackPicker } from '@/components/ui/font-picker';
+import { Field, FieldDescription, FieldLabel } from '@/components/ui/field';
+import {
+  FontList, FontPicker, FontPickerContent, FontPickerTrigger, FontStackPicker, FontStackPickerContent, FontStackPickerInputGroup,
+} from '@/components/ui/font-picker';
 import { GOOGLE_FONTS } from '@/lib/google-fonts';
 
 (globalThis as { __UI_SDK_STRICT__?: boolean }).__UI_SDK_STRICT__ = true;
@@ -217,5 +220,51 @@ describe('FontPicker details', () => {
     fireEvent.keyDown(search, { key: 'ArrowDown' });
     fireEvent.keyDown(search, { key: 'Enter' });
     expect(onChange).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ reason: 'enter-key', event: expect.any(KeyboardEvent), cancel: expect.any(Function) }));
+  });
+});
+
+describe('FontPicker and FontStackPicker in a Field and a form', () => {
+  it('are named by the FieldLabel (the trigger with its family), described by the Field, and submit under its name', async () => {
+    const { container } = render(
+      <form>
+        <Field name="headline">
+          <FieldLabel>Headline font</FieldLabel>
+          <FontPicker defaultValue="Inter" fonts={fonts} />
+          <FieldDescription>For titles.</FieldDescription>
+        </Field>
+        <Field>
+          <FieldLabel>Text fonts</FieldLabel>
+          <FontStackPicker name="text" defaultValue={['Inter', 'Caveat']} fonts={fonts} />
+        </Field>
+      </form>,
+    );
+    await act(async () => { await new Promise((resolve) => setTimeout(resolve, 0)); });
+    const trigger = screen.getByRole('button', { name: 'Headline font Inter' });
+    expect(trigger.getAttribute('aria-describedby')).toBeTruthy();
+    expect(screen.getByRole('group', { name: 'Text fonts' })).toBeTruthy();
+    const data = new FormData(container.querySelector('form')!);
+    expect(data.get('headline')).toBe('Inter');
+    expect(data.get('text')).toBe('Inter, Caveat');
+  });
+
+  it('marks a required picker and fails the form while it is empty', () => {
+    const { container } = render(
+      <form>
+        <FontPicker aria-label="Headline font" required fonts={fonts} />
+      </form>,
+    );
+    expect(screen.getByRole('button').getAttribute('aria-required')).toBe('true');
+    expect(container.querySelector('form')!.checkValidity()).toBe(false);
+  });
+
+  it('composes the stack from its field and its popup, sized on the field', () => {
+    const { container } = render(
+      <FontStackPicker aria-label="Code fonts" defaultValue={['Fira Code']} fonts={fonts}>
+        <FontStackPickerInputGroup size="sm" />
+        <FontStackPickerContent side="start" />
+      </FontStackPicker>,
+    );
+    expect(container.querySelector('[data-slot=font-stack-picker]')!.className).toContain('min-h-8');
+    expect(screen.getByRole('group', { name: 'Code fonts' })).toBeTruthy();
   });
 });

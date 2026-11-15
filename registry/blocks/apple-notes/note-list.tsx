@@ -24,7 +24,7 @@ export function NoteList({ notes, items, onOpen }: { notes: NotesState; items: N
       </div>;
       // Drag a note onto another note to embed (link) it, or onto another location to move or copy it.
       return <div key={note.id} {...(note.file.standalone ? {} : fileDragProps(note.file.path))}><ItemMenu notes={notes} id={note.id} label={note.file.name}>
-        <ListRow divider={false} onClick={() => onOpen(note.id)} preview={<NotePreview notes={notes} note={note} />} trailingActions={note.file.standalone ? undefined : [{ label: 'Delete', destructive: true, onAction: () => notes.setDeleting(note.id) }]}
+        <ListRow divider={false} onClick={() => onOpen(note.id)} preview={<NotePreview notes={notes} note={note} />} endActions={note.file.standalone ? undefined : [{ label: 'Delete', destructive: true, onAction: () => notes.setDeleting(note.id) }]}
           className="[&>[data-slot=list-row-content]]:bg-transparent [&>[data-slot=list-row-content]]:px-5"
           title={<span className={cn('relative block rounded-lg px-2 py-2', selected && 'bg-primary text-primary-foreground')}>
             <span className="flex items-center gap-2 text-[15.5px] font-semibold"><span className="min-w-0 flex-1 truncate">{note.file.name}</span>{notes.files.unseen.has(note.id) ? <UnreadDot /> : null}</span>

@@ -68,7 +68,7 @@ describe('CodeEditor is agent-ready', () => {
   });
 
   it('a read-only editor offers its text but no edit', async () => {
-    await mount(<CodeEditor readOnly variant="ghost" lines={['one', 'two']} aria-label="Log" gutters={[{ id: 'bp', width: 16, render: () => null, onClick: () => {}, label: (n) => `bp ${n}` }]} />);
+    await mount(<CodeEditor readOnly variant="plain" lines={['one', 'two']} aria-label="Log" gutters={[{ id: 'bp', width: 16, render: () => null, onClick: () => {}, label: (n) => `bp ${n}` }]} />);
     const log = agent.snapshot().find((e) => !e.offPage && e.component === 'code-editor');
     expect(log).toBeTruthy();
     const read = await run(agent, [{ ref: log!.ref, action: 'getValue' }]);

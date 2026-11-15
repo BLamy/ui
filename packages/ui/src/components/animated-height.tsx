@@ -34,7 +34,7 @@ export function AnimatedHeight({ children, spring = 'tray', className, ...props 
     return () => ro.disconnect();
   }, []);
   return (
-    <motion.div {...props} data-slot="animated-height" className={cn('overflow-hidden', className)}
+    <motion.div {...props} data-slot="animated-height" className={cn('box-content overflow-hidden', className)}
       initial={false} animate={{ height: h }} transition={reduced ? { duration: 0 } : springs[spring]}>
       <div ref={inner} className="flow-root">{children}</div>
     </motion.div>

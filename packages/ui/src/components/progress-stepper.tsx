@@ -49,8 +49,11 @@ export interface ProgressStepperProps extends ComponentProps<'ol'> {
   variant?: Variant;
   /** Whether the current segment shimmers while it waits. */
   animated?: boolean;
-  /** Show the labels (and descriptions) under the icons; otherwise they are read by screen readers only. */
+  /** Show the labels (and descriptions) under the icons; otherwise they are read by screen readers only. A label
+   *  wraps to two lines before it is cut. */
   labels?: boolean;
+  /** What a complete step adds to its name for screen readers (", completed"), in your app's language. */
+  completedLabel?: string;
 }
 
 export const progressStepperVariants = cva(
@@ -58,13 +61,20 @@ export const progressStepperVariants = cva(
   { variants: { variant: { bars: 'gap-1.5', line: 'gap-0' } }, defaultVariants: { variant: 'bars' } },
 );
 
-const stepVariants = cva('group/step flex min-w-0 flex-1 items-center', {
-  variants: { variant: { bars: 'flex-col gap-2', line: 'flex-row gap-0' } },
+/* `bars`: icon, segment and label stacked and centred. `line`: two rows, the icon and the segment that joins it to
+   the next step on the first, the label and description under them, start-aligned, on the second. */
+const stepVariants = cva('group/step min-w-0 flex-1', {
+  variants: {
+    variant: {
+      bars: 'flex flex-col items-center gap-2',
+      line: 'grid grid-cols-[auto_minmax(0,1fr)] content-start items-center gap-y-1.5',
+    },
+  },
   defaultVariants: { variant: 'bars' },
 });
 
-interface StepperCtx { variant: Variant; animated: boolean; labels: boolean; current: number }
-const StepperContext = createContext<StepperCtx>({ variant: 'bars', animated: true, labels: false, current: 0 });
+interface StepperCtx { variant: Variant; animated: boolean; labels: boolean; current: number; completedLabel: string }
+const StepperContext = createContext<StepperCtx>({ variant: 'bars', animated: true, labels: false, current: 0, completedLabel: 'completed' });
 const StepContext = createContext<{ index: number; state: ProgressStepState }>({ index: 0, state: 'upcoming' });
 
 const stateOf = (index: number, current: number): ProgressStepState =>
@@ -76,6 +86,7 @@ export function ProgressStepper({
   variant = 'bars',
   animated = true,
   labels = false,
+  completedLabel = 'completed',
   className,
   children,
   'aria-label': ariaLabel,
@@ -93,7 +104,7 @@ export function ProgressStepper({
       {...rest}
       className={cn(progressStepperVariants({ variant }), className)}
     >
-      <StepperContext.Provider value={{ variant, animated, labels, current }}>
+      <StepperContext.Provider value={{ variant, animated, labels, current, completedLabel }}>
         {items.map((item, index) => (
           <StepContext.Provider key={item.key ?? index} value={{ index, state: stateOf(index, current) }}>
             {item}
@@ -115,7 +126,7 @@ export interface ProgressStepProps extends ComponentProps<'li'> {
 
 /** One milestone. With no children it renders its icon, segment, label and description from its props. */
 export function ProgressStep({ label, icon, description, className, children, ...props }: ProgressStepProps) {
-  const { variant } = useContext(StepperContext);
+  const { variant, completedLabel } = useContext(StepperContext);
   const { state } = useContext(StepContext);
   return (
     <li
@@ -130,14 +141,14 @@ export function ProgressStep({ label, icon, description, className, children, ..
           <ProgressStepIcon>{icon}</ProgressStepIcon>
           <ProgressStepTrack />
           {label != null || description != null ? (
-            <span className="flex min-w-0 max-w-full flex-col items-center">
+            <span className={cn('flex min-w-0 max-w-full flex-col', variant === 'line' ? 'col-span-2 items-start pe-2' : 'items-center')}>
               {label != null ? <ProgressStepLabel>{label}</ProgressStepLabel> : null}
               {description != null ? <ProgressStepDescription>{description}</ProgressStepDescription> : null}
             </span>
           ) : null}
         </>
       )}
-      {state === 'complete' ? <span className="sr-only">, completed</span> : null}
+      {state === 'complete' ? <span className="sr-only">, {completedLabel}</span> : null}
     </li>
   );
 }
@@ -187,7 +198,7 @@ export function ProgressStepTrack({ className, ...props }: ComponentProps<'span'
       data-slot="progress-step-track"
       aria-hidden="true"
       {...props}
-      className={cn(progressVariants({ size: 'sm' }), 'block bg-(--stepper-track)', variant === 'line' && 'group-last/step:hidden', className)}
+      className={cn(progressVariants({ size: 'sm' }), 'block bg-(--stepper-track)', variant === 'line' && 'mx-1.5 w-auto group-last/step:invisible', className)}
     >
       <span
         data-slot="progress-step-fill"
@@ -202,14 +213,16 @@ export function ProgressStepTrack({ className, ...props }: ComponentProps<'span'
 
 /** The step's name: visible under the icon when the stepper has `labels`, read by screen readers always. */
 export function ProgressStepLabel({ className, ...props }: ComponentProps<'span'>) {
-  const { labels } = useContext(StepperContext);
+  const { labels, variant } = useContext(StepperContext);
   const { state } = useContext(StepContext);
   return (
     <span
       data-slot="progress-step-label"
       {...props}
       className={cn(
-        labels ? 'max-w-full truncate text-caption2 font-semibold' : 'sr-only',
+        // Two lines before an ellipsis: "Order placed" and "Being prepared" keep their meaning on a phone.
+        labels ? 'line-clamp-2 max-w-full text-caption2 font-semibold break-words text-balance' : 'sr-only',
+        labels && (variant === 'line' ? 'col-span-2 text-start' : 'text-center'),
         labels && (state === 'upcoming' ? 'text-muted-foreground' : 'text-foreground'),
         className,
       )}
@@ -219,12 +232,12 @@ export function ProgressStepLabel({ className, ...props }: ComponentProps<'span'
 
 /** A second line under the label (a time, a place); shown with the labels. */
 export function ProgressStepDescription({ className, ...props }: ComponentProps<'span'>) {
-  const { labels } = useContext(StepperContext);
+  const { labels, variant } = useContext(StepperContext);
   return (
     <span
       data-slot="progress-step-description"
       {...props}
-      className={cn(labels ? 'max-w-full truncate text-caption2 text-muted-foreground tabular-nums' : 'sr-only', className)}
+      className={cn(labels ? 'max-w-full truncate text-caption2 text-muted-foreground tabular-nums' : 'sr-only', labels && variant === 'line' && 'col-span-2', className)}
     />
   );
 }

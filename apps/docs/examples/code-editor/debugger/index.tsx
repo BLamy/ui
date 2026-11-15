@@ -45,7 +45,7 @@ function HitCount({ line, hit, onGo }: { line: number; hit: number; onGo: (line:
       >
         <span className="ml-auto">{hits}</span>
       </PopoverTrigger>
-      <PopoverContent variant="surface" side="bottom" align="start" sideOffset={4} className="flex w-auto items-center gap-1 p-1.5 outline-none">
+      <PopoverContent variant="plain" side="bottom" align="start" sideOffset={4} className="flex w-auto items-center gap-1 p-1.5 outline-none">
         <PopoverTitle className="sr-only">{`Executions of line ${line}`}</PopoverTitle>
         <Button size="icon-sm" variant="quiet" aria-label="Previous execution" disabled={hit <= 1} onClick={() => onGo(line, hit - 1)}>
           <Icon name="chevron-left" size={14} />
@@ -164,7 +164,7 @@ export default function Debugger() {
         <div className="min-h-0 flex-1">
           <CodeEditor
             readOnly
-            variant="ghost"
+            variant="plain"
             lines={LINES}
             aria-label="store.js"
             gutters={gutters}

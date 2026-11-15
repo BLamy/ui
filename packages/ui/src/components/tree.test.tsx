@@ -24,7 +24,7 @@ afterEach(() => {
 const FILES: TreeNode[] = [
   { value: 'src', label: 'src', children: [
     { value: 'src/lib', label: 'lib', children: [{ value: 'src/lib/utils.ts', label: 'utils.ts' }] },
-    { value: 'src/app.tsx', label: 'app.tsx', detail: '2 KB', detailTitle: '2,048 bytes' },
+    { value: 'src/app.tsx', label: 'app.tsx', trailing: '2 KB', description: '2,048 bytes' },
     { value: 'src/Button.tsx', label: 'Button.tsx' },
   ] },
   { value: 'README.md', label: 'README.md' },
@@ -158,7 +158,7 @@ describe('Tree, drawn from its data', () => {
     expect(names()).toEqual(['src', 'README.md', 'docs']);
   });
 
-  it('sorts folders first, flattens single-folder chains, and shows a detail', () => {
+  it('sorts folders first, flattens single-folder chains, and shows a trailing note', () => {
     const nested: TreeNode[] = [
       { value: 'z.ts', label: 'z.ts' },
       { value: 'a', label: 'a', children: [{ value: 'a/b', label: 'b', children: [{ value: 'a/b/c.ts', label: 'c.ts' }, { value: 'a/b/B.ts', label: 'B.ts' }] }] },
@@ -176,7 +176,7 @@ describe('Tree, drawn from its data', () => {
   it('draws a file-type icon that stays out of a row\'s name and of typing', () => {
     render(<Tree aria-label="Files" items={FILES} defaultExpanded={['src']} />);
     expect(row('src/app.tsx').querySelector('[data-slot="file-type-icon"]')!.getAttribute('data-type')).toBe('typescript');
-    // The name is the label; the detail describes the row.
+    // The name is the label; the trailing note describes the row.
     expect(screen.getByRole('treeitem', { name: 'app.tsx' })).toBe(row('src/app.tsx'));
     expect(row('src/app.tsx').getAttribute('aria-description')).toBe('2,048 bytes');
     row('src').focus();

@@ -146,13 +146,21 @@ const write = (file, next) => {
 };
 
 write(join(PAGES, 'variants.md'), referencePage());
+// Items that share a page (avatar-group on avatar) write one section together, named after the page's own item.
+const byPage = new Map();
 for (const { item, recipes } of byItem.values()) {
   const page = item.manifest?.page;
   if (!page) continue;
+  const entry = byPage.get(page) ?? { name: item.name, recipes: [] };
+  if (item.name === page) entry.name = item.name;
+  entry.recipes.push(...recipes);
+  byPage.set(page, entry);
+}
+for (const [page, { name, recipes }] of byPage) {
   const file = join(PAGES, `${page}.md`);
   let md;
   try { md = readFileSync(file, 'utf8'); } catch { continue; }
-  write(file, withRecipes(md, recipes, item.name));
+  write(file, withRecipes(md, recipes, name));
 }
 
 if (check && stale.length) {

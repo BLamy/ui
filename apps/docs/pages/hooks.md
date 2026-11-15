@@ -7,7 +7,7 @@ Every hook BL UI defines, in one table, and where each is documented in detail. 
 BL UI ships two ways from the same files (see [How the registry works](https://blamy.github.io/ui/#/registry)), and the hooks follow:
 
 - **Public** hooks are re-exported from the package root: `import { useToast } from '@brett_lamy/ui'`. They are also in the registry, so a source copy gives you the same hook at an alias path (`@/components/ui/toast`, `@/lib/container`).
-- **Registry-only** hooks are not in the package root. Three are: `usePersistentHost`, `useAttachHost` and `useRowLabel`, plus the framework-free `createTitleFlight`. They are internals of components (`ArtifactChatContainer`, `ListRow`, `NavigationStack`) and are copied into your project, with the component that uses them, when you add that component. You can also add one on its own, for example `npx shadcn@latest add https://blamy.github.io/ui/r/persistent-host.json`.
+- **Registry-only** hooks are not in the package root. One is: `useRowLabel`, plus the framework-free `createTitleFlight`. They are internals of components (`ListRow`, `NavigationStack`) and are copied into your project, with the component that uses them, when you add that component. You can also add one on its own, for example `npx shadcn@latest add https://blamy.github.io/ui/r/row-label.json`.
 
 A "must be called under" entry below means the hook reads a React context that the named component provides. Components render their children where you put them, so the rule is about the **React tree**, not the DOM: a node rendered through a portal sees the context of the place the portal was created, not of the element it lands in.
 
@@ -72,8 +72,7 @@ Documented on [State hooks](https://blamy.github.io/ui/#/hooks-state).
 | --- | --- | --- | --- |
 | `usePersistentState` | `[value, setValue]` | nothing | public |
 | `useControllableChange` | `[value, set]` | nothing | public |
-| `usePersistentHost` | a detached `HTMLElement` | nothing; `null` on the server | registry-only |
-| `useAttachHost` | nothing | nothing | registry-only |
+| `useKeptChildren` | `{ dock, portal, inline }` | nothing | public |
 | `useRowLabel` | an `aria-labelledby` id or `undefined` | a `ListRow` with a title; `undefined` outside | registry-only |
 
 6.0 removed `useHotkey` (use UI SDK's `useShortcut`) and `useBackHistory` (use the kit's `bindBack` from `@/lib/back`); see [State and platform hooks](https://blamy.github.io/ui/#/hooks-state).
@@ -133,7 +132,7 @@ Each is documented on the page of the component or module it belongs to.
 | `usePGlite`, `useReadyDatabase`, `useDatabaseStatus` | the database, or its status | `PGliteProvider`; throws outside | public | [PGlite](https://blamy.github.io/ui/#/pglite) |
 | `useQuery`, `useLiveQuery`, `useExec`, `useTransaction` | rows and status; a function that runs SQL | `PGliteProvider` | public | [PGlite](https://blamy.github.io/ui/#/pglite) |
 | `useSchema`, `usePersistenceSupport`, `useTabLock` | the database's tables; where it can persist; a one-tab lock | `PGliteProvider` for `useSchema` | public | [PGlite](https://blamy.github.io/ui/#/pglite) |
-| `useTailscale`, `useTailscaleStatus`, `useTailscaleFetch` | the tailnet connection, its status, a `fetch` that routes through it | `TailscaleProvider`; throws outside | public | [Sign in with Tailscale](https://blamy.github.io/ui/#/tailscale-login) |
+| `useTailscale`, `useTailscaleStatus`, `useTailscaleFetch` | the tailnet connection, its status, a `fetch` that routes through it | `TailscaleProvider`; throws outside | public | [Sign in with Tailscale](https://blamy.github.io/ui/#/tailscale) |
 | `useTailscaleRouter` | the service-worker router's status | `TailscaleProvider` | public | [Tailscale request router](https://blamy.github.io/ui/#/tailscale-router) |
 
 BL UI is built on [UI SDK](https://blamy.github.io/ui/#/ui-sdk), and the behaviors it builds on (press, focus, shortcuts, clipboard, drag and drop, popups) are UI SDK's, not BL UI's own. You can use them beside the kit; they are covered in [Behaviors](https://blamy.github.io/ui/#/behaviors). Keyboard shortcuts in particular are UI SDK's `useShortcut` (`@ui-sdk/react/shortcuts`): 6.0 removed `useHotkey` and `matchesHotkey`.

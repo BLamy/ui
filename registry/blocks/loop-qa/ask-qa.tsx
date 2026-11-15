@@ -8,7 +8,7 @@
 import type { CSSProperties } from 'react';
 import { useArtifactChatContainer } from '@/components/ui/artifact-chat-container';
 import { Composer, ComposerCard, ComposerFooter, ComposerInput, ComposerSend, ComposerSpacer, ComposerText } from '@/components/ui/composer/composer';
-import { AssistantMessage, Conversation, ConversationEmpty, ConversationMessages, ConversationSuggestions, MessageMarkdown, Suggestion, ToolCall, UserMessage, WorkLog } from '@/components/ui/conversation';
+import { ConversationAssistantMessage, Conversation, ConversationEmpty, ConversationMessages, ConversationSuggestions, ConversationMarkdown, ConversationSuggestion, ConversationToolCall, ConversationUserMessage, ConversationWorkLog } from '@/components/ui/conversation';
 import { SUGGESTIONS } from './agent';
 import { PROJECTS } from './data';
 import { BarButton, LoopMark } from './parts';
@@ -52,21 +52,21 @@ export function AskQA() {
             description={`Ask about ${project.name}'s bugs, runs and replays — or have it start a run.`} />
         <ConversationMessages threadKey={project.id} streaming={!!qa.streaming}>
           {qa.messages.map((m) => m.role === 'user' ? (
-            <UserMessage key={m.id} className="px-3.5">{m.text}</UserMessage>
+            <ConversationUserMessage key={m.id} className="px-3.5">{m.text}</ConversationUserMessage>
           ) : (
-            <AssistantMessage key={m.id} className="px-3.5 text-[13.5px]">
+            <ConversationAssistantMessage key={m.id} className="px-3.5 text-[13.5px]">
               {m.tools?.length ? (
-                <WorkLog summary={m.worked ?? 'Worked'} className="mb-2">
-                  {m.tools.map((t) => <ToolCall key={t.title} icon={t.icon} title={t.title} description={t.detail} />)}
-                </WorkLog>
+                <ConversationWorkLog summary={m.worked ?? 'Worked'} className="mb-2">
+                  {m.tools.map((t) => <ConversationToolCall key={t.title} icon={t.icon} title={t.title} description={t.detail} />)}
+                </ConversationWorkLog>
               ) : null}
-              <MessageMarkdown markdown={m.text} streaming={qa.streaming === m.id} />
+              <ConversationMarkdown markdown={m.text} streaming={qa.streaming === m.id} />
               {m.runId && qa.streaming !== m.id ? <RunCard runId={m.runId} compact className="mt-3" /> : null}
-            </AssistantMessage>
+            </ConversationAssistantMessage>
           ))}
         </ConversationMessages>
         <ConversationSuggestions>
-          {SUGGESTIONS.map((s) => <Suggestion key={s} onClick={() => qa.send(s)}>{s}</Suggestion>)}
+          {SUGGESTIONS.map((s) => <ConversationSuggestion key={s} onClick={() => qa.send(s)}>{s}</ConversationSuggestion>)}
         </ConversationSuggestions>
       </Conversation>
     </div>

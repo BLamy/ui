@@ -2,11 +2,11 @@ import { useState } from 'react'
 import { ThemeScope, useThemeScope } from '@/lib/theme'
 import { Segmented, SegmentedItem } from '@/components/ui/segmented'
 import {
-  AssistantMessage,
-  MessageMarkdown,
-  ToolCall,
-  UserMessage,
-  WorkLog,
+  ConversationAssistantMessage,
+  ConversationMarkdown,
+  ConversationToolCall,
+  ConversationUserMessage,
+  ConversationWorkLog,
 } from '@/components/ui/conversation'
 
 // Any Workbench part reads its colors from the `workbench` scope. Reading the
@@ -23,14 +23,14 @@ function Appearance() {
 function Sample() {
   return (
     <div className="grid gap-1">
-      <UserMessage>Why is the build slow?</UserMessage>
-      <AssistantMessage>
-        <WorkLog summary="Worked for 12s" defaultOpen>
-          <ToolCall icon="doc-text" title="Read" description="vite.config.ts" />
-          <ToolCall status="running" title="Profiling" description="vite build" />
-        </WorkLog>
-        <MessageMarkdown markdown="The config pulls in `@babel/core` for every file. Drop it and the **cold build** halves." />
-      </AssistantMessage>
+      <ConversationUserMessage>Why is the build slow?</ConversationUserMessage>
+      <ConversationAssistantMessage>
+        <ConversationWorkLog summary="Worked for 12s" defaultOpen>
+          <ConversationToolCall icon="doc-text" title="Read" description="vite.config.ts" />
+          <ConversationToolCall status="running" title="Profiling" description="vite build" />
+        </ConversationWorkLog>
+        <ConversationMarkdown markdown="The config pulls in `@babel/core` for every file. Drop it and the **cold build** halves." />
+      </ConversationAssistantMessage>
       <div className="mt-1 flex items-center gap-2">
         <span className="rounded-full bg-primary px-3 py-1 text-caption font-semibold text-primary-foreground">Apply fix</span>
         <span className="rounded-lg bg-code px-2.5 py-1 font-mono text-caption text-code-foreground">pnpm nx build docs</span>

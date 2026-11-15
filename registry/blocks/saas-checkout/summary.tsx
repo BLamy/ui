@@ -40,7 +40,7 @@ export function OrderSummary() {
           <div className={cn('text-footnote', SOFT_INK)}>{seats} {seats === 1 ? 'seat' : 'seats'} · billed {yearly ? 'yearly' : 'monthly'}</div>
         </div>
         {c.step !== 'plan' ? (
-          <Button variant="link" size="sm" disabled={busy} onClick={() => c.goTo('plan')} className="h-auto px-0 text-link" aria-label="Change plan">Change</Button>
+          <Button variant="link" disabled={busy} onClick={() => c.goTo('plan')} className="text-footnote font-semibold" aria-label="Change plan">Change</Button>
         ) : null}
       </div>
 
@@ -53,7 +53,7 @@ export function OrderSummary() {
             Yearly billing saves you {money(q.annualSaving, true)} a year.
           </p>
         ) : (
-          <Button variant="link" size="sm" disabled={busy} onClick={() => c.setCycle('annual')} className="h-auto justify-start px-0 font-medium whitespace-normal text-link">
+          <Button variant="link" disabled={busy} onClick={() => c.setCycle('annual')} className="justify-start text-footnote font-medium">
             Switch to yearly and save {money(q.annualSaving, true)} a year
           </Button>
         )}
@@ -123,7 +123,7 @@ function PromoCode({ disabled }: { disabled: boolean }) {
     );
   } else if (!open) {
     body = (
-      <Button data-promo-focus="add" variant="link" size="sm" disabled={disabled} onClick={() => setOpen(true)} className="h-auto justify-start px-0 font-medium text-link">
+      <Button data-promo-focus="add" variant="link" disabled={disabled} onClick={() => setOpen(true)} className="justify-start text-footnote font-medium">
         <Icon name="tag" size={16} /> Add promotion code
       </Button>
     );

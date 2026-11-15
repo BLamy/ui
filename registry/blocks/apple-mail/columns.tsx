@@ -2,7 +2,7 @@
    width: on the phone SplitView stacks them, the headers trade their leading items for a back button, and the
    message's actions move to a bottom bar. */
 import { SearchInput } from '@/components/ui/search-input';
-import { SplitViewContent, SplitViewDetail, SplitViewHeader, SplitViewSupplementary, SplitViewToggle, useSplitView } from '@/components/ui/split-view';
+import { SplitViewContent, SplitViewDetail, SplitViewHeader, SplitViewSupplementary, SplitViewSidebarTrigger, useSplitView } from '@/components/ui/split-view';
 import { Icon } from '@/lib/icon';
 import { MessageList } from './message-list';
 import { MessageView, NoMessage } from './message-view';
@@ -15,7 +15,7 @@ export function ListColumn({ mail }: { mail: MailState }) {
   return (
     <SplitViewSupplementary aria-label={mail.box.title} width={380} minWidth={300}>
       <SplitViewHeader largeTitle title={mail.editing && mail.checked.size ? `${mail.checked.size} Selected` : mail.box.title}
-        leading={mail.editing ? <BarButton label={all ? 'Deselect All' : 'Select All'} onClick={mail.checkAll} /> : <SplitViewToggle />}
+        leading={mail.editing ? <BarButton label={all ? 'Deselect All' : 'Select All'} onClick={mail.checkAll} /> : <SplitViewSidebarTrigger />}
         trailing={<BarButton label={mail.editing ? 'Done' : 'Edit'} className={mail.editing ? 'font-semibold' : undefined}
           onClick={() => mail.setEditing(!mail.editing)} />} />
       <SplitViewContent>

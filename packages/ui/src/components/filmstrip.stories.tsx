@@ -65,5 +65,8 @@ export const Portrait: Story = { args: { frames: PORTRAIT, aspect: 9 / 16, heigh
     prefers reduced motion. */
 export const Loading: Story = { args: { frames: [] } };
 
+/** No frames and `loading={false}` (nothing decodable, or the extraction failed): a plain tint, no shimmer. */
+export const Empty: Story = { args: { frames: [], loading: false } };
+
 /** On a dark lane. */
 export const Dark: Story = { parameters: { dark: true } };

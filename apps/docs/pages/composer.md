@@ -20,7 +20,7 @@ import {
 {% tab title="npm" %}
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 
-Import the stylesheet once at your app's entry, then the parts from the package root:
+Import the stylesheet once at your app's entry, then the parts from their module:
 
 ```tsx
 import '@brett_lamy/ui/styles.css'
@@ -28,7 +28,7 @@ import '@brett_lamy/ui/styles.css'
 import {
   Composer, ComposerCard, ComposerInput, ComposerFooter,
   ComposerSend,
-} from '@brett_lamy/ui'
+} from '@brett_lamy/ui/composer/composer'
 ```
 {% endtab %}
 {% endtabs %}
@@ -54,7 +54,7 @@ import {
         <ComposerSelect aria-label="Access" icon="lock-rounded" items={access} />
       </ComposerOptions>
       <ComposerSpacer />
-      <ComposerAdd icon="paperclip-diagonal" label="Attach files" />
+      <ComposerAdd icon="paperclip-diagonal" aria-label="Attach files" />
       <ComposerSend />
     </ComposerFooter>
   </ComposerCard>
@@ -104,12 +104,12 @@ Addons and bumps order themselves (block-start → input → block-end, top bump
 | `onSubmit(markdown, attachments)` | — | The trimmed draft and its attachments, after the draft has emptied. |
 | `disabled` | `false` | Nothing can be typed, attached, chosen or sent; sets `data-disabled`. |
 | `annotator` | provider's, else `PencilKitAnnotator` | The [ImageAnnotator](https://blamy.github.io/ui/#/pencilkit) engine an image attachment opens; `null` opens a plain preview. |
-| `acceptedFileTypes` | any | MIME types, wildcards and extensions (`['image/*', '.md']`). |
-| `maxFileSize` / `maxFiles` | — | Larger files and files past the count are turned away. |
+| `accept` | any | MIME types, wildcards and extensions (`['image/*', '.md']`, or `'image/*,.md'`), as on [FileUpload](https://blamy.github.io/ui/#/file-upload). |
+| `maxSize` / `maxFiles` | — | Larger files (bytes) and files past the count are turned away. |
 | `onDropFiles(files, source)` | — | Sees each batch that passed: return `false` to take them yourself, or an array to attach those instead. |
-| `onFilesRejected(rejections)` | warning toast | Replaces the toast for files turned away (`reason`: `type`, `size`, `count`). |
+| `onReject(rejected)` | warning toast | Replaces the toast for files turned away: UI SDK's `FileRejection[]` (`{ file, reasons }`, reasons `file-type`, `file-too-large`, `too-many-files`), as FileUpload's `onReject` gets. |
 | `collapseOnScroll` | — | A scroller ref (the transcript): scrolling away from its anchor collapses the composer. |
-| `collapseTo` | `'compact'` | How far scrolling collapses it: `'compact'` or `'fab'`. |
+| `collapse` | `'compact'` | How far scrolling may collapse it, `'compact'` or `'fab'`: the policy, like FloatingSheet's `collapse`; `collapsed` is where it is now. |
 | `collapseAnchor` | `'bottom'` | Which end of the scroller is home (`'top'` for documents). |
 | `fabAlign` | `'end'` | Where the FAB sits along the inline axis: `'start' \| 'center' \| 'end'`. |
 | `fabIcon` | compose glyph | The FAB's icon. |
@@ -130,7 +130,7 @@ Every callback runs before the state moves, and `details.cancel()` keeps an unco
 
 | Prop | Default | Effect |
 | --- | --- | --- |
-| `placeholder` | "Ask anything — @ files, / commands, paste images" | |
+| `placeholder` | "Ask anything — @ files, / commands, paste images" | One line: a long one ends in an ellipsis on a narrow card. |
 | `aria-label` | "Message" | The editor's name (a contenteditable has none of its own). |
 | `autoFocus` | `false` | Focus the editor when it mounts. |
 | `imagePaste` | `'chip'` | Pasted images become attachment chips, or inline image blocks (`'inline'`). |
@@ -143,9 +143,9 @@ Enter sends from a plain paragraph (lists, quotes, tables and code keep their ow
 
 | Part | Props | Notes |
 | --- | --- | --- |
-| `ComposerSend` | `morph` (default `true`), `stopVariant` (`'ring' \| 'solid'`), Button props | The kit's `default` Button as a 30px circle. Disabled while there is nothing to send. While streaming it becomes the stop control (`morph={false}` keeps the arrow: pair it with `ComposerStop`). `data-state` is `send`, `queue` or `stop`. |
-| `ComposerStop` | `variant` (`'ring'` spinning ring, `'solid'` red circle), `forceMount`, Button props | Renders only while streaming, and pops in beside its neighbours. |
-| `ComposerAdd` | `icon` (default `plus`), `label` (default "Add files"), `acceptedFileTypes`, `multiple` (default `true`), `directory`, `capture` | UI SDK's `FileInputTrigger` in the kit's `quiet` `icon-sm` Button look. The paperclip is `<ComposerAdd icon="paperclip-diagonal" label="Attach files" />`. |
+| `ComposerSend` | `morph` (default `true`), `stopVariant` (`'ring' \| 'solid'`), Button props | The kit's `default` Button, round at the 28px `icon-sm` size of the row's other tools. Disabled while there is nothing to send. While streaming it becomes the stop control (`morph={false}` keeps the arrow: pair it with `ComposerStop`). `data-state` is `send`, `queue` or `stop`. |
+| `ComposerStop` | `variant` (`'ring'` spinning ring, `'solid'` red circle), `forceMount`, Button props | The same 28px circle. Renders only while streaming, and pops in beside its neighbours. |
+| `ComposerAdd` | `icon` (default `plus`), `aria-label` (default "Add files"; also its tooltip), `accept` (default: the Composer's), `multiple` (default `true`), `directory`, `capture` | UI SDK's `FileInputTrigger` in the kit's `quiet` `icon-sm` Button look. The paperclip is `<ComposerAdd icon="paperclip-diagonal" aria-label="Attach files" />`. |
 | `ComposerExpand` | Toggle props | UI SDK's `Toggle` (`aria-pressed`) in the card's top-right corner. |
 
 Any other button in a composer is the kit's [Button](https://blamy.github.io/ui/#/button): `<Button variant="quiet" size="icon-sm">` for a tool, the same metrics as `ComposerAdd`. On a touch screen every composer control answers presses 44px wide without changing its drawn size.
@@ -181,7 +181,7 @@ import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuGro
         …
 ```
 
-Color a pill with `className` (`className="text-primary"` for the accent). The t3-clone block's `ModelPicker` is a pill on a [Popover](https://blamy.github.io/ui/#/popover) (`<PopoverContent variant="surface" palette="trigger">`) holding a searchable command list.
+Color a pill with `className` (`className="text-primary"` for the accent). The t3-clone block's `ModelPicker` is a pill on a [Popover](https://blamy.github.io/ui/#/popover) (`<PopoverContent variant="plain" palette="trigger">`) holding a searchable command list.
 
 Wrap the pills in `ComposerOptions`: they stay on one line and scroll sideways when the footer is too narrow (no orphaned separator on a wrapped row), and while the composer is `compact` they move, as the same elements with their menus' state, into the `ComposerOptionsOutlet`, usually in the bottom bump.
 
@@ -190,25 +190,24 @@ Wrap the pills in `ComposerOptions`: they stay on one line and scroll sideways w
 | Prop | Default | Effect |
 | --- | --- | --- |
 | `side` | `'bottom'` | Which edge of the card it hangs off. |
-| `variant` | `'attached'` | `attached`: tucked behind the card, same border; `detached`: a separate strip; `flush`: no chrome. |
+| `variant` | `'attached'` | `attached`: tucked behind the card, same border; `detached`: a separate strip; `plain`: no chrome. |
 | `gutter` | `12` | How far an attached bump stands in from the card's edges (px); a draggable one widens to them as it opens. |
 | `draggable` | `false` | A top bump whose handle drags its `ComposerBumpContent` open, like a sheet. |
 | `open` / `defaultOpen` / `onOpenChange(open, details)` | `false` | A draggable bump's state (`press`, `drag`, `escape-key`, `imperative`). |
-| `peek` | `0` | Body height kept visible while closed. |
-| `maxReveal` / `bounds` / `boundsInset` | `320` | The open height, or grow to an element's top edge. |
+| `peek` | `0` | Body height kept visible while closed (px, at most three quarters of `maxReveal`). A transcript inside rests at its newest line while it peeks. |
+| `maxReveal` | `320` | The open height (px). |
 | `closeOnEscape` | `true` | Escape closes an open draggable bump (it is a layer, so a menu opened from it closes first). |
-| `minimizable`, `minimized`, `onMinimizedChange`, `onProgressChange` | | For a host that drives a floating surface from the bump (ArtifactChatContainer's floating layout). |
 
-`ComposerBumpHandle` is the bump's row (`grip`, default `true`, and `label` for the grip's name); in a draggable bump the whole row is the drag handle and a tap on it toggles. `ComposerBumpContent` (`label`, default "Details") is the revealed region. `ComposerText` (`icon`) is muted inline text for a bump or a footer hint; `ComposerSpacer` pushes what follows to the end; `ComposerSeparator` is a short vertical [Separator](https://blamy.github.io/ui/#/separator).
+`ComposerBumpHandle` is the bump's row (`grip`, default `true`, and `aria-label` for the grip's name, default "Expand" / "Collapse"); in a draggable bump the whole row is the drag handle and a tap on it toggles. `ComposerBumpContent` (`aria-label`, default "Details") is the revealed region. A draggable bump is a strip that belongs to the card (a monitor's output above the composer, say); a chat that floats over a page, peeks, grows and folds into a button is [ArtifactChatContainer](https://blamy.github.io/ui/#/artifact-chat-container) on a FloatingSheet. `ComposerText` (`icon`) is muted inline text for a bump or a footer hint; `ComposerSpacer` pushes what follows to the end; `ComposerSeparator` is a short vertical [Separator](https://blamy.github.io/ui/#/separator).
 
 {% demo src="composer/compositional-parts" %}
 
 ## Collapse: compact and FAB
 
-`collapsed` folds the same composition: the card is one element that springs between shapes, never a second copy. **Compact** is a single-row pill: the editor on the left, attach / stop / send on the right, and the `ComposerOptions` pills moved into the bottom bump. **FAB** folds everything into a round button: the card shrinks into the circle and grows back out of it; pressing it restores the composer and focuses the editor.
+`collapsed` folds the same composition: the card is one element that springs between shapes, never a second copy. **Compact** is a single-row pill: the editor on the left, attach / stop / send on the right, and the `ComposerOptions` pills moved into the bottom bump. **FAB** folds everything into a round button: the card shrinks into the circle and grows back out of it; pressing it restores the composer and focuses the editor. (`collapsed="fab"` is what a FloatingSheet calls `minimized`; `collapse`, on both, is how far it may go.)
 
 ```tsx
-<Composer collapseOnScroll={transcriptRef} collapseTo="fab" fabAlign="end">
+<Composer collapseOnScroll={transcriptRef} collapse="fab" fabAlign="end">
   <ComposerCard>…</ComposerCard>
   <ComposerBump side="bottom">
     <ComposerBumpHandle>
@@ -219,16 +218,16 @@ Wrap the pills in `ComposerOptions`: they stay on one line and scroll sideways w
 </Composer>
 ```
 
-`collapseOnScroll` ties it to the transcript. Chats rest at their newest message, so scrolling up collapses to `compact`; with `collapseTo="fab"` a flick or a long read back folds it into the FAB; scrolling back down, or pressing the FAB, restores it. `collapseAnchor="top"` flips this for documents. It never collapses while it has focus, an attachment or the annotator open, and a draft or a streaming reply never folds into the FAB.
+`collapseOnScroll` ties it to the transcript. Chats rest at their newest message, so scrolling up collapses to `compact`; with `collapse="fab"` a flick or a long read back folds it into the FAB; scrolling back down, or pressing the FAB, restores it. `collapseAnchor="top"` flips this for documents. It never collapses while it has focus, an attachment or the annotator open, and a draft or a streaming reply never folds into the FAB.
 
 ## Files and images
 
-Files come in three ways, all through one door (`attachFiles`): `ComposerAdd`, a **drop** on the card, or a **paste** anywhere in the card. Images chip into the draft where they land (at the drop point over the text, else at the caret) and appear in the strip; every other file becomes a tile: a video's first frame, code's first lines, or a glyph in the kind's color with its name, extension and size. Sizes read like the editor's chips ("84 KB", "1.3 MB").
+Files come in three ways, all through one door (`attachFiles`): `ComposerAdd`, a **drop** on the card, or a **paste** anywhere in the card. Images chip into the draft where they land (at the drop point over the text, else at the caret) and appear in the strip; every other file becomes a tile: a video's first frame, code's first lines, or a glyph in the kind's color with its name, extension and size. Sizes are written in decimal units in the reader's locale ("86 kB", "1.3 MB"), as in FileUpload and RequestTable.
 
 ```tsx
 <Composer
-  acceptedFileTypes={['image/*', 'video/*', 'application/pdf', '.md', '.ts', '.tsx']}
-  maxFileSize={10 * 1024 * 1024}
+  accept={['image/*', 'video/*', 'application/pdf', '.md', '.ts', '.tsx']}
+  maxSize={10 * 1024 * 1024}
   maxFiles={8}
   onSubmit={(markdown, attachments) => upload(attachments.map((a) => a.file))}
 >
@@ -244,7 +243,7 @@ Files come in three ways, all through one door (`attachFiles`): `ComposerAdd`, a
 </Composer>
 ```
 
-- Files outside `acceptedFileTypes`, over `maxFileSize` or past `maxFiles` are turned away with one grouped warning toast (mount a `ToastRegion`), or through `onFilesRejected`.
+- Files outside `accept`, over `maxSize` or past `maxFiles` are turned away with one grouped warning toast (mount a `ToastRegion`), or through `onReject`.
 - Each attachment is `{ id, name, size, type, kind, file, src, preview?, excerpt? }`; `kind` is `image | video | audio | pdf | text | archive | other` and `file` is the original `File`. Images keep a data URL; other files an object URL, revoked when the attachment leaves (files handed to `onSubmit` stay valid until the Composer unmounts).
 - ✕, or Backspace / Delete on a focused tile, removes one; focus moves to the next tile, else the editor. What was attached is announced.
 
@@ -389,6 +388,6 @@ relative box-border flex min-w-0 flex-col text-caption text-muted-foreground
 | --- | --- |
 | `attached` (default) | `border border-border bg-popover` |
 | `detached` | `rounded-lg bg-secondary` |
-| `flush` | — |
+| `plain` | — |
 
 6 compound variants — see the source.

@@ -1,6 +1,6 @@
 # TuiPreview
 
-`TuiPreview` runs one small terminal program from its source: an [OpenTUI](https://blamy.github.io/opentui/docs/getting-started/browser/) program rendered by OpenTUI's own WebAssembly renderer, in a sandboxed frame, started when the reader presses **Run**. Use it to show a TUI in documentation or in an AI reply. It lives in Docstream, so a `tui` code fence in a [MarkdownView](https://blamy.github.io/ui/#/docstream) and this component share one sandbox, input handling and lifecycle.
+`TuiPreview` runs one small terminal program from its source: an [OpenTUI](https://blamy.github.io/opentui/docs/getting-started/browser/) program rendered by OpenTUI's own WebAssembly renderer, in a sandboxed frame, started when the reader presses **Run**. Use it to show a TUI in documentation or in an AI reply. It lives in Docstream, so a `tui` code fence in a [MarkdownView](https://blamy.github.io/ui/#/markdown-view) and this component share one sandbox, input handling and lifecycle.
 
 {% hint style="info" %}
 **Which terminal?** [Terminal](https://blamy.github.io/ui/#/terminal) is an emulator for a process you run (a shell, a REPL, a log stream). [OpenCode](https://blamy.github.io/ui/#/open-code) is a whole coding agent with a workspace and app previews. `TuiPreview` runs one program from source, on demand.
@@ -21,12 +21,12 @@ import { TuiPreview } from '@/components/ui/tui-preview'
 {% tab title="npm" %}
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 
-Import the stylesheet once at your app's entry, then the parts from the package root:
+Import the stylesheet once at your app's entry, then the parts from their module:
 
 ```tsx
 import '@brett_lamy/ui/styles.css'
 
-import { TuiPreview } from '@brett_lamy/ui'
+import { TuiPreview } from '@brett_lamy/ui/tui-preview'
 ```
 {% endtab %}
 {% endtabs %}

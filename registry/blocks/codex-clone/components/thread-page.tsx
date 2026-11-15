@@ -75,7 +75,7 @@ function TurnRail({
       .find((n) => n.kind === 'message' && n.role === 'dot');
     return [
       {
-        key: m.id,
+        value: m.id,
         caption: m.text,
         preview: reply?.kind === 'message' ? reply.text : undefined,
         trailing: (

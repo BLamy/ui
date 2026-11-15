@@ -15,23 +15,24 @@ import { Canvas, CanvasFrame, useCanvas } from '@/components/ui/canvas'
 {% tab title="npm" %}
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 
-Import the stylesheet once at your app's entry, then the parts from the package root:
+Import the stylesheet once at your app's entry, then the parts from their module:
 
 ```tsx
 import '@brett_lamy/ui/styles.css'
 
-import { Canvas, CanvasFrame, useCanvas } from '@brett_lamy/ui'
+import { Canvas, CanvasFrame, useCanvas } from '@brett_lamy/ui/canvas'
 ```
 {% endtab %}
 {% endtabs %}
 
 ## The idea
 
-The view is UI SDK's `Viewport`, `{ x, y, zoom }`: a board point is on screen at `board * zoom + (x, y)`. Children of `Canvas` live in the **board layer**, one element moved and scaled by the view, so you position them in board units (px at 100% zoom). The `overlay` prop draws in screen space on top (an empty state, a minimap).
+The view is UI SDK's `Viewport`, `{ x, y, zoom }`: a board point is on screen at `board * zoom + (x, y)`. Children of `Canvas` live in the **board layer**, one element moved and scaled by the view, so you position them in board units (px at 100% zoom). The `overlay` prop draws in screen space on top (an empty state, a minimap). `Canvas` fills its positioned parent (`absolute inset-0`), like a map or a video: give it a `relative` box with a height.
 
 ```tsx
 const [viewport, setViewport] = useState<Viewport>({ x: 0, y: 0, zoom: 1 })
 
+<div className="relative h-[420px]">
 <Canvas
   viewport={viewport}
   onViewportChange={(next, details) => setViewport(next)}
@@ -41,6 +42,7 @@ const [viewport, setViewport] = useState<Viewport>({ x: 0, y: 0, zoom: 1 })
 >
   {cards.map((c) => <Card key={c.id} style={{ left: c.x, top: c.y }} />)}
 </Canvas>
+</div>
 ```
 
 Control the view with `viewport` and `onViewportChange`, or leave it to the canvas with `defaultViewport`. `onViewportChange(viewport, details)` says why it moved in `details.reason`: `wheel`, `drag`, `pinch`, `zoom-key`, `move-key` (an arrow key), `focus-in`, `find-in-page`, `track-press` (a press on the minimap) or `imperative` (a controller); `details.cancel()` keeps the view where it is.
@@ -117,7 +119,7 @@ Each takes `className` and `style`, merged after its own, so a locked item's han
 <Canvas overlay={<CanvasMiniMap items={cards.map((c) => ({ id: c.id, x: c.x, y: c.y, w: c.w, h: c.h }))} />}>…</Canvas>
 ```
 
-`useCanvas()` returns the view, its zoom, the canvas size, the conversions (`toBoard(e)` and `local(e)` for a pointer event, `toScreen(p)` for a board point in the canvas's own pixels, `toCanvas(clientX, clientY)` for a client point) and the controller's methods (`fit`, `zoomBy`, `panBy` …) to anything rendered inside.
+`useCanvas()` returns the view, its zoom, the canvas size, the conversions (`toBoard(e)` and `local(e)` for a pointer event, `toLocal(p)` for a board point in the canvas's own pixels, its partner; and the controller's `toCanvas(clientX, clientY)` and `toScreen(p)`, which speak client pixels) and the controller's methods (`fit`, `zoomBy`, `panBy` …) to anything rendered inside.
 
 ## The math
 

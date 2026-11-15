@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle'
 
-// One item pressed at a time by default — and in the `filled` variant one card
+// One item pressed at a time by default — and in the `segmented` variant one card
 // slides between the items. `multiple` lets each item toggle on its own. The
 // value is an array of the pressed items' values. Arrow keys move focus.
 export default function Modes() {
@@ -9,7 +9,7 @@ export default function Modes() {
   const [marks, setMarks] = useState(['bold'])
   return (
     <div className="mx-auto grid max-w-sm justify-items-start gap-5">
-      <ToggleGroup variant="filled" aria-label="View" value={view} onValueChange={setView} deselectable={false}>
+      <ToggleGroup variant="segmented" aria-label="View" value={view} onValueChange={setView} deselectable={false}>
         <ToggleGroupItem value="list">List</ToggleGroupItem>
         <ToggleGroupItem value="grid">Grid</ToggleGroupItem>
         <ToggleGroupItem value="board">Board</ToggleGroupItem>

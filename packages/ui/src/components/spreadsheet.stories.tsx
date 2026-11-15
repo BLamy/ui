@@ -8,7 +8,11 @@ import { Panel } from '../stories/primitive-frame';
 const meta: Meta<typeof Spreadsheet> = {
   title: 'Organisms/Spreadsheet',
   component: Spreadsheet,
-  decorators: [(Story) => <Panel w={760}><Story /></Panel>],
+  // One panel per story: 760 px, or what a story's `parameters.panel` asks for (a phone's width, dark).
+  decorators: [(Story, { parameters }) => {
+    const panel = (parameters.panel ?? {}) as { w?: number; dark?: boolean };
+    return <Panel w={panel.w ?? 760} dark={panel.dark}><Story /></Panel>;
+  }],
 };
 export default meta;
 type Story = StoryObj<typeof Spreadsheet>;
@@ -38,9 +42,9 @@ export const NoStatusBar: Story = { args: { ...base, statusBar: false } };
 /** In a phone-sized frame: the grid scrolls both ways under its sticky titles and row numbers. */
 export const Phone: Story = {
   args: { ...base, density: 'comfortable', className: 'h-[600px]' },
-  decorators: [(Story) => <Panel w={390}><Story /></Panel>],
+  parameters: { panel: { w: 390 } },
 };
 export const Dark: Story = {
   args: base,
-  decorators: [(Story) => <Panel w={760} dark><Story /></Panel>],
+  parameters: { panel: { dark: true } },
 };

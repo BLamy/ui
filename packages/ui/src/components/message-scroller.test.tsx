@@ -1,8 +1,9 @@
 // @vitest-environment happy-dom
+import * as React from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { MessageScroller, MessageScrollerItem } from '@/components/ui/message-scroller';
-import { Conversation, ConversationMessages, Suggestion, UserMessage, WorkLog, ToolCall } from '@/components/ui/conversation';
+import { Conversation, ConversationMessages, ConversationSuggestion, ConversationUserMessage, ConversationWorkLog, ConversationToolCall } from '@/components/ui/conversation';
 
 declare global { var __UI_SDK_STRICT__: boolean | undefined }
 globalThis.__UI_SDK_STRICT__ = true;
@@ -50,6 +51,21 @@ describe('MessageScroller', () => {
     expect(jump().hasAttribute('inert')).toBe(true);
   });
 
+  it('rests inside any peek host at its peek, and stops resting when the host grows', async () => {
+    const { container } = render(
+      <div data-peek-host="" data-peeking="">
+        <MessageScroller>{items}</MessageScroller>
+      </div>,
+    );
+    expect(viewport().hasAttribute('data-resting')).toBe(true);
+    const host = container.querySelector('[data-peek-host]')!;
+    await act(async () => {
+      host.removeAttribute('data-peeking');
+      await new Promise((r) => setTimeout(r, 0));
+    });
+    expect(viewport().hasAttribute('data-resting')).toBe(false);
+  });
+
   it('shows the jump pill once the reader scrolls away, and it goes back to the end', () => {
     render(<MessageScroller>{items}</MessageScroller>);
     scrollTo(100);
@@ -93,8 +109,8 @@ describe('MessageScroller naming', () => {
 });
 
 describe('Conversation', () => {
-  it('WorkLog is a disclosure of its tool calls', () => {
-    render(<WorkLog summary="Worked for 4s"><ToolCall title="Read file" /></WorkLog>);
+  it('ConversationWorkLog is a disclosure of its tool calls', () => {
+    render(<ConversationWorkLog summary="Worked for 4s"><ConversationToolCall title="Read file" /></ConversationWorkLog>);
     const trigger = screen.getByRole('button', { name: /Worked for 4s/ });
     expect(trigger.getAttribute('aria-expanded')).toBe('false');
     act(() => trigger.click());
@@ -102,9 +118,22 @@ describe('Conversation', () => {
     expect(screen.getByText('Read file')).toBeTruthy();
   });
 
-  it('Suggestion takes onClick', () => {
+  it('ConversationWorkLog and ConversationToolCall pass element props and ref to their root', () => {
+    const log = React.createRef<HTMLDivElement>();
+    const tool = React.createRef<HTMLDivElement>();
+    render(
+      <ConversationWorkLog ref={log} data-testid="log" summary="Worked" defaultOpen>
+        <ConversationToolCall ref={tool} data-testid="tool" id="t1" title="Read file" />
+      </ConversationWorkLog>,
+    );
+    expect(log.current).toBe(screen.getByTestId('log'));
+    expect(tool.current?.id).toBe('t1');
+    expect(tool.current?.dataset.slot).toBe('tool-call');
+  });
+
+  it('ConversationSuggestion takes onClick', () => {
     const onClick = vi.fn();
-    render(<Suggestion onClick={onClick}>Explain this</Suggestion>);
+    render(<ConversationSuggestion onClick={onClick}>Explain this</ConversationSuggestion>);
     act(() => screen.getByRole('button', { name: 'Explain this' }).click());
     expect(onClick).toHaveBeenCalledTimes(1);
   });
@@ -113,7 +142,7 @@ describe('Conversation', () => {
     render(
       <Conversation>
         <ConversationMessages threadKey="t1">
-          <UserMessage key="u1" value="u1">Hello</UserMessage>
+          <ConversationUserMessage key="u1" value="u1">Hello</ConversationUserMessage>
         </ConversationMessages>
       </Conversation>,
     );

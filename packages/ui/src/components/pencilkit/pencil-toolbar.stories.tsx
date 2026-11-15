@@ -4,6 +4,10 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { pencilInks, type PencilTool } from '@/components/ui/pencilkit/constants';
 import { ToolbarSeparator } from '@/components/ui/toolbar';
 import { ThemeScope } from '@/lib/theme';
+import { Phone as PhoneFrame } from '../../stories/frame';
+import { EmptyState } from '@/components/ui/empty-state';
+import { PencilCanvas } from '@/components/ui/pencilkit/pencil-canvas';
+import { usePencilHistory } from '@/components/ui/pencilkit/use-pencil-history';
 import {
   PencilActions,
   PencilInkPicker,
@@ -65,11 +69,66 @@ export const FullToolbarDark: Story = {
   render: () => <Frame dark><Full tool="marker" ink={pencilInks[1].value} width={1.7} canUndo={false} canRedo={false} /></Frame>,
 };
 
-/** At a phone's width the groups scroll sideways under an edge fade; undo, redo and clear stay pinned. */
+/** At a phone's width the toolbar runs out of room, so the ink and width pickers fold into one button showing the
+ *  current ink; it opens both rows in a popover. Every tool and undo, redo and clear stay in view. */
 export const Narrow: Story = { render: () => <Frame width={360}><Full /></Frame> };
 
 /** Narrow, in dark. */
 export const NarrowDark: Story = { render: () => <Frame dark width={360}><Full /></Frame> };
+
+/** Narrow, with the folded ink and width popover open. */
+export const NarrowOpen: Story = {
+  render: () => <div className="pt-32"><Frame width={360}><Full /></Frame></div>,
+  play: async ({ canvasElement }) => {
+    (canvasElement.querySelector('[aria-label^="Ink"]') as HTMLButtonElement | null)?.click();
+  },
+};
+
+/** A drawing on a phone: the canvas fills the screen and the toolbar floats at the bottom, folded to fit. */
+export const Phone: Story = {
+  parameters: { layout: 'fullscreen' },
+  render: () => {
+    const history = usePencilHistory();
+    const [tool, setTool] = useState<PencilTool>('pen');
+    const [ink, setInk] = useState(pencilInks[2].value);
+    const [width, setWidth] = useState(1);
+    return (
+      <PhoneFrame h={844}>
+        <div className="absolute inset-0 bg-background">
+          <PencilCanvas tool={tool} ink={ink} width={width} strokes={history.strokes} onStrokesChange={history.onStrokesChange}
+            emptyState={<EmptyState title="Draw anywhere" description="Pick an ink and a width from the round button." />} />
+          <PencilToolbar className="absolute inset-x-2.5 bottom-6 mx-auto">
+            <PencilToolPicker value={tool} onValueChange={setTool} />
+            <ToolbarSeparator />
+            <PencilInkPicker value={ink} onValueChange={setInk} />
+            <ToolbarSeparator />
+            <PencilWidthPicker value={width} onValueChange={setWidth} />
+            <PencilToolbarPinned>
+              <ToolbarSeparator />
+              <PencilActions onUndo={history.undo} onRedo={history.redo} onClear={history.clear}
+                canUndo={history.canUndo} canRedo={history.canRedo} canClear={history.canClear} />
+            </PencilToolbarPinned>
+          </PencilToolbar>
+        </div>
+      </PhoneFrame>
+    );
+  },
+};
+
+/** `presentation="popover"` on a wide toolbar: each picker is one button whatever the room (here the width alone). */
+export const Folded: Story = {
+  render: () => (
+    <Frame>
+      <PencilToolbar>
+        <PencilToolPicker />
+        <ToolbarSeparator />
+        <PencilInkPicker />
+        <ToolbarSeparator />
+        <PencilWidthPicker presentation="popover" />
+      </PencilToolbar>
+    </Frame>
+  ),
+};
 
 /** `variant="plain"`: no card, for a bar that sits in another surface (the image annotator's footer). */
 export const Plain: Story = {

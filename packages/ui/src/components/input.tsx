@@ -17,10 +17,14 @@ import { cx } from '@/lib/utils';
  *  a group, both written by its Field), and the disabled dim. Put it on the control itself, or on a group around one
  *  (an `InputGroup`, a segmented date input): focus and invalid read from inside either way. A multi-line control
  *  replaces the height with its own (`h-auto min-h-…`). */
+/** The field's focus line: a 1.5px inset primary ring while anything inside has focus. Shared with the controls that
+ *  keep a fill of their own (SearchInput's pill). */
+export const fieldFocusRing = 'focus-within:shadow-[inset_0_0_0_1.5px_var(--primary)]';
+
 const surface = [
   'box-border min-w-0 rounded-ctl border-0 bg-input px-3 [font-family:inherit] text-foreground outline-none',
   'transition-[box-shadow,background-color] duration-spring-snappy ease-spring-snappy',
-  'focus-within:bg-transparent focus-within:shadow-[inset_0_0_0_1.5px_var(--primary)]',
+  'focus-within:bg-transparent', fieldFocusRing,
   'aria-invalid:shadow-[inset_0_0_0_1.5px_var(--destructive)] data-invalid:shadow-[inset_0_0_0_1.5px_var(--destructive)]',
   'data-disabled:cursor-not-allowed data-disabled:opacity-50 has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-50',
 ];

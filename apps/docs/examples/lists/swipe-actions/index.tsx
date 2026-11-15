@@ -95,8 +95,8 @@ function Mail() {
                   {m.time}
                 </span>
               }
-              leadingActions={leading}
-              trailingActions={trailing}
+              startActions={leading}
+              endActions={trailing}
               onClick={() => setLast(`Opened “${m.subject}”.`)}
               divider={i < mail.length - 1}
             />
@@ -105,7 +105,7 @@ function Mail() {
       </ListSection>
       {mail.length === 0 ? (
         <Button
-          variant="link"
+          variant="plain"
           style={{ display: 'block', margin: '0 auto 16px' }}
           onClick={() => setMail(initialMail)}
         >

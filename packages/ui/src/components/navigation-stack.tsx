@@ -7,7 +7,7 @@ import { createParts, usePart, usePrimitive } from '@ui-sdk/react/primitive';
 import { chromeStore, BLSafeCtx, BLStickyCtx } from '@/lib/theme';
 import { cn, BARH } from '@/lib/utils';
 import { SizeClassProvider } from '@/lib/container';
-import { barSurface } from '@/lib/primitives';
+import { barMaterial, barSurface } from '@/lib/primitives';
 import { StackParentContext } from '@/lib/stack-parent';
 import {
   BackLabel, backName, barBackButton, barTitle, barTitleFade, barTitleHidden, largeTitleText, useBackFit,
@@ -156,7 +156,9 @@ export interface NavigationStackProps
   rootBack?: NavigationStackRootBack | false;
   /** Safe-area top for this stack, px. Usually inherited from BLProvider instead. */
   safeTop?: number;
-  /** Room kept under every page's content for bars that ride over it (px), unless a page's content sets its own. */
+  /** Extra room kept under every page's content (px), unless a page's content sets its own: a mini player, a
+   *  toolbar of your own. A Tabs `bar` (or a SplitView sidebar that became a tab bar) around the stack is counted by
+   *  itself (`--tabs-bar-h`), safe area included, so it needs none. Default 0. */
   bottomInset?: number;
 }
 
@@ -421,7 +423,7 @@ export function NavigationStackBar({ hideOnScroll = true, className, children, .
             {/* Under-island strip: stays put while the bar slides away, so content never runs under the camera. */}
             {safeTop ? (
               <div className={cn(
-                'absolute inset-x-0 top-0 h-(--screen-safe-top) bg-bar backdrop-blur-[20px] backdrop-saturate-[1.7] transition-transform duration-spring-smooth ease-spring-smooth',
+                'absolute inset-x-0 top-0 h-(--screen-safe-top) transition-transform duration-spring-smooth ease-spring-smooth', barMaterial,
                 s.scrolled || s.hidden ? 'opacity-100' : 'opacity-0',
                 s.hidden ? '[transform:translateY(calc(var(--screen-bar-h)-var(--screen-safe-top)))]' : '[transform:none]',
               )} />
@@ -502,7 +504,7 @@ export type NavigationStackTrailingProps = Omit<ComponentProps<typeof Trailing>,
 /** Bar items at the trailing edge. */
 export function NavigationStackTrailing({ className, ...props }: NavigationStackTrailingProps) {
   const value = usePageKey('NavigationStackTrailing');
-  return <Trailing {...props} value={value} className={(s) => cn('relative z-1 ml-auto flex items-center', classOf(className, s))} />;
+  return <Trailing {...props} value={value} className={(s) => cn('relative z-1 ms-auto flex items-center', classOf(className, s))} />;
 }
 
 /* ── Content ── */
@@ -513,7 +515,8 @@ export interface NavigationStackContentProps extends Omit<ComponentProps<typeof 
   onRefresh?: () => unknown;
   /** A readable width the content centers at on a wide page. */
   maxWidth?: number | string;
-  /** Room kept under the content for bars that ride over it (px). Defaults to the stack's `bottomInset`. */
+  /** Extra room kept under the content (px), on top of a tab bar's (`--tabs-bar-h`). Defaults to the stack's
+   *  `bottomInset`. */
   bottomInset?: number;
   children?: ReactNode;
 }
@@ -529,7 +532,8 @@ export function NavigationStackContent({ onRefresh, maxWidth, bottomInset, class
       className={(s) => cn('group/nav-scroll bl-scroll absolute inset-0 overflow-x-hidden overflow-y-auto overscroll-contain [-webkit-overflow-scrolling:touch]', classOf(className, s))}
       style={(s) => ({
         '--screen-max-w': maxWidth == null || maxWidth === 0 || maxWidth === '' ? 'none' : typeof maxWidth === 'number' ? maxWidth + 'px' : maxWidth,
-        '--screen-inset': inset + 28 + 'px',
+        // A tab bar around (Tabs `bar`, a SplitView sidebar as one) publishes how much it covers, safe area included.
+        '--screen-inset': `calc(var(--tabs-bar-h, 0px) + ${inset + 28}px)`,
         ...styleOf(style, s),
       } as CSSProperties)}>
       {(s) => (

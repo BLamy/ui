@@ -3,7 +3,7 @@
 import { Button as SdkButton } from '@ui-sdk/react/button';
 import { SearchInput } from '@/components/ui/search-input';
 import { EmptyState } from '@/components/ui/empty-state';
-import { SplitViewContent, SplitViewHeader, SplitViewItem, SplitViewToggle } from '@/components/ui/split-view';
+import { SplitViewContent, SplitViewHeader, SplitViewItem, SplitViewSidebarTrigger } from '@/components/ui/split-view';
 import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
 import { SEVERITY } from './data';
@@ -18,7 +18,7 @@ export function ItemList({ category, sections, query, onQuery, now, onAdd }: {
   const canAdd = category !== 'wifi' && category !== 'deleted' && category !== 'security';
   return (
     <>
-      <SplitViewHeader title={categoryTitle(category)} leading={<SplitViewToggle />}
+      <SplitViewHeader title={categoryTitle(category)} leading={<SplitViewSidebarTrigger />}
         trailing={canAdd ? (
           <SdkButton aria-label="New password" onClick={() => onAdd()}
             className="bl-btn grid size-9 cursor-pointer place-items-center rounded-ctl border-0 bg-transparent text-primary transition-[background-color,scale] duration-spring-snappy ease-spring-snappy hover:bg-secondary active:scale-90">

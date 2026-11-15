@@ -7,13 +7,13 @@ import { Panel } from '../stories/primitive-frame';
 const meta: Meta<typeof DateInput> = {
   title: 'Molecules/DateInput',
   component: DateInput,
-  args: { locale: 'en-US', variant: 'field', size: 'default' },
+  args: { locale: 'en-US', variant: 'default', size: 'default' },
   argTypes: {
-    variant: { control: 'inline-radio', options: ['field', 'bare'] },
+    variant: { control: 'inline-radio', options: ['default', 'plain'] },
     size: { control: 'inline-radio', options: ['sm', 'default', 'lg'] },
     granularity: { control: 'inline-radio', options: ['day', 'hour', 'minute', 'second'] },
   },
-  decorators: [(Story) => <Panel w={360}><Story /></Panel>],
+  decorators: [(Story, { parameters }) => <Panel w={360} dark={parameters.dark}><Story /></Panel>],
 };
 export default meta;
 type Story = StoryObj<typeof DateInput>;
@@ -107,7 +107,7 @@ export const TimeWithSeconds: Story = {
 };
 
 export const Dark: Story = {
-  decorators: [(Story) => <Panel w={360} dark><Story /></Panel>],
+  parameters: { dark: true },
   render: (args) => (
     <Field>
       <FieldLabel>Birthday</FieldLabel>

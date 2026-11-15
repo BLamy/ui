@@ -1,7 +1,7 @@
 {
   "name": "pencilkit",
   "title": "PencilKit",
-  "description": "Pressure-aware freehand drawing (perfect-freehand): PencilCanvas on its own or as a Canvas's drawing layer, the PencilKit tool palette (tools, inks, widths, undo/redo) on the kit Toolbar, snapshot undo history, and the image annotator.",
+  "description": "Pressure-aware freehand drawing (perfect-freehand): PencilCanvas on its own or as a Canvas's drawing layer, the PencilKit tool palette (tools, inks, widths, undo/redo) on the kit Toolbar that folds to fit a phone, snapshot undo history, and the ImageAnnotator lightbox that marks up an image and saves it flattened.",
   "page": "pencilkit",
   "exports": [
     "PencilCanvas",
@@ -29,6 +29,7 @@
     "PencilStroke",
     "PencilInk",
     "PencilWidth",
-    "PencilHistory"
+    "PencilHistory",
+    "PencilPickerPresentation"
   ]
 }

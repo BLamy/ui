@@ -1,16 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { describeAccept, describeRules, fileKind, rejectionMessage, xhrUpload } from '@/lib/file-upload-model';
-import { formatFileSize } from '@ui-sdk/core/file-input';
 
 const f = (name: string, size = 10, type = 'text/plain') => new File([new Uint8Array(size)], name, { type, lastModified: 1 });
-
-describe('file sizes', () => {
-  it('reads through UI SDK\'s formatFileSize: decimal units, in the locale', () => {
-    expect(formatFileSize(840, 'en')).toBe('840 byte');
-    expect(formatFileSize(1536, 'en')).toBe('1.5 kB');
-    expect(formatFileSize(5_000_000, 'en')).toBe('5 MB');
-  });
-});
 
 describe('describeAccept / describeRules', () => {
   it('says it in words', () => {
@@ -29,8 +20,8 @@ describe('rejectionMessage', () => {
   const ctx = (file = f('x')) => ({ file, path: file.name, accept: ['image/*'], maxSize: 100, minSize: 5, maxFiles: 2 });
   it('says why for each of FileInput\'s reasons, and for duplicates', () => {
     expect(rejectionMessage('file-type', ctx())).toBe('Unsupported file type. Accepted: Images.');
-    expect(rejectionMessage('file-too-large', ctx())).toBe('Larger than the 100 byte limit.');
-    expect(rejectionMessage('file-too-small', ctx())).toBe('Smaller than the 5 byte minimum.');
+    expect(rejectionMessage('file-too-large', ctx())).toBe('Larger than the 100 B limit.');
+    expect(rejectionMessage('file-too-small', ctx())).toBe('Smaller than the 5 B minimum.');
     expect(rejectionMessage('too-many-files', ctx())).toBe('Only 2 files are allowed.');
     expect(rejectionMessage('too-many-files', { ...ctx(), maxFiles: 1 })).toBe('Only one file is allowed.');
     expect(rejectionMessage('duplicate', ctx())).toBe('Already added.');

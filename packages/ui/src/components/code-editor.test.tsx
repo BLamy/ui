@@ -57,7 +57,7 @@ const generated = (i: number) => `line ${i + 1}`;
 
 describe('CodeEditor as a source view', () => {
   it('takes className and style last, and has a role, a label and a tab stop', () => {
-    render(<CodeEditor readOnly variant="ghost" lines={['a']} className="h-64" style={{ color: 'red' }} aria-label="app.js" />);
+    render(<CodeEditor readOnly variant="plain" lines={['a']} className="h-64" style={{ color: 'red' }} aria-label="app.js" />);
     const outer = document.querySelector('[data-slot="code-editor"]') as HTMLElement;
     expect(outer.className).toContain('h-64');
     expect(outer.className).not.toContain('h-full');
@@ -82,7 +82,7 @@ describe('CodeEditor as a source view', () => {
 
   it('renders what is on screen of half a million lines, and asks for no others', () => {
     const getLine = vi.fn(generated);
-    render(<CodeEditor readOnly variant="ghost" lineCount={500_000} getLine={getLine} maxLineLength={20} highlight={null} />);
+    render(<CodeEditor readOnly variant="plain" lineCount={500_000} getLine={getLine} maxLineLength={20} highlight={null} />);
     const rows = lineNumbers();
     expect(rows[0]).toBe(1);
     expect(rows.length).toBeLessThanOrEqual(HEIGHT / LINE + 16);
@@ -97,7 +97,7 @@ describe('CodeEditor as a source view', () => {
   });
 
   it('marks each line with where it is in the list, for assistive tech', () => {
-    render(<CodeEditor readOnly variant="ghost" lineCount={500_000} getLine={generated} maxLineLength={20} highlight={null} />);
+    render(<CodeEditor readOnly variant="plain" lineCount={500_000} getLine={generated} maxLineLength={20} highlight={null} />);
     expect(lineEl(3)?.getAttribute('role')).toBe('listitem');
     expect(lineEl(3)?.getAttribute('aria-posinset')).toBe('3');
     expect(lineEl(3)?.getAttribute('aria-setsize')).toBe('500000');
@@ -105,7 +105,7 @@ describe('CodeEditor as a source view', () => {
 
   it('never puts a megabyte line in the DOM', () => {
     const line = Array.from({ length: 200_000 }, (_, i) => `v${i};`).join('').slice(0, 1 << 20);
-    render(<CodeEditor readOnly variant="ghost" lines={['start', line]} />);
+    render(<CodeEditor readOnly variant="plain" lines={['start', line]} />);
     expect(domText().length).toBeLessThan(1000);
     expect(textOf(2)).toBe(line.slice(0, textOf(2).length));
 
@@ -124,11 +124,11 @@ describe('CodeEditor as a source view', () => {
   });
 
   it('scrolls the width of the longest line, and past what a browser can size only by scaling', () => {
-    const { unmount } = render(<CodeEditor readOnly variant="ghost" lines={['x'.repeat(10_000)]} />);
+    const { unmount } = render(<CodeEditor readOnly variant="plain" lines={['x'.repeat(10_000)]} />);
     const extent = () => document.querySelector('[data-slot="code-editor-extent"]') as HTMLElement;
     expect(parseFloat(extent().style.width)).toBeGreaterThan(10_000 * CELL);
     unmount();
-    render(<CodeEditor readOnly variant="ghost" lineCount={3_000_000} getLine={generated} maxLineLength={20} highlight={null} />);
+    render(<CodeEditor readOnly variant="plain" lineCount={3_000_000} getLine={generated} maxLineLength={20} highlight={null} />);
     expect(parseFloat(extent().style.height)).toBe(16_000_000);
     scrollTo({ top: 16_000_000 - HEIGHT });
     expect(lineNumbers().at(-1)).toBe(3_000_000);
@@ -141,7 +141,7 @@ describe('CodeEditor as a source view', () => {
     ];
 
     it('come in order, with the line numbers next to the code, and keep their place when the code scrolls', () => {
-      render(<CodeEditor readOnly variant="ghost" lines={numbered(5)} gutters={gutters} />);
+      render(<CodeEditor readOnly variant="plain" lines={numbered(5)} gutters={gutters} />);
       const row = document.querySelector('[data-slot="code-editor-gutter-row"][data-line="2"]') as HTMLElement;
       expect([...row.children].map((el) => (el as HTMLElement).dataset.gutter)).toEqual(['hits', 'dot', 'line-number']);
       expect(screen.getByTestId('hits-2').textContent).toBe('4');
@@ -151,17 +151,17 @@ describe('CodeEditor as a source view', () => {
     });
 
     it('put line numbers first on request, or leave them out', () => {
-      const { unmount } = render(<CodeEditor readOnly variant="ghost" lines={numbered(5)} gutters={gutters} lineNumbers="start" />);
+      const { unmount } = render(<CodeEditor readOnly variant="plain" lines={numbered(5)} gutters={gutters} lineNumbers="start" />);
       const cells = () => [...(document.querySelector('[data-slot="code-editor-gutter-row"]') as HTMLElement).children].map((el) => (el as HTMLElement).dataset.gutter);
       expect(cells()).toEqual(['line-number', 'hits', 'dot']);
       unmount();
-      render(<CodeEditor readOnly variant="ghost" lines={numbered(5)} gutters={gutters} lineNumbers={false} />);
+      render(<CodeEditor readOnly variant="plain" lines={numbered(5)} gutters={gutters} lineNumbers={false} />);
       expect(cells()).toEqual(['hits', 'dot']);
     });
 
     it('press through a button on lines that can be pressed, and hold anything', () => {
       const onClick = vi.fn();
-      render(<CodeEditor readOnly variant="ghost" lines={numbered(5)} gutters={[{ ...gutters[1], onClick }]} />);
+      render(<CodeEditor readOnly variant="plain" lines={numbered(5)} gutters={[{ ...gutters[1], onClick }]} />);
       const two = screen.getByRole('button', { name: 'Toggle 2' });
       fireEvent.click(two);
       expect(onClick).toHaveBeenCalledWith(expect.objectContaining({ type: 'click' }), expect.objectContaining({ line: 2, source: expect.any(String) }));
@@ -170,10 +170,10 @@ describe('CodeEditor as a source view', () => {
 
     it('line numbers are buttons only when they do something', () => {
       const onLineNumberClick = vi.fn();
-      const { unmount } = render(<CodeEditor readOnly variant="ghost" lines={numbered(3)} />);
+      const { unmount } = render(<CodeEditor readOnly variant="plain" lines={numbered(3)} />);
       expect(screen.queryByRole('button')).toBeNull();
       unmount();
-      render(<CodeEditor readOnly variant="ghost" lines={numbered(3)} lineNumbers={{ onClick: onLineNumberClick, clickable: (n) => n !== 2, label: (n) => `Jump to ${n}` }} />);
+      render(<CodeEditor readOnly variant="plain" lines={numbered(3)} lineNumbers={{ onClick: onLineNumberClick, clickable: (n) => n !== 2, label: (n) => `Jump to ${n}` }} />);
       fireEvent.click(screen.getByRole('button', { name: 'Jump to 3' }));
       expect(onLineNumberClick).toHaveBeenCalledWith(expect.objectContaining({ type: 'click' }), expect.objectContaining({ line: 3 }));
       expect(screen.queryByRole('button', { name: 'Jump to 2' })).toBeNull();
@@ -181,7 +181,7 @@ describe('CodeEditor as a source view', () => {
 
     it('leave nothing for the selection or the copied text', () => {
       const ref = createRef<CodeEditorHandle>();
-      render(<CodeEditor readOnly variant="ghost" ref={ref} lines={numbered(3)} gutters={gutters} />);
+      render(<CodeEditor readOnly variant="plain" ref={ref} lines={numbered(3)} gutters={gutters} />);
       act(() => ref.current?.selectAll());
       expect(ref.current?.getSelectionText()).toBe('line 1\nline 2\nline 3');
     });
@@ -189,7 +189,7 @@ describe('CodeEditor as a source view', () => {
 
   describe('line state', () => {
     it('shows the current line and its column', () => {
-      render(<CodeEditor readOnly variant="ghost" lines={numbered(5)} currentLine={3} currentColumn={2} />);
+      render(<CodeEditor readOnly variant="plain" lines={numbered(5)} currentLine={3} currentColumn={2} />);
       const bands = document.querySelectorAll('[data-slot="code-editor-band"]');
       expect(bands.length).toBe(1);
       expect((bands[0] as HTMLElement).dataset.tint).toBe('current');
@@ -201,7 +201,7 @@ describe('CodeEditor as a source view', () => {
 
     it('decorates lines by function: bands, classes on the text and on the gutter', () => {
       const decorate = (n: number) => (n === 2 ? { tint: 'danger' as const, textClassName: 'dim', gutterClassName: 'gutter-dim' } : n === 4 ? { className: 'mine' } : null);
-      render(<CodeEditor readOnly variant="ghost" lines={numbered(5)} lineDecoration={decorate} />);
+      render(<CodeEditor readOnly variant="plain" lines={numbered(5)} lineDecoration={decorate} />);
       const bands = [...document.querySelectorAll<HTMLElement>('[data-slot="code-editor-band"]')];
       expect(bands.map((b) => b.dataset.tint)).toEqual(['danger', undefined]);
       expect(bands[1].className).toContain('mine');
@@ -210,22 +210,22 @@ describe('CodeEditor as a source view', () => {
     });
 
     it('keeps the current line in view when it changes, and leaves the scroll alone when it already is', () => {
-      const { rerender } = render(<CodeEditor readOnly variant="ghost" lines={numbered(10_000)} currentLine={5} />);
+      const { rerender } = render(<CodeEditor readOnly variant="plain" lines={numbered(10_000)} currentLine={5} />);
       expect(root().scrollTop).toBe(0);
-      rerender(<CodeEditor readOnly variant="ghost" lines={numbered(10_000)} currentLine={8} />);
+      rerender(<CodeEditor readOnly variant="plain" lines={numbered(10_000)} currentLine={8} />);
       expect(root().scrollTop).toBe(0);
-      rerender(<CodeEditor readOnly variant="ghost" lines={numbered(10_000)} currentLine={5000} />);
+      rerender(<CodeEditor readOnly variant="plain" lines={numbered(10_000)} currentLine={5000} />);
       expect(root().scrollTop).toBe(4999 * LINE - HEIGHT / 3);
     });
 
     it('can leave following along to the host', () => {
-      const { rerender } = render(<CodeEditor readOnly variant="ghost" lines={numbered(10_000)} currentLine={5} revealCurrentLine={false} />);
-      rerender(<CodeEditor readOnly variant="ghost" lines={numbered(10_000)} currentLine={5000} revealCurrentLine={false} />);
+      const { rerender } = render(<CodeEditor readOnly variant="plain" lines={numbered(10_000)} currentLine={5} revealCurrentLine={false} />);
+      rerender(<CodeEditor readOnly variant="plain" lines={numbered(10_000)} currentLine={5000} revealCurrentLine={false} />);
       expect(root().scrollTop).toBe(0);
     });
 
     it('brings a current column into view sideways', () => {
-      render(<CodeEditor readOnly variant="ghost" lines={['x'.repeat(100_000)]} currentLine={1} currentColumn={50_000} />);
+      render(<CodeEditor readOnly variant="plain" lines={['x'.repeat(100_000)]} currentLine={1} currentColumn={50_000} />);
       expect(root().scrollLeft).toBeGreaterThan(49_000 * CELL);
       expect(lineEl(1)?.querySelector('[data-slot="code-editor-column"]')).not.toBeNull();
     });
@@ -234,21 +234,21 @@ describe('CodeEditor as a source view', () => {
   describe('markers', () => {
     it('press, at their column, from an array or a function', () => {
       const onClick = vi.fn();
-      const { unmount } = render(<CodeEditor readOnly variant="ghost" lines={numbered(5)} markers={[{ line: 2, column: 3, label: 'Site at 3', onClick }, { line: 2, column: 1, label: 'Site at 1', active: true, onClick }]} />);
+      const { unmount } = render(<CodeEditor readOnly variant="plain" lines={numbered(5)} markers={[{ line: 2, column: 3, label: 'Site at 3', onClick }, { line: 2, column: 1, label: 'Site at 1', pressed: true, onClick }]} />);
       const three = screen.getByRole('button', { name: 'Site at 3' });
       expect(parseFloat(three.style.left)).toBe(PADDING + 3 * CELL);
       fireEvent.click(three);
       expect(onClick).toHaveBeenCalledWith(expect.objectContaining({ type: 'click' }), expect.objectContaining({ line: 2, marker: expect.objectContaining({ column: 3 }) }));
       expect(screen.getByRole('button', { name: 'Site at 1' }).getAttribute('aria-pressed')).toBe('true');
       unmount();
-      render(<CodeEditor readOnly variant="ghost" lines={numbered(5)} markers={(n) => (n === 4 ? [{ column: 2, label: 'Only here' }] : undefined)} />);
+      render(<CodeEditor readOnly variant="plain" lines={numbered(5)} markers={(n) => (n === 4 ? [{ column: 2, label: 'Only here' }] : undefined)} />);
       expect(lineEl(4)?.querySelectorAll('[data-code-editor-cell="marker"]').length).toBe(1);
       expect(lineEl(3)?.querySelectorAll('[data-code-editor-cell="marker"]').length).toBe(0);
     });
 
     it('on a long line, only the ones in the part that is rendered are in the DOM', () => {
       const marks = Array.from({ length: 50_000 }, (_, i) => ({ column: i * 20, label: `At ${i * 20}`, onClick: () => {} }));
-      render(<CodeEditor readOnly variant="ghost" lines={['x'.repeat(1_000_000)]} markers={(n) => (n === 1 ? marks : undefined)} />);
+      render(<CodeEditor readOnly variant="plain" lines={['x'.repeat(1_000_000)]} markers={(n) => (n === 1 ? marks : undefined)} />);
       expect(document.querySelectorAll('[data-code-editor-cell="marker"]').length).toBeLessThan(40);
       scrollTo({ left: 800_000 * CELL });
       const labels = [...document.querySelectorAll('[data-code-editor-cell="marker"]')].map((el) => el.getAttribute('aria-label'));
@@ -261,7 +261,7 @@ describe('CodeEditor as a source view', () => {
   describe('scrolling', () => {
     it('goes to a line through the ref, aligned', () => {
       const ref = createRef<CodeEditorHandle>();
-      render(<CodeEditor readOnly variant="ghost" ref={ref} lines={numbered(10_000)} />);
+      render(<CodeEditor readOnly variant="plain" ref={ref} lines={numbered(10_000)} />);
       act(() => ref.current?.scrollToLine(1000, { align: 'start' }));
       expect(root().scrollTop).toBe(999 * LINE);
       act(() => ref.current?.scrollToLine(1000, { align: 'end' }));
@@ -273,19 +273,19 @@ describe('CodeEditor as a source view', () => {
     });
 
     it('goes to a line through the prop, when it changes', () => {
-      const { rerender } = render(<CodeEditor readOnly variant="ghost" lines={numbered(10_000)} revealLine={{ line: 500, align: 'start' }} />);
+      const { rerender } = render(<CodeEditor readOnly variant="plain" lines={numbered(10_000)} revealLine={{ line: 500, align: 'start' }} />);
       expect(root().scrollTop).toBe(499 * LINE);
       root().scrollTop = 0;
       // The same target again, as a new object: not a change.
-      rerender(<CodeEditor readOnly variant="ghost" lines={numbered(10_000)} revealLine={{ line: 500, align: 'start' }} />);
+      rerender(<CodeEditor readOnly variant="plain" lines={numbered(10_000)} revealLine={{ line: 500, align: 'start' }} />);
       expect(root().scrollTop).toBe(0);
-      rerender(<CodeEditor readOnly variant="ghost" lines={numbered(10_000)} revealLine={700} />);
+      rerender(<CodeEditor readOnly variant="plain" lines={numbered(10_000)} revealLine={700} />);
       expect(root().scrollTop).toBe(699 * LINE + LINE / 2 - HEIGHT / 2);
     });
 
     it('animates on request, unless motion is reduced', () => {
       const ref = createRef<CodeEditorHandle>();
-      render(<CodeEditor readOnly variant="ghost" ref={ref} lines={numbered(10_000)} />);
+      render(<CodeEditor readOnly variant="plain" ref={ref} lines={numbered(10_000)} />);
       const scrollTo = vi.fn();
       root().scrollTo = scrollTo as typeof root.prototype.scrollTo;
       act(() => ref.current?.scrollToLine(1000, { smooth: true, align: 'start' }));
@@ -299,7 +299,7 @@ describe('CodeEditor as a source view', () => {
 
     it('scrolls sideways to a column, and back when the line it goes to is too short to see', () => {
       const ref = createRef<CodeEditorHandle>();
-      render(<CodeEditor readOnly variant="ghost" ref={ref} lines={['short', 'x'.repeat(100_000)]} />);
+      render(<CodeEditor readOnly variant="plain" ref={ref} lines={['short', 'x'.repeat(100_000)]} />);
       act(() => ref.current?.scrollToLine(2, { column: 90_000 }));
       expect(root().scrollLeft).toBeGreaterThan(89_000 * CELL);
       act(() => { fireEvent.scroll(root()); });
@@ -315,7 +315,7 @@ describe('CodeEditor as a source view', () => {
 
     it('drags by the grid, whatever is in the DOM', () => {
       const ref = createRef<CodeEditorHandle>();
-      render(<CodeEditor readOnly variant="ghost" ref={ref} lines={['const a = 1;', 'const b = 2;', 'const c = 3;']} />);
+      render(<CodeEditor readOnly variant="plain" ref={ref} lines={['const a = 1;', 'const b = 2;', 'const c = 3;']} />);
       fireEvent.pointerDown(codeLayer(), at(0, 6));
       fireEvent.pointerMove(codeLayer(), at(2, 7));
       fireEvent.pointerUp(codeLayer(), at(2, 7));
@@ -325,7 +325,7 @@ describe('CodeEditor as a source view', () => {
 
     it('draws on each line it covers, with a cell for the newline', () => {
       const ref = createRef<CodeEditorHandle>();
-      render(<CodeEditor readOnly variant="ghost" ref={ref} lines={['abcd', '', 'efgh']} />);
+      render(<CodeEditor readOnly variant="plain" ref={ref} lines={['abcd', '', 'efgh']} />);
       act(() => ref.current?.setSelection({ anchor: { line: 1, column: 2 }, focus: { line: 3, column: 1 } }));
       const rects = [...document.querySelectorAll<HTMLElement>('[data-slot="code-editor-selection"]')];
       expect(rects.map((r) => [parseFloat(r.style.left), parseFloat(r.style.width)])).toEqual([
@@ -338,7 +338,7 @@ describe('CodeEditor as a source view', () => {
     it('copies the source, not the gutters', () => {
       const ref = createRef<CodeEditorHandle>();
       const onCopyText = vi.fn();
-      render(<CodeEditor readOnly variant="ghost" ref={ref} lines={['\tone', 'two']} tabSize={4} gutters={[{ id: 'g', width: 20, render: () => 'GUTTER' }]} onCopyText={onCopyText} />);
+      render(<CodeEditor readOnly variant="plain" ref={ref} lines={['\tone', 'two']} tabSize={4} gutters={[{ id: 'g', width: 20, render: () => 'GUTTER' }]} onCopyText={onCopyText} />);
       act(() => ref.current?.selectAll());
       const setData = vi.fn();
       const handled = !fireEvent.copy(root(), { clipboardData: { setData } });
@@ -348,7 +348,7 @@ describe('CodeEditor as a source view', () => {
     });
 
     it('leaves copying alone with nothing selected', () => {
-      render(<CodeEditor readOnly variant="ghost" lines={['one']} />);
+      render(<CodeEditor readOnly variant="plain" lines={['one']} />);
       const setData = vi.fn();
       expect(fireEvent.copy(root(), { clipboardData: { setData } })).toBe(true);
       expect(setData).not.toHaveBeenCalled();
@@ -356,7 +356,7 @@ describe('CodeEditor as a source view', () => {
 
     it('selects a line far down, however far it scrolled from where it began', () => {
       const ref = createRef<CodeEditorHandle>();
-      render(<CodeEditor readOnly variant="ghost" ref={ref} lineCount={500_000} getLine={generated} maxLineLength={20} highlight={null} />);
+      render(<CodeEditor readOnly variant="plain" ref={ref} lineCount={500_000} getLine={generated} maxLineLength={20} highlight={null} />);
       fireEvent.pointerDown(codeLayer(), at(0, 0));
       fireEvent.pointerUp(codeLayer(), at(0, 0));
       scrollTo({ top: 400_000 * LINE });
@@ -370,7 +370,7 @@ describe('CodeEditor as a source view', () => {
 
     it('selects all, and clears on escape, by keyboard', () => {
       const ref = createRef<CodeEditorHandle>();
-      render(<CodeEditor readOnly variant="ghost" ref={ref} lines={numbered(3)} />);
+      render(<CodeEditor readOnly variant="plain" ref={ref} lines={numbered(3)} />);
       fireEvent.keyDown(root(), { key: 'a', metaKey: true });
       expect(ref.current?.getSelectionText()).toBe('line 1\nline 2\nline 3');
       fireEvent.keyDown(root(), { key: 'Escape' });
@@ -379,7 +379,7 @@ describe('CodeEditor as a source view', () => {
 
     it('extends with shift and the arrow keys, from where the last click landed', () => {
       const ref = createRef<CodeEditorHandle>();
-      render(<CodeEditor readOnly variant="ghost" ref={ref} lines={['const a = 1;', 'const b = 2;']} />);
+      render(<CodeEditor readOnly variant="plain" ref={ref} lines={['const a = 1;', 'const b = 2;']} />);
       fireEvent.pointerDown(codeLayer(), at(0, 6));
       fireEvent.pointerUp(codeLayer(), at(0, 6));
       fireEvent.keyDown(root(), { key: 'ArrowRight', shiftKey: true });
@@ -397,7 +397,7 @@ describe('CodeEditor as a source view', () => {
 
     it('selects from the top of the view with nothing clicked', () => {
       const ref = createRef<CodeEditorHandle>();
-      render(<CodeEditor readOnly variant="ghost" ref={ref} lines={numbered(10)} />);
+      render(<CodeEditor readOnly variant="plain" ref={ref} lines={numbered(10)} />);
       fireEvent.keyDown(root(), { key: 'ArrowDown', shiftKey: true });
       expect(ref.current?.getSelectionText()).toBe('line 1\n');
     });
@@ -405,17 +405,17 @@ describe('CodeEditor as a source view', () => {
     it('reports changes, and forgets positions when the content changes', () => {
       const ref = createRef<CodeEditorHandle>();
       const onSelectionChange = vi.fn();
-      const { rerender } = render(<CodeEditor readOnly variant="ghost" ref={ref} lines={numbered(3)} onSelectionChange={onSelectionChange} />);
+      const { rerender } = render(<CodeEditor readOnly variant="plain" ref={ref} lines={numbered(3)} onSelectionChange={onSelectionChange} />);
       act(() => ref.current?.setSelection({ anchor: { line: 1, column: 0 }, focus: { line: 1, column: 2 } }));
       expect(onSelectionChange).toHaveBeenLastCalledWith({ anchor: { line: 1, column: 0 }, focus: { line: 1, column: 2 } }, expect.objectContaining({ reason: 'imperative', source: 'programmatic' }));
-      rerender(<CodeEditor readOnly variant="ghost" ref={ref} lines={numbered(4)} onSelectionChange={onSelectionChange} />);
+      rerender(<CodeEditor readOnly variant="plain" ref={ref} lines={numbered(4)} onSelectionChange={onSelectionChange} />);
       expect(ref.current?.getSelection()).toBeNull();
       expect(onSelectionChange).toHaveBeenLastCalledWith(null, expect.objectContaining({ reason: 'imperative' }));
     });
 
     it('a press on a marker or gutter button starts no selection', () => {
       const ref = createRef<CodeEditorHandle>();
-      render(<CodeEditor readOnly variant="ghost" ref={ref} lines={numbered(3)} markers={[{ line: 1, column: 0, label: 'Mark', onClick: () => {} }]} />);
+      render(<CodeEditor readOnly variant="plain" ref={ref} lines={numbered(3)} markers={[{ line: 1, column: 0, label: 'Mark', onClick: () => {} }]} />);
       fireEvent.pointerDown(screen.getByRole('button', { name: 'Mark' }), at(0, 0));
       fireEvent.pointerMove(codeLayer(), at(1, 3));
       expect(ref.current?.getSelection()).toBeNull();
@@ -426,7 +426,7 @@ describe('CodeEditor as a source view', () => {
     const typeOf = (text: string) => [...document.querySelectorAll('.bl-tok')].find((el) => el.textContent === text)?.className;
 
     it('labels with the default lexer at once', () => {
-      render(<CodeEditor readOnly variant="ghost" lines={['const a = "b"; // c']} />);
+      render(<CodeEditor readOnly variant="plain" lines={['const a = "b"; // c']} />);
       expect(typeOf('const')).toContain('bl-tok-keyword');
       expect(typeOf('"b"')).toContain('bl-tok-string');
       expect(typeOf('// c')).toContain('bl-tok-comment');
@@ -434,7 +434,7 @@ describe('CodeEditor as a source view', () => {
     });
 
     it('finds comments that start on earlier lines', () => {
-      render(<CodeEditor readOnly variant="ghost" lines={['/* one', 'two', 'three */ four']} />);
+      render(<CodeEditor readOnly variant="plain" lines={['/* one', 'two', 'three */ four']} />);
       expect(typeOf('two')).toContain('bl-tok-comment');
       expect(typeOf('three */')).toContain('bl-tok-comment');
     });
@@ -442,28 +442,28 @@ describe('CodeEditor as a source view', () => {
     it('says when what is on screen may still change color', async () => {
       let resolve: (tokens: { text: string }[]) => void = () => {};
       const promised = new Promise<{ text: string }[]>((r) => (resolve = r));
-      const { unmount } = render(<CodeEditor readOnly variant="ghost" lines={['later']} highlight={() => promised} />);
+      const { unmount } = render(<CodeEditor readOnly variant="plain" lines={['later']} highlight={() => promised} />);
       expect(root().dataset.highlighter).toBe('pending');
       await act(async () => { resolve([{ text: 'later' }]); });
       await flushFrames();
       expect(root().dataset.highlighter).toBe('custom');
       unmount();
-      const { unmount: again } = render(<CodeEditor readOnly variant="ghost" lines={['a']} />);
+      const { unmount: again } = render(<CodeEditor readOnly variant="plain" lines={['a']} />);
       expect(root().dataset.highlighter).toBe('lexer');
       again();
-      render(<CodeEditor readOnly variant="ghost" lines={['a']} highlight={null} />);
+      render(<CodeEditor readOnly variant="plain" lines={['a']} highlight={null} />);
       expect(root().dataset.highlighter).toBe('none');
     });
 
     it('turns off with null', () => {
-      render(<CodeEditor readOnly variant="ghost" lines={['const a = 1']} highlight={null} />);
+      render(<CodeEditor readOnly variant="plain" lines={['const a = 1']} highlight={null} />);
       expect(document.querySelector('.bl-tok')).toBeNull();
       expect(textOf(1)).toBe('const a = 1');
     });
 
     it('takes a highlighter, and draws what the line says, not what the tokens say', () => {
       const highlight = vi.fn((text: string, index: number) => [{ text: text.slice(0, 2), type: 'keyword' as const }, { text: 'XX', className: `line-${index}` }]);
-      render(<CodeEditor readOnly variant="ghost" lines={['abcdef']} highlight={highlight} />);
+      render(<CodeEditor readOnly variant="plain" lines={['abcdef']} highlight={highlight} />);
       expect(highlight.mock.calls[0][0]).toBe('abcdef');
       expect(highlight.mock.calls[0][1]).toBe(0);
       expect(textOf(1)).toBe('abcdef');
@@ -473,7 +473,7 @@ describe('CodeEditor as a source view', () => {
     it('shows plain text until a promise answers', async () => {
       let resolve: (tokens: { text: string; type: 'string' }[]) => void = () => {};
       const promised = new Promise<{ text: string; type: 'string' }[]>((r) => (resolve = r));
-      render(<CodeEditor readOnly variant="ghost" lines={['later']} highlight={() => promised} />);
+      render(<CodeEditor readOnly variant="plain" lines={['later']} highlight={() => promised} />);
       expect(textOf(1)).toBe('later');
       expect(document.querySelector('.bl-tok')).toBeNull();
       await act(async () => { resolve([{ text: 'later', type: 'string' }]); });
@@ -482,7 +482,7 @@ describe('CodeEditor as a source view', () => {
     });
 
     it('stays plain when a highlighter fails, without troubling the page', async () => {
-      render(<CodeEditor readOnly variant="ghost" lines={['later']} highlight={() => Promise.reject(new Error('WebGPU unavailable'))} />);
+      render(<CodeEditor readOnly variant="plain" lines={['later']} highlight={() => Promise.reject(new Error('WebGPU unavailable'))} />);
       await flushFrames();
       expect(textOf(1)).toBe('later');
     });
@@ -490,7 +490,7 @@ describe('CodeEditor as a source view', () => {
     it('gives a highlighter only the window of a long line', () => {
       const highlight = vi.fn((text: string) => [{ text }]);
       const line = 'x'.repeat(1 << 20);
-      render(<CodeEditor readOnly variant="ghost" lines={[line]} highlight={highlight} />);
+      render(<CodeEditor readOnly variant="plain" lines={[line]} highlight={highlight} />);
       expect(Math.max(...highlight.mock.calls.map(([text]) => text.length))).toBeLessThan(1000);
     });
   });
@@ -498,21 +498,21 @@ describe('CodeEditor as a source view', () => {
   describe('characters', () => {
     it('draws tabs as spaces to the next stop, and copies them as tabs', () => {
       const ref = createRef<CodeEditorHandle>();
-      render(<CodeEditor readOnly variant="ghost" ref={ref} lines={['a\tb']} tabSize={4} highlight={null} />);
+      render(<CodeEditor readOnly variant="plain" ref={ref} lines={['a\tb']} tabSize={4} highlight={null} />);
       expect(textOf(1)).toBe('a   b');
       act(() => ref.current?.selectAll());
       expect(ref.current?.getSelectionText()).toBe('a\tb');
     });
 
     it('holds wide characters to two cells', () => {
-      render(<CodeEditor readOnly variant="ghost" lines={['a漢b']} highlight={null} />);
+      render(<CodeEditor readOnly variant="plain" lines={['a漢b']} highlight={null} />);
       const box = [...document.querySelectorAll<HTMLElement>('[data-slot="code-editor-text"] span')].find((el) => el.textContent === '漢');
       expect(box?.style.width).toContain('* 2');
     });
 
     it('puts a click on the right side of a wide character', () => {
       const ref = createRef<CodeEditorHandle>();
-      render(<CodeEditor readOnly variant="ghost" ref={ref} lines={['a漢b']} />);
+      render(<CodeEditor readOnly variant="plain" ref={ref} lines={['a漢b']} />);
       const code = document.querySelector('[data-slot="code-editor-code"]') as HTMLElement;
       const at = (cell: number) => ({ clientX: PADDING + cell * CELL, clientY: LINE / 2, pointerId: 1, pointerType: 'mouse', button: 0, buttons: 1 });
       fireEvent.pointerDown(code, at(1));
@@ -526,7 +526,7 @@ describe('CodeEditor as a source view', () => {
     it('gives a long line several rows, and the gutter only the first', () => {
       const ref = createRef<CodeEditorHandle>();
       // 800 px, less the gutter and padding, at 8 px a cell.
-      render(<CodeEditor readOnly variant="ghost" ref={ref} lines={['x'.repeat(1000), 'short']} wrap />);
+      render(<CodeEditor readOnly variant="plain" ref={ref} lines={['x'.repeat(1000), 'short']} wrap />);
       const rows = document.querySelectorAll('[data-slot="code-editor-line"][data-line="1"]');
       expect(rows.length).toBeGreaterThan(5);
       expect(document.querySelectorAll('[data-slot="code-editor-gutter-row"][data-line="1"]').length).toBe(1);
@@ -538,7 +538,7 @@ describe('CodeEditor as a source view', () => {
     });
 
     it('still only renders what is on screen of a very long line', () => {
-      render(<CodeEditor readOnly variant="ghost" lines={['x'.repeat(1 << 20)]} wrap />);
+      render(<CodeEditor readOnly variant="plain" lines={['x'.repeat(1 << 20)]} wrap />);
       expect(domText().length).toBeLessThan(5000);
       expect(document.querySelectorAll('[data-slot="code-editor-line"]').length).toBeLessThan(40);
     });
@@ -552,14 +552,14 @@ describe('CodeEditor as a source view', () => {
     const controls = () => [...document.querySelectorAll<HTMLElement>('[data-slot="code-editor-content"] button')];
 
     it('has one tab stop among all the buttons', () => {
-      render(<CodeEditor readOnly variant="ghost" lines={numbered(50)} gutters={gutters} lineNumbers={{ onClick: () => {} }} />);
+      render(<CodeEditor readOnly variant="plain" lines={numbered(50)} gutters={gutters} lineNumbers={{ onClick: () => {} }} />);
       const stops = controls().filter((el) => el.getAttribute('tabindex') !== '-1');
       expect(controls().length).toBeGreaterThan(40);
       expect(stops.length).toBe(1);
     });
 
     it('moves with the arrow keys, down a gutter and along a line', () => {
-      render(<CodeEditor readOnly variant="ghost" lines={numbered(50)} gutters={gutters} />);
+      render(<CodeEditor readOnly variant="plain" lines={numbered(50)} gutters={gutters} />);
       const a1 = screen.getByRole('button', { name: 'a 1' });
       act(() => a1.focus());
       fireEvent.keyDown(a1, { key: 'ArrowDown' });
@@ -575,7 +575,7 @@ describe('CodeEditor as a source view', () => {
     });
 
     it('keeps the row with focus when the view scrolls away from it', () => {
-      render(<CodeEditor readOnly variant="ghost" lines={numbered(10_000)} gutters={gutters} />);
+      render(<CodeEditor readOnly variant="plain" lines={numbered(10_000)} gutters={gutters} />);
       const a1 = screen.getByRole('button', { name: 'a 1' });
       act(() => a1.focus());
       scrollTo({ top: 5000 * LINE });
@@ -588,7 +588,7 @@ describe('CodeEditor as a source view', () => {
       function Host() {
         const [typed, setTyped] = useState('');
         return (
-          <CodeEditor readOnly variant="ghost" lines={numbered(5)} gutters={[{ id: 'p', width: 20, render: () => <input aria-label="Box" value={typed} onChange={(e) => setTyped(e.target.value)} /> }]} />
+          <CodeEditor readOnly variant="plain" lines={numbered(5)} gutters={[{ id: 'p', width: 20, render: () => <input aria-label="Box" value={typed} onChange={(e) => setTyped(e.target.value)} /> }]} />
         );
       }
       render(<Host />);
@@ -601,24 +601,24 @@ describe('CodeEditor as a source view', () => {
   describe('content', () => {
     it('reads getLine again only when the content changes', () => {
       const first = vi.fn(generated);
-      const { rerender } = render(<CodeEditor readOnly variant="ghost" lineCount={100} getLine={first} contentKey="a" highlight={null} />);
+      const { rerender } = render(<CodeEditor readOnly variant="plain" lineCount={100} getLine={first} contentKey="a" highlight={null} />);
       const second = vi.fn((i: number) => `other ${i}`);
-      rerender(<CodeEditor readOnly variant="ghost" lineCount={100} getLine={second} contentKey="a" highlight={null} />);
+      rerender(<CodeEditor readOnly variant="plain" lineCount={100} getLine={second} contentKey="a" highlight={null} />);
       expect(textOf(1)).toBe('line 1');
-      rerender(<CodeEditor readOnly variant="ghost" lineCount={100} getLine={second} contentKey="b" highlight={null} />);
+      rerender(<CodeEditor readOnly variant="plain" lineCount={100} getLine={second} contentKey="b" highlight={null} />);
       expect(textOf(1)).toBe('other 0');
     });
 
     it('with no key, a new getLine is new content', () => {
-      const { rerender } = render(<CodeEditor readOnly variant="ghost" lineCount={100} getLine={generated} highlight={null} />);
+      const { rerender } = render(<CodeEditor readOnly variant="plain" lineCount={100} getLine={generated} highlight={null} />);
       expect(textOf(1)).toBe('line 1');
-      rerender(<CodeEditor readOnly variant="ghost" lineCount={100} getLine={(i) => `other ${i}`} highlight={null} />);
+      rerender(<CodeEditor readOnly variant="plain" lineCount={100} getLine={(i) => `other ${i}`} highlight={null} />);
       expect(textOf(1)).toBe('other 0');
     });
 
     it('works in StrictMode', () => {
       const ref = createRef<CodeEditorHandle>();
-      const { unmount } = render(<StrictMode><CodeEditor readOnly variant="ghost" ref={ref} lines={numbered(100)} currentLine={50} /></StrictMode>);
+      const { unmount } = render(<StrictMode><CodeEditor readOnly variant="plain" ref={ref} lines={numbered(100)} currentLine={50} /></StrictMode>);
       expect(lineNumbers()).toContain(50);
       act(() => ref.current?.selectAll());
       expect(ref.current?.getSelectionText().split('\n').length).toBe(100);
@@ -627,7 +627,7 @@ describe('CodeEditor as a source view', () => {
 
     it('copes with no lines at all', () => {
       const ref = createRef<CodeEditorHandle>();
-      render(<CodeEditor readOnly variant="ghost" ref={ref} lines={[]} />);
+      render(<CodeEditor readOnly variant="plain" ref={ref} lines={[]} />);
       act(() => {
         ref.current?.scrollToLine(5);
         ref.current?.selectAll();
@@ -732,6 +732,31 @@ describe('both renderers', () => {
     const row = [...document.querySelectorAll('.bl-tok')].map((el) => [el.textContent, el.className]);
     expect(page).toEqual([['const', 'bl-tok bl-tok-keyword'], ['=', 'bl-tok bl-tok-operator'], ['1', 'bl-tok bl-tok-number']]);
     expect(row).toEqual(page);
+  });
+
+  it('color a snippet the same way: in the page, windowed read-only and in an editor', () => {
+    const src = 'function f<T>(url: string, ms = 5): T | null { return g([url, ms]); }';
+    const tokens = () => [...document.querySelectorAll('.bl-tok')].map((el) => [el.textContent, el.className.replace('bl-tok ', '')]);
+    const { unmount } = render(<CodeEditor readOnly value={src} engine="fallback" />);
+    const page = tokens();
+    unmount();
+    const win = render(<CodeEditor readOnly windowed value={src} engine="fallback" />);
+    expect(tokens()).toEqual(page);
+    win.unmount();
+    render(<CodeEditor defaultValue={src} />);
+    expect(tokens()).toEqual(page);
+    // Type parameters and built-in types are types; brackets and commas are plain in all three.
+    expect(page).toContainEqual(['T', 'bl-tok-type']);
+    expect(page).toContainEqual(['string', 'bl-tok-type']);
+    expect(page.some(([text]) => text && /^[()[\]{},;]+$/.test(text))).toBe(false);
+  });
+
+  it('draw the line-number gutter alike: no rule after numbers alone, a rule after gutters of the host', () => {
+    const { unmount } = render(<CodeEditor readOnly windowed value={'a\nb'} lineNumbers />);
+    expect(document.querySelector('[data-slot="code-editor"] .border-r.border-border')).toBeNull();
+    unmount();
+    render(<CodeEditor readOnly windowed value={'a\nb'} lineNumbers gutters={[{ id: 'bp', width: 16, render: () => null }]} />);
+    expect(document.querySelector('[data-slot="code-editor"] .border-r.border-border')).not.toBeNull();
   });
 
   it('count lines the same, from the same first line, marked the same way', () => {
@@ -982,7 +1007,7 @@ describe('what is kept by line, through an edit', () => {
 
   it('a marker keeps its column on the grid when the line changes around it', async () => {
     const ref = createRef<CodeEditorHandle>();
-    render(<CodeEditor ref={ref} variant="ghost" defaultValue={'abcdef\nsecond'} markers={[{ line: 1, column: 4, label: 'here' }]} />);
+    render(<CodeEditor ref={ref} variant="plain" defaultValue={'abcdef\nsecond'} markers={[{ line: 1, column: 4, label: 'here' }]} />);
     const left = () => parseFloat((document.querySelector('[data-code-editor-cell="marker"]') as HTMLElement).style.left);
     const before = left();
     act(() => ref.current?.setSelection({ anchor: { line: 1, column: 0 }, focus: { line: 1, column: 0 } }));
@@ -1018,7 +1043,7 @@ describe('what is kept by line, through an edit', () => {
   it('wrapping knows a line got longer, and only moves rows when it has to', async () => {
     const ref = createRef<CodeEditorHandle>();
     // 800 px wide with a gutter, and a cell of 8 px: a little under 100 cells to a row.
-    render(<CodeEditor ref={ref} variant="ghost" defaultValue={`${'x'.repeat(10)}\nnext`} wrap lineNumbers={false} />);
+    render(<CodeEditor ref={ref} variant="plain" defaultValue={`${'x'.repeat(10)}\nnext`} wrap lineNumbers={false} />);
     await flushFrames();
     const rows = () => document.querySelectorAll('[data-slot="code-editor-line"][data-line="1"]').length;
     expect(rows()).toBe(1);
@@ -1045,7 +1070,7 @@ describe('pointer gestures', () => {
     const capture = vi.fn();
     Object.defineProperty(HTMLElement.prototype, 'setPointerCapture', { configurable: true, value: capture });
     const ref = createRef<CodeEditorHandle>();
-    render(<CodeEditor readOnly variant="ghost" ref={ref} lines={['const a = 1;', 'const b = 2;']} />);
+    render(<CodeEditor readOnly variant="plain" ref={ref} lines={['const a = 1;', 'const b = 2;']} />);
     fireEvent.pointerDown(codeLayer(), at(0, 0));
     expect(capture).toHaveBeenCalledWith(1);
     expect(capture.mock.contexts[0]).toBe(codeLayer());
@@ -1057,7 +1082,7 @@ describe('pointer gestures', () => {
 
   it('scrolls when a drag goes past the bottom of the view, and selects what comes in', async () => {
     const ref = createRef<CodeEditorHandle>();
-    render(<CodeEditor readOnly variant="ghost" ref={ref} lines={numbered(2000)} />);
+    render(<CodeEditor readOnly variant="plain" ref={ref} lines={numbered(2000)} />);
     fireEvent.pointerDown(codeLayer(), at(1, 0));
     fireEvent.pointerMove(document, { ...at(0, 0), clientY: HEIGHT + 60 });
     await wait(80);
@@ -1073,7 +1098,7 @@ describe('pointer gestures', () => {
 
   it('a tap with a finger puts the caret there', async () => {
     const ref = createRef<CodeEditorHandle>();
-    render(<CodeEditor ref={ref} variant="ghost" defaultValue={'const a = 1;\nconst b = 2;'} />);
+    render(<CodeEditor ref={ref} variant="plain" defaultValue={'const a = 1;\nconst b = 2;'} />);
     fireEvent.pointerDown(codeLayer(), at(1, 4, 'touch'));
     fireEvent.pointerUp(document, at(1, 4, 'touch'));
     expect(ref.current?.getSelection()).toEqual({ anchor: { line: 2, column: 4 }, focus: { line: 2, column: 4 } });
@@ -1082,7 +1107,7 @@ describe('pointer gestures', () => {
 
   it('a finger that moves first is a pan, not a tap', async () => {
     const ref = createRef<CodeEditorHandle>();
-    render(<CodeEditor ref={ref} variant="ghost" defaultValue={'const a = 1;\nconst b = 2;'} />);
+    render(<CodeEditor ref={ref} variant="plain" defaultValue={'const a = 1;\nconst b = 2;'} />);
     fireEvent.pointerDown(codeLayer(), at(1, 4, 'touch'));
     fireEvent.pointerMove(document, { ...at(1, 4, 'touch'), clientY: LINE * 1.5 + 30 });
     fireEvent.pointerUp(document, { ...at(1, 4, 'touch'), clientY: LINE * 1.5 + 30 });
@@ -1091,7 +1116,7 @@ describe('pointer gestures', () => {
 
   it('a long press selects the word, and dragging from it selects more', async () => {
     const ref = createRef<CodeEditorHandle>();
-    render(<CodeEditor readOnly variant="ghost" ref={ref} lines={['const alpha = 1;', 'const beta = 2;']} />);
+    render(<CodeEditor readOnly variant="plain" ref={ref} lines={['const alpha = 1;', 'const beta = 2;']} />);
     fireEvent.pointerDown(codeLayer(), at(0, 7, 'touch'));
     await wait(520);
     expect(ref.current?.getSelectionText()).toBe('alpha');
@@ -1109,7 +1134,7 @@ describe('controls', () => {
 
   it('goes down a gutter to a line that is not rendered yet, and brings it in', async () => {
     const gutters: CodeEditorGutter[] = [{ id: 'bp', width: 16, render: () => null, onClick: () => {}, clickable: (n) => n === 1 || n === 4000, label: (n) => `bp ${n}` }];
-    render(<CodeEditor readOnly variant="ghost" lines={numbered(5000)} gutters={gutters} />);
+    render(<CodeEditor readOnly variant="plain" lines={numbered(5000)} gutters={gutters} />);
     act(() => screen.getByRole('button', { name: 'bp 1' }).focus());
     await key('ArrowDown');
     await flushFrames();
@@ -1128,7 +1153,7 @@ describe('controls', () => {
       { id: 'a', width: 20, render: () => 'A', onClick: () => {}, label: (n) => `a ${n}` },
       { id: 'b', width: 20, render: () => 'B', onClick: () => {}, label: (n) => `b ${n}` },
     ];
-    render(<CodeEditor readOnly variant="ghost" lines={numbered(5)} gutters={gutters} markers={[{ line: 2, column: 1, label: 'm1', onClick: () => {} }, { line: 2, column: 4, label: 'm4', onClick: () => {} }]} />);
+    render(<CodeEditor readOnly variant="plain" lines={numbered(5)} gutters={gutters} markers={[{ line: 2, column: 1, label: 'm1', onClick: () => {} }, { line: 2, column: 4, label: 'm4', onClick: () => {} }]} />);
     act(() => screen.getByRole('button', { name: 'b 2' }).focus());
     fireEvent.keyDown(document.activeElement as Element, { key: 'End' });
     expect(focused()).toBe('m4');
@@ -1139,7 +1164,7 @@ describe('controls', () => {
   });
 
   it('goes down from a marker to the nearest one on the next line that has any', () => {
-    render(<CodeEditor readOnly variant="ghost" lines={numbered(6)} markers={[
+    render(<CodeEditor readOnly variant="plain" lines={numbered(6)} markers={[
       { line: 1, column: 8, label: 'one at 8', onClick: () => {} },
       { line: 3, column: 1, label: 'three at 1', onClick: () => {} },
       { line: 3, column: 7, label: 'three at 7', onClick: () => {} },
@@ -1156,7 +1181,7 @@ describe('controls', () => {
       render: (n) => (n % 100 === 1 ? <button type="button">{`pop ${n}`}</button> : null),
       focusable: (n) => n % 100 === 1,
     }, { id: 'bp', width: 16, render: () => null, onClick: () => {}, label: (n) => `bp ${n}` }];
-    render(<CodeEditor readOnly variant="ghost" lines={numbered(500)} gutters={gutters} />);
+    render(<CodeEditor readOnly variant="plain" lines={numbered(500)} gutters={gutters} />);
     await flushFrames();
     const stops = [...document.querySelectorAll('[data-slot="code-editor-content"] button')].filter((el) => el.getAttribute('tabindex') === '0');
     expect(stops.length).toBe(1);
@@ -1182,7 +1207,7 @@ describe('controls', () => {
         render: (n) => (set.includes(n) ? <button type="button">{`pop ${n}`}</button> : null),
         focusable: (n) => set.includes(n),
       }];
-      return <CodeEditor readOnly variant="ghost" lines={numbered(50)} gutters={gutters} />;
+      return <CodeEditor readOnly variant="plain" lines={numbered(50)} gutters={gutters} />;
     }
     render(<Host />);
     await flushFrames();
@@ -1202,7 +1227,7 @@ describe('controls', () => {
 
   it('reports a press on a gutter button with UI SDK details and the line', () => {
     const onClick = vi.fn();
-    render(<CodeEditor readOnly variant="ghost" lines={numbered(3)} gutters={[{ id: 'bp', width: 16, render: () => null, onClick, label: (n) => `bp ${n}` }]} />);
+    render(<CodeEditor readOnly variant="plain" lines={numbered(3)} gutters={[{ id: 'bp', width: 16, render: () => null, onClick, label: (n) => `bp ${n}` }]} />);
     fireEvent.click(screen.getByRole('button', { name: 'bp 2' }));
     const [event, details] = onClick.mock.calls[0];
     expect(event.type).toBe('click');
@@ -1270,7 +1295,7 @@ describe('change details', () => {
     const ref = createRef<CodeEditorHandle>();
     const reasons: string[] = [];
     let refuse = false;
-    render(<CodeEditor readOnly variant="ghost" ref={ref} lines={['const a = 1;', 'const b = 2;']} onSelectionChange={(_selection, details) => {
+    render(<CodeEditor readOnly variant="plain" ref={ref} lines={['const a = 1;', 'const b = 2;']} onSelectionChange={(_selection, details) => {
       reasons.push(details.reason);
       if (refuse) details.cancel();
     }} />);

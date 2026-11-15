@@ -84,4 +84,18 @@ describe('ProgressStepper', () => {
     const { container } = render(<ProgressStepper steps={steps} current={0} />);
     expect(container.querySelector('[data-slot="progress-step-label"]')!.className).toContain('sr-only');
   });
+
+  it('reads a complete step with the `completedLabel` it is given', () => {
+    render(<ProgressStepper steps={steps} current={1} completedLabel="terminé" />);
+    expect(screen.getAllByRole('listitem')[0].textContent).toContain(', terminé');
+  });
+
+  it('puts a line\'s labels on a second row under the icon, wrapping to two lines', () => {
+    const { container } = render(<ProgressStepper steps={steps} current={1} variant="line" labels />);
+    expect(container.querySelector('[data-slot="progress-step"]')!.className).toContain('grid-cols-[auto_minmax(0,1fr)]');
+    const label = container.querySelector('[data-slot="progress-step-label"]')!;
+    expect(label.className).toContain('line-clamp-2');
+    expect(label.className).toContain('col-span-2');
+    expect(label.className).not.toContain('truncate');
+  });
 });

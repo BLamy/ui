@@ -3,7 +3,7 @@ import {
   Combobox,
   ComboboxContent,
   ComboboxEmpty,
-  ComboboxField,
+  ComboboxInputGroup,
   ComboboxInput,
   ComboboxTrigger,
   ComboboxItem,
@@ -44,10 +44,10 @@ export default function Assignee() {
           onValueChange={setValue}
           onQueryChange={setQuery}
         >
-          <ComboboxField>
+          <ComboboxInputGroup>
             <ComboboxInput placeholder="Search the team" />
             <ComboboxTrigger />
-          </ComboboxField>
+          </ComboboxInputGroup>
           <ComboboxContent>
             <ComboboxEmpty>No one matches “{query}”.</ComboboxEmpty>
             <ComboboxList>
@@ -74,7 +74,7 @@ export default function Assignee() {
       <Field disabled>
         <FieldLabel>Reviewer (locked)</FieldLabel>
         <Combobox items={[{ value: 'ana', label: 'Ana Torres' }]} defaultValue="ana">
-          <ComboboxField />
+          <ComboboxInputGroup />
           <ComboboxContent />
         </Combobox>
       </Field>

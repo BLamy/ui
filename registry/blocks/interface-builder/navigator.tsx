@@ -102,11 +102,11 @@ function toNode(item: Item): TreeNode {
   switch (item.kind) {
     case 'entry': return { value: item.id, label: item.label, icon: 'arrow-right' };
     case 'contexts': return { value: item.id, label: 'Contexts', ...kids };
-    case 'context': return { value: item.id, label: item.ctx.name, icon: 'circle-fill', detail: item.ctx.alias, detailTitle: 'Read it as' };
+    case 'context': return { value: item.id, label: item.ctx.name, icon: 'circle-fill', trailing: item.ctx.alias, description: 'Read it as' };
     case 'scene': return { value: item.id, label: item.scene.name, ...kids };
     case 'responder': {
       const handles = Object.keys(item.scene.responds ?? {}).length;
-      return { value: item.id, label: 'First Responder', icon: 'bolt-fill', ...(handles ? { detail: String(handles), detailTitle: 'Commands it handles' } : {}) };
+      return { value: item.id, label: 'First Responder', icon: 'bolt-fill', ...(handles ? { trailing: String(handles), description: 'Commands it handles' } : {}) };
     }
     case 'exit': return { value: item.id, label: 'Exit', icon: 'arrow-uturn-backward' };
     case 'segue': return { value: item.id, label: `${SEGUE_KINDS.find((k) => k.id === item.segue.kind)?.label} → ${item.to}`, icon: SEGUE_GLYPH[item.segue.kind] as IconName };
@@ -127,7 +127,7 @@ function toNode(item: Item): TreeNode {
       return {
         value: item.id, label: item.root ? `${item.label} (root)` : item.label,
         ...(typeof spec.icon === 'string' ? { icon: spec.icon as IconName } : {}),
-        ...(badges.length ? { detail: badges.map(([b]) => b).join(' '), detailTitle: badges.map(([, t]) => t).join('; ') } : {}),
+        ...(badges.length ? { trailing: badges.map(([b]) => b).join(' '), description: badges.map(([, t]) => t).join('; ') } : {}),
         ...kids,
       };
     }

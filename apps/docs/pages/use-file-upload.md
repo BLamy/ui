@@ -1,6 +1,6 @@
 # useFileUpload
 
-The logic behind [FileUpload](https://blamy.github.io/ui/#/file-upload), without its styling: the rows of a file list (queued, uploading, done, failed, and the files UI SDK's [FileInput](https://ui-sdk.dev/docs/react/components/file-input) turned away, with the reason in words), a concurrency-limited upload queue with abort, retry and controlled mode (the `fileUpload` primitive, so agents can reach it too), an `XMLHttpRequest` adapter that reports real progress, and helpers (`describeRules`, `rejectionMessage`; sizes read through UI SDK's `formatFileSize`). Choosing, dropping, pasting and the checks are FileInput's: spread `inputProps` on its root and the hook does the rest. Use it to build your own drop target, rows or form; the options, the returned API and the helpers are documented under [FileUpload](https://blamy.github.io/ui/#/file-upload).
+The logic behind [FileUpload](https://blamy.github.io/ui/#/file-upload), without its styling: the rows of a file list (queued, uploading, done, failed, and the files UI SDK's [FileInput](https://ui-sdk.dev/docs/react/components/file-input) turned away, with the reason in words), a concurrency-limited upload queue with abort, retry and controlled mode (the `fileUpload` primitive, so agents can reach it too), an `XMLHttpRequest` adapter that reports real progress, and helpers (`describeRules`, `rejectionMessage`; sizes read through the kit's `formatFileSize`, `@/lib/file-size`). Choosing, dropping, pasting and the checks are FileInput's: spread `inputProps` on its root and the hook does the rest. Use it to build your own drop target, rows or form; the options, the returned API and the helpers are documented under [FileUpload](https://blamy.github.io/ui/#/file-upload).
 
 {% tabs title="Installation" sync="install" %}
 {% tab title="shadcn CLI" %}
@@ -16,12 +16,13 @@ import { xhrUpload } from '@/lib/file-upload-model'
 {% tab title="npm" %}
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 
-Import the stylesheet once at your app's entry, then the parts from the package root:
+Import the stylesheet once at your app's entry, then the parts from their module:
 
 ```tsx
 import '@brett_lamy/ui/styles.css'
 
-import { useFileUpload, xhrUpload } from '@brett_lamy/ui'
+import { useFileUpload } from '@brett_lamy/ui/lib/use-file-upload'
+import { xhrUpload } from '@brett_lamy/ui/lib/file-upload-model'
 ```
 {% endtab %}
 {% endtabs %}

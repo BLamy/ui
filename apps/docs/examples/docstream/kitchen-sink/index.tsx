@@ -108,7 +108,7 @@ export default function KitchenSink() {
             <div className="sink-panel-body">
               <MarkdownEditor
                 aria-label="Kitchen sink document"
-                variant="ghost"
+                variant="plain"
                 value={markdown}
                 onValueChange={setMarkdown}
                 toolbar

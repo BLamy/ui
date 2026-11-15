@@ -1,7 +1,6 @@
 'use client';
 import * as React from 'react';
 import { useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
 import { GitbookEditor, type GitbookEditorProps } from '@brett_lamy/docstream-editor/editor';
 import type { EditorAttachment } from '@brett_lamy/docstream-editor';
 import { cva, type VariantProps } from 'class-variance-authority';
@@ -34,18 +33,19 @@ import {
   attachmentKind,
   describeAccepted,
   fileExtension,
-  formatFileSize,
   readFileAsDataURL,
   textExcerpt,
   videoPoster,
   type ComposerAttachmentKind,
 } from '@/components/ui/composer/composer-files';
+import { formatFileSize } from '@/lib/file-size';
 import { flipPlay, flipSnapshot, prefersReducedMotion, springs, type FlipSnapshot } from '@/lib/motion';
 import { useEnterExit, usePresence, usePresenceList, type PresenceEntry } from '@/lib/presence';
 import { Swap } from '@/components/ui/swap';
 import { TextMorph } from '@/components/ui/text-morph';
 import { themeScopeProps } from '@/lib/theme';
-import { changeDetails, type ChangeGiven } from '@/lib/change-details';
+import { useKeptChildren } from '@/lib/kept-children';
+import type { ChangeGiven } from '@/lib/change-details';
 import { useControllableChange } from '@/lib/controllable-state';
 
 /* ══ Composer — a compositional prompt box, in the spirit of shadcn's InputGroup ══
@@ -58,7 +58,7 @@ import { useControllableChange } from '@/lib/controllable-state';
        <ComposerExpand />
        <ComposerFooter>                                      ← block-end addon
          <ComposerSelect aria-label="Effort" items={…} /> <ComposerSeparator /> <ComposerSelect … />
-         <ComposerSpacer /> <ComposerAdd icon="paperclip-diagonal" label="Attach files" /> <ComposerSend />
+         <ComposerSpacer /> <ComposerAdd icon="paperclip-diagonal" aria-label="Attach files" /> <ComposerSend />
        </ComposerFooter>
      </ComposerCard>
      <ComposerBump side="bottom">…</ComposerBump>
@@ -67,7 +67,7 @@ import { useControllableChange } from '@/lib/controllable-state';
    The root owns the draft (markdown + attachments), expanded, streaming, disabled and send/stop; every part reads
    it from `useComposer()`. Popups, menus and buttons are the kit's own (DropdownMenu, Button, ImageAnnotator).
    `ComposerOutlet` (not in the barrel) lets an ancestor add parts to (or wrap the card of) the Composer inside it:
-   the floating chat layout uses it to hang its transcript off a draggable top bump. */
+   ArtifactChatContainer uses it to swap the card for a working status while its agent works. */
 
 export type { ComposerAttachmentKind } from '@/components/ui/composer/composer-files';
 
@@ -89,12 +89,13 @@ export interface ComposerAttachment extends EditorAttachment {
 /** Where attached files came from. */
 export type ComposerFileSource = 'picker' | 'drop' | 'paste' | 'api';
 
-/** A file the Composer turned away, and why. */
-export interface ComposerFileRejection {
-  file: File;
-  /** `type`: not in `acceptedFileTypes` · `size`: over `maxFileSize` · `count`: past `maxFiles`. */
-  reason: 'type' | 'size' | 'count';
-}
+/** A file the Composer turned away, and why: UI SDK's (and FileUpload's) shape. `reasons` holds `file-type` (not in
+    `accept`), `file-too-large` (over `maxSize`) or `too-many-files` (past `maxFiles`). */
+export type { FileRejection } from '@ui-sdk/react/file-input';
+
+/** An `accept` value as a list (`'image/*,.pdf'` or `['image/*', '.pdf']`). */
+const acceptList = (accept: string | readonly string[] | undefined): readonly string[] | undefined =>
+  typeof accept === 'string' ? accept.split(',').map((t) => t.trim()).filter(Boolean) : accept;
 
 export interface ComposerAttachOptions {
   /** Where the files came from (passed to `onDropFiles`; default `api`). */
@@ -134,13 +135,13 @@ export interface ComposerContextValue {
   removeAttachment: (id: string, given?: ChangeGiven<ComposerAttachmentsChangeReason>) => boolean;
   updateAttachment: (id: string, patch: Partial<ComposerAttachment>, given?: ChangeGiven<ComposerAttachmentsChangeReason>) => boolean;
   /**
-   * Adds files as attachments, after the `acceptedFileTypes` / `maxFileSize` / `maxFiles` checks and the
+   * Adds files as attachments, after the `accept` / `maxSize` / `maxFiles` checks and the
    * `onDropFiles` hook. Images chip into the editor (at `point` when over it, else the caret); other files
    * become tiles with a preview where one is cheap (a video's first frame, a text file's first lines).
    */
   attachFiles: (files: File[], options?: ComposerAttachOptions) => void;
-  /** The Composer's `acceptedFileTypes` (the add button and the drop zone use it). */
-  acceptedFileTypes?: string[];
+  /** The Composer's `accept`, as a list (the add button and the drop zone use it). */
+  accept?: readonly string[];
   expanded: boolean;
   setExpanded: (expanded: boolean, given?: ChangeGiven<ComposerExpandedChangeReason>) => boolean;
   streaming: boolean;
@@ -260,11 +261,12 @@ export interface ComposerProps {
   annotator?: ImageAnnotatorEngine | null;
   /**
    * Files the composer takes — from the add button, a drop, or a paste — as MIME types, wildcards and
-   * extensions (`['image/*', 'application/pdf', '.md']`). Default: any file. Others are turned away with a toast.
+   * extensions (`['image/*', 'application/pdf', '.md']`, or a comma-separated string, as on FileUpload and an
+   * `<input accept>`). Default: any file. Others are turned away with a toast.
    */
-  acceptedFileTypes?: string[];
+  accept?: string | readonly string[];
   /** The largest file (bytes) the composer takes; larger ones are turned away with a toast. */
-  maxFileSize?: number;
+  maxSize?: number;
   /** How many attachments a draft can hold; files past it are turned away with a toast. */
   maxFiles?: number;
   /**
@@ -272,22 +274,24 @@ export interface ComposerProps {
    * `api`). Return `false` to take them yourself (nothing attaches), or an array to attach those instead.
    */
   onDropFiles?: (files: File[], source: ComposerFileSource) => File[] | false | void;
-  /** Called with the files turned away. Providing it replaces the default warning toast. */
-  onFilesRejected?: (rejections: ComposerFileRejection[]) => void;
-  /** Collapse state: the full card, a single-row `compact` pill, or a `fab`. */
+  /** Called with the files turned away (FileUpload's `onReject`). Providing it replaces the default warning toast. */
+  onReject?: (rejected: FileRejection[]) => void;
+  /** Collapse state: the full card (`none`), a single-row `compact` pill, or folded into a `fab` (what a
+      FloatingSheet calls `minimized`). */
   collapsed?: ComposerCollapse;
   defaultCollapsed?: ComposerCollapse;
   onCollapsedChange?: (collapsed: ComposerCollapse, details: ComposerCollapsedChangeDetails) => void;
   /**
    * A scroller beside the composer (a chat transcript). Scrolling away from its anchor (up, away from the
-   * newest message, by default) collapses the composer to `compact`; with `collapseTo="fab"` a flick or a long
+   * newest message, by default) collapses the composer to `compact`; with `collapse="fab"` a flick or a long
    * scroll away folds it into a FAB — the card morphing into the button as one shape. Scrolling back near the
    * anchor, or tapping the FAB, restores it. Never collapses while the composer has focus, an attachment, or the
    * annotator open, and never folds a draft or a reply into the FAB.
    */
   collapseOnScroll?: React.RefObject<HTMLElement | null>;
-  /** How far scrolling collapses the composer (default `compact`). */
-  collapseTo?: 'compact' | 'fab';
+  /** How far scrolling may collapse the composer (default `compact`): the policy, as FloatingSheet's `collapse` is;
+      `collapsed` is where it is now. */
+  collapse?: 'compact' | 'fab';
   /**
    * Which end of the scroller is "home". `bottom` (default, chats): the transcript rests at its newest
    * message, scrolling up collapses and scrolling back down restores. `top` (documents): the reverse.
@@ -328,16 +332,16 @@ export function Composer({
   onSubmit,
   disabled = false,
   annotator: annotatorProp,
-  acceptedFileTypes,
-  maxFileSize,
+  accept: acceptProp,
+  maxSize,
   maxFiles,
   onDropFiles,
-  onFilesRejected,
+  onReject,
   collapsed: collapsedProp,
   defaultCollapsed = 'none',
   onCollapsedChange,
   collapseOnScroll,
-  collapseTo = 'compact',
+  collapse = 'compact',
   collapseAnchor = 'bottom',
   fabAlign = 'end',
   fabIcon,
@@ -423,21 +427,22 @@ export function Composer({
     },
     [],
   );
+  const accept = React.useMemo(() => acceptList(acceptProp), [acceptProp]);
   const toast = useToast();
-  const rejectFiles = (rejections: ComposerFileRejection[]) => {
+  const rejectFiles = (rejections: FileRejection[]) => {
     if (!rejections.length) return;
-    if (onFilesRejected) return onFilesRejected(rejections);
-    const names = (rs: ComposerFileRejection[]) => {
+    if (onReject) return onReject(rejections);
+    const names = (rs: FileRejection[]) => {
       const list = rs.map((r) => r.file.name || 'a file');
       const shown = list.slice(0, 2).join(list.length === 2 ? ' and ' : ', ');
       return list.length > 2 ? `${shown} and ${list.length - 2} more` : shown;
     };
-    const group = (reason: ComposerFileRejection['reason']) => rejections.filter((r) => r.reason === reason);
-    const [type, size, count] = [group('type'), group('size'), group('count')];
+    const group = (reason: FileRejection['reasons'][number]) => rejections.filter((r) => r.reasons[0] === reason);
+    const [type, size, count] = [group('file-type'), group('file-too-large'), group('too-many-files')];
     const are = (rs: unknown[]) => (rs.length > 1 ? 'are' : 'is');
     const lines = [
-      type.length && `${names(type)} ${are(type)} not a type this composer takes (${describeAccepted(acceptedFileTypes)}).`,
-      size.length && `${names(size)} ${are(size)} over the ${formatFileSize(maxFileSize)} limit.`,
+      type.length && `${names(type)} ${are(type)} not a type this composer takes (${describeAccepted(accept)}).`,
+      size.length && `${names(size)} ${are(size)} over the ${formatFileSize(maxSize)} limit.`,
       count.length && `${names(count)} didn't fit — a draft holds ${maxFiles} attachment${maxFiles === 1 ? '' : 's'}.`,
     ].filter(Boolean);
     const n = rejections.length;
@@ -462,16 +467,16 @@ export function Composer({
   };
   const attachFiles = (incoming: File[], { source = 'api', point, event }: ComposerAttachOptions = {}) => {
     if (disabled) return;
-    const rejected: ComposerFileRejection[] = [];
+    const rejected: FileRejection[] = [];
     let files = incoming.filter((file) => {
-      if (!acceptsFile(file, acceptedFileTypes)) rejected.push({ file, reason: 'type' });
-      else if (maxFileSize != null && file.size > maxFileSize) rejected.push({ file, reason: 'size' });
+      if (!acceptsFile(file, accept)) rejected.push({ file, reasons: ['file-type'] });
+      else if (maxSize != null && file.size > maxSize) rejected.push({ file, reasons: ['file-too-large'] });
       else return true;
       return false;
     });
     if (maxFiles != null) {
       const room = Math.max(0, maxFiles - attRef.current.length - pendingFiles.current);
-      files.slice(room).forEach((file) => rejected.push({ file, reason: 'count' }));
+      files.slice(room).forEach((file) => rejected.push({ file, reasons: ['too-many-files'] }));
       files = files.slice(0, room);
     }
     rejectFiles(rejected);
@@ -575,10 +580,10 @@ export function Composer({
   // Chat-style by default: the transcript rests at its newest message (the bottom). Scrolling away from it
   // folds the composer to one row; a long or fast scroll away folds it to the FAB; coming back near the
   // anchor restores it. `collapseAnchor="top"` flips this for documents that start at the top.
-  const scrollState = useRef({ collapsed, collapseTo, streaming, draft: false, blocked: () => false as boolean, set: setCollapsed });
+  const scrollState = useRef({ collapsed, collapse, streaming, draft: false, blocked: () => false as boolean, set: setCollapsed });
   scrollState.current = {
     collapsed,
-    collapseTo,
+    collapse,
     streaming,
     draft: !!value.trim(),
     blocked: () =>
@@ -626,7 +631,7 @@ export function Composer({
       }
       travel = Math.max(0, travel) + delta;
       // Drafts and replies never fold into the FAB.
-      const canFab = st.collapseTo === 'fab' && !st.streaming && !st.draft;
+      const canFab = st.collapse === 'fab' && !st.streaming && !st.draft;
       // A flick (fast) or a long read away folds all the way to the FAB.
       if (canFab && st.collapsed !== 'fab' && (speed > COLLAPSE_FLICK_SPEED || travel > COLLAPSE_FAB_TRAVEL)) set('fab');
       else if (st.collapsed === 'none' && travel > 24) set('compact');
@@ -657,7 +662,7 @@ export function Composer({
     if (!setCollapsed('none', { reason: 'press', event: event?.nativeEvent })) return;
     requestAnimationFrame(() => editor?.commands.focus('end'));
   };
-  const fabEnabled = !!collapseOnScroll || collapsedProp !== undefined || defaultCollapsed === 'fab' || collapseTo === 'fab';
+  const fabEnabled = !!collapseOnScroll || collapsedProp !== undefined || defaultCollapsed === 'fab' || collapse === 'fab';
   const origin = useRef<(() => HTMLElement | null) | undefined>(undefined);
   const pressedAttachment = useRef<Element | null>(null);
   const openAnnotator = (id: string) => {
@@ -687,7 +692,7 @@ export function Composer({
     removeAttachment,
     updateAttachment,
     attachFiles,
-    acceptedFileTypes,
+    accept,
     expanded,
     setExpanded,
     streaming,
@@ -887,33 +892,27 @@ export interface ComposerOptionsProps extends Omit<React.HTMLAttributes<HTMLSpan
  * `compact`, move into the `ComposerOptionsOutlet` (e.g. in the bottom bump). The same elements move (a stable
  * portal host is re-attached), so menus keep their state.
  */
-export function ComposerOptions({ className, style, children, ...props }: ComposerOptionsProps) {
+export function ComposerOptions({ className, children, ...props }: ComposerOptionsProps) {
   const { collapsed, optionsOutlet } = useComposerInternals();
   const home = useRef<HTMLSpanElement>(null);
-  const [host] = useState(() => {
-    if (typeof document === 'undefined') return null;
-    const el = document.createElement('span');
-    el.setAttribute('data-slot', 'composer-options');
-    return el;
-  });
-  // The host is a plain element the Composer moves around: its classes and props are written on it directly.
-  React.useLayoutEffect(() => {
-    if (!host) return;
-    host.className = cn(OPTIONS_ROW, className);
-    for (const [key, value] of Object.entries(props)) {
-      if (typeof value === 'string' && (key.startsWith('data-') || key.startsWith('aria-') || key === 'id' || key === 'role')) host.setAttribute(key, value);
-    }
-    if (style) Object.assign(host.style, style);
-  });
+  // The row is rendered once and kept mounted (menus keep their state) while it moves between its home in the
+  // footer and the outlet.
+  const kept = useKeptChildren(
+    <span data-slot="composer-options" className={cn(OPTIONS_ROW, className)} {...props}>
+      {children}
+    </span>,
+  );
+  const dock = kept.dock;
   React.useLayoutEffect(() => {
     const target = collapsed === 'compact' && optionsOutlet ? optionsOutlet : home.current;
-    if (host && target && host.parentNode !== target) target.appendChild(host);
-  }, [collapsed, optionsOutlet, host]);
-  React.useEffect(() => () => host?.remove(), [host]);
+    if (target) dock(target);
+  }, [collapsed, optionsOutlet, dock]);
   return (
     <>
-      <span ref={home} data-slot="composer-options-home" className="contents" />
-      {host ? createPortal(children, host) : null}
+      <span ref={home} data-slot="composer-options-home" className="contents">
+        {kept.inline}
+      </span>
+      {kept.portal}
     </>
   );
 }
@@ -1022,7 +1021,7 @@ function ComposerDropOverlay({ dragging, label, hint }: { dragging: boolean; lab
 
 /** The bordered surface. Holds the input and its addons, takes dropped and pasted files; an outlet may wrap it. */
 export function ComposerCard({ size, dropZone = true, dropLabel, className, ref, children, ...props }: ComposerCardProps) {
-  const { renderCard, collapsed, fab, acceptedFileTypes, attachFiles, disabled } = useComposerInternals();
+  const { renderCard, collapsed, fab, accept, attachFiles, disabled } = useComposerInternals();
   const folded = collapsed === 'fab' && !!fab;
   const surface = (dragging: boolean) => (
     <div
@@ -1042,7 +1041,7 @@ export function ComposerCard({ size, dropZone = true, dropLabel, className, ref,
         <ComposerDropOverlay
           dragging={dragging}
           label={dropLabel}
-          hint={acceptedFileTypes?.length ? describeAccepted(acceptedFileTypes) : 'Images, documents, code — any file'}
+          hint={accept?.length ? describeAccepted(accept) : 'Images, documents, code — any file'}
         />
       ) : null}
       {fab ? (
@@ -1144,9 +1143,10 @@ export function ComposerText({
 
 /* ── Buttons ── */
 /* The composer's buttons are the kit's Button: icon buttons are `variant="quiet" size="icon-sm"` (28px), the option
-   pill is the same quiet look at the footer's density, and send / stop are `default` / `destructive` circles. */
+   pill is the same quiet look at the footer's density, and send / stop are `default` / `destructive` circles at the
+   same 28px `icon-sm` size (round), so the row shares one height. `icon-sm` brings its own 44px coarse hit area. */
 const iconButtonClass = cn(buttonVariants({ variant: 'quiet', size: 'icon-sm' }), touchTarget);
-const circleClass = 'size-[30px] rounded-full p-0';
+const circleClass = 'rounded-full';
 
 /** The Composer around a part, when there is one (the pill and select also work on their own). */
 function useComposerDisabled(disabled: boolean | undefined) {
@@ -1282,7 +1282,7 @@ export interface ComposerStopProps extends Omit<ButtonProps, 'variant' | 'size'>
 /** The spinning progress ring around the stop square. */
 function StopRing() {
   return (
-    <svg aria-hidden="true" width="30" height="30" viewBox="0 0 30 30" className="absolute inset-0 animate-[wbSpin_1s_linear_infinite] motion-reduce:animate-none">
+    <svg aria-hidden="true" viewBox="0 0 30 30" className="absolute inset-0 size-full animate-[wbSpin_1s_linear_infinite] motion-reduce:animate-none">
       <circle cx="15" cy="15" r="12.5" fill="none" stroke="var(--secondary-strong, var(--accent))" strokeWidth="2.5" />
       <circle cx="15" cy="15" r="12.5" fill="none" stroke="var(--primary)" strokeWidth="2.5" strokeDasharray="24 55" strokeLinecap="round" />
     </svg>
@@ -1297,11 +1297,11 @@ export function ComposerStop({ variant = 'ring', forceMount, className, ...props
   if (!presence.mounted) return null;
   const button =
     variant === 'solid' ? (
-      <Button variant="destructive" aria-label="Stop" onClick={stop} className={cx([circleClass, touchTarget], className)} {...props}>
+      <Button variant="destructive" size="icon-sm" aria-label="Stop" onClick={stop} className={cx([circleClass], className)} {...props}>
         <span className="block size-[9px] rounded-xs bg-current" />
       </Button>
     ) : (
-      <Button variant="ghost" aria-label="Stop" onClick={stop} className={cx([circleClass, touchTarget, 'bg-transparent'], className)} {...props}>
+      <Button variant="ghost" size="icon-sm" aria-label="Stop" onClick={stop} className={cx([circleClass, 'bg-transparent'], className)} {...props}>
         <StopRing />
         <Icon name="stop-square" size={12} sw={2.4} />
       </Button>
@@ -1340,6 +1340,7 @@ export function ComposerSend({ morph = true, stopVariant = 'ring', disabled: dis
   return (
     <Button
       variant={stopping && stopVariant === 'solid' ? 'destructive' : 'default'}
+      size="icon-sm"
       data-state={stopping ? 'stop' : queueing ? 'queue' : 'send'}
       aria-label={stopping ? 'Stop' : queueing ? 'Queue message' : 'Send'}
       disabled={disabled}
@@ -1347,7 +1348,6 @@ export function ComposerSend({ morph = true, stopVariant = 'ring', disabled: dis
       className={cx(
         [
           circleClass,
-          touchTarget,
           'overflow-visible [transition:background-color_var(--duration-spring-snappy)_var(--ease-spring-snappy),opacity_var(--duration-spring-snappy)_var(--ease-spring-snappy),color_var(--duration-spring-snappy)_var(--ease-spring-snappy),scale_var(--duration-spring-snappy)_var(--ease-spring-snappy)]',
           stopping && stopVariant === 'ring' && 'bg-transparent text-foreground',
         ],
@@ -1372,8 +1372,8 @@ export function ComposerSend({ morph = true, stopVariant = 'ring', disabled: dis
 }
 
 export interface ComposerAddProps extends Omit<React.ComponentProps<typeof FileInputTrigger>, 'children' | 'controller'> {
-  /** Files the picker offers (MIME types, wildcards, extensions). Defaults to the Composer's `acceptedFileTypes`. */
-  acceptedFileTypes?: string[];
+  /** Files the picker offers (MIME types, wildcards, extensions). Defaults to the Composer's `accept`. */
+  accept?: string | readonly string[];
   /** Pick several files at once (default `true`). */
   multiple?: boolean;
   /** Pick a whole folder instead of files. */
@@ -1383,7 +1383,7 @@ export interface ComposerAddProps extends Omit<React.ComponentProps<typeof FileI
   /** The glyph: an `Icon` name or a node (default `plus`; `paperclip-diagonal` for an attach button). */
   icon?: IconName | (string & {}) | React.ReactNode;
   /** Accessible name and tooltip (default "Add files"; "Attach files" beside a paperclip). */
-  label?: string;
+  'aria-label'?: string;
 }
 
 /**
@@ -1392,24 +1392,24 @@ export interface ComposerAddProps extends Omit<React.ComponentProps<typeof FileI
  * `ComposerAttachments`.
  */
 export function ComposerAdd({
-  acceptedFileTypes,
+  accept,
   multiple = true,
   directory,
   capture,
   icon = 'plus',
-  label = 'Add files',
+  'aria-label': label = 'Add files',
   disabled,
   className,
   ...props
 }: ComposerAddProps) {
-  const { attachFiles, acceptedFileTypes: accepted, disabled: composerDisabled } = useComposer();
+  const { attachFiles, accept: accepted, disabled: composerDisabled } = useComposer();
   // Files the picker's filter let through but its `accept` doesn't match go to `attachFiles` too: it turns them
   // away with the composer's toast.
   const rejected = (files: FileRejection[]) => attachFiles(files.map((r) => r.file as File), { source: 'picker' });
   return (
     <FileInput
       className="contents"
-      accept={acceptedFileTypes ?? accepted}
+      accept={accept ?? accepted}
       multiple={multiple}
       directory={directory}
       capture={capture}
@@ -1848,7 +1848,7 @@ export const composerBumpVariants = cva('relative box-border flex min-w-0 flex-c
       /** A separate rounded strip with a gap (the Workbench checkout bar). */
       detached: 'rounded-lg bg-secondary',
       /** No chrome — just a row (suggestions, hints). */
-      flush: '',
+      plain: '',
     },
   },
   compoundVariants: [
@@ -1858,8 +1858,8 @@ export const composerBumpVariants = cva('relative box-border flex min-w-0 flex-c
     { side: 'bottom', variant: 'attached', className: 'mx-(--bump-inset) -mt-3 rounded-b-card border-t-0 pt-3' },
     { side: 'top', variant: 'detached', className: 'mx-2 mb-1.5' },
     { side: 'bottom', variant: 'detached', className: 'mx-2 mt-1.5' },
-    { side: 'top', variant: 'flush', className: 'mb-1.5' },
-    { side: 'bottom', variant: 'flush', className: 'mt-1.5' },
+    { side: 'top', variant: 'plain', className: 'mb-1.5' },
+    { side: 'bottom', variant: 'plain', className: 'mt-1.5' },
   ],
   defaultVariants: { side: 'bottom', variant: 'attached' },
 });
@@ -1867,9 +1867,6 @@ export const composerBumpVariants = cva('relative box-border flex min-w-0 flex-c
 /** Why a draggable bump opened or closed: its handle pressed, dragged, Escape, or code. */
 export type ComposerBumpOpenChangeReason = 'press' | 'drag' | 'escape-key' | 'imperative';
 export type ComposerBumpOpenChangeDetails = ChangeDetails<ComposerBumpOpenChangeReason>;
-/** Why a minimizable bump folded into (or out of) its FAB: a drag below rest, or its handle pressed. */
-export type ComposerBumpMinimizedChangeReason = 'press' | 'drag';
-export type ComposerBumpMinimizedChangeDetails = ChangeDetails<ComposerBumpMinimizedChangeReason>;
 
 export interface ComposerBumpContextValue {
   side: 'top' | 'bottom';
@@ -1908,22 +1905,6 @@ export function useComposerBump(): ComposerBumpContextValue {
   return useBumpInternals();
 }
 
-export interface ComposerBumpProgress {
-  /** 0 at rest, 1 fully open. */
-  progress: number;
-  /** Revealed body height (px): the finger's while dragging, else where the body is heading. */
-  reveal: number;
-  /** 0–1 fold towards a FAB while dragging below rest (minimizable bumps). */
-  minimize: number;
-  dragging: boolean;
-  /** The bump's own CSS transition is carrying it to rest: a host driving CSS from `progress` transitions too. */
-  settling: boolean;
-}
-
-/** Extra downward travel (past the peek) that folds the surface into its FAB. */
-const BUMP_MINIMIZE_TRAVEL = 96;
-/** Share of the fold travel a release must reach (projected) to fold into the FAB. */
-const BUMP_FOLD_COMMIT = 0.5;
 /** How far (ms of travel at release speed) a flick is carried before picking the nearest rest. */
 const BUMP_PROJECT_MS = 200;
 /** Release speed (px/ms) above which a drag counts as a flick toward the next rest. */
@@ -1933,21 +1914,18 @@ interface BumpDragOptions {
   onOpenChange: (open: boolean, given: ChangeGiven<ComposerBumpOpenChangeReason>) => boolean;
   peek: number;
   maxReveal: number;
-  minimizable: boolean;
-  minimized: boolean;
-  onMinimizedChange?: (minimized: boolean, details: ComposerBumpMinimizedChangeDetails) => void;
   windowRef: React.RefObject<HTMLDivElement | null>;
 }
 
 /**
  * A draggable bump's gesture, on UI SDK's `bindDrag` and gesture math: the body follows the pointer one-to-one
- * (rubber-banding past its ends), and a release projects the pointer's velocity forward to pick a rest (peek,
- * open, or the FAB). The body then transitions there in CSS on the `tray` spring; grabbing it mid-way catches it
+ * (rubber-banding past its ends), and a release projects the pointer's velocity forward to pick a rest (peek or
+ * open). The body then transitions there in CSS on the `tray` spring; grabbing it mid-way catches it
  * where it is.
  */
-function useBumpDrag({ open, onOpenChange, peek, maxReveal, minimizable, minimized, onMinimizedChange, windowRef }: BumpDragOptions) {
+function useBumpDrag({ open, onOpenChange, peek, maxReveal, windowRef }: BumpDragOptions) {
   const target = open ? maxReveal : peek;
-  const [drag, setDrag] = useState<{ reveal: number; minimize: number } | null>(null);
+  const [drag, setDrag] = useState<{ reveal: number } | null>(null);
   // `settling` holds from a release (or a new rest) until the body's own CSS transition has finished: UI SDK's
   // `animateIn` reports when the element's running animations end (at once without any, as under reduced motion).
   const [settle, setSettle] = useState(0);
@@ -1955,7 +1933,7 @@ function useBumpDrag({ open, onOpenChange, peek, maxReveal, minimizable, minimiz
   const cleanup = useRef<(() => void) | null>(null);
   const startSettle = React.useCallback(() => setSettle((n) => n + 1), []);
   // A tap, Escape or a prop moves the rest: the body transitions there.
-  const rest = `${target}|${minimized}`;
+  const rest = target;
   const restRef = useRef(rest);
   React.useEffect(() => {
     if (restRef.current === rest) return;
@@ -1970,10 +1948,8 @@ function useBumpDrag({ open, onOpenChange, peek, maxReveal, minimizable, minimiz
   }, [settle, rest, windowRef]);
   React.useEffect(() => () => cleanup.current?.(), []);
 
-  const travel = Math.max(1, peek + BUMP_MINIMIZE_TRAVEL);
-  const minimizeFor = (raw: number) => (minimizable && raw < peek ? Math.min(1, (peek - raw) / travel) : 0);
-  const latest = useRef({ open, minimized, peek, maxReveal, onOpenChange, onMinimizedChange, minimizeFor });
-  latest.current = { open, minimized, peek, maxReveal, onOpenChange, onMinimizedChange, minimizeFor };
+  const latest = useRef({ open, peek, maxReveal, onOpenChange });
+  latest.current = { open, peek, maxReveal, onOpenChange };
 
   const startDrag = (event: React.PointerEvent<HTMLElement>) => {
     if (event.button !== 0) return;
@@ -1993,24 +1969,23 @@ function useBumpDrag({ open, onOpenChange, peek, maxReveal, minimizable, minimiz
       },
       onMove: ({ y, event: move }) => {
         tracker.add(move.timeStamp, y);
-        const { peek: p, maxReveal: max, minimizeFor: fold } = latest.current;
+        const { peek: p, maxReveal: max } = latest.current;
         raw = from + (y0 - y);
-        // A FAB-bound bump shrinks through its peek; others rubber-band below it.
-        const floor = minimizable ? 0 : Math.min(p, max);
+        // It rubber-bands past both ends.
+        const floor = Math.min(p, max);
         const shown = raw > max ? max + rubberBand(raw - max, max || 1) * 0.35 : raw < floor ? Math.max(0, floor - rubberBand(floor - raw, max || 1)) : raw;
-        setDrag({ reveal: Math.min(max + 24, shown), minimize: fold(raw) });
+        setDrag({ reveal: Math.min(max + 24, shown) });
       },
       onEnd: (end, canceled) => {
         cleanup.current = null;
         if (!moved) return;
-        const { open: wasOpen, minimized: wasMinimized, peek: p, maxReveal: max, onOpenChange: setOpen, onMinimizedChange: setMinimized, minimizeFor: fold } = latest.current;
+        const { open: wasOpen, peek: p, maxReveal: max, onOpenChange: setOpen } = latest.current;
         setDrag(null);
         startSettle();
         if (canceled) return;
         // Up is positive: the reveal grows as the pointer rises.
         const v = -tracker.velocity(end.timeStamp);
         const projected = raw + v * BUMP_PROJECT_MS;
-        const fab = minimizable && fold(projected) > BUMP_FOLD_COMMIT && fold(raw) > 0.08;
         const stops = [p, max];
         const clamped = Math.max(0, Math.min(max, projected));
         // A decided flick goes to the next rest the way it was thrown; a gentle release, to the nearest one.
@@ -2020,21 +1995,18 @@ function useBumpDrag({ open, onOpenChange, peek, maxReveal, minimizable, minimiz
             ? Math.min(...ahead)
             : Math.max(...ahead)
           : stops.reduce((best, s) => (Math.abs(s - clamped) < Math.abs(best - clamped) ? s : best), stops[0]);
-        const nextOpen = !fab && nearest === max && max > p;
-        if (fab !== wasMinimized) setMinimized?.(fab, changeDetails({ reason: 'drag', event: end }));
+        const nextOpen = nearest === max && max > p;
         if (nextOpen !== wasOpen) setOpen(nextOpen, { reason: 'drag', event: end });
       },
     });
   };
 
   const toggle = (event?: Event) => {
-    if (minimized) onMinimizedChange?.(false, changeDetails({ reason: 'press', event }));
     onOpenChange(!open, { reason: 'press', event });
   };
 
   return {
     reveal: drag ? drag.reveal : target,
-    minimize: drag ? drag.minimize : minimized ? 1 : 0,
     dragging: !!drag,
     settling,
     startDrag,
@@ -2053,19 +2025,10 @@ export interface ComposerBumpProps extends Omit<React.HTMLAttributes<HTMLDivElem
   defaultOpen?: boolean;
   /** Called before a draggable bump opens or closes; `details.cancel()` keeps an uncontrolled bump where it is. */
   onOpenChange?: (open: boolean, details: ComposerBumpOpenChangeDetails) => void;
-  /** Body height kept visible while closed. */
+  /** Body height kept visible while closed (px, at most three quarters of `maxReveal`). */
   peek?: number;
-  /** Body height when open, when there are no `bounds` to fill. */
+  /** Body height when open (px, default 320). */
   maxReveal?: number;
-  /** Grow until the bump reaches this element's top edge (minus `boundsInset`). */
-  bounds?: React.RefObject<HTMLElement | null>;
-  boundsInset?: number;
-  /** Dragging below rest folds the host's surface into a FAB (reported through onProgressChange / onMinimizedChange). */
-  minimizable?: boolean;
-  minimized?: boolean;
-  onMinimizedChange?: (minimized: boolean, details: ComposerBumpMinimizedChangeDetails) => void;
-  /** Fires as the bump moves, so a host can drive a scrim, a width, a FAB. */
-  onProgressChange?: (progress: ComposerBumpProgress) => void;
   /** Escape closes an open draggable bump (default). */
   closeOnEscape?: boolean;
   ref?: React.Ref<HTMLDivElement>;
@@ -2086,13 +2049,7 @@ export function ComposerBump({
   defaultOpen = false,
   onOpenChange,
   peek: requestedPeek = 0,
-  maxReveal: maxRevealProp = 320,
-  bounds,
-  boundsInset = 0,
-  minimizable = false,
-  minimized = false,
-  onMinimizedChange,
-  onProgressChange,
+  maxReveal = 320,
   closeOnEscape = true,
   className,
   style,
@@ -2103,42 +2060,12 @@ export function ComposerBump({
   const [open, setOpen] = useControllableChange<boolean, ComposerBumpOpenChangeReason>(openProp, defaultOpen, onOpenChange);
   const windowRef = useRef<HTMLDivElement | null>(null);
   const bumpRef = useRef<HTMLDivElement | null>(null);
-  const [measured, setMeasured] = useState<number | null>(null);
   const contentId = React.useId();
 
-  // With bounds, the open height is the room between the content's (stable) bottom edge and the bounds' top.
-  React.useLayoutEffect(() => {
-    if (!draggable || !bounds) return;
-    const measure = () => {
-      const b = bounds.current,
-        w = windowRef.current;
-      if (!b || !w) return;
-      // The grip is pinned above the content (the bump's top padding), so the content stops that much short.
-      const host = w.parentElement;
-      const grip = host ? parseFloat(getComputedStyle(host).paddingTop) || 0 : 0;
-      setMeasured(Math.max(0, Math.round(w.getBoundingClientRect().bottom - b.getBoundingClientRect().top - boundsInset - grip)));
-    };
-    measure();
-    if (typeof ResizeObserver === 'undefined') return;
-    const ro = new ResizeObserver(measure);
-    if (bounds.current) ro.observe(bounds.current);
-    const root = windowRef.current?.closest('[data-slot="composer"]');
-    if (root) ro.observe(root);
-    return () => ro.disconnect();
-  }, [draggable, bounds, boundsInset]);
-
-  const maxReveal = bounds ? (measured ?? maxRevealProp) : maxRevealProp;
   const peek = Math.max(0, Math.min(requestedPeek, maxReveal * 0.75));
-  const drag = useBumpDrag({ open, onOpenChange: setOpen, peek, maxReveal, minimizable, minimized, onMinimizedChange, windowRef });
+  const drag = useBumpDrag({ open, onOpenChange: setOpen, peek, maxReveal, windowRef });
   const reveal = draggable ? drag.reveal : 0;
   const progress = maxReveal > peek ? Math.max(0, (reveal - peek) / (maxReveal - peek)) : 0;
-  const minimize = drag.minimize;
-
-  const report = useRef(onProgressChange);
-  report.current = onProgressChange;
-  React.useEffect(() => {
-    report.current?.({ progress, reveal, minimize, dragging: drag.dragging, settling: drag.settling });
-  }, [progress, reveal, minimize, drag.dragging, drag.settling]);
 
   // Open, the bump is a layer: Escape goes to the topmost one, so a menu opened from it closes first.
   const closeRef = useRef((event: Event) => setOpen(false, { reason: 'escape-key', event }));
@@ -2215,23 +2142,23 @@ export function ComposerBump({
 export interface ComposerBumpHandleProps extends React.HTMLAttributes<HTMLDivElement> {
   /** Show the grip bar above the row (draggable bumps; default true). */
   grip?: boolean;
-  /** Accessible name of the open/close control. */
-  label?: string;
+  /** In a draggable bump, the grip's accessible name (default "Expand" / "Collapse"); else the row's. */
+  'aria-label'?: string;
 }
 
 /** Presses on these stay theirs: a drag or a tap on the row doesn't start from them (the grip is the exception). */
 const ROW_CONTROL = 'button,a,input,[role=button]';
 
 /** The bump's row. In a draggable bump it is the drag handle: pull up to open, tap the grip to toggle. */
-export function ComposerBumpHandle({ grip = true, label, className, children, onPointerDown, onClick, ...props }: ComposerBumpHandleProps) {
+export function ComposerBumpHandle({ grip = true, 'aria-label': ariaLabel, className, children, onPointerDown, onClick, ...props }: ComposerBumpHandleProps) {
   const bump = useBumpInternals();
   if (!bump.draggable)
     return (
-      <div data-slot="composer-bump-handle" className={cn('flex min-w-0 items-center gap-[7px] px-[11px] py-1.5', className)} onPointerDown={onPointerDown} onClick={onClick} {...props}>
+      <div data-slot="composer-bump-handle" aria-label={ariaLabel} className={cn('flex min-w-0 items-center gap-[7px] px-[11px] py-1.5', className)} onPointerDown={onPointerDown} onClick={onClick} {...props}>
         {children}
       </div>
     );
-  const name = label ?? (bump.open ? 'Collapse' : 'Expand');
+  const name = ariaLabel ?? (bump.open ? 'Collapse' : 'Expand');
   const fromControl = (target: EventTarget) => {
     const control = (target as HTMLElement).closest?.(ROW_CONTROL);
     return !!control && !control.hasAttribute('data-bump-grip');
@@ -2285,13 +2212,13 @@ export function ComposerBumpHandle({ grip = true, label, className, children, on
 }
 
 export interface ComposerBumpContentProps extends React.HTMLAttributes<HTMLDivElement> {
-  /** Accessible name of the revealed region. */
-  label?: string;
+  /** Accessible name of the revealed region (default "Details"). */
+  'aria-label'?: string;
 }
 
 /** The body a draggable bump reveals above its handle. Laid out at its full open height and pinned to the
     handle, so it slides out without reflowing mid-drag. */
-export function ComposerBumpContent({ label = 'Details', className, children, ...props }: ComposerBumpContentProps) {
+export function ComposerBumpContent({ 'aria-label': ariaLabel = 'Details', className, children, ...props }: ComposerBumpContentProps) {
   const bump = useBumpInternals();
   // Still shown while it closes, until the transition is done.
   const expanded = bump.reveal > 0 || bump.settling;
@@ -2300,10 +2227,12 @@ export function ComposerBumpContent({ label = 'Details', className, children, ..
       ref={bump.windowRef}
       id={bump.contentId}
       role="region"
-      aria-label={label}
+      aria-label={ariaLabel}
       aria-hidden={!expanded}
       inert={!expanded}
       data-slot="composer-bump-content"
+      // A transcript inside reads its resting state from here (see the message-scroller primitive).
+      data-peek-host=""
       data-peeking={(bump.peek > 0 && !bump.open) || undefined}
       className={cn(
         'relative order-first h-(--bump-reveal) w-full shrink-0 overflow-hidden',

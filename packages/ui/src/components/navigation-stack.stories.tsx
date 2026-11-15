@@ -6,7 +6,7 @@ import {
   NavigationStack, NavigationStackBar, NavigationStackContent, NavigationStackLargeTitle, NavigationStackPage,
   NavigationStackLeading, NavigationStackTitle, useNavigationStack,
 } from '@/components/ui/navigation-stack';
-import { SplitView, SplitViewContent, SplitViewDetail, SplitViewHeader, SplitViewItem, SplitViewSidebar, SplitViewToggle } from '@/components/ui/split-view';
+import { SplitView, SplitViewContent, SplitViewDetail, SplitViewHeader, SplitViewItem, SplitViewSidebar, SplitViewSidebarTrigger } from '@/components/ui/split-view';
 import { Tabs, TabsBar, TabsList, TabsTab } from '@/components/ui/tabs';
 import { Phone } from '../stories/frame';
 
@@ -112,19 +112,18 @@ export const ChromeHideOnScroll: Story = {
   render: function ChromeHideStory() {
     const [tab, setTab] = useState('contacts');
     return (
-      <>
+      // The stack is inside the Tabs root, so it keeps the room the bar covers (`--tabs-bar-h`) by itself.
+      <Tabs variant="bar" value={tab} onValueChange={(next) => { if (next) setTab(next); }} className="contents">
         <NavigationStack defaultPages={['hide']}>
-          <Simple value="hide" title="Contacts" large bottomInset={66}>{tallRows(60)}</Simple>
+          <Simple value="hide" title="Contacts" large>{tallRows(60)}</Simple>
         </NavigationStack>
-        <Tabs variant="bar" value={tab} onValueChange={(next) => { if (next) setTab(next); }} className="contents">
-          <TabsBar>
-            <TabsList aria-label="Tabs">
-              <TabsTab value="contacts" icon="person">Contacts</TabsTab>
-              <TabsTab value="settings" icon="sliders">Settings</TabsTab>
-            </TabsList>
-          </TabsBar>
-        </Tabs>
-      </>
+        <TabsBar>
+          <TabsList aria-label="Tabs">
+            <TabsTab value="contacts" icon="person">Contacts</TabsTab>
+            <TabsTab value="settings" icon="sliders">Settings</TabsTab>
+          </TabsList>
+        </TabsBar>
+      </Tabs>
     );
   },
 };
@@ -267,7 +266,7 @@ function InSplitView({ compact }: { compact?: boolean }) {
         )}>
           <NavigationStackPage value="albums">
             <NavigationStackBar>
-              <NavigationStackLeading><SplitViewToggle /></NavigationStackLeading>
+              <NavigationStackLeading><SplitViewSidebarTrigger /></NavigationStackLeading>
               <NavigationStackTitle>Albums</NavigationStackTitle>
             </NavigationStackBar>
             <NavigationStackContent>

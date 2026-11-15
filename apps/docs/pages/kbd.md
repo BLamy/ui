@@ -15,12 +15,12 @@ import { Kbd, KbdGroup } from '@/components/ui/kbd'
 {% tab title="npm" %}
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 
-Import the stylesheet once at your app's entry, then the parts from the package root:
+Import the stylesheet once at your app's entry, then the parts from their module:
 
 ```tsx
 import '@brett_lamy/ui/styles.css'
 
-import { Kbd, KbdGroup } from '@brett_lamy/ui'
+import { Kbd, KbdGroup } from '@brett_lamy/ui/kbd'
 ```
 {% endtab %}
 {% endtabs %}

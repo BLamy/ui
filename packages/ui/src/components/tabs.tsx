@@ -12,11 +12,12 @@ import {
 } from '@ui-sdk/react/tabs';
 import { cva } from 'class-variance-authority';
 import { Icon, type IconName } from '@/lib/icon';
-import { barSurface } from '@/lib/primitives';
+import { barBottomHeight, barSurface } from '@/lib/primitives';
+import { useSizeClassScope } from '@/lib/container';
 import { useChromeHidden } from '@/lib/theme';
 import { cn, cx } from '@/lib/utils';
 import { Separator, type SeparatorProps } from '@/components/ui/separator';
-import { segmentIndicatorVariants, segmentItemVariants, segmentTrackVariants } from '@/components/ui/segmented';
+import { segmentIndicatorVariants, segmentItemVariants, segmentTrackVariants, type SegmentSize } from '@/components/ui/segmented';
 
 /* ══ Tabs — UI SDK's Tabs, from an in-page segmented control to an app's tab bar ══
    One root, one family of parts. `variant` picks the look and `side` where the tabs sit around the panels
@@ -29,7 +30,7 @@ import { segmentIndicatorVariants, segmentItemVariants, segmentTrackVariants } f
      </Tabs>
 
    Bar looks (a surface around the list, with parts that aren't tabs):
-     <Tabs variant="bar" defaultValue="home">                   bar (bottom) | rail (start) | workspace (start) | plain
+     <Tabs variant="bar" defaultValue="home">                   bar (bottom) | rail (start) | switcher (start) | plain
        <TabsBar>                                                the surface; `bar` hides with the scroll
          <TabsHeader>…</TabsHeader>                             logos, titles
          <TabsList aria-label="Sections">
@@ -51,7 +52,7 @@ import { segmentIndicatorVariants, segmentItemVariants, segmentTrackVariants } f
 export { createTabsController } from '@ui-sdk/react/tabs';
 export type { TabsController, TabsTabState, TabsValueChangeReason } from '@ui-sdk/core/tabs';
 
-export type TabsVariant = 'segmented' | 'underline' | 'bar' | 'rail' | 'workspace' | 'plain';
+export type TabsVariant = 'segmented' | 'underline' | 'bar' | 'rail' | 'switcher' | 'plain';
 export type TabsSide = 'top' | 'bottom' | 'start' | 'end';
 export type TabsOrientation = 'horizontal' | 'vertical';
 
@@ -62,19 +63,20 @@ const DEFAULT_SIDE: Record<TabsVariant, TabsSide> = {
   plain: 'top',
   bar: 'bottom',
   rail: 'start',
-  workspace: 'start',
+  switcher: 'start',
 };
 
 interface TabsContextValue {
   variant: TabsVariant;
   side: TabsSide;
   orientation: TabsOrientation;
+  size: SegmentSize;
 }
 const TabsContext = createContext<TabsContextValue | null>(null);
-const FALLBACK: TabsContextValue = { variant: 'segmented', side: 'top', orientation: 'horizontal' };
+const FALLBACK: TabsContextValue = { variant: 'segmented', side: 'top', orientation: 'horizontal', size: 'default' };
 const useTabsContext = () => useContext(TabsContext) ?? FALLBACK;
 
-/** The enclosing `Tabs`' look, side and orientation; `null` outside a `Tabs`. */
+/** The enclosing `Tabs`' look (the one `presentation` resolved to), side, orientation and size; `null` outside a `Tabs`. */
 export const useTabs = () => useContext(TabsContext);
 
 const TabsTabContext = createContext<TabsTabState | null>(null);
@@ -99,7 +101,7 @@ export const tabsVariants = cva(
         underline: 'gap-4',
         bar: '',
         rail: '',
-        workspace: '',
+        switcher: '',
         plain: '',
       },
     },
@@ -107,26 +109,50 @@ export const tabsVariants = cva(
   },
 );
 
+export type TabsPresentation = 'auto' | 'bar' | 'rail';
+
 export type TabsProps<T extends string = string> = Omit<Parameters<typeof SdkTabs<T>>[0], 'orientation'> & {
-  /** The look. `segmented` and `underline` are in-page tabs; `bar`, `rail`, `workspace` and `plain` put the list on a
+  /** The look. `segmented` and `underline` are in-page tabs; `bar`, `rail`, `switcher` and `plain` put the list on a
    *  `TabsBar`. Default `segmented`. */
   variant?: TabsVariant;
   /** Where the tabs sit around the panels; it sets the orientation (`top`/`bottom` → horizontal, `start`/`end` →
-   *  vertical). Defaults to `bottom` for `bar`, `start` for `rail` and `workspace`, `top` otherwise. */
+   *  vertical). Defaults to `bottom` for `bar`, `start` for `rail` and `switcher`, `top` otherwise (for the look
+   *  `presentation` resolves to, when it is set). */
   side?: TabsSide;
+  /** `segmented` and `underline`: the height of the tabs. `sm` 32px, `default` 36px, `lg` 44px for `segmented` (the
+   *  track Segmented and ToggleGroup `filled` share, so the three line up at every size); `underline` scales its
+   *  label and row the same way. */
+  size?: SegmentSize;
+  /** The app-navigation looks, chosen by size: `auto` is the bottom `bar` in a compact size-class scope and the side
+   *  `rail` in a medium or regular one (the scope of the SplitView, BLProvider or SidebarProvider around); `bar` or
+   *  `rail` force one. When set it replaces `variant`. With no scope around, `auto` is the `bar`. */
+  presentation?: TabsPresentation;
 };
 
-export function Tabs<T extends string = string>({ variant = 'segmented', side, className, ...props }: TabsProps<T>) {
+/** The look a `presentation` stands for, from the size-class scope around. */
+function useLook(variant: TabsVariant, presentation: TabsPresentation | undefined): TabsVariant {
+  const scope = useSizeClassScope();
+  if (presentation === undefined) return variant;
+  if (presentation !== 'auto') return presentation;
+  return scope === undefined || scope === 'compact' ? 'bar' : 'rail';
+}
+
+export function Tabs<T extends string = string>({ variant: look = 'segmented', presentation, size = 'default', side, className, style, ...props }: TabsProps<T>) {
+  const variant = useLook(look, presentation);
   const at = side ?? DEFAULT_SIDE[variant];
   const orientation: TabsOrientation = at === 'start' || at === 'end' ? 'vertical' : 'horizontal';
-  const context = useMemo(() => ({ variant, side: at, orientation }), [variant, at, orientation]);
+  const context = useMemo(() => ({ variant, side: at, orientation, size }), [variant, at, orientation, size]);
+  // A bottom bar publishes how much it covers, for the stacks that scroll under it (NavigationStackContent).
+  const covers = variant === 'bar' && at === 'bottom';
   return (
     <TabsContext.Provider value={context}>
       <SdkTabs<T>
         data-variant={variant}
         data-side={at}
+        data-size={size}
         orientation={orientation}
         className={cx(tabsVariants({ side: at, variant }), className)}
+        style={covers ? (state) => ({ '--tabs-bar-h': barBottomHeight, ...(typeof style === 'function' ? style(state) : style) } as CSSProperties) : style}
         {...props}
       />
     </TabsContext.Provider>
@@ -151,7 +177,7 @@ export const tabsBarVariants = cva('box-border', {
       rail: 'relative flex w-19 shrink-0 flex-col gap-1 bg-bar py-2 data-[side=end]:border-s data-[side=start]:border-e border-border',
       /** Workspace switcher (Discord, Slack): a narrow column of tiles on the muted surface. Header and footer stay
        *  put; the list between them scrolls when there are more tiles than room. */
-      workspace: 'flex w-13 shrink-0 flex-col items-center gap-2 border-e border-border bg-muted px-0 py-2.5',
+      switcher: 'flex w-13 shrink-0 flex-col items-center gap-2 border-e border-border bg-muted px-0 py-2.5',
       /** No chrome: the host styles the bar. */
       plain: inline,
     },
@@ -182,21 +208,27 @@ export function TabsBar({ hideOnScroll = true, className, ...props }: TabsBarPro
 }
 
 /* ── List ── */
+const SIZES = ['sm', 'default', 'lg'] as const;
+const sizeAxis = { sm: '', default: '', lg: '' };
+
 export const tabsListVariants = cva('relative outline-none', {
   variants: {
     variant: {
-      segmented: cn('flex', segmentTrackVariants()),
+      segmented: 'flex',
       underline:
         'isolate flex gap-5 shadow-hairline-b data-[orientation=vertical]:flex-col data-[orientation=vertical]:gap-0 data-[orientation=vertical]:border-e data-[orientation=vertical]:border-border data-[orientation=vertical]:shadow-none',
       bar: 'flex flex-1',
       rail: 'flex flex-col gap-1 px-1.5',
       // Scrolls on its own; the padding (cancelled by the margin) keeps badges and focus rings from being clipped.
-      workspace:
+      switcher:
         'flex min-h-0 w-full flex-col items-center gap-2 overflow-y-auto overscroll-contain -mt-1 -mb-1.5 pt-1 pb-1.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden',
       plain: 'flex data-[orientation=vertical]:flex-col',
     },
+    size: sizeAxis,
   },
-  defaultVariants: { variant: 'segmented' },
+  // The segmented track is Segmented's, at the same size.
+  compoundVariants: SIZES.map((size) => ({ variant: 'segmented' as const, size, className: segmentTrackVariants({ size }) })),
+  defaultVariants: { variant: 'segmented', size: 'default' },
 });
 
 export type TabsListProps = ComponentProps<typeof SdkTabsList>;
@@ -209,10 +241,10 @@ const hasIndicator = (children: ReactNode) =>
 /** The tablist. `segmented` and `underline` add their sliding indicator; give the list a `TabsIndicator` child to
  *  style it, or to add one to the other looks. */
 export function TabsList({ className, children, ...props }: TabsListProps) {
-  const { variant } = useTabsContext();
+  const { variant, size } = useTabsContext();
   const draw = DRAWS_INDICATOR.has(variant);
   return (
-    <SdkTabsList className={cx(tabsListVariants({ variant }), className)} {...props}>
+    <SdkTabsList className={cx(tabsListVariants({ variant, size }), className)} {...props}>
       {typeof children === 'function'
         ? (state) => {
             const own = children(state);
@@ -231,9 +263,9 @@ export const tabsTabVariants = cva(
   {
     variants: {
       variant: {
-        segmented: segmentItemVariants(),
+        segmented: '',
         underline: cn(
-          'bl-btn -mb-px flex h-10 items-center justify-center gap-1.5 px-0.5 py-0 text-subhead leading-[inherit] font-semibold whitespace-nowrap hover:not-data-selected:not-data-disabled:text-foreground data-selected:text-primary focus-visible:rounded-md focus-visible:ring-[3px] focus-visible:ring-ring/45 data-disabled:opacity-40',
+          'bl-btn -mb-px flex items-center justify-center gap-1.5 px-0.5 py-0 leading-[inherit] font-semibold whitespace-nowrap hover:not-data-selected:not-data-disabled:text-foreground data-selected:text-primary focus-visible:rounded-md focus-visible:ring-[3px] focus-visible:ring-ring/45 data-disabled:opacity-40',
           'data-[orientation=vertical]:mb-0 data-[orientation=vertical]:h-9 data-[orientation=vertical]:justify-start data-[orientation=vertical]:px-3',
           label,
         ),
@@ -248,12 +280,19 @@ export const tabsTabVariants = cva(
         ),
         /** A full-width row that centers its tile; the tile styles itself from the tab's state (`group-data-selected:`,
          *  `group-hover:`). On touch the row's hit area grows to 44px. */
-        workspace:
+        switcher:
           'group flex w-full shrink-0 justify-center p-0 text-inherit pointer-coarse:after:absolute pointer-coarse:after:inset-x-0 pointer-coarse:after:-inset-y-1.5',
         plain: 'p-0 text-inherit',
       },
+      size: sizeAxis,
     },
-    defaultVariants: { variant: 'segmented' },
+    compoundVariants: [
+      ...SIZES.map((size) => ({ variant: 'segmented' as const, size, className: segmentItemVariants({ size }) })),
+      { variant: 'underline', size: 'sm', className: 'h-8 text-footnote' },
+      { variant: 'underline', size: 'default', className: 'h-10 text-subhead' },
+      { variant: 'underline', size: 'lg', className: 'h-11 text-callout' },
+    ],
+    defaultVariants: { variant: 'segmented', size: 'default' },
   },
 );
 
@@ -276,10 +315,10 @@ export type TabsTabProps = ComponentProps<typeof SdkTabsTab> & {
 /** A tab. Its children are the label; `icon` adds a glyph. A function child gets the tab's state (`selected`,
  *  `disabled`) and draws the whole tab itself. */
 export function TabsTab({ className, icon, children, ...props }: TabsTabProps) {
-  const { variant } = useTabsContext();
+  const { variant, size } = useTabsContext();
   const stacked = STACKED.has(variant);
   return (
-    <SdkTabsTab className={cx(tabsTabVariants({ variant }), className)} {...props}>
+    <SdkTabsTab className={cx(tabsTabVariants({ variant, size }), className)} {...props}>
       {(state) => (
         <TabsTabContext.Provider value={state}>
           {typeof children === 'function' ? children(state) : (
@@ -316,23 +355,25 @@ export const tabsIndicatorVariants = cva('absolute', {
   variants: {
     variant: {
       /** The card under the selected segment. */
-      segmented: cn('inset-0', segmentIndicatorVariants()),
+      segmented: 'inset-0',
       /** A 2px tint line along the selected tab's edge (bottom; the end edge in a column). */
       underline: 'bg-primary',
       bar: 'bg-primary',
       rail: 'bg-primary',
-      workspace: 'bg-primary',
+      switcher: 'bg-primary',
       plain: 'bg-primary',
     },
     orientation: { horizontal: '', vertical: '' },
+    size: sizeAxis,
   },
   compoundVariants: [
+    ...SIZES.map((size) => ({ variant: 'segmented' as const, size, className: segmentIndicatorVariants({ size }) })),
     { variant: 'underline', orientation: 'horizontal', className: 'inset-x-0 bottom-0 h-0.5' },
     { variant: 'underline', orientation: 'vertical', className: 'inset-y-1 end-0 w-0.5 rounded-full' },
-    { variant: ['bar', 'rail', 'workspace', 'plain'], orientation: 'horizontal', className: 'inset-x-3 bottom-0 h-0.5 rounded-full' },
-    { variant: ['bar', 'rail', 'workspace', 'plain'], orientation: 'vertical', className: 'inset-y-2.5 start-0 w-[3px] rounded-e-full' },
+    { variant: ['bar', 'rail', 'switcher', 'plain'], orientation: 'horizontal', className: 'inset-x-3 bottom-0 h-0.5 rounded-full' },
+    { variant: ['bar', 'rail', 'switcher', 'plain'], orientation: 'vertical', className: 'inset-y-2.5 start-0 w-[3px] rounded-e-full' },
   ],
-  defaultVariants: { variant: 'segmented', orientation: 'horizontal' },
+  defaultVariants: { variant: 'segmented', orientation: 'horizontal', size: 'default' },
 });
 
 export interface TabsIndicatorProps extends Omit<ComponentProps<typeof SdkTabsIndicator>, 'className' | 'style' | 'children'> {
@@ -343,10 +384,10 @@ export interface TabsIndicatorProps extends Omit<ComponentProps<typeof SdkTabsIn
 
 /** The selection mark, once, as a direct child of `TabsList`. `segmented` and `underline` draw one by default. */
 export function TabsIndicator({ className, style, ...props }: TabsIndicatorProps) {
-  const { variant, orientation } = useTabsContext();
+  const { variant, orientation, size } = useTabsContext();
   return (
     <SdkTabsIndicator className={cn(indicatorFrame, variant === 'segmented' && '-z-1')} {...props}>
-      <span className={cn(tabsIndicatorVariants({ variant, orientation }), className)} style={style} />
+      <span className={cn(tabsIndicatorVariants({ variant, orientation, size }), className)} style={style} />
     </SdkTabsIndicator>
   );
 }
@@ -376,8 +417,8 @@ export function TabsPill({ attention, className, ...props }: TabsPillProps) {
       data-attention={attention && !tab?.selected ? '' : undefined}
       className={cn(
         tabsPillVariants(),
-        // The workspace pill grows on the bouncy spring, with the tile's corners.
-        variant === 'workspace' && 'duration-(--duration-spring-bouncy) ease-(--ease-spring-bouncy)',
+        // The switcher pill grows on the bouncy spring, with the tile's corners.
+        variant === 'switcher' && 'duration-(--duration-spring-bouncy) ease-(--ease-spring-bouncy)',
         className,
       )}
     />
@@ -396,7 +437,7 @@ export function TabsSeparator({ className, ...props }: TabsSeparatorProps) {
       decorative
       orientation={orientation === 'vertical' ? 'horizontal' : 'vertical'}
       className={cx(
-        cn('self-center', variant === 'workspace' ? 'my-[-1px] h-0.5 w-5 rounded-full' : orientation === 'vertical' ? 'h-px w-8' : 'h-6 w-px'),
+        cn('self-center', variant === 'switcher' ? 'my-[-1px] h-0.5 w-5 rounded-full' : orientation === 'vertical' ? 'h-px w-8' : 'h-6 w-px'),
         className,
       )}
       {...props}
@@ -411,8 +452,8 @@ export const tabsActionVariants = cva('cursor-pointer outline-none focus-visible
       underline: 'bl-btn border-0 bg-transparent p-0 [font-family:inherit] text-muted-foreground hover:not-data-disabled:text-foreground',
       bar: 'bl-btn flex flex-1 flex-col items-center justify-center gap-[3px] border-0 bg-transparent p-0 leading-[normal] [font-family:inherit] text-muted-foreground active:not-data-disabled:opacity-60',
       rail: 'bl-btn mx-1.5 flex flex-col items-center justify-center gap-[3px] rounded-panel border-0 bg-transparent px-1 pt-[7px] pb-1.5 leading-[normal] [font-family:inherit] text-muted-foreground hover:not-data-disabled:bg-secondary/60 hover:not-data-disabled:text-foreground active:not-data-disabled:bg-secondary',
-      /** A dashed tile ("Add workspace") that rounds its corners on hover and dips on press; 44px to a finger. */
-      workspace:
+      /** A dashed tile ("Add server") that rounds its corners on hover and dips on press; 44px to a finger. */
+      switcher:
         'relative grid size-[34px] shrink-0 place-items-center rounded-[17px] border border-dashed border-border bg-transparent text-muted-foreground [transition:border-radius_var(--duration-spring-bouncy)_var(--ease-spring-bouncy),color_var(--duration-spring-snappy)_var(--ease-spring-snappy),scale_var(--duration-spring-snappy)_var(--ease-spring-snappy)] hover:not-data-disabled:rounded-[11px] hover:not-data-disabled:text-foreground active:not-data-disabled:scale-[.94] motion-reduce:transition-none pointer-coarse:after:absolute pointer-coarse:after:-inset-[5px]',
       plain: 'bl-btn border-0 bg-transparent p-0 [font-family:inherit]',
     },
@@ -428,12 +469,12 @@ export type TabsActionProps = ComponentProps<typeof SdkButton> & {
 /** A button that sits in the bar but isn't a tab ("Add server", "Compose"). Children are its label. */
 export function TabsAction({ className, icon, children, ...props }: TabsActionProps) {
   const { variant } = useTabsContext();
-  const size = variant === 'bar' ? 25 : variant === 'workspace' ? 14 : variant === 'rail' ? 24 : 16;
+  const size = variant === 'bar' ? 25 : variant === 'switcher' ? 14 : variant === 'rail' ? 24 : 16;
   return (
     <SdkButton className={cx(tabsActionVariants({ variant }), className)} {...props}>
       {typeof children === 'function' ? children : (
         <>
-          {icon != null && (typeof icon === 'string' ? <Icon name={icon} size={size} sw={variant === 'workspace' ? 1.9 : 1.8} /> : icon)}
+          {icon != null && (typeof icon === 'string' ? <Icon name={icon} size={size} sw={variant === 'switcher' ? 1.9 : 1.8} /> : icon)}
           {children != null && (STACKED.has(variant) ? <span className="text-caption2 font-semibold">{children}</span> : children)}
         </>
       )}
@@ -450,7 +491,7 @@ export function TabsHeader({ className, ...props }: TabsHeaderProps) {
 
 export type TabsFooterProps = ComponentProps<'div'>;
 
-/** Content after the tabs, pushed to the far end of the bar. In a `workspace` bar it follows the list instead
+/** Content after the tabs, pushed to the far end of the bar. In a `switcher` bar it follows the list instead
  *  (Discord's add button sits right under the last tile), and the list scrolls once they no longer fit. */
 export function TabsFooter({ className, ...props }: TabsFooterProps) {
   const { orientation, variant } = useTabsContext();
@@ -460,7 +501,7 @@ export function TabsFooter({ className, ...props }: TabsFooterProps) {
       {...props}
       className={cn(
         'flex shrink-0 items-center justify-center',
-        orientation === 'vertical' ? cn('flex-col', variant === 'workspace' ? 'gap-2' : 'mt-auto') : 'ms-auto',
+        orientation === 'vertical' ? cn('flex-col', variant === 'switcher' ? 'gap-2' : 'mt-auto') : 'ms-auto',
         className,
       )}
     />

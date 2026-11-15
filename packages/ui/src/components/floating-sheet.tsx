@@ -23,7 +23,7 @@ import {
   type SnapPoint,
 } from '@ui-sdk/react/drawer';
 import { Button as SdkButton } from '@ui-sdk/react/button';
-import { supportsTopLayer, type ChangeDetails } from '@ui-sdk/core';
+import { type ChangeDetails } from '@ui-sdk/core';
 import { cva } from 'class-variance-authority';
 import { ThemeScopeContext, themeScopeClass, useThemeScope, type Appearance } from '@/lib/theme';
 import { useHideOnScroll } from '@/lib/scroll-edge';
@@ -32,11 +32,12 @@ import { useControllableChange } from '@/lib/controllable-state';
 import { focusRing } from '@/lib/primitives';
 import { cn } from '@/lib/utils';
 import { Sheet, SheetBackdrop, sheetGrabberVariants } from '@/components/ui/sheet';
+import { trayInset } from '@/lib/surface';
 
 /* ══ FloatingSheet — a card that rests over a page and grows into it ══
    <FloatingSheet peek={120} aria-label="Order">
      <FloatingSheetBody>…grows with the sheet…</FloatingSheetBody>
-     <FloatingSheetFoot>…pinned at the bottom…</FloatingSheetFoot>
+     <FloatingSheetFooter>…pinned at the bottom…</FloatingSheetFooter>
      <FloatingSheetFab aria-label="Show order"><Icon name="bag" /></FloatingSheetFab>
    </FloatingSheet>
    UI SDK's Drawer with snap points at the peek, any `snapPoints` and full height, modal only above the peek. ══ */
@@ -99,8 +100,6 @@ interface PartsContextValue {
   label: string;
   collapse: FloatingSheetCollapse;
   minimized: boolean;
-  fabSide: FloatingSheetFabSide;
-  fabAlign: FloatingSheetFabAlign;
   restore: (event?: Event) => void;
   claimFab: () => () => void;
 }
@@ -127,7 +126,7 @@ const GLASS_BLUR: CSSProperties = { backdropFilter: 'blur(16px)', WebkitBackdrop
    rect, so there is no second card to fade in and no seam under the cap.
    ck-floating-sheet__surface stays as a hook for the peek-mask rules in styles.css. */
 const surfaceBase =
-  'ck-floating-sheet__surface pointer-events-auto absolute top-0 left-1/2 box-border flex h-[max(calc(var(--fs-rest)*1px_-_var(--fs-gutter)*1px),calc(var(--fs-extent)*1px_-_var(--fs-gutter)*1px*(1_-_var(--fs-grown))))] w-[max(52px,calc(100%_-_var(--fs-gutter)*2px*(1_-_var(--fs-grown))))] -translate-x-1/2 flex-col overflow-hidden rounded-t-[calc(var(--fs-radius)*1px*(1_-_var(--fs-grown)*var(--fs-square)))] rounded-b-[calc(var(--fs-radius-bottom)*1px*(1_-_var(--fs-grown)))] border transition-[background-color,border-color,box-shadow,backdrop-filter,color,translate,opacity] duration-spring-smooth ease-spring-smooth motion-reduce:transition-none';
+  'ck-floating-sheet__surface pointer-events-auto absolute top-0 left-1/2 box-border flex h-[max(calc(var(--fs-rest)*1px_-_var(--fs-gutter)*1px),calc(var(--fs-extent)*1px_-_var(--fs-gutter)*1px*(1_-_var(--fs-grown))))] w-[max(52px,calc(100%_-_var(--fs-gutter)*2px*(1_-_var(--fs-grown))))] -translate-x-1/2 flex-col overflow-hidden rounded-t-[calc(var(--fs-radius)*(1_-_var(--fs-grown)*var(--fs-square)))] rounded-b-[calc(var(--fs-radius-bottom)*(1_-_var(--fs-grown)))] border transition-[background-color,border-color,box-shadow,backdrop-filter,color,translate,opacity] duration-spring-smooth ease-spring-smooth motion-reduce:transition-none';
 /* The material, mixed from the scope's own tokens (so it follows the page, or the `sheet` scope of an explicit
    appearance): translucent glass (the card colour at a growing alpha under a highlight gradient), or an opaque
    system sheet (the card colour, a soft shadow that deepens as it grows). The FAB wears the same. */
@@ -178,8 +177,8 @@ export const floatingSheetFabVariants = cva(
   },
 );
 
-/** The layer, and the layer host the sheet lives in (so it fills this box, not the app). ck-floating-sheet keys the
-    body / peek-mask rules in styles.css. */
+/** The layer: the box the sheet's contained Sheet (its layer host) fills, so it covers this box, not the app.
+    ck-floating-sheet keys the body / peek-mask rules in styles.css. */
 export const floatingSheetVariants = cva(
   'ck-floating-sheet pointer-events-none absolute inset-0 z-40 overflow-clip font-sans text-foreground [contain:layout]',
 );
@@ -216,10 +215,12 @@ export interface FloatingSheetProps {
   visible?: boolean;
   defaultVisible?: boolean;
   onVisibleChange?: (visible: boolean, details: FloatingSheetChangeDetails) => void;
-  /** Inset from the host edges while resting. `0` docks the sheet edge to edge like a system sheet. */
+  /** Inset from the host edges while resting, px. Default 10, the inset of Dialog's `tray` (the same floating card
+      on a phone). `0` docks the sheet edge to edge like a system sheet. */
   gutter?: number;
-  /** Corner radius while resting, px. Squares off as the sheet fills the host. */
-  radius?: number;
+  /** Corner radius while resting: px, or any CSS length. Default `var(--radius-sheet)`, the radius of every modal
+      sheet and of Dialog's `tray`. Squares off as the sheet fills the host. */
+  radius?: number | string;
   /** `glass` (default) blurs the page behind it; `sheet` is an opaque card. */
   variant?: FloatingSheetVariant;
   /** Colour scheme of the surface: `auto` (default) follows the page; `light` / `dark` override it. */
@@ -229,10 +230,6 @@ export interface FloatingSheetProps {
    * upward out of the cap; `start` keeps a card's header under the cap and lets the rest emerge below as it grows.
    */
   bodyAlign?: 'start' | 'end';
-  /** The edge of the host the FAB rests on. Default `bottom`. */
-  fabSide?: FloatingSheetFabSide;
-  /** Where along that edge. Default `center`. */
-  fabAlign?: FloatingSheetFabAlign;
   /** Follow NavigationStack/List scroll chrome, like the `Tabs` bar. */
   hideOnScroll?: boolean;
   /** A scroller whose direction also hides and restores the surface while it is resting. */
@@ -259,7 +256,7 @@ const shareOfHost = (percent: string, hostHeight: number, chrome: number) =>
  * into the full page: UI SDK's Drawer with snap points at the peek, any `snapPoints` and full height, modal only
  * above the peek (`modalAbove`), so the page stays usable beside a resting sheet. Drag it (or press the cap) to grow
  * it; drag down past the resting height to fold it into a FAB, or (`collapse="hide"`) slide it away. Escape and the
- * scrim bring a grown sheet back to rest. Write a `FloatingSheetBody` (the growing region) and a `FloatingSheetFoot`
+ * scrim bring a grown sheet back to rest. Write a `FloatingSheetBody` (the growing region) and a `FloatingSheetFooter`
  * (pinned at the bottom: a composer, actions) inside it, in that order.
  */
 export function FloatingSheet({
@@ -276,13 +273,11 @@ export function FloatingSheet({
   visible: controlledVisible,
   defaultVisible = true,
   onVisibleChange,
-  gutter = 20,
-  radius = 28,
+  gutter = trayInset,
+  radius = 'var(--radius-sheet)',
   variant = 'glass',
   appearance = 'auto',
   bodyAlign = 'start',
-  fabSide = 'bottom',
-  fabAlign = 'center',
   hideOnScroll = true,
   scrollRef,
   scrim = true,
@@ -434,8 +429,6 @@ export function FloatingSheet({
     label,
     collapse,
     minimized: folded,
-    fabSide,
-    fabAlign,
     restore,
     claimFab: () => {
       setCustomFabs((n) => n + 1);
@@ -450,9 +443,6 @@ export function FloatingSheet({
           <div
             ref={rootRef}
             data-slot="floating-sheet"
-            // The sheet's layer host (with `contain: layout` in its classes): the drawer fills it and is modal only to
-            // it. In the markup, so a sheet that's open from the start already sees its host.
-            data-layer-host=""
             data-variant={variant}
             data-appearance={scheme}
             data-theme-scope={scheme ? 'sheet' : undefined}
@@ -464,11 +454,11 @@ export function FloatingSheet({
             className={cn(floatingSheetVariants(), themeScopeClass(scheme), className)}
             style={{ '--fs-fab-gutter': `${Math.max(gutter, 16)}px`, ...style } as CSSProperties}
           >
-            {/* Rendered in place, inside this host (a portal into it would remount the Body once the host's element
-                exists); only a browser without the top layer needs the explicit container, or UI SDK would use the body. */}
+            {/* A contained Sheet: its layer host fills this box, so the drawer is modal only to it and rendered in
+                place (without the top layer, into that host rather than the body). */}
             <Sheet
               side="bottom"
-              container={supportsTopLayer() ? null : root}
+              contained
               controller={controller}
               open={shown}
               onOpenChange={onDrawerOpenChange}
@@ -495,6 +485,8 @@ export function FloatingSheet({
                 {(state) => (
                   <div
                     data-slot="floating-sheet-surface"
+                    // A transcript inside reads its resting state from here (see the message-scroller primitive).
+                    data-peek-host=""
                     data-open={open || undefined}
                     data-expanded={(resting > 0 || peek > 0) || undefined}
                     data-peeking={(peek > 0 && resting === 0) || undefined}
@@ -503,8 +495,8 @@ export function FloatingSheet({
                     className={cn(floatingSheetSurfaceVariants({ variant, hidden }), surfaceClassName)}
                     style={{
                       '--fs-gutter': gutter,
-                      '--fs-radius': radius,
-                      '--fs-radius-bottom': gutter > 0 ? radius : 0,
+                      '--fs-radius': typeof radius === 'number' ? `${radius}px` : radius,
+                      '--fs-radius-bottom': gutter > 0 ? 'var(--fs-radius)' : '0px',
                       '--fs-square': gapAbove > 0 ? 0 : 1,
                       // The material firms up as the sheet grows.
                       '--ck-sheet-border-alpha': 'calc(.12 + .04 * var(--fs-grown))',
@@ -524,6 +516,8 @@ export function FloatingSheet({
                       aria-label={open ? 'Collapse' : 'Expand'}
                       className={cn(
                         'group/cap box-border grid h-[18px] w-full shrink-0 cursor-grab touch-none place-items-center border-0 bg-transparent p-0 text-inherit focus-visible:ring-inset active:cursor-grabbing',
+                        // 18px drawn; on a touch screen it answers presses 44px tall, over the body's faded top (the footer stays above it).
+                        "relative z-1 pointer-coarse:after:absolute pointer-coarse:after:inset-x-0 pointer-coarse:after:top-0 pointer-coarse:after:h-11 pointer-coarse:after:content-['']",
                         focusRing,
                       )}
                     >
@@ -583,12 +577,12 @@ export function FloatingSheetBody({ className, children, ...props }: FloatingShe
   );
 }
 
-export type FloatingSheetFootProps = ComponentProps<'div'>;
+export type FloatingSheetFooterProps = ComponentProps<'div'>;
 
 /** Pinned to the bottom of the surface at every height: a composer, action buttons. A hairline above it appears as
     the sheet grows. */
-export function FloatingSheetFoot({ className, ref, ...props }: FloatingSheetFootProps) {
-  const { setFoot } = useParts('FloatingSheetFoot');
+export function FloatingSheetFooter({ className, ref, ...props }: FloatingSheetFooterProps) {
+  const { setFoot } = useParts('FloatingSheetFooter');
   return (
     <div
       ref={(el) => {
@@ -596,9 +590,9 @@ export function FloatingSheetFoot({ className, ref, ...props }: FloatingSheetFoo
         if (typeof ref === 'function') ref(el);
         else if (ref) ref.current = el;
       }}
-      data-slot="floating-sheet-foot"
+      data-slot="floating-sheet-footer"
       className={cn(
-        'relative min-w-0 shrink-0 border-t border-[color:color-mix(in_srgb,var(--foreground)_calc(var(--ck-sheet-divider-alpha,0)*100%),transparent)]',
+        'relative z-2 min-w-0 shrink-0 border-t border-[color:color-mix(in_srgb,var(--foreground)_calc(var(--ck-sheet-divider-alpha,0)*100%),transparent)]',
         className,
       )}
       {...props}
@@ -607,6 +601,10 @@ export function FloatingSheetFoot({ className, ref, ...props }: FloatingSheetFoo
 }
 
 export type FloatingSheetFabProps = Omit<ComponentProps<typeof SdkButton>, 'children' | 'className' | 'style' | 'onClick'> & {
+  /** The edge of the host the FAB rests on. Default `bottom`. */
+  side?: FloatingSheetFabSide;
+  /** Where along that edge. Default `center`. */
+  align?: FloatingSheetFabAlign;
   /** Runs before the sheet unfolds; `event.preventDefault()` keeps it folded. */
   onClick?: (event: ReactMouseEvent<HTMLElement>) => void;
   /** The FAB's face, usually an icon. Default: a dot in the accent colour. */
@@ -616,8 +614,8 @@ export type FloatingSheetFabProps = Omit<ComponentProps<typeof SdkButton>, 'chil
 };
 
 /* The FAB itself, wherever it is written: placed on the host's edge, folded and out of reach until the sheet is. */
-function Fab({ className, style, children, onClick, 'aria-label': ariaLabel, ...props }: FloatingSheetFabProps) {
-  const { variant, label, minimized, fabSide, fabAlign, restore } = useParts('FloatingSheetFab');
+function Fab({ side = 'bottom', align = 'center', className, style, children, onClick, 'aria-label': ariaLabel, ...props }: FloatingSheetFabProps) {
+  const { variant, label, minimized, restore } = useParts('FloatingSheetFab');
   return (
     <SdkButton
       data-floating-sheet-fab=""
@@ -626,7 +624,7 @@ function Fab({ className, style, children, onClick, 'aria-label': ariaLabel, ...
       // Not there until the sheet folds into it: out of the tab order and the accessibility tree.
       inert={!minimized || undefined}
       aria-hidden={!minimized || undefined}
-      className={cn(floatingSheetFabVariants({ variant, side: fabSide, align: fabAlign }), className)}
+      className={cn(floatingSheetFabVariants({ variant, side, align }), className)}
       style={{ ...(variant === 'glass' ? GLASS_BLUR : null), ...style }}
       onClick={(event) => {
         onClick?.(event);
@@ -640,8 +638,8 @@ function Fab({ className, style, children, onClick, 'aria-label': ariaLabel, ...
 }
 
 /** The round button the sheet folds into with `collapse="fab"` (a drag below rest); pressing it brings the resting
-    sheet back. Write it inside the FloatingSheet to give it a face and a name; it renders on the host's edge, at
-    `fabSide` / `fabAlign`. Without one, the sheet shows a default FAB named "Open" + the sheet's name. */
+    sheet back. Write it inside the FloatingSheet to give it a face, a name or a place; it renders on the host's
+    `side` edge (default `bottom`) at `align` along it (default `center`). Without one, the sheet shows a default FAB named "Open" + the sheet's name. */
 export function FloatingSheetFab(props: FloatingSheetFabProps) {
   const { root, collapse, claimFab } = useParts('FloatingSheetFab');
   useLayoutEffect(claimFab, []);

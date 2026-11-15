@@ -60,7 +60,7 @@ test('the real client: nothing downloads until the press, then the WebAssembly l
   const wasm = [];
   // The binary itself, not the tiny `main.wasm?import&url` module that only exports its URL.
   page.on('request', (r) => /main\.wasm(\?(?!import)|$)/.test(r.url()) && wasm.push(r.url()));
-  await openDemo(page, 'tailscale-login/sign-in', LOGIN);
+  await openDemo(page, 'tailscale/sign-in', LOGIN);
   await page.waitForTimeout(500);
   expect(wasm).toEqual([]);
   const popup = context.waitForEvent('page');
@@ -72,7 +72,7 @@ test('the real client: nothing downloads until the press, then the WebAssembly l
 
 test('the real client reaches Tailscale\'s sign-in page (TAILSCALE_LIVE=1: talks to login.tailscale.com)', async ({ page, context }) => {
   test.skip(!process.env.TAILSCALE_LIVE, 'needs the internet and Tailscale\'s control server');
-  await openDemo(page, 'tailscale-login/sign-in', LOGIN);
+  await openDemo(page, 'tailscale/sign-in', LOGIN);
   const popup = context.waitForEvent('page');
   await page.locator(LOGIN).click();
   await (await popup).waitForURL(/^https:\/\/login\.tailscale\.com\//, { timeout: 60_000 });

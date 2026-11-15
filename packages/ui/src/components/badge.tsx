@@ -17,7 +17,8 @@ export const badgeVariants = cva(
         tinted: 'bg-primary/15 text-primary',
         outline: 'text-foreground shadow-hairline',
         destructive: 'bg-destructive text-white',
-        success: 'bg-success text-white',
+        // Black on the light iOS green and yellow (about 9:1); white would be 2.2:1.
+        success: 'bg-success text-black',
         warning: 'bg-warning text-black',
       },
       size: {

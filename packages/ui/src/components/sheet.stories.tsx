@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import {
-  Sheet, SheetBackdrop, SheetBody, SheetClose, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle, SheetTrigger, SheetView,
+  Sheet, SheetBack, SheetBackdrop, SheetBody, SheetClose, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle, SheetTrigger, SheetView,
 } from '@/components/ui/sheet';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -60,16 +60,18 @@ export const Bottom: Story = { render: (args) => <Demo side={(args.side as Side)
 export const BottomDark: Story = { render: () => <Demo side="bottom" dark /> };
 export const Right: Story = { render: () => <Demo side="right" /> };
 export const RightDark: Story = { render: () => <Demo side="right" dark /> };
-export const Left: Story = { render: () => <Demo side="left" dark /> };
+export const Left: Story = { render: () => <Demo side="left" /> };
+export const LeftDark: Story = { render: () => <Demo side="left" dark /> };
 export const Top: Story = { render: () => <Demo side="top" /> };
 /** Two places to rest: the grabber becomes a handle (press it, or use the arrow keys), and a drag settles on one. */
 export const SnapPoints: Story = { render: () => <Demo side="bottom" snapPoints={[0.5, 1]} /> };
 export const Closed: Story = { render: () => <Demo side="bottom" open={false} /> };
 
-/** A flow: the root's `view` and a `SheetView` spring the short tray to each step's height, and the step and its
- *  title slide in the direction of travel. */
-function Flow({ dark }: { dark?: boolean }) {
-  const [step, setStep] = useState<'pick' | 'confirm'>('pick');
+/** A flow: the root's `view` and a `SheetView` spring the short sheet to each step's height, and the step and its
+ *  title slide in the direction of travel. The header is Dialog's flow bar: SheetBack folds in on the second step,
+ *  the title travels, the × stays at the end of the row. */
+function Flow({ dark, start = 'pick' }: { dark?: boolean; start?: 'pick' | 'confirm' }) {
+  const [step, setStep] = useState<'pick' | 'confirm'>(start);
   return (
     <Screen dark={dark}>
       <div>
@@ -77,16 +79,17 @@ function Flow({ dark }: { dark?: boolean }) {
           <SheetTrigger className={buttonVariants()}>Upgrade plan</SheetTrigger>
           <SheetBackdrop />
           <SheetContent>
-            <SheetClose />
             {/* The header stays mounted outside the view: the title travels by itself and keeps naming the sheet. */}
-            <SheetHeader>
+            <SheetHeader variant="bar">
+              <SheetBack hidden={step === 'pick'} onClick={() => setStep('pick')} />
               <SheetTitle>{step === 'pick' ? 'Choose a plan' : 'Confirm Team'}</SheetTitle>
-              <SheetDescription>{step === 'pick' ? 'You can change it any time.' : '$12 per seat each month, billed today.'}</SheetDescription>
+              <SheetClose />
             </SheetHeader>
             <SheetView>
               {step === 'pick' ? (
                 <>
                   <SheetBody className="flex flex-col gap-2">
+                    <SheetDescription>You can change it any time.</SheetDescription>
                     <Button variant="secondary" size="lg" className="justify-between">Starter <span>$0</span></Button>
                     <Button size="lg" className="justify-between">Team <span>$12</span></Button>
                   </SheetBody>
@@ -95,10 +98,14 @@ function Flow({ dark }: { dark?: boolean }) {
                   </SheetFooter>
                 </>
               ) : (
-                <SheetFooter>
-                  <SheetClose render={<Button size="pill" />}>Confirm and pay</SheetClose>
-                  <Button size="pill" variant="secondary" onClick={() => setStep('pick')}>Back</Button>
-                </SheetFooter>
+                <>
+                  <SheetBody>
+                    <SheetDescription>$12 per seat each month, billed today.</SheetDescription>
+                  </SheetBody>
+                  <SheetFooter>
+                    <SheetClose render={<Button size="pill" />}>Confirm and pay</SheetClose>
+                  </SheetFooter>
+                </>
               )}
             </SheetView>
           </SheetContent>
@@ -108,6 +115,37 @@ function Flow({ dark }: { dark?: boolean }) {
   );
 }
 export const FlowInTray: Story = { render: () => <Flow /> };
+/** The second step: the back chevron has folded into the bar. */
+export const FlowSecondStep: Story = { render: () => <Flow start="confirm" /> };
+export const FlowDark: Story = { render: () => <Flow dark start="confirm" /> };
+
+/** `dismissible={false}`: no ×, no grabber, no swipe or scrim close; only an answer closes it. Two answers share a
+ *  `horizontal` footer. */
+function Required({ dark }: { dark?: boolean }) {
+  return (
+    <Screen dark={dark}>
+      <div>
+        <Sheet defaultOpen dismissible={false}>
+          <SheetTrigger className={buttonVariants()}>Terms</SheetTrigger>
+          <SheetBackdrop />
+          <SheetContent>
+            <SheetClose />
+            <SheetHeader>
+              <SheetTitle>New terms of service</SheetTitle>
+              <SheetDescription>Read and accept them to keep syncing your library.</SheetDescription>
+            </SheetHeader>
+            <SheetFooter orientation="horizontal">
+              <SheetClose render={<Button size="pill" variant="secondary" />}>Later</SheetClose>
+              <SheetClose render={<Button size="pill" />}>Accept</SheetClose>
+            </SheetFooter>
+          </SheetContent>
+        </Sheet>
+      </div>
+    </Screen>
+  );
+}
+export const NotDismissible: Story = { render: () => <Required /> };
+export const NotDismissibleDark: Story = { render: () => <Required dark /> };
 
 /** `contained`: the sheet stays inside its positioned parent (the framed box under the toolbar), with
  *  `SheetContent variant="panel"`, a full-height edge panel without chrome. The toolbar stays usable. */

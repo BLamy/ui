@@ -5,12 +5,12 @@ import {
   TabsSeparator, TabsTab, type TabsSide, type TabsVariant,
 } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Segmented as SegmentedControl, SegmentedItem } from '@/components/ui/segmented';
 import { List, ListRow, ListSection } from '@/components/ui/list';
 import {
   NavigationStack, NavigationStackBar, NavigationStackContent, NavigationStackLargeTitle, NavigationStackPage,
   NavigationStackTitle,
 } from '@/components/ui/navigation-stack';
-import { useSizeClass } from '@/lib/container';
 import { Icon, type IconName } from '@/lib/icon';
 import { BLProvider, ThemeScope } from '@/lib/theme';
 import { cn } from '@/lib/utils';
@@ -57,6 +57,31 @@ function SettingsTabs({ variant, side, icons, disabled, activation }: {
 export const Segmented: Story = {
   args: { dark: false },
   render: ({ dark }) => <Panel dark={dark}><SettingsTabs variant="segmented" /></Panel>,
+};
+
+/** `size` beside Segmented and ToggleGroup `segmented` at the same size: one track, one card, one height (32 / 36 /
+    44px), so they line up in a toolbar. */
+export const Sizes: Story = {
+  args: { dark: false },
+  render: ({ dark }) => (
+    <Panel dark={dark} w={420}>
+      {(['sm', 'default', 'lg'] as const).map((size) => (
+        <div key={size} className="flex items-center gap-3">
+          <Tabs size={size} defaultValue="day" className="flex-1">
+            <TabsList aria-label={`Range, ${size}`}>
+              <TabsTab value="day">Day</TabsTab>
+              <TabsTab value="week">Week</TabsTab>
+              <TabsTab value="month">Month</TabsTab>
+            </TabsList>
+          </Tabs>
+          <SegmentedControl size={size} aria-label={`View, ${size}`} defaultValue="list">
+            <SegmentedItem value="list">List</SegmentedItem>
+            <SegmentedItem value="grid">Grid</SegmentedItem>
+          </SegmentedControl>
+        </div>
+      ))}
+    </Panel>
+  ),
 };
 
 /** A tinted line under the selected label, over a hairline. */
@@ -186,10 +211,10 @@ export const BottomBarHideOnScroll: Story = {
           <TabsPanels>
             {sections.map((s) => (
               <TabsPanel key={s.id} value={s.id} keepMounted className="overflow-hidden">
-                <NavigationStack defaultPages={['root']} bottomInset={66}>
+                <NavigationStack defaultPages={['root']}>
                   <NavigationStackPage value="root">
                     <NavigationStackBar><NavigationStackTitle>{s.title}</NavigationStackTitle></NavigationStackBar>
-                    <NavigationStackContent bottomInset={66}>
+                    <NavigationStackContent>
                       <NavigationStackLargeTitle />
                       {rows(40)}
                     </NavigationStackContent>
@@ -223,17 +248,15 @@ export const BottomBarOnly: Story = {
   },
 };
 
-/** One tree at every size: a bottom bar when the box is compact, a side rail from 700px (its own size class, not the
-    viewport). Screenshot it at 390x844 and wide. */
+/** One tree at every size: `presentation="auto"` is a bottom bar while the size-class scope (BLProvider's box here,
+    not the viewport) is compact, and a side rail from 640px. Screenshot it at 390x844 and wide. */
 export const Adaptive: Story = {
   args: { dark: false },
   render: function AdaptiveTabs({ dark }) {
-    const [box, sizeClass] = useSizeClass<HTMLDivElement>({ breakpoints: { medium: 700 }, initial: 'compact' });
-    const compact = sizeClass === 'compact';
     return (
-      <div ref={box} className="relative h-[640px] w-full overflow-hidden rounded-card shadow-hairline">
+      <div className="relative h-[640px] w-full overflow-hidden rounded-card shadow-hairline">
         <BLProvider dark={dark} className="absolute inset-0">
-          <Tabs variant={compact ? 'bar' : 'rail'} defaultValue="contacts" className="absolute inset-0 bg-background">
+          <Tabs presentation="auto" defaultValue="contacts" className="absolute inset-0 bg-background">
             <TabsBar>
               <TabsList aria-label="Sections">
                 {sections.map((s) => <TabsTab key={s.id} value={s.id} icon={s.icon}>{s.title}</TabsTab>)}
@@ -290,7 +313,7 @@ export const Rail: Story = {
 
 export const RailDark: Story = { ...Rail, args: { side: 'start', dark: true } };
 
-/* ── Workspace switcher (variant="workspace") ── */
+/* ── Workspace switcher (variant="switcher") ── */
 
 const workspaces = [
   { id: 'blui', label: 'B', color: 'var(--primary)', title: 'BL UI HQ' },
@@ -318,7 +341,7 @@ function Tile({ color = 'var(--primary)', mentions, children }: { color?: string
 function WorkspaceRail({ count }: { count?: number }) {
   const list = count ? Array.from({ length: count }, (_, i) => ({ ...workspaces[i % 4], id: `w${i}`, label: String.fromCharCode(65 + i), title: `Workspace ${i + 1}` })) : workspaces;
   return (
-    <Tabs variant="workspace" defaultValue={count ? 'w0' : 'blui'} className="flex h-full">
+    <Tabs variant="switcher" defaultValue={count ? 'w0' : 'blui'} className="flex h-full">
       <TabsBar>
         <TabsList aria-label="Workspaces">
           <TabsTab value="home" aria-label="Direct Messages">

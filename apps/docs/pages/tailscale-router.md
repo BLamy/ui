@@ -1,6 +1,6 @@
 # Tailscale request router
 
-A service worker that sends a page's requests to the tailnet. Once it is installed and the page is [signed in to Tailscale](https://blamy.github.io/ui/#/tailscale-login), a plain `fetch('http://nas.tail1234.ts.net/photos')`, an `<img src="http://100.101.102.103/cam.jpg">` or a library's `XMLHttpRequest` reaches the device on your tailnet, and nothing in that code knows about Tailscale. Requests the policy does not name are not touched: the worker does not even answer them, so the browser handles them as if it were not there.
+A service worker that sends a page's requests to the tailnet. Once it is installed and the page is [signed in to Tailscale](https://blamy.github.io/ui/#/tailscale), a plain `fetch('http://nas.tail1234.ts.net/photos')`, an `<img src="http://100.101.102.103/cam.jpg">` or a library's `XMLHttpRequest` reaches the device on your tailnet, and nothing in that code knows about Tailscale. Requests the policy does not name are not touched: the worker does not even answer them, so the browser handles them as if it were not there.
 
 {% tabs title="Installation" sync="install" %}
 {% tab title="shadcn CLI" %}
@@ -17,12 +17,14 @@ import {
 {% tab title="npm" %}
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 
-Import the stylesheet once at your app's entry, then the parts from the package root:
+Import the stylesheet once at your app's entry, then the parts from their module:
 
 ```tsx
 import '@brett_lamy/ui/styles.css'
 
-import { TailscaleRouter, useTailscaleRouter } from '@brett_lamy/ui'
+import {
+  TailscaleRouter, useTailscaleRouter,
+} from '@brett_lamy/ui/lib/tailscale-router/react'
 ```
 {% endtab %}
 {% endtabs %}

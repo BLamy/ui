@@ -115,3 +115,20 @@ describe('Toolbar', () => {
     expect(screen.getByRole('separator').getAttribute('data-orientation')).toBe('horizontal');
   });
 });
+
+describe('Toolbar disabled tools', () => {
+  it('an unavailable toned tool goes grey in every look, instead of fading its tint', () => {
+    render(
+      <Toolbar aria-label="Run">
+        <ToolbarButton tone="success" disabled>Continue</ToolbarButton>
+        <ToolbarButton variant="default" disabled>Deploy</ToolbarButton>
+      </Toolbar>,
+    );
+    const go = screen.getByRole('button', { name: 'Continue' });
+    expect(go.className).toContain('not-data-disabled:text-success');
+    expect(go.className).toContain('data-disabled:text-tertiary-foreground');
+    expect(go.className).toContain('data-disabled:opacity-100');
+    // A filled look keeps Button's dimmed fill.
+    expect(screen.getByRole('button', { name: 'Deploy' }).className).not.toContain('data-disabled:text-tertiary-foreground');
+  });
+});

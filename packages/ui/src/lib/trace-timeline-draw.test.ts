@@ -4,7 +4,7 @@ import { TraceBuffers, drawTraceData, drawTraceOverlay, groupRequests, toneColor
 
 const COLORS: TraceColors = {
   foreground: 'fg', muted: 'muted', faint: 'faint', border: 'border', primary: 'primary', background: 'bg', surface: 'surface', ruler: 'ruler', card: 'card',
-  warning: 'warning', success: 'success', error: 'error', chart: ['c1', 'c2', 'c3', 'c4', 'c5'],
+  warning: 'warning', success: 'success', destructive: 'destructive', chart: ['c1', 'c2', 'c3', 'c4', 'c5'],
 };
 const HOUR = 3_600_000;
 const RANGE: TraceRange = { start: 0, end: HOUR };
@@ -39,7 +39,7 @@ function fakeContext() {
 function frame(ctx: CanvasRenderingContext2D, over: Partial<TraceFrame> = {}): TraceFrame {
   const length = over.length ?? 1200;
   const dpr = over.dpr ?? 2;
-  return { ctx, dpr, vertical: false, side: 'right', width: 1264, height: 300, start: 64, length, columns: length * dpr, axis: linearAxis(RANGE), win: { from: 0, to: 1 }, colors: COLORS, font: '11px sans-serif', ...over };
+  return { ctx, dpr, vertical: false, edge: 'right', width: 1264, height: 300, start: 64, length, columns: length * dpr, axis: linearAxis(RANGE), win: { from: 0, to: 1 }, colors: COLORS, font: '11px sans-serif', ...over };
 }
 
 function scene(rows: TraceRow[], lanes: TraceLane[], over: Partial<TraceScene> = {}): TraceScene {
@@ -130,11 +130,11 @@ describe('one drawing for two orientations', () => {
   });
 
   it('swaps x and y on a left rail, and mirrors them on a right rail, with no words', () => {
-    for (const side of ['left', 'right'] as const) {
+    for (const edge of ['left', 'right'] as const) {
       const { ctx, ops } = fakeContext();
-      const f = frame(ctx, { vertical: true, side, width: 44, height: 600, start: 0, length: 600, columns: 1200 });
+      const f = frame(ctx, { vertical: true, edge, width: 44, height: 600, start: 0, length: 600, columns: 1200 });
       drawTraceData(f, scene(layoutRail(lanes), lanes), buffers(f));
-      expect(ops.transforms[ops.transforms.length - 1]).toEqual(side === 'left' ? [0, 2, 2, 0, 0, 0] : [0, 2, -2, 0, 88, 0]);
+      expect(ops.transforms[ops.transforms.length - 1]).toEqual(edge === 'left' ? [0, 2, 2, 0, 0, 0] : [0, 2, -2, 0, 88, 0]);
       expect(ops.text).toEqual([]);
     }
   });
@@ -153,11 +153,11 @@ describe('one drawing for two orientations', () => {
   });
 
   it('leaves dot marks to the stops on a rail, where they would have no room', () => {
-    const withDots: TraceLane[] = [{ key: 'a', marks: [{ key: 'bar', times: [1000], shape: 'bar', tone: 'error' }, { key: 'dot', times: [2000], shape: 'dot', tone: 'success' }] }];
+    const withDots: TraceLane[] = [{ key: 'a', marks: [{ key: 'bar', times: [1000], shape: 'bar', tone: 'destructive' }, { key: 'dot', times: [2000], shape: 'dot', tone: 'success' }] }];
     const { ctx, ops } = fakeContext();
     const f = frame(ctx, { vertical: true, width: 44, height: 600, start: 0, length: 600, columns: 1200 });
     drawTraceData(f, scene(layoutRail(withDots), withDots), buffers(f));
-    expect(ops.rects.some((r) => r.style === 'error')).toBe(true);
+    expect(ops.rects.some((r) => r.style === 'destructive')).toBe(true);
     expect(ops.rects.some((r) => r.style === 'success')).toBe(false);
     expect(ops.roundRect).toBe(0);
   });
@@ -165,7 +165,7 @@ describe('one drawing for two orientations', () => {
 
 describe('colours', () => {
   it('takes a host colour for its own lanes and threads, through the resolver', () => {
-    const lanes: TraceLane[] = [{ key: 'a', color: 'red', density: { times: dense(10) }, threads: [{ id: 1, color: 'blue' }] }];
+    const lanes: TraceLane[] = [{ key: 'a', tint: 'red', density: { times: dense(10) }, threads: [{ id: 1, tint: 'blue' }] }];
     const { ctx, ops } = fakeContext();
     const f = frame(ctx);
     const activity = new Map([['a', { edges: [0, HOUR], threads: new Map([[1, { counts: [5], max: 5 }]]), total: { counts: [5], max: 5 } }]]);
@@ -194,10 +194,10 @@ describe('colours', () => {
   });
 
   it('maps tones to tokens', () => {
-    expect(toneColor(COLORS, 'error')).toBe('error');
+    expect(toneColor(COLORS, 'destructive')).toBe('destructive');
     expect(toneColor(COLORS, 'warning')).toBe('warning');
     expect(toneColor(COLORS, 'success')).toBe('success');
-    expect(toneColor(COLORS, 'info')).toBe('primary');
+    expect(toneColor(COLORS, 'muted')).toBe('faint');
     expect(toneColor(COLORS, undefined)).toBe('muted');
   });
 });
@@ -239,7 +239,7 @@ describe('rows', () => {
   });
 
   it('draws the strip stops from what selectStops chose', () => {
-    const stops = [{ key: 'a', time: 1000, tone: 'error' as const }, { key: 'b', time: 1_800_000, level: 2 }];
+    const stops = [{ key: 'a', time: 1000, tone: 'destructive' as const }, { key: 'b', time: 1_800_000, level: 2 }];
     const axis = linearAxis(RANGE);
     const marks = selectStops(stops, { axis, win: { from: 0, to: 1 }, length: 1200 });
     const rows = layoutStrip([], 100, { stops: true });
@@ -247,7 +247,7 @@ describe('rows', () => {
     const f = frame(ctx);
     drawTraceData(f, scene(rows, [], { stopMarks: marks }), buffers(f));
     const dashes = ops.rects.filter((r) => r.w === 2);
-    expect(dashes.map((r) => r.style)).toEqual(['error', 'faint']);
+    expect(dashes.map((r) => r.style)).toEqual(['destructive', 'faint']);
     expect(dashes[0].h).toBe(9);
     expect(dashes[1].h).toBe(6);
   });

@@ -50,14 +50,14 @@ export type ValuePreview =
 export type ValueType = ValuePreview['type'];
 
 /** How a piece of a preview is tinted. */
-export type ValueTint =
+export type ValueTokenType =
   | 'string' | 'number' | 'keyword' | 'nullish' | 'function' | 'functionMark' | 'symbol' | 'regexp' | 'date' | 'error'
   | 'className' | 'key' | 'punctuation' | 'muted' | 'plain';
 
 /** One tinted run of a preview's text. */
 export interface ValueToken {
   text: string;
-  tint: ValueTint;
+  tint: ValueTokenType;
 }
 
 /** Characters of a string a preview shows before truncating it. */

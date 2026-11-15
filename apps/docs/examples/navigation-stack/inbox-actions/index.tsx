@@ -40,7 +40,7 @@ function InboxWithActions() {
         <NavigationStackPage value="inbox">
           <NavigationStackBar hideOnScroll={false}>
             <NavigationStackLeading>
-              <Button variant="link" style={{ padding: '0 10px' }}>
+              <Button variant="plain">
                 Edit
               </Button>
             </NavigationStackLeading>

@@ -23,12 +23,15 @@
 @layer base{
   :where([data-slot]),:where([data-slot])::before,:where([data-slot])::after,
   :where([data-slot]) *,:where([data-slot]) ::before,:where([data-slot]) ::after{box-sizing:border-box}
+  /* A kit popup shown in the top layer (no BLProvider or layer host around it) is a `[popover]` element. UI SDK
+     resets the browser's `[popover]` box (3px currentColor border, padding, centering) for its dialog, popover,
+     hover-card and tooltip presets, but not for menu, select, combobox and date-picker: mirror its reset here for
+     every kit popup, at zero specificity, so the kit's own classes always win. */
+  :where([data-slot][popover]){inset:auto;width:auto;height:auto;max-width:none;max-height:none;margin:0;padding:0;border:0;overflow:visible;color:inherit;background:none}
 }
 
 /* BL UI framework CSS — verbatim from the prototype's injected `bl-kf` block. */
 @keyframes blSpin{to{transform:rotate(360deg)}}
-@keyframes blRing{from{transform:scale(.35);opacity:.85}to{transform:scale(2.4);opacity:0}}
-@keyframes blHapIn{0%{opacity:0;transform:translateY(8px)}10%{opacity:1;transform:none}72%{opacity:1}100%{opacity:0;transform:translateY(-4px)}}
 @keyframes blBub{from{transform:scale(.5);opacity:0}to{transform:scale(1);opacity:1}}
 @keyframes blWaveCard{from{scale:.94;opacity:0}}
 .bl-scroll{scrollbar-width:thin;scrollbar-color:rgba(128,128,140,.35) transparent}
@@ -41,8 +44,6 @@
 [data-swiping] .bl-hl:active{background:transparent!important}
 [data-row-control] :is(button,input,select,textarea,a,label,[role=switch],[role=slider],[role=checkbox],[data-slot=slider]){pointer-events:auto}
 input:where([data-slot] *,[data-slot]):where(:not(.gb *))::placeholder{color:var(--tertiary-foreground, color-mix(in oklab, var(--muted-foreground) 60%, transparent))}
-@keyframes blShimmer{from{background-position:200% 0}to{background-position:0% 0}}
-.bl-shimmer{background:linear-gradient(90deg,var(--tertiary-foreground, color-mix(in oklab, var(--muted-foreground) 60%, transparent)) 40%,var(--foreground) 50%,var(--tertiary-foreground, color-mix(in oklab, var(--muted-foreground) 60%, transparent)) 60%) 0 0/200% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:blShimmer 2.4s linear infinite}
 .bl-range{-webkit-appearance:none;appearance:none;width:100%;height:28px;background:transparent;margin:0;cursor:pointer}
 .bl-range::-webkit-slider-runnable-track{height:4px;border-radius:2px;background:linear-gradient(var(--primary),var(--primary)) 0/var(--bl-range-fill,50%) 100% no-repeat,var(--secondary-strong, var(--accent))}
 .bl-range::-webkit-slider-thumb{-webkit-appearance:none;width:26px;height:26px;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.28),0 0 1px rgba(0,0,0,.22);margin-top:-11px}
@@ -677,7 +678,6 @@ input:where([data-slot] *,[data-slot]):where(:not(.gb *))::placeholder{color:var
 
 /* ══ Workbench (WorkbenchShell, Composer, MarkdownView, terminal) — the `workbench` / `terminal` theme scopes ══ */
 /* BL UI Workbench — framework-owned CSS (scrollbars, caret pulse, spin, markdown). */
-@keyframes wbBlink{0%,55%{opacity:1}56%,100%{opacity:0}}
 @keyframes wbPulse{0%,100%{opacity:1}50%{opacity:.35}}
 @keyframes wbSpin{to{transform:rotate(360deg)}}
 .wb-scroll{scrollbar-width:thin;scrollbar-color:rgba(140,140,155,.3) transparent}
@@ -716,31 +716,18 @@ input:where([data-slot] *,[data-slot]):where(:not(.gb *))::placeholder{color:var
 .wb-md :where(a:hover){text-decoration:underline}
 .wb-md :where(img){max-width:100%;border-radius:8px}
 
-/* ── Code colors in MarkdownView (Docstream's hljs spans) and HlPre (.wb-tok-*) ──
-   CodeEditor's knobs (--bl-syntax-*) retheme them too. Defaults follow the code surface: a Material
-   palette on the dark --code well, a One Light-style palette on a light Workbench's light well. */
-:root,[data-theme-scope="workbench"].dark{
-  --_wb-code-keyword:#C792EA;--_wb-code-string:#A5D6A7;--_wb-code-number:#F78C6C;--_wb-code-comment:#777784;
-  --_wb-code-function:#82AAFF;--_wb-code-constant:#F07178;--_wb-code-type:#FFCB6B;--_wb-code-operator:#89DDFF;
-  --_wb-code-deleted:#FF6B6B;--_wb-code-added:#69DB7C
+/* ── Code colors in MarkdownView ── Docstream paints fence tokens with `.docs-tok-*`, each reading a --docs-tok-*
+   property; here those read CodeEditor's --bl-syntax-* knobs, so one theme setting colors a snippet the same in a
+   CodeEditor and in a MarkdownView fence. Unset knobs fall through to Docstream's defaults, which are CodeEditor's
+   palette (`light-dark()`). */
+.wb-md{
+  --docs-tok-keyword:var(--bl-syntax-keyword);--docs-tok-type:var(--bl-syntax-type);--docs-tok-function:var(--bl-syntax-function);
+  --docs-tok-string:var(--bl-syntax-string);--docs-tok-number:var(--bl-syntax-number);--docs-tok-constant:var(--bl-syntax-constant);
+  --docs-tok-operator:var(--bl-syntax-operator);--docs-tok-comment:var(--bl-syntax-comment)
 }
-[data-theme-scope="workbench"].light{
-  --_wb-code-keyword:#A626A4;--_wb-code-string:#3E8B3A;--_wb-code-number:#986801;--_wb-code-comment:#9A9AA3;
-  --_wb-code-function:#3563D9;--_wb-code-constant:#D2403A;--_wb-code-type:#B06A00;--_wb-code-operator:#0B7FA8;
-  --_wb-code-deleted:#D2403A;--_wb-code-added:#2F8F46
-}
-.wb-md :where(.hljs-keyword,.hljs-selector-tag,.hljs-built_in,.hljs-type,.hljs-tag,.hljs-name),.wb-tok-keyword{color:var(--bl-syntax-keyword,var(--_wb-code-keyword))}
-.wb-md :where(.hljs-string,.hljs-attr,.hljs-symbol,.hljs-bullet),.wb-tok-string{color:var(--bl-syntax-string,var(--_wb-code-string))}
-.wb-md :where(.hljs-title,.hljs-section,.hljs-function .hljs-title),.wb-tok-function{color:var(--bl-syntax-function,var(--_wb-code-function))}
-.wb-md :where(.hljs-number,.hljs-literal,.hljs-variable,.hljs-template-variable),.wb-tok-number{color:var(--bl-syntax-number,var(--_wb-code-number))}
-.wb-md :where(.hljs-comment,.hljs-quote,.hljs-meta){color:var(--bl-syntax-comment,var(--_wb-code-comment));font-style:italic}
-.wb-tok-comment{color:var(--bl-syntax-comment,var(--_wb-code-comment))}
-.wb-md :where(.hljs-operator,.hljs-punctuation),.wb-tok-operator{color:var(--bl-syntax-operator,var(--_wb-code-operator))}
-.wb-md :where(.hljs-deletion){color:var(--_wb-code-deleted)}
-.wb-md :where(.hljs-addition){color:var(--_wb-code-added)}
-.wb-tok-constant{color:var(--bl-syntax-constant,var(--_wb-code-constant))}
-.wb-tok-type{color:var(--bl-syntax-type,var(--_wb-code-type))}
-.wb-tok-text{color:var(--bl-syntax-fg,var(--code-foreground, var(--foreground)))}
+/* A reply that opens with a heading starts at the top of its box, and the last block doesn't add space under it. */
+.wb-md .docs-article>[data-docstream-blocks]>:first-child{margin-top:0}
+.wb-md .docs-article>[data-docstream-blocks]>:last-child{margin-bottom:0}
 
 /* Docstream editor compressed into the Workbench composer. The editor package defaults to a
    full document canvas, so this adapter supplies the same narrow, auto-growing surface used by
@@ -756,7 +743,6 @@ input:where([data-slot] *,[data-slot]):where(:not(.gb *))::placeholder{color:var
 .wb-composer-doc.gb .ProseMirror{min-height:38px;padding:10px 34px 4px 0;outline:none;font-size:14px;line-height:1.5}
 .wb-composer-doc.gb,.wb-composer-doc.gb .ProseMirror{color:var(--foreground);caret-color:var(--primary)}
 .wb-composer-doc.gb .ProseMirror :where(h1,h2,h3,h4,h5,h6,p,li){color:inherit}
-.wb-composer-doc-wide.gb .ProseMirror{min-height:38px}
 .wb-composer-doc-expanded.gb{max-height:min(58vh,440px)}
 .wb-composer-doc-expanded.gb .ProseMirror{min-height:min(52vh,400px)}
 .wb-composer-doc.gb .ProseMirror>*+*{margin-top:.4em}
@@ -764,6 +750,9 @@ input:where([data-slot] *,[data-slot]):where(:not(.gb *))::placeholder{color:var
 .wb-composer-doc.gb .ProseMirror p:is(.is-empty,.is-editor-empty):first-child:before{
   content:attr(data-placeholder);float:left;height:0;color:var(--tertiary-foreground, color-mix(in oklab, var(--muted-foreground) 60%, transparent));pointer-events:none
 }
+/* The placeholder stays on one line (a long one ends in an ellipsis at narrow widths, instead of wrapping under the
+   footer); clip, not hidden, so its zero-height float still shows the line. */
+.wb-composer-doc.gb .ProseMirror p:is(.is-empty,.is-editor-empty):first-child:before{max-width:100%;white-space:nowrap;overflow-x:clip;overflow-y:visible;text-overflow:ellipsis}
 .wb-composer-doc.gb .gb-code{margin:.45em 0}
 
 
@@ -788,7 +777,7 @@ input:where([data-slot] *,[data-slot]):where(:not(.gb *))::placeholder{color:var
 :is(.wb-md,.bl-mde,.wb-composer-doc) .docs-task-control[data-task-state="verified"]{color:var(--success, oklch(0.723 0.191 149.6))}
 
 /* StlViewer used on its own (outside a docstream article or editor) takes the theme's tokens too. */
-.docstream-stl{--gb-primary:var(--primary);--gb-muted:var(--secondary);--gb-border:var(--border)}
+.docstream-stl{--gb-primary:var(--primary);--gb-muted:var(--secondary);--gb-border:var(--border);--gb-panel:var(--popover);--gb-panel-foreground:var(--primary);--gb-hover:var(--accent)}
 /* Tree (@pierre/trees) in the theme: its rows live in a shadow root and read these overrides. Git colors lean toward
    the text color so they keep text contrast in light and dark. */
 [data-slot="tree"]{--trees-accent-override:var(--primary);--trees-fg-override:var(--foreground);--trees-fg-muted-override:var(--muted-foreground);--trees-bg-override:transparent;--trees-bg-muted-override:var(--secondary);--trees-input-bg-override:var(--secondary);--trees-search-bg-override:var(--secondary);--trees-border-color-override:var(--border);--trees-indent-guide-bg-override:var(--border);--trees-selected-bg-override:color-mix(in oklab,var(--primary) 16%,transparent);--trees-selected-fg-override:var(--foreground);--trees-focus-ring-color-override:var(--ring);--trees-selected-focused-border-color-override:var(--ring);--trees-scrollbar-thumb-override:var(--secondary-strong,var(--border));--trees-font-family-override:var(--font-sans);--trees-font-size-override:var(--text-footnote);--trees-border-radius-override:var(--radius-ctl);--trees-status-added-override:color-mix(in oklab,var(--trees-added-light) 60%,var(--foreground));--trees-status-untracked-override:color-mix(in oklab,var(--trees-untracked-light) 60%,var(--foreground));--trees-status-modified-override:color-mix(in oklab,var(--trees-modified-light) 60%,var(--foreground));--trees-status-renamed-override:color-mix(in oklab,var(--trees-renamed-light) 55%,var(--foreground));--trees-status-deleted-override:color-mix(in oklab,var(--trees-deleted-light) 70%,var(--foreground))}
@@ -815,7 +804,7 @@ input:where([data-slot] *,[data-slot]):where(:not(.gb *))::placeholder{color:var
 .bl-mde-md{--mde-fs:15px;--mde-lh:1.55;--mde-min-h-d:96px}
 .bl-mde-lg{--mde-fs:17px;--mde-lh:1.55;--mde-min-h-d:144px}
 .bl-mde[data-variant="card"]{--mde-px:16px;--mde-py:14px}
-.bl-mde[data-variant="ghost"]{--mde-px:0px;--mde-py:0px}
+.bl-mde[data-variant="plain"]{--mde-px:0px;--mde-py:0px}
 .bl-mde .bl-mde-doc.gb{
   display:flex;flex-direction:column;flex:1 1 auto;width:100%;max-width:none;margin:0;padding:0;box-sizing:border-box;
   min-height:var(--mde-min-h,var(--mde-min-h-d));max-height:var(--mde-max-h,none);
@@ -845,7 +834,7 @@ input:where([data-slot] *,[data-slot]):where(:not(.gb *))::placeholder{color:var
 .bl-mde .bl-mde-doc .gb-tool:is([data-pressed],[data-active],[data-open]){background:var(--secondary-strong, var(--accent));color:var(--foreground)}
 .bl-mde .bl-mde-doc .gb-toolbar-hint{font-size:12px;color:var(--tertiary-foreground, color-mix(in oklab, var(--muted-foreground) 60%, transparent))}
 .bl-mde .bl-mde-doc .gb-toolbar-hint kbd{border-color:var(--border);background:transparent;font-family:inherit;color:var(--muted-foreground)}
-.bl-mde[data-variant="ghost"] .bl-mde-doc .gb-toolbar{padding-left:0;padding-right:0;margin-bottom:8px}
+.bl-mde[data-variant="plain"] .bl-mde-doc .gb-toolbar{padding-left:0;padding-right:0;margin-bottom:8px}
 /* The editor's popovers (in place, so inside .bl-mde). The shadow deepens on a dark color scheme. */
 .bl-mde .slash-menu{border-radius:12px;box-shadow:0 12px 32px light-dark(rgba(0,0,0,.16),transparent),0 2px 6px light-dark(rgba(0,0,0,.06),transparent),0 14px 40px light-dark(transparent,rgba(0,0,0,.5))}
 .bl-mde .slash-item{border-radius:8px}
@@ -875,9 +864,6 @@ input:where([data-slot] *,[data-slot]):where(:not(.gb *))::placeholder{color:var
 [data-slot="composer"][data-collapsed="fab"] [data-slot="composer-card"][data-folded]{width:52px;height:52px;border-radius:26px;overflow:hidden;flex-wrap:nowrap;box-shadow:0 10px 30px -8px rgba(0,0,0,.45),0 2px 8px rgba(0,0,0,.14)}
 [data-slot="composer"][data-collapsed="fab"] [data-slot="composer-card"][data-folded]>[data-slot="composer-card-body"]>*{opacity:0!important;filter:blur(4px);pointer-events:none;transition:opacity .1s ease,filter .1s ease}
 [data-slot="composer"][data-collapsed="fab"] [data-slot="composer-card"][data-folded]>[data-slot="composer-fab"]{opacity:1;pointer-events:auto;transform:none;transition:opacity .2s ease .14s,transform var(--duration-spring-bouncy) var(--ease-spring-bouncy) .1s}
-[data-slot="composer"][data-fab-position="end"][data-collapsed="fab"] [data-slot="composer-card"][data-folded]{align-self:flex-end}
-[data-slot="composer"][data-fab-position="center"][data-collapsed="fab"] [data-slot="composer-card"][data-folded]{align-self:center}
-[data-slot="composer"][data-fab-position="start"][data-collapsed="fab"] [data-slot="composer-card"][data-folded]{align-self:flex-start}
 [data-slot="composer"][data-collapsed="fab"]:has([data-folded])>[data-slot="composer-stack"]>[data-slot="composer-bump"]{height:0;min-height:0;margin-block:0;padding-block:0;border-width:0;opacity:0;overflow:hidden;pointer-events:none;transition:opacity .1s ease}
 @media (prefers-reduced-motion:reduce){[data-slot="composer-card"],[data-slot="composer-card-body"]>*,[data-slot="composer-card"]>[data-slot="composer-fab"],[data-slot="composer-stack"]>[data-slot="composer-bump"]{transition:none!important}}
 
@@ -898,7 +884,7 @@ input:where([data-slot] *,[data-slot]):where(:not(.gb *))::placeholder{color:var
 .bl-syntax-card{box-sizing:border-box;border:1px solid var(--bl-syntax-border,var(--border));border-radius:var(--bl-syntax-radius,12px);background:var(--_bl-syn-surface);overflow:hidden}
 .bl-syntax-card>.bl-syntax-pre{border-radius:inherit}
 .bl-syntax-card>.bl-syntax-header+.bl-syntax-pre{border-top-left-radius:0;border-top-right-radius:0}
-.bl-syntax-ghost{--_bl-syn-surface:var(--bl-syntax-surface,transparent)}
+.bl-syntax-plain{--_bl-syn-surface:var(--bl-syntax-surface,transparent)}
 .bl-syntax-pre{margin:0;overflow:auto;padding:var(--bl-syntax-padding-y,12px) 0;font-family:var(--bl-syntax-font,var(--font-mono,ui-monospace,monospace));font-size:var(--bl-syntax-font-size,13px);line-height:var(--bl-syntax-line-height,1.6);tab-size:var(--bl-syntax-tab-size,2);color:inherit;background:none;outline:none;white-space:pre;text-align:left;-webkit-user-select:text;user-select:text}
 .bl-syntax-pre:focus-visible{box-shadow:inset 0 0 0 2px var(--primary)}
 .bl-syntax-code{display:block;width:max-content;min-width:100%;font:inherit;color:inherit;background:none;padding:0;border-radius:0}
@@ -914,7 +900,7 @@ input:where([data-slot] *,[data-slot]):where(:not(.gb *))::placeholder{color:var
 .bl-syntax-line[data-diff=add]>.bl-syntax-ln{--_bl-syn-line:var(--bl-syntax-added-gutter,light-dark(rgba(52,199,89,.26),rgba(48,209,88,.3)))}
 .bl-syntax-line[data-diff=del]>.bl-syntax-ln{--_bl-syn-line:var(--bl-syntax-removed-gutter,light-dark(rgba(255,59,48,.2),rgba(255,69,58,.3)))}
 .bl-syntax-lc{flex:1 0 auto;min-height:1lh;padding:0 16px}
-.bl-syntax-pre[data-line-numbers] .bl-syntax-lc{padding-left:8px}
+.bl-syntax-pre[data-line-numbers] .bl-syntax-lc{padding-left:10px}
 .bl-syntax-pre[data-wrap] .bl-syntax-lc{flex:1 1 0;min-width:0;white-space:pre-wrap;overflow-wrap:anywhere}
 .bl-syntax-pre[data-diff] .bl-syntax-lc::before{content:'';display:inline-block;width:2ch;color:var(--muted-foreground);-webkit-user-select:none;user-select:none}
 .bl-syntax-line[data-diff=add]>.bl-syntax-lc::before{content:'+'}
@@ -922,14 +908,9 @@ input:where([data-slot] *,[data-slot]):where(:not(.gb *))::placeholder{color:var
 .bl-syntax-inline{font-family:var(--bl-syntax-font,var(--font-mono,ui-monospace,monospace));font-size:var(--bl-syntax-inline-font-size,.88em);padding:.12em .38em;border-radius:6px;background:var(--bl-syntax-inline-bg,var(--secondary));color:var(--bl-syntax-fg,var(--foreground));white-space:pre-wrap;-webkit-box-decoration-break:clone;box-decoration-break:clone;-webkit-user-select:text;user-select:text}
 .bl-syntax-header{display:flex;align-items:center;gap:8px;min-height:40px;padding:0 6px 0 14px;box-sizing:border-box;border-bottom:1px solid var(--border);background:var(--bl-syntax-header-bg,color-mix(in srgb,var(--foreground) 3.5%,transparent));font-size:12.5px;color:var(--muted-foreground)}
 .bl-syntax-title{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--bl-syntax-font,var(--font-mono,ui-monospace,monospace));font-weight:500;color:var(--foreground)}
-.bl-syntax-copy{display:grid;flex:none;place-items:center;width:28px;height:28px;padding:0;border:0;border-radius:7px;background:transparent;color:var(--muted-foreground);cursor:pointer;outline:none;transition:background-color .15s,color .15s,opacity .15s}
-.bl-syntax-copy:hover{background:var(--secondary);color:var(--foreground)}
-.bl-syntax-copy:focus-visible{box-shadow:0 0 0 2px var(--primary)}
-.bl-syntax-copy[data-copied]{color:var(--success, oklch(0.723 0.191 149.6))}
 .bl-syntax-copy-float{position:absolute;top:7px;right:7px;z-index:2;background:var(--_bl-syn-surface);box-shadow:inset 0 0 0 1px var(--border);opacity:0}
 .bl-syntax:hover>.bl-syntax-copy-float,.bl-syntax-copy-float:focus-visible,.bl-syntax-copy-float[data-copied]{opacity:1}
 @media (hover:none){.bl-syntax-copy-float{opacity:1}}
-.bl-syntax-sr{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 .bl-syntax[data-windowed]{font-family:var(--bl-syntax-font,var(--font-mono,ui-monospace,monospace));font-size:var(--bl-syntax-font-size,13px)}
 .bl-code-band[data-mark=highlight]{background:var(--bl-syntax-highlight,color-mix(in srgb,var(--primary) 13%,transparent));box-shadow:inset 3px 0 var(--bl-syntax-highlight-bar,var(--primary))}
 .bl-code-band[data-mark=add]{background:var(--bl-syntax-added,light-dark(rgba(52,199,89,.14),rgba(48,209,88,.15)))}

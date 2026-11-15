@@ -15,12 +15,12 @@ import { Slider } from '@/components/ui/slider'
 {% tab title="npm" %}
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 
-Import the stylesheet once at your app's entry, then the parts from the package root:
+Import the stylesheet once at your app's entry, then the parts from their module:
 
 ```tsx
 import '@brett_lamy/ui/styles.css'
 
-import { Slider } from '@brett_lamy/ui'
+import { Slider } from '@brett_lamy/ui/slider'
 ```
 {% endtab %}
 {% endtabs %}
@@ -39,13 +39,25 @@ import { Slider } from '@brett_lamy/ui'
 
 ## Variants, colors and the scrubber
 
-`variant="on-dark"` (translucent white) and `variant="on-light"` (translucent black) make the track readable over artwork, dark glass or light imagery. `size="sm"` is the scrubber: a 12px thumb on a 20px hit area that grows while dragging. Any other color is a CSS variable the parts read, set with `className` and working with every variant: `--bl-slider-track`, `--bl-slider-fill`, `--bl-slider-thumb`.
+`variant="overlay"` makes the track and fill translucent and monochrome, so the slider reads over artwork, video or glass: white in a dark scheme, black in a light one. It follows the scheme it sits in; where the backdrop has its own scheme (album art that is dark in both appearances), set `appearance="dark"` or `"light"` on the slider. `appearance` is the kit's color-scheme prop, so it also works with the default look. `size="sm"` is the scrubber: a 12px thumb on a 20px hit area that grows while dragging. Any other color is a CSS variable the parts read, set with `className` and working with every variant: `--bl-slider-track`, `--bl-slider-fill`, `--bl-slider-thumb`.
 
 ```tsx
+<Slider aria-label="Volume" variant="overlay" appearance="dark" size="sm" value={volume} onValueChange={setVolume} />
 <Slider aria-label="Exposure" className="[--bl-slider-fill:var(--success)]" defaultValue={62} />
 ```
 
 {% demo src="slider/media" %}
+
+## Vertical
+
+`orientation="vertical"` stands the slider up (a mixer channel, an equalizer band): the label and value sit above a control that fills the rest of the parent's height, so give the parent a height. The keys are the same as on a horizontal slider.
+
+```tsx
+<div className="flex h-56 gap-6">
+  <Slider orientation="vertical" label="Bass" defaultValue={40} />
+  <Slider orientation="vertical" label="Treble" defaultValue={30} />
+</div>
+```
 
 ## Custom layout
 
@@ -81,7 +93,8 @@ Every UI SDK `Slider` prop applies (`value`, `defaultValue`, `onValueChange`, `o
 | `label` | — | Caption above the track. |
 | `showValue` | `false` | The formatted value on the right of the label row. |
 | `thumbLabels` | `['Minimum', 'Maximum']` | Names of a range's thumbs, in order. |
-| `variant` | `default` | `default` (tint fill) · `on-dark` · `on-light`. |
+| `variant` | `default` | `default` (tint fill) · `overlay` (translucent, for media). |
+| `appearance` | `auto` | The color scheme of the slider: `auto` follows the page, `light` / `dark` fix it for what the slider sits on. |
 | `size` | `default` | `default` 26px thumb · `sm` 12px scrubber thumb. |
 | `children` | — | Replaces the default label, value and track. |
 
@@ -89,11 +102,11 @@ Every UI SDK `Slider` prop applies (`value`, `defaultValue`, `onValueChange`, `o
 
 ### Parts
 
-`SliderValue` shows the formatted value (a range joined with an en dash). `SliderControl` is the 28px hit area (20px for `sm`), inset by half a thumb. `SliderTrack` is the 4px rail and `SliderIndicator` the fill up to the thumb (or between a range's thumbs). `SliderThumb` takes an `index` for ranges, plus `aria-label` / `aria-labelledby` for its input.
+`SliderValue` shows the formatted value (a range joined with an en dash). `SliderControl` is the 28px hit area (20px for `sm`), inset by half a thumb; vertical, it is a column that takes the remaining height. `SliderTrack` is the 4px rail and `SliderIndicator` the fill up to the thumb (or between a range's thumbs). `SliderThumb` takes an `index` for ranges, plus `aria-label` / `aria-labelledby` for its input.
 
 ## Styling
 
-UI SDK writes `data-slot` on every part (`slider`, `slider-value`, `slider-control`, `slider-track`, `slider-indicator`, `slider-thumb`) and the state attributes `data-orientation`, `data-disabled`, `data-readonly` and `data-dragging` (a thumb, while it is dragged); the root also has `data-variant` and `data-size` when not default. The focus ring is the kit's solid ring, drawn on the thumb with `has-focus-visible:`. A disabled slider is dimmed to 40%. `sliderVariants({ variant })` returns the root classes (layout and the variant's `--bl-slider-*` colors); `size` is read by the parts from `data-size`.
+UI SDK writes `data-slot` on every part (`slider`, `slider-value`, `slider-control`, `slider-track`, `slider-indicator`, `slider-thumb`) and the state attributes `data-orientation`, `data-disabled`, `data-readonly` and `data-dragging` (a thumb, while it is dragged); the root also has `data-variant`, `data-appearance` and `data-size` when not default, and is a named Tailwind group (`group/slider`), so a part styles itself from the root with `group-data-[size=sm]/slider:`. The focus ring is the kit's solid ring, drawn on the thumb with `has-focus-visible:`. A disabled slider is dimmed to 40%. `sliderVariants({ variant })` returns the root classes (layout and the variant's `--bl-slider-*` colors); `size` is read by the parts from `data-size`.
 
 ## cva recipes
 
@@ -104,7 +117,7 @@ Generated from the source. Call a recipe on any element to borrow a component's 
 Defined in `@/components/ui/slider`. Base classes:
 
 ```text
-group grid w-full grid-cols-[1fr_auto] items-center gap-x-3 gap-y-1 data-disabled:opacity-40
+[ 'group/slider grid w-full grid-cols-[1fr_auto] items-center gap-x-3 gap-y-1 data-disabled:opacity-40', // Stood up: the label and value over a control that takes the rest of the parent's height. 'data-[orientation=vertical]:flex data-[orientation=vertical]:h-full data-[orientation=vertical]:w-fit data-[orientation=vertical]:flex-col', ]
 ```
 
 **`variant`** — default `default`
@@ -112,5 +125,4 @@ group grid w-full grid-cols-[1fr_auto] items-center gap-x-3 gap-y-1 data-disable
 | Value | Adds |
 | --- | --- |
 | `default` (default) | — |
-| `on-dark` | `[--bl-slider-track:--alpha(white/22%)] [--bl-slider-fill:--alpha(white/88%)]` |
-| `on-light` | `[--bl-slider-track:--alpha(black/14%)] [--bl-slider-fill:--alpha(black/72%)]` |
+| `overlay` | `[--bl-slider-track:light-dark(--alpha(black/14%),--alpha(white/22%))] [--bl-slider-fill:light-dark(--alpha(black/72%),--alpha(white/88%))]` |

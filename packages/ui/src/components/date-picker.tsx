@@ -1,5 +1,5 @@
 'use client';
-import { createContext, useCallback, useContext, useMemo, useRef, useState, type ComponentProps } from 'react';
+import { createContext, useCallback, useContext, useId, useLayoutEffect, useMemo, useRef, useState, type ComponentProps } from 'react';
 import {
   DatePicker as SdkDatePicker,
   DatePickerClear as SdkDatePickerClear,
@@ -14,7 +14,7 @@ import {
 import type { PartProps } from '@ui-sdk/react/primitive';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { buttonVariants } from '@/components/ui/button';
-import { CalendarHeader, CalendarMonths, type CalendarValue } from '@/components/ui/calendar';
+import { CalendarHeader, CalendarMonths, CalendarMonthsContext, type CalendarValue } from '@/components/ui/calendar';
 import { fieldSurfaceVariants } from '@/components/ui/input';
 import { popoverContentVariants } from '@/components/ui/popover';
 import { Icon } from '@/lib/icon';
@@ -30,26 +30,23 @@ import { cn, cx } from '@/lib/utils';
    <Field>
      <FieldLabel>Date</FieldLabel>
      <DatePicker defaultValue="2026-09-09">
-       <DatePickerField />
+       <DatePickerInputGroup />
        <DatePickerContent />
      </DatePicker>
      <FieldError />
    </Field>
-   `size` (sm / default / lg) sizes the field. Every Calendar part works inside DatePickerContent, so its children can
-   be your own header, months and presets. ══ */
+   `size` (sm / default / lg) on the DatePickerInputGroup sizes the field, as on every compound picker's box part.
+   Every Calendar part works inside DatePickerContent, so its children can be your own header, months (CalendarMonths
+   takes the picker's `months`) and presets. ══ */
 
-/** What the layout parts share: the mode and months (which decide the default field and popup) and the field's
-    element, which the popup anchors to. */
+/** What the layout parts share: the mode (which decides the default field) and the field's element, which the popup
+    anchors to. */
 interface PickerLayout {
   mode: DatePickerMode;
-  months: number;
-  size: FieldSize | undefined;
   field: HTMLElement | null;
   setField: (element: HTMLElement | null) => void;
 }
 const PickerLayoutContext = createContext<PickerLayout | null>(null);
-
-type FieldSize = 'sm' | 'default' | 'lg';
 
 type SdkDatePickerProps = ComponentProps<typeof SdkDatePicker>;
 
@@ -58,8 +55,6 @@ type SdkDatePickerProps = ComponentProps<typeof SdkDatePicker>;
 export type DatePickerProps<Mode extends DatePickerMode = 'single'> = Omit<SdkDatePickerProps, 'mode' | 'value' | 'defaultValue' | 'onValueChange'> & {
   /** `single` (default) picks one date; `range` picks a start and an end, with an input for each. */
   mode?: Mode;
-  /** The field's size, as on every field: `sm` 32px, `default` 44px, `lg` 50px. A DatePickerField's own `size` wins. */
-  size?: FieldSize;
   value?: CalendarValue<Mode>;
   defaultValue?: CalendarValue<Mode>;
   onValueChange?: (value: CalendarValue<Mode>, details: Parameters<NonNullable<SdkDatePickerProps['onValueChange']>>[1]) => void;
@@ -69,7 +64,6 @@ export function DatePicker<Mode extends DatePickerMode = 'single'>({
   className,
   mode,
   months = 1,
-  size,
   // As in Calendar: each grid shows its own month only, unless asked.
   showOutsideDays = false,
   // As in Calendar: one letter per weekday.
@@ -100,28 +94,30 @@ export function DatePicker<Mode extends DatePickerMode = 'single'>({
   // "auto" follows the nearest size class around (a sheet when compact), even when the content is portaled.
   const shown = usePresentation(presentation, 'popover');
   const [field, setField] = useState<HTMLElement | null>(null);
-  const layout = useMemo<PickerLayout>(() => ({ mode: mode ?? 'single', months, size, field, setField }), [mode, months, size, field]);
+  const layout = useMemo<PickerLayout>(() => ({ mode: mode ?? 'single', field, setField }), [mode, field]);
   return (
     <PickerLayoutContext.Provider value={layout}>
-      <SdkDatePicker
-        mode={mode}
-        months={months}
-        showOutsideDays={showOutsideDays}
-        weekdayFormat={weekdayFormat}
-        container={container === undefined ? host : container}
-        presentation={shown}
-        className={cx('group/date-picker flex min-w-0 flex-col gap-1.5', className)}
-        {...(props as SdkDatePickerProps)}
-        ref={setRoot}
-        onValueChange={valueChange}
-      >
-        {children ?? (
-          <>
-            <DatePickerField />
-            <DatePickerContent />
-          </>
-        )}
-      </SdkDatePicker>
+      <CalendarMonthsContext.Provider value={months}>
+        <SdkDatePicker
+          mode={mode}
+          months={months}
+          showOutsideDays={showOutsideDays}
+          weekdayFormat={weekdayFormat}
+          container={container === undefined ? host : container}
+          presentation={shown}
+          className={cx('group/date-picker flex min-w-0 flex-col gap-1.5', className)}
+          {...(props as SdkDatePickerProps)}
+          ref={setRoot}
+          onValueChange={valueChange}
+        >
+          {children ?? (
+            <>
+              <DatePickerInputGroup />
+              <DatePickerContent />
+            </>
+          )}
+        </SdkDatePicker>
+      </CalendarMonthsContext.Provider>
     </PickerLayoutContext.Provider>
   );
 }
@@ -134,7 +130,7 @@ const pickerField = [
 ];
 
 /** The field box: `fieldSurfaceVariants` (Input's box, heights and focus edge) plus the open and invalid edges. */
-export const datePickerFieldVariants = cva('', {
+export const datePickerInputGroupVariants = cva('', {
   variants: {
     size: {
       sm: [fieldSurfaceVariants({ size: 'sm' }), pickerField],
@@ -145,18 +141,18 @@ export const datePickerFieldVariants = cva('', {
   defaultVariants: { size: 'default' },
 });
 
-export interface DatePickerFieldProps extends Omit<ComponentProps<'div'>, 'ref'>, VariantProps<typeof datePickerFieldVariants> {}
+export interface DatePickerInputGroupProps extends Omit<ComponentProps<'div'>, 'ref'>, VariantProps<typeof datePickerInputGroupVariants> {}
 
 /** The filled field: the input (a start and an end with a dash between, in range mode) and the calendar button.
     The popup opens under it. Pass children to lay out your own DatePickerInput, DatePickerClear and
     DatePickerTrigger, and to name the inputs (`aria-label`) when there is no FieldLabel. */
-export function DatePickerField({ className, size, children, ...props }: DatePickerFieldProps) {
+export function DatePickerInputGroup({ className, size, children, ...props }: DatePickerInputGroupProps) {
   const layout = useContext(PickerLayoutContext);
-  const shown = size ?? layout?.size ?? 'default';
+  const shown = size ?? 'default';
   // A range's inputs are as wide as a date, so the dash follows the start and the button keeps to the end.
   const rangeInput = 'flex-initial field-sizing-content min-w-[10ch]';
   return (
-    <div ref={layout?.setField} data-slot="date-picker-field" data-size={shown} className={cn(datePickerFieldVariants({ size: shown }), className)} {...props}>
+    <div ref={layout?.setField} data-slot="date-picker-input-group" data-size={shown} className={cn(datePickerInputGroupVariants({ size: shown }), className)} {...props}>
       {children ??
         (layout?.mode === 'range' ? (
           <>
@@ -175,18 +171,49 @@ export function DatePickerField({ className, size, children, ...props }: DatePic
   );
 }
 
-/** The text input, bare: DatePickerField draws the box around it. `end` makes it a range's end. In a Field the
-    label names it (a range's start); otherwise give it an `aria-label`. */
-export function DatePickerInput({ className, ...props }: ComponentProps<typeof SdkDatePickerInput>) {
+/** The text input, bare: DatePickerInputGroup draws the box around it. `end` makes it a range's end. In a Field the
+    label names it; otherwise give it an `aria-label`. A range's two inputs are named by both: the Field's label, then
+    their own `aria-label` ("Stay, Start date" and "Stay, End date"; by default "Start date" and "End date"). */
+export function DatePickerInput({ className, ref, ...props }: ComponentProps<typeof SdkDatePickerInput>) {
+  const layout = useContext(PickerLayoutContext);
+  const own = useRef<HTMLInputElement | null>(null);
+  const suffixId = useId();
+  const suffix = layout?.mode === 'range' ? (props['aria-label'] ?? (props.end ? 'End date' : 'Start date')) : undefined;
+  // UI SDK names a range's start by its Field's label alone (the field's `aria-labelledby` wins over `aria-label`) and
+  // its end by the `aria-label` alone, so both get the Field's label followed by their own "start" or "end".
+  useLayoutEffect(() => {
+    const input = own.current;
+    if (!input || !suffix) return;
+    const ids = (input.getAttribute('aria-labelledby') ?? '').split(' ').filter(Boolean);
+    if (ids.includes(suffixId)) return;
+    const fieldIds = ids.length ? ids : fieldLabelIds(input);
+    if (fieldIds.length) input.setAttribute('aria-labelledby', [...fieldIds, suffixId].join(' '));
+  });
   return (
-    <SdkDatePickerInput
-      className={cx(
-        ['h-full min-w-0 flex-1 border-0 bg-transparent p-0 [font:inherit] text-inherit tabular-nums outline-none placeholder:text-tertiary-foreground data-disabled:cursor-not-allowed', selectableText],
-        className,
-      )}
-      {...props}
-    />
+    <>
+      <SdkDatePickerInput
+        ref={(element: HTMLInputElement | null) => {
+          own.current = element;
+          if (typeof ref === 'function') return ref(element);
+          if (ref) (ref as { current: HTMLInputElement | null }).current = element;
+        }}
+        className={cx(
+          ['h-full min-w-0 flex-1 border-0 bg-transparent p-0 [font:inherit] text-inherit tabular-nums outline-none placeholder:text-tertiary-foreground data-disabled:cursor-not-allowed', selectableText],
+          className,
+        )}
+        {...props}
+        aria-label={suffix ?? props['aria-label']}
+      />
+      {suffix ? <span id={suffixId} data-date-picker-suffix="" hidden>{suffix}</span> : null}
+    </>
   );
+}
+
+/* The ids of the Field's label, read from whichever input of the same picker UI SDK labelled with it. */
+function fieldLabelIds(input: HTMLElement) {
+  const labelled = input.closest('[data-slot=date-picker]')?.querySelector('input[aria-labelledby]');
+  const doc = input.ownerDocument;
+  return (labelled?.getAttribute('aria-labelledby') ?? '').split(' ').filter((id) => id && !doc.getElementById(id)?.hasAttribute('data-date-picker-suffix'));
 }
 
 /* A small button inside the field: its keyboard ring sits flush (no offset), inside the field's own edge. */
@@ -229,7 +256,7 @@ export function DatePickerPreset({ className, ...props }: ComponentProps<typeof 
 export type DatePickerContentProps = ComponentProps<typeof SdkDatePickerContent>;
 
 /** The popup with the calendar, on the Popover's surface (a bottom sheet with `presentation="sheet"`, or `"auto"`
-    in a compact container). Place it anywhere inside the DatePicker; it opens under the DatePickerField. Without
+    in a compact container). Place it anywhere inside the DatePicker; it opens under the DatePickerInputGroup. Without
     children it holds a header and a grid per month; give it children to compose your own from the Calendar parts,
     with presets beside them. */
 export function DatePickerContent({ className, style, anchor, sideOffset = 8, children, ...props }: DatePickerContentProps) {
@@ -237,21 +264,20 @@ export function DatePickerContent({ className, style, anchor, sideOffset = 8, ch
   const scope = useThemeScopeProps();
   // Portaled out of its container: it carries the size class it was opened in, for the calendar's touch-size days.
   const sizeClass = useSizeClassScope();
-  const months = Math.max(1, Math.floor(layout?.months ?? 1));
   return (
     <SdkDatePickerContent
       data-theme-scope={scope['data-theme-scope']}
       data-size-class={sizeClass}
       anchor={anchor ?? layout?.field ?? undefined}
       sideOffset={sideOffset}
-      className={cx([popoverContentVariants({ variant: 'surface' }), 'max-w-(--available-width) min-w-0 overflow-auto p-3', scope.className], className)}
+      className={cx([popoverContentVariants({ variant: 'plain' }), 'max-w-(--available-width) min-w-0 overflow-auto p-3', scope.className], className)}
       style={scopeStyle(scope.style, style)}
       {...props}
     >
       {children ?? (
         <>
           <CalendarHeader />
-          <CalendarMonths months={months} />
+          <CalendarMonths />
         </>
       )}
     </SdkDatePickerContent>

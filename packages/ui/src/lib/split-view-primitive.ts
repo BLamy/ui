@@ -54,7 +54,7 @@ export type SplitViewDefaultSidebarOpen = boolean | { regular?: boolean; medium?
 
 /** Why the sidebar opened or closed: the toggle, Escape, a press outside a floating sidebar, a pick in it, the
  *  size class changing (it resets to `defaultSidebarOpen`), or a controller. */
-export type SplitViewSidebarOpenChangeReason = 'trigger-press' | 'escape-key' | 'outside-press' | 'item-press' | 'content-resize' | 'imperative';
+export type SplitViewSidebarOpenChangeReason = 'trigger-press' | 'shortcut' | 'escape-key' | 'outside-press' | 'item-press' | 'content-resize' | 'imperative';
 export type SplitViewValueChangeReason = 'item-press' | 'imperative';
 /** Why the top column of the compact stack changed: a pick pushed the next one, the back button, Escape, the
  *  platform's back, a swipe from the leading edge, or a controller. */
@@ -143,8 +143,8 @@ export function createSplitViewController() {
   return createController<SplitViewController>();
 }
 
-/** What a column declares about its size. */
-export type SplitViewColumnSpec = { width: number; minWidth: number; maxWidth: number; resizable: boolean };
+/** What a column declares about its size, and (the sidebar) whether it becomes a tab bar while compact. */
+export type SplitViewColumnSpec = { width: number; minWidth: number; maxWidth: number; resizable: boolean; tabs?: boolean };
 
 export const SPLIT_VIEW_COLUMNS: readonly SplitViewColumn[] = ['sidebar', 'supplementary', 'detail'];
 export const SPLIT_VIEW_COLUMN_DEFAULTS: Record<SplitViewColumn, SplitViewColumnSpec> = {
@@ -204,9 +204,15 @@ const behaviorIn = (state: Store): Exclude<SplitViewSidebarBehavior, 'auto'> =>
 const specOf = (state: Store, column: SplitViewColumn) => state.specs[column] ?? SPLIT_VIEW_COLUMN_DEFAULTS[column];
 /** Columns that are rendered, in order. */
 const registeredIn = (state: Store) => SPLIT_VIEW_COLUMNS.filter((c) => state.specs[c]);
-/** Registered columns that are hidden: the supplementary, closed, when there's a detail to take its space. */
-const hiddenIn = (state: Store): SplitViewColumn[] =>
-  !state.supplementaryOpen && state.specs.supplementary && state.specs.detail ? ['supplementary'] : [];
+/** Compact, a sidebar with `tabs` is a tab bar over the other columns instead of the stack's first page. */
+const tabbedIn = (state: Store) =>
+  sizeClassIn(state) === 'compact' && !!state.specs.sidebar?.tabs && (!!state.specs.supplementary || !!state.specs.detail);
+/** Registered columns that are hidden: the supplementary, closed, when there's a detail to take its space; and,
+ *  compact, a sidebar that is a tab bar. */
+const hiddenIn = (state: Store): SplitViewColumn[] => [
+  ...(tabbedIn(state) ? (['sidebar'] as const) : []),
+  ...(!state.supplementaryOpen && state.specs.supplementary && state.specs.detail ? (['supplementary'] as const) : []),
+];
 /** Columns that are shown, in order. */
 const presentIn = (state: Store) => {
   const hidden = hiddenIn(state);
@@ -359,6 +365,8 @@ export type SplitViewState = {
   canGoBack: boolean;
   columnWidths: SplitViewColumnWidths;
   supplementaryOpen: boolean;
+  /** Collapsed, and the sidebar (`compactPresentation="tabs"`) is a tab bar over the other columns. */
+  sidebarTabs: boolean;
 };
 
 /** What a column's parts hand `render` functions and state-based class names. */
@@ -379,6 +387,8 @@ export type SplitViewHeaderState = {
   fading: boolean;
   /** The inline title (and the bar's hairline) shows. */
   inline: boolean;
+  /** Its pane's content has scrolled off its top (where a bar with a scroll edge draws its hairline). */
+  scrolled: boolean;
 };
 
 const headerState = (
@@ -392,6 +402,7 @@ const headerState = (
     inContent,
     fading: largeTitle || onScroll,
     inline: largeTitle ? inContent && pane.under : onScroll ? pane.scrolled : true,
+    scrolled: !!pane?.scrolled,
   };
 };
 
@@ -419,6 +430,7 @@ function stateOf(state: Store): SplitViewState {
     canGoBack: sizeClass === 'compact' && columns.indexOf(top) > 0,
     columnWidths: state.columnWidths,
     supplementaryOpen: state.supplementaryOpen,
+    sidebarTabs: tabbedIn(state),
   };
 }
 
@@ -692,7 +704,7 @@ export const splitView = definePrimitive({
         off = bindLayer(el, {
           // The toggle that opened it counts as inside, so pressing it toggles once.
           contains: (target) => {
-            const toggle = target instanceof Element ? target.closest('[data-slot="split-view-toggle"]') : null;
+            const toggle = target instanceof Element ? target.closest('[data-slot="split-view-sidebar-trigger"]') : null;
             return !!toggle && root()?.contains(toggle) === true;
           },
           onDismiss: (reason, event) => {
@@ -754,7 +766,7 @@ export const splitView = definePrimitive({
             store.set({ specs: next });
             return;
           }
-          if (cur && cur.width === spec.width && cur.minWidth === spec.minWidth && cur.maxWidth === spec.maxWidth && cur.resizable === spec.resizable) return;
+          if (cur && cur.width === spec.width && cur.minWidth === spec.minWidth && cur.maxWidth === spec.maxWidth && cur.resizable === spec.resizable && !!cur.tabs === !!spec.tabs) return;
           store.set({ specs: { ...specs, [column]: spec } });
         },
         bindRoot,
@@ -775,10 +787,13 @@ export const splitView = definePrimitive({
         /** Collapsed, an item that pushes the column after it. */
         pushes(state: Store, column: SplitViewColumn) {
           const present = presentIn(state);
-          return sizeClassIn(state) === 'compact' && present.indexOf(column) < present.length - 1;
+          const i = present.indexOf(column);
+          return sizeClassIn(state) === 'compact' && i >= 0 && i < present.length - 1;
         },
-        /** Whether `value` is current in `column`: never while collapsed, where rows are navigation. */
-        current: (state: Store, column: SplitViewColumn, value: string) => sizeClassIn(state) !== 'compact' && state.value[column] === value,
+        /** Whether `value` is current in `column`: never while collapsed, where rows are navigation, except in a
+         *  sidebar that is a tab bar (its tabs are a place, not a way in). */
+        current: (state: Store, column: SplitViewColumn, value: string) =>
+          (sizeClassIn(state) !== 'compact' || (column === 'sidebar' && tabbedIn(state))) && state.value[column] === value,
       },
     };
     return api;
@@ -883,7 +898,7 @@ export const splitView = definePrimitive({
       },
     }),
 
-    toggle: slot<object, { open: boolean }>({
+    'sidebar-trigger': slot<object, { open: boolean }>({
       present: (state) => sizeClassIn(state) !== 'compact' && presentIn(state).includes('sidebar') && presentIn(state).length > 1,
       state: (state) => ({ open: sidebarOpenIn(state) }),
       attrs: (state, { id }) => ({
@@ -931,7 +946,7 @@ export const splitView = definePrimitive({
       state: (state, { key, props }) => headerState(state.panes[key], props),
       attrs: (state, { key, props }) => {
         const h = headerState(state.panes[key], props);
-        return { 'data-large-title': flag(h.largeTitle), 'data-fading': flag(h.fading), 'data-title-hidden': flag(!h.inline) };
+        return { 'data-large-title': flag(h.largeTitle), 'data-fading': flag(h.fading), 'data-title-hidden': flag(!h.inline), 'data-scrolled': flag(h.scrolled) };
       },
     }),
     /** The pane's scrolling content: `data-scrolled` once it has left its top, `data-under` once the large title

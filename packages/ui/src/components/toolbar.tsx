@@ -92,12 +92,18 @@ const barButton = [
   'data-disabled:cursor-default data-disabled:text-tertiary-foreground',
 ].join(' ');
 
+// A tone colors an available tool only: an unavailable one goes grey like any other, never a faded tint.
 const tones: Record<ToolbarTone, string> = {
   default: '',
-  success: 'text-success hover:not-data-disabled:text-success',
-  warning: 'text-warning hover:not-data-disabled:text-warning',
-  destructive: 'text-destructive hover:not-data-disabled:text-destructive',
+  success: 'not-data-disabled:text-success hover:not-data-disabled:text-success',
+  warning: 'not-data-disabled:text-warning hover:not-data-disabled:text-warning',
+  destructive: 'not-data-disabled:text-destructive hover:not-data-disabled:text-destructive',
 };
+
+/** An unavailable tool with no fill of its own: grey at full opacity, as in the `bar` look, not Button's fade.
+ *  Filled looks (`default`, `secondary`, `destructive`, `contrast`) keep Button's dimmed fill. */
+const unfilledDisabled = 'data-disabled:text-tertiary-foreground data-disabled:opacity-100';
+const UNFILLED: ReadonlySet<ButtonVariant> = new Set<ButtonVariant>(['quiet', 'ghost', 'plain', 'outline', 'link']);
 
 /** Icon tools are rounded squares in a toolbar, not Button's circles. */
 const iconCorners: Partial<Record<ButtonSize, string>> = { icon: 'rounded-ctl', 'icon-lg': 'rounded-xl' };
@@ -115,7 +121,8 @@ export function toolbarButtonVariants({
   tone?: ToolbarTone;
 } = {}): string {
   // In a bar, a button with no look of its own is the bar's text action.
-  const base = toolbar === 'bar' && !variant ? barButton : cn(buttonVariants({ variant: variant ?? 'quiet', size }), iconCorners[size]);
+  const look = variant ?? 'quiet';
+  const base = toolbar === 'bar' && !variant ? barButton : cn(buttonVariants({ variant: look, size }), iconCorners[size], UNFILLED.has(look) && unfilledDisabled);
   return cn(base, tones[tone]);
 }
 

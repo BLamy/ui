@@ -26,7 +26,7 @@
     "useEncryptedState",
     "vaultErrorMessage",
     "VaultEnrollDialog",
-    "RecoveryKey",
+    "VaultRecoveryKey",
     "VaultGate",
     "VaultUnlock",
     "VaultSetup",

@@ -6,12 +6,12 @@ import { Slider } from '@/components/ui/slider'
 // menu lists the hidden items. The first and the last always stay, and as many
 // trailing items as fit. Resize the frame (slider, or drag its corner).
 const PATH: BreadcrumbItemData[] = [
-  { id: 'home', label: 'Home', icon: 'house', href: '#home' },
-  { id: 'workspace', label: 'Workspace', href: '#workspace' },
-  { id: 'projects', label: 'Projects', href: '#projects' },
-  { id: 'design', label: 'Design system', href: '#design' },
-  { id: 'components', label: 'Components', href: '#components' },
-  { id: 'breadcrumb', label: 'Breadcrumb' },
+  { value: 'home', label: 'Home', icon: 'house', href: '#home' },
+  { value: 'workspace', label: 'Workspace', href: '#workspace' },
+  { value: 'projects', label: 'Projects', href: '#projects' },
+  { value: 'design', label: 'Design system', href: '#design' },
+  { value: 'components', label: 'Components', href: '#components' },
+  { value: 'breadcrumb', label: 'Breadcrumb' },
 ]
 
 export default function Collapsing() {

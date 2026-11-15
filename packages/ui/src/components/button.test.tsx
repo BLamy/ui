@@ -71,7 +71,17 @@ describe('Button', () => {
     render(<Button variant="link" render={<a href="/docs" />}>Docs</Button>);
     const link = screen.getByRole('link', { name: 'Docs' });
     expect(link.getAttribute('href')).toBe('/docs');
-    expect(link.className).toContain('text-primary');
+    expect(link.className).toContain('text-link');
+  });
+
+  it('draws `link` in the line it sits in, whatever the size, and keeps the size box for `plain`', () => {
+    render(<><Button variant="link" size="lg">Inline</Button><Button variant="plain">Cancel</Button></>);
+    const link = screen.getByRole('button', { name: 'Inline' }).className.split(' ');
+    expect(link).toEqual(expect.arrayContaining(['h-auto', 'p-0', 'text-[length:inherit]', 'font-[weight:inherit]']));
+    expect(link).not.toEqual(expect.arrayContaining(['h-11']));
+    expect(link).not.toEqual(expect.arrayContaining(['px-5']));
+    const plain = screen.getByRole('button', { name: 'Cancel' }).className.split(' ');
+    expect(plain).toEqual(expect.arrayContaining(['h-9', 'px-4', 'text-primary', 'bg-transparent']));
   });
 
   it('is named by its text label, which TextMorph draws, and renders other children as given', () => {

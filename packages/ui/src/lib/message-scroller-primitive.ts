@@ -5,9 +5,10 @@ import { prefersReducedMotion } from '@/lib/reduced-motion';
    Following is UI SDK's `createStickToBottom`: it keeps the end in view while the reader is there and lets go on
    scroll intent (wheel or keys up, a touch drag). What this adds is the turn anchor: a spacer under the latest
    turn leaves room for its reply, so a new turn scrolls near the top with a peek of the one before it, and the
-   reply grows into that room without moving the view. A thread opens at its last anchor. Inside a composer bump
-   resting at its peek (`data-peeking` on `composer-bump-content`), only the bottom edge shows, so the spacer goes
-   and the view sits at the live edge. The viewport is a region named "Messages" unless the renderer names it. No
+   reply grows into that room without moving the view. A thread opens at its last anchor. Inside a peek host
+   resting at its peek (the nearest `[data-peek-host]` ancestor while it has `data-peeking`: a FloatingSheet's
+   surface, a ComposerBump's content), only the bottom edge shows, so the spacer goes and the view sits at the live
+   edge. The viewport is a region named "Messages" unless the renderer names it. No
    React: `components/message-scroller.tsx` renders it. */
 
 export type MessageScrollerOptions = {
@@ -28,7 +29,7 @@ export type MessageScrollerState = {
   following: boolean;
   /** The reader is far enough from the end for the jump pill. */
   away: boolean;
-  /** Inside a composer bump resting at its peek. */
+  /** Inside a peek host (`[data-peek-host]`) resting at its peek (`data-peeking`). */
   resting: boolean;
   streaming: boolean;
 };
@@ -49,8 +50,8 @@ export const messageScroller = definePrimitive({
   api: (context) => {
     const { store } = context;
     let viewport: HTMLElement | null = null;
-    let bump: Element | null = null;
-    let watchBump: MutationObserver | null = null;
+    let host: Element | null = null;
+    let watchHost: MutationObserver | null = null;
     let thread = context.options().threadKey;
     let ids = context.options().ids ?? [];
     const frames = new Set<number>();
@@ -123,29 +124,30 @@ export const messageScroller = definePrimitive({
     };
     const settle = () => { opening = false; };
 
-    /** Hosts can move the transcript onto a composer bump after it mounts, so this looks again on every change. */
-    const findBump = () => {
-      const next = viewport?.closest('[data-slot="composer-bump-content"]') ?? null;
-      if (next === bump) return;
-      watchBump?.disconnect();
-      watchBump = null;
-      bump = next;
+    /** Hosts can move the transcript into a peek host after it mounts (a chat moving from a docked column into a
+     *  floating sheet), so this looks again on every change and every resize. */
+    const findHost = () => {
+      const next = viewport?.closest('[data-peek-host]') ?? null;
+      if (next === host) return;
+      watchHost?.disconnect();
+      watchHost = null;
+      host = next;
       const read = () => {
-        const resting = !!bump?.hasAttribute('data-peeking');
+        const resting = !!host?.hasAttribute('data-peeking');
         if (resting === store.get().resting) return;
         store.set({ resting });
         open();
       };
       const MO = viewport?.ownerDocument.defaultView?.MutationObserver;
-      if (bump && MO) {
-        watchBump = new MO(read);
-        watchBump.observe(bump, { attributes: true, attributeFilter: ['data-peeking'] });
+      if (host && MO) {
+        watchHost = new MO(read);
+        watchHost.observe(host, { attributes: true, attributeFilter: ['data-peeking'] });
       }
       read();
     };
 
     context.onOptions((options) => {
-      findBump();
+      findHost();
       if (options.threadKey !== thread) {
         thread = options.threadKey;
         ids = options.ids ?? [];
@@ -171,7 +173,7 @@ export const messageScroller = definePrimitive({
     });
 
     context.onDestroy(() => {
-      watchBump?.disconnect();
+      watchHost?.disconnect();
       const view = viewport?.ownerDocument.defaultView;
       frames.forEach((id) => view?.cancelAnimationFrame(id));
     });
@@ -186,6 +188,7 @@ export const messageScroller = definePrimitive({
           const view = el.ownerDocument.defaultView;
           sizes = view?.ResizeObserver
             ? new view.ResizeObserver(() => {
+              findHost();
               if (opening) open();
               else layoutSpacer();
               measureAway();
@@ -198,7 +201,7 @@ export const messageScroller = definePrimitive({
           el.addEventListener('scroll', measureAway, { passive: true });
           // The reader's own scroll ends the opening.
           for (const type of ['wheel', 'touchstart', 'keydown', 'pointerdown'] as const) el.addEventListener(type, settle, { passive: true });
-          findBump();
+          findHost();
           layoutSpacer();
           later(open);
           return () => {
@@ -207,9 +210,9 @@ export const messageScroller = definePrimitive({
             sizes = undefined;
             el.removeEventListener('scroll', measureAway);
             for (const type of ['wheel', 'touchstart', 'keydown', 'pointerdown'] as const) el.removeEventListener(type, settle);
-            watchBump?.disconnect();
-            watchBump = null;
-            bump = null;
+            watchHost?.disconnect();
+            watchHost = null;
+            host = null;
             if (viewport === el) viewport = null;
           };
         },

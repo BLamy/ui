@@ -216,3 +216,29 @@ describe('Select', () => {
     expect(selectTriggerVariants({ size: 'sm' })).toContain('h-8');
   });
 });
+
+describe('Select row size', () => {
+  it('opens dense rows under a small trigger, and an explicit content size wins', async () => {
+    const view = render(
+      <Select aria-label="Size" defaultOpen>
+        <SelectTrigger size="sm" />
+        <SelectContent>
+          <SelectItem value="a">A</SelectItem>
+        </SelectContent>
+      </Select>,
+    );
+    await settle();
+    expect(screen.getByRole('option', { name: 'A' }).className).toContain('min-h-8');
+    view.unmount();
+    render(
+      <Select aria-label="Size" defaultOpen>
+        <SelectTrigger size="sm" />
+        <SelectContent size="default">
+          <SelectItem value="a">A</SelectItem>
+        </SelectContent>
+      </Select>,
+    );
+    await settle();
+    expect(screen.getByRole('option', { name: 'A' }).className).not.toContain('min-h-8');
+  });
+});

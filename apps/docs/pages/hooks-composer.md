@@ -28,8 +28,8 @@ function useComposer(): ComposerContextValue
 | --- | --- |
 | `value`, `setValue(markdown, given?)` | The draft as GitBook-flavored Markdown (attachment chips serialize as `![name](attachment:id)`). |
 | `attachments`, `addAttachment(a, given?)`, `removeAttachment(id, given?)`, `updateAttachment(id, patch, given?)` | The attachments. `removeAttachment` also removes the chip in the editor. Each setter returns `false` when the change was canceled. |
-| `attachFiles(files, { source?, point?, event? })` | Adds files after the `acceptedFileTypes`, `maxFileSize` and `maxFiles` checks and the `onDropFiles` hook. Images chip into the editor (at `point` when it is over the editor, else at the caret); other files become tiles. |
-| `acceptedFileTypes` | The Composer's own setting. |
+| `attachFiles(files, { source?, point?, event? })` | Adds files after the `accept`, `maxSize` and `maxFiles` checks and the `onDropFiles` hook. Images chip into the editor (at `point` when it is over the editor, else at the caret); other files become tiles. |
+| `accept` | The Composer's own `accept`, as a list. |
 | `expanded`, `setExpanded(expanded, given?)` | Whether the editor is expanded. |
 | `streaming` | The Composer's `streaming` prop. |
 | `canSend` | Whether there is anything to send. |
@@ -84,7 +84,7 @@ function useComposerBump(): ComposerBumpContextValue
 | `open`, `setOpen(open)` | Whether it is open. |
 | `reveal` | The revealed body height, px: the finger's while dragging, else the height it rests at. |
 | `progress` | 0 at rest (peek), 1 fully open. |
-| `peek`, `maxReveal` | The resting and fully open body heights, px (`maxReveal` is measured from `bounds` when given). |
+| `peek`, `maxReveal` | The resting and fully open body heights, px. |
 | `dragging` | A finger is on the handle. |
 | `settling` | The bump's own CSS transition is carrying the body to rest (after a release, a tap or Escape). |
 | `contentId` | The id of the bump's content element. |
@@ -98,7 +98,7 @@ function BumpHint() {
 }
 ```
 
-The gesture is UI SDK's `bindDrag` (with `createVelocityTracker` and `rubberBand`), so `reveal` and `progress` change every frame while dragging. On release they jump to the rest value and the body gets there with a CSS transition on the `tray` spring, while `settling` is `true`. Something that follows the bump should transition too while it settles, and only turn its transition off while `dragging`. To follow the motion from outside the bump, use its `onProgressChange` prop, which reports `{ progress, reveal, minimize, dragging, settling }`.
+The gesture is UI SDK's `bindDrag` (with `createVelocityTracker` and `rubberBand`), so `reveal` and `progress` change every frame while dragging. On release they jump to the rest value and the body gets there with a CSS transition on the `tray` spring, while `settling` is `true`. Something that follows the bump should transition too while it settles, and only turn its transition off while `dragging`. Read it from a part inside the bump; the bump drives nothing outside itself.
 
 ## `usePencilHistory`
 

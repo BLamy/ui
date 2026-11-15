@@ -122,7 +122,7 @@ function ContactsDemo({ grouped }: { grouped?: boolean }) {
               accessory={edit ? undefined : 'chevron'}
               editing={edit} checked={pick.has(c.id)}
               onClick={() => { if (edit) togglePick(c.id); }}
-              trailingActions={[{ label: 'Delete', destructive: true, onAction: () => setGone((g) => new Set([...g, c.id])) }]}
+              endActions={[{ label: 'Delete', destructive: true, onAction: () => setGone((g) => new Set([...g, c.id])) }]}
               divider={i < s.items.length - 1} />
           ))}
         </ListSection>
@@ -235,7 +235,7 @@ export const SwipeToDelete: Story = {
               <ListSection sticky title="Contacts">
                 {items.map((c, i) => (
                   <ListRow key={c.id} title={c.f + ' ' + c.l} description={c.role} icon={<Avatar name={`${c.f} ${c.l}`} />}
-                    trailingActions={[{ label: 'Delete', destructive: true, onAction: () => setGone((g) => new Set([...g, c.id])) }]} divider={i < items.length - 1} />
+                    endActions={[{ label: 'Delete', destructive: true, onAction: () => setGone((g) => new Set([...g, c.id])) }]} divider={i < items.length - 1} />
                 ))}
               </ListSection>
             </List>
@@ -426,7 +426,7 @@ function ReorderDemo({ startEditing = true }: { startEditing?: boolean }) {
             {songs.map((t, i) => (
               <ListRow key={t} title={t} description={`Track ${PLAYLIST.indexOf(t) + 1}`}
                 icon={<span aria-hidden style={{ width: 34, height: 34, borderRadius: 7, background: `hsl(${PLAYLIST.indexOf(t) * 45} 70% 60%)` }} />}
-                trailingActions={edit ? undefined : [{ label: 'Remove', icon: 'trash', destructive: true, onAction: () => setSongs((s) => s.filter((x) => x !== t)) }]}
+                endActions={edit ? undefined : [{ label: 'Remove', icon: 'trash', destructive: true, onAction: () => setSongs((s) => s.filter((x) => x !== t)) }]}
                 divider={i < songs.length - 1} />
             ))}
           </ListSection>

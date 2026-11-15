@@ -3,11 +3,11 @@ import { Tree, TreeItemIndicator, TreeItemLabel, type TreeNode } from '@/compone
 
 const TEAMS: TreeNode[] = [
   { value: 'design', label: 'Design', children: [
-    { value: 'ada', label: 'Ada Lovelace', detail: 'Lead' },
-    { value: 'grace', label: 'Grace Hopper', detail: 'Away' },
+    { value: 'ada', label: 'Ada Lovelace', trailing: 'Lead' },
+    { value: 'grace', label: 'Grace Hopper', trailing: 'Away' },
   ] },
   { value: 'platform', label: 'Platform', children: [
-    { value: 'alan', label: 'Alan Turing', detail: 'On call' },
+    { value: 'alan', label: 'Alan Turing', trailing: 'On call' },
   ] },
 ]
 
@@ -21,7 +21,7 @@ export default function CustomRows() {
           <TreeItemLabel>
             {branch ? <TreeItemIndicator /> : <span className="size-4 shrink-0" />}
             <span className={branch ? 'min-w-0 flex-1 truncate font-semibold' : 'min-w-0 flex-1 truncate'}>{node.label}</span>
-            {node.detail ? <Badge variant="secondary">{node.detail}</Badge> : null}
+            {node.trailing ? <Badge variant="secondary">{node.trailing}</Badge> : null}
           </TreeItemLabel>
         )} />
     </div>

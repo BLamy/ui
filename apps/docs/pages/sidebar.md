@@ -1,6 +1,6 @@
 # Sidebar
 
-An app's navigation column: a workspace at the top, a search, labelled sections of rows with icons, counts and the current page, and an account at the bottom. It shows as a docked column, as an icon rail that expands, or as a floating card, and it becomes a drawer behind a button when its container gets narrow. Use it for the main navigation of a web or desktop app shell.
+An app's navigation column: the account or team at the top, a search, labelled sections of rows with icons, counts and the current page, and an account at the bottom. It shows as a docked column, as an icon rail that expands, or as a floating card, and it becomes a drawer behind a button when its container gets narrow. Use it for the main navigation of a web or desktop app shell.
 
 Reach for a sibling instead when:
 
@@ -28,7 +28,7 @@ import {
 {% tab title="npm" %}
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 
-Import the stylesheet once at your app's entry, then the parts from the package root:
+Import the stylesheet once at your app's entry, then the parts from their module:
 
 ```tsx
 import '@brett_lamy/ui/styles.css'
@@ -36,7 +36,7 @@ import '@brett_lamy/ui/styles.css'
 import {
   SidebarProvider, Sidebar, SidebarContent, SidebarSection,
   SidebarItem, SidebarTrigger, SidebarInset,
-} from '@brett_lamy/ui'
+} from '@brett_lamy/ui/sidebar'
 ```
 {% endtab %}
 {% endtabs %}
@@ -47,14 +47,14 @@ import {
 
 ```tsx
 import {
-  SidebarProvider, Sidebar, SidebarHeader, SidebarWorkspace, SidebarContent, SidebarSearch,
+  SidebarProvider, Sidebar, SidebarHeader, SidebarAccount, SidebarContent, SidebarSearch,
   SidebarSection, SidebarItem, SidebarFooter, SidebarInset, SidebarTrigger,
 } from '@/components/ui/sidebar'
 
 <SidebarProvider>                                  {/* open state; measures its own width */}
   <Sidebar variant="rail" presentation="auto">     {/* the look, and column or drawer */}
     <SidebarHeader>
-      <SidebarWorkspace title="Northwind" description="Sales" />
+      <SidebarAccount title="Northwind" description="Sales" />
     </SidebarHeader>
     <SidebarContent aria-label="Northwind">        {/* a nav landmark; scrolls */}
       <SidebarSearch shortcut="/" onClick={openSearch} />
@@ -76,7 +76,7 @@ import {
 
 ## Docked, with a footer
 
-A CRM: the workspace in the header, a search with its `/` shortcut, two sections with a count, and the signed-in account in `SidebarFooter`. A row's `icon` is an [Icon](https://blamy.github.io/ui/#/icons) name or any node; a number or a string in `trailing` is drawn as a count badge, anything else as it is.
+A CRM: the team (`SidebarAccount`) in the header, a search with its `/` shortcut, two sections with a count, and the signed-in account in `SidebarFooter`. A row's `icon` is an [Icon](https://blamy.github.io/ui/#/icons) name or any node; a number or a string in `trailing` is drawn as a count badge, anything else as it is.
 
 {% demo src="sidebar/crm-docked" %}
 
@@ -134,6 +134,7 @@ What closed means depends on the look: a `docked` or `float` column slides away 
 | `width` | `228` | Open width, px, of the column and the drawer (a drawer takes at most 85% of the provider). |
 | `railWidth` | `52` | Width of a collapsed rail, px. |
 | `aria-label` | `"Sidebar"` | The drawer's name. |
+| `ref`, `id`, `data-*`… | — | Go on the sidebar's panel (`data-slot="sidebar-panel"`), the same element as a column and as a drawer, to measure it or find it in a test. |
 | `className` / `style` | — | The column's box or the drawer's panel; a function gets `{ variant, presentation, open, collapsed }`. |
 
 ### Parts
@@ -142,14 +143,14 @@ What closed means depends on the look: a `docked` or `float` column slides away 
 | --- | --- | --- |
 | `SidebarHeader` · `SidebarFooter` | `div` props | Don't scroll; the footer sits on a hairline. |
 | `SidebarContent` | `nav` props | Scrolls. `aria-label` defaults to "Sidebar". |
-| `SidebarWorkspace` | `title`, `description`, `icon` | A 28px tile (default: the title's first letter on the brand gradient), a name and a second line. The tile alone in a collapsed rail. |
+| `SidebarAccount` | `title`, `description`, `icon` | Who or where this is (an account, a team, the app): a 28px tile (default: the title's first letter on the brand gradient), a name and a second line. The tile alone in a collapsed rail. In a compact provider it grows with the 44px rows under it (a 32px tile, a 15px name), so the drawer's heading is never smaller than its rows. |
 | `SidebarSearch` | `placeholder` ("Search"), `shortcut`, UI SDK Button props | A button shaped like a search field that opens your search ([CommandMenu](https://blamy.github.io/ui/#/command-menu), a Dialog). `shortcut` presses it from anywhere and shows a keycap. |
 | `SidebarSection` | `title`, `div` props | A labelled group; the title turns into a hairline in a collapsed rail. |
 | `SidebarItem` | `icon`, `title`, `description`, `trailing`, `current`, `tint`, `disabled`, `render`, `onClick(event, details)` | A navigation row. `tint` is a CSS colour for an action row ("New task"). |
 | `SidebarTrigger` | `shortcut`, button props | Toggles the sidebar in whichever presentation shows. Default icon `sidebar-left`, name "Toggle sidebar". |
 | `SidebarInset` | `div` props | The main column beside the sidebar. |
 
-The rows, sections, search and workspace also work outside a `Sidebar` (a shell's own side panel, such as [WorkbenchShell](https://blamy.github.io/ui/#/workbench-shell)'s), where there is no collapsed state to follow.
+The rows, sections, search and account also work outside a `Sidebar` (a shell's own side panel, such as [WorkbenchShell](https://blamy.github.io/ui/#/workbench-shell)'s), where there is no collapsed state to follow.
 
 ### Hooks
 

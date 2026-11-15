@@ -219,7 +219,7 @@ function CodeEditorHarness() {
     'aria-label': 'the code',
     title: params.get('title') ?? undefined,
     showCopy: !!params.get('copy'),
-    variant: (params.get('variant') ?? 'default') as 'default' | 'ghost',
+    variant: (params.get('variant') ?? 'default') as 'default' | 'plain',
   }
   const size = params.get('auto') ? '' : 'h-[420px]'
   return (

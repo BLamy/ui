@@ -7,6 +7,7 @@ import {
   createTabsController, useTabs, useTabsTab, type TabsProps,
 } from '@/components/ui/tabs';
 import { chromeStore } from '@/lib/theme';
+import { SizeClassProvider } from '@/lib/container';
 
 declare global { var __UI_SDK_STRICT__: boolean | undefined }
 globalThis.__UI_SDK_STRICT__ = true;
@@ -359,16 +360,16 @@ describe('Tabs on a bar', () => {
   it('useTabs reads the root, and is null outside one', async () => {
     const seen: unknown[] = [];
     function Probe() { seen.push(useTabs()); return null; }
-    render(<><Probe /><Tabs variant="workspace"><Probe /></Tabs></>);
+    render(<><Probe /><Tabs variant="switcher"><Probe /></Tabs></>);
     await settle();
     expect(seen[0]).toBeNull();
-    expect(seen[1]).toEqual({ variant: 'workspace', side: 'start', orientation: 'vertical' });
+    expect(seen[1]).toEqual({ variant: 'switcher', side: 'start', orientation: 'vertical', size: 'default' });
   });
 
   it('a separator is decorative and arrow keys pass over it; an action is a button, not a tab', async () => {
     const add = vi.fn();
     render(
-      <Tabs variant="workspace" defaultValue="home">
+      <Tabs variant="switcher" defaultValue="home">
         <TabsBar>
           <TabsList aria-label="Workspaces">
             <TabsTab value="home" aria-label="Direct Messages"><TabsPill /></TabsTab>
@@ -397,7 +398,7 @@ describe('Tabs on a bar', () => {
 
   it('the pill follows its own tab: full when selected, a nub for attention otherwise', async () => {
     render(
-      <Tabs variant="workspace" defaultValue="home">
+      <Tabs variant="switcher" defaultValue="home">
         <TabsBar>
           <TabsList aria-label="Workspaces">
             <TabsTab value="home" aria-label="Direct Messages"><TabsPill attention /></TabsTab>
@@ -516,5 +517,45 @@ describe('Bottom tab bar (Tabs variant="bar" with no panels)', () => {
     fireEvent.click(tab('Recents'));
     await settle();
     expect(tab('Contacts').getAttribute('aria-selected')).toBe('true');
+  });
+});
+
+describe('Tabs size and presentation', () => {
+  it('size reaches the segmented track, tabs and card: the same classes Segmented draws at that size', async () => {
+    render(<Settings defaultValue="account" size="sm" />);
+    await settle();
+    expect(screen.getByRole('tablist').className).toContain('rounded-lg');
+    expect(tab('Account').className).toContain('h-7');
+    expect(slot('tabs-indicator')?.querySelector('span')?.className ?? '').toContain('rounded-[calc(var(--radius-lg)-2px)]');
+    cleanup();
+    render(<Settings defaultValue="account" size="lg" />);
+    await settle();
+    expect(tab('Account').className).toContain('h-10');
+  });
+
+  const App = () => (
+    <Tabs presentation="auto" defaultValue="home">
+      <TabsBar><TabsList aria-label="App"><TabsTab value="home" icon="house">Home</TabsTab></TabsList></TabsBar>
+    </Tabs>
+  );
+
+  it('presentation="auto" is a bottom bar in a compact scope, a rail otherwise, and a bar outside every scope', async () => {
+    const root = () => screen.getByRole('tablist').closest('[data-variant][data-side][data-size]') as HTMLElement;
+    render(<SizeClassProvider value="compact"><App /></SizeClassProvider>);
+    await settle();
+    expect(root().getAttribute('data-variant')).toBe('bar');
+    expect(root().getAttribute('data-side')).toBe('bottom');
+    // A bottom bar publishes what it covers, safe area included.
+    expect(root().style.getPropertyValue('--tabs-bar-h')).toContain('safe-area-inset-bottom');
+    cleanup();
+    render(<SizeClassProvider value="regular"><App /></SizeClassProvider>);
+    await settle();
+    expect(root().getAttribute('data-variant')).toBe('rail');
+    expect(root().getAttribute('data-side')).toBe('start');
+    expect(root().style.getPropertyValue('--tabs-bar-h')).toBe('');
+    cleanup();
+    render(<App />);
+    await settle();
+    expect(root().getAttribute('data-variant')).toBe('bar');
   });
 });

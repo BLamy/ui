@@ -15,6 +15,7 @@
     "SheetBody",
     "SheetFooter",
     "SheetClose",
+    "SheetBack",
     "SheetView",
     "sheetVariants",
     "sheetGrabberVariants",

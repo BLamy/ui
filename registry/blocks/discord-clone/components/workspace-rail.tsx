@@ -1,8 +1,8 @@
 import type { CSSProperties, ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 
-/* ══ WorkspaceTile — a server tile for a `Tabs variant="workspace"` rail ══
-   <Tabs variant="workspace" defaultValue="blui">
+/* ══ WorkspaceTile — a server tile for a `Tabs variant="switcher"` rail ══
+   <Tabs variant="switcher" defaultValue="blui">
      <TabsBar>
        <TabsList aria-label="Workspaces">
          <TabsTab value="blui" aria-label="BL UI HQ">

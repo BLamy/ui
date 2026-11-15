@@ -30,7 +30,7 @@ export function Detail({ entry, vault, now, editing, onEditing }: {
     return (
       <>
         <SplitViewHeader />
-        <EmptyState icon={<Icon name="key" size={40} />} title="No Selection" description="Choose an item to see its details." />
+        <EmptyState icon={<Icon name="key" />} title="No Selection" description="Choose an item to see its details." />
       </>
     );
   }

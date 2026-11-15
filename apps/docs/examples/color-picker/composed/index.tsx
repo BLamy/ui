@@ -2,7 +2,7 @@ import { useState } from 'react'
 import {
   ColorPicker,
   ColorPickerArea,
-  ColorPickerField,
+  ColorPickerInputGroup,
   ColorPickerInput,
   ColorPickerSlider,
   ColorPickerSwatch,
@@ -26,10 +26,10 @@ export default function Composed() {
       <ColorPickerSlider channel="hue" label="Hue" showValue />
       <div className="flex flex-col gap-1.5">
         <Label variant="field" htmlFor="composed-hex">Hex</Label>
-        <ColorPickerField size="sm">
+        <ColorPickerInputGroup size="sm">
           <ColorPickerSwatch />
           <ColorPickerInput id="composed-hex" />
-        </ColorPickerField>
+        </ColorPickerInputGroup>
       </div>
     </ColorPicker>
   )

@@ -1,20 +1,22 @@
 'use client';
 import {
-  createContext, useCallback, useContext, useEffect, useMemo, useRef, useState,
-  type ComponentProps, type ReactNode, type Ref, type RefObject,
+  createContext, useCallback, useContext, useEffect, useId, useImperativeHandle, useMemo, useRef, useState,
+  type ComponentProps, type CSSProperties, type KeyboardEvent, type ReactNode, type Ref, type RefObject,
 } from 'react';
-import { announce } from '@ui-sdk/core';
-import { formatFileSize } from '@ui-sdk/core/file-input';
+import { announce, createInputHistory, createLocalStorage } from '@ui-sdk/core';
+import { formatFileSize } from '@/lib/file-size';
+import { Textarea, createInputController, type TextareaOptions } from '@ui-sdk/react/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { DataTable, type DataTableColumn } from '@/components/ui/data-table';
+import { Button, type ButtonProps } from '@/components/ui/button';
+import { DataTable, DataTableCell, type DataTableColumn } from '@/components/ui/data-table';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { EmptyState } from '@/components/ui/empty-state';
+import { Kbd, KbdGroup } from '@/components/ui/kbd';
 import { Popover, PopoverContent, PopoverTitle, PopoverTrigger } from '@/components/ui/popover';
 import { Spinner } from '@/components/ui/spinner';
-import { SqlEditor, useSqlHistory, type SqlEditorHandle, type SqlEditorProps, type SqlHistory } from '@/components/ui/sql-editor';
 import { Tabs, TabsList, TabsPanel, TabsTab } from '@/components/ui/tabs';
 import { Tree } from '@/components/ui/tree';
+import { useControllableChange } from '@/lib/controllable-state';
 import { SizeClassProvider, useSizeClass } from '@/lib/container';
 import { fieldSortValue } from '@/lib/data-table-model';
 import { Icon } from '@/lib/icon';
@@ -23,8 +25,9 @@ import { useDatabaseStatus, type DatabaseState } from '@/lib/pglite';
 import { downloadFile, pickFile } from '@/lib/pglite-files';
 import { schemaTreeItems, useSchema, type SchemaTreeNode } from '@/lib/pglite-schema';
 import { exportDatabase, importDatabase, type ExportFormat } from '@/lib/pglite-transfer';
-import { selectableText } from '@/lib/primitives';
+import { calloutVariants, selectableText } from '@/lib/primitives';
 import { formatCell, formatDuration, pgTypeName, pluralRows, toCsv, toJson, PG_TYPE, type FormattedCell } from '@/lib/sql-format';
+import { sqlSpans, type SqlSpan } from '@/lib/sql-lex';
 import { useCopy } from '@/lib/use-copy';
 import { cn } from '@/lib/utils';
 
@@ -42,6 +45,9 @@ import { cn } from '@/lib/utils';
        <SqlConsoleResults />   a DataTable per statement, or the error with its line, caret, SQLSTATE and hint
      </SqlConsole>
 
+   The editor's text is the console's `value` / `defaultValue` / `onValueChange`. `SqlConsoleEditor` also works on its
+   own, outside a console, as a SQL box with Run, history and an error squiggle (see "The editor" below).
+
    A script with several statements runs through `exec`, so each gets its own result; one that fails says that, as a
    script is one implicit transaction, none of it was applied. The console follows its own width (its size class, on
    `data-size-class`), not the viewport's: with a sidebar, the schema sits beside the editor from `medium` up, and
@@ -56,13 +62,15 @@ interface ConsoleContext {
   ready: boolean;
   history: SqlHistory;
   value: string;
-  setValue: (value: string) => void;
+  setValue: (value: string, given?: { reason: InputValueChangeReason; event?: Event }) => void;
   run: (sql: string) => Promise<void>;
   pending: boolean;
   last: { sql: string; outcome: RunOutcome } | null;
   notice: Notice | null;
   timing: boolean;
-  editor: RefObject<SqlEditorHandle | null>;
+  editor: RefObject<SqlConsoleEditorHandle | null>;
+  /** The id of the error the editor's squiggle points at, while it is shown. */
+  errorId: string;
   insertTable: (schema: string, table: string) => void;
   transfer: (action: ExportFormat | 'import') => Promise<void>;
 }
@@ -93,27 +101,37 @@ function ErrorExcerpt({ sql, error }: { sql: string; error: SqlError }) {
   );
 }
 
-function ErrorPanel({ title, error, sql, children, className }: { title: string; error: SqlError; sql?: string; children?: ReactNode; className?: string }) {
+function ErrorPanel({ id, title, error, sql, children, className }: { id?: string; title: string; error: SqlError; sql?: string; children?: ReactNode; className?: string }) {
   return (
-    <div role="alert" data-slot="sql-console-error" className={cn('rounded-panel bg-destructive/10 px-3 py-2.5 text-footnote', className)}>
-      <div className="flex flex-wrap items-baseline gap-x-2">
-        <span className="font-semibold text-destructive">{title}</span>
-        {error.code ? <code className="font-mono text-caption text-foreground/65">SQLSTATE {error.code}</code> : null}
+    <div id={id} role="alert" data-slot="sql-console-error" className={cn(calloutVariants({ tone: 'destructive' }), className)}>
+      <Icon name="exclamation-circle" size={16} />
+      <div className="min-w-0 flex-1">
+        <div className="flex flex-wrap items-baseline gap-x-2">
+          <span className="font-semibold text-destructive">{title}</span>
+          {error.code ? <code className="font-mono text-caption text-foreground/65">SQLSTATE {error.code}</code> : null}
+        </div>
+        <p className="mt-0.5 break-words">{error.message}</p>
+        {sql ? <ErrorExcerpt sql={sql} error={error} /> : null}
+        {error.detail ? <p className="mt-1.5 text-foreground/65">Detail: {error.detail}</p> : null}
+        {error.hint ? <p className="mt-1.5 text-foreground/65">Hint: {error.hint}</p> : null}
+        {children}
       </div>
-      <p className="mt-0.5 break-words text-foreground">{error.message}</p>
-      {sql ? <ErrorExcerpt sql={sql} error={error} /> : null}
-      {error.detail ? <p className="mt-1.5 text-foreground/65">Detail: {error.detail}</p> : null}
-      {error.hint ? <p className="mt-1.5 text-foreground/65">Hint: {error.hint}</p> : null}
-      {children}
     </div>
   );
 }
 
 /* ── The root ── */
 
-export interface SqlConsoleProps extends Omit<ComponentProps<'div'>, 'onError'> {
+type InputValueChangeReason = Parameters<NonNullable<TextareaOptions['onValueChange']>>[1]['reason'];
+
+export interface SqlConsoleProps extends Omit<ComponentProps<'div'>, 'onError' | 'defaultValue'> {
+  /** The editor's text, controlled: open a saved query, or put one in from a button outside the console. */
+  value?: string;
   /** The editor's initial text. */
   defaultValue?: string;
+  /** Every change to the editor's text: typing (`input-change`), a history step, a table pressed in the schema or a
+      history entry put back (`imperative`). Cancel it to keep the text. */
+  onValueChange?: TextareaOptions['onValueChange'];
   /** Keep the history in localStorage under this key. */
   historyKey?: string;
   /** Called after each run (also failed ones). */
@@ -134,7 +152,7 @@ function summaryOf(result: RunOutcome['results'][number]): string {
 }
 
 export function SqlConsole({
-  defaultValue = '', historyKey, onRun, autoRun = false, timing = true, className, ref, children, ...props
+  value: valueProp, defaultValue = '', onValueChange, historyKey, onRun, autoRun = false, timing = true, className, ref, children, ...props
 }: SqlConsoleProps) {
   const [sizeRef, sizeClass] = useSizeClass();
   const root = useRef<HTMLDivElement | null>(null);
@@ -147,11 +165,15 @@ export function SqlConsole({
   const database = useDatabaseStatus();
   const { status, db, invalidate } = database;
   const history = useSqlHistory(historyKey);
-  const [value, setValue] = useState(defaultValue);
+  const [value, setText] = useControllableChange<string, InputValueChangeReason>(valueProp, defaultValue, onValueChange);
+  const setValue = useCallback((next: string, given?: { reason: InputValueChangeReason; event?: Event }) => {
+    setText(next, given);
+  }, [setText]);
+  const errorId = useId();
   const [pending, setPending] = useState(false);
   const [last, setLast] = useState<{ sql: string; outcome: RunOutcome } | null>(null);
   const [notice, setNotice] = useState<Notice | null>(null);
-  const editor = useRef<SqlEditorHandle>(null);
+  const editor = useRef<SqlConsoleEditorHandle>(null);
 
   const run = useCallback(async (sql: string) => {
     if (!db) return;
@@ -207,7 +229,7 @@ export function SqlConsole({
       setValue(text);
       editor.current?.focus();
     }
-  }, [value]);
+  }, [value, setValue]);
 
   const ready = status === 'ready' && !!db;
 
@@ -234,7 +256,7 @@ export function SqlConsole({
     }
   }, [autoRun, ready, run, defaultValue]);
 
-  const context: ConsoleContext = { database, ready, history, value, setValue, run, pending, last, notice, timing, editor, insertTable, transfer };
+  const context: ConsoleContext = { database, ready, history, value, setValue, run, pending, last, notice, timing, editor, errorId, insertTable, transfer };
   const openError = status === 'error' ? database.error : null;
   return (
     <SizeClassProvider value={sizeClass}>
@@ -340,7 +362,7 @@ export function SqlConsoleHeader({ children, className, ...props }: SqlConsoleHe
 
 type HistoryRow = { id: string; sql: string };
 const HISTORY_COLUMNS: DataTableColumn<HistoryRow>[] = [
-  { id: 'sql', title: 'Statement', flex: 1, sortable: false, className: 'font-mono', render: (row) => <span title={row.sql}>{row.sql.replace(/\s+/g, ' ')}</span> },
+  { id: 'sql', header: 'Statement', flex: 1, sortable: false, className: 'font-mono', cell: (row) => <span title={row.sql}>{row.sql.replace(/\s+/g, ' ')}</span> },
 ];
 
 /** The schema of the open database (press a table to put a query for it in the editor) and the statements you ran,
@@ -383,7 +405,7 @@ export function SqlConsoleSidebar({ className, ...props }: ComponentProps<'aside
             columns={HISTORY_COLUMNS}
             density="compact"
             layout="table"
-            selectionMode="none"
+            mode="none"
             onAction={(_id, { row }) => { setValue(row.sql); editor.current?.focus(); }}
             emptyState={<EmptyState size="sm" title="No history yet" description="Statements you run appear here." />}
           />
@@ -393,30 +415,389 @@ export function SqlConsoleSidebar({ className, ...props }: ComponentProps<'aside
   );
 }
 
-/* ── The editor ── */
+/* ── The editor ──
+   A SQL box on UI SDK's Textarea: a native <textarea> sits over a highlighted copy of its own text, so selection, IME,
+   undo, accessibility and mobile keyboards are the browser's and nothing heavy (no CodeMirror / Monaco) ships. That
+   editing model is why it is not a CodeEditor, which draws its own selection. Highlighting is lib/sql-lex (keywords,
+   types, functions, strings incl. $$ bodies, numbers, comments), computed synchronously; `errorPosition` underlines
+   the offending token and marks the box invalid.
 
-export type SqlConsoleEditorProps = Omit<SqlEditorProps, 'value' | 'defaultValue' | 'onValueChange' | 'onRun' | 'pending' | 'history' | 'error' | 'ref'>;
+   ⌘ + Enter (Ctrl + Enter off Apple platforms: the Textarea's `mod+enter` submit shortcut) runs the selection, or
+   everything when nothing is selected. ↑ on the first line and ↓ on the last step through `history` with UI SDK's
+   `createInputHistory`, like a terminal: ↓ past the newest brings your draft back. Tab keeps its job of moving focus
+   (indenting would trap keyboard users). `ref` exposes `focus()` and `insert(text)`.
 
-/** The console's SqlEditor: its text, Run, the history and the last error's squiggle come from the console. */
-export function SqlConsoleEditor({ className, ...props }: SqlConsoleEditorProps) {
-  const { database, ready, value, setValue, run, pending, history, last, editor } = useConsole('SqlConsoleEditor');
-  if (database.status === 'error') return null;
+   Inside a SqlConsole its text, Run, pending, history and the last error come from the console; outside one it is a
+   controlled or uncontrolled editor of its own. The footer is a part: with no children the editor shows
+   `<SqlConsoleEditorFooter />` (the shortcut hint and Run); give it children to put your own controls there, or
+   `{false}` for none. `SqlConsoleEditorRun` is the Run button on its own. */
+
+const editorClass = cn(
+  'flex min-w-0 flex-col overflow-hidden rounded-panel bg-card text-card-foreground shadow-hairline transition-shadow duration-spring-snappy ease-spring-snappy',
+  'focus-within:ring-2 focus-within:ring-primary focus-within:ring-inset',
+  // Invalid (an error position, or a Field's invalid on the textarea): the field's destructive ring.
+  'data-invalid:shadow-[inset_0_0_0_1.5px_var(--destructive)] has-[textarea[aria-invalid=true]]:shadow-[inset_0_0_0_1.5px_var(--destructive)]',
+);
+
+/** Same metrics on the textarea and its highlighted copy, or the two drift apart. */
+const metrics = 'box-border m-0 border-0 px-3 py-2.5 font-mono text-footnote leading-5 [tab-size:2] whitespace-pre';
+
+export interface SqlConsoleEditorHandle {
+  focus: () => void;
+  /** Inserts text at the cursor (replacing the selection) and focuses the editor. */
+  insert: (text: string) => void;
+}
+
+export interface SqlConsoleEditorProps extends Omit<ComponentProps<'div'>, 'children' | 'defaultValue' | 'ref'> {
+  /** The text. In a SqlConsole, the console's (set `value` / `defaultValue` there). */
+  value?: string;
+  defaultValue?: string;
+  /** Every change to the text, with the Textarea's `details`: typing is `input-change`; a history step and `insert()`
+      are `imperative`. Canceling a history step leaves the text and the arrow key to the browser. In a SqlConsole it is
+      called as well as the console's. */
+  onValueChange?: TextareaOptions['onValueChange'];
+  /** ⌘/Ctrl + Enter, or the Run button. Receives the selection, or the whole text. In a SqlConsole: the console runs it. */
+  onRun?: (sql: string) => void;
+  /** A statement is running: Run is disabled and reads "Running…" (`data-pending` on the root). */
+  pending?: boolean;
+  /** How many lines show before the text scrolls (default 8). */
+  rows?: number;
+  /** Earlier statements, newest first (see `useSqlHistory`); ↑ on the first line and ↓ on the last step through them. */
+  history?: readonly string[];
+  /** Where the error is, 1-based in characters, as Postgres reports it (`SqlError.position`): the token there is
+      underlined and the editor is invalid (`aria-invalid`, `data-invalid`). In a SqlConsole: the last failed run's. */
+  errorPosition?: number | null;
+  /** Highlight SQL (default true; skipped past 200k characters). */
+  highlight?: boolean;
+  placeholder?: string;
+  disabled?: boolean;
+  readOnly?: boolean;
+  autoFocus?: boolean;
+  /** The footer. Default `<SqlConsoleEditorFooter />`; `false` or `null` for none. */
+  children?: ReactNode;
+  /** The textarea's name (default "SQL"). */
+  'aria-label'?: string;
+  /** Elements that describe the textarea: the error message it points at. In a SqlConsole, its error panel is added. */
+  'aria-describedby'?: string;
+  ref?: Ref<SqlConsoleEditorHandle>;
+}
+
+const HIGHLIGHT_LIMIT = 200_000;
+
+const SQUIGGLE = 'underline decoration-destructive decoration-wavy decoration-from-font underline-offset-2';
+
+type Segment = { text: string; className?: string };
+
+/** The source cut at every span and error boundary, each piece with its token class (and the squiggle on the error). */
+function segmentsOf(code: string, spans: readonly SqlSpan[], errorAt: number | null): Segment[] {
+  let errStart = -1;
+  let errEnd = -1;
+  if (errorAt !== null && errorAt >= 0 && errorAt < code.length) {
+    const word = /^[\w$\u0080-￿]+/.exec(code.slice(errorAt));
+    errStart = errorAt;
+    errEnd = errorAt + (word ? word[0].length : 1);
+  }
+  const cuts = new Set<number>([0, code.length]);
+  for (const s of spans) {
+    cuts.add(s.start);
+    cuts.add(s.end);
+  }
+  if (errStart >= 0) {
+    cuts.add(errStart);
+    cuts.add(Math.min(errEnd, code.length));
+  }
+  const bounds = [...cuts].filter((n) => n >= 0 && n <= code.length).sort((a, b) => a - b);
+  const out: Segment[] = [];
+  let k = 0; // index of the first span that may still cover the current piece
+  for (let i = 0; i + 1 < bounds.length; i++) {
+    const a = bounds[i];
+    const b = bounds[i + 1];
+    while (k < spans.length && spans[k].end <= a) k++;
+    const span = k < spans.length && spans[k].start <= a ? spans[k] : undefined;
+    const bad = a >= errStart && b <= errEnd && errStart >= 0;
+    out.push({ text: code.slice(a, b), className: cn(span && `bl-tok bl-tok-${span.type}`, bad && SQUIGGLE) || undefined });
+  }
+  return out;
+}
+
+interface EditorState {
+  run: () => void;
+  pending: boolean;
+  disabled: boolean;
+  empty: boolean;
+  hasHistory: boolean;
+}
+
+const EditorContext = createContext<EditorState | null>(null);
+
+function useEditor(part: string): EditorState {
+  const context = useContext(EditorContext);
+  if (!context) throw new Error(`${part} must be inside a SqlConsoleEditor`);
+  return context;
+}
+
+export type SqlConsoleEditorRunProps = Omit<ButtonProps, 'onClick' | 'disabled'>;
+
+/** The Run button: runs the selection, or everything. Disabled with nothing to run, while a run is pending, and when
+ *  the editor is disabled. Ink on paper (`contrast`) rather than white on the accent blue, which is 3.7:1 at this size. */
+export function SqlConsoleEditorRun({ children, variant = 'contrast', size = 'sm', ...props }: SqlConsoleEditorRunProps) {
+  const { run, pending, disabled, empty } = useEditor('SqlConsoleEditorRun');
   return (
-    <SqlEditor
-      ref={editor}
+    <Button variant={variant} size={size} disabled={disabled || pending || empty} onClick={run} {...props}>
+      {pending ? 'Running…' : (children ?? 'Run')}
+    </Button>
+  );
+}
+
+export interface SqlConsoleEditorFooterProps extends ComponentProps<'div'> {
+  /** Controls before Run. */
+  children?: ReactNode;
+}
+
+/** The footer: the shortcut hint (shown once the editor, not the window, has room for it), your controls, and Run. */
+export function SqlConsoleEditorFooter({ children, className, ...props }: SqlConsoleEditorFooterProps) {
+  const { hasHistory } = useEditor('SqlConsoleEditorFooter');
+  return (
+    <div data-slot="sql-console-editor-footer" className={cn('@container/sql-footer flex shrink-0 items-center gap-2 px-2 py-1.5 shadow-hairline-t', className)} {...props}>
+      <KbdGroup className="hidden min-w-0 flex-1 text-caption text-foreground/65 @md/sql-footer:inline-flex">
+        <Kbd keys="mod+enter" />
+        <span className="truncate">runs the selection, or everything</span>
+        {hasHistory ? (
+          <>
+            <Kbd keys="arrowup" />
+            <span className="truncate">history</span>
+          </>
+        ) : null}
+      </KbdGroup>
+      <span className="flex-1 @md/sql-footer:hidden" />
+      {children}
+      <SqlConsoleEditorRun />
+    </div>
+  );
+}
+
+/** The SQL editor. In a SqlConsole it is the console's (its text, Run, history and the last error come from there);
+    on its own it is a SQL box with Run, history and an error squiggle. */
+export function SqlConsoleEditor(props: SqlConsoleEditorProps) {
+  const host = useContext(SqlConsoleContext);
+  if (!host) return <Editor {...props} />;
+  return <ConsoleEditor host={host} {...props} />;
+}
+
+function ConsoleEditor({ host, className, onValueChange, disabled, ref, 'aria-describedby': describedBy, ...props }: SqlConsoleEditorProps & { host: ConsoleContext }) {
+  const { database, ready, value, setValue, run, pending, history, last, editor, errorId } = host;
+  const setRef = useCallback((handle: SqlConsoleEditorHandle | null) => {
+    editor.current = handle;
+    if (typeof ref === 'function') ref(handle);
+    else if (ref) ref.current = handle;
+  }, [editor, ref]);
+  if (database.status === 'error') return null;
+  // The squiggle (and the alert it points at) only while the text is still what failed.
+  const failed = last?.outcome.error && last.sql === value.trim() ? last.outcome.error : null;
+  return (
+    <Editor
+      placeholder="select now();"
+      {...props}
+      ref={setRef}
       value={value}
-      onValueChange={setValue}
+      onValueChange={(next, details) => {
+        onValueChange?.(next, details);
+        if (!details.canceled) setValue(next, { reason: details.reason, event: details.event });
+      }}
       onRun={(sql) => void run(sql)}
       pending={pending}
-      disabled={!ready}
+      disabled={!ready || disabled}
       history={history.entries}
-      error={last?.outcome.error && last.sql === value.trim() ? last.outcome.error : null}
-      placeholder="select now();"
-      aria-label="SQL"
+      errorPosition={failed?.position ?? null}
+      aria-describedby={cn(describedBy, failed && errorId) || undefined}
       className={cn('h-fit [grid-area:editor]', className)}
-      {...props}
     />
   );
+}
+
+function Editor({
+  value: valueProp, defaultValue = '', onValueChange, onRun, pending = false, history, errorPosition, highlight = true, placeholder,
+  disabled, readOnly, autoFocus, rows = 8, children, className, style, ref, 'aria-label': ariaLabel = 'SQL',
+  'aria-describedby': describedBy, ...props
+}: SqlConsoleEditorProps) {
+  const [inner, setInner] = useState(defaultValue);
+  const controlled = valueProp !== undefined;
+  const value = controlled ? valueProp : inner;
+  // Writes from here (a history step, `insert`) go through the Textarea's controller, so they reach
+  // `onValueChange` like typing does.
+  const [input] = useState(createInputController);
+  const setValue = useCallback((v: string) => { input.setValue(v); }, [input]);
+
+  const areaRef = useRef<HTMLTextAreaElement>(null);
+  const layerRef = useRef<HTMLPreElement>(null);
+  const syncScroll = useCallback(() => {
+    const a = areaRef.current;
+    if (a && layerRef.current) layerRef.current.style.translate = `${-a.scrollLeft}px ${-a.scrollTop}px`;
+  }, []);
+
+  useImperativeHandle(ref, () => ({
+    focus: () => areaRef.current?.focus(),
+    insert: (text: string) => {
+      const a = areaRef.current;
+      if (!a) return;
+      const from = a.selectionStart ?? a.value.length;
+      const to = a.selectionEnd ?? from;
+      const next = a.value.slice(0, from) + text + a.value.slice(to);
+      setValue(next);
+      requestAnimationFrame(() => {
+        a.focus();
+        a.setSelectionRange(from + text.length, from + text.length);
+      });
+    },
+  }), [setValue]);
+
+  // History: ArrowUp on the first line goes back, ArrowDown on the last goes forward and past the newest returns
+  // the draft. `createInputHistory` takes the entries oldest first and leaves modified, composing, selecting,
+  // read-only and expanded-popup key presses alone.
+  const historyRef = useRef(history);
+  useEffect(() => { historyRef.current = history; }, [history]);
+  const [recall] = useState(() => createInputHistory<string>({
+    entries: () => (historyRef.current ? [...historyRef.current].reverse() : undefined),
+    read: () => areaRef.current?.value ?? '',
+    // Textarea's reasons have no `history-key` yet (gaps/r2-leaf.md), so a step is the controller's `imperative`,
+    // which takes no event. `setValue` reports false for an unchanged value too, which is still a step.
+    write: (v) => input.setValue(v) || areaRef.current?.value === v,
+  }));
+
+  const run = () => {
+    const a = areaRef.current;
+    if (!a || pending || !onRun) return;
+    const selected = a.selectionStart !== a.selectionEnd ? a.value.slice(a.selectionStart, a.selectionEnd) : '';
+    const sql = (selected || a.value).trim();
+    if (sql) onRun(sql);
+  };
+
+  const onKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
+    recall.keydown(e.nativeEvent);
+  };
+
+  const spans = useMemo(() => (highlight && value.length <= HIGHLIGHT_LIMIT ? sqlSpans(value) : []), [highlight, value]);
+  const errorAt = errorPosition ? errorPosition - 1 : null;
+  const invalid = errorAt !== null && errorAt >= 0;
+  const segments = useMemo(() => segmentsOf(value, spans, errorAt), [value, spans, errorAt]);
+
+  const context: EditorState = {
+    run, pending, disabled: !!disabled || !onRun, empty: !value.trim(), hasHistory: !!history?.length,
+  };
+  return (
+    <EditorContext.Provider value={context}>
+      <div
+        data-slot="sql-console-editor"
+        data-disabled={disabled || undefined}
+        data-pending={pending || undefined}
+        data-invalid={invalid || undefined}
+        className={cn(editorClass, className)}
+        style={{ '--editor-rows': rows, ...style } as CSSProperties}
+        {...props}
+      >
+        <div className="relative min-h-0 flex-1 overflow-hidden">
+          {/* The highlighted copy: decoration, not content (the textarea is what assistive tech reads). */}
+          <pre
+            ref={layerRef}
+            aria-hidden="true"
+            data-slot="sql-console-editor-highlight"
+            className={cn(metrics, 'pointer-events-none absolute top-0 left-0 min-w-full text-card-foreground')}
+          >
+            {segments.map((s, i) => (s.className ? <span key={i} className={s.className}>{s.text}</span> : s.text))}
+            {'\n'}
+          </pre>
+          <Textarea
+            ref={areaRef}
+            controller={input}
+            aria-label={ariaLabel}
+            aria-invalid={invalid || undefined}
+            aria-describedby={describedBy}
+            value={value}
+            onValueChange={(next, details) => {
+              onValueChange?.(next, details);
+              if (details.canceled) return;
+              if (!controlled) setInner(next);
+            }}
+            submitShortcut="mod+enter"
+            onSubmit={run}
+            onKeyDown={onKeyDown}
+            onScroll={syncScroll}
+            placeholder={placeholder}
+            disabled={disabled}
+            readOnly={readOnly}
+            autoFocus={autoFocus}
+            spellCheck={false}
+            autoCapitalize="off"
+            autoCorrect="off"
+            wrap="off"
+            className={cn(
+              metrics,
+              'bl-scroll relative block h-[calc(var(--editor-rows)*1.25rem+1.25rem)] w-full resize-none overflow-auto bg-transparent text-transparent caret-foreground outline-none selection:bg-primary/25 placeholder:text-foreground/65',
+              selectableText,
+            )}
+          />
+        </div>
+
+        {children === undefined ? <SqlConsoleEditorFooter /> : children}
+      </div>
+    </EditorContext.Provider>
+  );
+}
+
+/* ── History ── */
+
+export interface SqlHistory {
+  /** Newest first. */
+  entries: string[];
+  /** Records a statement run (blank ones and a repeat of the newest are skipped). */
+  push: (sql: string) => void;
+  clear: () => void;
+}
+
+const parseEntries = (raw: string | null, max: number): string[] => {
+  if (!raw) return [];
+  try {
+    const value: unknown = JSON.parse(raw);
+    return Array.isArray(value) ? value.filter((v): v is string => typeof v === 'string').slice(0, max) : [];
+  } catch {
+    return []; // a corrupt value: start empty
+  }
+};
+
+/** Statements you ran, newest first. Pass a `key` to keep them in localStorage (UI SDK's `createLocalStorage`): they
+    last across reloads and follow other tabs' runs. Read after mount, so it is SSR safe. SqlConsole keeps one (its
+    `historyKey`); give one to a SqlConsoleEditor of your own as `history={entries}`. */
+export function useSqlHistory(key?: string, max = 50): SqlHistory {
+  const storage = useMemo(() => (key ? createLocalStorage(key) : undefined), [key]);
+  const [entries, setEntries] = useState<string[]>([]);
+  // The newest list, for writes that land before React re-renders (two runs in one tick).
+  const latest = useRef<string[]>([]);
+  useEffect(() => {
+    if (!storage) return;
+    const load = (raw: string | null) => {
+      const next = parseEntries(raw, max);
+      if (JSON.stringify(next) === JSON.stringify(latest.current)) return;
+      latest.current = next;
+      setEntries(next);
+    };
+    load(storage.get());
+    return storage.subscribe(load);
+  }, [storage, max]);
+  const commit = useCallback((next: string[]) => {
+    latest.current = next;
+    setEntries(next);
+    if (!storage) return;
+    if (next.length) storage.set(JSON.stringify(next));
+    else storage.remove();
+  }, [storage]);
+  const push = useCallback((sql: string) => {
+    const s = sql.trim();
+    const prev = latest.current;
+    if (!s || prev[0] === s) return;
+    commit([s, ...prev.filter((p) => p !== s)].slice(0, max));
+  }, [max, commit]);
+  const clear = useCallback(() => commit([]), [commit]);
+  return { entries, push, clear };
 }
 
 /* ── The results ── */
@@ -493,11 +874,11 @@ function resultColumns(result: Result): DataTableColumn<ResultRow>[] {
     return {
       id: n > 1 ? `${name}~${n}` : name,
       label: name,
-      title: end ? <>{type} {name}</> : <>{name} {type}</>,
+      header: end ? <>{type} {name}</> : <>{name} {type}</>,
       align: end ? 'end' : 'start',
       width: widthOf(name, oid, result.rows),
       minWidth: 48,
-      render: (row) => <ResultCell value={row.values[name]} oid={oid} name={name} />,
+      cell: (row) => <ResultCell value={row.values[name]} oid={oid} name={name} />,
       sortValue: (row) => {
         const v = row.values[name];
         return end && typeof v === 'string' ? Number(v) : fieldSortValue(row.values, name);
@@ -512,6 +893,30 @@ function QueryResult({ result, durationMs, label }: { result: Result; durationMs
   const rows = useMemo(() => result.rows.map((values, id): ResultRow => ({ id, values })), [result.rows]);
   const columns = useMemo(() => resultColumns(result), [result]);
   const { copy, copied } = useCopy<'csv' | 'json'>();
+  // Stacked (a compact console), a value means little without its column: the first field is the row's title, and the
+  // others follow as `name value` pairs.
+  const renderStackedRow = useCallback((row: ResultRow) => {
+    const [first, ...rest] = result.fields;
+    return (
+      <DataTableCell col={0} className="flex min-w-0 flex-1 flex-col gap-1">
+        {first ? (
+          <span className="min-w-0 leading-[18px] font-medium">
+            <ResultCell value={row.values[first.name]} oid={first.dataTypeID} name={first.name} />
+          </span>
+        ) : null}
+        {rest.length ? (
+          <span data-slot="sql-console-stacked-fields" className="flex h-[18px] min-w-0 items-baseline gap-x-3 overflow-hidden text-caption whitespace-nowrap">
+            {rest.map(({ name, dataTypeID: oid }, i) => (
+              <span key={i} className="flex min-w-0 shrink-0 items-baseline gap-1">
+                <span className="text-foreground/65">{name}</span>
+                <span className={cn('max-w-48 truncate', oid !== undefined && NUMERIC.has(oid) && 'tabular-nums')}>{formatCell(row.values[name], oid).text}</span>
+              </span>
+            ))}
+          </span>
+        ) : null}
+      </DataTableCell>
+    );
+  }, [result.fields]);
   const summary = `${summaryOf(result)}${durationMs !== undefined ? ` · ${formatDuration(durationMs)}` : ''}`;
   const said = <span data-slot="sql-console-summary" className="min-w-0 flex-1 truncate text-footnote text-foreground/65 tabular-nums">{summary}</span>;
   if (!result.fields.length) {
@@ -522,9 +927,10 @@ function QueryResult({ result, durationMs, label }: { result: Result; durationMs
       aria-label={label}
       rows={rows}
       columns={columns}
-      selectionMode="none"
+      mode="none"
       // The toolbar already counts the rows; stacked, the header keeps only the sort menu.
       countLabel={noCount}
+      renderStackedRow={renderStackedRow}
       className="max-h-(--sql-console-result-height,18rem)"
       emptyState={<EmptyState size="sm" title="No rows" />}
       toolbar={(
@@ -545,12 +951,12 @@ function QueryResult({ result, durationMs, label }: { result: Result; durationMs
 /** The last run: a DataTable per statement (each named "Result 1", "Result 2"…, with its summary and Copy CSV / JSON),
  *  or the error. Each table is at most 18rem tall: set `--sql-console-result-height` to change it. */
 export function SqlConsoleResults({ className, ...props }: ComponentProps<'div'>) {
-  const { database, last, timing } = useConsole('SqlConsoleResults');
+  const { database, last, timing, errorId } = useConsole('SqlConsoleResults');
   if (database.status === 'error' || !last) return null;
   const { outcome, sql } = last;
   if (outcome.error) {
     return (
-      <ErrorPanel className={cn('h-fit [grid-area:results]', className)} title="Query failed" error={outcome.error} sql={sql}>
+      <ErrorPanel id={errorId} className={cn('h-fit [grid-area:results]', className)} title="Query failed" error={outcome.error} sql={sql}>
         {outcome.statementCount > 1 && !/\b(begin|start\s+transaction)\b/i.test(sql) ? (
           <p className="mt-1.5 text-foreground/65">The script ran as one transaction, so none of its {outcome.statementCount} statements were applied.</p>
         ) : null}

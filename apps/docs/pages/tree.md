@@ -1,6 +1,6 @@
 # Tree
 
-A hierarchy you can expand, collapse, search and select from the keyboard: [UI SDK](https://ui-sdk.dev)'s Tree with the kit's rows. Compose it from parts for a short tree whose rows are yours, or hand it nested `items` and it draws the rows itself, only the ones in view, with what a file browser has: indent guides, a chevron on folders, a file-type icon on files, a truncating label and a short detail after it, search, Git status, rename in place, a context menu and a hover preview per row, and drag and drop. A node with `children` is a folder. Any hierarchy works, not only files: an outline, a database schema, a syntax tree. For a debugger's values use [ObjectTree](https://blamy.github.io/ui/#/object-tree), and for its frames [CallStack](https://blamy.github.io/ui/#/call-stack): both draw their own rows on this tree, so the three look and move alike. Use [Listbox](https://blamy.github.io/ui/#/listbox) for a flat list of choices and [NavigationStack](https://blamy.github.io/ui/#/navigation-stack) to drill into one level at a time.
+A hierarchy you can expand, collapse, search and select from the keyboard: [UI SDK](https://ui-sdk.dev)'s Tree with the kit's rows. Compose it from parts for a short tree whose rows are yours, or hand it nested `items` and it draws the rows itself, only the ones in view, with what a file browser has: indent guides, a chevron on folders, a file-type icon on files, a truncating label and a short `trailing` note after it, search, Git status, rename in place, a context menu and a hover preview per row, and drag and drop. A node with `children` is a folder. Any hierarchy works, not only files: an outline, a database schema, a syntax tree. For a debugger's values use [ObjectTree](https://blamy.github.io/ui/#/object-tree), and for its frames [CallStack](https://blamy.github.io/ui/#/call-stack): both draw their own rows on this tree, so the three look and move alike. Use [Listbox](https://blamy.github.io/ui/#/listbox) for a flat list of choices and [NavigationStack](https://blamy.github.io/ui/#/navigation-stack) to drill into one level at a time.
 
 {% tabs title="Installation" sync="install" %}
 {% tab title="shadcn CLI" %}
@@ -15,12 +15,12 @@ import { Tree } from '@/components/ui/tree'
 {% tab title="npm" %}
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 
-Import the stylesheet once at your app's entry, then the parts from the package root:
+Import the stylesheet once at your app's entry, then the parts from their module:
 
 ```tsx
 import '@brett_lamy/ui/styles.css'
 
-import { Tree } from '@brett_lamy/ui'
+import { Tree } from '@brett_lamy/ui/tree'
 ```
 {% endtab %}
 {% endtabs %}
@@ -46,14 +46,14 @@ import { Tree } from '@brett_lamy/ui'
 
 ## Any hierarchy
 
-For something that isn't files, set `icons={false}` and give leaves their own `icon` from the icon set. `detail` goes after the label: a count, a kind, a short status. `dimmed` fades a row that's listed but not the point, and `disabled` makes one that can't be selected or run. `mode="multiple"` makes the value an array: ⌘-click and ⇧-click select more than one row. `mode="none"` is a tree that only navigates or runs `onAction`.
+For something that isn't files, set `icons={false}` and give leaves their own `icon` from the icon set. `trailing` goes after the label, at the row's end: a count, a kind, a short status (with `description` saying it in words, for its tooltip and screen readers). `dimmed` fades a row that's listed but not the point, and `disabled` makes one that can't be selected or run. `mode="multiple"` makes the value an array: ⌘-click and ⇧-click select more than one row. `mode="none"` is a tree that only navigates or runs `onAction`.
 
 {% demo src="tree/basic" %}
 
 ```tsx
 const MAILBOXES: TreeNode[] = [
   { value: 'icloud', label: 'iCloud', children: [
-    { value: 'inbox', label: 'Inbox', icon: 'tray', detail: '12' },
+    { value: 'inbox', label: 'Inbox', icon: 'tray', trailing: '12' },
     { value: 'archive', label: 'Archive', icon: 'folder', dimmed: true },
   ] },
 ]
@@ -98,7 +98,7 @@ const items = schemaTreeItems(schema)
     <TreeItemLabel>
       {branch ? <TreeItemIndicator /> : <span className="size-4 shrink-0" />}
       <span className="min-w-0 flex-1 truncate">{node.label}</span>
-      {node.detail ? <Badge variant="secondary">{node.detail}</Badge> : null}
+      {node.trailing ? <Badge variant="secondary">{node.trailing}</Badge> : null}
     </TreeItemLabel>
   )} />
 ```
@@ -149,7 +149,7 @@ It is a `tree` of `treeitem`s with `aria-level`, `aria-posinset`, `aria-setsize`
 | Prop | Default | Effect |
 | --- | --- | --- |
 | `aria-label` | — | The tree's name. |
-| `items` | — | `TreeNode[]`: `value`, `label`, `children` (folders), `disabled`, `href`, `detail`, `detailTitle`, `icon`, `dimmed`. The tree draws them, virtualized. |
+| `items` | — | `TreeNode[]`: `value`, `label`, `children` (folders), `disabled`, `href`, `trailing`, `description`, `icon`, `dimmed`. The tree draws them, virtualized. |
 | `paths` | — | File paths instead of `items` (`['src/index.ts', 'README.md']`); folders become branches. |
 | `mode` | `'single'` | `'single'`, `'multiple'` or `'none'`. |
 | `value` / `defaultValue` / `onValueChange` | — | The selection, controlled or initial. A controlled value scrolls into view. |
@@ -205,7 +205,7 @@ text-footnote text-foreground
 Defined in `@/components/ui/tree`. Base classes:
 
 ```text
-[ 'group/tree-row relative box-border flex h-(--tree-row-height) w-full min-w-0 cursor-default items-center gap-(--tree-gap) rounded-ctl pr-(--tree-pad-x) leading-(--tree-row-height) select-none', 'pl-[calc(var(--tree-pad-x)+(var(--tree-level,1)-1)*var(--tree-indent))]', 'hover:not-data-disabled:not-data-selected:bg-secondary data-selected:bg-primary/16 data-current:font-medium data-disabled:opacity-50 data-pending:cursor-progress', 'group-focus-visible/tree-item:[box-shadow:inset_0_0_0_2px_var(--ring)]', 'group-data-dimmed/tree-item:opacity-60 group-data-drop-target/tree-item:bg-secondary group-data-drop-target/tree-item:[box-shadow:inset_0_0_0_2px_var(--primary)]', ]
+[ 'group/tree-row relative box-border flex h-(--tree-row-height) w-full min-w-0 cursor-default items-center gap-(--tree-gap) rounded-ctl pe-(--tree-pad-x) leading-(--tree-row-height) select-none', // Logical, so a row's own `ps-*` (ObjectTree's capped indent) merges with it, and the indent follows the text direction. 'ps-[calc(var(--tree-pad-x)+(var(--tree-level,1)-1)*var(--tree-indent))]', 'hover:not-data-disabled:not-data-selected:bg-secondary data-selected:bg-primary/16 data-current:font-medium data-disabled:opacity-50 data-pending:cursor-progress', 'group-focus-visible/tree-item:[box-shadow:inset_0_0_0_2px_var(--ring)]', 'group-data-dimmed/tree-item:opacity-60 group-data-drop-target/tree-item:bg-secondary group-data-drop-target/tree-item:[box-shadow:inset_0_0_0_2px_var(--primary)]', ]
 ```
 
 No variants.

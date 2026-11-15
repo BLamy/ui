@@ -23,6 +23,7 @@ export default function Variants() {
         <Button variant="ghost">Skip</Button>
         <Button variant="quiet">Hide</Button>
         <Button variant="destructive">Delete</Button>
+        <Button variant="plain">Not now</Button>
         <Button variant="link">Learn more</Button>
       </Row>
       <Row label="size">

@@ -13,7 +13,8 @@ import { cn } from '@/lib/utils';
 export const previewPanelVariants = cva('flex min-w-0 flex-col gap-2', {
   variants: {
     variant: {
-      card: 'rounded-panel bg-secondary p-3',
+      /** An outlined well, not the field fill: a read-out next to an Input mustn't look like a second input. */
+      card: 'rounded-panel p-3 shadow-hairline',
       plain: 'px-1',
     },
   },

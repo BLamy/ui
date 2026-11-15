@@ -2,6 +2,7 @@
    pull requests use), where the composer posts real comments with live data. Live lists are GitHub's 50 newest per
    state; the search box filters what's loaded. */
 import { useState } from 'react';
+import { EmptyState } from '@/components/ui/empty-state';
 import { cn } from '@/lib/utils';
 import { IssueCard, UserName } from './cards';
 import { labelOf } from './github-api';
@@ -45,7 +46,7 @@ export function IssueList({ ui, nav, labelFilter }: { ui: Layout; nav: Nav; labe
                     meta={<>#{i.number} {i.state === 'open' ? 'opened' : 'was closed'} {i.when} by <UserName user={i.author} className="font-normal text-muted-foreground" />{i.milestone ? <span className="ml-2 inline-flex items-center gap-1"><Oct name="history" size={12} />{i.milestone}</span> : null}</>}
                     assignees={i.assignees} comments={i.comments} />
                 ))}
-                {rows.length === 0 ? <div className="px-4 py-10 text-center text-muted-foreground">{list.length ? 'No results matched your search.' : `No ${state} issues.`}</div> : null}
+                {rows.length === 0 ? <EmptyState size="sm" role="status" className="py-10" title={list.length ? 'No results matched your search.' : `No ${state} issues.`} /> : null}
               </>
             );
           }}

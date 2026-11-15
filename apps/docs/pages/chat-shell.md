@@ -41,7 +41,7 @@ export function Chat() {
   return (
     <ChatShell breakpoint={880} tint="#0A84FF">
       <ChatShellNav>
-        <Tabs variant="workspace" defaultValue="hq" className="contents">
+        <Tabs variant="switcher" defaultValue="hq" className="contents">
           <TabsBar>
             <TabsList aria-label="Workspaces">
               <TabsTab value="hq" aria-label="HQ">
@@ -152,7 +152,7 @@ The smallest shell is just `ChatShellMain`: a header, a transcript and a compose
 
 ### The rail
 
-`Tabs variant="workspace"`, tiles in Discord's style: a tile is a circle at rest and morphs into a rounded square when hovered or selected, and the pill on its leading edge grows from the unread nub to half height on hover and full height when selected — corners and pill on springs, a small dip on press.
+`Tabs variant="switcher"`, tiles in Discord's style: a tile is a circle at rest and morphs into a rounded square when hovered or selected, and the pill on its leading edge grows from the unread nub to half height on hover and full height when selected — corners and pill on springs, a small dip on press.
 
 {% demo src="chat-shell/workspace-rail" %}
 

@@ -13,7 +13,7 @@ import { Icon } from '@/lib/icon';
 
 /** A bar button that goes back: the chevron hugs the leading edge, the label follows. */
 export const barBackButton = [
-  'bl-btn flex cursor-pointer items-center border-0 bg-transparent py-1.5 pr-2 pl-0 [font-family:inherit] text-body text-primary outline-none',
+  'bl-btn flex cursor-pointer items-center border-0 bg-transparent py-1.5 pe-2 ps-0 [font-family:inherit] text-body text-primary outline-none',
   'focus-visible:rounded-lg focus-visible:ring-2 focus-visible:ring-ring',
 ].join(' ');
 

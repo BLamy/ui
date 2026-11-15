@@ -23,11 +23,11 @@ export type { IndexBarJumpReason };
    under that parent widen their trailing inset by it, so chevrons and accessories stay clear of the letters. Opt out
    with insetContent={false}. ══ */
 
-export type IndexBarKey = string | number;
+export type IndexBarValue = string | number;
 
-export interface IndexBarItem<K extends IndexBarKey = IndexBarKey> {
+export interface IndexBarItem<K extends IndexBarValue = IndexBarValue> {
   /** The stop's identity, passed to `onJump` and matched by `current`. Default: its index, as a string. */
-  key?: K;
+  value?: K;
   /** What the rail shows: a letter, or nothing for a dot (a dash in the wave). */
   label?: string;
   /** The stop's name: the card's title and the option's accessible name (default `label`, else "Stop n"). */
@@ -47,21 +47,21 @@ const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
 /** The UIKit A–Z rail's items: every letter, with the ones not in `available` disabled (all enabled when omitted). */
 export function alphabetItems(available?: Iterable<string>): IndexBarItem<string>[] {
   const set = available ? new Set(Array.from(available, (l) => l.toUpperCase())) : null;
-  return ALPHABET.map((letter) => ({ key: letter, label: letter, disabled: set ? !set.has(letter) : false }));
+  return ALPHABET.map((letter) => ({ value: letter, label: letter, disabled: set ? !set.has(letter) : false }));
 }
 
-interface Point<K extends IndexBarKey> {
+interface Point<K extends IndexBarValue> {
   key: K | string; label: string; preview: ReactNode | null; caption: string | null; disabled: boolean; level: number;
   trailing: ReactNode | null; item: IndexBarItem<K>;
 }
 
-function points<K extends IndexBarKey>(items: ReadonlyArray<IndexBarItem<K> | K>): Point<K>[] {
+function points<K extends IndexBarValue>(items: ReadonlyArray<IndexBarItem<K> | K>): Point<K>[] {
   return items.map((it, i) => (it !== null && typeof it === 'object')
     ? {
-        key: it.key ?? String(i), label: it.label ?? '', preview: it.preview ?? null, caption: it.caption || null,
+        key: it.value ?? String(i), label: it.label ?? '', preview: it.preview ?? null, caption: it.caption || null,
         disabled: !!it.disabled, level: it.level ?? 1, trailing: it.trailing ?? null, item: it,
       }
-    : { key: it, label: String(it), preview: null, caption: null, disabled: false, level: 1, trailing: null, item: { key: it, label: String(it) } });
+    : { key: it, label: String(it), preview: null, caption: null, disabled: false, level: 1, trailing: null, item: { value: it, label: String(it) } });
 }
 
 export const indexBarVariants = cva(
@@ -75,7 +75,7 @@ export const indexBarVariants = cva(
   },
 );
 
-export interface IndexBarJumpDetails<K extends IndexBarKey = string> {
+export interface IndexBarJumpDetails<K extends IndexBarValue = string> {
   /** The stop's position on the rail. */
   index: number;
   /** The item as you passed it. */
@@ -86,16 +86,16 @@ export interface IndexBarJumpDetails<K extends IndexBarKey = string> {
   event?: Event;
 }
 
-export type IndexBarProps<K extends IndexBarKey = string> = Omit<ComponentProps<'div'>, 'children'> & {
-  /** The stops, top to bottom: items, or bare keys (a letter, an id). For the A–Z rail, `alphabetItems(…)`. */
+export type IndexBarProps<K extends IndexBarValue = string> = Omit<ComponentProps<'div'>, 'children'> & {
+  /** The stops, top to bottom: items, or bare values (a letter, an id). For the A–Z rail, `alphabetItems(…)`. */
   items: ReadonlyArray<IndexBarItem<K> | K>;
   /** Each time the rail lands on another stop. */
-  onJump?: (key: K, details: IndexBarJumpDetails<K>) => void;
+  onJump?: (value: K, details: IndexBarJumpDetails<K>) => void;
   /** `default` renders letters or dots with a bubble; `wave` renders dashes that swell around the pointer. */
   variant?: 'default' | 'wave';
   /** Edge the rail sits on (`end` by default); the bubble or card appears on the inner side. */
   side?: 'start' | 'end';
-  /** Key of the stop you are at (the turn in view, the section on screen): `aria-current`, and in the wave a full-length
+  /** Value of the stop you are at (the turn in view, the section on screen): `aria-current`, and in the wave a full-length
    *  dash in the tint. */
   current?: K;
   /** `wave` only: hovering (or focusing) the rail opens a card listing every stop (an outline) in place of the
@@ -120,7 +120,7 @@ const beside = (side: 'start' | 'end', gap: 'near' | 'far') =>
     ? cn('start-full origin-left rtl:origin-right', gap === 'far' ? 'ms-2.5' : 'ms-1')
     : cn('end-full origin-right rtl:origin-left', gap === 'far' ? 'me-2.5' : 'me-1');
 
-export function IndexBar<K extends IndexBarKey = string>({
+export function IndexBar<K extends IndexBarValue = string>({
   items, onJump, variant = 'default', side = 'end', current, panel = false, panelTitle, previewLines = 2, previewWidth = 260,
   insetContent = true, className, style, 'aria-label': ariaLabel = 'Jump to section', ...props
 }: IndexBarProps<K>) {

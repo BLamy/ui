@@ -16,8 +16,6 @@
     "DialogClose",
     "DialogBack",
     "DialogView",
-    "SurfaceFlow",
-    "SurfaceFlowTitle",
     "dialogVariants",
     "createDialogController",
     "AlertDialog",

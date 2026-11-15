@@ -2,12 +2,12 @@ import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Button } from '@/components/ui/button';
 import { createDataTableController, type DataTableColumn, type DataTableController } from '@/components/ui/data-table';
-import { RequestLink, RequestTable } from '@/components/ui/request-table';
+import { RequestTableLink, RequestTable } from '@/components/ui/request-table';
 import { Slider } from '@/components/ui/slider';
 import { Icon } from '@/lib/icon';
 import { formatLogTime, type RowId } from '@/lib/log-list-model';
 import { usePlaybackClock, usePlaybackState } from '@/lib/playback';
-import { requestTimeRange, type RequestRow, type RequestTone } from '@/lib/request-table-model';
+import { requestTimeRange, type RequestRow } from '@/lib/request-table-model';
 import { BLProvider } from '@/lib/theme';
 import { Phone as PhoneFrame } from '../stories/frame';
 
@@ -44,7 +44,10 @@ const ROUTES: { url: (n: number) => string; method: string; type: string; size: 
   { url: () => 'https://shop.example.com/styles/app.css', method: 'GET', type: 'css', size: 34_000 },
 ];
 
-const TONES: Record<string, RequestTone> = { fetch: 'primary', xhr: 'primary', script: 'warning', img: 'success', font: 'accent', css: 'accent' };
+/** A bar's look by request type: a tone where it means something, a tint of your own for a category. */
+const LOOKS: Record<string, Pick<RequestRow, 'tone' | 'tint'>> = {
+  fetch: {}, xhr: {}, script: { tone: 'warning' }, img: { tone: 'success' }, font: { tint: 'var(--chart-5)' }, css: { tint: 'var(--chart-5)' },
+};
 
 function makeRequests(count: number, { seed = 5, step = 120 }: { seed?: number; step?: number } = {}): RequestRow[] {
   const random = seeded(seed);
@@ -64,7 +67,7 @@ function makeRequests(count: number, { seed = 5, step = 120 }: { seed?: number; 
       size: status === 0 ? undefined : Math.floor(route.size * (0.4 + random())),
       time,
       duration: Math.floor(8 + random() * random() * 900),
-      tone: TONES[route.type],
+      ...LOOKS[route.type],
     };
   }
   return rows;
@@ -91,29 +94,29 @@ function PhoneWindow({ children, dark }: { children?: ReactNode; dark?: boolean 
   );
 }
 
-const PLAYHEAD = SMALL[60].time;
+const NOW = SMALL[60].time;
 
 export const Default: Story = {
-  args: { rows: SMALL, playhead: PLAYHEAD, timeRange: [0, SMALL[120].time ?? 1], defaultValue: 'request-52', density: 'compact', layout: 'auto' },
+  args: { rows: SMALL, currentTime: NOW, timeRange: [0, SMALL[120].time ?? 1], defaultValue: 'request-52', density: 'compact', layout: 'auto' },
   render: (args) => <Desktop><RequestTable aria-label="Requests" {...args} className="min-h-0 flex-1" /></Desktop>,
 };
 
 /** Taller rows, for touch. */
 export const Comfortable: Story = {
-  render: () => <Desktop><RequestTable aria-label="Requests" rows={SMALL} playhead={PLAYHEAD} timeRange={[0, SMALL[120].time ?? 1]} density="comfortable" className="min-h-0 flex-1" /></Desktop>,
+  render: () => <Desktop><RequestTable aria-label="Requests" rows={SMALL} currentTime={NOW} timeRange={[0, SMALL[120].time ?? 1]} density="comfortable" className="min-h-0 flex-1" /></Desktop>,
 };
 
 export const Dark: Story = {
-  render: () => <Desktop dark><RequestTable aria-label="Requests" rows={SMALL} playhead={PLAYHEAD} timeRange={[0, SMALL[120].time ?? 1]} defaultValue="request-52" className="min-h-0 flex-1" /></Desktop>,
+  render: () => <Desktop dark><RequestTable aria-label="Requests" rows={SMALL} currentTime={NOW} timeRange={[0, SMALL[120].time ?? 1]} defaultValue="request-52" className="min-h-0 flex-1" /></Desktop>,
 };
 
 /** Under 480 px of its own width: two-line rows, with sorting in a menu. */
 export const Phone: Story = {
-  render: () => <PhoneWindow><RequestTable aria-label="Requests" rows={SMALL} playhead={PLAYHEAD} timeRange={[0, SMALL[120].time ?? 1]} className="min-h-0 flex-1" /></PhoneWindow>,
+  render: () => <PhoneWindow><RequestTable aria-label="Requests" rows={SMALL} currentTime={NOW} timeRange={[0, SMALL[120].time ?? 1]} className="min-h-0 flex-1" /></PhoneWindow>,
 };
 
 export const PhoneDark: Story = {
-  render: () => <PhoneWindow dark><RequestTable aria-label="Requests" rows={SMALL} playhead={PLAYHEAD} timeRange={[0, SMALL[120].time ?? 1]} className="min-h-0 flex-1" /></PhoneWindow>,
+  render: () => <PhoneWindow dark><RequestTable aria-label="Requests" rows={SMALL} currentTime={NOW} timeRange={[0, SMALL[120].time ?? 1]} className="min-h-0 flex-1" /></PhoneWindow>,
 };
 
 /** Driven by the table's own width and not the viewport's: in a side panel on a wide window it stacks too. */
@@ -122,7 +125,7 @@ export const SidePanel: Story = {
     <Desktop>
       <div className="flex min-h-0 flex-1 gap-2">
         <div className="grid min-w-0 flex-1 place-items-center rounded-panel bg-card text-footnote text-muted-foreground shadow-hairline">Preview</div>
-        <RequestTable aria-label="Requests" rows={SMALL} playhead={PLAYHEAD} timeRange={[0, SMALL[120].time ?? 1]} className="w-[360px] shrink-0" />
+        <RequestTable aria-label="Requests" rows={SMALL} currentTime={NOW} timeRange={[0, SMALL[120].time ?? 1]} className="w-[360px] shrink-0" />
       </div>
     </Desktop>
   ),
@@ -134,7 +137,7 @@ function Transport({ rows, controller, rate }: { rows: readonly RequestRow[]; co
   const playing = usePlaybackState(clock, (s) => s.playing);
   const shown = usePlaybackState(clock, (s) => Math.round(s.time * 4) / 4);
   useEffect(() => {
-    const tick = () => controller.setPlayhead(clock.getState().time * 1000);
+    const tick = () => controller.setCurrentTime(clock.getState().time * 1000);
     tick();
     return clock.subscribe(tick);
   }, [clock, controller]);
@@ -197,11 +200,11 @@ const PAIR: PairRow[] = (() => {
     const server = `s${i}`;
     rows.push({
       id: browser, url: `https://shop.example.com/_serverFn/${fn}`, method: 'POST', status, type: 'fetch', size: 300 + Math.floor(random() * 2000),
-      time: at, duration: took, tone: 'primary', other: server, otherLabel: 'Server function',
+      time: at, duration: took, other: server, otherLabel: 'Server function',
     });
     rows.push({
       id: server, url: `server:${fn}`, name: `${fn}()`, method: 'FN', status, type: 'function',
-      time: at + 14, duration: took - 28, tone: 'accent', other: browser, otherLabel: 'Browser call',
+      time: at + 14, duration: took - 28, tint: 'var(--chart-5)', other: browser, otherLabel: 'Browser call',
     });
     at += 60 + Math.floor(random() * 500);
   }
@@ -212,7 +215,7 @@ function PairDemo() {
   const [selected, setSelected] = useState<RowId | null>('s8');
   const [seekedTo, setSeekedTo] = useState('Press a row to seek to it');
   const renderLink = useCallback((row: PairRow) => (
-    row.other ? <RequestLink onClick={() => setSelected(row.other ?? null)}>{row.otherLabel}</RequestLink> : null
+    row.other ? <RequestTableLink onClick={() => setSelected(row.other ?? null)}>{row.otherLabel}</RequestTableLink> : null
   ), []);
   return (
     <>
@@ -225,7 +228,7 @@ function PairDemo() {
         onValueChange={setSelected}
         onAction={(_id, { row }) => setSeekedTo(`Seek to ${formatLogTime(row.time ?? 0)}`)}
         renderLink={renderLink}
-        playhead={PAIR[40].time}
+        currentTime={PAIR[40].time}
         className="min-h-0 flex-1"
       />
     </>
@@ -242,16 +245,16 @@ export const LinkedPairPhone: Story = {
 
 /** Columns of your own, beside the built-ins: an IPC channel, where it went, and a status in words. */
 const IPC: (RequestRow & { from: string; to: string })[] = [
-  { id: 1, url: 'cart:add', method: 'invoke', status: 'ok', type: 'ipc', time: 12, duration: 3, from: 'renderer', to: 'main', tone: 'accent' },
-  { id: 2, url: 'cart:list', method: 'invoke', status: 'ok', type: 'ipc', time: 44, duration: 8, from: 'renderer', to: 'main', tone: 'accent' },
-  { id: 3, url: 'window:focus', method: 'send', status: 'sent', type: 'ipc-to-renderer', time: 80, from: 'main', to: 'renderer', tone: 'neutral' },
-  { id: 4, url: 'files:read', method: 'invoke', status: 'threw', failed: true, type: 'ipc', time: 130, duration: 22, from: 'renderer-2', to: 'main', error: 'ENOENT: no such file', tone: 'accent' },
-  { id: 5, url: 'updates:check', method: 'invoke', pending: true, type: 'ipc', time: 180, from: 'renderer', to: 'main', tone: 'accent' },
+  { id: 1, url: 'cart:add', method: 'invoke', status: 'ok', type: 'ipc', time: 12, duration: 3, from: 'renderer', to: 'main', tint: 'var(--chart-5)' },
+  { id: 2, url: 'cart:list', method: 'invoke', status: 'ok', type: 'ipc', time: 44, duration: 8, from: 'renderer', to: 'main', tint: 'var(--chart-5)' },
+  { id: 3, url: 'window:focus', method: 'send', status: 'sent', type: 'ipc-to-renderer', time: 80, from: 'main', to: 'renderer', tone: 'muted' },
+  { id: 4, url: 'files:read', method: 'invoke', status: 'threw', failed: true, type: 'ipc', time: 130, duration: 22, from: 'renderer-2', to: 'main', error: 'ENOENT: no such file', tint: 'var(--chart-5)' },
+  { id: 5, url: 'updates:check', method: 'invoke', pending: true, type: 'ipc', time: 180, from: 'renderer', to: 'main', tint: 'var(--chart-5)' },
 ];
 const IPC_COLUMNS: (DataTableColumn<(typeof IPC)[number]> | 'status' | 'duration' | 'waterfall')[] = [
-  { id: 'url', title: 'Channel', flex: 2, minWidth: 140 },
-  { id: 'from', title: 'From', width: 90 },
-  { id: 'to', title: 'To', width: 70 },
+  { id: 'url', header: 'Channel', flex: 2, minWidth: 140 },
+  { id: 'from', header: 'From', width: 90 },
+  { id: 'to', header: 'To', width: 70 },
   'status',
   'duration',
   'waterfall',

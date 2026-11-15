@@ -15,19 +15,19 @@ import { AnimatedHeight } from '@/components/ui/animated-height'
 {% tab title="npm" %}
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 
-Import the stylesheet once at your app's entry, then the parts from the package root:
+Import the stylesheet once at your app's entry, then the parts from their module:
 
 ```tsx
 import '@brett_lamy/ui/styles.css'
 
-import { AnimatedHeight } from '@brett_lamy/ui'
+import { AnimatedHeight } from '@brett_lamy/ui/animated-height'
 ```
 {% endtab %}
 {% endtabs %}
 
 ## AnimatedHeight
 
-Wrap anything whose height changes. It observes its content with a `ResizeObserver`, so you do not tell it the new height: a list gaining rows, an image loading or text reflowing all animate. It clips its content (`overflow: hidden`), so put outlines, focus rings and shadows of children inside its padding, and style the tray itself (background, radius) on the `AnimatedHeight`.
+Wrap anything whose height changes. It observes its content with a `ResizeObserver`, so you do not tell it the new height: a list gaining rows, an image loading or text reflowing all animate. It clips its content (`overflow: hidden`), so put outlines, focus rings and shadows of children inside its padding, and style the tray itself (background, radius, padding) on the `AnimatedHeight`: it is `box-content`, so its padding and border add to the height it animates rather than cutting the content short.
 
 {% demo src="animated-height/disclosure" %}
 

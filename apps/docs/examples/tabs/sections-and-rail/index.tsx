@@ -125,7 +125,7 @@ function WorkspaceTile({
   )
 }
 
-// The rail: a vertical Tabs with a `workspace` bar. Home is
+// The rail: a vertical Tabs with a `switcher` bar. Home is
 // the first tab, over a separator; Add is an action, not a tab.
 function Rail({
   server,
@@ -138,7 +138,7 @@ function Rail({
 }) {
   return (
     <Tabs
-      variant="workspace"
+      variant="switcher"
       value={server}
       onValueChange={(next) => {
         if (next) setServer(next)

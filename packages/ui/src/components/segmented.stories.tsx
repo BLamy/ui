@@ -132,7 +132,7 @@ function LookAlikes({ size }: { size: SegmentSize }) {
         </Tabs>
       )}
       <ToggleGroup
-        variant="filled" size={size} aria-label="ToggleGroup" className="w-full"
+        variant="segmented" size={size} aria-label="ToggleGroup" className="w-full"
         value={[value]} deselectable={false} onValueChange={([v]) => v && setValue(v)}
       >
         {days.map((d) => <ToggleGroupItem key={d.value} value={d.value}>{d.label}</ToggleGroupItem>)}
@@ -142,7 +142,7 @@ function LookAlikes({ size }: { size: SegmentSize }) {
 }
 
 /** One track, three components: Segmented (radios), Tabs `variant="segmented"` (tabs; one size) and ToggleGroup
-    `variant="filled"` (pressed buttons) draw the same tray, segments and card at the same `size`. */
+    `variant="segmented"` (pressed buttons) draw the same tray, segments and card at the same `size`. */
 export const SharedTrack: Story = {
   render: () => (
     <div className="flex flex-col gap-5">

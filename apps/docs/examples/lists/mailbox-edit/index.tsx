@@ -70,14 +70,14 @@ function MailboxEdit() {
               }
               divider={i < mail.length - 1}
               onClick={() => editing && toggle(m.id)}
-              trailingActions={[{ label: 'Delete', destructive: true, onAction: () => remove([m.id]) }]}
+              endActions={[{ label: 'Delete', destructive: true, onAction: () => remove([m.id]) }]}
             />
           ))}
         </ListSection>
       </List>
       {mail.length === 0 && (
         <Button
-          variant="link"
+          variant="plain"
           style={{ display: 'block', margin: '0 auto' }}
           onClick={() => setMail(initialMail)}
         >

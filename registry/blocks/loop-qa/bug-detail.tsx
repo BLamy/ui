@@ -7,7 +7,8 @@ import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { MarkdownView } from '@/components/ui/markdown-view';
 import { replayDemoEvents } from '@brett_lamy/docstream/replay/demo';
-import { ReplayPreview, formatReplayTime, type ReplayPreviewHandle } from '@/components/ui/replay-preview';
+import { formatReplayTime } from '@brett_lamy/docstream/replay';
+import { ReplayPreview, type ReplayPreviewHandle } from '@/components/ui/replay-preview';
 import {
   NavigationStackBar, NavigationStackContent, NavigationStackPage, NavigationStackTitle, NavigationStackTrailing,
 } from '@/components/ui/navigation-stack';
@@ -223,7 +224,7 @@ function Details({ bug: b, project }: { bug: Bug; project: string }) {
   const rows: [string, string, ReactNode][] = [
     ['Discovered', 'clock', <>{relativeTime(b.discovered)} <span className="text-muted-foreground">· {dateTime(b.discovered)}</span></>],
     ['Type', 'sparkle', `${b.kind}`],
-    ['Source', 'checklist', <RunPreview key="run" runId={b.runId} render={<Button variant="link" size={null} className="h-auto p-0 text-footnote" onClick={() => qa.open({ kind: 'run', id: b.runId })} />}>Test run #{b.runId.slice(4)}</RunPreview>],
+    ['Source', 'checklist', <RunPreview key="run" runId={b.runId} render={<Button variant="link" className="text-footnote" onClick={() => qa.open({ kind: 'run', id: b.runId })} />}>Test run #{b.runId.slice(4)}</RunPreview>],
     ['Journey', 'network', b.journey],
     ['Project', 'folder-closed', project],
     ['Webhook', 'paperplane', tracker ? `Filed in ${tracker.name}` : 'Not sent'],
@@ -262,7 +263,7 @@ function Details({ bug: b, project }: { bug: Bug; project: string }) {
           <div className="min-w-0 flex-1">
             <dt className="text-[11.5px] text-muted-foreground">Replay</dt>
             <dd className="m-0 mt-0.5 font-mono text-[11.5px] leading-[16px] break-all">{b.replayId}</dd>
-            <Button variant="link" size={null} className="mt-1 h-auto p-0 text-[12.5px]" onClick={() => qa.copy(`https://loopqa.dev/replays/${b.replayId}`, 'Copied replay link')}>Copy replay link</Button>
+            <Button variant="link" className="mt-1 text-[12.5px]" onClick={() => qa.copy(`https://loopqa.dev/replays/${b.replayId}`, 'Copied replay link')}>Copy replay link</Button>
           </div>
         </div>
       </dl>

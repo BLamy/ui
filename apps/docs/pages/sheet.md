@@ -19,21 +19,21 @@ import {
 {% tab title="npm" %}
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 
-Import the stylesheet once at your app's entry, then the parts from the package root:
+Import the stylesheet once at your app's entry, then the parts from their module:
 
 ```tsx
 import '@brett_lamy/ui/styles.css'
 
 import {
   Sheet, SheetTrigger, SheetBackdrop, SheetContent, SheetTitle,
-} from '@brett_lamy/ui'
+} from '@brett_lamy/ui/sheet'
 ```
 {% endtab %}
 {% endtabs %}
 
 ## Usage
 
-`Sheet` is the root and takes the `side`. `SheetTrigger` is the button that opens it (`render` one of ours), `SheetBackdrop` the scrim and `SheetContent` the panel. `SheetClose` on its own is the round × in the corner; with children or `render` it is any element, such as the Apply button, and its `action` runs before the sheet closes. `SheetFooter` pins its actions to the bottom (`mt-auto`), so a side panel keeps its button at the foot whatever the content height.
+`Sheet` is the root and takes the `side`. `SheetTrigger` is the button that opens it (`render` one of ours), `SheetBackdrop` the scrim and `SheetContent` the panel. `SheetClose` on its own is the round × in the corner; with children or `render` it is any element, such as the Apply button, and its `action` runs before the sheet closes. `SheetFooter` pins its actions to the bottom (`mt-auto`), so a side panel keeps its button at the foot whatever the content height: stacked full width (`orientation="vertical"`, the default), or side by side sharing the width (`orientation="horizontal"`), as in a Dialog presented as a sheet.
 
 ```tsx
 <Sheet side="bottom">
@@ -55,15 +55,15 @@ import {
 
 ## Sides
 
-The bottom sheet is full width with rounded top corners (the kit's modal radius, `rounded-sheet`), a 5px grabber (`grabber={false}` on the content removes it) and a height capped 48px short of its host. `top` has the same cap and respects the safe-area top; `left` and `right` (or the writing-direction `start` and `end`) are 85% of the host, up to 360px, full height. Every side follows a drag toward its edge: let go past the threshold, or flick, and it springs away; otherwise it springs back, on the kit's tray spring. `swipe={false}` on the content turns the drag off (Escape and the scrim still close it). A press on the scrim closes it; `dismissible={false}` on the root refuses the scrim, Esc and the swipe (it resists and springs back, and `onDismissAttempt` runs) so the user has to choose an action. The sheet renders into BLProvider's root (see `useLayerHost`) — your app root, or a demo's frame — and stays inside it; without one it renders in the browser's top layer and covers the page.
+The bottom sheet is full width with rounded top corners (the kit's modal radius, `rounded-sheet`), a 5px grabber (`grabber={false}` on the content removes it) and a height capped 48px short of its host. `top` has the same cap and respects the safe-area top; `left` and `right` (or the writing-direction `start` and `end`) are 85% of the host, up to 360px, full height. Every side follows a drag toward its edge: let go past the threshold, or flick, and it springs away; otherwise it springs back, on the kit's tray spring. `swipe={false}` on the content turns the drag off (Escape and the scrim still close it). A press on the scrim closes it; `dismissible={false}` on the root refuses the scrim, Esc and the swipe (it resists and springs back, and `onDismissAttempt` runs) so the user has to choose an action: the bare `SheetClose` × and the grabber are left out (a sheet with snap points keeps its handle), and a `SheetClose` with children still closes it. The sheet renders into BLProvider's root (see `useLayerHost`) — your app root, or a demo's frame — and stays inside it; without one it renders in the browser's top layer and covers the page.
 
 {% demo src="sheet/sides" %}
 
 ## Contained, and the panel look
 
-`contained` renders the sheet inside its positioned parent rather than BLProvider's root: the Sheet writes a layer host there (`data-slot="sheet-host"`, `absolute inset-0`, `contain: layout`), so its scrim, panel, focus trap and Escape stay in that box and the rest of the page outside it stays usable. The host stacks at `z-index: var(--sheet-z, 30)`; set `--sheet-z` on the parent to move it. `modal={false}` puts the panel beside a usable box, with no scrim.
+`contained` renders the sheet inside its positioned parent rather than BLProvider's root: the Sheet writes a layer host there (`data-slot="sheet-host"`, `absolute inset-0`, `contain: layout`), so its scrim, panel, focus trap and Escape stay in that box and the rest of the page outside it stays usable. The host stacks at `z-index: var(--sheet-z, 30)`; set `--sheet-z` on the parent to move it. `modal={false}` puts the panel beside a usable box, with no scrim. In a browser without the top layer (UI SDK would portal the sheet to the body) the sheet renders into that host instead, so it stays contained there too.
 
-`SheetContent variant="panel"` is the edge panel without chrome: full length, flush with its edge, divided from the page by a hairline, no grabber, on the page background, 20rem wide up to 85% of the host. Its children are the whole panel (its own classes lay them out), which is what a drawer of navigation or an inspector wants. AdaptivePane's drawer and Sidebar's overlay are a contained Sheet with a panel.
+`SheetContent variant="panel"` is the edge panel without chrome: full length, flush with its edge, divided from the page by a hairline, no grabber, on the page background, 20rem wide up to 85% of the host. Its children are the whole panel (its own classes lay them out), which is what a drawer of navigation or an inspector wants. AdaptivePane's drawer and Sidebar's overlay are a contained Sheet with a panel, and [FloatingSheet](https://blamy.github.io/ui/#/floating-sheet) is a contained bottom Sheet.
 
 ```tsx
 <div className="relative h-full">
@@ -86,14 +86,17 @@ The bottom sheet is full width with rounded top corners (the kit's modal radius,
 
 ## A flow in a tray
 
-Give the root a `view` and put the content in a `SheetView`: each new `view` springs the sheet to its height, and the step and its `SheetTitle` slide in from the right (a view seen before comes back from the left), as a [Dialog](https://blamy.github.io/ui/#/dialog) flow does. Keep the `SheetHeader` outside the `SheetView`, as Dialog keeps its header bar outside `DialogView`: the title travels on its own and goes on naming the sheet. Without a `view`, `SheetView` still springs the sheet when its content changes in place (an error appearing). Use it for short, content-sized trays; a sheet with a scrolling body leaves it out.
+A flow in a sheet is built exactly like a [Dialog](https://blamy.github.io/ui/#/dialog) flow, so there is one way to go back on a phone. Give the root a `view` and put the content in a `SheetView`: each new `view` springs the sheet to its height, and the step and its `SheetTitle` slide in from the right (a view seen before comes back from the left). The header is the flow bar, `SheetHeader variant="bar"`: `SheetBack` (Dialog's `DialogBack`) on the leading edge, folded away with `hidden` on the first step and growing in after it, the `SheetTitle` taking the row, and the `SheetClose` × at the end of it. Keep the header outside the `SheetView`, as Dialog keeps its bar outside `DialogView`: the title travels on its own and goes on naming the sheet. Without a `view`, `SheetView` still springs the sheet when its content changes in place (an error appearing). Use it for short, content-sized trays; a sheet with a scrolling body leaves it out.
 
 ```tsx
 <Sheet view={step}>
   <SheetBackdrop />
   <SheetContent>
-    <SheetClose />
-    <SheetHeader><SheetTitle>{step === 'pick' ? 'Choose a plan' : 'Confirm'}</SheetTitle></SheetHeader>
+    <SheetHeader variant="bar">
+      <SheetBack hidden={step === 'pick'} onClick={() => setStep('pick')} />
+      <SheetTitle>{step === 'pick' ? 'Choose a plan' : 'Confirm'}</SheetTitle>
+      <SheetClose />
+    </SheetHeader>
     <SheetView>{step === 'pick' ? <PickPlan /> : <Confirm />}</SheetView>
   </SheetContent>
 </Sheet>
@@ -138,7 +141,7 @@ Like Dialog: focus is trapped, the rest of the host is inert, Esc closes, focus 
 
 ### Parts
 
-`SheetTitle`, `SheetDescription` and `SheetClose` are the Drawer's parts in the shared surface look (`surfaceTitleVariants`, `surfaceDescriptionVariants`, `closeButtonVariants` from `@/lib/surface`, also exported by Dialog); `SheetHeader` and `SheetBody` are Dialog's header and body under their own slots. `SheetFooter` is its own: a column of actions at the foot with 20px side padding. `SheetHandle` is the grabber as a control, for placing your own with `grabber={false}`; `sheetGrabberVariants({ handle })` is its look. `SheetView` is Dialog's `DialogView` in a sheet (the springing, sliding view of a flow; slot `dialog-view`).
+`SheetTitle`, `SheetDescription` and `SheetClose` are the Drawer's parts in the shared surface look (`surfaceTitleVariants`, `surfaceDescriptionVariants`, `closeButtonVariants` from `@/lib/surface`, also exported by Dialog); `SheetHeader` and `SheetBody` are Dialog's header and body under their own slots: `SheetHeader variant` is `default` (title over description, the × pinned in the corner) or `bar` (one row: `SheetBack` · `SheetTitle` · `SheetClose`). `SheetBack` is Dialog's `DialogBack` (slot `dialog-back`): the round ‹, `hidden` folds it away, its `onClick` steps your `view` back. In a `bar` header `SheetTitle` takes the free width and `SheetClose` sits in the row instead of the corner. `SheetFooter` is its own: the actions at the foot with 20px side padding, `orientation` `vertical` (default) or `horizontal`. `SheetHandle` is the grabber as a control, for placing your own with `grabber={false}`; `sheetGrabberVariants({ handle })` is its look. `SheetView` is Dialog's `DialogView` in a sheet (the springing, sliding view of a flow; slot `dialog-view`).
 
 ## Styling
 

@@ -6,7 +6,7 @@ import { cn, cx } from '@/lib/utils';
 
 /* ══ The segment track ══
    One tray, one segment and one sliding card, shared by Segmented, Tabs `variant="segmented"` and ToggleGroup
-   `variant="filled"`, so the three are pixel-alike at the same `size`. The track's height is Button's for the size
+   `variant="segmented"`, so the three are pixel-alike at the same `size`. The track's height is Button's for the size
    (32 / 36 / 44), the segments are 4px shorter (the track's 2px padding), and the card's radius is the track's
    minus that padding, so the corners stay concentric. Each component adds its own display (`flex` or
    `inline-flex`) and its selected-state attribute does the rest: `data-checked` (Segmented), `data-selected`
@@ -29,11 +29,15 @@ export const segmentTrackVariants = cva(
 );
 
 /** One segment: a label-sized button that shares the track's width with its siblings. Medium at rest, semibold
-    when selected. On a touch screen its hit area reaches 44px tall. */
+    when selected, dimmed while pressed. Its text steps with Button's and Toggle's (footnote, subhead, callout). On a
+    touch screen its hit area reaches 44px tall. */
 export const segmentItemVariants = cva(
   [
     'bl-btn relative box-border flex flex-1 cursor-pointer items-center justify-center gap-1.5 border-0 bg-transparent [font-family:inherit] font-medium whitespace-nowrap text-foreground outline-none [&_svg]:shrink-0',
     'data-checked:font-semibold data-selected:font-semibold data-pressed:font-semibold',
+    // An unselected segment dims under the finger (as on iOS) until the card slides to it.
+    'transition-opacity duration-spring-snappy ease-spring-snappy motion-reduce:transition-none',
+    'active:not-data-disabled:not-data-checked:not-data-selected:not-data-pressed:opacity-60',
     // Stacked, each segment keeps its height instead of sharing the track's.
     'group-data-[orientation=vertical]/segments:flex-none',
     // The solid ring of every control, without the offset: the neighbours are 2px away.
@@ -46,7 +50,7 @@ export const segmentItemVariants = cva(
       size: {
         sm: 'h-7 px-2.5 text-footnote leading-[inherit] rounded-[calc(var(--radius-lg)-2px)] pointer-coarse:after:-inset-y-2',
         default: 'h-8 px-3 text-subhead leading-[inherit] rounded-[calc(var(--radius-ctl)-2px)] pointer-coarse:after:-inset-y-1.5',
-        lg: 'h-10 px-3.5 text-body leading-[inherit] rounded-[calc(var(--radius-xl)-2px)] pointer-coarse:after:-inset-y-0.5',
+        lg: 'h-10 px-3.5 text-callout leading-[inherit] rounded-[calc(var(--radius-xl)-2px)] pointer-coarse:after:-inset-y-0.5',
       },
     },
     defaultVariants: { size: 'default' },

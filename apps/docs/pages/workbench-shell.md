@@ -100,7 +100,7 @@ The size class is measured on the shell's own box (`useSizeClass` with `workbenc
 
 ## The sidebar
 
-`WorkbenchSidebar` holds whatever navigation you give it. The generic [Sidebar](https://blamy.github.io/ui/#/sidebar) parts fit it — `SidebarHeader` with a `SidebarWorkspace` and a `WorkbenchSidebarClose`, `SidebarContent` › `SidebarSection` › `SidebarItem` for the threads, `SidebarFooter` — as the compositions below do; call `useWorkbenchShell().setSidebarOpen(false)` when a thread is picked so the compact drawer closes. T3 Code's own thread sidebar (search, project switcher, collapsible Active / Settled groups with running and unread states, "Show more", an update notice) is part of the **t3-clone** block above — `npx shadcn add` copies it into your app as `components/blocks/t3-clone/components/thread-sidebar.tsx`.
+`WorkbenchSidebar` holds whatever navigation you give it. The generic [Sidebar](https://blamy.github.io/ui/#/sidebar) parts fit it — `SidebarHeader` with a `SidebarAccount` and a `WorkbenchSidebarClose`, `SidebarContent` › `SidebarSection` › `SidebarItem` for the threads, `SidebarFooter` — as the compositions below do; call `useWorkbenchShell().setSidebarOpen(false)` when a thread is picked so the compact drawer closes. T3 Code's own thread sidebar (search, project switcher, collapsible Active / Settled groups with running and unread states, "Show more", an update notice) is part of the **t3-clone** block above — `npx shadcn add` copies it into your app as `components/blocks/t3-clone/components/thread-sidebar.tsx`.
 
 ## Conversation parts
 
@@ -110,12 +110,12 @@ Library parts (`@/components/ui/conversation`), used by the block and by any cha
 | --- | --- |
 | `Conversation` | Root; `empty` switches to the empty state. Keep the children in this order. |
 | `ConversationEmpty` | Above the composer while empty (`title`, `description`, `icon`: the kit's EmptyState); leaves upward when the thread starts. |
-| `ConversationMessages` | The messages, in a `MessageScroller`: each `UserMessage` anchors near the top, replies grow below. `threadKey`, `streaming`, `peek`, `aria-label`. |
+| `ConversationMessages` | The messages, in a `MessageScroller`: each `ConversationUserMessage` anchors near the top, replies grow below. `threadKey`, `streaming`, `peek`, `aria-label`. |
 | `ConversationComposer` | Docks the composer: centred while empty, at the bottom after — the same element, so it flies between the two. |
-| `ConversationSuggestions` · `Suggestion` | Chips under the empty composer. |
-| `UserMessage` | Right-aligned bubble, with its `attachments` above it. |
-| `AssistantMessage` · `MessageMarkdown` · `ConversationTyping` | The reply: streaming Markdown, with the typing dots until the first token. |
-| `WorkLog` · `ToolCall` | "Worked for 42s", expanding into the steps behind the reply — a title, a `detail`, a `code` well, and a `status`. |
+| `ConversationSuggestions` · `ConversationSuggestion` | Chips under the empty composer. |
+| `ConversationUserMessage` | Right-aligned bubble, with its `attachments` above it. |
+| `ConversationAssistantMessage` · `ConversationMarkdown` · `ConversationTyping` | The reply: streaming Markdown, with the typing dots until the first token. |
+| `ConversationWorkLog` · `ConversationToolCall` | "Worked for 42s", expanding into the steps behind the reply — a title, a `description`, a `code` well, and a `status`. |
 
 ## Terminal and surface parts
 

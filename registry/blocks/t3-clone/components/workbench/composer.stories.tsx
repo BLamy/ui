@@ -100,16 +100,16 @@ interface T3Props {
   streaming?: boolean;
   collapsed?: ComposerCollapse;
   collapseOnScroll?: React.RefObject<HTMLElement | null>;
-  collapseTo?: 'compact' | 'fab';
+  collapse?: 'compact' | 'fab';
   topBump?: boolean;
 }
-function T3Composer({ open, defaultOpen, attachments = true, streaming = true, collapsed, collapseOnScroll, collapseTo, topBump = true }: T3Props) {
+function T3Composer({ open, defaultOpen, attachments = true, streaming = true, collapsed, collapseOnScroll, collapse, topBump = true }: T3Props) {
   const [busy, setBusy] = useState(streaming);
   return (
     <Composer
       defaultCollapsed={collapsed}
       collapseOnScroll={collapseOnScroll}
-      collapseTo={collapseTo}
+      collapse={collapse}
       streaming={busy}
       onStop={() => setBusy(false)}
       onSubmit={() => setBusy(true)}
@@ -117,7 +117,7 @@ function T3Composer({ open, defaultOpen, attachments = true, streaming = true, c
       defaultValue={attachments ? SEED_MARKDOWN : ''}
     >
       {topBump ? <ComposerBump side="top" draggable open={open} defaultOpen={defaultOpen} maxReveal={220}>
-        <ComposerBumpContent label="Monitor output">
+        <ComposerBumpContent aria-label="Monitor output">
           <div className="flex flex-col gap-1.5 px-3.5 pt-3 pb-2 font-mono text-[11.5px] leading-[1.5] text-muted-foreground">
             <div><span className="text-success">✓</span> vite v6 ready in 412 ms</div>
             <div><span className="text-success">✓</span> 287 stories indexed</div>
@@ -144,7 +144,7 @@ function T3Composer({ open, defaultOpen, attachments = true, streaming = true, c
             <ComposerSelect aria-label="Access" icon="lock-rounded" items={ACCESS} />
           </ComposerOptions>
           <ComposerSpacer />
-          <ComposerAdd icon="paperclip-diagonal" label="Attach files" />
+          <ComposerAdd icon="paperclip-diagonal" aria-label="Attach files" />
           <ComposerStop variant="solid" />
           <ComposerSend morph={false} />
         </ComposerFooter>
@@ -229,7 +229,7 @@ function ScrollPage({ appearance = 'dark' }: { appearance?: Appearance }) {
         <ChatThread scroller={scroller} />
         <div style={{ position: 'absolute', left: 0, right: 0, bottom: 16, padding: '0 24px' }}>
           <div style={{ maxWidth: 720, margin: '0 auto' }}>
-            <T3Composer collapseOnScroll={scroller} collapseTo="fab" topBump={false} attachments={false} streaming={false} />
+            <T3Composer collapseOnScroll={scroller} collapse="fab" topBump={false} attachments={false} streaming={false} />
           </div>
         </div>
       </ThemeScope>
@@ -265,7 +265,7 @@ export const Addons: Story = {
             <ComposerText icon="doc-corner">block-start · composer.tsx</ComposerText>
           </ComposerAddon>
           <ComposerAddon align="inline-start">
-            <ComposerAdd icon="paperclip-diagonal" label="Attach files" />
+            <ComposerAdd icon="paperclip-diagonal" aria-label="Attach files" />
           </ComposerAddon>
           <ComposerInput />
           <ComposerAddon align="inline-end">
@@ -403,7 +403,7 @@ const MIXED_MARKDOWN = "Here's the repro and the logs ![header.png](attachment:m
 
 function FilesComposer({ attachments = [], value = '' }: { attachments?: ComposerAttachment[]; value?: string }) {
   return (
-    <Composer defaultAttachments={attachments} defaultValue={value} maxFileSize={25 * 1024 * 1024} maxFiles={10}>
+    <Composer defaultAttachments={attachments} defaultValue={value} maxSize={25 * 1024 * 1024} maxFiles={10}>
       <ComposerCard>
         <ComposerAttachments />
         <ComposerInput placeholder="Ask anything — drop files here, or press +" />

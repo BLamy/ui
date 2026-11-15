@@ -1,10 +1,11 @@
 {
   "name": "markdown-editor",
   "title": "MarkdownEditor",
-  "description": "A themed WYSIWYG Markdown editor over docstream-editor: slash menu, Markdown paste, inline or chip images, toolbar.",
+  "description": "A themed WYSIWYG Markdown editor over docstream-editor: slash menu, Markdown paste, inline or chip images, and the built-in formatting toolbar or one of your own (a Toolbar of MarkdownEditorToolbarButtons).",
   "page": "markdown-editor",
   "exports": [
     "MarkdownEditor",
+    "MarkdownEditorToolbarButton",
     "markdownEditorVariants",
     "looksLikeMarkdown",
     "insertMarkdown"

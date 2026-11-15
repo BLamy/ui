@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { HoverCard, HoverCardContent, HoverCardHeader, HoverCardTrigger } from '@/components/ui/hover-card';
-import { formatFileSize } from '@ui-sdk/react/file-input';
+import { formatFileSize } from '@/lib/file-size';
 import { Icon } from '@/lib/icon';
 import type { TailscalePeer, TailscaleSnapshot } from '@/lib/tailscale';
 import { exitNodeName } from '@/lib/tailscale-exit';

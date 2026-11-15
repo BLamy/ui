@@ -95,13 +95,14 @@ function FilePicker({ notes, root, dir, self, picking, onDone }: {
       <SearchInput aria-label="Search files" value={query} onValueChange={setQuery} autoFocus />
       <div className="max-h-[50vh] min-h-40 overflow-auto rounded-lg border border-border">
         {/* Arrows or a press pick a file; a double press or Return chooses it. */}
-        {items.length ? <Listbox aria-label="Files" value={chosen} onValueChange={setChosen}
+        <Listbox aria-label="Files" value={chosen} onValueChange={setChosen}
+          emptyState={q ? 'No files match.' : images ? 'No images in this folder.' : 'No other files in this folder.'}
           onKeyDown={(e) => { if (e.key === 'Enter' && chosen) { e.preventDefault(); choose(chosen); } }}>
           {items.map((path) => <ListboxItem key={path} value={path} label={path.slice(path.lastIndexOf('/') + 1)} icon={<FileBadgeIcon name={path} />}
             description={parent(path.slice(root.length + 1)) || undefined} onDoubleClick={() => choose(path)}>
             {path.slice(path.lastIndexOf('/') + 1)}
           </ListboxItem>)}
-        </Listbox> : <p className="m-0 px-4 py-10 text-center text-detail text-muted-foreground">{q ? 'No files match.' : images ? 'No images in this folder.' : 'No other files in this folder.'}</p>}
+        </Listbox>
       </div>
       <div className="flex gap-2">
         <DialogClose render={<Button variant="secondary" className="flex-1" />}>Cancel</DialogClose>

@@ -33,9 +33,9 @@ const PROJECT: TreeNode[] = [
     dir('packages/ui', [
       dir('packages/ui/src', [
         dir('packages/ui/src/components', [
-          file('packages/ui/src/components/button.tsx', { detail: '4 KB' }),
-          file('packages/ui/src/components/tree.tsx', { detail: '31 KB' }),
-          file('packages/ui/src/components/list-box.tsx', { detail: '9 KB' }),
+          file('packages/ui/src/components/button.tsx', { trailing: '4 KB' }),
+          file('packages/ui/src/components/tree.tsx', { trailing: '31 KB' }),
+          file('packages/ui/src/components/list-box.tsx', { trailing: '9 KB' }),
         ]),
         file('packages/ui/src/index.ts'),
         file('packages/ui/src/styles.css'),
@@ -101,13 +101,13 @@ export const Rename: Story = { render: () => <Frame><Renaming /></Frame> };
 
 const MAILBOXES: TreeNode[] = [
   { value: 'icloud', label: 'iCloud', children: [
-    { value: 'inbox', label: 'Inbox', icon: 'tray', detail: '12' },
-    { value: 'drafts', label: 'Drafts', icon: 'doc', detail: '2' },
+    { value: 'inbox', label: 'Inbox', icon: 'tray', trailing: '12' },
+    { value: 'drafts', label: 'Drafts', icon: 'doc', trailing: '2' },
     { value: 'sent', label: 'Sent', icon: 'paperplane' },
     { value: 'archive', label: 'Archive', icon: 'archivebox', dimmed: true },
     { value: 'junk', label: 'Junk', icon: 'xmark-bin', disabled: true },
   ] },
-  { value: 'work', label: 'Work', children: [{ value: 'work/inbox', label: 'Inbox', icon: 'tray', detail: '3' }] },
+  { value: 'work', label: 'Work', children: [{ value: 'work/inbox', label: 'Inbox', icon: 'tray', trailing: '3' }] },
 ];
 
 /** Any hierarchy: icons from the icon set, a detail, a faded row and a disabled one; ⌘- and ⇧-click select several. */

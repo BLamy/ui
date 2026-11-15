@@ -17,7 +17,7 @@ import { pressableFocusRing } from '@/lib/primitives';
    </RadioGroup>
 
    For the iOS segmented look use <Segmented>. */
-export const radioGroupVariants = cva('group flex', {
+export const radioGroupVariants = cva('group/radio-group flex', {
   variants: {
     /** How the radios are laid out. Arrow keys on both axes move between them either way. */
     orientation: {
@@ -50,7 +50,7 @@ export const radioVariants = cva(
     'active:not-data-disabled:scale-90',
     pressableFocusRing,
     // Invalid: the radio itself (`aria-invalid`, which a Field writes on its control) or the group around it.
-    'aria-invalid:border-destructive group-aria-invalid:border-destructive',
+    'aria-invalid:border-destructive group-aria-invalid/radio-group:border-destructive',
     'data-disabled:cursor-default data-disabled:opacity-40',
   ],
 );

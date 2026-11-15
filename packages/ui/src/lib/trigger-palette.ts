@@ -43,7 +43,12 @@ function triggerOf(content: HTMLElement | null): Element | null {
     `ref`); `props` is null until the content has mounted and found its trigger, and always null when `enabled` is
     false. The palette is read as the content mounts, which is each time the popup opens: not once up front, when a
     host may not have applied its tokens yet. */
-export function useTriggerPalette<T extends HTMLElement>(enabled: boolean, ref?: Ref<T>): { ref: Ref<T> | undefined; props: TriggerPaletteProps | null } {
+export function useTriggerPalette<T extends HTMLElement>(
+  enabled: boolean,
+  ref?: Ref<T>,
+  /** The element to read instead of the one whose `aria-controls` names the content (a combobox's field box). */
+  anchor?: Element | null,
+): { ref: Ref<T> | undefined; props: TriggerPaletteProps | null } {
   const [content, setContent] = useState<HTMLElement | null>(null);
   const merged = useCallback(
     (node: T | null) => {
@@ -54,7 +59,7 @@ export function useTriggerPalette<T extends HTMLElement>(enabled: boolean, ref?:
     [ref],
   );
   if (!enabled) return { ref, props: null };
-  const trigger = triggerOf(content);
+  const trigger = content ? (anchor ?? triggerOf(content)) : null;
   if (!trigger) return { ref: merged, props: null };
   return {
     ref: merged,

@@ -12,7 +12,7 @@ import { popoverPreset } from '@ui-sdk/core/popover'
 
 ## Already done for you
 
-Reach for these only when no kit component has the shape you need. A styled kit popup is usually closer than you think: `Popover` takes any content, `openOnHover`, `modal`, `presentation="auto"` and a controller, and `PopoverContent`'s `variant="surface"` is the bare floating surface.
+Reach for these only when no kit component has the shape you need. A styled kit popup is usually closer than you think: `Popover` takes any content, `openOnHover`, `modal`, `presentation="auto"` and a controller, and `PopoverContent`'s `variant="plain"` is the bare floating surface.
 
 | You want | Use |
 | --- | --- |

@@ -31,18 +31,18 @@ export const AlphaAZ: Story = {
 function CustomItemsExample() {
   const [last, setLast] = useState<string | null>(null);
   const items = [
-    { key: 'm1', label: '', caption: 'Question', preview: 'Why is the build slow on CI but not locally?' },
-    { key: 'm2', label: '', caption: 'Decision', preview: 'We will ship the new rail behind a flag.' },
-    { key: 'm3', label: '●', caption: 'Pinned', preview: 'Design review moved to Thursday 2pm.' },
-    { key: 'm4', label: '', preview: 'Can someone rerun the flaky index-bar test?' },
-    { key: 'm5', label: '', disabled: true, preview: 'Archived: old branch cleanup thread.' },
+    { value: 'm1', label: '', caption: 'Question', preview: 'Why is the build slow on CI but not locally?' },
+    { value: 'm2', label: '', caption: 'Decision', preview: 'We will ship the new rail behind a flag.' },
+    { value: 'm3', label: '●', caption: 'Pinned', preview: 'Design review moved to Thursday 2pm.' },
+    { value: 'm4', label: '', preview: 'Can someone rerun the flaky index-bar test?' },
+    { value: 'm5', label: '', disabled: true, preview: 'Archived: old branch cleanup thread.' },
   ];
   return (
     <>
       <div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', fontSize: 15, color: 'var(--muted-foreground)' }}>
         {last ? 'Jumped to ' + last : 'Hover, drag, or use arrow keys →'}
       </div>
-      <IndexBar items={items} onJump={(key) => setLast(key)} className="top-10 bottom-10" aria-label="Jump to conversation event" />
+      <IndexBar items={items} onJump={(value) => setLast(value)} className="top-10 bottom-10" aria-label="Jump to conversation event" />
     </>
   );
 }
@@ -74,17 +74,17 @@ const THREAD = [
   ['Wrap-up', 'Ship it behind nothing — the default rendering is unchanged.'],
 ] as const;
 
-const waveStops = THREAD.map(([caption, preview], i) => ({ key: `t${i + 1}`, caption, preview }));
+const waveStops = THREAD.map(([caption, preview], i) => ({ value: `t${i + 1}`, caption, preview }));
 
 function WaveExample({ side, panel }: { side: 'start' | 'end'; panel?: boolean }) {
   const [current, setCurrent] = useState('t6');
-  const title = waveStops.find((s) => s.key === current)?.caption;
+  const title = waveStops.find((s) => s.value === current)?.caption;
   return (
     <>
       <div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', padding: 60, textAlign: 'center', fontSize: 15, color: 'var(--muted-foreground)' }}>
         {title}
       </div>
-      <IndexBar variant="wave" side={side} items={waveStops} current={current} onJump={(key) => setCurrent(key)}
+      <IndexBar variant="wave" side={side} items={waveStops} current={current} onJump={(value) => setCurrent(value)}
         panel={panel} panelTitle={panel ? 'Thread' : undefined} className="top-3 bottom-3" aria-label="Jump to a turn" />
     </>
   );

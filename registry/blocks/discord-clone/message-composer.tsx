@@ -20,7 +20,7 @@ export function MessageComposer({ placeholder, autoFocus, channels, onSend, ...p
   };
   return (
     <Composer
-      acceptedFileTypes={['image/*']}
+      accept={['image/*']}
       // Images ride along as Markdown, in place of their `attachment:` chips.
       onSubmit={(markdown, attachments) => onSend(attachments.reduce((md, a) => md.replace(`attachment:${a.id}`, a.src ?? ''), markdown))}
       {...props}
@@ -28,7 +28,7 @@ export function MessageComposer({ placeholder, autoFocus, channels, onSend, ...p
       <ComposerCard>
         <ComposerAttachments />
         <ComposerAddon align="inline-start">
-          <ComposerAdd icon="paperclip-diagonal" label="Attach images" />
+          <ComposerAdd icon="paperclip-diagonal" aria-label="Attach images" />
         </ComposerAddon>
         <ComposerInput placeholder={placeholder} autoFocus={autoFocus} references={references} />
         <ComposerAddon align="inline-end">

@@ -11,6 +11,8 @@ import { Icon, type IconName } from '@/lib/icon';
 import { cn, cx } from '@/lib/utils';
 import { scopeStyle, useLayerHost, useThemeScopeProps } from '@/lib/theme';
 import { closeButtonVariants } from '@/lib/surface';
+import { pressableFocusRing } from '@/lib/primitives';
+import { buttonVariants } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { TextMorph } from '@/components/ui/text-morph';
 
@@ -174,7 +176,7 @@ export function ToastRegion({
     `--toast-offset`, `--toast-height`, the swipe offsets), or the dark HUD pill (the `hud` material, the same in light
     and dark, as on iOS; `--hud` / `--hud-foreground` retheme it). Moves ride the snappy spring, a card's height the smooth one; fades are short tweens,
     quicker on the way out. Under reduced motion only the fades are left. */
-export const toastVariants = cva('flex outline-none focus-visible:ring-2 focus-visible:ring-primary', {
+export const toastVariants = cva(['flex', pressableFocusRing], {
   variants: {
     variant: {
       banner: [
@@ -275,12 +277,13 @@ export function ToastDescription({ className, ...props }: ComponentProps<typeof 
   return <SdkToastDescription className={cx('mt-0.5 text-footnote leading-snug text-muted-foreground', className)} {...props} />;
 }
 
-const toastButton =
-  'bl-btn shrink-0 cursor-pointer self-center rounded-full border-0 bg-secondary px-3 py-1.5 text-footnote font-semibold outline-none transition-[background-color,scale,opacity] duration-spring-snappy ease-spring-snappy hover:bg-secondary-strong focus-visible:ring-2 focus-visible:ring-primary active:scale-95 data-pending:cursor-progress data-pending:opacity-60';
+/* The action and a labelled close are the kit's small secondary Button (32px, its press, pending and focus ring),
+   as a pill. */
+const toastButton = cn(buttonVariants({ variant: 'secondary', size: 'sm' }), 'shrink-0 self-center rounded-full no-underline');
 
 /** The toast's action, like Undo (its `action` without children; a link when the action has an `href`). */
 export function ToastAction({ className, ...props }: ComponentProps<typeof SdkToastAction>) {
-  return <SdkToastAction className={cx([toastButton, 'text-primary no-underline'], className)} {...props} />;
+  return <SdkToastAction className={cx([toastButton, 'text-primary'], className)} {...props} />;
 }
 
 /** Closes the toast: the round ✕ without children, a labelled button (the toast's `cancel`) with them. */

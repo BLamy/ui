@@ -24,19 +24,32 @@ export const Labeled: Story = {
   ),
 };
 
-/** `variant` for media controls over artwork or dark glass (`on-dark`) and light imagery (`on-light`); `size="sm"` is
-    the scrubber thumb that grows while dragging. Any other color is a `--bl-slider-track` / `-fill` / `-thumb` variable. */
+/** `variant="overlay"` for media controls over artwork, video or glass: translucent white on a dark scheme, black
+    on a light one. Artwork that is dark in both schemes sets `appearance="dark"`; `size="sm"` is the scrubber thumb
+    that grows while dragging. Any other color is a `--bl-slider-track` / `-fill` / `-thumb` variable. */
 export const Variants: Story = {
   render: () => (
     <div className="flex flex-col gap-3">
       <div className="flex flex-col gap-4 rounded-[18px] p-5" style={{ background: 'linear-gradient(160deg,#5b2a86,#1d1030 70%)' }}>
-        <Slider aria-label="Playback position" variant="on-dark" size="sm" defaultValue={38} />
-        <Slider aria-label="Volume" variant="on-dark" defaultValue={70} />
+        <Slider aria-label="Playback position" variant="overlay" appearance="dark" size="sm" defaultValue={38} />
+        <Slider aria-label="Volume" variant="overlay" appearance="dark" defaultValue={70} />
       </div>
       <div className="flex flex-col gap-4 rounded-[18px] p-5" style={{ background: 'linear-gradient(160deg,#fde2c4,#f7c6d9)' }}>
-        <Slider aria-label="Warmth" variant="on-light" size="sm" defaultValue={55} />
+        <Slider aria-label="Warmth" variant="overlay" appearance="light" size="sm" defaultValue={55} />
         <Slider aria-label="Brightness" className="[--bl-slider-fill:var(--warning)] [--bl-slider-track:color-mix(in_oklab,var(--warning)_22%,transparent)]" defaultValue={62} />
       </div>
+    </div>
+  ),
+};
+
+/** `orientation="vertical"`: a mixer's channels. The slider fills its parent's height. */
+export const Vertical: Story = {
+  render: () => (
+    <div className="flex h-56 items-stretch gap-6">
+      <Slider orientation="vertical" label="Bass" defaultValue={40} />
+      <Slider orientation="vertical" label="Mid" defaultValue={65} />
+      <Slider orientation="vertical" size="sm" label="Treble" defaultValue={30} />
+      <Slider orientation="vertical" aria-label="Range" defaultValue={[20, 70]} />
     </div>
   ),
 };

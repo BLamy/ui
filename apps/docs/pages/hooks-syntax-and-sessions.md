@@ -28,9 +28,9 @@ The lines of a piece of code as arrays of tokens, lexed on the GPU through the p
 function useSyntaxTokens(
   code: string,
   options?: { language?: string; enabled?: boolean; engine?: 'auto' | 'gpu' | 'fallback' },
-): { lines: SyntaxToken[][]; highlighter: 'gpu' | 'fallback' | 'pending' | 'none' }
+): { lines: CodeToken[][]; highlighter: 'gpu' | 'fallback' | 'pending' | 'none' }
 
-interface SyntaxToken { type: SyntaxTokenType; text: string }
+interface CodeToken { type: CodeTokenType; text: string }
 ```
 
 | Option | Default | Effect |

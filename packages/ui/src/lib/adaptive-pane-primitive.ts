@@ -34,11 +34,14 @@ import { createStack, type StackExit } from '@/lib/stack';
    `-settling`): the page opts in with `adaptivePanePageClass`, so nothing writes styles on elements the pane doesn't
    own. `side` is UI SDK's: `start` and `end` follow the reading direction. */
 
-/** The edge a pane sits on. `start` and `end` follow the reading direction. */
-export type AdaptivePaneSide = Extract<Side, 'start' | 'end' | 'left' | 'right'>;
+/** The edge a pane sits on: `start` or `end`, which follow the reading direction. */
+export type AdaptivePaneSide = Extract<Side, 'start' | 'end'>;
 
-/** How the pane shows. `auto` (the component's default) picks one from the size-class scope. */
-export type AdaptivePanePresentation = 'column' | 'drawer' | 'push' | 'cover' | 'hidden';
+/** How the pane shows. `auto` (the component's default) picks one of the others from the size-class scope. */
+export type AdaptivePanePresentation = 'column' | 'drawer' | 'push' | 'cover' | 'hidden' | 'auto';
+
+/** A presentation that shows: `auto` resolved. */
+export type AdaptivePaneShown = Exclude<AdaptivePanePresentation, 'auto'>;
 
 /** The widths the user resized the pane to, per presentation; unset means the host's own width applies. */
 export type AdaptivePaneWidths = { column?: number; drawer?: number };
@@ -78,7 +81,7 @@ export function createAdaptivePaneController() {
 
 export type AdaptivePaneOptions = {
   /** The presentation that shows now (the component resolves `auto`). */
-  presentation: AdaptivePanePresentation;
+  presentation: AdaptivePaneShown;
   /** Whether the pane shows, to control it. */
   open?: boolean;
   /** Whether it starts open when uncontrolled. Default false. */
@@ -102,7 +105,7 @@ export type AdaptivePaneOptions = {
 };
 
 type AdaptivePaneState = {
-  presentation: AdaptivePanePresentation;
+  presentation: AdaptivePaneShown;
   side: AdaptivePaneSide;
   /** Whether the pane reads right to left, measured with the separator. */
   rtl: boolean;
@@ -123,8 +126,7 @@ const KEEP = { column: 240, drawer: 48 } as const;
 const STEP = 16;
 
 /** The separator's handle: the pane's inner edge on screen. */
-const handleOf = (state: Pick<AdaptivePaneState, 'side' | 'rtl'>) =>
-  state.side === 'left' || (state.side === 'start' && !state.rtl) || (state.side === 'end' && state.rtl) ? 'e' : 'w';
+const handleOf = (state: Pick<AdaptivePaneState, 'side' | 'rtl'>) => ((state.side === 'start') !== state.rtl ? 'e' : 'w');
 
 /** The box an absolutely placed element is laid out in: its offset parent, else its nearest positioned ancestor. */
 const containingBox = (el: HTMLElement): HTMLElement => {

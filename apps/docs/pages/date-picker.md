@@ -10,21 +10,21 @@ Copies the source into your project's `components/ui/` (with the parts it is bui
 
 ```tsx
 import {
-  DatePicker, DatePickerField, DatePickerContent,
+  DatePicker, DatePickerInputGroup, DatePickerContent,
 } from '@/components/ui/date-picker'
 ```
 {% endtab %}
 {% tab title="npm" %}
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 
-Import the stylesheet once at your app's entry, then the parts from the package root:
+Import the stylesheet once at your app's entry, then the parts from their module:
 
 ```tsx
 import '@brett_lamy/ui/styles.css'
 
 import {
-  DatePicker, DatePickerField, DatePickerContent,
-} from '@brett_lamy/ui'
+  DatePicker, DatePickerInputGroup, DatePickerContent,
+} from '@brett_lamy/ui/date-picker'
 ```
 {% endtab %}
 {% endtabs %}
@@ -43,7 +43,7 @@ A `DatePicker` holds the field and, anywhere inside it, the popup. Put it in a [
 <Field>
   <FieldLabel>Date</FieldLabel>
   <DatePicker defaultValue="2026-09-09">
-    <DatePickerField />
+    <DatePickerInputGroup />
     <DatePickerContent />
   </DatePicker>
   <FieldDescription>Type a date, or open the calendar.</FieldDescription>
@@ -51,15 +51,15 @@ A `DatePicker` holds the field and, anywhere inside it, the popup. Put it in a [
 </Field>
 ```
 
-`DatePickerField` is the filled field: a `DatePickerInput` and the `DatePickerTrigger` (in range mode, an input for each end with a dash between). `DatePickerContent` is the popup, which holds a calendar header and a grid per month. Both take children when you want your own layout, and every [Calendar](https://blamy.github.io/ui/#/calendar) part works inside the content:
+`DatePickerInputGroup` is the filled field: a `DatePickerInput` and the `DatePickerTrigger` (in range mode, an input for each end with a dash between). `DatePickerContent` is the popup, which holds a calendar header and a grid per month. Both take children when you want your own layout, and every [Calendar](https://blamy.github.io/ui/#/calendar) part works inside the content:
 
 ```tsx
 <DatePicker>
-  <DatePickerField>
+  <DatePickerInputGroup>
     <DatePickerInput aria-label="Due date" />
     <DatePickerClear />
     <DatePickerTrigger />
-  </DatePickerField>
+  </DatePickerInputGroup>
   <DatePickerHint />
   <DatePickerContent>
     <CalendarHeader />
@@ -73,7 +73,7 @@ A `DatePicker` holds the field and, anywhere inside it, the popup. Put it in a [
 
 ## Typing and picking
 
-The input reads what was typed on Enter or when focus leaves it: the locale's order (`9/18/2026` in American English, `18.9.2026` in German), ISO dates, digits without separators, two-digit years and month names. A valid date is rewritten in the locale's format; text that is not a date stays as typed, marks the input `aria-invalid` and leaves the value alone. Choosing a day in the calendar sets the value and closes the popup; Esc closes it without a change, and focus returns to the calendar button. With no value the popup opens on today's month, so pass `defaultMonth` to open somewhere else (the demos pin September 2026). `size` on the picker (`sm`, `default`, `lg`) sizes the field, as on every field; a `DatePickerField` of your own takes its own `size`, which wins. The popup renders outside the field, so in a themed area wrap the picker in a [ThemeScope](https://blamy.github.io/ui/#/theming) (or put `BLProvider` at your root) for it to wear the same theme.
+The input reads what was typed on Enter or when focus leaves it: the locale's order (`9/18/2026` in American English, `18.9.2026` in German), ISO dates, digits without separators, two-digit years and month names. A valid date is rewritten in the locale's format; text that is not a date stays as typed, marks the input `aria-invalid` and leaves the value alone. Choosing a day in the calendar sets the value and closes the popup; Esc closes it without a change, and focus returns to the calendar button. With no value the popup opens on today's month, so pass `defaultMonth` to open somewhere else (the demos pin September 2026). `size` on the picker (`sm`, `default`, `lg`) sizes the field, as on every field; a `DatePickerInputGroup` of your own takes its own `size`, which wins. The popup renders outside the field, so in a themed area wrap the picker in a [ThemeScope](https://blamy.github.io/ui/#/theming) (or put `BLProvider` at your root) for it to wear the same theme.
 
 {% demo src="date-picker/basic" %}
 
@@ -101,7 +101,7 @@ A `name` on the Field (or on the `DatePicker`; `startName` and `endName` for a r
 
 ## Accessibility
 
-It follows the WAI-ARIA date picker dialog. The input is a plain text input named by the Field's label, described by the hint, the description and any error. The calendar button has `aria-haspopup="dialog"` and `aria-expanded` and is named "Choose date" with the date chosen ("Choose dates" for a range); pass `aria-label` to name it in another language. The popup is a `dialog` holding the calendar's grid; focus moves to the selected day (else today) when it opens and back to the button when a day is picked or Esc closes it. Outside a Field, give each input an `aria-label`; the default field names them "Date", or "Start date" and "End date".
+It follows the WAI-ARIA date picker dialog. The input is a plain text input named by the Field's label, described by the hint, the description and any error; a range's two inputs are named by the label and their end ("Stay Start date", "Stay End date"; their `aria-label`s give the words). The calendar button has `aria-haspopup="dialog"` and `aria-expanded` and is named "Choose date" with the date chosen ("Choose dates" for a range); pass `aria-label` to name it in another language. The popup is a `dialog` holding the calendar's grid; focus moves to the selected day (else today) when it opens and back to the button when a day is picked or Esc closes it. Outside a Field, give each input an `aria-label`; the default field names them "Date", or "Start date" and "End date".
 
 | Key | Where | Action |
 | --- | --- | --- |
@@ -122,7 +122,6 @@ The root is UI SDK's `DatePicker`; every prop passes through, with `className` m
 | Prop | Default | Effect |
 | --- | --- | --- |
 | `mode` | `single` | `single` or `range`. |
-| `size` | `default` | The field: `sm` 32px · `default` 44px · `lg` 50px. A `DatePickerField`'s own `size` wins. |
 | `value` / `defaultValue` / `onValueChange` | — | The ISO date, or `[start, end]`; `null` while empty. The callback gets `(value, details)`; `details.reason` is `item-press`, `input-commit`, `preset-press`, `clear-press`, `reset`… |
 | `open` / `defaultOpen` / `onOpenChange` | closed | Control the popup. |
 | `month` / `defaultMonth` / `onMonthChange` | the value's month, else today's | The first month the calendar shows, as `"2026-09"`. |
@@ -137,13 +136,13 @@ The root is UI SDK's `DatePicker`; every prop passes through, with `className` m
 | `controller` | — | From `createDatePickerController()`. |
 | `children` | the field and the popup | The parts, or a function of the picker's state. |
 
-### DatePickerField
+### DatePickerInputGroup
 
 | Prop | Default | Effect |
 | --- | --- | --- |
-| `size` | the picker's | `sm` 32px · `default` 44px · `lg` 50px. |
+| `size` | `default` | `sm` 32px · `default` 44px · `lg` 50px: on the box part, as on every compound picker (`SelectTrigger`, `ComboboxInputGroup`, `ColorPickerTrigger`). |
 | `children` | the input (or two) and the button | Your own `DatePickerInput`, `DatePickerClear` and `DatePickerTrigger`. |
-| `className` | — | Merged onto the field (`data-slot="date-picker-field"`). |
+| `className` | — | Merged onto the field (`data-slot="date-picker-input-group"`). |
 
 The popup anchors to this element.
 
@@ -153,8 +152,8 @@ The popup anchors to this element.
 | --- | --- | --- |
 | `side` / `align` | `bottom` / `start` | Where the popup sits against the field. |
 | `sideOffset` / `alignOffset` | `8` / `0` | Gap from the field and shift along it, in pixels. |
-| `anchor` | the `DatePickerField` | Another element to position against. |
-| `children` | a `CalendarHeader` and `CalendarMonths` | Your own Calendar parts, with presets beside them. In a range picker with `months`, give `CalendarMonths` the same `months`. |
+| `anchor` | the `DatePickerInputGroup` | Another element to position against. |
+| `children` | a `CalendarHeader` and `CalendarMonths` | Your own Calendar parts, with presets beside them. `CalendarMonths` takes the picker's `months` on its own. |
 | `className` | — | Classes for the popup, which has 12px of padding. |
 
 ### Other parts
@@ -169,13 +168,13 @@ The popup anchors to this element.
 
 ## Styling
 
-Slots: `date-picker`, `date-picker-field`, `date-picker-input`, `date-picker-trigger`, `date-picker-clear`, `date-picker-hint`, `date-picker-preset`, `date-picker-content`, plus the calendar's slots in the popup. The root carries `data-open` or `data-closed`, `data-mode`, `data-invalid`, `data-disabled` and `data-readonly`; an input carries `data-invalid` and `data-disabled`, a preset `data-selected`, Clear `data-empty`, and the content `data-side`, `data-align`, `data-presentation` and `data-starting-style` / `data-ending-style` while it enters and leaves. The field is the kit's filled field (`fieldSurfaceVariants` from [Input](https://blamy.github.io/ui/#/input)): a 1.5px primary edge while it has focus or the popup is open, and a destructive one while an input is invalid. The calendar button's keyboard ring sits flush inside the field's edge (no offset). In a compact container the calendar's days grow to 44px touch targets.
+Slots: `date-picker`, `date-picker-input-group`, `date-picker-input`, `date-picker-trigger`, `date-picker-clear`, `date-picker-hint`, `date-picker-preset`, `date-picker-content`, plus the calendar's slots in the popup. The root carries `data-open` or `data-closed`, `data-mode`, `data-invalid`, `data-disabled` and `data-readonly`; an input carries `data-invalid` and `data-disabled`, a preset `data-selected`, Clear `data-empty`, and the content `data-side`, `data-align`, `data-presentation` and `data-starting-style` / `data-ending-style` while it enters and leaves. The field is the kit's filled field (`fieldSurfaceVariants` from [Input](https://blamy.github.io/ui/#/input)): a 1.5px primary edge while it has focus or the popup is open, and a destructive one while an input is invalid. The calendar button's keyboard ring sits flush inside the field's edge (no offset). In a compact container the calendar's days grow to 44px touch targets.
 
 ## cva recipes
 
 Generated from the source. Call a recipe on any element to borrow a component's look; in a registry-installed copy, change `defaultVariants` to change the default. All recipes are listed in the [Variants reference](https://blamy.github.io/ui/#/variants).
 
-### `datePickerFieldVariants`
+### `datePickerInputGroupVariants`
 
 Defined in `@/components/ui/date-picker`. Base classes:
 

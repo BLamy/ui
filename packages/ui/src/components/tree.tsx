@@ -14,7 +14,7 @@ import { createParts } from '@ui-sdk/react/primitive';
 import type { ChangeDetails } from '@ui-sdk/core';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { DropdownMenu, DropdownMenuContextTrigger } from '@/components/ui/dropdown-menu';
-import { EmptyState } from '@/components/ui/empty-state';
+import { renderEmptyState } from '@/components/ui/empty-state';
 import { HoverCard, HoverCardContent, HoverCardTrigger, createHoverCardController, type HoverCardController } from '@/components/ui/hover-card';
 import { SearchInput } from '@/components/ui/search-input';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -39,7 +39,7 @@ import { cn, cx } from '@/lib/utils';
    </Tree>
 
    Or hand it the data and it draws the rows, only the ones in view (UI SDK's virtualizer), with what a file browser
-   has: indent guides, file-type icons, a detail after the label, search, Git status, rename in place, a context menu
+   has: indent guides, file-type icons, a trailing note after the label, search, Git status, rename in place, a context menu
    and a hover preview per row, and drag and drop. A node with `children` (even an empty array) is a folder.
    <Tree aria-label="Files" items={[{ value: 'src', label: 'src', children: [{ value: 'src/app.tsx', label: 'app.tsx' }] }]}
      defaultExpanded="all" onAction={(value) => open(value)} />
@@ -70,8 +70,9 @@ const ROW_HEIGHT: Record<TreeDensity, number> = { compact: 24, default: 30, comf
 /** A row: the label inside an item. Selection, the current page and a disabled row show here; keyboard focus is on the
  *  item around it (`group/tree-item`). Each level moves the row's content in by `--tree-indent`. */
 export const treeRowVariants = cva([
-  'group/tree-row relative box-border flex h-(--tree-row-height) w-full min-w-0 cursor-default items-center gap-(--tree-gap) rounded-ctl pr-(--tree-pad-x) leading-(--tree-row-height) select-none',
-  'pl-[calc(var(--tree-pad-x)+(var(--tree-level,1)-1)*var(--tree-indent))]',
+  'group/tree-row relative box-border flex h-(--tree-row-height) w-full min-w-0 cursor-default items-center gap-(--tree-gap) rounded-ctl pe-(--tree-pad-x) leading-(--tree-row-height) select-none',
+  // Logical, so a row's own `ps-*` (ObjectTree's capped indent) merges with it, and the indent follows the text direction.
+  'ps-[calc(var(--tree-pad-x)+(var(--tree-level,1)-1)*var(--tree-indent))]',
   'hover:not-data-disabled:not-data-selected:bg-secondary data-selected:bg-primary/16 data-current:font-medium data-disabled:opacity-50 data-pending:cursor-progress',
   'group-focus-visible/tree-item:[box-shadow:inset_0_0_0_2px_var(--ring)]',
   'group-data-dimmed/tree-item:opacity-60 group-data-drop-target/tree-item:bg-secondary group-data-drop-target/tree-item:[box-shadow:inset_0_0_0_2px_var(--primary)]',
@@ -149,10 +150,11 @@ export function TreeGroup({ className, ...props }: Parameters<typeof SdkTreeGrou
 export interface TreeNode extends Omit<TreeItemData, 'children'> {
   /** A folder's children. An empty array is an empty folder; leave it out for a leaf. */
   children?: readonly TreeNode[];
-  /** After the label: a count, a kind, a short status. */
-  detail?: string;
-  /** The detail's tooltip. */
-  detailTitle?: string;
+  /** After the label, at the row's end: a count, a kind, a short status. */
+  trailing?: ReactNode;
+  /** What the row's `trailing` says, in words: its tooltip and the item's `aria-description`. Default: `trailing`,
+   *  when it's a string. */
+  description?: string;
   /** A leaf's icon, from the icon set (folders show their chevron). Overrides the file-type icon. */
   icon?: IconName;
   /** Shown faded: listed, but not the kind of thing this tree opens. */
@@ -589,7 +591,7 @@ function DataTree({
     const item = {
       value: key,
       'data-key': key,
-      'aria-description': node.detail ? (node.detailTitle ?? node.detail) : undefined,
+      'aria-description': node.description ?? (typeof node.trailing === 'string' && node.trailing ? node.trailing : undefined),
       'data-edit-id': onRename ? key : undefined,
       'data-dimmed': node.dimmed ? '' : undefined,
       'data-drop-target': dropTarget === key ? '' : undefined,
@@ -602,12 +604,13 @@ function DataTree({
       : <SdkTreeItem key={key} {...item}>{content}</SdkTreeItem>;
   };
 
-  /** The file browser's row: indent guides, a chevron or an icon, the name, a detail and the Git status. */
+  /** The file browser's row: indent guides, a chevron or an icon, the name, a trailing note and the Git status. */
   const fileRow = (shown: (typeof flat)[number], node: TreeNode, renaming: string | null) => {
     const { value: key, label } = shown.item;
     const branch = !!shown.item.children;
     const status = gitStatus?.[key];
     const ink = status ? STATUS[status].ink : undefined;
+    const hasTrailing = node.trailing != null && node.trailing !== false && node.trailing !== '';
     const leafIcon = node.icon ? <Icon name={node.icon} size={16} />
       : icons ? <FileTypeIcon name={node.label} />
       : null;
@@ -656,11 +659,11 @@ function DataTree({
             ) : <RowName name={label} />}
           </span>
         )}
-        {/* The detail describes the row (`aria-description` on the item); the row's name stays its label. */}
-        {node.detail || gitStatus ? (
-          <span aria-hidden="true" title={node.detailTitle} className="flex min-w-0 flex-1 basis-0 justify-end overflow-hidden text-end text-foreground/72">
+        {/* The trailing text describes the row (`aria-description` on the item); the row's name stays its label. */}
+        {hasTrailing || gitStatus ? (
+          <span aria-hidden="true" title={node.description} className="flex min-w-0 flex-1 basis-0 justify-end overflow-hidden text-end text-foreground/72">
             {/* Too long, it gives way at its start: its end (the part that tells rows apart) stays. */}
-            {node.detail ? <span className="inline-flex max-w-full min-w-0 justify-end overflow-hidden whitespace-nowrap">{node.detail}</span> : null}
+            {hasTrailing ? <span className="inline-flex max-w-full min-w-0 justify-end overflow-hidden whitespace-nowrap">{node.trailing}</span> : null}
           </span>
         ) : null}
         {gitStatus ? (
@@ -733,9 +736,7 @@ function DataTree({
           {virtual.items.map(({ index, start }) => row(index, start, renaming))}
         </SdkTree>
         ) : loading && !query ? placeholder
-          : emptyState === undefined || (typeof emptyState === 'string' && emptyState)
-            ? <EmptyState size="sm" title={emptyState || (query ? 'No matches' : 'No items')} />
-            : emptyState;
+          : renderEmptyState(emptyState, { title: query ? 'No matches' : 'No items' });
   };
   const scroller = {
     ref: scrollerRef,
@@ -804,7 +805,7 @@ function DataTree({
       ) : tree}
       {preview ? (
         <HoverCard controller={card} onPayloadChange={(payload) => setPreviewNode((payload as TreeNode | undefined) ?? null)}>
-          <HoverCardContent side="right" align="start">{previewNode ? preview(previewNode) : null}</HoverCardContent>
+          <HoverCardContent side="end" align="start">{previewNode ? preview(previewNode) : null}</HoverCardContent>
         </HoverCard>
       ) : null}
     </div>

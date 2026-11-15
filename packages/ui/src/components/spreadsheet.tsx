@@ -5,7 +5,7 @@ import { createParts, usePart, usePrimitive, type PartProps, type PrimitiveHandl
 import { Button as SdkButton } from '@ui-sdk/react/button';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { Button } from '@/components/ui/button';
-import { EmptyState } from '@/components/ui/empty-state';
+import { renderEmptyState } from '@/components/ui/empty-state';
 import { Icon } from '@/lib/icon';
 import { columnResizerClass } from '@/lib/primitives';
 import { cn, cx } from '@/lib/utils';
@@ -72,8 +72,8 @@ export interface SpreadsheetProps
   statusBar?: boolean;
   /** Extra controls at the end of the status bar. */
   actions?: ReactNode;
-  /** Shown when there are no rows. Default `<EmptyState size="sm" title="No rows" description="Paste cells or add a row." />`
-   *  (without the description when read-only). */
+  /** Shown when there are no rows, read through `renderEmptyState`: a string is the title of a small `EmptyState`,
+   *  `null` shows nothing. Default "No rows", with "Paste cells or add a row." unless read-only. */
   emptyState?: ReactNode;
   /** Width in px of a column with no text to size it from. Other columns start at the widest of their title and first rows (≤ 320). */
   columnWidth?: number;
@@ -91,13 +91,16 @@ const formatNumber = (n: number) => (numberFormat ? numberFormat.format(n) : Str
 const isNumeric = (type: string | undefined) => type === 'number' || type === 'date';
 const ranOnText = (r: SpreadsheetRanOn) => (r === 'gpu' ? 'on the GPU' : 'on the CPU');
 
-function HistogramBars({ histogram, label }: { histogram: SpreadsheetHistogram; label: string }) {
+/** A bound as its column's cells say it: a date column's as a day (`2026-05-01`), a number column's as a number. */
+const formatBound = (n: number, date: boolean) => (date && Number.isFinite(n) ? new Date(n).toISOString().slice(0, 10) : formatNumber(n));
+
+function HistogramBars({ histogram, label, date }: { histogram: SpreadsheetHistogram; label: string; date: boolean }) {
   const bins = histogram.bins;
   let peak = 1;
   for (const b of bins) peak = Math.max(peak, b);
   const w = 100 / bins.length;
   return (
-    <svg role="img" aria-label={`${label}: values from ${formatNumber(histogram.min)} to ${formatNumber(histogram.max)}`}
+    <svg role="img" aria-label={`${label}: values from ${formatBound(histogram.min, date)} to ${formatBound(histogram.max, date)}`}
       data-slot="spreadsheet-histogram" data-engine={histogram.ranOn} viewBox={`0 0 100 ${HISTOGRAM_HEIGHT}`} preserveAspectRatio="none"
       className="block h-(--hist) w-full text-primary/55">
       {Array.from(bins, (b, i) => {
@@ -162,12 +165,13 @@ const SpreadsheetRowHeader = memo(function SpreadsheetRowHeader({ row }: { row: 
   );
 });
 
-function SpreadsheetColumn({ col, title, left, width, histogram, bars, header, numeric, onSortPress }: {
+function SpreadsheetColumn({ col, title, left, width, histogram, bars, header, numeric, date, onSortPress }: {
   col: number; title: string; left: number; width: number; histogram: SpreadsheetHistogram | null | undefined; bars: boolean; header: boolean;
-  numeric: boolean; onSortPress: (col: number, event?: Event) => void;
+  numeric: boolean; date: boolean; onSortPress: (col: number, event?: Event) => void;
 }) {
   return (
-    <parts.Column value={String(col)} col={col} className={cn('group absolute top-0 flex h-full flex-col justify-center bg-secondary px-2', lines, 'data-selected:bg-secondary-strong')} style={{ left, width }}>
+    // Named by its title alone: the sort button, the histogram and the edge inside it are its controls, not its name.
+    <parts.Column value={String(col)} col={col} aria-label={title} className={cn('group absolute top-0 flex h-full flex-col justify-center bg-secondary px-2', lines, 'data-selected:bg-secondary-strong')} style={{ left, width }}>
       {(state) => (
         <>
           {/* A number column's title lines up with its numbers, at the end; its sort button comes first. */}
@@ -181,7 +185,7 @@ function SpreadsheetColumn({ col, title, left, width, histogram, bars, header, n
               <Icon name={state.sorted === 'descending' ? 'arrow-down' : state.sorted === 'ascending' ? 'arrow-up' : 'chevron-up-down'} size={13} weight="semibold" />
             </SdkButton>
           </div>
-          {bars ? <div className="mt-0.5 h-(--hist)">{histogram ? <HistogramBars histogram={histogram} label={`${title} histogram`} /> : null}</div> : null}
+          {bars ? <div className="mt-0.5 h-(--hist)">{histogram ? <HistogramBars histogram={histogram} label={`${title} histogram`} date={date} /> : null}</div> : null}
           {/* The grid places columns by `left`, so the edge is on the right in either direction. */}
           <parts.Resizer value={String(col)} aria-label={`Resize ${title}`} className={cn(columnResizerClass, 'end-auto -right-1 z-10')} />
           {state.editing && header ? <SpreadsheetEditor label={`Title of column ${spreadsheetColumnLetter(col)}`} className="h-7.5 font-semibold" /> : null}
@@ -212,7 +216,7 @@ function SpreadsheetCells({ handle, state }: { handle: Handle; state: Spreadshee
           {colItems.map((c) => (
             <SpreadsheetColumn key={c.index} col={c.index} title={title(c.index)} left={gutter + c.start} width={c.size}
               histogram={numericAt(c.index) ? state.bins.byColumn.get(c.index) : undefined} bars={bars} header={state.header}
-              numeric={numericAt(c.index)} onSortPress={internal.sortPress} />
+              numeric={numericAt(c.index)} date={model.types[c.index] === 'date'} onSortPress={internal.sortPress} />
           ))}
         </SpreadsheetRow>
       </SpreadsheetRowGroup>
@@ -266,9 +270,7 @@ export function Spreadsheet({
           {/* Over the body at the scroller's own width, not inside the columns' (two narrow columns would wrap it). */}
           {!api.internal.modelOf(state).body ? (
             <div data-slot="spreadsheet-empty" className="absolute inset-x-0 top-(--head)">
-              {emptyState === undefined
-                ? <EmptyState size="sm" title="No rows" description={state.readOnly ? undefined : 'Paste cells or add a row.'} />
-                : emptyState}
+              {renderEmptyState(emptyState, { title: 'No rows', description: state.readOnly ? undefined : 'Paste cells or add a row.' })}
             </div>
           ) : null}
         </parts.Grid>

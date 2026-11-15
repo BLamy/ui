@@ -23,7 +23,7 @@ export default function Narrow() {
   return (
     <div className="flex w-full flex-col gap-2">
       <Slider<number> aria-label="Table width" size="sm" className="w-full max-w-sm" min={300} max={800} value={width} onValueChange={(value) => setWidth(value)} />
-      <RequestTable aria-label="Requests" rows={ROWS} playhead={3600} defaultValue={12} className="h-[360px] max-w-full" style={{ width }} />
+      <RequestTable aria-label="Requests" rows={ROWS} currentTime={3600} defaultValue={12} className="h-[360px] max-w-full" style={{ width }} />
     </div>
   )
 }

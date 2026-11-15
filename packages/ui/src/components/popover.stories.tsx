@@ -47,7 +47,7 @@ export const Closed: Story = { render: () => <Screen h={260}><div><Dimensions op
 
 const FILTERS = ['Unread', 'Flagged', 'From VIPs', 'With attachments'];
 
-/** `variant="surface"`: the bare surface, at least as wide as its trigger, for a list or a layout that pads itself. */
+/** `variant="plain"`: the surface without padding or a width of its own, at least as wide as its trigger, for a list or a layout that pads itself. */
 function Filters({ dark = false }: { dark?: boolean }) {
   return (
     <Screen dark={dark} h={420}>
@@ -56,7 +56,7 @@ function Filters({ dark = false }: { dark?: boolean }) {
           <PopoverTrigger render={<Button variant="secondary" />}>
             <Icon name="filter-circle" size={18} /> Filters
           </PopoverTrigger>
-          <PopoverContent variant="surface" align="start" className="w-56 py-1.5">
+          <PopoverContent variant="plain" align="start" className="w-56 py-1.5">
             <PopoverTitle className="sr-only">Filters</PopoverTitle>
             {FILTERS.map((f) => (
               <label key={f} className="flex min-h-11 items-center gap-3 px-4 text-body text-foreground">

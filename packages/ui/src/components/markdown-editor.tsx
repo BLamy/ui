@@ -8,6 +8,7 @@ import type { ChangeDetails } from '@ui-sdk/core';
 import { useFieldControl } from '@ui-sdk/react/field';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { fieldSurfaceVariants } from '@/components/ui/input';
+import { ToolbarButton, type ToolbarButtonProps } from '@/components/ui/toolbar';
 import { changeDetails } from '@/lib/change-details';
 import { cn } from '@/lib/utils';
 
@@ -71,7 +72,7 @@ export const markdownEditorVariants = cva(
         /** A filled field: Input's and Textarea's box (`fieldSurfaceVariants`), growing with its text. */
         default: '',
         /** No chrome: text on the surface it sits on (inline notes, full-page documents). */
-        ghost: 'rounded-none bg-transparent',
+        plain: 'rounded-none bg-transparent',
         /** A raised card with a hairline, for editors that stand on their own; the same rings as a field. */
         card: 'rounded-card bg-card shadow-hairline focus-within:shadow-[inset_0_0_0_1.5px_var(--primary)] data-invalid:shadow-[inset_0_0_0_1.5px_var(--destructive)]',
       },
@@ -250,8 +251,9 @@ type MarkdownEditorOwnProps = VariantProps<typeof markdownEditorVariants> & {
   /** Not editable and dimmed. Inside a Field, the field's `disabled` applies too. */
   disabled?: boolean;
   autoFocus?: boolean;
-  /** The formatting toolbar (bold, italic, strike, code, link). Hidden while read-only or disabled. */
-  toolbar?: boolean;
+  /** The formatting toolbar, hidden while read-only or disabled. `true`: the built-in one (bold, italic, strike, code,
+      link). A node: a toolbar of your own in the same place, usually a `<Toolbar>` of `MarkdownEditorToolbarButton`s. */
+  toolbar?: boolean | React.ReactNode;
   /** The "/" block menu: on (default), off, or a custom item list. */
   slashMenu?: GitbookEditorProps['slashMenu'];
   /** @mention / #tag / $codebase pickers: off by default; true for the defaults, or per-trigger sources. */
@@ -283,10 +285,11 @@ type MarkdownEditorOwnProps = VariantProps<typeof markdownEditorVariants> & {
   handleKeyDown?: (event: KeyboardEvent) => boolean;
   /** Runs before the editor's paste handling (ProseMirror's `handlePaste`); return true when you handled it. */
   handlePaste?: (event: ClipboardEvent) => boolean;
-  /** The writing area took focus. */
-  onFocus?: (event: FocusEvent) => void;
+  /** The writing area took focus (TipTap's focus, with the DOM `FocusEvent`). React's `onFocus` / `onBlur` are the root's
+      and also fire for the toolbar and the editor's popups. */
+  onEditorFocus?: (event: FocusEvent) => void;
   /** The writing area lost focus. */
-  onBlur?: (event: FocusEvent) => void;
+  onEditorBlur?: (event: FocusEvent) => void;
   /** The TipTap editor, once mounted (and null on teardown). */
   onEditorReady?: (editor: MarkdownEditorInstance | null) => void;
   /** Minimum height of the writing area (px or any CSS length). */
@@ -309,6 +312,45 @@ type MarkdownEditorOwnProps = VariantProps<typeof markdownEditorVariants> & {
 /** The root `div` takes the rest (`className`, `style`, `data-*`…); `id` and the `aria-*` names go on the writing area. */
 export type MarkdownEditorProps = MarkdownEditorOwnProps &
   Omit<React.HTMLAttributes<HTMLDivElement>, keyof MarkdownEditorOwnProps | 'children' | 'onChange' | 'onInput'>;
+
+/* ── A toolbar of your own ── */
+
+const EditorContext = React.createContext<MarkdownEditorInstance | null>(null);
+
+export type MarkdownEditorToolbarButtonProps = Omit<ToolbarButtonProps, 'onClick'> & {
+  /** The TipTap command it runs, with no arguments, on the focused editor: `toggleBold`, `toggleItalic`, `toggleStrike`,
+      `toggleCode`, `toggleBulletList`, `toggleOrderedList`, `toggleTaskList`, `toggleBlockquote`, `setHorizontalRule`… */
+  command: string;
+  /** A mark or node (`bold`, `heading`, `taskList`) that makes it a toggle: pressed while the selection is in one. */
+  mark?: string;
+  /** With `mark`: its attributes (`{ level: 2 }` for a second-level heading). */
+  attributes?: Record<string, unknown>;
+};
+
+/** A ToolbarButton for a MarkdownEditor's own `toolbar`: runs `command` on the editor and, given a `mark`, is a toggle
+    that is pressed while the selection is in it. Give an icon-only one an `aria-label`. */
+export function MarkdownEditorToolbarButton({ command, mark, attributes, size = 'icon-sm', ...props }: MarkdownEditorToolbarButtonProps) {
+  const editor = React.useContext(EditorContext);
+  const subscribe = React.useCallback((notify: () => void) => {
+    if (!editor || !mark) return () => {};
+    editor.on('transaction', notify);
+    return () => { editor.off('transaction', notify); };
+  }, [editor, mark]);
+  const pressed = React.useSyncExternalStore(subscribe, () => (editor && mark ? editor.isActive(mark, attributes) : false), () => false);
+  return (
+    <ToolbarButton
+      size={size}
+      disabled={!editor}
+      aria-pressed={mark ? pressed : undefined}
+      data-pressed={(mark && pressed) || undefined}
+      {...props}
+      onClick={() => {
+        const chain = editor?.chain().focus() as unknown as Record<string, (() => { run: () => boolean }) | undefined> | undefined;
+        chain?.[command]?.().run();
+      }}
+    />
+  );
+}
 
 /** Sets a callback or object ref. */
 function setRef<T>(ref: React.Ref<T>, value: T | null) {
@@ -351,8 +393,8 @@ export function MarkdownEditor({
     onDropEmbeds,
     handleKeyDown: onKeyDownHook,
     handlePaste: onPasteHook,
-    onFocus,
-    onBlur,
+    onEditorFocus,
+    onEditorBlur,
     onEditorReady,
     minHeight,
     maxHeight,
@@ -387,6 +429,7 @@ export function MarkdownEditor({
   const fieldRef = React.useRef(fieldProps?.ref);
   fieldRef.current = fieldProps?.ref;
   const editable = !readOnly && !disabled;
+  const ownToolbar = toolbar !== true && toolbar !== false && toolbar != null;
 
   // Handlers the editor captured at creation read the latest props through here.
   const latest = React.useRef({ markdown, onValueChange, onSubmit, onKeyDown: onKeyDownHook, onPaste: onPasteHook, pasteMarkdown, onReady: onEditorReady, controlled });
@@ -501,15 +544,15 @@ export function MarkdownEditor({
 
   React.useEffect(() => {
     if (!editor) return;
-    const f = ({ event }: { event: FocusEvent }) => onFocus?.(event);
-    const b = ({ event }: { event: FocusEvent }) => onBlur?.(event);
+    const f = ({ event }: { event: FocusEvent }) => onEditorFocus?.(event);
+    const b = ({ event }: { event: FocusEvent }) => onEditorBlur?.(event);
     editor.on('focus', f);
     editor.on('blur', b);
     return () => {
       editor.off('focus', f);
       editor.off('blur', b);
     };
-  }, [editor, onFocus, onBlur]);
+  }, [editor, onEditorFocus, onEditorBlur]);
 
   React.useImperativeHandle(
     ref,
@@ -588,7 +631,7 @@ export function MarkdownEditor({
       data-readonly={readOnly || undefined}
       data-disabled={disabled || undefined}
       data-invalid={invalid || undefined}
-      data-toolbar={(toolbar && editable) || undefined}
+      data-toolbar={(toolbar !== false && toolbar != null && editable) || undefined}
       className={cn(markdownEditorVariants({ variant, size }), readOnlyFocus, className)}
       style={{
         ...(minHeight !== undefined ? { '--mde-min-h': len(minHeight) } : {}),
@@ -605,10 +648,20 @@ export function MarkdownEditor({
         }
       }}
     >
+      {ownToolbar && editable ? (
+        <EditorContext.Provider value={editor}>
+          <div
+            data-slot="markdown-editor-toolbar"
+            className="flex flex-none items-center px-1.5 py-1 shadow-hairline-b group-data-[variant=plain]/mde:mb-2 group-data-[variant=plain]/mde:px-0"
+          >
+            {toolbar}
+          </div>
+        </EditorContext.Provider>
+      ) : null}
       <GitbookEditor
         markdown={markdown}
         onChange={handleChange}
-        toolbar={toolbar && editable}
+        toolbar={toolbar === true && editable}
         documentProperties={documentProperties}
         slashMenu={slashMenu}
         references={references}

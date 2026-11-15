@@ -161,8 +161,9 @@ export interface CodeEditorMarker {
   label: string;
   /** Makes it a button. */
   onClick?: (event: MouseEvent<HTMLElement>, details: CodeEditorMarkerClickDetails) => void;
-  /** Filled in, and announced as pressed. */
-  active?: boolean;
+  /** A marker that toggles (a column breakpoint that is set): filled in, and announced as pressed (`aria-pressed`). Leave it
+      out for a marker that isn't a toggle. */
+  pressed?: boolean;
   title?: string;
   className?: string;
   /** Replaces the default dot. */
@@ -470,7 +471,7 @@ const CodeRow = memo(function CodeRow({
   if (m === n) return true;
   if (!m || !n || m.length !== n.length) return false;
   return m.every((marker, i) => marker === n[i] || (
-    marker.column === n[i].column && marker.index === n[i].index && marker.left === n[i].left && marker.label === n[i].label && marker.active === n[i].active &&
+    marker.column === n[i].column && marker.index === n[i].index && marker.left === n[i].left && marker.label === n[i].label && marker.pressed === n[i].pressed &&
     marker.onClick === n[i].onClick && marker.className === n[i].className && marker.children === n[i].children && marker.title === n[i].title
   ));
 });
@@ -483,7 +484,7 @@ function Marker({ marker, line, lineNumber, controls }: { marker: CodeEditorMark
       viewBox="0 0 8 5"
       className={cn(
         'mt-0.5 block h-[5px] w-2 fill-current',
-        marker.active ? 'text-primary' : 'text-muted-foreground/50 group-hover/marker:text-primary/70',
+        marker.pressed ? 'text-primary' : 'text-muted-foreground/50 group-hover/marker:text-primary/70',
       )}
     >
       <path d="M0 0h8L4 5z" />
@@ -494,7 +495,7 @@ function Marker({ marker, line, lineNumber, controls }: { marker: CodeEditorMark
       <span
         data-code-editor-cell="marker"
         data-slot="code-editor-marker"
-        data-active={marker.active || undefined}
+        data-pressed={marker.pressed || undefined}
         role="img"
         aria-label={marker.label}
         title={marker.title}
@@ -517,9 +518,9 @@ function MarkerButton({ marker, line, lineNumber, controls, children }: {
     render: (
       <SdkButton
         data-code-editor-cell="marker"
-        data-active={marker.active || undefined}
+        data-pressed={marker.pressed || undefined}
         aria-label={marker.label}
-        aria-pressed={marker.active === undefined ? undefined : marker.active}
+        aria-pressed={marker.pressed}
         title={marker.title}
         onClick={(event, details) => marker.onClick?.(event, { ...details, marker, line: lineNumber })}
         className={cn('group/marker', MARKER_CLASS, marker.className)}
@@ -830,7 +831,8 @@ export function CodeEditorWindow({
 
   /* Gutters, with the line numbers in their place. */
   const digits = String(Math.max(1, startLine + Math.max(1, source.count) - 1)).length;
-  const lineNumberWidth = Math.ceil(digits * cellWidth) + 16;
+  // The page renderer's gutter, to the pixel: the digits, 16px before them and 12px after (`.bl-syntax-ln`).
+  const lineNumberWidth = Math.ceil(digits * cellWidth) + 28;
   const lineNumberGutter = useMemo<CodeEditorGutter | null>(() => {
     if (lineNumbers === false) return null;
     return {
@@ -838,7 +840,7 @@ export function CodeEditorWindow({
       width: lineNumberWidth,
       align: 'end',
       // The current line's number reads in full ink; a pressable one (a breakpoint target) stays muted until hovered.
-      className: 'pr-2 pl-1 text-caption text-tertiary-foreground group-data-current/gutter:[&:not(button)]:text-foreground [&:is(button)]:text-muted-foreground [&:is(button)]:hover:text-foreground',
+      className: 'pr-3 pl-4 text-tertiary-foreground group-data-current/gutter:[&:not(button)]:text-foreground [&:is(button)]:text-muted-foreground [&:is(button)]:hover:text-foreground',
       render: (lineNumber) => <span aria-hidden="true">{lineNumber}</span>,
       onClick: onLineNumberClick,
       clickable: lineNumberClickable,
@@ -2260,7 +2262,9 @@ export function CodeEditorWindow({
           ) : null}
           <span ref={probeRef} aria-hidden="true" className="invisible absolute top-0 left-0 whitespace-pre">{PROBE}</span>
           <span ref={proxyRef} aria-hidden="true" data-slot="code-editor-copy-proxy" className="sr-only whitespace-pre select-text" />
-          {gutterWidth > 0 ? <div className="absolute inset-y-0 left-0 border-r border-border" style={{ width: gutterWidth }} /> : null}
+          {/* A rule after the gutters only when there are gutters of the host's (breakpoints, coverage): line numbers alone sit
+              on the code's surface, as in the page renderer. */}
+          {gutterWidth > 0 && gutterProp?.length ? <div className="absolute inset-y-0 left-0 border-r border-border" style={{ width: gutterWidth }} /> : null}
           <div ref={yLayerRef} data-slot="code-editor-gutter" className="absolute top-0 left-0 w-full will-change-transform">
             {bands}
             {gutterRows}

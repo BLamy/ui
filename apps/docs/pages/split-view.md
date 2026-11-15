@@ -7,6 +7,8 @@ Use it for an app whose screens are columns: a list beside what it opens (Mail, 
 | You need | Use |
 | --- | --- |
 | Columns that tile, float the sidebar, and become a push stack on a phone | **SplitView** |
+| A sidebar on a tablet that is the bottom tab bar on a phone (Music, Podcasts) | **SplitView** with `compactPresentation="tabs"` (below) |
+| Only a bottom tab bar, or only a side rail | [Tabs](#/tabs) `variant="bar"` / `"rail"`, or `presentation="auto"` for both |
 | A push/pop stack of pages: a phone app, or one column of a SplitView | [NavigationStack](#/navigation-stack) (inside a column, it is that column's stack) |
 | A web-app navigation shell whose compact form is a drawer behind a menu button, with a collapsed rail | [Sidebar](#/sidebar) |
 | One side panel that docks, slides over or pushes a page | [AdaptivePane](#/adaptive-pane) |
@@ -28,7 +30,7 @@ import {
 {% tab title="npm" %}
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 
-Import the stylesheet once at your app's entry, then the parts from the package root:
+Import the stylesheet once at your app's entry, then the parts from their module:
 
 ```tsx
 import '@brett_lamy/ui/styles.css'
@@ -36,7 +38,7 @@ import '@brett_lamy/ui/styles.css'
 import {
   SplitView, SplitViewSidebar, SplitViewSupplementary,
   SplitViewDetail,
-} from '@brett_lamy/ui'
+} from '@brett_lamy/ui/split-view'
 ```
 {% endtab %}
 {% endtabs %}
@@ -60,7 +62,7 @@ The root writes `data-size-class` on itself for CSS, and is the size-class scope
     </SplitViewContent>
   </SplitViewSidebar>
   <SplitViewSupplementary>
-    <SplitViewHeader title="Inbox" leading={<SplitViewToggle />} />
+    <SplitViewHeader title="Inbox" leading={<SplitViewSidebarTrigger />} />
     <SplitViewContent>{/* a SplitViewItem per message */}</SplitViewContent>
   </SplitViewSupplementary>
   <SplitViewDetail>
@@ -78,12 +80,13 @@ Each column is **one element for its whole life**. Tiled, floating and stacked a
 | Part | Role |
 | --- | --- |
 | `SplitView` | Root: size class, sidebar, value per column, compact navigation, widths. `sizeClass` forces a class; `breakpoints` moves them (`{ medium, regular }`); `sidebarBehavior` is `auto` · `tile` · `overlay` · `displace`; `controller` drives it from outside |
+| `SplitViewSidebar` | The sidebar column (below), plus `compactPresentation`: `stack` (default, the compact stack's first page) or `tabs` (the iOS tab bar over the other columns while compact; see "A sidebar that becomes a tab bar") |
 | `SplitViewSidebar` · `SplitViewSupplementary` · `SplitViewDetail` | Columns (`<section>`, `data-slot="split-view-sidebar"` etc., `data-top`, `data-behind`, `data-lifted`, `data-hairline`). The column is its own surface: `className` (a string, or a function of `{ column, top, behind, lifted }`) merges over its background and flex layout; `style`, `ref` and the rest go on the section. `width`, `minWidth`, `maxWidth`, `resizable` (a `separator` divider on its trailing edge: arrows, Shift+arrows, Home/End, Enter or double-click to reset) |
-| `SplitViewHeader` | The bar of a column that doesn't push (`data-slot="split-view-header"`): `title`, `leading`, `trailing`; collapsed, a back button to the column before (`split-view-back`) takes the leading items' place. `largeTitle` draws the iOS large title (a level-1 heading) at the top of the content; with it or `showOnScroll`, the inline title fades in once the content scrolls (`data-title-hidden` while it is away). `titleAlign="start"` puts the title after the leading items. It is the same bar as `NavigationStackBar` (one back-label rule, one large title, one fade): a page of a NavigationStack uses `NavigationStackBar`'s parts |
+| `SplitViewHeader` | The bar of a column that doesn't push (`data-slot="split-view-header"`): `title`, `leading`, `trailing`; collapsed, a back button to the column before (`split-view-back`) takes the leading items' place. `largeTitle` draws the iOS large title (a level-1 heading) at the top of the content; with it or `showOnScroll`, the inline title fades in once the content scrolls (`data-title-hidden` while it is away). `titleAlign="start"` puts the title after the leading items. `scrollEdge` (default true) is iOS's scroll-edge look: the hairline under the bar shows only once the pane's `SplitViewContent` has scrolled under it (`data-scrolled`), as a `NavigationStackBar`'s surface does, so the bars of a window line up at rest; `scrollEdge={false}` keeps it at rest. It is the same bar as `NavigationStackBar` (one back-label rule, one large title, one fade): a page of a NavigationStack uses `NavigationStackBar`'s parts |
 | `SplitViewContent` | The column's scroller (`data-slot="split-view-content"`); draws the header's large title (`split-view-large-title`) at the top of the scroll, and carries `data-scrolled` once it leaves its top and `data-under` once the large title has gone under the bar |
-| `SplitViewItem` | A row bound to the column's value: pressing it selects `value` and shows the next column (a push while collapsed). Row anatomy: `icon`, `title`, `description`, `trailing`, or your own `children`. The current one (its `value` is the column's; never while collapsed, where rows are navigation) has `aria-current` and `data-current`. The items of a column are one tab stop: Up, Down, Home and End move between them, past `disabled` ones, and Tab moves on to the next column. `variant` is `pill` (sidebar default; 44px tall in a compact split view) or `row`; `tint` gives it its own colour; `preview` shows a hover card beside it; `onClick` runs first (`event.preventDefault()` keeps it from selecting) |
-| `SplitViewSection` | A titled group of items (`role="group"`, named by its label); the label is the kit's `menu` section label, or a bold heading with `variant="prominent"`. `collapsible` makes the label UI SDK's Collapsible trigger (`open` / `defaultOpen` / `onOpenChange(open, details)`). The same value may appear in several sections; every copy draws current |
-| `SplitViewToggle` | Sidebar button (`aria-expanded`, `aria-controls`); steps aside when collapsed |
+| `SplitViewItem` | A row bound to the column's value: pressing it selects `value` and shows the next column (a push while collapsed). Row anatomy: `icon`, `title`, `description`, `trailing`, or your own `children`. The current one (its `value` is the column's; never while collapsed, where rows are navigation) has `aria-current` and `data-current`. The items of a column are one tab stop: Up, Down, Home and End move between them, past `disabled` ones, and Tab moves on to the next column. `variant` is `pill` (sidebar default; 44px tall in a compact split view) or `row`; `tint` gives it its own colour; `preview` shows a hover card beside it; `onClick` runs first (`event.preventDefault()` keeps it from selecting). `icon` is an `Icon` name or a node. `tab`: one of the compact tab bar's tabs, in a sidebar with `compactPresentation="tabs"` |
+| `SplitViewSection` | A titled group of items (`role="group"`, named by its label); the label is the kit's `menu` section label, or a bold heading with `variant="prominent"`. `collapsible` makes the label UI SDK's Collapsible trigger (`open` / `defaultOpen` / `onOpenChange(open, details)`). The same value may appear in several sections; every copy draws current. `tab` with a `value` and an `icon`: the whole section is one tab of the compact tab bar (a tab group), current while any of its items is the selection |
+| `SplitViewSidebarTrigger` | The sidebar button (`aria-expanded`, `aria-controls`, `data-slot="split-view-sidebar-trigger"`); steps aside when collapsed. `children` replace the 22px `sidebar` glyph; `shortcut` (UI SDK's syntax, `"mod+alt+s"`) toggles the sidebar from anywhere and is announced as `aria-keyshortcuts` (reason `shortcut`) |
 | `useSplitView()` | `sizeClass`, `collapsed`, `columns`, `value`, `select(column, value)`, `isCurrent(column, value)`, `compactColumn`, `show`, `back`, `canGoBack`, `sidebarOpen`, `setSidebarOpen`, `toggleSidebar`, `sidebarBehavior`, `supplementaryOpen`, `setSupplementaryOpen`, `columnWidths`, `setColumnWidth`. Throws outside a SplitView |
 | `useSplitViewColumn()` | The column the caller is in, or `null` |
 | `useSplitViewBack(title?)` | For a bar of your own at a column's root (a NavigationStack does this itself): `{ title, back }` while collapsed with a column before it, else `null` |
@@ -182,7 +185,7 @@ A column with pages of its own holds a [NavigationStack](#/navigation-stack), an
 
 - **Collapsed**, the stack's first page gets the back button to the column before, named by that column's title ("‹ Library"), and the stack's first title names the column for the one after it.
 - **Escape, the platform back and the edge swipe pop the innermost level first**: the stack's pages, then the columns once the stack is at its first page. A popup open in a page closes before either.
-- **Tiled**, the first page has no back button; put the `SplitViewToggle` in `NavigationStackLeading` (the back button takes its place when there is one).
+- **Tiled**, the first page has no back button; put the `SplitViewSidebarTrigger` in `NavigationStackLeading` (the back button takes its place when there is one).
 - **Across size classes** the column and its stack are the same elements: a page pushed at regular width is still on top when the window narrows.
 
 `resetKey` pops the stack to its first page when the sidebar picks something else; `renderPage(key)` draws the pages pushed by key (`useNavigationStack().push(key)`), a deep link or a restored stack.
@@ -195,7 +198,7 @@ function Library() {
       <NavigationStack resetKey={s.value.sidebar} renderPage={(key) => <AlbumPage value={key} />}>
         <NavigationStackPage value="albums">
           <NavigationStackBar>
-            <NavigationStackLeading><SplitViewToggle /></NavigationStackLeading>
+            <NavigationStackLeading><SplitViewSidebarTrigger /></NavigationStackLeading>
             <NavigationStackTitle>Recently Added</NavigationStackTitle>
           </NavigationStackBar>
           <NavigationStackContent>
@@ -213,6 +216,35 @@ Its pages are keys, so the stack can be controlled (`pages` / `onPagesChange`, t
 
 {% demo src="split-view/nested-stack" %}
 
+## A sidebar that becomes a tab bar
+
+Music, Podcasts and the TV app are a sidebar on an iPad and a tab bar on an iPhone. `compactPresentation="tabs"` on `SplitViewSidebar` is that, with one tree: while the split view is compact the sidebar leaves the stack and its `tab` items become the kit's [Tabs](#/tabs) `bar`, pinned over the bottom of the other columns. A `SplitViewSection` with `tab`, a `value` and an `icon` is one tab for all its rows (Library), current while any of them is the selection. Picking a tab selects it exactly as picking the row would (`onValueChange`, reason `item-press`) and goes back to the first page of the stack beside it; the arrow keys move between tabs and Enter or Space picks one (manual activation, so arrowing doesn't reset the stack). Tabs keep the sidebar's order.
+
+Nothing remounts at the boundary: the detail's NavigationStack (with `resetKey={value.sidebar}`) stays mounted, and its content keeps room for the bar (`--tabs-bar-h`, which the split view publishes while its sidebar is a tab bar, home indicator included), as `SplitViewContent` does. A mini player or a toolbar of your own sits at `bottom: calc(var(--tabs-bar-h) + 8px)`.
+
+```tsx
+<SplitView value={{ sidebar }} onValueChange={(v) => setSidebar(v.sidebar)}>
+  <SplitViewSidebar compactPresentation="tabs" aria-label="Podcasts">
+    <SplitViewContent>
+      <SplitViewItem value="home" title="Home" icon="house" tab />
+      <SplitViewItem value="search" title="Search" icon="magnifyingglass" tab />
+      <SplitViewSection title="Library" tab value="library" icon="books-vertical">
+        <SplitViewItem value="shows" title="Shows" icon="layers" />
+      </SplitViewSection>
+    </SplitViewContent>
+  </SplitViewSidebar>
+  <SplitViewDetail>
+    <NavigationStack resetKey={sidebar}>…</NavigationStack>
+  </SplitViewDetail>
+</SplitView>
+```
+
+Drag the frame across 640px:
+
+{% demo src="split-view/sidebar-tab-bar" %}
+
+The [Apple Music block](#/blocks/apple-music) is the full version: one SplitView at every size, its Library tab a section, and the mini player riding over the tab bar.
+
 ## Gallery: closing the supplementary column
 
 `supplementaryOpen={false}` (or `setSupplementaryOpen(false)` from `useSplitView()`) slides the supplementary column away, under a tiled sidebar or off the leading edge, and the detail springs across to take its space. The column keeps its width, scroll position and state, and slides back the same way. Collapsed, the stack skips it: picking in the sidebar pushes the detail directly.
@@ -226,7 +258,7 @@ const s = useSplitView()
 
 ## Stories
 
-Storybook's **Organisms/SplitView** (`registry/blocks/split-view-demos/split-view.stories.tsx`) shows every composition at its size class: Mail light and dark, Notes, Settings, the compact stack and a pushed column, overlay and displace sidebars, a resizable frame, tinted items, large titles scrolled and compact, item states, an empty detail, header options, the gallery, and the column that pushes (`NestedStack`, `NestedStackDark`, `NestedStackMedium`, `NestedStackCompact`, `NestedStackCompactRoot`, `NestedNavigationStack`, `NavigationStackRootBack`).
+Storybook's **Organisms/SplitView** (`registry/blocks/split-view-demos/split-view.stories.tsx`) shows every composition at its size class: Mail light and dark, Notes, Settings, the compact stack and a pushed column, overlay and displace sidebars, a resizable frame, tinted items, large titles scrolled and compact, item states, an empty detail, header options, the gallery, and the sidebar as a tab bar (`SidebarTabBar`, `SidebarTabBarDark`, `SidebarTabBarTablet`), the column that pushes (`NestedStack`, `NestedStackDark`, `NestedStackMedium`, `NestedStackCompact`, `NestedStackCompactRoot`, `NestedNavigationStack`, `NavigationStackRootBack`).
 
 ## cva recipes
 
@@ -237,7 +269,7 @@ Generated from the source. Call a recipe on any element to borrow a component's 
 Defined in `@/components/ui/split-view`. Base classes:
 
 ```text
-[ 'bl-btn group/item relative flex w-full cursor-pointer items-center gap-3 border-0 text-left [font-family:inherit] text-subhead text-foreground outline-none', 'transition-[background-color,color] duration-150', 'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset', 'disabled:cursor-default disabled:opacity-45', ]
+[ 'bl-btn group/item relative flex w-full cursor-pointer items-center gap-3 border-0 text-start [font-family:inherit] text-subhead text-foreground outline-none', 'transition-[background-color,color] duration-150', 'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset', 'disabled:cursor-default disabled:opacity-45', ]
 ```
 
 **`variant`** — default `pill`

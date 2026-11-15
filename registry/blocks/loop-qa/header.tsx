@@ -3,14 +3,14 @@
 import type { ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { SplitViewToggle, useSplitView } from '@/components/ui/split-view';
+import { SplitViewSidebarTrigger, useSplitView } from '@/components/ui/split-view';
 import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
 import { BarButton } from './parts';
 import { useLoopQA } from './state';
 
 export function Leading() {
-  return <SplitViewToggle />;
+  return <SplitViewSidebarTrigger />;
 }
 
 export function PageActions({ run = true, extra }: { run?: boolean; extra?: ReactNode }) {

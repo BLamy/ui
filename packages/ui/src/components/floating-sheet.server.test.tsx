@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { renderToString } from 'react-dom/server';
-import { FloatingSheet, FloatingSheetBody, FloatingSheetFoot } from '@/components/ui/floating-sheet';
+import { FloatingSheet, FloatingSheetBody, FloatingSheetFooter } from '@/components/ui/floating-sheet';
 
 declare global { var __UI_SDK_STRICT__: boolean | undefined }
 globalThis.__UI_SDK_STRICT__ = true;
@@ -13,7 +13,7 @@ describe('FloatingSheet on the server', () => {
     const html = renderToString(
       <FloatingSheet aria-label="Order" peek={120}>
         <FloatingSheetBody><p>Arriving in 12 minutes</p></FloatingSheetBody>
-        <FloatingSheetFoot><button type="button">Track</button></FloatingSheetFoot>
+        <FloatingSheetFooter><button type="button">Track</button></FloatingSheetFooter>
       </FloatingSheet>,
     );
     expect(html).toContain('data-layer-host=""');

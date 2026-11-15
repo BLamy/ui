@@ -17,14 +17,14 @@ import { splitClip } from '@/lib/video-timeline-model'
 {% tab title="npm" %}
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 
-Import the stylesheet once at your app's entry, then the parts from the package root:
+Import the stylesheet once at your app's entry, then the parts from their module:
 
 ```tsx
 import '@brett_lamy/ui/styles.css'
 
-import {
-  VideoTimeline, usePlaybackClock, splitClip,
-} from '@brett_lamy/ui'
+import { VideoTimeline } from '@brett_lamy/ui/video-timeline'
+import { usePlaybackClock } from '@brett_lamy/ui/lib/playback'
+import { splitClip } from '@brett_lamy/ui/lib/video-timeline-model'
 ```
 {% endtab %}
 {% endtabs %}
@@ -54,7 +54,7 @@ useEffect(() => playback.setDuration(timelineDuration(timeline)), [playback, tim
 />
 ```
 
-`media` gives each media id its length (a trim can't run past the end of the file; stills have no limit) and the name a clip shows. `selectedClips` / `defaultSelectedClips` / `onSelectedClipsChange(ids, details)` (reasons `item-press`, `track-press`, `escape-key`, `remove-press`) and `zoom` / `defaultZoom` / `onZoomChange(zoom, details)` (pixels per second, reason `wheel`) can be controlled; `readOnly` shows the edit without letting anything change it; `fitTimelineZoom(duration, width, { headerWidth })` fits an edit to a width. `onDropMedia(id, details)` reports media dragged in from a library: put `timelineMediaType` on the drag with the media id. `details` has where it landed (`trackId`, `time` and, on a magnetic track, `index`), the drop's `event` and `source`, and `cancel()` to refuse it. ⌘/Ctrl + wheel zooms with `reason: 'wheel'`; a zoom the host refuses leaves the scroll where it was.
+`media` gives each media id its length (a trim can't run past the end of the file; stills have no limit) and the name a clip shows. `selectedClips` / `defaultSelectedClips` / `onSelectedClipsChange(ids, details)` (reasons `item-press`, `track-press`, `escape-key`, `remove-press`) and `zoom` / `defaultZoom` / `onZoomChange(zoom, details)` (pixels per second, reason `wheel`) can be controlled; `readOnly` shows the edit without letting anything change it; `fitTimelineZoom(duration, width, { headerWidth })` fits an edit to a width, and `timelineZoomRange` (`{ min: 2, max: 600 }` px a second) is the range a zoom is clamped to, for your own zoom slider or buttons. `onDropMedia(id, details)` reports media dragged in from a library: put `timelineMediaType` on the drag with the media id. `details` has where it landed (`trackId`, `time` and, on a magnetic track, `index`), the drop's `event` and `source`, and `cancel()` to refuse it. ⌘/Ctrl + wheel zooms with `reason: 'wheel'`; a zoom the host refuses leaves the scroll where it was.
 
 ## The model
 

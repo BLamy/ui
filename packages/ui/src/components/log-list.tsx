@@ -8,7 +8,7 @@ import { createParts, usePart, usePrimitive, type PartProps, type PrimitiveHandl
 import { cva, type VariantProps } from 'class-variance-authority';
 import { badgeVariants } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { EmptyState } from '@/components/ui/empty-state';
+import { renderEmptyState } from '@/components/ui/empty-state';
 import { Icon, type IconShape } from '@/lib/icon';
 import { formatLogTime, normalizeLogLevel, type LogLevel, type LogRow, type RowId } from '@/lib/log-list-model';
 import {
@@ -95,7 +95,7 @@ const COUNT_CLASS = cn(badgeVariants({ variant: 'secondary', size: 'sm' }), 'me-
 const TOGGLE_CLASS = 'invisible ms-[calc(var(--log-toggle)*-0.5)] flex h-[18px] w-(--log-toggle) shrink-0 items-center justify-center text-muted-foreground group-data-clipped/row:visible group-data-expanded/row:visible group-data-has-detail/row:visible';
 const ICON_CLASS = 'me-1.5 flex h-[18px] w-3.5 shrink-0 items-center justify-center';
 
-export interface LogRowContentProps {
+export interface LogListRowContentProps {
   row: LogRow;
   /** Shows `row.detail`, and the whole message. */
   expanded?: boolean;
@@ -108,7 +108,7 @@ export interface LogRowContentProps {
 
 /** A row's usual content: disclosure, level icon, count, message, source and time. A `renderRow` can use it to add to a
  *  row rather than replace it. */
-export function LogRowContent({ row, expanded = false, cut = false, disclosure = false, formatTime = formatLogTime }: LogRowContentProps) {
+export function LogListRowContent({ row, expanded = false, cut = false, disclosure = false, formatTime = formatLogTime }: LogListRowContentProps) {
   const time = row.time === undefined ? null : formatTime(row.time);
   return (
     <>
@@ -142,7 +142,7 @@ export interface LogRowState {
   expanded: boolean;
   /** The list's `overflow="expand"`, while the row isn't open. */
   cut: boolean;
-  /** Whether rows draw a disclosure chevron: pass it on to `LogRowContent`. */
+  /** Whether rows draw a disclosure chevron: pass it on to `LogListRowContent`. */
   disclosure: boolean;
   formatTime: (ms: number) => string;
 }
@@ -185,7 +185,7 @@ export interface LogListProps<T extends LogRow = LogRow>
   /** A row's text for copying. Default `logRowText`. */
   getRowText?: (row: T) => string;
   /** Called with a row's text when it's copied. Hosts with a clipboard of their own can write it there. */
-  onRowCopy?: (row: T, text: string) => void;
+  onRowCopy?: (text: string, row: T) => void;
   /** Draws a row's content yourself, inside its row element. Must be stable (`useCallback`): a new function re-renders
    *  every mounted row. */
   renderRow?: (row: T, state: LogRowState) => ReactNode;
@@ -261,7 +261,7 @@ const RowContent = memo(function RowContent({ row, index, selected, expanded, cu
     <parts.Cell className={CELL_CLASS}>
       {renderRow
         ? renderRow(row as never, { index, selected, expanded, cut, disclosure, formatTime })
-        : <LogRowContent row={row} expanded={expanded} cut={cut} disclosure={disclosure} formatTime={formatTime} />}
+        : <LogListRowContent row={row} expanded={expanded} cut={cut} disclosure={disclosure} formatTime={formatTime} />}
     </parts.Cell>
   );
 });
@@ -353,9 +353,7 @@ const LogListBody = memo(function LogListBody({
               ) : null}
             </parts.Marker>
           </parts.Rows>
-          <parts.Empty>{emptyState === undefined || typeof emptyState === 'string'
-            ? <EmptyState size="sm" title={emptyState ?? 'No messages'} />
-            : emptyState}</parts.Empty>
+          <parts.Empty>{renderEmptyState(emptyState, { title: 'No messages' })}</parts.Empty>
           {footer != null ? <parts.Footer className="px-3 py-2 text-center text-caption text-muted-foreground">{footer}</parts.Footer> : null}
         </parts.Grid>
         <parts.Jump className="pointer-events-none absolute inset-x-0 z-4 flex justify-center data-[side=above]:top-2 data-[side=below]:bottom-2">

@@ -41,7 +41,7 @@ export function ComposeSheet({ mail }: { mail: MailState }) {
       {d ? (
         <div className="flex min-h-0 flex-1 flex-col">
           <div className="flex h-toolbar shrink-0 items-center gap-2 px-2">
-            <Button variant="link" className="px-2 text-body font-normal" onClick={() => mail.closeDraft('save')}>Cancel</Button>
+            <Button variant="plain" className="px-2 text-body font-normal" onClick={() => mail.closeDraft('save')}>Cancel</Button>
             <div className="min-w-0 flex-1 truncate text-center text-body font-semibold"><TextMorph>{d.subject.trim() || 'New Message'}</TextMorph></div>
             <Button variant="ghost" size="icon" aria-label="Send" disabled={!d.to.trim()} onClick={() => mail.closeDraft('send')}
               className="text-primary data-disabled:text-tertiary-foreground data-disabled:opacity-100">
@@ -63,7 +63,7 @@ export function ComposeSheet({ mail }: { mail: MailState }) {
             <Field label="Subject:">
               <Input className={input} value={d.subject} aria-label="Subject" onValueChange={(subject) => mail.editDraft({ subject })} />
             </Field>
-            <MarkdownEditor key={d.replyTo ?? 'new'} variant="ghost" aria-label="Message body" defaultValue={d.body}
+            <MarkdownEditor key={d.replyTo ?? 'new'} variant="plain" aria-label="Message body" defaultValue={d.body}
               autoFocus={!!d.to} slashMenu={false} minHeight={260} placeholder=" "
               onValueChange={(body) => mail.editDraft({ body })} className="px-4 pt-3 pb-8 text-callout" classNames={{ blockquote: 'border-l-primary' }} />
           </div>

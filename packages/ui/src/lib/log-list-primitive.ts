@@ -67,7 +67,7 @@ export type LogListOptions<T extends LogRow = LogRow> = {
   expandOnPress?: boolean;
   copyable?: boolean;
   getRowText?: (row: T) => string;
-  onRowCopy?: (row: T, text: string) => void;
+  onRowCopy?: (text: string, row: T) => void;
   formatTime?: (ms: number) => string;
   /** A row's height until it's measured. */
   rowHeight?: number;
@@ -331,7 +331,7 @@ export const logList = definePrimitive({
       if (!row) return Promise.resolve(false);
       const { getRowText, onRowCopy, formatTime } = options();
       const text = getRowText?.(row) ?? logRowText(row, formatTime ?? formatLogTime);
-      onRowCopy?.(row, text);
+      onRowCopy?.(text, row);
       const clipboard = globalThis.navigator?.clipboard;
       if (!clipboard) return Promise.resolve(false);
       return clipboard.writeText(text).then(() => { announce('Copied'); return true; }, () => false);

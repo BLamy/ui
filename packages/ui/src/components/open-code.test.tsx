@@ -516,3 +516,27 @@ it('is a card by default and plain on request, and passes ref and root props thr
   view.rerender(<OpenCode host={f.host} loadRuntime={f.loadRuntime} autoStart={false} variant="plain" />);
   expect(screen.getByRole('region', { name: 'OpenCode' }).className).not.toContain('rounded-card');
 });
+
+it('waits in an empty state whose action is Start, and keeps Stop in the header only while it runs', async () => {
+  const f = fixture();
+  render(<OpenCode host={f.host} loadRuntime={f.loadRuntime} autoStart={false} />);
+  const start = screen.getByRole('button', { name: 'Start OpenCode' });
+  // One Start, in the empty terminal, under a title that says what is missing.
+  expect(start.closest('[data-slot=empty-state]')).toBeTruthy();
+  expect(screen.getByText("OpenCode isn't running")).toBeTruthy();
+  expect(screen.queryByRole('button', { name: 'Stop OpenCode' })).toBeNull();
+  fireEvent.click(start);
+  await waitFor(() => expect(f.runtime.mount).toHaveBeenCalledTimes(1));
+  expect(screen.getByRole('button', { name: 'Stop OpenCode' }).closest('header')).toBeTruthy();
+  expect(screen.queryByRole('button', { name: 'Start OpenCode' })).toBeNull();
+});
+
+it('shows a start failure in the shared destructive callout', async () => {
+  const f = fixture();
+  render(<OpenCode host={f.host} loadRuntime={() => Promise.reject(new Error('runtime offline'))} />);
+  const alert = await screen.findByRole('alert');
+  expect(alert.textContent).toContain('runtime offline');
+  expect(alert.className).toContain('bg-destructive/10');
+  expect(alert.querySelector('[data-slot=icon]')).toBeTruthy();
+  expect(screen.getByText('OpenCode could not start')).toBeTruthy();
+});

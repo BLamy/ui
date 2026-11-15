@@ -1,6 +1,7 @@
 import type { ComponentProps } from 'react';
+import { renderElement, type PartProps } from '@ui-sdk/react/primitive';
 import { cva, type VariantProps } from 'class-variance-authority';
-import { cn } from '@/lib/utils';
+import { cn, cx } from '@/lib/utils';
 
 /* ══ Skeleton — loading placeholder. A soft highlight sweeps across it (left to right, the reading direction)
    instead of the whole block pulsing; reduced motion gets a still block. Size it with classes (`h-24 w-full`), or
@@ -8,7 +9,12 @@ import { cn } from '@/lib/utils';
    a shorter last line; style its bars with `lineClassName` (`h-3`) and its spacing with `className` (`gap-3`). Placeholders are
    aria-hidden — mark the region that is loading with role="group", aria-busy and a label instead. ══ */
 export const skeletonVariants = cva(
-  'block bg-secondary-strong [background-image:linear-gradient(90deg,transparent_25%,color-mix(in_oklab,var(--card)_55%,transparent)_50%,transparent_75%)] [background-size:200%_100%] [background-position:150%_0] [background-repeat:no-repeat] animate-bl-shimmer motion-reduce:animate-none',
+  [
+    // The sheen is lighter than the bar in both appearances: the card color in light, a whisper of the foreground in
+    // dark (the dark card is darker than the bar, and would sweep a shadow across it).
+    '[--skeleton-sheen:color-mix(in_oklab,var(--card)_55%,transparent)] dark:[--skeleton-sheen:color-mix(in_oklab,var(--foreground)_8%,transparent)]',
+    'block bg-secondary-strong [background-image:linear-gradient(90deg,transparent_25%,var(--skeleton-sheen)_50%,transparent_75%)] [background-size:200%_100%] [background-position:150%_0] [background-repeat:no-repeat] animate-bl-shimmer motion-reduce:animate-none',
+  ],
   {
     variants: {
       shape: {
@@ -26,18 +32,27 @@ export const skeletonVariants = cva(
   },
 );
 
-export interface SkeletonProps extends ComponentProps<'div'>, VariantProps<typeof skeletonVariants> {
+export interface SkeletonProps extends PartProps<'div'>, VariantProps<typeof skeletonVariants> {
   /** Width — a number is px. Classes work too. */
   width?: number | string;
   /** Height — a number is px. Classes work too. */
   height?: number | string;
 }
 
-export function Skeleton({ className, shape, width, height, style, ...props }: SkeletonProps) {
-  return (
-    <div data-slot="skeleton" data-shape={shape ?? 'default'} aria-hidden="true"
-      className={cn(skeletonVariants({ shape }), className)}
-      style={width != null || height != null ? { width, height, ...style } : style} {...props} />
+/** A placeholder block. `render` swaps the element where the markup needs phrasing content, such as a text line
+    inside a `<p>` or a button: `<Skeleton shape="text" render={<span />} />`. */
+export function Skeleton({ className, shape, width, height, style, render, ...props }: SkeletonProps) {
+  return renderElement(
+    'div',
+    {
+      'data-slot': 'skeleton',
+      'data-shape': shape ?? 'default',
+      'aria-hidden': true,
+      ...props,
+      className: cx(skeletonVariants({ shape }), className),
+      style: width != null || height != null ? { width, height, ...style } : style,
+    },
+    render,
   );
 }
 

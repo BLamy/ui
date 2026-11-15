@@ -1,22 +1,26 @@
 'use client';
 import {
-  createContext, memo, use, useContext, useId, useLayoutEffect, useMemo, useState,
-  type ComponentProps, type CSSProperties, type ReactNode,
+  createContext, memo, use, useCallback, useContext, useId, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore,
+  type ComponentProps, type CSSProperties, type MouseEvent as ReactMouseEvent, type ReactNode, type RefObject,
 } from 'react';
 import { createParts, usePart, usePrimitive } from '@ui-sdk/react/primitive';
+import { Button as SdkButton } from '@ui-sdk/react/button';
 import { Sheet, SheetBackdrop, SheetContent, type SheetProps } from '@/components/ui/sheet';
 import { closeButtonVariants, surfaceHeaderVariants, surfaceTitleVariants } from '@/lib/surface';
 import {
   adaptivePane,
   type AdaptivePaneApi,
+  type AdaptivePaneController,
   type AdaptivePaneOptions,
   type AdaptivePanePresentation,
+  type AdaptivePaneShown,
   type AdaptivePaneSide,
 } from '@/lib/adaptive-pane-primitive';
 import { useSizeClassScope, type SizeClass } from '@/lib/container';
 import { Icon } from '@/lib/icon';
 import { useKeptChildren } from '@/lib/kept-children';
-import { focusRing } from '@/lib/primitives';
+import { BackLabel, backName, barBackButton, barTitle, useBackFit } from '@/lib/nav-bar';
+import { barSurface } from '@/lib/primitives';
 import { BLSafeCtx } from '@/lib/theme';
 import { BARH, cn, cx } from '@/lib/utils';
 
@@ -47,6 +51,10 @@ export type {
        </AdaptivePaneHeader>
        …
      </AdaptivePane>
+   The button that opens it lives outside it, so it connects through the pane's `controller`:
+     const [pane] = useState(createAdaptivePaneController);
+     <AdaptivePaneTrigger controller={pane}>Activity</AdaptivePaneTrigger>
+     <AdaptivePane controller={pane} side="end" aria-label="Activity">…</AdaptivePane>
    A column or a drawer can be `resizable`: a separator on the edge it shares with the page drags its width, with
    the keyboard (arrows, Shift+arrows, Home, End, Enter) and by double-click back to the host's width. ══ */
 
@@ -58,13 +66,13 @@ const { Resizer, Edge, Dim, Page, Close } = createParts(adaptivePane, {
   close: 'button',
 });
 
-/** What `className` and `style` are given when they are functions. */
-export type AdaptivePaneState = { presentation: AdaptivePanePresentation; open: boolean; side: AdaptivePaneSide };
+/** What `className` and `style` are given when they are functions (`presentation` is the one that shows). */
+export type AdaptivePaneState = { presentation: AdaptivePaneShown; open: boolean; side: AdaptivePaneSide };
 
 export interface AdaptivePaneProps extends Omit<AdaptivePaneOptions, 'presentation'> {
   /** How it shows. Default `auto`: from the size-class scope (regular: `column`, medium: `drawer`, compact: `push`
    *  for an `end` pane, else `drawer`). */
-  presentation?: AdaptivePanePresentation | 'auto';
+  presentation?: AdaptivePanePresentation;
   /** The column's width (any CSS length; a number is px). The host's grid or flex track can size it instead. */
   columnWidth?: number | string;
   /** The drawer's width. Default 20rem, at most 85% of the host. */
@@ -89,14 +97,14 @@ export interface AdaptivePaneProps extends Omit<AdaptivePaneOptions, 'presentati
 }
 
 /** `auto`, resolved against the size class of the scope the pane is written in. Outside every scope: regular. */
-function resolvePresentation(presentation: AdaptivePanePresentation | 'auto', side: AdaptivePaneSide, sizeClass: SizeClass | undefined): AdaptivePanePresentation {
+function resolvePresentation(presentation: AdaptivePanePresentation, side: AdaptivePaneSide, sizeClass: SizeClass | undefined): AdaptivePaneShown {
   if (presentation !== 'auto') return presentation;
   if (sizeClass === 'compact') return side === 'end' ? 'push' : 'drawer';
   return sizeClass === 'medium' ? 'drawer' : 'column';
 }
 
 /* What the parts inside read: the presentation that shows and the pane's naming. */
-type PaneContext = { presentation: AdaptivePanePresentation; titleId: string; setTitled: (on: boolean) => void };
+type PaneContext = { presentation: AdaptivePaneShown; titleId: string; setTitled: (on: boolean) => void };
 const AdaptivePaneContext = createContext<PaneContext | null>(null);
 function usePane(part: string): PaneContext {
   const pane = useContext(AdaptivePaneContext);
@@ -120,6 +128,8 @@ export function AdaptivePane({
   const { api } = handle;
   const kept = useKeptChildren(children);
   const titleId = useId();
+  const paneId = useId();
+  usePublishPane(controller, handle.instance as unknown as PaneStore, paneId);
   const [titled, setTitled] = useState(false);
   const context = useMemo(() => ({ presentation: shown, titleId, setTitled }), [shown, titleId]);
   // The dock and the separator only change when the pane's own props do, so the presentation below can skip
@@ -128,6 +138,7 @@ export function AdaptivePane({
   const resizer = useMemo(() => (resizable ? <PaneResizer side={side} /> : null), [resizable, side]);
   const naming = useMemo(() => (label ? { 'aria-label': label } : titled ? { 'aria-labelledby': titleId } : { 'aria-label': 'Pane' }), [label, titled, titleId]);
   return usePart(handle, 'root', {}, {
+    id: paneId,
     className: (state: RootState) => {
       const own = { presentation: state.presentation, open: state.open, side: state.side };
       // Closed, a column or a cover leaves the layout (the `hidden` the root gets, which a display class would beat).
@@ -168,7 +179,7 @@ export function AdaptivePane({
   }, 'div');
 }
 
-type RootState = { presentation: AdaptivePanePresentation; side: AdaptivePaneSide; open: boolean; dragging: boolean };
+type RootState = { presentation: AdaptivePaneShown; side: AdaptivePaneSide; open: boolean; dragging: boolean };
 
 type PaneBodyProps = RootState & Pick<AdaptivePaneProps, 'modal' | 'dismissible' | 'swipe'> & {
   api: AdaptivePaneApi;
@@ -207,9 +218,9 @@ const PaneBody = memo(function PaneBody({
 });
 
 /** The swipe strip, on the pane's own edge of the host. */
-const edgeClass: Record<AdaptivePaneSide, string> = { start: 'start-0', end: 'end-0', left: 'left-0', right: 'right-0' };
+const edgeClass: Record<AdaptivePaneSide, string> = { start: 'start-0', end: 'end-0' };
 /** The divider, over the pane's inner edge. */
-const resizerClass: Record<AdaptivePaneSide, string> = { start: '-end-[5px]', end: '-start-[5px]', left: '-right-[5px]', right: '-left-[5px]' };
+const resizerClass: Record<AdaptivePaneSide, string> = { start: '-end-[5px]', end: '-start-[5px]' };
 
 /** The divider on a pane's inner edge: a separator that measures the pane when a drag or key starts, so the host
  *  can give any CSS width and the first resize still begins from what is on screen. */
@@ -277,26 +288,32 @@ export const adaptivePanePageClass = cn(
 
 /* ── Header parts ──
    One header for every presentation: in a column, a drawer or a cover, the title and a round × in a row; in a
-   push, the NavigationStack bar (the back button on the leading edge, the title centred, under the safe area). */
+   push, the NavigationStack bar, from the same pieces (lib/nav-bar and `barSurface`): the back button on the leading
+   edge naming what it goes back to, the title centred, the bar's material and hairline, under the safe area. */
+
+/* The push bar's row, which the back button measures its label against. */
+const PushBarContext = createContext<RefObject<HTMLDivElement | null> | null>(null);
 
 /** The pane's title row. Put an AdaptivePaneTitle and an AdaptivePaneClose in it (and any actions after them). */
-export function AdaptivePaneHeader({ className, style, ...props }: ComponentProps<'div'>) {
+export function AdaptivePaneHeader({ className, style, children, ...props }: ComponentProps<'div'>) {
   const { presentation } = usePane('AdaptivePaneHeader');
   const safeTop = use(BLSafeCtx);
+  const row = useRef<HTMLDivElement | null>(null);
   if (presentation === 'push') {
     return (
       <div data-slot="adaptive-pane-header" data-presentation="push"
-        className={cn(
-          'relative box-border grid h-(--adaptive-pane-bar-h) shrink-0 grid-cols-[minmax(0,1fr)_minmax(0,2fr)_minmax(0,1fr)] items-center px-1.5 pt-(--adaptive-pane-safe-top)',
-          'border-b border-border bg-background/86 backdrop-blur-[18px] backdrop-saturate-[1.7]',
-          className,
-        )}
+        className={cn('relative box-border flex h-(--adaptive-pane-bar-h) shrink-0 items-end px-1.5 pt-(--adaptive-pane-safe-top)', className)}
         // The bar's height follows the frame's safe area, measured at runtime.
         style={{ '--adaptive-pane-bar-h': safeTop + BARH + 'px', '--adaptive-pane-safe-top': safeTop + 'px', ...style } as CSSProperties}
-        {...props} />
+        {...props}>
+        <div data-side="top" aria-hidden="true" className={cn(barSurface, 'absolute inset-0 h-auto')} />
+        <div ref={row} className="relative flex h-toolbar w-full items-center justify-between gap-2">
+          <PushBarContext value={row}>{children}</PushBarContext>
+        </div>
+      </div>
     );
   }
-  return <div data-slot="adaptive-pane-header" className={cn(surfaceHeaderVariants({ variant: 'bar' }), className)} style={style} {...props} />;
+  return <div data-slot="adaptive-pane-header" className={cn(surfaceHeaderVariants({ variant: 'bar' }), className)} style={style} {...props}>{children}</div>;
 }
 
 /** The pane's title, which names it (unless the pane has an `aria-label`). A level 2 heading. */
@@ -310,7 +327,7 @@ export function AdaptivePaneTitle({ className, id, ...props }: ComponentProps<'h
     <h2 data-slot="adaptive-pane-title" id={id ?? titleId}
       className={cn(
         presentation === 'push'
-          ? 'col-start-2 row-start-1 m-0 truncate text-center text-body font-semibold text-foreground'
+          ? cn('m-0 leading-[22px]', barTitle)
           : cn(surfaceTitleVariants({ size: 'sm' }), 'min-w-0 flex-1 truncate py-1'),
         className,
       )}
@@ -319,31 +336,30 @@ export function AdaptivePaneTitle({ className, id, ...props }: ComponentProps<'h
 }
 
 export type AdaptivePaneCloseProps = ComponentProps<typeof Close> & {
-  /** What a pushed pane goes back to, shown beside the chevron. Default "Back". */
+  /** What a pushed pane goes back to, shown beside the chevron while it fits ("Back", then the chevron alone, when
+   *  it doesn't, as NavigationStack's bar does). Default "Back". */
   backLabel?: ReactNode;
 };
 
-/** Closes the pane: the round × in a column, a drawer or a cover; the "‹ Back" button of a pushed page (it pops it).
- *  Either way `onOpenChange` hears `close-press`. With children it shows them instead. */
+const noRow: RefObject<HTMLDivElement | null> = { current: null };
+
+/** Closes the pane: the round × in a column, a drawer or a cover; the "‹ Back" button of a pushed page (it pops it,
+ *  and is named "Back to" + `backLabel`). Either way `onOpenChange` hears `close-press`. With children it shows them
+ *  instead. */
 export function AdaptivePaneClose({ className, children, backLabel = 'Back', 'aria-label': ariaLabel, ...props }: AdaptivePaneCloseProps) {
   const { presentation, titleId } = usePane('AdaptivePaneClose');
   const ownId = useId();
   const id = props.id ?? ownId;
+  const row = useContext(PushBarContext) ?? noRow;
+  const fit = useBackFit(row, backLabel, () => row.current?.querySelector<HTMLElement>('[data-slot=adaptive-pane-title]'));
   if (presentation === 'push') {
     return (
-      <Close type="button" aria-label={ariaLabel ?? (typeof backLabel === 'string' ? backLabel : 'Back')}
-        className={cx(
-          ['bl-btn relative z-1 col-start-1 row-start-1 flex min-w-0 cursor-pointer items-center justify-self-start rounded-ctl border-0 bg-transparent py-1.5 pr-2 pl-0 [font-family:inherit] text-body text-primary', focusRing],
-          className,
-        )}
-        {...props}>
-        {children ?? (
-          <>
-            <Icon name="chevL" size={24} sw={2.4} className="shrink-0 rtl:-scale-x-100" />
-            <span className="truncate">{backLabel}</span>
-          </>
-        )}
-      </Close>
+      <div className="relative z-1 flex min-w-[44px] items-center">
+        <Close type="button" aria-label={ariaLabel ?? backName(backLabel)} className={cx(barBackButton, className)} {...props}>
+          {children ?? <BackLabel fit={fit} label={backLabel} />}
+        </Close>
+        {fit.rulers}
+      </div>
     );
   }
   return (
@@ -354,5 +370,74 @@ export function AdaptivePaneClose({ className, children, backLabel = 'Back', 'ar
       {...props}>
       {children ?? <Icon name="x" size={15} sw={2.6} />}
     </Close>
+  );
+}
+
+/* ── The trigger ──
+   A pane's opener lives outside it (in a toolbar, a tab bar), so it reaches the pane through its controller: the
+   pane publishes whether it is open and its id under the controller, and every trigger given the same controller
+   reads them. */
+
+type PaneLink = { open: boolean; id: string };
+type PaneEntry = { value: PaneLink | undefined; listeners: Set<() => void> };
+const links = new WeakMap<object, PaneEntry>();
+const entryOf = (controller: object): PaneEntry => {
+  let entry = links.get(controller);
+  if (!entry) links.set(controller, (entry = { value: undefined, listeners: new Set() }));
+  return entry;
+};
+
+/** Publishes the pane's open state and id under its controller, for its triggers. */
+type PaneStore = { get: () => { open: boolean }; subscribe: (listener: () => void) => () => void };
+function usePublishPane(controller: AdaptivePaneController | undefined, store: PaneStore, id: string) {
+  useLayoutEffect(() => {
+    if (!controller) return undefined;
+    const entry = entryOf(controller);
+    const publish = () => {
+      const open = store.get().open;
+      if (entry.value?.open === open && entry.value.id === id) return;
+      entry.value = { open, id };
+      entry.listeners.forEach((listener) => listener());
+    };
+    publish();
+    const stop = store.subscribe(publish);
+    return () => {
+      stop();
+      entry.value = undefined;
+      entry.listeners.forEach((listener) => listener());
+    };
+  }, [controller, store, id]);
+}
+
+export type AdaptivePaneTriggerProps = Omit<ComponentProps<typeof SdkButton>, 'onClick'> & {
+  /** The controller the pane was given (`createAdaptivePaneController()`). */
+  controller: AdaptivePaneController;
+  /** Runs before the pane toggles; `event.preventDefault()` keeps it as it is. */
+  onClick?: (event: ReactMouseEvent<HTMLElement>) => void;
+};
+
+/** The button that opens and closes a pane from outside it: it toggles `open` (`onOpenChange` hears
+ *  `trigger-press`), and says whether the pane shows and which element it controls (`aria-expanded`,
+ *  `aria-controls`). Unstyled, like the other triggers: style it with `buttonVariants()` or `render`. */
+export function AdaptivePaneTrigger({ controller, onClick, ...props }: AdaptivePaneTriggerProps) {
+  const subscribe = useCallback((listener: () => void) => {
+    const { listeners } = entryOf(controller);
+    listeners.add(listener);
+    return () => { listeners.delete(listener); };
+  }, [controller]);
+  const link = useSyncExternalStore(subscribe, () => entryOf(controller).value, () => undefined);
+  return (
+    <SdkButton
+      data-adaptive-pane-trigger=""
+      aria-expanded={link ? link.open : undefined}
+      aria-controls={link?.id}
+      data-open={link?.open || undefined}
+      onClick={(event) => {
+        onClick?.(event);
+        if (event.defaultPrevented || !link) return;
+        controller.setOpen(!link.open, { reason: 'trigger-press', event: event.nativeEvent });
+      }}
+      {...props}
+    />
   );
 }

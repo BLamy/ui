@@ -273,8 +273,7 @@ function AtlasGate() {
       {prompt}{' '}
       <Button
         variant="link"
-        size="sm"
-        className="h-auto px-0"
+        className="font-semibold"
         disabled={busy}
         onClick={() => go(next)}
       >
@@ -326,8 +325,7 @@ function AtlasGate() {
                 </Field>
                 <Button
                   variant="link"
-                  size="sm"
-                  className="-mt-1.5 h-auto self-end px-1"
+                  className="-mt-1.5 self-end text-footnote font-semibold"
                   disabled={busy}
                   onClick={() => go('reset')}
                 >

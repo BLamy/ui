@@ -7,6 +7,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/lib/icon';
+import { ThemeScope } from '@/lib/theme';
 import { Screen } from '../stories/primitive-frame';
 
 const meta: Meta<typeof DropdownMenu> = {
@@ -214,4 +215,17 @@ export const TriggerPalette: Story = {
   ),
 };
 
-export const Closed: Story = { render: (args) => <Screen h={260}><div><Actions open={false} {...args} /></div></Screen> };
+export const Closed: Story = { render: (args) => <Screen h={560}><div><Actions open={false} {...args} /></div></Screen> };
+
+/** No BLProvider or layer host around it: the menu goes to the browser's top layer as a `[popover]` element, and
+    looks exactly as it does inside a host (no browser border or padding; styles.css resets `[popover]` for every
+    kit popup). A host app that skips BLProvider gets this path. */
+function TopLayer({ dark }: { dark?: boolean }) {
+  return (
+    <ThemeScope appearance={dark ? 'dark' : 'light'} className="min-h-[560px] bg-background p-6 font-sans text-foreground">
+      <Actions />
+    </ThemeScope>
+  );
+}
+export const InTopLayer: Story = { render: () => <TopLayer /> };
+export const InTopLayerDark: Story = { render: () => <TopLayer dark /> };

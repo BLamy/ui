@@ -1,13 +1,17 @@
 {
   "name": "empty-state",
   "title": "EmptyState",
-  "description": "What a list, table, tree, popup, pane or page shows when it has nothing: an optional icon, a title, a description and an action, in three sizes. The default of every emptyState prop in the kit.",
+  "description": "What a list, table, tree, popup, pane or page shows when it has nothing: an optional icon, a title, a description and an action, in three sizes, AA on every surface. renderEmptyState(value, defaults) is how every emptyState prop in the kit is read (a string is the title, null nothing), as a polite status.",
   "page": "empty-state",
   "exports": [
     "EmptyState",
-    "emptyStateVariants"
+    "emptyStateVariants",
+    "renderEmptyState"
   ],
   "imports": [
     "EmptyState"
+  ],
+  "types": [
+    "EmptyStateProps"
   ]
 }

@@ -58,16 +58,17 @@ export const surfaceFooterVariants = cva('flex gap-2 px-5 pt-3 pb-5', {
   defaultVariants: { orientation: 'horizontal' },
 });
 
-/** The round × (and ‹) of every surface: 30px, in the header row (`inline`) or pinned to the top-end corner. */
+/** The round × (and ‹) of every surface: 30px, in the header row (`inline`) or pinned to the top-end corner. Like
+    iOS, it is drawn at 30px but hit-tested at 44px: a `::after` reaches 7px past each edge. */
 export const closeButtonVariants = cva(
   cn(
-    'bl-btn grid size-[30px] shrink-0 cursor-pointer place-items-center rounded-full border-0 bg-secondary p-0 text-muted-foreground transition-[background-color,color] duration-exit hover:text-foreground active:bg-secondary-strong disabled:cursor-default disabled:opacity-40',
+    "bl-btn grid size-[30px] shrink-0 after:absolute after:-inset-[7px] after:rounded-full after:content-[''] cursor-pointer place-items-center rounded-full border-0 bg-secondary p-0 text-muted-foreground transition-[background-color,color] duration-exit hover:text-foreground active:bg-secondary-strong disabled:cursor-default disabled:opacity-40",
     focusRing,
   ),
   {
     variants: {
       layout: {
-        inline: '',
+        inline: 'relative',
         pinned: 'absolute top-4 end-4 z-2',
       },
     },
@@ -86,3 +87,8 @@ export const sheetGrabberVariants = cva('mx-auto mt-[5px] mb-px block h-[5px] w-
   },
   defaultVariants: { handle: false },
 });
+
+/** The inset of a floating tray from its host's edges, px: Dialog's `variant="tray"` (`mx-2.5`, 10px over the safe
+    area at the bottom) and FloatingSheet's resting card (`gutter`) are the same object on a phone, with this inset
+    and `--radius-sheet` corners. */
+export const trayInset = 10;

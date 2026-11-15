@@ -16,11 +16,11 @@ type Story = StoryObj<typeof AnimatedHeight>;
 
 const LINES = ['Wi-Fi', 'Bluetooth', 'Cellular', 'Personal Hotspot', 'VPN'];
 
-function Demo(args: Story['args']) {
+function Demo({ className = 'rounded-card bg-card shadow-hairline', ...args }: Story['args'] & { className?: string }) {
   const [n, setN] = useState(2);
   return (
     <div className="grid gap-3">
-      <AnimatedHeight {...args} className="rounded-card bg-card shadow-hairline">
+      <AnimatedHeight {...args} className={className}>
         <ul className="m-0 list-none p-0">
           {LINES.slice(0, n).map((l) => <li key={l} className="flex h-row items-center px-4 text-body">{l}</li>)}
         </ul>
@@ -37,3 +37,6 @@ function Demo(args: Story['args']) {
 export const Default: Story = { render: (args) => <Demo {...args} /> };
 export const Bouncy: Story = { args: { spring: 'bouncy' }, render: (args) => <Demo {...args} /> };
 export const Dark: Story = { parameters: { dark: true }, render: (args) => <Demo {...args} /> };
+
+/** Padding on the AnimatedHeight itself adds to the animated height (it is `box-content`): nothing is cut off. */
+export const Padded: Story = { render: (args) => <Demo {...args} className="rounded-card bg-card p-4 shadow-hairline" /> };

@@ -14,7 +14,7 @@ type Previews = Map<string, { kind: 'track'; track: StrudelTrack } | { kind: 'mi
 
 /** A row, and a folder when it has anything under it. */
 const node = (value: string, label: string, detail: string, children: TreeNode[] = []): TreeNode =>
-  ({ value, label, ...(detail ? { detail } : {}), ...(children.length ? { children } : {}) });
+  ({ value, label, ...(detail ? { trailing: detail } : {}), ...(children.length ? { children } : {}) });
 
 function miniNode(g: MiniGroup, id: string): TreeNode {
   if (g.type !== 'sequence') return node(id, g.type, `${g.layers.length} layers`, g.layers.map((l, i) => miniNode(l, `${id}.${i}`)));

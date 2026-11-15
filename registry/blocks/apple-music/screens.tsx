@@ -4,6 +4,7 @@
    `open` from `MusicContext`, so a pushed page stays live. Album tiles, playlist tiles, artist rows and the album
    page's artist link preview what they open in a HoverCard (a pointer or keyboard focus; never touch). */
 import { createContext, useContext, useState, type ComponentProps, type CSSProperties, type ReactNode } from 'react';
+import { EmptyState } from '@/components/ui/empty-state';
 import { HoverCard, HoverCardContent, HoverCardHeader, HoverCardTrigger } from '@/components/ui/hover-card';
 import {
   NavigationStackBar, NavigationStackContent, NavigationStackLargeTitle, NavigationStackLeading, NavigationStackPage,
@@ -105,7 +106,7 @@ function Previewed({ card, render, children }: { card: ReactNode; render: Compon
   return (
     <HoverCard>
       <HoverCardTrigger render={render}>{children}</HoverCardTrigger>
-      <HoverCardContent side="right" align="start">{card}</HoverCardContent>
+      <HoverCardContent side="end" align="start">{card}</HoverCardContent>
     </HoverCard>
   );
 }
@@ -398,7 +399,7 @@ function Search({ ctx }: { ctx: Ctx }) {
           ))}
           {albums.length ? <Shelf title="Albums">{albums.map((a) => <AlbumTile key={a.id} album={a} ctx={ctx} size={140} />)}</Shelf> : null}
           {songs.length ? <><div className="px-4 pt-5 pb-1 text-[21px] font-bold">Songs</div><SongList songs={songs} ctx={ctx} art /></> : null}
-          {!artists.length && !albums.length && !songs.length ? <div className="py-16 text-center text-muted-foreground">No results for “{q}”</div> : null}
+          {!artists.length && !albums.length && !songs.length ? <EmptyState size="sm" role="status" className="py-16" title={`No results for “${q}”`} /> : null}
         </>
       )}
     </div>

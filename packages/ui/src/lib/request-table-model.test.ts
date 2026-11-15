@@ -42,9 +42,9 @@ describe('what a row says', () => {
     expect(requestSizeText({})).toBe('—');
   });
   it('picks a tone', () => {
-    expect(requestTone({})).toBe('primary');
-    expect(requestTone({ status: 500 })).toBe('danger');
-    expect(requestTone({ status: 500, tone: 'accent' })).toBe('accent');
+    expect(requestTone({})).toBe('default');
+    expect(requestTone({ status: 500 })).toBe('destructive');
+    expect(requestTone({ status: 500, tone: 'warning' })).toBe('warning');
   });
 });
 

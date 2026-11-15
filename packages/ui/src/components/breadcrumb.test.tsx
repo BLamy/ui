@@ -102,11 +102,11 @@ afterEach(() => { cleanup(); box.width = 1000; observers.clear(); });
 
 const pressed = vi.fn();
 const TRAIL: BreadcrumbItemData[] = [
-  { id: 'home', label: 'Home', href: '/' },
-  { id: 'projects', label: 'Projects', onClick: () => pressed('projects') },
-  { id: 'design', label: 'Design system', href: '/design' },
-  { id: 'components', label: 'Components', onClick: () => pressed('components') },
-  { id: 'breadcrumb', label: 'Breadcrumb' },
+  { value: 'home', label: 'Home', href: '/' },
+  { value: 'projects', label: 'Projects', onClick: () => pressed('projects') },
+  { value: 'design', label: 'Design system', href: '/design' },
+  { value: 'components', label: 'Components', onClick: () => pressed('components') },
+  { value: 'breadcrumb', label: 'Breadcrumb' },
 ];
 afterEach(() => pressed.mockClear());
 
@@ -140,7 +140,7 @@ describe('Breadcrumb items', () => {
   });
   it('lets the current page be pressable when it has a handler', () => {
     const onClick = vi.fn();
-    render(<Breadcrumb items={[{ id: 'a', label: 'Docs', href: '/' }, { id: 'b', label: 'Reload', onClick }]} />);
+    render(<Breadcrumb items={[{ value: 'a', label: 'Docs', href: '/' }, { value: 'b', label: 'Reload', onClick }]} />);
     const current = screen.getByRole('button', { name: 'Reload' });
     expect(current.getAttribute('aria-current')).toBe('page');
     expect(current.getAttribute('aria-disabled')).toBeNull();
@@ -149,7 +149,7 @@ describe('Breadcrumb items', () => {
   });
   it('hands onClick the click, so a link can be routed by the app', () => {
     const onClick = vi.fn((event: { preventDefault(): void }) => event.preventDefault());
-    render(<Breadcrumb items={[{ id: 'a', label: 'Docs', href: '/docs', onClick }, { id: 'b', label: 'Here' }]} />);
+    render(<Breadcrumb items={[{ value: 'a', label: 'Docs', href: '/docs', onClick }, { value: 'b', label: 'Here' }]} />);
     const link = screen.getByRole('link', { name: 'Docs' });
     const click = new MouseEvent('click', { bubbles: true, cancelable: true });
     act(() => { link.dispatchEvent(click); });
@@ -159,7 +159,7 @@ describe('Breadcrumb items', () => {
   });
   it('keeps a link a link when it also has a handler', () => {
     const onClick = vi.fn((event?: unknown) => event);
-    render(<Breadcrumb items={[{ id: 'a', label: 'Docs', href: '#docs', onClick }, { id: 'b', label: 'Here' }]} />);
+    render(<Breadcrumb items={[{ value: 'a', label: 'Docs', href: '#docs', onClick }, { value: 'b', label: 'Here' }]} />);
     const link = screen.getByRole('link', { name: 'Docs' });
     expect(link.getAttribute('href')).toBe('#docs');
     press(link);
@@ -180,15 +180,15 @@ describe('Breadcrumb items', () => {
 
 describe('Breadcrumb siblings menu', () => {
   const siblings = [
-    { id: 'ui', label: 'Components', onClick: () => pressed('ui') },
-    { id: 'blocks', label: 'Blocks', onClick: () => pressed('blocks') },
-    { id: 'docs', label: 'Docs', href: '/docs' },
+    { value: 'ui', label: 'Components', onClick: () => pressed('ui') },
+    { value: 'blocks', label: 'Blocks', onClick: () => pressed('blocks') },
+    { value: 'docs', label: 'Docs', href: '/docs' },
   ];
   const withSiblings = () => (
     <Breadcrumb items={[
-      { id: 'home', label: 'Home', href: '/' },
-      { id: 'section', label: 'Components', siblings, currentSibling: 'ui', onClick: () => pressed('own') },
-      { id: 'here', label: 'Breadcrumb' },
+      { value: 'home', label: 'Home', href: '/' },
+      { value: 'section', label: 'Components', siblings, siblingValue: 'ui', onClick: () => pressed('own') },
+      { value: 'here', label: 'Breadcrumb' },
     ]} />
   );
   it('opens the siblings, marks the current one and fires the chosen one', async () => {
@@ -249,7 +249,7 @@ describe('Breadcrumb width', () => {
   it('changes a short source path into a collapsed framework path with dialog pickers', async () => {
     box.width = 280;
     const item = (id: string, label: string): BreadcrumbItemData => ({
-      id, label, onClick: () => pressed(id), 'aria-haspopup': 'dialog', 'aria-expanded': false, 'aria-controls': `${id}-picker`,
+      value: id, label, onClick: () => pressed(id), 'aria-haspopup': 'dialog', 'aria-expanded': false, 'aria-controls': `${id}-picker`,
     });
     const { rerender } = render(<Breadcrumb items={[item('sources', 'Sources'), item('src', 'src'), item('cart', 'cart.js')]} />);
     const src = screen.getByRole('button', { name: 'src' });
@@ -298,7 +298,7 @@ describe('Breadcrumb width', () => {
     box.width = 400; // the four fit (376)
     const { rerender } = render(<Breadcrumb items={TRAIL.slice(0, 4)} />);
     expect(labels()).toEqual(['Home', 'Projects', 'Design system', 'Components']);
-    rerender(<Breadcrumb items={[...TRAIL.slice(0, 4), { id: 'extra', label: 'A much longer last item' }]} />);
+    rerender(<Breadcrumb items={[...TRAIL.slice(0, 4), { value: 'extra', label: 'A much longer last item' }]} />);
     expect(screen.getByRole('button', { name: 'More' })).toBeTruthy();
     expect(labels().at(-1)).toBe('A much longer last item');
   });
@@ -316,9 +316,9 @@ describe('Breadcrumb width', () => {
     box.width = 200;
     render(
       <Breadcrumb items={[
-        { id: 'home', label: 'Home', href: '/' },
-        { id: 'mid', label: 'Middle section', siblings: [{ id: 'a', label: 'Alpha', onClick: () => pressed('alpha') }, { id: 'b', label: 'Beta' }], currentSibling: 'a' },
-        { id: 'here', label: 'Current page here' },
+        { value: 'home', label: 'Home', href: '/' },
+        { value: 'mid', label: 'Middle section', siblings: [{ value: 'a', label: 'Alpha', onClick: () => pressed('alpha') }, { value: 'b', label: 'Beta' }], siblingValue: 'a' },
+        { value: 'here', label: 'Current page here' },
       ]} />,
     );
     press(screen.getByRole('button', { name: 'More' }));
@@ -341,9 +341,9 @@ describe('Breadcrumb names and rich content', () => {
     box.width = 200;
     render(
       <Breadcrumb items={[
-        { id: 'home', label: 'Home', href: '/' },
-        { id: 'repo', label: 'ui-v6 repository', children: <b>ui-v6</b>, href: '/repo' },
-        { id: 'here', label: 'Current page here' },
+        { value: 'home', label: 'Home', href: '/' },
+        { value: 'repo', label: 'ui-v6 repository', children: <b>ui-v6</b>, href: '/repo' },
+        { value: 'here', label: 'Current page here' },
       ]} />,
     );
     press(screen.getByRole('button', { name: 'More' }));

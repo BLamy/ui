@@ -30,7 +30,7 @@ function FileEditor({ store, path }: { store: VSCodeStore; path: string }) {
     <div className="h-full min-h-0" data-slot="vscode-editor" data-path={path} onFocusCapture={() => store.setActiveEditor(path)}>
       <CodeEditor
         ref={editor}
-        variant="ghost"
+        variant="plain"
         className="h-full"
         value={text}
         onValueChange={(next) => store.edit(path, next)}

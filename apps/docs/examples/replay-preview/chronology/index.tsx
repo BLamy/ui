@@ -2,7 +2,8 @@ import { useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { getReplayMarkers } from '@brett_lamy/docstream/replay'
 import { replayDemoEvents } from '@brett_lamy/docstream/replay/demo'
-import { ReplayPreview, formatReplayTime, type ReplayPreviewHandle } from '@/components/ui/replay-preview'
+import { formatReplayTime } from '@brett_lamy/docstream/replay'
+import { ReplayPreview, type ReplayPreviewHandle } from '@/components/ui/replay-preview'
 import { Icon } from '@/lib/icon'
 
 // The recording's own moments (minus clicks) as a chronology beside the player:

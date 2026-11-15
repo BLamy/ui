@@ -1,6 +1,9 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
-import { FontList, FontPicker, FontPickerContent, FontPickerTrigger, FontStackPicker } from '@/components/ui/font-picker';
+import { Field, FieldDescription, FieldError, FieldLabel } from '@/components/ui/field';
+import {
+  FontList, FontPicker, FontPickerContent, FontPickerTrigger, FontStackPicker, FontStackPickerContent, FontStackPickerInputGroup,
+} from '@/components/ui/font-picker';
 import { fontStack, useGoogleFont } from '@/lib/google-fonts';
 import { Caption, Panel } from '../stories/primitive-frame';
 
@@ -70,7 +73,10 @@ export const Sizes: Story = {
         </FontPicker>
       ))}
       {(['sm', 'default', 'lg'] as const).map((size) => (
-        <FontStackPicker key={`stack-${size}`} aria-label={`Stack, ${size}`} size={size} defaultValue={['Inter', 'Roboto']} />
+        <FontStackPicker key={`stack-${size}`} aria-label={`Stack, ${size}`} defaultValue={['Inter', 'Roboto']}>
+          <FontStackPickerInputGroup size={size} />
+          <FontStackPickerContent />
+        </FontStackPicker>
       ))}
     </div>
   ),
@@ -94,4 +100,23 @@ export const DarkPicker: Story = {
   name: 'Dark · one family',
   parameters: { dark: true },
   render: () => <FontPicker aria-label="Headline font" defaultValue="Fraunces" defaultOpen />,
+};
+
+/** In a form: each Field's label names its picker, the description describes it, and a required picker with nothing
+    chosen shows the Field's error (submit the empty form to see it). */
+export const InAField: Story = {
+  render: () => (
+    <form className="grid gap-4" onSubmit={(event) => event.preventDefault()}>
+      <Field>
+        <FieldLabel>Headline font</FieldLabel>
+        <FontPicker name="headline" defaultValue="Fraunces" />
+        <FieldDescription>Used for titles and large numbers.</FieldDescription>
+      </Field>
+      <Field>
+        <FieldLabel>Text fonts</FieldLabel>
+        <FontStackPicker name="text" required />
+        <FieldError>Choose at least one font.</FieldError>
+      </Field>
+    </form>
+  ),
 };

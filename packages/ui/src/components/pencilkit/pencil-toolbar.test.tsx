@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import {
   PencilActions, PencilInkPicker, PencilToolbar, PencilToolbarPinned, PencilToolPicker, PencilWidthPicker,
 } from '@/components/ui/pencilkit/pencil-toolbar';
@@ -166,5 +166,52 @@ describe('PencilToolbar as a UI SDK Toolbar', () => {
       expect(document.activeElement?.getAttribute('aria-label')).toBe(name);
     }
     expect(screen.getByRole('button', { name: 'Pen' }).getAttribute('aria-pressed')).toBe('true');
+  });
+});
+
+describe('PencilInkPicker and PencilWidthPicker folded into a popover', () => {
+  const settle = () => act(() => new Promise<void>((resolve) => setTimeout(resolve, 50)));
+  const inks = [{ value: 'a', label: 'Amber' }, { value: 'b', label: 'Blue' }, { value: 'c', label: 'Cyan' }];
+
+  it('shows one button named by the current ink, opening the swatches; its arrow keys stay in the popover', async () => {
+    const onValueChange = vi.fn();
+    render(
+      <PencilToolbar>
+        <PencilToolPicker tools={['pen', 'eraser']} />
+        <ToolbarSeparator />
+        <PencilInkPicker presentation="popover" inks={inks} onValueChange={onValueChange} />
+        <PencilToolbarPinned><PencilActions canUndo /></PencilToolbarPinned>
+      </PencilToolbar>,
+    );
+    expect(screen.queryByRole('group', { name: 'Ink' })).toBeNull();
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Ink: Amber' })); });
+    await settle();
+    const amber = screen.getByRole('button', { name: 'Amber' });
+    expect(document.activeElement).toBe(amber);
+    for (const name of ['Blue', 'Cyan', 'Amber']) {
+      fireEvent.keyDown(document.activeElement!, { key: 'ArrowRight' });
+      expect(document.activeElement?.getAttribute('aria-label')).toBe(name);
+    }
+    fireEvent.click(screen.getByRole('button', { name: 'Cyan' }));
+    expect(onValueChange).toHaveBeenLastCalledWith('c', expect.objectContaining({ reason: 'item-press' }));
+    // Uncontrolled: the button shows the new ink at once, and the popover stays for another pick.
+    expect(screen.getByRole('button', { name: 'Ink: Cyan' })).toBeTruthy();
+    expect(screen.getByRole('group', { name: 'Ink' })).toBeTruthy();
+  });
+
+  it('folds the width picker on its own when asked, named by the current width', async () => {
+    const onValueChange = vi.fn();
+    render(<PencilToolbar><PencilWidthPicker presentation="popover" defaultValue={1.7} onValueChange={onValueChange} /></PencilToolbar>);
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Width: Bold' })); });
+    await settle();
+    fireEvent.click(screen.getByRole('button', { name: 'Fine' }));
+    expect(onValueChange).toHaveBeenLastCalledWith(0.6, expect.anything());
+    expect(screen.getByRole('button', { name: 'Width: Fine' })).toBeTruthy();
+  });
+
+  it('stays inline outside a toolbar that ran out of room', () => {
+    render(<PencilToolbar><PencilInkPicker inks={inks} /><PencilWidthPicker /></PencilToolbar>);
+    expect(screen.getByRole('group', { name: 'Ink' })).toBeTruthy();
+    expect(screen.getByRole('group', { name: 'Width' })).toBeTruthy();
   });
 });

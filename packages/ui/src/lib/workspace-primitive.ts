@@ -186,13 +186,13 @@ export type WorkspaceState<TabData = unknown, TabsetData = unknown> = {
   /** Whether a pointer is dragging a tab. */
   dragging: boolean;
   disabled: boolean;
-  activeTabsetId: string | null;
+  currentTabsetId: string | null;
 };
 
 /** What a tabset's parts hand `render` functions and state-based class names. */
 export type WorkspaceTabsetState = {
-  /** The user last used this tabset. */
-  active: boolean;
+  /** The tabset the user last used: the one commands such as "close tab" act on (`data-current`). */
+  current: boolean;
   maximized: boolean;
   /** It is the only tabset, so there is nothing to maximize it over. */
   only: boolean;
@@ -261,7 +261,7 @@ const listWith = (lists: TransferLists, key: string) => Object.keys(lists).find(
 function tabsetState(state: WorkspaceStore, key: string): WorkspaceTabsetState {
   const tabset = findTabset(state.layout, key);
   return {
-    active: activeIn(state) === key,
+    current: activeIn(state) === key,
     maximized: state.layout.maximizedTabsetId === key,
     only: state.layout.root.type === 'tabset',
     empty: !tabset?.tabs.length,
@@ -659,7 +659,7 @@ export const workspace = definePrimitive({
         moving: state.moving?.key ?? null,
         dragging: state.dragging !== null,
         disabled: state.disabled,
-        activeTabsetId: activeIn(state),
+        currentTabsetId: activeIn(state),
       }),
       attrs: (state) => ({
         'data-disabled': flag(state.disabled),
@@ -681,9 +681,9 @@ export const workspace = definePrimitive({
       props: { value: 'string' },
       state: (state, { key }) => tabsetState(state, key),
       attrs(state, { key }) {
-        const { active, maximized, empty, tabSide } = tabsetState(state, key);
+        const { current, maximized, empty, tabSide } = tabsetState(state, key);
         return {
-          'data-active': flag(active),
+          'data-current': flag(current),
           'data-maximized': flag(maximized),
           'data-empty': flag(empty),
           'data-tab-side': tabSide,

@@ -1,11 +1,13 @@
 import { useState, type ReactNode } from 'react'
-import { Button } from '@/components/ui/button'
+import { buttonVariants } from '@/components/ui/button'
 import { List, ListRow, ListSection } from '@/components/ui/list'
 import {
   AdaptivePane,
   AdaptivePaneClose,
   AdaptivePaneHeader,
   AdaptivePaneTitle,
+  AdaptivePaneTrigger,
+  createAdaptivePaneController,
 } from '@/components/ui/adaptive-pane'
 import { Icon } from '@/lib/icon'
 
@@ -35,6 +37,7 @@ const files = [
 
 function FileInspector() {
   const [open, setOpen] = useState(true)
+  const [pane] = useState(createAdaptivePaneController)
   const [sel, setSel] = useState(files[0])
   return (
     <div style={{ display: 'flex', height: 360, background: 'var(--background)' }}>
@@ -55,14 +58,12 @@ function FileInspector() {
           }}
         >
           <strong style={{ flex: 1 }}>Documents</strong>
-          <Button
-            variant={open ? 'secondary' : 'ghost'}
-            size="sm"
-            aria-pressed={open}
-            onClick={() => setOpen(!open)}
+          <AdaptivePaneTrigger
+            controller={pane}
+            className={buttonVariants({ variant: open ? 'secondary' : 'ghost', size: 'sm' })}
           >
             <Icon name="info" size={17} /> Info
-          </Button>
+          </AdaptivePaneTrigger>
         </header>
         <List>
           <ListSection>
@@ -87,6 +88,7 @@ function FileInspector() {
       </div>
       {/* a docked column beside the list; its × closes it */}
       <AdaptivePane
+        controller={pane}
         presentation="column"
         side="end"
         open={open}

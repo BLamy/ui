@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import {
-  Sidebar, SidebarContent, SidebarInset, SidebarItem, SidebarProvider, SidebarSearch, SidebarSection, SidebarTrigger,
+  Sidebar, SidebarAccount, SidebarContent, SidebarInset, SidebarItem, SidebarProvider, SidebarSearch, SidebarSection, SidebarTrigger,
   useSidebar, type SidebarPresentation, type SidebarVariant,
 } from '@/components/ui/sidebar';
 
@@ -244,5 +244,27 @@ describe('Sidebar', () => {
     expect(document.querySelector('[data-slot=sidebar-panel]')!.getAttribute('data-presentation')).toBe('drawer');
     expect(input.value).toBe('kept');
     expect(input.isConnected).toBe(true);
+  });
+});
+
+describe('Sidebar root and account', () => {
+  it('passes ref, id and data-* to its panel, the same element in both presentations', () => {
+    const ref = { current: null as HTMLDivElement | null };
+    const { rerender } = render(<SidebarProvider><Sidebar ref={ref} id="nav" data-testid="sb"><SidebarContent /></Sidebar></SidebarProvider>);
+    const panel = screen.getByTestId('sb');
+    expect(panel.id).toBe('nav');
+    expect(panel.getAttribute('data-slot')).toBe('sidebar-panel');
+    expect(ref.current).toBe(panel);
+    rerender(<SidebarProvider><Sidebar ref={ref} id="nav" data-testid="sb" presentation="drawer"><SidebarContent /></Sidebar></SidebarProvider>);
+    expect(ref.current?.id ?? 'nav').toBe('nav');
+  });
+
+  it('the account grows with the rows in a compact provider, so the heading is never smaller than its rows', () => {
+    const { unmount } = render(<SidebarProvider><Sidebar presentation="column"><SidebarAccount title="Northwind" /></Sidebar></SidebarProvider>);
+    expect(screen.getByText('Northwind').className).toContain('text-footnote');
+    unmount();
+    width = 400;
+    render(<SidebarProvider defaultOpen><Sidebar presentation="column"><SidebarAccount title="Northwind" /></Sidebar></SidebarProvider>);
+    expect(screen.getByText('Northwind').className).toContain('text-subhead');
   });
 });

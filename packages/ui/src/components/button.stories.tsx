@@ -7,7 +7,7 @@ import { Toggle } from '@/components/ui/toggle';
 import { Icon } from '@/lib/icon';
 import { Pad } from '../stories/frame';
 
-const VARIANTS = ['default', 'secondary', 'outline', 'contrast', 'ghost', 'quiet', 'destructive', 'link'] as const;
+const VARIANTS = ['default', 'secondary', 'outline', 'contrast', 'ghost', 'quiet', 'destructive', 'plain', 'link'] as const;
 
 const meta: Meta<typeof Button> = {
   title: 'Atoms/Button',
@@ -38,8 +38,11 @@ const variants = (
       <Button variant="ghost">Ghost</Button>
       <Button variant="quiet">Quiet</Button>
       <Button variant="destructive">Delete</Button>
-      <Button variant="link">Link</Button>
+      <Button variant="plain">Plain</Button>
     </div>
+    <p className="m-0 text-subhead text-foreground">
+      A <Button variant="link">link</Button> sits in the sentence around it.
+    </p>
     <div className="flex flex-wrap items-center gap-3">
       <Button disabled>Disabled</Button>
       <Button variant="secondary" disabled>Disabled</Button>
@@ -121,6 +124,24 @@ export const Pending: Story = {
     <Button onClick={() => new Promise((resolve) => setTimeout(resolve, 1500))} pendingAnnouncement="Saving">
       Save
     </Button>
+  ),
+};
+
+/** The two text-only looks. `plain` is the iOS bar button: the size's height and padding, tint text, no fill.
+    `link` is a link in running text: it takes the line's size and weight and has no box, so `size` does not apply. */
+export const TextButtons: Story = {
+  render: () => (
+    <div className="flex flex-col gap-4">
+      <div className="flex h-11 items-center justify-between rounded-card bg-bar px-1 shadow-hairline-b">
+        <Button variant="plain" className="font-normal">Cancel</Button>
+        <span className="text-body font-semibold text-foreground">New Event</span>
+        <Button variant="plain">Add</Button>
+      </div>
+      <p className="m-0 text-footnote text-muted-foreground">
+        Your plan renews on 1 March. <Button variant="link">Change plan</Button> or{' '}
+        <Button variant="link" render={<a href="#billing" />}>see billing history</Button>.
+      </p>
+    </div>
   ),
 };
 

@@ -19,7 +19,7 @@ export { useChatShell, useOptionalChatShell, type ChatShellContextValue, type Ch
 /* ══ ChatShell — the layout root of a team chat, and its regions ══
    <ChatShell>                     measures itself, provides { width, compact, navOpen } and a size-class scope, applies --ck-* tokens
      <ChatShellNav>                rail + sidebar: a docked column when wide, a left drawer when compact
-       <Tabs variant="workspace"><TabsBar>…   an optional workspace rail
+       <Tabs variant="switcher"><TabsBar>…   an optional workspace rail
        <ChatShellSidebar>…         the channel column (header · channel list · signed-in user)
      <ChatShellMain>               the conversation column
        <ChatShellHeader>…          NavTrigger · HeaderIcon · Title · Description · HeaderActions
@@ -121,7 +121,7 @@ export function ChatShellNav({ children, className, style }: ChatShellNavProps) 
   return (
     <AdaptivePane
       presentation={compact ? 'drawer' : 'column'}
-      side="left"
+      side="start"
       aria-label="Navigation"
       // Docked, the navigation always shows; compact, it is the drawer's state.
       open={!compact || navOpen}

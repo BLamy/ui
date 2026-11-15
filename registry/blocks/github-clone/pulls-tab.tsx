@@ -1,6 +1,7 @@
 /* Pull requests tab: the PR list with check status and review state (live lists come from search, which doesn't say
    either, so those rows show them only once the PR is opened). */
 import { useState } from 'react';
+import { EmptyState } from '@/components/ui/empty-state';
 import { PullCard, UserName } from './cards';
 import { Box, Oct, PR_STATE, type Layout, type Nav } from './parts';
 import { FilterMenus, ItemRow, ListToolbar, StateToggle } from './lists';
@@ -38,7 +39,7 @@ export function PullList({ ui, nav }: { ui: Layout; nav: Nav }) {
                     onOpen={() => nav.openPr(p.number)} assignees={[p.author]} comments={p.comments} preview={<PullCard ui={ui} pr={p} />}
                     meta={<>#{p.number} {p.state === 'merged' ? 'merged' : p.state === 'closed' ? 'was closed' : 'opened'} {p.when} by <UserName user={p.author} className="font-normal text-muted-foreground" />{p.review ? <> · <span className={p.review === 'approved' ? 'text-[var(--gh-open)]' : p.review === 'changes' ? 'text-[var(--gh-closed)]' : ''}>{REVIEW_TEXT[p.review]}</span></> : null}</>} />
                 ))}
-                {rows.length === 0 ? <div className="px-4 py-10 text-center text-muted-foreground">{list.length ? 'No results matched your search.' : `No ${state} pull requests.`}</div> : null}
+                {rows.length === 0 ? <EmptyState size="sm" role="status" className="py-10" title={list.length ? 'No results matched your search.' : `No ${state} pull requests.`} /> : null}
               </>
             );
           }}

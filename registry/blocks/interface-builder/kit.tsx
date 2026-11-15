@@ -15,9 +15,9 @@ import { Calendar } from '@/components/ui/calendar';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ColorPicker, ColorPickerContent, ColorPickerTrigger } from '@/components/ui/color-picker';
-import { Combobox, ComboboxContent, ComboboxEmpty, ComboboxField, ComboboxInput, ComboboxList, ComboboxTrigger } from '@/components/ui/combobox';
+import { Combobox, ComboboxContent, ComboboxEmpty, ComboboxInputGroup, ComboboxInput, ComboboxList, ComboboxTrigger } from '@/components/ui/combobox';
 import { DateInput } from '@/components/ui/date-input';
-import { DatePicker, DatePickerContent, DatePickerField } from '@/components/ui/date-picker';
+import { DatePicker, DatePickerContent, DatePickerInputGroup } from '@/components/ui/date-picker';
 import { Disclosure, DisclosurePanel, DisclosureTrigger } from '@/components/ui/disclosure';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Field, FieldDescription, FieldError, FieldLabel } from '@/components/ui/field';
@@ -93,7 +93,7 @@ const leaf = (type: string, props: Record<string, unknown> = {}, patch: Partial<
 /** A comma list's entries as UI SDK's data items (`{ value, label }`). */
 const dataItems = (v: unknown) => itemsOf(v).map((it) => ({ value: it.id, label: it.label }));
 
-const BUTTON_VARIANTS = ['default', 'secondary', 'ghost', 'destructive', 'link', 'quiet'] as const;
+const BUTTON_VARIANTS = ['default', 'secondary', 'outline', 'contrast', 'ghost', 'quiet', 'destructive', 'plain', 'link'] as const;
 const BUTTON_SIZES = ['default', 'sm', 'lg', 'pill', 'icon', 'icon-sm'] as const;
 const SPINNERS = spinnerAnimations.map((a) => a.id);
 const SIDES = ['top', 'bottom', 'left', 'right'] as const;
@@ -145,7 +145,7 @@ export const KIT: Record<string, ComponentSpec> = {
   /* ── Buttons and toggles ── */
   Button: {
     type: 'Button', title: 'Button', section: 'Buttons and toggles', source: 'kit', icon: 'circle-fill',
-    description: "The labelled action button: UI SDK's Button with default, secondary, ghost, destructive and link variants, five sizes including the full-width iOS pill, a press that sinks on a spring, and a text label that morphs into the next one.",
+    description: "The labelled action button: UI SDK's Button with default, secondary, outline, contrast, ghost, quiet, destructive, plain (the bar text button) and link (inline) variants, five sizes including the full-width iOS pill, a press that sinks on a spring, and a text label that morphs into the next one.",
     module: '@/components/ui/button', tag: 'Button', focusable: true,
     props: [
       text('children', 'Button'),
@@ -171,12 +171,12 @@ export const KIT: Record<string, ComponentSpec> = {
   },
   Toggle: {
     type: 'Toggle', title: 'Toggle', section: 'Buttons and toggles', source: 'kit', icon: 'switch-2',
-    description: "Two-state button on UI SDK's Toggle: tinted when on, in default, filled and outline variants.",
+    description: "Two-state button on UI SDK's Toggle: tinted when on, in default, filled, outline and quiet variants.",
     module: '@/components/ui/toggle', tag: 'Toggle', focusable: true,
     props: [
       text('children', 'Mute'),
       { name: 'pressed', control: { kind: 'boolean' }, default: false, twoWay: 'onPressedChange' },
-      { name: 'variant', control: { kind: 'enum', options: values('default', 'filled', 'outline') }, default: 'filled' },
+      { name: 'variant', control: { kind: 'enum', options: values('default', 'filled', 'outline', 'quiet') }, default: 'filled' },
       { name: 'size', control: { kind: 'enum', options: values('sm', 'default', 'lg') }, default: 'default' },
       { name: 'icon', control: { kind: 'icon' }, default: 'bell', part: '<Icon> child' },
       { name: 'disabled', control: { kind: 'boolean' }, default: false },
@@ -184,7 +184,7 @@ export const KIT: Record<string, ComponentSpec> = {
     events: [{ name: 'onPressedChange', label: 'onPressedChange', value: 'pressed' }],
     layout: { width: 'fit' },
     render: ({ p, on }) => (
-      <Toggle pressed={!!p.pressed} onPressedChange={(v) => on.onPressedChange?.(v)} variant={pick(p.variant, ['default', 'filled', 'outline'] as const, 'filled')} size={pick(p.size, ['sm', 'default', 'lg'] as const, 'default')} disabled={!!p.disabled} aria-label={str(p.children) || 'Toggle'}>
+      <Toggle pressed={!!p.pressed} onPressedChange={(v) => on.onPressedChange?.(v)} variant={pick(p.variant, ['default', 'filled', 'outline', 'quiet'] as const, 'filled')} size={pick(p.size, ['sm', 'default', 'lg'] as const, 'default')} disabled={!!p.disabled} aria-label={str(p.children) || 'Toggle'}>
         {p.icon ? <Icon name={str(p.icon)} size={16} sw={2} /> : null}
         {str(p.children)}
       </Toggle>
@@ -199,13 +199,13 @@ export const KIT: Record<string, ComponentSpec> = {
   },
   ToggleGroup: {
     type: 'ToggleGroup', title: 'ToggleGroup', section: 'Buttons and toggles', source: 'kit', icon: 'rectangle-split',
-    description: "UI SDK's ToggleGroup with single or multiple selection, roving arrow-key focus, and filled, outline and default looks.",
+    description: "UI SDK's ToggleGroup with single or multiple selection, roving arrow-key focus, and segmented (Segmented's track), outline (joined), default, filled and quiet looks.",
     module: '@/components/ui/toggle', tag: 'ToggleGroup', uses: ['@/components/ui/toggle|ToggleGroupItem'], focusable: true,
     props: [
       { name: 'items', control: { kind: 'items' }, default: 'List, Grid, Board', part: '<ToggleGroupItem>s' },
       { name: 'value', label: 'pressed', control: { kind: 'text' }, default: 'Grid', twoWay: 'onValueChange', help: 'An item, or several separated by commas' },
       { name: 'multiple', control: { kind: 'boolean' }, default: false },
-      { name: 'variant', control: { kind: 'enum', options: values('default', 'filled', 'outline') }, default: 'filled' },
+      { name: 'variant', control: { kind: 'enum', options: values('segmented', 'outline', 'default', 'filled', 'quiet') }, default: 'segmented' },
       { name: 'aria-label', control: { kind: 'text' }, default: 'View' },
     ],
     events: [{ name: 'onValueChange', label: 'onValueChange', value: 'the pressed items, comma-separated' }],
@@ -218,7 +218,7 @@ export const KIT: Record<string, ComponentSpec> = {
           aria-label={str(p['aria-label'], 'Options')}
           multiple={multiple}
           deselectable={multiple}
-          variant={pick(p.variant, ['default', 'filled', 'outline'] as const, 'filled')}
+          variant={pick(p.variant, ['segmented', 'outline', 'default', 'filled', 'quiet'] as const, 'segmented')}
           value={sel}
           onValueChange={(v) => on.onValueChange?.(v.join(', '))}
         >
@@ -366,7 +366,7 @@ export const KIT: Record<string, ComponentSpec> = {
   },
   Slider: {
     type: 'Slider', title: 'Slider', section: 'Forms and inputs', source: 'kit', icon: 'sliders',
-    description: "UI SDK's Slider with the iOS look: a 4px track, tint fill and 26px thumb, one or two thumbs, plus on-dark and on-light tones and a small scrubber size.",
+    description: "UI SDK's Slider with the iOS look: a 4px track, tint fill and 26px thumb, one or two thumbs, plus a translucent overlay look for media (following the scheme, or a fixed appearance) and a small scrubber size.",
     module: '@/components/ui/slider', tag: 'Slider', focusable: true,
     props: [
       { name: 'label', control: { kind: 'text' }, default: 'Volume' },
@@ -376,7 +376,8 @@ export const KIT: Record<string, ComponentSpec> = {
       { name: 'step', control: { kind: 'number', min: 0.01 }, default: 1 },
       { name: 'showValue', control: { kind: 'boolean' }, default: true },
       { name: 'size', control: { kind: 'enum', options: values('default', 'sm') }, default: 'default' },
-      { name: 'variant', control: { kind: 'enum', options: values('default', 'on-dark', 'on-light') }, default: 'default' },
+      { name: 'variant', control: { kind: 'enum', options: values('default', 'overlay') }, default: 'default' },
+      { name: 'appearance', control: { kind: 'enum', options: values('auto', 'light', 'dark') }, default: 'auto' },
     ],
     events: [{ name: 'onValueChange', label: 'onValueChange', value: 'the value' }, { name: 'onValueCommit', label: 'onValueCommit', value: 'the value' }],
     layout: { width: 'fill' },
@@ -390,7 +391,8 @@ export const KIT: Record<string, ComponentSpec> = {
         max={num(p.max, 100)}
         step={num(p.step, 1) || 1}
         size={pick(p.size, ['default', 'sm'] as const, 'default')}
-        variant={pick(p.variant, ['default', 'on-dark', 'on-light'] as const, 'default')}
+        variant={pick(p.variant, ['default', 'overlay'] as const, 'default')}
+        appearance={pick(p.appearance, ['auto', 'light', 'dark'] as const, 'auto')}
         onValueChange={(v) => on.onValueChange?.(v)}
         onValueCommit={(v) => on.onValueCommit?.(v)}
       />
@@ -454,7 +456,7 @@ export const KIT: Record<string, ComponentSpec> = {
     type: 'Combobox', title: 'Combobox', section: 'Forms and inputs', source: 'kit', icon: 'magnifier',
     description: "UI SDK's Combobox: a text field with a suggestion list. Type to narrow the options, arrow keys to move, Enter to commit, in a Field with its label.",
     module: '@/components/ui/combobox', tag: 'Combobox', focusable: true,
-    uses: ['@/components/ui/field|FieldLabel', '@/components/ui/combobox|ComboboxField', '@/components/ui/combobox|ComboboxInput', '@/components/ui/combobox|ComboboxTrigger', '@/components/ui/combobox|ComboboxContent', '@/components/ui/combobox|ComboboxList'],
+    uses: ['@/components/ui/field|FieldLabel', '@/components/ui/combobox|ComboboxInputGroup', '@/components/ui/combobox|ComboboxInput', '@/components/ui/combobox|ComboboxTrigger', '@/components/ui/combobox|ComboboxContent', '@/components/ui/combobox|ComboboxList'],
     props: [
       { name: 'label', control: { kind: 'text' }, default: 'Assignee', part: '<FieldLabel>' },
       { name: 'items', control: { kind: 'items' }, default: 'Ana Torres, Kim Park, Lee Chen, Maya Okafor', part: 'items' },
@@ -466,10 +468,10 @@ export const KIT: Record<string, ComponentSpec> = {
     render: ({ p, on }) => (
       <Labelled label={p.label}>
         <Combobox items={dataItems(p.items)} value={str(p.value) || null} onValueChange={(v) => on.onValueChange?.(v)}>
-          <ComboboxField>
+          <ComboboxInputGroup>
             <ComboboxInput placeholder={str(p.placeholder)} aria-label={p.label ? undefined : 'Choose'} />
             <ComboboxTrigger />
-          </ComboboxField>
+          </ComboboxInputGroup>
           <ComboboxContent>
             <ComboboxEmpty>No matches.</ComboboxEmpty>
             <ComboboxList />
@@ -478,8 +480,8 @@ export const KIT: Record<string, ComponentSpec> = {
       </Labelled>
     ),
     code: (g) => {
-      parts(g, '@/components/ui/combobox', 'Combobox', 'ComboboxField', 'ComboboxInput', 'ComboboxTrigger', 'ComboboxContent', 'ComboboxEmpty', 'ComboboxList');
-      return fieldCode(g, `<Combobox items={${itemsCode(g, 'items')}} value={${g.expr('value')} || null}${g.on('onValueChange')}>\n  <ComboboxField>\n    <ComboboxInput${g.attr('placeholder')} />\n    <ComboboxTrigger />\n  </ComboboxField>\n  <ComboboxContent>\n    <ComboboxEmpty>No matches.</ComboboxEmpty>\n    <ComboboxList />\n  </ComboboxContent>\n</Combobox>`);
+      parts(g, '@/components/ui/combobox', 'Combobox', 'ComboboxInputGroup', 'ComboboxInput', 'ComboboxTrigger', 'ComboboxContent', 'ComboboxEmpty', 'ComboboxList');
+      return fieldCode(g, `<Combobox items={${itemsCode(g, 'items')}} value={${g.expr('value')} || null}${g.on('onValueChange')}>\n  <ComboboxInputGroup>\n    <ComboboxInput${g.attr('placeholder')} />\n    <ComboboxTrigger />\n  </ComboboxInputGroup>\n  <ComboboxContent>\n    <ComboboxEmpty>No matches.</ComboboxEmpty>\n    <ComboboxList />\n  </ComboboxContent>\n</Combobox>`);
     },
   },
   DateInput: {
@@ -508,11 +510,11 @@ export const KIT: Record<string, ComponentSpec> = {
     type: 'DatePicker', title: 'DatePicker', section: 'Forms and inputs', source: 'kit', icon: 'calendar-fill',
     description: "A date field with a calendar button that opens a Calendar in a popover, for one date or a range (`mode=\"range\"`): UI SDK's Date Picker, composed from a field and a content part.",
     module: '@/components/ui/date-picker', tag: 'DatePicker', focusable: true,
-    uses: ['@/components/ui/field|FieldLabel', '@/components/ui/date-picker|DatePickerField', '@/components/ui/date-picker|DatePickerContent'],
+    uses: ['@/components/ui/field|FieldLabel', '@/components/ui/date-picker|DatePickerInputGroup', '@/components/ui/date-picker|DatePickerContent'],
     props: [
       { name: 'label', control: { kind: 'text' }, default: 'Date', part: '<FieldLabel>' },
       { name: 'value', control: { kind: 'date' }, default: '2026-10-04', twoWay: 'onValueChange' },
-      { name: 'size', control: { kind: 'enum', options: values('default', 'sm', 'lg') }, default: 'default', part: '<DatePickerField size>' },
+      { name: 'size', control: { kind: 'enum', options: values('default', 'sm', 'lg') }, default: 'default', part: '<DatePickerInputGroup size>' },
       { name: 'disabled', control: { kind: 'boolean' }, default: false },
     ],
     events: [{ name: 'onValueChange', label: 'onValueChange', value: 'the date (YYYY-MM-DD)' }],
@@ -520,14 +522,14 @@ export const KIT: Record<string, ComponentSpec> = {
     render: ({ p, on }) => (
       <Labelled label={p.label}>
         <DatePicker value={date(p.value)} onValueChange={(v) => on.onValueChange?.(v)} disabled={!!p.disabled} aria-label={p.label ? undefined : 'Date'}>
-          <DatePickerField size={pick(p.size, ['default', 'sm', 'lg'] as const, 'default')} />
+          <DatePickerInputGroup size={pick(p.size, ['default', 'sm', 'lg'] as const, 'default')} />
           <DatePickerContent />
         </DatePicker>
       </Labelled>
     ),
     code: (g) => {
-      parts(g, '@/components/ui/date-picker', 'DatePicker', 'DatePickerField', 'DatePickerContent');
-      return fieldCode(g, `<DatePicker value={${g.expr('value')}}${g.on('onValueChange')}${g.attr('disabled')}>\n  <DatePickerField${g.attr('size')} />\n  <DatePickerContent />\n</DatePicker>`);
+      parts(g, '@/components/ui/date-picker', 'DatePicker', 'DatePickerInputGroup', 'DatePickerContent');
+      return fieldCode(g, `<DatePicker value={${g.expr('value')}}${g.on('onValueChange')}${g.attr('disabled')}>\n  <DatePickerInputGroup${g.attr('size')} />\n  <DatePickerContent />\n</DatePicker>`);
     },
   },
   Calendar: {
@@ -551,9 +553,9 @@ export const KIT: Record<string, ComponentSpec> = {
   },
   ColorPicker: {
     type: 'ColorPicker', title: 'ColorPicker', section: 'Forms and inputs', source: 'kit', icon: 'drop',
-    description: "UI SDK's Color Picker: an area, sliders, preset swatches and a hex field, composed in a popover behind a trigger that shows the current color. Colors are CSS strings.",
+    description: "UI SDK's Color Picker: an area, sliders, preset swatches and a hex field in a popup behind a trigger that shows the current color (the root holds the popover). Colors are CSS strings.",
     module: '@/components/ui/color-picker', tag: 'ColorPicker', focusable: true,
-    uses: ['@/components/ui/popover|Popover', '@/components/ui/color-picker|ColorPickerTrigger', '@/components/ui/color-picker|ColorPickerContent'],
+    uses: ['@/components/ui/color-picker|ColorPickerTrigger', '@/components/ui/color-picker|ColorPickerContent'],
     props: [
       { name: 'value', control: { kind: 'text' }, default: START_COLOR, twoWay: 'onValueChange', help: 'A hex color' },
       { name: 'aria-label', control: { kind: 'text' }, default: 'Color' },
@@ -564,17 +566,14 @@ export const KIT: Record<string, ComponentSpec> = {
     layout: { width: 'fill' },
     render: ({ p, on }) => (
       <ColorPicker aria-label={str(p['aria-label'], 'Color')} value={str(p.value) || START_COLOR} onValueChange={(c) => on.onValueChange?.(c)}>
-        <Popover>
-          <ColorPickerTrigger size={pick(p.size, ['sm', 'default', 'lg'] as const, 'default')} showValue={!!p.showValue} />
-          <ColorPickerContent />
-        </Popover>
+        <ColorPickerTrigger size={pick(p.size, ['sm', 'default', 'lg'] as const, 'default')} showValue={!!p.showValue} />
+        <ColorPickerContent />
       </ColorPicker>
     ),
     code: (g) => {
       parts(g, '@/components/ui/color-picker', 'ColorPicker', 'ColorPickerTrigger', 'ColorPickerContent');
-      g.use('@/components/ui/popover', 'Popover');
       const hide = g.expr('showValue') === 'false' ? ' showValue={false}' : '';
-      return `<ColorPicker aria-label={${g.expr('aria-label')}} value={${g.expr('value')}}${g.on('onValueChange')}>\n  <Popover>\n    <ColorPickerTrigger${g.attr('size')}${hide} />\n    <ColorPickerContent />\n  </Popover>\n</ColorPicker>`;
+      return `<ColorPicker aria-label={${g.expr('aria-label')}} value={${g.expr('value')}}${g.on('onValueChange')}>\n  <ColorPickerTrigger${g.attr('size')}${hide} />\n  <ColorPickerContent />\n</ColorPicker>`;
     },
   },
 
@@ -927,13 +926,13 @@ export const KIT: Record<string, ComponentSpec> = {
       { name: 'size', control: { kind: 'number', min: 16, max: 96, step: 1, unit: 'px' }, default: 32 },
       { name: 'max', control: { kind: 'number', min: 1, max: 12, step: 1 }, default: 4 },
       { name: 'menu', control: { kind: 'boolean' }, default: false },
-      { name: 'label', control: { kind: 'text' }, default: 'People' },
+      { name: 'aria-label', control: { kind: 'text' }, default: 'People' },
     ],
     events: [{ name: 'onAction', label: 'onAction', value: 'the chosen avatar' }],
     layout: { axis: 'horizontal', width: 'fit' },
     make: () => ({ children: ['Ada', 'Miles', 'Noor', 'Theo', 'Hana', 'June'].map((name) => leaf('Avatar', { name, size: 32, status: 'none', tint: null, src: '' }, { layout: { width: 'fit' } })) }),
     render: ({ p, on, childList }) => (
-      <AvatarGroup size={num(p.size, 32)} max={num(p.max, 4)} menu={!!p.menu} label={str(p.label)} onAction={(value) => on.onAction?.(value)}>
+      <AvatarGroup size={num(p.size, 32)} max={num(p.max, 4)} menu={!!p.menu} aria-label={str(p['aria-label'])} onAction={(value) => on.onAction?.(value)}>
         {childList}
       </AvatarGroup>
     ),
@@ -1061,7 +1060,7 @@ export const KIT: Record<string, ComponentSpec> = {
     layout: { width: 'fill' },
     render: ({ p, on, wired }) => (
       <Breadcrumb size={pick(p.size, ['sm', 'default', 'lg'] as const, 'default')} items={itemsOf(p.items).map((it, i, all) => ({
-        id: it.id, label: it.label, icon: it.icon, ...(i < all.length - 1 && wired('onClick') ? { onClick: () => on.onClick?.(it.id) } : null),
+        value: it.id, label: it.label, icon: it.icon, ...(i < all.length - 1 && wired('onClick') ? { onClick: () => on.onClick?.(it.id) } : null),
       }))} />
     ),
     code: (g) => {
@@ -1069,7 +1068,7 @@ export const KIT: Record<string, ComponentSpec> = {
       const press = g.handler('onClick');
       const items = g.list('items');
       const list = items
-        ? `[${items.map((it, i) => `{ id: ${q(it.id)}, label: ${q(it.label)}${it.icon ? `, icon: ${q(it.icon)}` : ''}${press && i < items.length - 1 ? `, onClick: () => (${press})(${q(it.id)})` : ''} }`).join(', ')}]`
+        ? `[${items.map((it, i) => `{ value: ${q(it.id)}, label: ${q(it.label)}${it.icon ? `, icon: ${q(it.icon)}` : ''}${press && i < items.length - 1 ? `, onClick: () => (${press})(${q(it.id)})` : ''} }`).join(', ')}]`
         : g.expr('items');
       return `<Breadcrumb${g.attr('size')} items={${list}} />`;
     },

@@ -17,14 +17,14 @@ import {
 {% tab title="npm" %}
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 
-Import the stylesheet once at your app's entry, then the parts from the package root:
+Import the stylesheet once at your app's entry, then the parts from their module:
 
 ```tsx
 import '@brett_lamy/ui/styles.css'
 
 import {
   Toolbar, ToolbarButton, ToolbarSeparator, ToolbarText,
-} from '@brett_lamy/ui'
+} from '@brett_lamy/ui/toolbar'
 ```
 {% endtab %}
 {% endtabs %}
@@ -132,7 +132,7 @@ UI SDK's ToolbarButton props (`onClick`, `disabled`, `focusableWhenDisabled`, `r
 | --- | --- | --- |
 | `variant` | `quiet` | Any [Button](https://blamy.github.io/ui/#/button) variant. In a `bar` toolbar, leaving it out gives the bar's tinted text action. |
 | `size` | the Toolbar's | Any Button size; icon-only tools take `icon-sm`, `icon` or `icon-lg`. |
-| `tone` | `default` | `success`, `warning` or `destructive` colors the label or glyph. |
+| `tone` | `default` | `success`, `warning` or `destructive` colors the label or glyph while the tool is available. Unavailable, an unfilled tool (`quiet`, `ghost`, `plain`, `outline`, the bar's actions) goes grey at full opacity in every look, never a faded tint; filled looks keep Button's dimmed fill. |
 
 ### ToolbarGroup, ToolbarSeparator, ToolbarText
 

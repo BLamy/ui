@@ -77,6 +77,8 @@ test('the VS Code Tailscale menu connects and Node fetch reaches a device throug
 });
 
 test('VS Code launches from Alfred and the Dock, stays mounted while minimized and shares the desktop tailnet', async ({ page }) => {
+  // Node boots inside the page; `ready` gives it a minute, so the test needs more than the default 30s.
+  test.setTimeout(120_000);
   await openHarness(page, 'macos-vscode', '[data-slot=macos-dock]');
   await page.getByRole('combobox').fill('vscode');
   await page.getByRole('combobox').press('Enter');

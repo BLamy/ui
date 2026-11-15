@@ -60,7 +60,7 @@ export function NetworkRow({ id, name, detail, glyph }: { id: string; name: stri
 /* ── Tailscale ── */
 
 /** What an exit node's row ends with: the same signal glyph a Wi-Fi network has, a spinner while it is switched to, a warning when it is offline. */
-const exitNodeGlyph: NonNullable<TailscaleExitNodesProps['glyph']> = (_peer, state) =>
+const exitNodeTrailing: NonNullable<TailscaleExitNodesProps['trailing']> = (_peer, state) =>
   state.connecting ? <Spinner size={14} />
   : state.online ? <WifiBars level={3} className="text-foreground/70" />
   : <Icon name="exclamation-circle" size={14} className="text-foreground/70" />;
@@ -93,7 +93,7 @@ export function TailscaleStatusItem({ defaultOpen }: { defaultOpen?: boolean }) 
         {connected ? (
           <div className="flex flex-col gap-2">
             <TailscaleSummary />
-            <TailscaleExitNodes onAction={choose} glyph={exitNodeGlyph} />
+            <TailscaleExitNodes onAction={choose} trailing={exitNodeTrailing} />
             <TailscaleLoginButton size="sm" variant="outline" />
           </div>
         ) : <TailscaleSignIn />}

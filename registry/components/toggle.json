@@ -1,7 +1,7 @@
 {
   "name": "toggle",
   "title": "Toggle",
-  "description": "UI SDK's Toggle, a button that stays pressed: tinted when on, in default, filled, outline and quiet (toolbar) variants with Button's sizes, with ToggleIcon and a controller; and ToggleGroup, toggles that share one value, single or multiple, one tab stop with arrow keys between them.",
+  "description": "UI SDK's Toggle, a button that stays pressed: tinted when on, in default, filled, outline and quiet (toolbar) variants with Button's sizes, with ToggleIcon and a controller; and ToggleGroup, toggles that share one value, single or multiple, one tab stop with arrow keys between them, as spaced toggles, a joined outline frame or Segmented's track (variant=\"segmented\"), in a row or a column.",
   "page": "toggle",
   "exports": [
     "Toggle",
@@ -19,6 +19,7 @@
     "ToggleGroupItem"
   ],
   "types": [
-    "ToggleProps"
+    "ToggleProps",
+    "ToggleGroupVariant"
   ]
 }

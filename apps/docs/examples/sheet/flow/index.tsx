@@ -3,6 +3,7 @@ import { Button, buttonVariants } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import {
   Sheet,
+  SheetBack,
   SheetBackdrop,
   SheetClose,
   SheetContent,
@@ -22,7 +23,9 @@ const plans = [
 
 // The root's `view` and a SheetView spring the sheet to each step's height as
 // a short flow steps forward (pick a plan, confirm), sliding the step and its
-// title in the direction of travel. The sheet is opened inside a
+// title in the direction of travel. The header is Dialog's flow bar: SheetBack
+// folds in on the second step, so a flow steps back the same way in a Sheet
+// and in a Dialog presented as a sheet. The sheet is opened inside a
 // ThemeScope with its own tint; popups wear the scope they open in, so the
 // primary button and focus ring here are teal although the page's are not.
 // "Confirm and pay" is a SheetClose rendered as a Button: its `action` runs,
@@ -39,18 +42,17 @@ export default function Flow() {
             <SheetTrigger className={cn(buttonVariants(), 'justify-self-start')}>Upgrade plan</SheetTrigger>
             <SheetBackdrop />
             <SheetContent>
-              <SheetClose />
               {/* The header stays outside the view: the title travels on its own and keeps naming the sheet. */}
-              <SheetHeader>
+              <SheetHeader variant="bar">
+                <SheetBack hidden={step === 'pick'} onClick={() => setStep('pick')} />
                 <SheetTitle>{step === 'pick' ? 'Choose a plan' : `Confirm ${plan.name}`}</SheetTitle>
-                <SheetDescription>
-                  {step === 'pick' ? 'You can change it any time.' : `${plan.price} per seat each month, billed today.`}
-                </SheetDescription>
+                <SheetClose />
               </SheetHeader>
               <SheetView>
                 {step === 'pick' ? (
                   <>
                     <div className="grid gap-2 px-5 py-2">
+                      <SheetDescription>You can change it any time.</SheetDescription>
                       {plans.map((p) => (
                         <Button
                           key={p.id}
@@ -72,12 +74,16 @@ export default function Flow() {
                     </SheetFooter>
                   </>
                 ) : (
-                  <SheetFooter>
-                    <SheetClose render={<Button size="pill" />} action={() => setDone(plan.name)}>
-                      Confirm and pay
-                    </SheetClose>
-                    <Button size="pill" variant="ghost" onClick={() => setStep('pick')}>Back</Button>
-                  </SheetFooter>
+                  <>
+                    <div className="px-5 py-2">
+                      <SheetDescription>{`${plan.price} per seat each month, billed today.`}</SheetDescription>
+                    </div>
+                    <SheetFooter>
+                      <SheetClose render={<Button size="pill" />} action={() => setDone(plan.name)}>
+                        Confirm and pay
+                      </SheetClose>
+                    </SheetFooter>
+                  </>
                 )}
               </SheetView>
             </SheetContent>

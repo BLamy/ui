@@ -65,6 +65,28 @@ describe('Swap effect="pop"', () => {
 });
 
 describe('Swap effect="slide"', () => {
+  it('keeps the leaving view where it stood inside a padded root, not at its padding corner', () => {
+    const top = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetTop')!;
+    const left = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetLeft')!;
+    const width = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetWidth')!;
+    Object.defineProperty(HTMLElement.prototype, 'offsetTop', { configurable: true, get: () => 16 });
+    Object.defineProperty(HTMLElement.prototype, 'offsetLeft', { configurable: true, get: () => 16 });
+    Object.defineProperty(HTMLElement.prototype, 'offsetWidth', { configurable: true, get: () => 200 });
+    try {
+      const { rerender } = render(<Swap value={1} className="p-4">one</Swap>);
+      rerender(<Swap value={2} className="p-4">two</Swap>);
+      const old = views()[0] as HTMLElement;
+      expect(old.style.getPropertyValue('--swap-top')).toBe('16px');
+      expect(old.style.getPropertyValue('--swap-left')).toBe('16px');
+      expect(old.style.getPropertyValue('--swap-width')).toBe('200px');
+      expect(old.className).toContain('data-ending-style:top-[var(--swap-top,0px)]');
+    } finally {
+      Object.defineProperty(HTMLElement.prototype, 'offsetTop', top);
+      Object.defineProperty(HTMLElement.prototype, 'offsetLeft', left);
+      Object.defineProperty(HTMLElement.prototype, 'offsetWidth', width);
+    }
+  });
+
   it('lifts the leaving view out of the flow while the new one arrives, in the direction of travel', async () => {
     const { rerender, container } = render(<Swap value={1} direction={1}>one</Swap>);
     rerender(<Swap value={2} direction={1}>two</Swap>);

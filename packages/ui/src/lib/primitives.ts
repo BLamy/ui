@@ -8,6 +8,9 @@ export const focusRing = 'outline-none focus-visible:ring-[3px] focus-visible:ri
     from the control by a gap in the surface's own colour, so it reads on a filled or tinted control in both schemes. */
 export const pressableFocusRing = 'outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background';
 
+/** A 28px tool's hit area grown to 44px on a touch screen, without changing its look (the tool must be `relative`). */
+export const coarseHitArea = "pointer-coarse:after:absolute pointer-coarse:after:-inset-2 pointer-coarse:after:content-['']";
+
 /** Floating surface for popovers, menus and select/combobox lists. It is never taller than the room UI SDK
     measured beside the anchor (`--available-height`), so a list inside it scrolls. Size a popup against its anchor
     with `--anchor-width` (`min-w-(--anchor-width)`). */
@@ -84,10 +87,20 @@ export const dataRowLayers = [
 
 /** The iOS bar: the 62px translucent strip (`h-bar`, `bg-bar` with the system blur) of a tab bar or an edit-mode
     toolbar, with its hairline on the edge that faces the content. A bar along the bottom (the default) has the
-    hairline on top and keeps 4px for the home indicator; `data-side="top"` turns it into a top bar, hairline below.
+    hairline on top and grows by the device's bottom safe area (`env(safe-area-inset-bottom)`, the home indicator of
+    an installed iPhone web app), keeping at least 4px under its items; `data-side="top"` turns it into a top bar,
+    hairline below.
     Surface only: the host positions it (TabsBar `bar` pins it over the content, Toolbar `bar` sits in the flow). */
+/** The bar's material alone: `bg-bar` under the system blur (a strip that continues a bar, such as the one under
+    the status bar). */
+export const barMaterial = 'bg-bar backdrop-blur-[20px] backdrop-saturate-[1.7]';
+
 export const barSurface =
-  'box-border h-bar bg-bar pb-1 shadow-hairline-t backdrop-blur-[20px] backdrop-saturate-[1.7] data-[side=top]:pb-0 data-[side=top]:shadow-hairline-b';
+  'box-border h-bar pb-1 shadow-hairline-t ' + barMaterial + ' not-data-[side=top]:h-[calc(var(--spacing-bar)+env(safe-area-inset-bottom,0px))] not-data-[side=top]:pb-[max(4px,env(safe-area-inset-bottom,0px))] data-[side=top]:pb-0 data-[side=top]:shadow-hairline-b';
+
+/** How much a bottom `barSurface` covers: its 62px plus the bottom safe area. Tabs `bar` publishes it as
+    `--tabs-bar-h` for what scrolls under the bar (NavigationStackContent keeps that much room under its rows). */
+export const barBottomHeight = 'calc(var(--spacing-bar) + env(safe-area-inset-bottom, 0px))';
 
 /** A table's column header cell (DataTable, Spreadsheet): caption semibold in the secondary ink (foreground at 65%, which keeps AA contrast where the iOS muted gray doesn't), one line, the inset focus
     ring of a grid unit. The host sets its height, padding and alignment. */
@@ -99,6 +112,26 @@ export const tableHeaderCellClass =
     `relative`. */
 export const columnResizerClass =
   "absolute inset-y-0 -end-1 z-1 w-2 cursor-col-resize touch-none after:absolute after:inset-y-1.5 after:start-[3.5px] after:w-px after:bg-border after:content-[''] hover:after:bg-primary data-dragging:after:bg-primary";
+
+/** An inline message box inside a surface: "the query failed", "copying was blocked". A tinted, rounded box of footnote
+    text in the body ink, with an optional leading glyph (an `<Icon size={16}>` as the first child) in the tone's color;
+    put the text in a `min-w-0` element after it. It is not a live region: add `role="alert"` (or `status`) for a
+    message that appears in response to something. SqlConsole's errors, OpenCode's start failure and the passkey vault's
+    errors use it. */
+export const calloutVariants = cva(
+  'm-0 flex items-start gap-2 rounded-ctl px-3 py-2.5 text-footnote text-foreground [&>[data-slot=icon]]:mt-px [&>[data-slot=icon]]:shrink-0',
+  {
+    variants: {
+      tone: {
+        default: 'bg-secondary [&>[data-slot=icon]]:text-muted-foreground',
+        success: 'bg-success/12 [&>[data-slot=icon]]:text-success',
+        warning: 'bg-warning/14 [&>[data-slot=icon]]:text-warning',
+        destructive: 'bg-destructive/10 [&>[data-slot=icon]]:text-destructive',
+      },
+    },
+    defaultVariants: { tone: 'default' },
+  },
+);
 
 /** A chosen value as a pill: a Combobox's chip and a FontStackPicker's family, with their remove button (and, on the
     stack, a drag handle) inside. */

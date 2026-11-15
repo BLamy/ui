@@ -75,7 +75,7 @@ const MIXED: ComposerAttachment[] = [
 ];
 
 /** The everyday composition: attachments, editor, expand, option pills, add and send. */
-function Full(props: Omit<ComposerProps, 'children'>) {
+function Full({ menuOpen, ...props }: Omit<ComposerProps, 'children'> & { menuOpen?: boolean }) {
   return (
     <Composer {...props}>
       <ComposerCard>
@@ -84,12 +84,12 @@ function Full(props: Omit<ComposerProps, 'children'>) {
         <ComposerInput placeholder="Ask anything — @ files, / commands, paste images" />
         <ComposerFooter>
           <ComposerOptions>
-            <ComposerSelect aria-label="Effort" items={EFFORT} defaultValue="medium" />
+            <ComposerSelect aria-label="Effort" items={EFFORT} defaultValue="medium" defaultOpen={menuOpen} />
             <ComposerSeparator />
             <ComposerSelect aria-label="Access" icon="lock-rounded" items={ACCESS} />
           </ComposerOptions>
           <ComposerSpacer />
-          <ComposerAdd icon="paperclip-diagonal" label="Attach files" />
+          <ComposerAdd icon="paperclip-diagonal" aria-label="Attach files" />
           <ComposerStop />
           <ComposerSend morph={false} />
         </ComposerFooter>
@@ -142,7 +142,7 @@ export const Disabled: Story = { render: () => <Frame><Full disabled defaultValu
 export const Compact: Story = { render: () => <Frame><Full defaultCollapsed="compact" /></Frame> };
 
 /** Folded into its FAB (`fabAlign` places it). */
-export const Fab: Story = { render: () => <Frame><Full defaultCollapsed="fab" collapseTo="fab" /></Frame> };
+export const Fab: Story = { render: () => <Frame><Full defaultCollapsed="fab" collapse="fab" /></Frame> };
 
 /** A 360px column: the option pills stay on one line and scroll sideways instead of wrapping. */
 export const Narrow: Story = {
@@ -161,7 +161,16 @@ export const SelectOpen: Story = {
   render: () => (
     <Frame>
       <div className="pt-48">
-        <Full />
+        <Full menuOpen />
+      </div>
+    </Frame>
+  ),
+};
+export const SelectOpenDark: Story = {
+  render: () => (
+    <Frame appearance="dark">
+      <div className="pt-48">
+        <Full menuOpen />
       </div>
     </Frame>
   ),
