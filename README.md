@@ -13,7 +13,7 @@ GitBook-aware markdown rendering for React applications and AI streaming surface
   Markdown vs HTML images, blank lines between blocks, list markers, fences, table layout and tag lines as written).
   Layout-only fields (`gap`, `raw`, `opening`, …) are recorded only where the source differs from the default
   output, and are ignored once they no longer fit an edited node.
-- Syntax-highlighted code blocks through `gpu-lexer`; Mermaid diagrams (drawn by [Pele](https://pele.run)) and KaTeX math load on first use.
+- Syntax-highlighted code blocks through `gpu-lexer` on WebGPU, with a synchronous fallback lexer everywhere else (and on the server); Mermaid diagrams (drawn by [Pele](https://pele.run)) and KaTeX math load on first use.
 - GitBook block support for hints, tabs, expandables, steppers, embeds, content refs, columns, figures, tables, math, dividers, updates, and OpenAPI operations.
 - Embed blocks render YouTube/direct video URLs through the built-in `VideoEmbed` and public Loop QA task, journey, exploration, or test-run URLs through `ReplayPreview`.
 - CSS exported as a stable package entrypoint so host apps can theme with CSS variables or shadcn-style design tokens.
@@ -1042,6 +1042,8 @@ Import the CSS once, then set tokens globally in your app. The command box's
 terminal glyph has its own tokens (`--gb-term-bg`, `--gb-term-fg`), so setting
 panel colors to `currentColor` doesn't blank it. Components also expose stable classes such as `docs-code`, `docs-tabs`, `docs-hint`, `docs-table`, and `docs-openapi`.
 
+Code fences are colored at once by a small synchronous lexer (ts/tsx/js/jsx, json, css, html/xml, bash, python, sql, markdown and yaml, and a C-family default for other languages; `text` stays plain), on the server too; where WebGPU works, `gpu-lexer`'s spans replace it when they arrive. `<code data-highlighter>` says which drew a fence: `"gpu"`, `"fallback"` or `"none"`. To draw fences yourself, pass `renderCode={(block, { placement, highlighted }) => …}` to `GitbookStreamdown`, `MarkdownContent` or `DocsRenderer`; return `null` for docstream's rendering.
+
 Code highlighting follows the surrounding `color-scheme`: set `color-scheme: dark` on a dark page (or any dark container) and code switches to the dark palette. Each token color is a custom property (`--docs-tok-keyword`, `--docs-tok-string`, `--docs-tok-type`, `--docs-tok-function`, `--docs-tok-number`, `--docs-tok-constant`, `--docs-tok-operator`, `--docs-tok-comment`) if you want your own palette.
 
 ### Live demos with in-page components
@@ -1129,6 +1131,38 @@ marked `@deprecated`.
   `showCode` still work as the defaults (deprecated). `onCodeChange(code, details)` now says
   `details.reason`: `"rack-edit"` or `"revert"`. `style`, `ref`, and `aria-label` (the figure is named by
   its title by default). New types `StrudelPanelChangeReason` and `StrudelCodeChangeDetails`.
+- **Code fences without WebGPU**: fences are now colored where WebGPU is missing (Safari, Firefox, headless
+  browsers, insecure contexts) or `gpu-lexer`'s `parse()` rejects. A synchronous fallback lexer labels the code
+  with the same token classes (`.docs-tok-*`, so the `--docs-tok-*` knobs apply) on first render, on the server
+  too: keywords, strings, numbers, comments, punctuation and operators, constants, calls and types, for
+  ts/tsx/js/jsx, json, css, html/xml, bash, python, sql, markdown (fences inside take their own language) and
+  yaml, with a C-family default for other languages. `text` fences stay plain, and sources over 64 KB are left
+  to the GPU. Where WebGPU works, its spans replace the fallback's when they arrive. `<code>` carries
+  `data-highlighter="gpu" | "fallback" | "none"`. No new dependency.
+- **`renderCode`** on `GitbookStreamdown`, `MarkdownContent` and `DocsRenderer` (a `DocRenderOptions` field):
+  `(block: CodeBlockNode, details: { placement: "block" | "tab"; highlighted: ReactNode }) => ReactNode | null`.
+  Return `null` or `undefined` for docstream's rendering, as `renderReference` does. `"block"` replaces a whole
+  fence; `"tab"` the body of one tab of a code-only tab set (the tab strip and copy button stay docstream's).
+  `highlighted` is docstream's own `<code>`, to frame. Widget fences (mermaid, xstate, tscircuit, strudel, tui,
+  live React) never reach it. Nested renderers inherit it. New types `CodeBlockRenderer` and
+  `CodeBlockRenderDetails`.
+- **ReplayPreview**: the big play disc follows the appearance: a near-opaque light disc with a dark icon on light
+  color-schemes (it was a dark translucent disc on every page), the dark scrim on dark ones; the icon keeps 8:1 or
+  more over any page. Knobs: `--replay-play-background`, `--replay-play-foreground`, `--replay-play-ring`. On
+  touch screens the control bar's buttons (play, DevTools, captions, speed, full screen) are 44px.
+- **Copy buttons** on code fences, tab sets and command boxes are 44px on touch screens (the floating one shows
+  at full strength there, with no hover to reveal it), and the focus ring is a 2px primary outline with a gap,
+  never dimmed by the hover-only opacity.
+- **Strudel rack controls**: `Knob` and `Fader` take `onValueChange(value, details)`, where `details` is
+  `{ reason, event? }` (`"drag"`, `"step-key"`, `"track-press"`, `"reset-press"` for the double-click…; UI SDK's
+  full change details where the control has them). `onChange` still works, now also with the details
+  (deprecated). `StrudelRack` takes `value` / `onValueChange(code, details)`, where `details` is `{ reason,
+  event?, control, track?, param? }`: which control edited the code (`"gain"`, `"effect"`, `"tempo"`, `"sound"`,
+  `"steps"`…) and how (the control's reason, `"item-press"` for a select or the Add menu, `"remove-press"` for
+  Remove). `code` / `onChange` still work (deprecated). `StrudelPlayer`'s `onCodeChange` details add `event`
+  and, for a rack edit, `rack` (those details). `StepGrid`'s `onAtomChange` gets the step's details as a third
+  argument. New types `ControlValueChangeDetails`, `ControlValueChangeReason`, `StrudelRackChangeDetails`,
+  `StrudelRackChangeReason`, `StrudelRackControl`.
 - Markup hooks: `[data-slot="tui-preview-source"]` is now a `<div>` around the disclosure (it was the
   `<details>`); its trigger is `.docstream-tui__source-trigger`, a `<summary>` before hydration and a
   `<button aria-expanded>` after. The Stop button is the Run button's own element while a program runs.

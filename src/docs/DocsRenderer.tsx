@@ -38,6 +38,7 @@ import { Mermaid } from "./Mermaid"
 import { XStateDiagram, isXStateLanguage } from "../xstate"
 import { TsCircuit, isTsCircuitLanguage } from "../tscircuit"
 import { HighlightedCode } from "./HighlightedCode"
+import { CodeRenderContext, type CodeBlockRenderer } from "./code-render"
 import { CitationSources, InlineReference } from "./reference"
 import { ImageThumbnail, leadingThumbnail, thumbnailLabel } from "./ImageThumbnail"
 import { DocumentProperties } from "./DocumentProperties"
@@ -242,6 +243,7 @@ function CommandBox({ block }: { block: CommandNode }) {
 function Tabs({ block, liveRenderer, sourceRenderer }: { block: Extract<Block, { type: "tabs" }> } & Renderers) {
   const [local, setLocal] = useState(0)
   const [synced, setSynced] = useSyncedTab(block.sync)
+  const renderCode = useContext(CodeRenderContext)
   const syncedIndex = synced === null ? -1 : block.tabs.findIndex((t) => t.title === synced)
   const active = Math.min(syncedIndex >= 0 ? syncedIndex : local, Math.max(0, block.tabs.length - 1))
   const codes = useMemo(() => codeOnlyTabs(block), [block])
@@ -293,13 +295,15 @@ function Tabs({ block, liveRenderer, sourceRenderer }: { block: Extract<Block, {
           <span className="docs-tabs-code-title">{code.title}</span>
           <CopyButton text={code.code} label={`Copy ${block.tabs[active]?.title ?? "code"}`} />
         </div>
-        {codes.map((c, i) => (
-          <TabsPanel key={String(i)} value={String(i)} className="docs-tabs-code-body">
-            <pre className={numbered(c) ? "docs-code-numbered" : ""}>
-              <HighlightedCode code={c.code} language={c.language} lineNumbers={numbered(c)} />
-            </pre>
-          </TabsPanel>
-        ))}
+        {codes.map((c, i) => {
+          const highlighted = <HighlightedCode code={c.code} language={c.language} lineNumbers={numbered(c)} />
+          const custom = renderCode?.(c, { placement: "tab", highlighted })
+          return (
+            <TabsPanel key={String(i)} value={String(i)} className="docs-tabs-code-body">
+              {custom != null ? custom : <pre className={numbered(c) ? "docs-code-numbered" : ""}>{highlighted}</pre>}
+            </TabsPanel>
+          )
+        })}
       </TabsRoot>
     )
   }
@@ -315,6 +319,7 @@ function Tabs({ block, liveRenderer, sourceRenderer }: { block: Extract<Block, {
 function BlockView({ block, liveRenderer, sourceRenderer }: { block: Block } & Renderers) {
   const onTaskStateChange = useContext(TaskStateChangeContext)
   const tui = useContext(TuiContext)
+  const renderCode = useContext(CodeRenderContext)
   switch (block.type) {
     case "paragraph": {
       // A paragraph that opens with a thumbnail sets its text beside it.
@@ -365,6 +370,13 @@ function BlockView({ block, liveRenderer, sourceRenderer }: { block: Block } & R
       }
       if (block.live && isReactLanguage(block.language) && liveRenderer) {
         return <LiveFence block={block} liveRenderer={liveRenderer} />
+      }
+      if (renderCode) {
+        const custom = renderCode(block, {
+          placement: "block",
+          highlighted: <HighlightedCode code={block.code} language={block.language} lineNumbers={block.lineNumbers} />,
+        })
+        if (custom != null) return <>{custom}</>
       }
       return (
         <div className="docs-code" data-language={block.language ?? undefined}>
@@ -709,6 +721,12 @@ export interface DocRenderOptions {
   envHost?: DocstreamEnvHost
   /** Variables to declare in addition to the frontmatter's `env`. */
   env?: readonly string[]
+  /**
+   * Draws fenced code blocks yourself: `(block, { placement, highlighted }) => ReactNode`. Return `null` or
+   * `undefined` for docstream's own rendering. Widget fences (mermaid, xstate, tscircuit, strudel, tui, live
+   * React) are not passed to it. Provided through context, so nested renderers inherit it.
+   */
+  renderCode?: CodeBlockRenderer
 }
 
 /** The variables a document declares in its frontmatter's `env`. */
@@ -722,8 +740,9 @@ function withEnv(doc: DocumentNode, { envHost, env }: DocRenderOptions, children
   return <DocstreamEnvProvider declared={declared} host={envHost}>{children}</DocstreamEnvProvider>
 }
 
-function withDemoContext({ demoResolver, demoRuntime, demoDependencies, demoVFS, onTaskStateChange, tui, isStreaming }: DocRenderOptions, children: ReactNode) {
+function withDemoContext({ demoResolver, demoRuntime, demoDependencies, demoVFS, onTaskStateChange, tui, isStreaming, renderCode }: DocRenderOptions, children: ReactNode) {
   let out = children
+  if (renderCode) out = <CodeRenderContext.Provider value={renderCode}>{out}</CodeRenderContext.Provider>
   if (tui !== undefined || isStreaming !== undefined) out = <TuiProvider options={tui} isStreaming={isStreaming}>{out}</TuiProvider>
   if (onTaskStateChange) out = <TaskStateChangeContext.Provider value={onTaskStateChange}>{out}</TaskStateChangeContext.Provider>
   if (demoVFS) out = <DocstreamDemoVFSContext.Provider value={demoVFS}>{out}</DocstreamDemoVFSContext.Provider>
@@ -781,10 +800,11 @@ export function MarkdownContent({
   env,
   tui,
   isStreaming,
+  renderCode,
 }: { markdown: string; className?: string } & Renderers & DocRenderOptions) {
   const doc = useMemo(() => parseMarkdown(markdown), [markdown])
   return withDemoContext(
-    { demoResolver, demoRuntime, demoDependencies, demoVFS, onTaskStateChange, tui, isStreaming },
+    { demoResolver, demoRuntime, demoDependencies, demoVFS, onTaskStateChange, tui, isStreaming, renderCode },
     withEnv(doc, { envHost, env }, <div data-docstream="" className={className}>
       <PageActionsBar markdown={markdown} options={pageActions} />
       {documentProperties && doc.properties ? <DocumentProperties properties={doc.properties} defaultOpen={typeof documentProperties === "object" && documentProperties.defaultOpen} /> : null}
@@ -810,9 +830,10 @@ export function DocsRenderer({
   env,
   tui,
   isStreaming,
+  renderCode,
 }: { doc: DocumentNode; /** Source for page actions; defaults to `serializeMarkdown(doc)`. */ markdown?: string } & Renderers & DocRenderOptions) {
   return withDemoContext(
-    { demoResolver, demoRuntime, demoDependencies, demoVFS, onTaskStateChange, tui, isStreaming },
+    { demoResolver, demoRuntime, demoDependencies, demoVFS, onTaskStateChange, tui, isStreaming, renderCode },
     withEnv(doc, { envHost, env }, <article className="docs-article">
       <PageActionsBar markdown={markdown ?? (() => serializeMarkdown(doc))} options={pageActions} />
       {documentProperties && doc.properties ? <DocumentProperties properties={doc.properties} defaultOpen={typeof documentProperties === "object" && documentProperties.defaultOpen} /> : null}

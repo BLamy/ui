@@ -6,6 +6,9 @@ import { useId } from "react"
 import { fractionOf, valueAt } from "@ui-sdk/core/number"
 import { Slider, SliderControl, SliderThumb, SliderTrack, SliderValue } from "@ui-sdk/react/slider"
 import { KnobDial, KnobRoot, KnobValue } from "./knob-parts"
+import type { ControlValueChangeDetails } from "./rack-types"
+
+export type { ControlValueChangeDetails, ControlValueChangeReason } from "./rack-types"
 
 export interface ControlProps {
   label: string
@@ -16,13 +19,24 @@ export interface ControlProps {
   log?: boolean
   defaultValue?: number
   format?: (value: number) => string
-  onChange: (value: number) => void
+  /** The new value, and why it changed. */
+  onValueChange?: (value: number, details: ControlValueChangeDetails) => void
+  /** @deprecated Use `onValueChange`. Still called, with the same details. */
+  onChange?: (value: number, details: ControlValueChangeDetails) => void
   disabled?: boolean
   /** Shown instead of the value, e.g. "∿" for a modulated parameter. */
   display?: string
   title?: string
   /** Knob only: "lg" for master controls. */
   size?: "md" | "lg"
+}
+
+/** Calls `onValueChange` and the deprecated `onChange`. */
+function reporter({ onValueChange, onChange }: Pick<ControlProps, "onValueChange" | "onChange">) {
+  return (value: number, details: ControlValueChangeDetails) => {
+    onValueChange?.(value, details)
+    onChange?.(value, details)
+  }
 }
 
 const scaleOf = ({ min, log }: Pick<ControlProps, "min" | "log">) => (log && min > 0 ? "log" : "linear")
@@ -54,7 +68,7 @@ export function Knob(props: ControlProps) {
       className="strudel-knob"
       data-size={props.size ?? "md"}
       value={props.value}
-      onValueChange={props.onChange}
+      onValueChange={reporter(props)}
       min={props.min}
       max={props.max}
       scale={scaleOf(props)}
@@ -113,7 +127,8 @@ const TICKS = [10, 8, 6, 4, 2, 0]
 export function Fader(props: ControlProps) {
   const format = props.format ?? defaultFormat
   const scale = scaleOf(props)
-  const { display, defaultValue, disabled, onChange } = props
+  const { display, defaultValue, disabled } = props
+  const report = reporter(props)
   // The slider runs along the fader's travel, 0 to 1, so a log scale moves evenly.
   return (
     <Slider
@@ -124,7 +139,7 @@ export function Fader(props: ControlProps) {
       step={0.01}
       largeStep={0.1}
       value={fractionOf(props.value, props, scale)}
-      onValueChange={(position) => onChange(valueAt(position as number, props, scale))}
+      onValueChange={(position, details) => report(valueAt(position as number, props, scale), details)}
       disabled={disabled}
       format={(position) => display ?? format(valueAt(position, props, scale))}
       title={props.title}
@@ -138,8 +153,8 @@ export function Fader(props: ControlProps) {
         </div>
         <SliderControl
           className="strudel-fader__track"
-          onDoubleClick={() => {
-            if (!disabled && defaultValue !== undefined) onChange(defaultValue)
+          onDoubleClick={(event) => {
+            if (!disabled && defaultValue !== undefined) report(defaultValue, { reason: "reset-press", event: event.nativeEvent })
           }}
         >
           <div className="strudel-fader__slot" />

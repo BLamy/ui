@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect, useId, useRef, useState, useSyncExternalStor
 import type { ChangeDetails } from "@ui-sdk/core"
 import { Code2, Loader2, Pause, Play, SlidersHorizontal, Undo2 } from "lucide-react"
 import { HighlightedCode } from "../docs/HighlightedCode"
+import type { StrudelRackChangeDetails } from "./rack-types"
 import { Panel, PanelTrigger, usePanel } from "./panel"
 import {
   DEFAULT_SAMPLES,
@@ -24,6 +25,10 @@ export type StrudelPanelChangeReason = "trigger-press" | "find-in-page" | "imper
 /** What `onCodeChange` reports with the code: a rack edit (a knob, fader, mute, sound…) or the Revert button. */
 export interface StrudelCodeChangeDetails {
   reason: "rack-edit" | "revert"
+  /** The click, key or drag behind it, when there is one. */
+  event?: Event
+  /** For a rack edit: which control made it and how (the rack's own `onValueChange` details). */
+  rack?: StrudelRackChangeDetails
 }
 
 export interface StrudelPlayerProps {
@@ -239,9 +244,9 @@ export function StrudelPlayer({
     return () => clearTimeout(timer)
   }, [toPlay])
 
-  const edit = (next: string, reason: StrudelCodeChangeDetails["reason"] = "rack-edit") => {
+  const edit = (next: string, reason: StrudelCodeChangeDetails["reason"], extra: Omit<StrudelCodeChangeDetails, "reason"> = {}) => {
     setEdited(next)
-    onCodeChange?.(next, { reason })
+    onCodeChange?.(next, { reason, ...extra })
   }
 
   useEffect(() => {
@@ -340,11 +345,11 @@ export function StrudelPlayer({
         <Panel panel={rackPanel} className="docstream-strudel__equipment">
           <Suspense fallback={<div className="docstream-strudel__sub">Loading equipment…</div>}>
             {edited !== null && edited !== ready && (
-              <button type="button" className="docstream-strudel__revert" onClick={() => edit(ready!, "revert")}>
+              <button type="button" className="docstream-strudel__revert" onClick={(event) => edit(ready!, "revert", { event: event.nativeEvent })}>
                 <Undo2 size={13} aria-hidden="true" /> Revert edits
               </button>
             )}
-            <StrudelRack code={current} onChange={(next) => edit(next)} onPlayableChange={setPlayable} />
+            <StrudelRack value={current} onValueChange={(next, rack) => edit(next, "rack-edit", { rack, ...(rack.event ? { event: rack.event } : {}) })} onPlayableChange={setPlayable} />
           </Suspense>
         </Panel>
       )}

@@ -173,3 +173,48 @@ describe("TuiPreview and StlViewer chrome take the page's tokens", () => {
     expect(block(".docstream-stl__reset:focus-visible")).toContain("outline: 2px solid")
   })
 })
+
+describe("2.0.1 touch targets, focus ring and the replay play disc", () => {
+  const coarse = (() => {
+    const at = styles.indexOf("@media (pointer: coarse) {\n  .docs-copy {")
+    expect(at).toBeGreaterThanOrEqual(0)
+    return styles.slice(at, styles.indexOf("\n}\n", at))
+  })()
+  const inCoarse = (selector: string) => {
+    const at = coarse.indexOf(`${selector} {`)
+    expect(at, selector).toBeGreaterThanOrEqual(0)
+    return coarse.slice(at, coarse.indexOf("}", at))
+  }
+
+  it("code-fence copy buttons are 44px on touch, and the floating one shows without a hover", () => {
+    expect(inCoarse(".docs-copy")).toContain("min-width: 44px;")
+    expect(inCoarse(".docs-copy")).toContain("min-height: 44px;")
+    expect(inCoarse(".docs-code-header .docs-copy")).toContain("height: 44px;")
+    expect(inCoarse(".docs-code-copy-float")).toContain("opacity: 1;")
+  })
+
+  it("a copy button's focus ring is visible, and outranks the hover-only opacity", () => {
+    const ring = styles.lastIndexOf(".docs-copy:focus-visible {")
+    const css = styles.slice(ring, styles.indexOf("}", ring))
+    expect(css).toContain("outline: 2px solid var(--gb-primary);")
+    expect(css).toContain("opacity: 1;")
+    expect(ring).toBeGreaterThan(styles.indexOf(".docs-code-copy-float {"))
+  })
+
+  it("the replay player's controls and play disc are at least 44px on touch, in the replay layer", () => {
+    expect(coarse).toContain("@layer docstream.replay {")
+    expect(inCoarse(':where([data-slot="replay-preview-controls"] button, [data-slot="replay-preview-speed"])')).toContain("min-width: 44px;")
+    expect(inCoarse(':where([data-slot="replay-preview-controls"] button, [data-slot="replay-preview-speed"])')).toContain("height: 44px;")
+    expect(inCoarse(':where([data-slot="replay-preview-center"] > button)')).toContain("min-height: 44px;")
+    const disc = styles.slice(styles.indexOf(':where([data-slot="replay-preview-center"] > button) {'))
+    expect(disc.slice(0, disc.indexOf("}"))).toContain("width: 56px;")
+  })
+
+  it("the play disc follows the appearance: a light disc with a dark icon on light color-schemes", () => {
+    const at = styles.indexOf(':where([data-slot="replay-preview-center"] > button) {')
+    const css = styles.slice(at, styles.indexOf("}", at))
+    expect(css).toContain("color: var(--replay-play-foreground, light-dark(#18181b, #ffffff));")
+    expect(css).toContain("background: var(--replay-play-background, light-dark(rgba(255, 255, 255, 0.9), rgba(9, 9, 11, 0.72)));")
+    expect(css).not.toContain("var(--foreground")
+  })
+})

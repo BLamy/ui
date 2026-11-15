@@ -198,11 +198,51 @@ Tokens fall into eight classes, each a CSS custom property with light and dark d
 }
 ```
 
-The rest of the theme is on [Theming](../07-reference/01-theming.md). The language tag still matters — it labels the header, picks the shell treatment in tab sets, and switches on mermaid, live and music fences — but it doesn't change the colouring.
+The rest of the theme is on [Theming](../07-reference/01-theming.md). The language tag still matters: it labels the header, picks the shell treatment in tab sets, switches on mermaid, live and music fences, and picks the fallback lexer's rules (below). gpu-lexer itself doesn't need it.
 
-{% hint style="info" %}
-Without WebGPU, code renders as plain, unhighlighted text — still selectable, copyable and numbered.
-{% endhint %}
+### Without WebGPU
+
+Where WebGPU is missing (Safari and Firefox without it, headless browsers, insecure contexts) or gpu-lexer fails on a source, a small synchronous lexer colors the fence instead, with the same eight classes, so your `--docs-tok-*` overrides apply to both. It runs on the first render, and on the server, so a fence is never shown plain first; where WebGPU works, gpu-lexer's spans replace it when they arrive.
+
+The fallback reads the language tag: TypeScript and JavaScript (JSX too), JSON, CSS, HTML and XML (with their `<script>` and `<style>` bodies), shell, Python, SQL, Markdown (whose fences take their own language) and YAML each get their own rules: keywords, strings, numbers, comments, punctuation and operators, constants, calls and types. Other languages get a C-family default, `text` stays plain, and sources over 64 KB are left to the GPU. The `<code>` element says which lexer drew it:
+
+```css title="debug.css"
+/* Outline fences the fallback colored */
+.docs-code code[data-highlighter="fallback"] { outline: 1px dashed orange; }
+```
+
+| `data-highlighter` | Drawn by |
+| --- | --- |
+| `"gpu"` | gpu-lexer on WebGPU |
+| `"fallback"` | The synchronous fallback lexer |
+| `"none"` | Nobody: a plain-text language, or an empty or oversized source without WebGPU |
+
+## Drawing code fences yourself
+
+`renderCode` hands every ordinary fence to you: your own editor, your own highlighter, or docstream's highlighting in your frame. Return `null` (or `undefined`) for docstream's rendering, as `renderReference` does for chips. It works on `GitbookStreamdown`, `MarkdownContent` and `DocsRenderer`, and nested renderers inherit it:
+
+```tsx title="Docs.tsx"
+import { GitbookStreamdown, type CodeBlockRenderer } from "@brett_lamy/docstream"
+import { CodeEditor } from "./CodeEditor"
+
+const renderCode: CodeBlockRenderer = (block, { placement, highlighted }) => {
+  if (block.language === "text") return null // docstream draws it
+  if (placement === "tab") return <pre className="my-code">{highlighted}</pre>
+  return <CodeEditor value={block.code} language={block.language ?? "text"} title={block.title} readOnly />
+}
+
+export function Docs({ markdown }: { markdown: string }) {
+  return <GitbookStreamdown markdown={markdown} renderCode={renderCode} />
+}
+```
+
+| Argument | What it is |
+| --- | --- |
+| `block` | The fence: `code`, `language`, `title`, `lineNumbers`, and its other attributes (`CodeBlockNode`). |
+| `details.placement` | `"block"`: a fence on its own; you draw all of it (header and copy button included). `"tab"`: one tab of a [code-only tab set](02-callouts-and-tabs.md#code-only-tabs-collapse); you draw the panel's body, and the tab strip, title and copy button stay docstream's. |
+| `details.highlighted` | Docstream's own highlighted `<code>` for the fence, to put inside your chrome. |
+
+Widget fences never reach it: `mermaid`, `xstate`, `tscircuit`, `strudel`, `tui` and live React fences keep their widgets. `renderCode` is new in 2.0.1.
 
 ## Copy buttons
 
@@ -217,7 +257,7 @@ Every code surface has one:
 | Mermaid / math card | The diagram or TeX source |
 | Demo code panel | The file shown |
 
-Copy buttons write to the clipboard and confirm with a check mark. The `CopyButton` component and `copyText` helper are exported for your own chrome.
+Copy buttons write to the clipboard and confirm with a check mark. On touch screens they are 44px targets, and the floating one shows at full strength, as there is no hover to reveal it. Keyboard focus draws a 2px ring in `--primary` with a gap in the panel's color. The `CopyButton` component and `copyText` helper are exported for your own chrome.
 
 ## Collapsible code
 

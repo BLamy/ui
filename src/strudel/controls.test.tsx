@@ -4,7 +4,7 @@ import { renderToStaticMarkup } from "react-dom/server"
 import { describe, expect, it } from "vitest"
 import { focus, mount, press } from "../__fixtures__/dom"
 import { parseMini, type MiniAtom } from "./ast/mini"
-import { Fader, Knob, type ControlProps } from "./controls"
+import { Fader, Knob, type ControlProps, type ControlValueChangeDetails } from "./controls"
 import { RackGrid, type GridLayout } from "./RackGrid"
 import { StepGrid } from "./StepGrid"
 
@@ -138,6 +138,42 @@ describe("Fader", () => {
     expect(view.host.querySelector(".strudel-fader")!.hasAttribute("data-disabled")).toBe(true)
     await doubleClick(view.host.querySelector(".strudel-fader__track")!)
     expect(seen).toEqual([])
+    await view.unmount()
+  })
+})
+
+describe("Knob and Fader change details", () => {
+  function Reporting({ as: Control, log, legacy }: { as: typeof Knob; log: [number, ControlValueChangeDetails][]; legacy?: [number, ControlValueChangeDetails][] }) {
+    const [value, setValue] = useState(0.4)
+    return (
+      <Control
+        label="Level"
+        value={value}
+        min={0}
+        max={1}
+        defaultValue={0.25}
+        onValueChange={(next, details) => { log.push([next, details]); setValue(next) }}
+        {...(legacy ? { onChange: (next: number, details: ControlValueChangeDetails) => void legacy.push([next, details]) } : {})}
+      />
+    )
+  }
+
+  it.each([["Knob", Knob], ["Fader", Fader]] as const)("%s: onValueChange says why, with the event; the deprecated onChange gets the same", async (_name, Control) => {
+    const log: [number, ControlValueChangeDetails][] = []
+    const legacy: [number, ControlValueChangeDetails][] = []
+    const view = await mount(<Reporting as={Control} log={log} legacy={legacy} />)
+    const slider = view.host.querySelector<HTMLElement>('[role="slider"]')!
+    await focus(slider)
+    await press("ArrowUp")
+    expect(log).toHaveLength(1)
+    expect(log[0]![1].reason).toBe("step-key")
+    expect(log[0]![1].event).toBeInstanceOf(KeyboardEvent)
+    expect((log[0]![1].event as KeyboardEvent).key).toBe("ArrowUp")
+    await doubleClick(Control === Knob ? slider : view.host.querySelector(".strudel-fader__track")!)
+    expect(log.at(-1)![0]).toBe(0.25)
+    expect(log.at(-1)![1].reason).toBe("reset-press")
+    expect(log.at(-1)![1].event?.type).toBe("dblclick")
+    expect(legacy).toEqual(log)
     await view.unmount()
   })
 })

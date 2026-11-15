@@ -79,7 +79,7 @@ export function Song({ code, save }: { code: string; save: (code: string) => voi
 | `rackOpen` / `onRackOpenChange` | `boolean` / `(open, details) => void` | none | Control the rack panel. `details` is UI SDK's change details: `reason` is `"trigger-press"`, `"find-in-page"` or `"imperative"`, and `details.cancel()` keeps an uncontrolled panel as it was. |
 | `defaultCodeOpen` | `boolean` | `false` | Show the code under the player from the start (uncontrolled). |
 | `codeOpen` / `onCodeOpenChange` | `boolean` / `(open, details) => void` | none | Control the code panel, the same way. |
-| `onCodeChange` | `(code, details) => void` | none | The code after every rack edit and after **Revert edits**; `details.reason` is `"rack-edit"` or `"revert"`. |
+| `onCodeChange` | `(code, details) => void` | none | The code after every rack edit and after **Revert edits**; `details.reason` is `"rack-edit"` or `"revert"`, `details.event` the click, key or drag behind it, and for a rack edit `details.rack` is the rack's own details (which control, and how; below). |
 | `samples` | `readonly string[]` | `DEFAULT_SAMPLES` | Sample banks to load before the first play, e.g. `["github:tidalcycles/dirt-samples"]`. |
 | `className` | `string` | none | Added to `figure.docstream-strudel`, which carries `data-state="idle" \| "loading" \| "playing"`. |
 | `style` | `CSSProperties` | none | Inline styles on the root figure. |
@@ -131,10 +131,10 @@ mixCode(song, { solo: new Set([0]) })                             // the code wi
 
 | Export | Purpose |
 | --- | --- |
-| `StrudelRack` | The rack on its own: `code`, `onChange`, `onPlayableChange` (the code for the current mute/solo mix), `layout="rack" \| "grid"`, and `persistKey` to remember the layout in `localStorage`. |
+| `StrudelRack` | The rack on its own: `value`, `onValueChange(code, details)`, `onPlayableChange` (the code for the current mute/solo mix), `layout="rack" \| "grid"`, and `persistKey` to remember the layout in `localStorage`. `code` and `onChange` are the deprecated spellings of `value` and `onValueChange`, and still work. |
 | `RackGrid` | The masonry grid: `items` (`{ key, label, node, span? }`), `layout`, `onLayoutChange`. |
-| `StepGrid` | A mini-notation tree as a step sequencer: `mini`, `onAtomChange(atom, text)`, `label`. |
-| `Knob`, `Fader` | The hardware controls, both ARIA sliders: drag (Shift for fine), arrows, Page Up/Down, Home/End, double-click to reset. Props: `label`, `value`, `min`, `max`, `log`, `defaultValue`, `format`, `onChange`. |
+| `StepGrid` | A mini-notation tree as a step sequencer: `mini`, `onAtomChange(atom, text, details)` (`details.reason` is `"press"` for a toggle, `"input-commit"` for a typed value), `label`. |
+| `Knob`, `Fader` | The hardware controls, both ARIA sliders: drag (Shift for fine), arrows, Page Up/Down, Home/End, double-click to reset. Props: `label`, `value`, `min`, `max`, `log`, `defaultValue`, `format`, `onValueChange(value, details)`. `onChange` is the deprecated spelling, and gets the same details. |
 | `STRUDEL_PARAMS`, `trackName` | The effects the rack draws knobs for, with ranges and defaults; a track's display name. |
 | `playStrudel`, `updateStrudel`, `stopStrudel` | Drive the shared runtime yourself. `playStrudel` must run from a user gesture. |
 | `subscribeStrudel`, `getStrudelSnapshot`, `strudelNow` | Who is playing (`{ owner, status }`) and the scheduler's position in cycles, for your own visuals. |
@@ -146,9 +146,46 @@ import { StrudelRack } from "@brett_lamy/docstream/strudel"
 
 export function Mixer({ initial }: { initial: string }) {
   const [code, setCode] = useState(initial)
-  return <StrudelRack code={code} onChange={setCode} layout="grid" persistKey="my-song" />
+  return <StrudelRack value={code} onValueChange={setCode} layout="grid" persistKey="my-song" />
 }
 ```
+
+Every edit says what made it. A knob or fader reports `onValueChange(value, details)`, and the rack reports `onValueChange(code, details)` with the control's reason and which control it was:
+
+```tsx title="Studio.tsx"
+import { useState } from "react"
+import { Knob, StrudelRack, type StrudelRackChangeDetails } from "@brett_lamy/docstream/strudel"
+
+export function Studio({ initial, log }: { initial: string; log: (line: string) => void }) {
+  const [code, setCode] = useState(initial)
+  const [cutoff, setCutoff] = useState(1200)
+  const record = (next: string, { reason, control, track, param }: StrudelRackChangeDetails) => {
+    // "step-key gain on track 0", "drag effect lpf on track 2", "remove-press effect room on track 2"
+    log(`${reason} ${control}${param ? ` ${param}` : ""}${track === undefined ? "" : ` on track ${track}`}`)
+    setCode(next)
+  }
+  return (
+    <>
+      <StrudelRack value={code} onValueChange={record} />
+      <Knob label="Cutoff" value={cutoff} min={40} max={16000} log defaultValue={1200}
+        onValueChange={(value, { reason }) => {
+          setCutoff(value)
+          if (reason === "reset-press") log("cutoff back to its default")
+        }} />
+    </>
+  )
+}
+```
+
+| `details` field | Knob, Fader | StrudelRack |
+| --- | --- | --- |
+| `reason` | `"drag"`, `"step-key"`, `"track-press"` (Fader), `"accessibility-adjust"`, `"reset-press"` (double-click), `"imperative"` | The control's reason, `"item-press"` / `"list-navigation"` (a select or the Add menu), `"press"` / `"input-commit"` (a step), `"remove-press"` (an effect's Remove) |
+| `event` | The key, pointer or double-click event, when there is one | The same |
+| `control` | | `"tempo"`, `"output"`, `"gain"`, `"effect"`, `"sound"`, `"key"`, `"scale"`, `"steps"` |
+| `track` | | The track's index in the song, for a track's controls |
+| `param` | | The effect's method (`"lpf"`, `"room"`), for an effect's knob, Remove button and the Add menu |
+
+The details, `value` / `onValueChange` on the rack and on the controls, and `onCodeChange`'s `event` and `rack` are new in 2.0.1. Handlers that take only the value or the code keep working.
 
 The rack's parser (acorn plus the mini-notation parser) loads the first time someone opens a rack in a player, not with the player itself.
 

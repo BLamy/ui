@@ -3,13 +3,14 @@
    it with a rest; double-click it (or press F2) to type a new value. Operators show as badges (×2, (3,8), ?, !3).
    The keys are the `step-grid` primitive (step-grid.ts): one tab stop, arrows between the steps. */
 import type { ReactNode } from "react"
+import type { ChangeDetails } from "@ui-sdk/core"
 import { StepGridCell, StepGridEditor, StepGridRoot } from "./step-grid-parts"
 import { miniAtoms, type MiniAtom, type MiniGroup, type MiniOp, type MiniSequence, type MiniStep } from "./ast/mini"
 
 export interface StepGridProps {
   mini: MiniGroup
-  /** Called with the atom and its new text. */
-  onAtomChange: (atom: MiniAtom, text: string) => void
+  /** Called with the atom, its new text, and how: a step pressed (`"press"`) or a value typed (`"input-commit"`). */
+  onAtomChange: (atom: MiniAtom, text: string, details: ChangeDetails<"press" | "input-commit">) => void
   /** Accessible name for the grid. */
   label?: string
 }
@@ -118,14 +119,14 @@ export function StepGrid({ mini, onAtomChange, label }: StepGridProps) {
     <StepGridRoot
       className="strudel-steps"
       aria-label={label ?? "Steps"}
-      onStepPress={(key) => {
+      onStepPress={(key, details) => {
         const atom = atoms.get(key)
-        if (atom) onAtomChange(atom, atom.rest ? fallback : "~")
+        if (atom) onAtomChange(atom, atom.rest ? fallback : "~", details)
       }}
-      onStepEdit={({ step: key, text }) => {
+      onStepEdit={({ step: key, text }, details) => {
         const atom = atoms.get(key)
         const value = text.trim()
-        if (atom && value && value !== atom.value && VALUE.test(value)) onAtomChange(atom, value)
+        if (atom && value && value !== atom.value && VALUE.test(value)) onAtomChange(atom, value, details)
       }}
     >
       {drawn}

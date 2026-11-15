@@ -4650,11 +4650,16 @@ details[open] > .oas-response-trigger .oas-response-caret {
     cursor: pointer;
     pointer-events: auto;
     appearance: none;
-    /* A video player's scrim, not the page's tokens: it sits over a recorded page of any color, and a host can
-       redefine --foreground (BL UI's markdown sets it to currentColor), which made a white icon on a white disc. */
-    color: #ffffff;
-    background: rgba(9, 9, 11, 0.62);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25), inset 0 0 0 1px rgba(255, 255, 255, 0.16);
+    /* Glass that follows the appearance: a near-opaque light disc with a dark icon on light color-schemes, the dark
+       scrim on dark ones. Fixed colors, not the page's tokens: it sits over a recorded page of any color, and a host
+       can redefine --foreground (BL UI's markdown sets it to currentColor), which once made a white icon on a white
+       disc. Over any page the icon keeps at least 8:1 on its disc; the ring and shadow set the disc off the page.
+       Retheme with --replay-play-background, --replay-play-foreground and --replay-play-ring. */
+    color: var(--replay-play-foreground, light-dark(#18181b, #ffffff));
+    background: var(--replay-play-background, light-dark(rgba(255, 255, 255, 0.9), rgba(9, 9, 11, 0.72)));
+    box-shadow:
+      0 8px 24px light-dark(rgba(0, 0, 0, 0.18), rgba(0, 0, 0, 0.3)),
+      inset 0 0 0 1px var(--replay-play-ring, light-dark(rgba(0, 0, 0, 0.14), rgba(255, 255, 255, 0.18)));
     -webkit-backdrop-filter: blur(12px);
     backdrop-filter: blur(12px);
     transition: scale 0.16s ease-out;
@@ -6072,6 +6077,61 @@ details[open] > .oas-response-trigger .oas-response-caret {
 .docs-tscircuit-result[data-theme="dark"] .docs-tscircuit-frame { filter: invert(1) hue-rotate(180deg); }
 .docs-tscircuit-status { padding: 12px; font-size: 13px; color: var(--muted-foreground, currentColor); }
 .docs-tscircuit-status .docs-mermaid-error { margin: 0 0 8px; padding: 0; }
+
+/* Touch targets, 2.0.1: on coarse pointers the code-fence copy buttons and the replay player's controls are at
+   least 44px square. The copy buttons' negative block margins keep the headers they sit in as tall as before. */
+@media (pointer: coarse) {
+  .docs-copy {
+    min-width: 44px;
+    min-height: 44px;
+    margin-block: -8px;
+  }
+
+  .docs-code-header .docs-copy {
+    width: 44px;
+    height: 44px;
+    margin-block: -12px;
+  }
+
+  /* No hover on touch to reveal it: the floating copy button shows at full strength, tucked into the corner. */
+  .docs-code-copy-float {
+    top: 2px;
+    right: 2px;
+    margin: 0;
+    opacity: 1;
+  }
+
+  .docs-react-demo-code-copy {
+    margin: 0;
+  }
+
+  @layer docstream.replay {
+    :where([data-slot="replay-preview-controls"]) {
+      height: 52px;
+      padding-inline: 4px;
+    }
+
+    :where([data-slot="replay-preview-controls"] button, [data-slot="replay-preview-speed"]) {
+      min-width: 44px;
+      height: 44px;
+    }
+
+    /* The big play disc is 56px everywhere; keep it at least 44px when a host shrinks it. */
+    :where([data-slot="replay-preview-center"] > button) {
+      min-width: 44px;
+      min-height: 44px;
+    }
+  }
+}
+
+/* A copy button's focus ring: two tones (the primary ring and a gap in the panel's color), so it reads on the
+   code panel, on a header bar and over the page, in light and dark. It never hides behind the hover-only opacity. */
+.docs-copy:focus-visible {
+  outline: 2px solid var(--gb-primary);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 2px var(--gb-panel, transparent);
+  opacity: 1;
+}
 
 /* Keep every rendered table variant flush, after the shared block spacing rules. */
 :is([data-docstream], .docs-article) [data-docstream-blocks] > :is(.docs-table, table, .docs-cards) {

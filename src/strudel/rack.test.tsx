@@ -5,7 +5,7 @@ import { createRef } from "react"
 import { describe, expect, it, vi } from "vitest"
 import { click, focus, mount, press, tick } from "../__fixtures__/dom"
 import { StrudelPlayer } from "./StrudelPlayer"
-import { StrudelRack } from "./StrudelRack"
+import { StrudelRack, type StrudelRackChangeDetails } from "./StrudelRack"
 
 declare global {
   // eslint-disable-next-line no-var
@@ -181,6 +181,37 @@ describe("StrudelRack", () => {
     await view.unmount()
   })
 
+  it("value / onValueChange: the edited code with which control edited it and how", async () => {
+    const log: [string, StrudelRackChangeDetails][] = []
+    const legacy: string[] = []
+    function Controlled() {
+      const [code, setCode] = useState(SONG)
+      return <StrudelRack value={code} onValueChange={(next, details) => { log.push([next, details]); setCode(next) }} onChange={(next) => void legacy.push(next)} />
+    }
+    const view = await mount(<Controlled />)
+    await focus(named(device(view.host, "bd · sd · hh"), "slider", "Gain")!)
+    await press("PageUp")
+    expect(log.at(-1)![0]).toContain(".gain(.945)")
+    expect(log.at(-1)![1]).toMatchObject({ reason: "step-key", control: "gain", track: 0 })
+    expect((log.at(-1)![1].event as KeyboardEvent).key).toBe("PageUp")
+
+    await focus(named(device(view.host, "Keys · piano"), "slider", "Reverb")!)
+    await press("ArrowUp")
+    expect(log.at(-1)![1]).toMatchObject({ reason: "step-key", control: "effect", param: "room", track: 2 })
+    await click(device(view.host, "Keys · piano").querySelector<HTMLButtonElement>('button[aria-label="Remove Reverb"]'))
+    expect(log.at(-1)![0]).not.toContain(".room(")
+    expect(log.at(-1)![1]).toMatchObject({ reason: "remove-press", control: "effect", param: "room", track: 2 })
+    expect(log.at(-1)![1].event?.type).toBe("click")
+
+    await focus(named(named(view.host, "group", "Master")!, "slider", "Tempo")!)
+    await press("End")
+    expect(log.at(-1)![1]).toMatchObject({ reason: "step-key", control: "tempo" })
+    expect(log.at(-1)![1].track).toBeUndefined()
+    // The deprecated onChange still hears every edit.
+    expect(legacy).toEqual(log.map(([code]) => code))
+    await view.unmount()
+  })
+
   it("renders on the server, and names a syntax error instead", () => {
     const html = renderToStaticMarkup(<StrudelRack code={SONG} onChange={() => {}} />)
     expect(html.match(/data-slot="toggle"/g)).toHaveLength(6)
@@ -290,16 +321,19 @@ describe("StrudelPlayer", () => {
   })
 
   it("onCodeChange says whether the rack edited the code or Revert put it back", async () => {
-    const calls: [string, { reason: string }][] = []
+    const calls: [string, { reason: string; event?: Event; rack?: StrudelRackChangeDetails }][] = []
     const view = await mount(<StrudelPlayer code={SONG} title="Night drive" defaultRackOpen onCodeChange={(next, details) => calls.push([next, details])} />)
     for (let i = 0; i < 20 && !view.host.querySelector(".strudel-rack"); i++) await tick(10)
     const gain = named(device(view.host, "bd · sd · hh"), "slider", "Gain")!
     await focus(gain)
     await press("PageUp")
     expect(calls.at(-1)![0]).toContain(".gain(.945)")
-    expect(calls.at(-1)![1]).toEqual({ reason: "rack-edit" })
+    expect(calls.at(-1)![1]).toMatchObject({ reason: "rack-edit", rack: { reason: "step-key", control: "gain", track: 0 } })
+    expect(calls.at(-1)![1].event).toBe(calls.at(-1)![1].rack!.event)
     await click(view.host.querySelector<HTMLButtonElement>("button.docstream-strudel__revert"))
-    expect(calls.at(-1)).toEqual([SONG, { reason: "revert" }])
+    expect(calls.at(-1)![0]).toBe(SONG)
+    expect(calls.at(-1)![1]).toMatchObject({ reason: "revert" })
+    expect(calls.at(-1)![1].event?.type).toBe("click")
     await view.unmount()
   })
 

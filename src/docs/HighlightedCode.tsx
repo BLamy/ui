@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react"
 import { parse } from "gpu-lexer"
+import { fallbackSpans } from "./fallback-lexer"
 
 type Span = {
   type: "plain" | "comment" | "string" | "number" | "keyword" | "type" | "function" | "constant" | "operator"
@@ -8,45 +9,77 @@ type Span = {
 }
 
 /* Token colors live in styles.css (`.docs-tok-*`) and follow the host's color-scheme, so code reads on
-   light and dark backgrounds alike. Hosts can retheme via the --docs-tok-* custom properties. */
+   light and dark backgrounds alike. Hosts can retheme via the --docs-tok-* custom properties.
+
+   Two lexers, one vocabulary. The synchronous fallback (fallback-lexer.ts) colors the code at once, on the
+   server too, so a fence is never plain where WebGPU is missing (Safari, Firefox, headless browsers, insecure
+   contexts) or gpu-lexer's parse() rejects. When gpu-lexer resolves with spans, they replace the fallback's.
+   `data-highlighter` on the <code> says which drew it: "gpu", "fallback" or "none". */
 
 function escapeHtml(value: string) {
   return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\"/g, "&quot;")
 }
 
-function spansToHtml(code: string, spans: Span[]) {
+function spansToHtml(code: string, spans: readonly Span[]) {
   let cursor = 0
-  return spans.map((span) => {
-    const prefix = escapeHtml(code.slice(cursor, span.start))
-    const text = escapeHtml(code.slice(span.start, span.end))
-    cursor = span.end
-    return `${prefix}${span.type === "plain" ? text : `<span class="docs-tok docs-tok-${span.type}">${text}</span>`}`
-  }).join("") + escapeHtml(code.slice(cursor))
+  let html = ""
+  for (const span of spans) {
+    const start = Math.max(span.start, cursor)
+    const end = Math.min(span.end, code.length)
+    if (end <= start) continue
+    html += escapeHtml(code.slice(cursor, start))
+    const text = escapeHtml(code.slice(start, end))
+    html += span.type === "plain" ? text : `<span class="docs-tok docs-tok-${span.type}">${text}</span>`
+    cursor = end
+  }
+  return html + escapeHtml(code.slice(cursor))
 }
 
-export function HighlightedCode({ code, language: _language, lineNumbers = false }: {
+/** The spans that fall on one line, cut to it (a block comment or a template string spans several). */
+function lineSpans(spans: readonly Span[], start: number, end: number): Span[] {
+  const out: Span[] = []
+  for (const span of spans) {
+    if (span.end <= start || span.start >= end) continue
+    out.push({ type: span.type, start: Math.max(span.start, start) - start, end: Math.min(span.end, end) - start })
+  }
+  return out
+}
+
+export function HighlightedCode({ code, language, lineNumbers = false }: {
   code: string
   language: string | null
   lineNumbers?: boolean
 }) {
   const lines = useMemo(() => code.split("\n"), [code])
-  const [spans, setSpans] = useState<Span[] | null>(null)
+  const fallback = useMemo<Span[]>(() => fallbackSpans(code, language), [code, language])
+  const [gpu, setGpu] = useState<{ code: string; spans: Span[] } | null>(null)
 
   useEffect(() => {
     let cancelled = false
-    setSpans(null)
-    parse(code).then((result) => { if (!cancelled) setSpans(result) }).catch(() => { if (!cancelled) setSpans([]) })
+    // Rejects without WebGPU; the fallback's spans stay.
+    parse(code).then(
+      (result) => { if (!cancelled && result.length) setGpu({ code, spans: result }) },
+      () => {},
+    )
     return () => { cancelled = true }
   }, [code])
 
-  const html = useMemo(() => spans && spans.length ? spansToHtml(code, spans) : null, [code, spans])
-  if (!lineNumbers) return html === null ? <code>{code}</code> : <code dangerouslySetInnerHTML={{ __html: html }} />
+  const fromGpu = gpu && gpu.code === code ? gpu.spans : null
+  const spans = fromGpu ?? fallback
+  const highlighter = fromGpu ? "gpu" : spans.length ? "fallback" : "none"
+  const html = useMemo(() => spans.length ? spansToHtml(code, spans) : null, [code, spans])
+  if (!lineNumbers) {
+    return html === null
+      ? <code data-highlighter={highlighter}>{code}</code>
+      : <code data-highlighter={highlighter} dangerouslySetInnerHTML={{ __html: html }} />
+  }
 
-  return <code>{lines.map((line, index) => {
-    const start = lines.slice(0, index).reduce((total, value) => total + value.length + 1, 0)
-    const lineSpans = spans?.filter((span) => span.start >= start && span.end <= start + line.length)
-      .map((span) => ({ ...span, start: span.start - start, end: span.end - start }))
-    const lineHtml = lineSpans?.length ? spansToHtml(line, lineSpans) : null
+  let start = 0
+  return <code data-highlighter={highlighter}>{lines.map((line, index) => {
+    const from = start
+    start += line.length + 1
+    const cut = spans.length ? lineSpans(spans, from, from + line.length) : []
+    const lineHtml = cut.length ? spansToHtml(line, cut) : null
     return <span key={index} className="docs-code-line">
       <span className="docs-code-lineno">{index + 1}</span>
       {lineHtml === null ? <span>{line}</span> : <span dangerouslySetInnerHTML={{ __html: lineHtml }} />}
