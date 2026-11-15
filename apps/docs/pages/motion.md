@@ -144,7 +144,7 @@ The kit's motion comes from two engines and the panel slows both: framer-motion 
 | `Checkbox` | the tick draws itself on; press sink |
 | `Radio`, `Slider` | press sink / thumb grows while dragging |
 | `Disclosure` | panel height (tray) + content fades down + chevron turns |
-| `Dialog`, `Popover`, `Tooltip`, `DropdownMenu`, `Select`, `ComboBox` | grow out of the trigger's anchor point (snappy), leave quicker |
+| `Dialog`, `Popover`, `Tooltip`, `DropdownMenu`, `Select`, `Combobox` | grow out of the trigger's anchor point (snappy), leave quicker |
 | `Sheet`, `AdaptivePane` drawers and pushes | slide on the tray spring; `SheetView` for stepping sheets |
 | `Dialog` with `view` (`DialogView`, `DialogBack`) | height morph, directional views and titles, back chevron grows in |
 | `NavigationStack` | push / pop on the smooth spring, interruptible; swipe release continues on the tray spring |

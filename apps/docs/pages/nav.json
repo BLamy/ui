@@ -25,171 +25,166 @@
       ]
     },
     {
-      "section": "Buttons and toggles",
+      "section": "Controls",
       "pages": [
         { "id": "button", "title": "Button" },
+        { "id": "checkbox", "title": "Checkbox" },
+        { "id": "radio-group", "title": "RadioGroup" },
+        { "id": "segmented", "title": "Segmented" },
+        { "id": "slider", "title": "Slider" },
+        { "id": "switch", "title": "Switch" },
         { "id": "toggle", "title": "Toggle" }
       ]
     },
     {
-      "section": "Forms and inputs",
+      "section": "Forms and fields",
       "pages": [
-        { "id": "label", "title": "Label" },
-        { "id": "input", "title": "Input" },
-        { "id": "textarea", "title": "Textarea" },
-        { "id": "field", "title": "Field" },
-        { "id": "search-input", "title": "SearchInput" },
-        { "id": "checkbox", "title": "Checkbox" },
-        { "id": "radio-group", "title": "RadioGroup" },
-        { "id": "switch", "title": "Switch" },
-        { "id": "slider", "title": "Slider" },
-        { "id": "segmented", "title": "Segmented" },
-        { "id": "select", "title": "Select" },
-        { "id": "combobox", "title": "Combobox" },
-        { "id": "date-input", "title": "DateInput" },
-        { "id": "date-picker", "title": "DatePicker" },
+        { "id": "form", "title": "Forms" },
         { "id": "calendar", "title": "Calendar" },
         { "id": "color-picker", "title": "ColorPicker" },
-        { "id": "font-picker", "title": "FontPicker" },
-        { "id": "listbox", "title": "Listbox" },
-        { "id": "tree", "title": "Tree" },
-        { "id": "form", "title": "Forms" },
-        { "id": "natural-time-input", "title": "NaturalTimeInput" },
+        { "id": "combobox", "title": "Combobox" },
         { "id": "cron-editor", "title": "CronEditor" },
+        { "id": "date-input", "title": "DateInput" },
+        { "id": "date-picker", "title": "DatePicker" },
+        { "id": "field", "title": "Field" },
         { "id": "file-upload", "title": "FileUpload" },
+        { "id": "font-picker", "title": "FontPicker" },
+        { "id": "input", "title": "Input" },
+        { "id": "label", "title": "Label" },
+        { "id": "listbox", "title": "Listbox" },
+        { "id": "natural-time-input", "title": "NaturalTimeInput" },
+        { "id": "search-input", "title": "SearchInput" },
+        { "id": "select", "title": "Select" },
+        { "id": "textarea", "title": "Textarea" },
         { "id": "use-file-upload", "title": "useFileUpload" }
       ]
     },
     {
       "section": "Menus and overlays",
       "pages": [
+        { "id": "command-menu", "title": "CommandMenu" },
+        { "id": "dialog", "title": "Dialog" },
         { "id": "dropdown-menu", "title": "DropdownMenu" },
-        { "id": "tooltip", "title": "Tooltip" },
+        { "id": "floating-sheet", "title": "FloatingSheet" },
         { "id": "hover-card", "title": "Hover Card" },
         { "id": "popover", "title": "Popover" },
-        { "id": "dialog", "title": "Dialog" },
         { "id": "sheet", "title": "Sheet" },
-        { "id": "floating-sheet", "title": "FloatingSheet" },
-        { "id": "command-menu", "title": "CommandMenu" }
+        { "id": "tooltip", "title": "Tooltip" }
       ]
     },
     {
       "section": "Feedback and status",
       "pages": [
-        { "id": "toast", "title": "Toast" },
+        { "id": "badge", "title": "Badge" },
+        { "id": "celebrate", "title": "Celebrate" },
+        { "id": "empty-state", "title": "EmptyState" },
+        { "id": "now-playing-bars", "title": "NowPlayingBars" },
         { "id": "progress", "title": "Progress" },
         { "id": "progress-ring", "title": "ProgressRing" },
         { "id": "progress-stepper", "title": "ProgressStepper" },
-        { "id": "spinner", "title": "Spinner" },
         { "id": "skeleton", "title": "Skeleton" },
-        { "id": "badge", "title": "Badge" },
-        { "id": "celebrate", "title": "Celebrate" },
-        { "id": "now-playing-bars", "title": "NowPlayingBars" }
+        { "id": "spinner", "title": "Spinner" },
+        { "id": "toast", "title": "Toast" }
       ]
     },
     {
-      "section": "Lists and content",
+      "section": "Content",
       "pages": [
-        { "id": "lists", "title": "Lists" },
-        { "id": "filter", "title": "Filter" },
-        { "id": "index-bar", "title": "IndexBar" },
-        { "id": "card", "title": "Card" },
-        { "id": "empty-state", "title": "EmptyState" },
         { "id": "avatar", "title": "Avatar" },
+        { "id": "card", "title": "Card" },
         { "id": "disclosure", "title": "Disclosure (Accordion)" },
-        { "id": "scroll-area", "title": "ScrollArea" },
-        { "id": "separator", "title": "Separator" },
         { "id": "kbd", "title": "Kbd" },
         { "id": "qr-code", "title": "QRCode" },
+        { "id": "scroll-area", "title": "ScrollArea" },
+        { "id": "separator", "title": "Separator" }
+      ]
+    },
+    {
+      "section": "Lists, trees and tables",
+      "pages": [
+        { "id": "call-stack", "title": "CallStack" },
         { "id": "data-table", "title": "DataTable" },
-        { "id": "spreadsheet", "title": "Spreadsheet" },
+        { "id": "filter", "title": "Filter" },
+        { "id": "index-bar", "title": "IndexBar" },
+        { "id": "lists", "title": "Lists" },
         { "id": "log-list", "title": "LogList" },
-        { "id": "request-table", "title": "RequestTable" }
+        { "id": "object-tree", "title": "ObjectTree" },
+        { "id": "object-value", "title": "ObjectValue" },
+        { "id": "request-table", "title": "RequestTable" },
+        { "id": "spreadsheet", "title": "Spreadsheet" },
+        { "id": "tree", "title": "Tree" }
       ]
     },
     {
       "section": "Navigation and layout",
       "pages": [
-        { "id": "navigation-stack", "title": "NavigationStack" },
-        { "id": "breadcrumb", "title": "Breadcrumb" },
-        { "id": "tabs", "title": "Tabs" },
-        { "id": "toolbar", "title": "Toolbar" },
-        { "id": "split-view", "title": "SplitView" },
-        { "id": "sidebar", "title": "Sidebar" },
         { "id": "adaptive-pane", "title": "AdaptivePane" },
-        { "id": "canvas", "title": "Canvas" }
+        { "id": "breadcrumb", "title": "Breadcrumb" },
+        { "id": "canvas", "title": "Canvas" },
+        { "id": "navigation-stack", "title": "NavigationStack" },
+        { "id": "sidebar", "title": "Sidebar" },
+        { "id": "split-view", "title": "SplitView" },
+        { "id": "tabs", "title": "Tabs" },
+        { "id": "toolbar", "title": "Toolbar" }
       ]
     },
     {
       "section": "Motion components",
       "pages": [
+        { "id": "animated-height", "title": "AnimatedHeight" },
         { "id": "morph", "title": "Morph" },
-        { "id": "text-morph", "title": "TextMorph" },
         { "id": "number-morph", "title": "NumberMorph" },
         { "id": "swap", "title": "Swap" },
-        { "id": "animated-height", "title": "AnimatedHeight" }
+        { "id": "text-morph", "title": "TextMorph" }
       ]
     },
     {
       "section": "Chat",
       "pages": [
+        { "id": "artifact-chat-container", "title": "ArtifactChatContainer" },
+        { "id": "chat-shell", "title": "ChatShell" },
         { "id": "composer", "title": "Composer" },
         { "id": "conversation", "title": "Conversation" },
-        { "id": "message-scroller", "title": "MessageScroller" },
-        { "id": "artifact-chat-container", "title": "ArtifactChatContainer" },
-        { "id": "chat-shell", "title": "ChatShell" }
+        { "id": "message-scroller", "title": "MessageScroller" }
       ]
     },
     {
       "section": "Editors and workbench",
       "pages": [
-        { "id": "docstream", "title": "Markdown" },
-        { "id": "tui-preview", "title": "TuiPreview" },
-        { "id": "open-code", "title": "OpenCode" },
-        { "id": "workspace", "title": "Workspace" },
-        { "id": "markdown-editor", "title": "MarkdownEditor" },
         { "id": "code-editor", "title": "CodeEditor" },
         { "id": "debug-toolbar", "title": "DebugToolbar" },
-        { "id": "terminal", "title": "Terminal" },
+        { "id": "docstream", "title": "Markdown" },
+        { "id": "markdown-editor", "title": "MarkdownEditor" },
+        { "id": "open-code", "title": "OpenCode" },
         { "id": "pencilkit", "title": "PencilKit" },
         { "id": "replay-preview", "title": "ReplayPreview" },
+        { "id": "terminal", "title": "Terminal" },
         { "id": "trace-timeline", "title": "TraceTimeline" },
-        { "id": "object-tree", "title": "ObjectTree" },
-        { "id": "object-value", "title": "ObjectValue" },
-        { "id": "call-stack", "title": "CallStack" },
-        { "id": "workbench-shell", "title": "WorkbenchShell" }
+        { "id": "tui-preview", "title": "TuiPreview" },
+        { "id": "workbench-shell", "title": "WorkbenchShell" },
+        { "id": "workspace", "title": "Workspace" }
       ]
     },
     {
-      "section": "Video",
+      "section": "Media",
       "pages": [
         { "id": "ffmpeg", "title": "FFmpeg" },
-        { "id": "video-timeline", "title": "VideoTimeline" },
-        { "id": "video-preview", "title": "VideoPreview" },
         { "id": "filmstrip", "title": "Filmstrip" },
+        { "id": "stl-viewer", "title": "StlViewer" },
+        { "id": "strudel", "title": "Strudel" },
+        { "id": "video-preview", "title": "VideoPreview" },
+        { "id": "video-timeline", "title": "VideoTimeline" },
         { "id": "waveform", "title": "Waveform" }
-      ]
-    },
-    {
-      "section": "Audio",
-      "pages": [
-        { "id": "strudel", "title": "Strudel" }
-      ]
-    },
-    {
-      "section": "3D",
-      "pages": [
-        { "id": "stl-viewer", "title": "StlViewer" }
       ]
     },
     {
       "section": "Storage and security",
       "pages": [
-        { "id": "passkey-vault", "title": "Passkey vault" },
         { "id": "env-variables", "title": "Example environment variables" },
+        { "id": "passkey-vault", "title": "Passkey vault" },
         { "id": "pglite", "title": "PGlite" },
-        { "id": "sql-console", "title": "SqlConsole" },
         { "id": "tailscale-login", "title": "Sign in with Tailscale" },
+        { "id": "sql-console", "title": "SqlConsole" },
         { "id": "tailscale-router", "title": "Tailscale request router" }
       ]
     },

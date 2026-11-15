@@ -336,16 +336,6 @@ Every state change moves rather than swaps, on the kit's springs: send ↔ stop 
 
 Generated from the source. Call a recipe on any element to borrow a component's look; in a registry-installed copy, change `defaultVariants` to change the default. All recipes are listed in the [Variants reference](https://blamy.github.io/ui/#/variants).
 
-### `composerFabVariants`
-
-Defined in `@/components/ui/composer/composer`. Base classes:
-
-```text
-[ pressable, pressableFocusRing, 'z-3 grid size-[52px] cursor-pointer place-items-center rounded-full border border-border bg-card p-0 text-foreground shadow-hud', ]
-```
-
-No variants.
-
 ### `composerCardVariants`
 
 Defined in `@/components/ui/composer/composer`. Base classes:

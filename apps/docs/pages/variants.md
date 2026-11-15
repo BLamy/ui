@@ -1,6 +1,6 @@
 # Variants reference
 
-Every BL UI component is a [cva](https://cva.style) recipe. This page is generated from the source (98 recipes) — the same functions you can call on any element, and the defaults you can edit in your installed copy. See [Styling and variants](https://blamy.github.io/ui/#/styling) for how to use, compose and change them.
+Every BL UI component is a [cva](https://cva.style) recipe. This page is generated from the source (97 recipes) — the same functions you can call on any element, and the defaults you can edit in your installed copy. See [Styling and variants](https://blamy.github.io/ui/#/styling) for how to use, compose and change them.
 
 ```tsx
 import { buttonVariants } from '@/components/ui/button'
@@ -312,16 +312,6 @@ bl-btn w-full cursor-pointer justify-start text-left active:not-data-disabled:bg
 | `lg` | `fieldSurfaceVariants({ size: 'lg' })` |
 
 ## Composer
-
-### `composerFabVariants`
-
-Defined in `@/components/ui/composer/composer`. Base classes:
-
-```text
-[ pressable, pressableFocusRing, 'z-3 grid size-[52px] cursor-pointer place-items-center rounded-full border border-border bg-card p-0 text-foreground shadow-hud', ]
-```
-
-No variants.
 
 ### `composerCardVariants`
 

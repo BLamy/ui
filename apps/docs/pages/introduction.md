@@ -34,12 +34,12 @@ Twenty-odd lines of composition: a `Tabs` bar, a `NavigationStack` inside the fi
 | Section index titles | `IndexBar` — the A–Z rail (`alphabetItems`) or application-defined keyed stops |
 | Sheets and trays | `Dialog` (`variant="tray"`), `Sheet` |
 | Inspector column | `AdaptivePane` |
-| Sidebar | `Sidebar` — docked, rail, float, or overlay navigation |
+| Sidebar | `Sidebar` — docked, rail or float, as a column or a drawer (`presentation`) |
 | Canvas view | `PencilCanvas` |
 
 ## How the docs are organized
 
-The sidebar groups pages by what a part does, not by how big it is. **Foundations** covers theming, styling, variants, motion and icons. Then come the parts: **Buttons and toggles**, **Forms and inputs**, **Menus and overlays**, **Feedback and status**, **Lists and content**, **Navigation and layout**, **Motion components**, **Chat**, and **Editors and workbench**. **Hooks** documents every hook the library exports, and **Behaviors** the UI SDK behaviors the containers are built from, for building parts of your own.
+The sidebar groups pages by what a part does, not by how big it is. **Foundations** covers theming, styling, variants, motion and icons. Then come the parts: **Controls**, **Forms and fields**, **Menus and overlays**, **Feedback and status**, **Content**, **Lists, trees and tables**, **Navigation and layout**, **Motion components**, **Chat**, **Editors and workbench**, **Media**, and **Storage and security**. Within a section, pages are in alphabetical order. **Hooks** documents every hook the library exports, and **Behaviors** the UI SDK behaviors the containers are built from, for building parts of your own.
 
 The shells that belong to one product (the Discord-style `ChatShell`, the T3-style `WorkbenchShell`) live in [blocks](https://blamy.github.io/ui/#/blocks). Every one is built from the parts documented here, so a shell that does not fit can be recomposed from them.
 

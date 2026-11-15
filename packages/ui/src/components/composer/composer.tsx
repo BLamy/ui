@@ -48,8 +48,6 @@ import { themeScopeProps } from '@/lib/theme';
 import { changeDetails, type ChangeGiven } from '@/lib/change-details';
 import { useControllableChange } from '@/lib/controllable-state';
 
-type SdkButtonProps = React.ComponentProps<typeof SdkButton>;
-
 /* ══ Composer — a compositional prompt box, in the spirit of shadcn's InputGroup ══
 
    <Composer onSubmit={(markdown, attachments) => …} streaming={busy} onStop={stop}>
@@ -872,26 +870,6 @@ function playShape(root: HTMLElement | null, snap: ShapeSnapshot) {
 /* ── FAB ── */
 /** On a touch screen every composer control answers presses 44px wide, without changing the drawn size. */
 const touchTarget = "relative pointer-coarse:after:absolute pointer-coarse:after:top-1/2 pointer-coarse:after:left-1/2 pointer-coarse:after:size-11 pointer-coarse:after:-translate-1/2 pointer-coarse:after:content-['']";
-
-/** The folded composer's round face (a Composer in `fab` mode renders one; the floating chat layout reuses it). */
-export const composerFabVariants = cva([
-  pressable,
-  pressableFocusRing,
-  'z-3 grid size-[52px] cursor-pointer place-items-center rounded-full border border-border bg-card p-0 text-foreground shadow-hud',
-]);
-
-export interface ComposerFabProps extends Omit<SdkButtonProps, 'children'> {
-  children?: React.ReactNode;
-}
-
-/** The folded composer: a round button. Not in the barrel; the floating chat layout reuses it. */
-export function ComposerFab({ className, children, 'aria-label': ariaLabel = 'Open composer', ...props }: ComposerFabProps) {
-  return (
-    <SdkButton aria-label={ariaLabel} className={cx(composerFabVariants(), className)} {...props}>
-      {children ?? <Icon name="square-pencil" size={21} sw={1.9} />}
-    </SdkButton>
-  );
-}
 
 /* ── Options that move between the footer and the bottom bump ── */
 /** The options row: one line that scrolls sideways when the footer is too narrow (no wrapped, orphaned pills). It

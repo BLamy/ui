@@ -1,12 +1,20 @@
 # Migrating to 6.0
 
-BL UI 6.0 keeps the look and changes what is underneath. Every interactive part is now built on [UI SDK](https://ui-sdk.dev) instead of react-aria-components, and its API is UI SDK's: `onClick` instead of `onPress`, `disabled` instead of `isDisabled`, `value` and `onValueChange(value, details)` instead of keys and selections, and roots with named parts instead of wrappers that take "the first child". This page lists every change, family by family, with the before and after.
+BL UI 6.0 changes two things. Every interactive part is now built on [UI SDK](https://ui-sdk.dev) instead of react-aria-components, and its API is UI SDK's: `onClick` instead of `onPress`, `disabled` instead of `isDisabled`, `value` and `onValueChange(value, details)` instead of keys and selections, and roots with named parts instead of wrappers that take "the first child". And the library is smaller: components that did the same job as another one were merged into it (117 modules became 99), and every concept has one prop name across the kit. This page lists every change, with the before and after, so you can move a 5.x app to 6.0 from here.
 
-The classes, tokens, radii, springs and sizes are the same as in 5.x. What you change is the props you pass, the parts you compose, and any CSS of yours that selected react-aria's state attributes.
+Read it in this order:
+
+1. [Changes that apply everywhere](#changes-that-apply-everywhere): the UI SDK vocabulary, which is most of a migration.
+2. [One spelling per concept](#one-spelling-per-concept): the prop names every component now shares.
+3. [Components that merged, moved or were renamed](#components-that-merged-moved-or-were-renamed): one table from every removed or renamed module, export and prop to what you write now.
+4. The family sections, from [Buttons and toggles](#buttons-and-toggles) on: what changed inside each component that kept its name.
+5. [What looks different](#what-looks-different).
+
+Most tokens, radii, springs and sizes are the same as in 5.x. What you change is the props you pass, the parts you compose, the names you import, and any CSS of yours that selected react-aria's state attributes. The places where the look changed on purpose are listed at the end.
 
 ## What changed and why
 
-**UI SDK owns behavior.** Keyboard, focus, selection, dismissal, popups and their placement, drag and drop, and ARIA all come from UI SDK (`@ui-sdk/core` for the framework-free behaviors, `@ui-sdk/react` for the React parts). BL UI owns the look, the tokens and the iOS-flavored containers. A component that UI SDK ships (Button, Dialog, Popover, Menu, Select, Combobox, Tabs, Tooltip, Toast, Tree…) is UI SDK's part with BL UI's classes, so its props, parts and data attributes are the ones in UI SDK's docs. A component UI SDK does not ship (NavigationStack, SplitView, Credenza, Sidebar…) is a primitive built from UI SDK's behaviors, with the same conventions. Why UI SDK, and how the two fit, is on [Built on UI SDK](https://blamy.github.io/ui/#/ui-sdk).
+**UI SDK owns behavior.** Keyboard, focus, selection, dismissal, popups and their placement, drag and drop, and ARIA all come from UI SDK (`@ui-sdk/core` for the framework-free behaviors, `@ui-sdk/react` for the React parts). BL UI owns the look, the tokens and the iOS-flavored containers. A component that UI SDK ships (Button, Dialog, Popover, Menu, Select, Combobox, Tabs, Tooltip, Toast, Tree…) is UI SDK's part with BL UI's classes, so its props, parts and data attributes are the ones in UI SDK's docs. A component UI SDK does not ship (NavigationStack, SplitView, AdaptivePane, Sidebar…) is a primitive built from UI SDK's behaviors, with the same conventions. Why UI SDK, and how the two fit, is on [Built on UI SDK](https://blamy.github.io/ui/#/ui-sdk).
 
 **React 19 is required.** `react` and `react-dom` 19, and `@types/react` 19.2.10 or newer with TypeScript. `ref` is an ordinary prop on every part.
 
@@ -28,7 +36,7 @@ A CSS Module loads too late to come first, so keep the line in the global styles
 
 ### Installing
 
-BL UI uses its fork of UI SDK, published as `@brett_lamy/ui-sdk-core` and `@brett_lamy/ui-sdk-react` and installed under upstream's names through npm aliases. The fork is upstream plus layer hosts (popups contained in an element such as `BLProvider`'s root), a `when` option on `bindLayer`, and two exported kernel types; the other behaviors the containers need (size classes, the navigation stack, edge swipes, the platform back, pull to refresh) are BL UI's own, in `@/lib` (see [Built on UI SDK](https://blamy.github.io/ui/#/ui-sdk)). Every import, in the kit and in your code, is `@ui-sdk/core/…` and `@ui-sdk/react/…`.
+BL UI uses its fork of UI SDK, published as `@brett_lamy/ui-sdk-core` and `@brett_lamy/ui-sdk-react` and installed under upstream's names through npm aliases. The fork is upstream plus layer hosts (popups contained in an element such as `BLProvider`'s root), a `when` option on `bindLayer`, and the kernel type `SlotProps` exported from `@ui-sdk/core/renderer`; the other behaviors the containers need (size classes, the navigation stack, edge swipes, the platform back, pull to refresh) are BL UI's own, in `@/lib` (see [Built on UI SDK](https://blamy.github.io/ui/#/ui-sdk)). Every import, in the kit and in your code, is `@ui-sdk/core/…` and `@ui-sdk/react/…`.
 
 With the npm package, `@brett_lamy/ui` depends on the two aliases, so installing it brings them:
 
@@ -104,13 +112,13 @@ Hover, press and keyboard focus are the platform's pseudo-classes; component sta
 | `data-pressed:` (held down) | `active:` |
 | `data-focused:` | `focus:` or `focus-within:` |
 | `data-selected` on Switch, Checkbox, Radio, Segmented | `data-checked` (Checkbox also `data-indeterminate`) |
-| `data-selected` on Toggle, ToggleGroupItem, PlainToggleButton | `data-pressed` (a toggle that is on) |
+| `data-selected` on Toggle, ToggleGroupItem, PlainToggleButton (now UI SDK's `Toggle`) | `data-pressed` (a toggle that is on) |
 | `data-focused` on a menu or list row | `data-highlighted` |
 | `data-expanded` (disclosure) | `data-open` / `data-closed` |
 | `data-entering` / `data-exiting` | `data-starting-style` / `data-ending-style` |
 | `data-placement` | `data-side` (and `data-align`) |
 | `--trigger-width`, `--trigger-anchor-point` | `--anchor-width`, `--transform-origin` |
-| `data-current` | `aria-[current=page]:` |
+| `data-current` | `aria-[current=page]:` on anything that writes `aria-current` (Sidebar, List and Tree rows); SplitViewItem, Breadcrumb and LogList write `data-current` as well |
 
 `data-open`, `data-disabled`, `data-selected` (on options, tabs, rows), `data-invalid` and `data-dragging` remain; a part's own page lists its attributes. Enter and exit are transitions now: put the closed look on `data-starting-style` and `data-ending-style`, and the part stays mounted until its exit transition ends.
 
@@ -146,14 +154,14 @@ A part renders one element. To make it another element, or one of your component
   <PopoverContent placement="bottom start">…</PopoverContent>
 </PopoverTrigger>
 
-// 6.0: a root, a trigger part with the button look, a content part
+// 6.0: a root, a trigger part rendered as the kit's Button, a content part
 <Popover>
-  <PopoverTrigger className={buttonVariants({ variant: 'secondary' })}>Open</PopoverTrigger>
+  <PopoverTrigger render={<Button variant="secondary" />}>Open</PopoverTrigger>
   <PopoverContent side="bottom" align="start">…</PopoverContent>
 </Popover>
 ```
 
-A popup trigger is already a button, so give it the kit's look with `buttonVariants` rather than `render={<Button />}`: a Button rendered inside a trigger is listed to agents twice under one name (the button and the popup). Keep `render` for when the element really changes, such as links: `<Button render={<a href="/docs" />}>Docs</Button>`, `<DropdownMenuItem render={<a href="/docs" />}>`, `<TabsTab render={<a href="…" />}>`.
+A popup trigger is already a button; `render={<Button … />}` gives it the kit's look, size and focus ring, and the two merge into one element (the trigger's ARIA and the Button's classes), so it is one control to a screen reader or an agent. Every docs page and story writes triggers this way. `render` also changes the element itself, as for links: `<Button render={<a href="/docs" />}>Docs</Button>`, `<DropdownMenuItem render={<a href="/docs" />}>`, `<TabsTab render={<a href="…" />}>`.
 
 ### `className` and `style` as functions of state
 
@@ -183,34 +191,662 @@ Controllers replace the imperative `ref` handles of 5.x (`LogListHandle`, `Reque
 
 ### Popups render in the layer host
 
-Popups (dialogs, sheets, menus, popovers, tooltips, toasts) render into the nearest `BLProvider` root, which is marked as a layer host, instead of `document.body`. A dialog opened inside a framed app covers the frame, not the page; a modal one makes the rest of the frame inert and leaves page scroll alone. Pass `container` to a popup root to put it elsewhere. `useLayerHost()` returns the host.
+Popups (dialogs, sheets, menus, popovers, tooltips, toasts) render into the nearest `BLProvider` root, which is marked as a layer host, instead of `document.body`. A dialog opened inside a framed app covers the frame, not the page; a modal one makes the rest of the frame inert and leaves page scroll alone. Pass `container` to a popup root to put it elsewhere. `useLayerHost()` returns the host. `<Sheet contained>` (a sheet that stays in its parent's box, `[data-slot=sheet-host]`) and `FloatingSheet`'s root are layer hosts too.
 
 ### Size classes follow the container
 
-`presentation="auto"` (the default of `Credenza`, and an option on `Dialog`, `Popover`, `DropdownMenu`, `Select`, `Combobox` and `DatePicker`) is a sheet when the nearest **size-class scope** is compact, and the popup's own presentation when it is medium or regular, whatever the screen. The scope is a React context: `BLProvider`'s root, `SplitView`, `NavigationStack`, `SidebarProvider`, `SideDrawer` (with `presentation="auto"`) and `ArtifactChatContainer` each measure their own box and provide it, so a popup written in a compact column is a sheet even though it renders into `BLProvider`'s root. With no scope around it, UI SDK's own rule decides (a small touch screen). For a frame of your own, measure it with `useSizeClass()` and wrap its children in `<SizeClassProvider value={sizeClass}>` (both from `@/lib/container`); a `data-size-class` attribute alone doesn't change how popups present. See [Layout hooks](https://blamy.github.io/ui/#/hooks-layout).
+`presentation="auto"` (the default of `Dialog`, and an option on `Popover`, `DropdownMenu`, `Select`, `Combobox`, `DatePicker`, `ColorPicker` and `FontPicker`) is a sheet when the nearest **size-class scope** is compact, and the popup's own presentation when it is medium or regular, whatever the screen. `AdaptivePane` and `Sidebar` default to `auto` too and pick their layout from the same scope (`Workspace`'s `auto` reads its own box). The scope is a React context: `BLProvider`'s root, `SplitView`, `NavigationStack`, `SidebarProvider`, `ArtifactChatContainer` and `SqlConsole` each measure their own box and provide it, so a popup written in a compact column is a sheet even though it renders into `BLProvider`'s root. With no scope around it, UI SDK's own rule decides (a small touch screen). For a frame of your own, measure it with `useSizeClass()` and wrap its children in `<SizeClassProvider value={sizeClass}>` (both from `@/lib/container`); a `data-size-class` attribute alone doesn't change how popups present. See [Layout hooks](https://blamy.github.io/ui/#/hooks-layout).
 
 ### Tests
 
 UI SDK's text controls listen to the native `input` event: `fireEvent.change(input, { target: { value } })` no longer reaches `onValueChange`, so use `fireEvent.input`. Set `globalThis.__UI_SDK_STRICT__ = true` in a test file to turn UI SDK's development warnings (an unnamed control, a missing part) into failures.
 
+## One spelling per concept
+
+6.0 uses one prop name for one idea across the whole kit. When a 5.x prop of yours isn't in the tables below, look here first: most renames are one of these.
+
+| Concept | The one spelling | What it replaces (examples) |
+| --- | --- | --- |
+| Size | `size: 'sm' \| 'default' \| 'lg'`. Extra steps only where a page documents them (Button `pill`, `icon-sm`, `icon`, `icon-lg`; ProgressRing `xl`); raw pixel numbers only on Avatar, Spinner and ProgressRing. Buttons are 32 / 36 / 44px tall, fields 32 / 44 / 50px | `size="md"` (ProgressRing, CountdownRing, Terminal) → `default`; `size="compact"` (DebugToolbar) → `sm`; SqlEditor `size` → `rows`; `rowHeight` (ObjectTree, CallStack) → `density` |
+| Look | `variant`. A boolean or a `tone` that picks a look is a variant, and an outline look exists wherever a filled one does | `List inset` → `variant="inset"`; `NavigationStackPage grouped` → `variant="grouped"`; Slider `tone="onDark"` → `variant="on-dark"`; FilterChip `tone="preview"` → `variant="preview"`; TailscaleStatusBadge `compact` → `variant="pill"`; FloatingSheet and ArtifactChatContainer `appearance="glass"` → `variant="glass"`; PencilCanvas `plain` → `variant="plain"` |
+| Semantic color | `tone: 'default' \| 'success' \| 'warning' \| 'destructive'` (plus `muted` where a quiet fill exists). Badge keeps shadcn's `variant` | ListRow `destructive` → `tone="destructive"`; Waveform `tone="primary"` → `className="text-primary"` |
+| A caller's color | `tint` (any CSS color) | Avatar and SidebarItem `color` / `tone` → `tint`; Composer's boolean `tint` → `className="text-primary"` |
+| Color scheme | `appearance: 'auto' \| 'light' \| 'dark'` | OpenCode `theme` → `appearance`; FloatingSheet and ArtifactChatContainer `tone` → `appearance` |
+| Where | `side` and `align` (`'start' \| 'end'` on the inline axis). Never `position`, `placement`, `left` / `right` | IndexBar `side="left"` → `side="start"`; ArtifactChatContainer `chatSide="right"` → `"end"`; `fabPosition="bottom-right"` → `fabAlign="end"`; Composer `fabPosition` → `fabAlign`; CanvasMiniMap `position="top-right"` → `side="top"`; Workspace `tabPlacement="left"` → `tabSide="start"`; TabView `placement` → Tabs `side` |
+| Density | `density: 'compact' \| 'default' \| 'comfortable'` | Tree `density="relaxed"` → `"comfortable"`; LogList, DataTable, Spreadsheet and List gain `default` |
+| Busy | `pending` is an action in flight (and writes `data-pending`); `loading` is data that isn't here yet | SqlEditor `running` → `pending`; SchemaTree `isLoading` → Tree `loading` |
+| Invalid | comes from `Field`. A control has an `invalid` of its own only when it can't be a Field control, and error text is a `FieldError`, never an `error` prop | NaturalTimeInput, FileUploadDropzone, MarkdownEditor `invalid` / `error` → `<Field invalid>` + `<FieldError>` |
+| Presentation | `presentation`, with `'auto'` wherever a component can change presentation; `auto` reads the size-class scope | Sidebar `variant="overlay"` → `presentation="drawer"`; SideDrawer's `breakpoint` → AdaptivePane's `auto` |
+| Inset-grouped card | `variant="inset"` (List, Listbox, DisclosureGroup); Separator's indent stays `inset` | `List inset` |
+| An item was activated | `onAction(value, details)`; a single pressable keeps `onClick` | AvatarGroup `onSelect(index)` → `onAction(value, details)`; TailscaleExitNodes `onExitNode` → `onAction`; IndexBar `onLetter` → `onJump` |
+| Current location | `current` (writes `aria-current`). A toggle is `pressed`, never `active` | Button `active` → `Toggle pressed`; ListRow `selected`, SidebarItem `active`, SplitViewItem's `selected` state, IndexBar `value` → `current`; Breadcrumb `selectedId` → `currentSibling` |
+| Open state | `open` / `defaultOpen` / `onOpenChange(open, details)` | ArtifactChatContainer `chatOpen` / `onChatOpenChange` → `open` / `onOpenChange` |
+| Empty collections | `emptyState?: ReactNode`, defaulting to the shared [`EmptyState`](https://blamy.github.io/ui/#/empty-state); never `emptyMessage` | Tree, ObjectTree, CallStack `emptyMessage` → `emptyState`; PencilCanvas `hint` → `emptyState`; `SplitViewEmpty` and `ConversationGreeting` → `EmptyState` |
+| Row anatomy | `icon`, `title`, `description`, `trailing` | ListRow `leading` / `subtitle`; SplitViewItem `subtitle` / `badge`; SidebarItem `label` / `badge`; SidebarWorkspace `name` / `detail` / `initial`; HoverCardHeader `media` / `subtitle` / `action`; ToolCall `detail` |
+| Parts | flat `RootPart` exports with UI SDK's suffixes (`…Trigger`, `…Content`, `…Header`, `…Item`); no dotted statics | `List.Section`, `Sidebar.Item`, `FloatingSheet.Body`, `ArtifactChatContainer.Chat` → `ListSection`, `SidebarItem`, `FloatingSheetBody`, `ArtifactChatContainerChat` |
+| Control names | `<Kind>Input`, never `<Kind>Field` (`Field` itself is the label, description and error wrapper) | `SearchField` → `SearchInput`; `DateField` / `TimeField` → `DateInput` / `TimeInput`; `ColorField` → `ColorInput` |
+
+## Components that merged, moved or were renamed
+
+Where two components did one job, 6.0 keeps one and folds the other into it as a variant, a part or a documented composition; where a name didn't follow UI SDK's, it takes UI SDK's. There are no aliases and no deprecated re-exports: every name in the left column is gone. The module is the file under `@/components/ui/` (a registry item of the same name; the npm package exports the same names from `@brett_lamy/ui`). A few left-hand names only existed in 6.0 previews; they are listed so that code written against those docs moves too. Rows marked **care** change shape, and have a before and after [below the table](#before-and-after-for-the-ones-that-need-care).
+
+| Before | Now | Notes |
+| --- | --- | --- |
+| `plain-button`: `PlainButton`, `PlainButtonProps` | `import { Button as SdkButton } from '@ui-sdk/react/button'`; props are `ComponentProps<typeof SdkButton>` | UI SDK's unstyled Button, under the local name the kit's own modules use. Button's page has an "Unstyled" section |
+| `plain-button`: `PlainToggleButton`, `PlainToggleButtonProps` | `import { Toggle as SdkToggle } from '@ui-sdk/react/toggle'` | `pressed` / `onPressedChange(pressed, details)`; in a ToggleGroup it takes `value` |
+| `toggle-group`: `ToggleGroup`, `ToggleGroupItem`, `toggleGroupVariants`, `createToggleGroupController`, `ToggleGroupProps`, `ToggleGroupItemProps` | the same names from `@/components/ui/toggle` | one module and one page with Toggle, like Checkbox and CheckboxGroup |
+| Button `active`, `variant="quiet" active` | `<Toggle variant="quiet" pressed={on} onPressedChange={setOn}>` | **care**. A tool that stays on is a toggle (`aria-pressed`); Button has no `active` |
+| `tailscale-login-button`, `tailscale-menu` | `@/components/ui/tailscale-controls`: `TailscaleLoginButton`, `TailscaleStatusBadge`, `TailscaleMark`, `TailscaleSummary`, `TailscaleExitNodes`, `tailscaleStatusBadgeVariants` | one module, documented on [Sign in with Tailscale](https://blamy.github.io/ui/#/tailscale-login) |
+| `TailscaleMenu` (`exitNodes`, `signOut`, `heading`, `detail`, `onExitNode`, `variant`), `TailscaleMenuProps`, `TailscaleMenuVariant`, `tailscaleMenuVariants` | compose `TailscaleSummary`, `TailscaleExitNodes` and `TailscaleLoginButton` | **care** |
+| `TailscaleMenuSummary`, `TailscaleMenuSummaryProps` | `TailscaleSummary` (takes `detail`), `TailscaleSummaryProps` | slot `tailscale-summary` |
+| `tailscaleLoginButtonVariants`, TailscaleLoginButton `tone` | removed: the button is the kit's `Button`, `variant` is any Button variant (default `contrast`) | default height 36px (was 40) |
+| TailscaleStatusBadge `compact`, `layout: 'inline' \| 'stacked'` | `variant: 'inline' \| 'stacked' \| 'pill'` | `pill` is the old `compact` |
+| TailscaleExitNodes `variant: 'radio' \| 'networks'`, `onExitNode(id)`, `tailscaleExitNodesVariants`; `TailscaleExitNodeState.active` | one listbox form; `value` / `onValueChange(value, details)`, `onAction(value)` for the switch; `.selected` | the radio form is gone |
+| `form`: `Form` | `<FieldGroup className="gap-5" render={<form onSubmit={save} />}>` | **care**. [Forms](https://blamy.github.io/ui/#/form) is a guide page now |
+| `form`: `FormSection`, `FormSectionProps` | `FieldSet` + `FieldLegend` + `FieldDescription` from `@/components/ui/field` | see [Forms and text fields](#forms-and-text-fields) |
+| `search-field`: `SearchField`, `SearchFieldProps`, `SearchFieldSubmitDetails` | `@/components/ui/search-input`: `SearchInput`, `SearchInputProps`, `SearchInputSubmitDetails` | slot `search-field` → `search-input`; new `size`, `icon`, `clearable`, `searchInputVariants` |
+| `lib/search-field-primitive`: `searchField`, `SearchFieldOptions`, `SearchFieldSubmitReason` | `lib/search-input-primitive`: `searchInput`, `SearchInputOptions`, `SearchInputSubmitReason` | |
+| `time-input`: `TimeInput` (the natural-language date and recurrence box), `TimeInputProps`, `TimeInputChange` | `@/components/ui/natural-time-input`: `NaturalTimeInput`, `NaturalTimeInputProps`, `NaturalTimeInputChange` | slots `natural-time-input*`. **`TimeInput` is now the segmented time control** (the old `TimeField`) |
+| `timeInputVariants` | removed | the preview's look is NaturalTimeInput's `variant` |
+| NaturalTimeInput `label`, `description`, `invalid`, `error` | put it in a `Field`: `FieldLabel`, `FieldDescription`, `FieldError`, `<Field invalid>` | **care** |
+| NaturalTimeInput `dateOrder`, `backend`, `weekStart`, `bareWeekday`, `bareWeekdays`, `nextWeekday`, `dayParts`, `until`, `debounceMs` | `parse={{ dateOrder, … }}` (`NaturalTimeInputParseOptions`) | `timeZone`, `locale`, `reference`, `maxOccurrences` stay top-level |
+| CronEditor `from`, `debounceMs`; `cronEditorVariants` | `reference`, `parse={{ debounceMs }}`; removed | `variant` stays |
+| FilterInput `query`; `useFilterQuery` `debounce`, `now` | `parse`; `debounceMs`, `reference` | |
+| `filterInputVariants`, `filterBarVariants`, `filterToolbarVariants` | removed | they had no variants |
+| FilterBar and FilterToolbar `hotkey`, `showMatch` | compose `<FilterToolbar><FilterMenu shortcut="f" /><FilterList /><FilterMatch /><FilterClear /></FilterToolbar>` | **care**. The default children are still Menu, List, Clear |
+| FilterMenu `hotkey`, `popoverClassName` | `shortcut`, `contentProps={{ className }}` | |
+| FilterChip `onChange(filter, options)`, `tone`; FilterValueEditor `onChange(value, options)` | `onValueChange(filter, details)`, `variant`; `onValueChange(value, details)` | in a bar the chip's handler runs first, and `details.cancel()` keeps the bar as it was |
+| `filter-input` docs page | the "Describing filters in a sentence" section of [Filter](https://blamy.github.io/ui/#/filter) | the module and registry item `filter-input` stay |
+| `FileDropZone`, `FileDropZoneProps`, `fileDropZoneVariants` | `FileUploadDropzone`, `FileUploadDropzoneProps`, `fileUploadDropzoneVariants` | |
+| `FileUploadButton`, `FileUploadButtonProps` | `FileUploadTrigger`, `FileUploadTriggerProps` | `data-file-upload-button` → `data-file-upload-trigger` |
+| `FileList`, `FileItem`, `FileThumbnail`, `fileItemVariants` (+ props types) | `FileUploadList`, `FileUploadItem`, `FileUploadThumbnail`, `fileUploadItemVariants` | slots `file-upload-list`, `file-upload-item`, `file-upload-thumbnail`… |
+| FileUploadDropzone `size="compact"`, `invalid`, `error` | `orientation="horizontal"`; `<Field invalid>` + `<FieldError>` around it | **care** |
+| `FieldLabel` default `variant="default"` | default `variant="field"` | drop `variant="field"`; write `variant="default"` where you relied on the old default |
+| `credenza`: `Credenza`, `CredenzaProps` | `Dialog`, `DialogProps` from `@/components/ui/dialog`, with `view` on the root | **care**. The dialog page keeps a "Credenza: the responsive dialog" section |
+| `CredenzaTrigger`, `createCredenzaController`, `CredenzaController` | `DialogTrigger`, `createDialogController`, `DialogController` | |
+| `CredenzaBackdrop`, `CredenzaContent`, `CredenzaContentProps` | `DialogBackdrop`, `DialogContent variant="tray"`, `DialogContentProps` | `variant` only shapes the sheet presentation |
+| `CredenzaHeader`, `CredenzaBack`, `CredenzaBackProps`, `CredenzaTitle`, `CredenzaClose` | `DialogHeader variant="bar"`, `DialogBack`, `DialogBackProps`, `DialogTitle`, `DialogClose` | the title travels with the view when the root has `view` |
+| `CredenzaView`, `CredenzaViewProps` | `DialogView`, `DialogViewProps` | |
+| `credenzaVariants` | `dialogVariants({ size, variant })` | |
+| `Dialog` `presentation` default `"dialog"` | default `"auto"`: a sheet in a compact scope, a card otherwise | **care**. A dialog that must stay centered on a phone says `presentation="dialog"`; AlertDialog is always centered |
+| `dialogVariants({ size: 'alert' })`, `dialogTitleClass`, `dialogDescriptionClass`, `dialogCloseClass` | `AlertDialog`; `surfaceTitleVariants`, `surfaceDescriptionVariants`, `closeButtonVariants({ layout: 'inline' \| 'pinned' })` | the surface recipes live in `@/lib/surface` and are re-exported by `dialog` |
+| `passkey-enroll-dialog`: `PasskeyEnrollDialog`, `PasskeyEnrollDialogProps` | `VaultEnrollDialog`, `VaultEnrollDialogProps` from `@/components/ui/vault-gate` | `open` / `onOpenChange` are optional now; it also takes `defaultOpen`, `controller` and a `DialogTrigger` child |
+| `RecoveryKey`, `recoveryKeyVariants` from `passkey-enroll-dialog`; `vaultActionClass`, `vaultLinkClass`, `vaultErrorClass`, `vaultMutedClass` | the same from `vault-gate`; private | one page, [Passkey vault](https://blamy.github.io/ui/#/passkey-vault) |
+| `edge-drawer`: `EdgeDrawer`, `edgeDrawerVariants`, `EdgeDrawerProps` | `<Sheet contained>` + `<SheetBackdrop />` + `<SheetContent variant="panel">` | **care** |
+| EdgeDrawer `zIndex`, `backdropClassName` / `scrim`, `width` / `maxWidth` / `shadow`, `swipe={false}` | `--sheet-z` on the parent; `SheetBackdrop className`; `SheetContent className`; `SheetContent swipe={false}` | host slot `edge-drawer-host` → `sheet-host` |
+| `useKeptChildren` (in `edge-drawer`) | `@/lib/kept-children` (`useKeptChildren`, `KeptChildren`) | |
+| `SheetContent animateHeight` | `<Sheet view={step}>` + `<SheetView>` | **care** |
+| `sheetVariants({ side })` | `sheetVariants({ variant, side })`; new `sheetGrabberVariants` | the sheet card is `rounded-sheet` (18px) |
+| `side-drawer`: `SideDrawer`, `SideDrawerProps` | `AdaptivePane side="end"`, `AdaptivePaneProps` | **care** |
+| SideDrawer `presentation: 'fixed' \| 'overlay' \| 'push' \| 'auto'` | AdaptivePane `presentation: 'column' \| 'drawer' \| 'push' \| 'cover' \| 'hidden' \| 'auto'` | `fixed` → `column`, `overlay` → `drawer` |
+| SideDrawer `title`, its built-in × and back button, `backLabel` | `<AdaptivePaneHeader><AdaptivePaneTitle>…</AdaptivePaneTitle><AdaptivePaneClose backLabel="…" /></AdaptivePaneHeader>` | the title names the pane |
+| SideDrawer `width`, `breakpoint` | `columnWidth` / `drawerWidth` (number or CSS length); removed: `auto` reads the size-class scope | |
+| `sideDrawerPageClass`, `--side-drawer-under`, `data-side-drawer-swiping` / `-settling` | `adaptivePanePageClass`, `--adaptive-pane-under`, `data-adaptive-pane-swiping` / `-settling` | |
+| `createSideDrawerController`, `SideDrawerController`, `SideDrawerPresentation`, `SideDrawerOpenChangeDetails` / `Reason`; `sideDrawerVariants` | `createAdaptivePaneController`, `AdaptivePaneController`, `AdaptivePanePresentation`, `AdaptivePaneOpenChangeDetails` / `Reason`; removed | |
+| AdaptivePane `presentation` required, `presentation="hidden"` to hide a column | optional (default `auto`); `open` means shown in every presentation, so pass `open={false}` | **care** |
+| AdaptivePane `columnClassName`, `columnStyle`; `drawerMaxWidth`; `scrim`, `shadow`, `backdropClassName` | one `className` / `style` on the pane in every presentation (or a function of `{ presentation, open, side }`); a `max-w-*` class; removed | the drawer is capped at 85% and 20rem wide by default |
+| `context-menu`: `ContextMenu`, `ContextMenuProps` | `DropdownMenu`, `DropdownMenuProps` | **care** |
+| `ContextMenuTrigger`, `ContextMenuTriggerProps` | `DropdownMenuContextTrigger`, `DropdownMenuContextTriggerProps` | |
+| `ContextMenuContent`, `ContextMenuItem`, `ContextMenuCheckboxItem`, `ContextMenuRadioGroup`, `ContextMenuRadioItem`, `ContextMenuGroup`, `ContextMenuGroupLabel`, `ContextMenuSeparator`, `ContextMenuShortcut`, `ContextMenuSub`, `ContextMenuSubTrigger`, `ContextMenuSubContent` (5.x: `ContextMenuSection`, `ContextMenuLabel`) | `DropdownMenu` + the same suffix | context menus are a section of the [DropdownMenu](https://blamy.github.io/ui/#/dropdown-menu) page |
+| `createMenuController`, `MenuController`, `MenuData`, `MenuDataItem` | `createDropdownMenuController`, `DropdownMenuController`, `DropdownMenuData`, `DropdownMenuDataItem` | data items take `icon` and `description` |
+| `HoverCardHeader` `media`, `subtitle`, `action` | `icon`, `description`, `trailing` | |
+| `CommandMenuDialogTrigger` | `DialogTrigger` from `@/components/ui/dialog` (`shortcut="mod+k"`) | |
+| `CommandMenuDialogContent overlayClassName` | `backdropClassName` | |
+| `tab-view`, `tab-bar` | `@/components/ui/tabs` | **care** |
+| `TabView` `placement`, `orientation` | `Tabs` `variant: 'segmented' \| 'underline' \| 'bar' \| 'rail' \| 'workspace' \| 'plain'`, `side: 'top' \| 'bottom' \| 'start' \| 'end'` | `side` sets the orientation; its default follows `variant` (`bar` bottom, `rail` and `workspace` start, others top) |
+| `TabViewBar variant`, `hideOnScroll` | `Tabs variant` on the root + `TabsBar hideOnScroll` | the bar writes `data-hidden` while scrolled away |
+| `TabViewList`, `TabViewIndicator`, `TabViewPill`, `TabViewSeparator`, `TabViewHeader`, `TabViewFooter`, `TabViewPanels`, `TabViewPanel` | `TabsList`, `TabsIndicator`, `TabsPill`, `TabsSeparator`, `TabsHeader`, `TabsFooter`, `TabsPanels`, `TabsPanel` | every part takes its element's props and `ref` |
+| `TabViewTab` / `TabViewAction` `icon: string`, `title` | `TabsTab` / `TabsAction` `icon: IconName \| ReactNode`, the label as children | |
+| `useTabView()`, `useTabViewTab()` | `useTabs()` (`null` outside a `Tabs`), `useTabsTab()` | |
+| `tabViewVariants`, `tabViewBarVariants`, `tabViewListVariants`, `tabViewTabVariants`, `tabViewIndicatorVariants`, `tabViewPillVariants`, `tabViewActionVariants` | `tabsVariants`, `tabsBarVariants`, `tabsListVariants`, `tabsTabVariants`, `tabsIndicatorVariants`, `tabsPillVariants`, `tabsActionVariants` | one `variant` axis |
+| `TabViewProps`, `TabViewBarProps`, `TabViewTabProps`, `TabViewIndicatorProps`, `TabViewActionProps`, `TabViewPlacement`, `TabViewOrientation`, `TabViewBarVariant` | `TabsProps`, `TabsBarProps`, `TabsTabProps`, `TabsIndicatorProps`, `TabsActionProps`, `TabsSide`, `TabsOrientation`, `TabsVariant` | |
+| `TabBar`, `TabBarProps`, `TabBarItem` | `<Tabs variant="bar">` + `TabsBar` + `TabsList` + `TabsTab` | **care**. The "Bottom tab bar" section of [Tabs](https://blamy.github.io/ui/#/tabs) |
+| slot `tab-view-bar`, `data-placement`, `data-bar-placement` | `tabs-bar`, `data-side` (and `data-variant`) on the root and the bar | |
+| Workspace `tabPlacement: 'top' \| 'bottom' \| 'left' \| 'right'`, `WorkspaceTabPlacement`, `data-tab-placement` | `tabSide: 'top' \| 'bottom' \| 'start' \| 'end'`, `WorkspaceTabSide`, `data-tab-side` | rename the field in saved layouts |
+| Workspace's own `rounded-xl border` frame | none: add `rounded-card border border-border` | new `presentation: 'auto' \| 'docked' \| 'tabs'` |
+| `icon-swap`: `IconSwap id`, `IconSwapProps` | `<Swap effect="pop" value={id}>` from `@/components/ui/swap`, `SwapProps` | `pop` is inline by default |
+| `ContentSwap id` (in `animated-height`), `ContentSwapProps` | `<Swap value={id}>` (`effect="slide"`, the default), `SwapProps`, `SwapEffect` | `animated-height` keeps only `AnimatedHeight`; slots `swap`, `swap-view` |
+| `Chevron`, `ChevronProps`, `ChevronDirection` from `icon-swap`; `sw` | the same names from `@/lib/icon`; `strokeWidth` | |
+| `spinner-shapes` | `lib/spinner-shapes` | no public exports |
+| Spinner `spin` | removed: it animates unless `paused` | `spin={x}` → `paused={!x}` |
+| Spinner `variant`, `SpinnerVariant`, `spinnerAnimations[].variants` | `pattern`, `SpinnerPattern` (`SpinnerPatternOf<A>`), `.patterns` | typed by `animation` |
+| Spinner animations `beacon`, `cells`, `register`, `bands` | `bars`, `merge`, `encode`, `scan` | the ids match their labels |
+| ProgressRing / CountdownRing `size="md"` | `size="default"` (`ProgressRingSize`) | `showValue` needs 40px (`lg`) or more |
+| CountdownRing `warnAt`, `warnColor`, `data-warning`, `--ring-warn`; `labelSize`, `CountdownRingLabelSize` | `urgentAt`, `urgentColor`, `data-urgent`, `--ring-urgent`; removed (the label sizes with the ring) | |
+| ProgressStepper data type `ProgressStep`; states `done`, `active`, `todo`; `--ck-stepper-accent`, `--ck-stepper-idle` | `ProgressStepItem` (`ProgressStep` is now a part); `complete`, `current`, `upcoming`; `--stepper-accent`, `--stepper-track` | new parts `ProgressStep`, `ProgressStepIcon`, `ProgressStepTrack`, `ProgressStepLabel`, `ProgressStepDescription` |
+| NumberMorph `locales`; Morph `id` | `locale`; `layoutId` (`id` is the DOM id again) | |
+| `qr-svg`: `QRSvg`, `QRSvgProps` | `@/components/ui/qr-code`: `QRCode`, `QRCodeProps` | **care**. `value` is required |
+| QRSvg `title`, `color`; `lib/qr` type `QRCode` | `aria-label`, a `text-*` class (the modules are `currentColor`); `QRMatrix` | encode errors go to `onError` |
+| Avatar `c={{ f, l }}`, `color` | `name="F L"`, `tint` | |
+| `AvatarGroup`, `avatarGroupVariants`, `AvatarGroupProps` from `avatar` | the same from `@/components/ui/avatar-group` | **care**. `menu` defaults to `false`; `onSelect(index)` → `onAction(value, details)` |
+| Skeleton `shape="rounded"`; SkeletonText `lineHeight`, `gap` | removed (it was `default`); `lineClassName="h-3"`, `className="gap-3"` | |
+| Celebrate beside its subject in a `relative isolate` wrapper | `<Celebrate fire={n}>{subject}</Celebrate>` | **care** |
+| NowPlayingBars `speed` (seconds per bounce) | `speed` (a multiplier, like Spinner's: bigger is faster) | |
+| `schema-tree`: `SchemaTree`, `schemaTreeVariants`, `SchemaTreeProps`, `SchemaTreeActionDetails` | `<Tree items={schemaTreeItems(schema)} …>`; `schemaTreeItems`, `SchemaTreeNode` from `@/lib/pglite-schema` | **care** |
+| Tree `density="relaxed"`, `emptyMessage` | `density="comfortable"` (`TreeDensity`), `emptyState` | |
+| `TreeFileIcon`, `TreeFolderIcon` (in `tree`) | `FileBadgeIcon`, `FolderIcon` from `@/lib/file-icons` (with `FileTypeIcon`, `fileTypeOf`) | |
+| `objectTreeRowVariants`, `callStackRowVariants` | removed: their rows are Tree's (`treeRowVariants`) | |
+| ObjectTree and CallStack `rowHeight`, `emptyMessage` | `density` (default `compact`, 24px), `emptyState` | |
+| ObjectValue `expandable` | `actions` | |
+| `List.Section`, `List.Row`; List `inset` | `ListSection`, `ListRow`; `variant="inset"` | |
+| ListRow `leading`, `subtitle`, `selected`, `destructive`, `center`, `edit` | `icon`, `description`, `current`, `tone="destructive"`, `justify="center"`, `editing` | |
+| ListRow `onDelete` | `trailingActions={[{ label: 'Delete', destructive: true, onAction }]}` | **care** |
+| TraceTimeline `label`; `top`, `bottom`, `railWidth`; `renderPreview`, `previewLines`, `previewWidth` | `aria-label`; classes on the rail (`className="inset-y-2 w-14"`); `<TraceTimelinePreview lines width>{(time) => …}</TraceTimelinePreview>` | **care** |
+| Slider `tone: 'default' \| 'onDark' \| 'onLight'`, `SliderTone`, `data-tone` | `variant: 'default' \| 'on-dark' \| 'on-light'`, `SliderVariant`, `data-variant` | |
+| Slider `trackColor`, `fillColor`, `thumbColor` | `className="[--bl-slider-fill:var(--success)]"` (`--bl-slider-track`, `--bl-slider-thumb`) | |
+| `date-field`: `DateField`, `DateFieldProps`, `DateFieldSegment` | `@/components/ui/date-input`: `DateInput`, `DateInputProps`, `DateInputSegment` | 5.x's inner `DateInput` part is gone: the control is the root |
+| `TimeField`, `TimeFieldProps`, `TimeFieldSegment` | `TimeInput`, `TimeInputProps`, `TimeInputSegment` | |
+| `dateFieldVariants`, `createDateFieldController`, `createTimeFieldController`, `DateFieldController`, `TimeFieldController`, `DateFieldSegmentData`, `DateFieldState` | `dateInputVariants`, `createDateInputController`, `createTimeInputController`, `DateInputController`, `TimeInputController`, `DateInputSegmentData`, `DateInputState` | |
+| `color-field`: `ColorField`, `ColorFieldProps` | `ColorInput`, `ColorInputProps` from `@/components/ui/color-picker` | **care** |
+| `ColorFieldGroup`, `ColorFieldInput`, `ColorFieldChannelInput`, `ColorFieldSwatch` (+ props types) | `ColorPickerField`, `ColorPickerInput`, `ColorPickerChannelInput`, `ColorPickerSwatch` | UI SDK's part names |
+| `colorFieldVariants`, `colorFieldGroupVariants` | `fieldSurfaceVariants` from `@/components/ui/input` | the one filled field box |
+| `ColorSwatch` from `color-field` | the same from `color-picker` | |
+| ColorPicker with a `<Popover>` around the trigger and content | the root takes `open`, `defaultOpen`, `onOpenChange`, `presentation`; trigger and content go straight in | **care**. A `<Popover>` still works, for several triggers under one root |
+| `list-box` (module, page `list-box`) | `@/components/ui/listbox`, page [Listbox](https://blamy.github.io/ui/#/listbox) | |
+| `ListboxRow`, `listboxGroupClass`, `listboxGroupLabelClass`, `listboxSeparatorClass`, `listboxSheetClass`; ListboxItem `variant` | private (`lib/option-row`); removed (it follows the list) | |
+| `ComboboxInput chips clearable clearLabel triggerLabel groupClassName`, `ComboboxInputProps` | `ComboboxField` + a bare `ComboboxInput` + `ComboboxTrigger` + `ComboboxClear` + `ComboboxChips` | **care** |
+| FontPicker `size`, `side`, `align`, `className`, `triggerProps` | `FontPicker` + `FontPickerTrigger size className` + `FontPickerContent side align` | **care** |
+| `fontPickerTriggerVariants`, `fontListItemVariants` | removed: the trigger is `selectTriggerVariants` | |
+| `edit-bar`: `EditBar`, `EditBarProps` | `<Toolbar variant="bar">` from `@/components/ui/toolbar` | **care**. The "Edit mode: the bottom bar" section of [Toolbar](https://blamy.github.io/ui/#/toolbar) |
+| DebugToolbar `size="compact"`; labels "Step in", "Reverse" | `size="sm"` (and `lg`); "Step into", "Reverse continue" | **care**. A preset of the kit `Toolbar`, with `DebugToolbarButton` for your own rows |
+| IndexBar `avail`, `onLetter`, `AL` | `items={alphabetItems(available)}` (required), `onJump` | **care** |
+| IndexBar `onJump(key, point, index, details)` | `onJump(key, { index, item, reason, event })` (`IndexBarJumpDetails`) | |
+| IndexBar `side: 'left' \| 'right'`, `label`, `top`, `bottom`, `width`, `value`; item `dim` | `side: 'start' \| 'end'`, `aria-label`, classes (`className="top-14 bottom-2"`), `current`; item `disabled` | |
+| Breadcrumb item `items`, `selectedId`; `BreadcrumbEllipsis label` | `siblings`, `currentSibling`; `aria-label` | `onClick` gets the event |
+| `SplitViewStack`, `SplitViewStackProps`, `SplitViewStackApi`, a column's `stack` prop | a `NavigationStack` inside the column | **care** |
+| `useSplitViewStack()` (`push(node, { key })`, `popToRoot`) | `useNavigationStack()` (`push(key)`, `pop`, `popTo`, `replace`) | pages are keys, drawn by children or `renderPage` |
+| `createSplitViewStackController`, `SplitViewStackController`, `SplitViewStackPagesChangeDetails` / `Reason` | `createNavigationStackController`, `NavigationStackController`, `NavigationStackChangeDetails`, `NavigationStackReason` | |
+| `SplitViewEmpty`, `SplitViewEmptyProps` | `EmptyState` from `@/components/ui/empty-state` | |
+| `splitViewSectionLabelVariants` | removed (the shared section label) | |
+| SplitViewItem `id`, `subtitle`, `badge`; state `selected`, `data-selected`; `useSplitView().isSelected` | `value`, `description`, `trailing`; `current`, `data-current`; `isCurrent(column, value)` | |
+| SplitViewHeader `titleOnScroll`, `titleAlign="leading"` | `showOnScroll`, `titleAlign="start"` | |
+| NavigationStackPage `grouped`; NavigationStack `safeTop: string`; `useNavigationStack()` returning `null` outside | `variant="grouped"`; `safeTop: number` (px); it throws outside a stack | |
+| Sidebar `variant="overlay"` | `presentation="drawer"` (`'auto' \| 'column' \| 'drawer'`, default `auto`) | **care**. `variant` is only the look: `docked`, `rail`, `float` |
+| SidebarItem `label`, `active`, `tone`, `badge`, `icon` (a `SIDEBAR_ICONS` key) | `title`, `current`, `tint`, `trailing`, `icon` (an `IconName` or a node) | **care** |
+| SidebarWorkspace `name`, `detail`, `initial`; SidebarSearch's fixed `/` chip | `title`, `description`, `icon`; `SidebarSearch shortcut="/"` (binds the key) | |
+| `Sidebar.Header`, `.Content`, `.Footer`, `.Workspace`, `.Search`, `.Section`, `.Item` | `SidebarHeader`, `SidebarContent`, `SidebarFooter`, `SidebarWorkspace`, `SidebarSearch`, `SidebarSection`, `SidebarItem` | |
+| `SidebarNav`, `SidebarNavProps`, `SIDEBAR_ICONS` | removed (demo compositions in the `split-view-demos` block) | |
+| `createRequestTableController`, `RequestTableController`, `RequestTableActionDetails`, `RequestTableValueChangeReason`, `RequestTableSortChangeReason`, `RequestTableColumnWidthsChangeReason`, `RequestTableBreakpoints` | `createDataTableController`, `DataTableController`, `DataTableActionDetails`, `DataTableValueChangeReason`, `DataTableSortChangeReason`, `DataTableColumnWidthsChangeReason`, `DataTableBreakpoints` from `@/components/ui/data-table` | RequestTable is a preset of [DataTable](https://blamy.github.io/ui/#/data-table) |
+| `RequestColumn<T>`, `RequestSort`, `RequestSortDirection`, `RequestSortValue`, `RequestColumnSize`, `RequestTimeRange`; `requestTableVariants`; `sortRequests` | `DataTableColumn<T>`, `DataTableSort`, `DataTableSortDirection`, `DataTableSortValue`, `DataTableColumnSize`, `DataTableTimeRange`; `dataTableVariants`; `sortDataTableRows` | |
+| RequestTable slots `request-table`, `request-table-grid`, `-row`, `-cell`…; `--request-*` | `data-table`, `data-table-grid`, `data-table-row`, `data-table-cell`…; `--data-table-*` | the request-specific slots (`request-table-name`, `-bar`…) stay |
+| `result-table`: `ResultTable`, `resultTableVariants`, `ResultTableProps`, `ResultSet`, `ResultField` | `DataTable`; the SQL console renders its own results | **care** |
+| SqlConsole `sidebar`, `transfer`, `headerActions`, `layout`, `sqlConsoleVariants`, `resultMaxHeight` | compose `SqlConsoleHeader`, `SqlConsoleDatabaseMenu`, `SqlConsoleSidebar`, `SqlConsoleEditor`, `SqlConsoleResults`; the `--sql-console-result-height` variable | **care** |
+| SqlEditor `running`, `size`, `footer`, `actions`, `runLabel`, `sqlEditorVariants` | `pending`, `rows` (default 8), `children` (`<SqlEditorFooter>`, `<SqlEditorRun>`; `{false}` for none), removed | SqlEditor ships inside the `sql-console` item |
+| Spreadsheet `onSort`, `footer`, `columnName` | `onSorted` (and a controlled `sort` / `onSortChange`), `statusBar`, removed | |
+| `workbench-theme`: `WorkbenchTheme`, `WorkbenchThemeProps` | `<ThemeScope scope="workbench">` from `@/lib/theme` | **care**. [Theming](https://blamy.github.io/ui/#/theming), "The workbench scope" |
+| `useWorkbenchAppearance()`, `WorkbenchAppearanceProvider` | `useScopeAppearance('workbench')` or `useThemeScope()?.appearance`; a `ThemeScope` publishes its scope | |
+| `code-editor-window` (component) | `lib/code-editor-window` | CodeEditor's private renderer |
+| `FbMd`, `HlPre`, `hlTokens`, `DocstreamRefContext`, `DocstreamRefContextValue` (in `markdown-view`) | removed | |
+| `replay-preview`: `ReplayStage`, `preloadReplayStage`, `getReplayMarkers`, `getReplayMeta`, `getReplayPointerTrack`, `replayPointerAt`, `getReplayDevtools`, `replayDevtoolsAt`, `getReplayInspections`, `resolveReplayInspections`, `replayInspectionAt`, `replayDemoEvents` and their types | `@brett_lamy/docstream/replay` (`replayDemoEvents` from `@brett_lamy/docstream/replay/demo`) | the kit keeps `ReplayPreview`, `formatReplayTime` and the props, handle and data types |
+| `tui-preview`: `TuiEmbed`, `DEFAULT_TUI_RUNTIME_URL`, `isTuiCodeBlock` | `@brett_lamy/docstream/tui` | the kit keeps `TuiPreview` |
+| `strudel-rack`: `StrudelRack`, `RackGrid`, `StepGrid`, `Knob`, `Fader`, `STRUDEL_PARAMS`, `trackName` (+ types) | `@brett_lamy/docstream/strudel` | one page, [Strudel](https://blamy.github.io/ui/#/strudel) |
+| `strudel-syntax`: `parseStrudel`, `parseMini`, `miniAtoms`, `miniLayers`, `chainCalls`, `findCall`, `applyEdits`, `formatNumber`, `setArg`, `setMethod`, `removeMethod`, `setTempo`, `setMiniAtom`, `setMiniSource`, `mixCode`, `isAudible`, `StrudelSyntaxError`, `MiniSyntaxError`, `CodeEdit`, the `Strudel*` and `Mini*` syntax types | `@brett_lamy/docstream/strudel` | `StrudelTrackKind` is docstream's `TrackKind` |
+| `strudel-player`: `DEFAULT_SAMPLES`, `strudelNow`, `StrudelPattern`, `StrudelHap` | `@brett_lamy/docstream/strudel` | the kit keeps `StrudelPlayer`, `playStrudel`, `stopStrudel`, `updateStrudel`, `subscribeStrudel`, `getStrudelSnapshot` |
+| `stl-viewer`: `parseStl`, `isStlUrl`, `StlMesh` | `@brett_lamy/docstream/stl` | the kit keeps `StlViewer` |
+| Terminal `size="md"` | `size="default"` | |
+| MarkdownEditor `invalid`; `onKeyDown`, `onPaste`; `contentClassName` | a `Field`; `handleKeyDown`, `handlePaste` (ProseMirror's); `classNames.content` | `onFocus` / `onBlur` get the event |
+| CodeEditor `contentClassName`; `onLineNumberClick`, `lineNumberClickable`, `lineNumberLabel`, `lineNumberTitle`; `scrollToLine` prop | `<CodeEditorContent className>`; `lineNumbers={{ onClick, clickable, label, title, side }}` (`CodeEditorLineNumbers`); `revealLine` | **care**. The handle keeps `scrollToLine()` |
+| CodeEditorCopyButton `label`, `onCopy(value)` | `aria-label`, `onValueCopy(value)` | it is the kit's Button |
+| OpenCode `height`, `theme`, `rounded-none border-0` to strip the chrome | a class (`className="h-[620px]"`), `appearance`, `variant="plain"` (`openCodeVariants`) | **care** |
+| `WbPopover`, `WbPopoverProps` (5.x); `WbPopoverContent`, `useSurfacePalette`, `wbPopoverSurface`, `isLightSurface` from `composer-popover` | `<PopoverContent variant="surface" palette="trigger">`; `useTriggerPalette`, `isLightSurface` from `@/lib/trigger-palette` | `palette="trigger"` also on `DropdownMenuContent` and `SelectContent` |
+| `ComposerMenuItem`, `composerMenuItemVariants` | `DropdownMenuRadioItem` in a `DropdownMenuContent size="sm"` | |
+| `ComposerButton`, `ComposerButtonProps`, `composerButtonVariants`; `ComposerButton variant="pill"` + `ComposerPillLabel` | the kit's `Button` (`variant="quiet" size="icon-sm"` for an icon tool); `ComposerPill` (`icon`, the label as children) | **care** |
+| `tint` on ComposerButton, ComposerSelect, ComposerAdd | `className="text-primary"` | |
+| ComposerSelect `options` (with `id`), `ComposerSelectOption`, `menuClassName` | `items` (with `value`, `disabled`), `ComposerSelectItem`; compose `DropdownMenu` + `ComposerPill` yourself for more | |
+| `ComposerAttach`, `ComposerAttachProps` | `<ComposerAdd icon="paperclip-diagonal" label="Attach files" />` | |
+| ComposerAdd, ComposerSend, ComposerStop `size`, `variant` | removed (ComposerStop keeps `variant: 'ring' \| 'solid'`) | |
+| `AnnotateLightbox`, `AnnotateLightboxProps` | `ImageAnnotator`, `ImageAnnotatorProps` (PencilKit) | its `annotator` prop is `engine` |
+| `ComposerAnnotatorProvider` (`annotator`); `ComposerAnnotator`, `ComposerAnnotatorProps`, `ComposerAnnotatorSurface`; `useComposerAnnotator` | `ImageAnnotatorProvider` (`engine`); `ImageAnnotatorEngine`, `ImageAnnotatorEngineProps`, `ImageAnnotatorSurface`; `useImageAnnotatorEngine` from `@/components/ui/pencilkit/image-annotator` | `Composer annotator` takes an `ImageAnnotatorEngine` or `null` |
+| Composer `annotateCanvas`, `fabPosition`; ComposerBump `inset` | an engine (`annotator={MyEngine}`); `fabAlign`; `gutter` | `data-fab-position` → `data-fab-align` |
+| `ComposerOutlet`, `ComposerFab`, `composerFabVariants`, `ComposerBumpProgress`; `useComposerBump()` `startDrag`, `toggle`, `windowRef`, `handleProps` | not public | style `ComposerBumpHandle` for a handle of your own |
+| MessageScroller `items: { id, anchor, node }[]`, type `MessageScrollerItem` | `<MessageScrollerItem value anchor>` children (a component), `MessageScrollerItemProps` | **care** |
+| `ConversationGreeting`, `ConversationGreetingProps` | `<ConversationEmpty title description icon action headingLevel>` (it renders `EmptyState`) | |
+| UserMessage `images: string[]`; ToolCall `detail` | `attachments: ComposerAttachment[]`; `description` | |
+| `SettledBanner`, `SettledBannerProps` | removed (it lives in the `t3-clone` block) | Suggestion is the kit's `Button variant="outline" size="sm"` (`SuggestionProps` are Button's) |
+| `floating-chat`: `FloatingChat`, `useFloatingChat`, `FloatingChatProps`, `FloatingChatContextValue`, `FloatingChatFabPosition`, `floatingChatVariants`, `glassScopeProps` | `<ArtifactChatContainer layout="floating">`, or a `FloatingSheet` | **care** |
+| `chat-column`: `ChatColumn`, `ChatColumnTranscript`, `ChatColumnComposer`, `ChatColumnProps` | `ArtifactChatContainer`'s docked layout, or `Conversation` for a column of your own | |
+| `ArtifactChatContainer.Content`, `.Chat`, `.Composer`; `.Context`, `.useContainer` | `ArtifactChatContainerContent`, `ArtifactChatContainerChat`, `ArtifactChatContainerComposer`; `useArtifactChatContainer()` | **care** |
+| ArtifactChatContainer `chatOpen`, `defaultChatOpen`, `onChatOpenChange` | `open`, `defaultOpen`, `onOpenChange(open, details)` | |
+| ArtifactChatContainer `chatSide: 'left' \| 'right'`, `fabPosition`, `appearance: 'glass' \| 'sheet'`, `tone`, `onAdd` | `chatSide: 'start' \| 'end'`, `fabSide` + `fabAlign`, `variant`, `appearance: 'auto' \| 'light' \| 'dark'`, `onComposingChange` | |
+| `useArtifactChatContainer()` `.compact`, `.chatOpen`, `.setChatOpen`; root `data-layout="compact"`; the content's `<main>` | `.layout === 'floating'`, `.open`, `.setOpen`; `data-layout="floating"`; a `div` (pass `role="main"`) | |
+| `ArtifactChatFabPosition`, `ArtifactChatContainerSlotChildren` | removed | `ArtifactChatSide`, `ArtifactChatContainerOpenChangeDetails` are new |
+| `FloatingSheet.Body`, `.Foot`, `.Fab`; `.Context`, `.useFloatingSheet`; `fabIcon` | `FloatingSheetBody`, `FloatingSheetFoot`, `FloatingSheetFab` (the button: children are its face); `useFloatingSheet()`; `<FloatingSheetFab>{icon}</FloatingSheetFab>` | write Body before Foot |
+| FloatingSheet `appearance: 'glass' \| 'sheet'`, `tone`, `dismissible` + `minimizable`, `detents`, `label`, `fabPosition` | `variant`, `appearance: 'auto' \| 'light' \| 'dark'`, `collapse: 'fab' \| 'hide' \| 'none'`, `snapPoints`, `aria-label`, `fabSide` + `fabAlign` | **care** |
+| `FloatingSheetTone`, `FloatingSheetFabPosition`, `FloatingSheetAppearance` (`glass` / `sheet`); `sheetToneProps` | `FloatingSheetAppearance` (`auto` / `light` / `dark`), `FloatingSheetVariant`, `FloatingSheetFabSide`, `FloatingSheetFabAlign`, `FloatingSheetCollapse`; removed | |
+| `floatingSheetSurfaceVariants({ appearance })`, `floatingSheetFabVariants({ appearance, position })`, `floatingSheetVariants({ tone })` | `({ variant, hidden })`, `({ variant, side, align })`, `floatingSheetVariants()` | |
+| `useHideOnScroll` from `floating-sheet` | `@/lib/scroll-edge` | the barrel name is unchanged |
+| `lib/persistent-host`: `createOutletStore`, `OutletStore`, `ChatHostContext`, `ComposerPortal` | removed | `usePersistentHost` and `useAttachHost` stay |
+| `PK_TOOLS`, `PK_INKS`, `PK_W`, `PK_TOOL_ICONS`, `PencilToolDef` | `pencilTools` (`{ options, opacity }`), `pencilInks` (`{ value, label }[]`), `pencilWidths` (`{ scale, dot, label }[]`), `pencilToolIcons`, `pencilToolLabels` | module exports of `@/components/ui/pencilkit/constants`, not in the barrel |
+| `PencilStroke { w, pen, done }`; `StrokePath({ st, pf })`; `MemoStroke`, `outlinePath` | `{ width, pressure, complete }`; `StrokePath({ stroke, variant })` (memoized); removed | |
+| PencilCanvas `hint`, `status`, `plain` | `emptyState`, removed (render a label as a child), `variant="plain"` | inside a `<Canvas>` it is the board's drawing layer |
+| `PencilToolButton`, `pencilToolButtonVariants`, `PencilToolbarDivider` | the kit's `ToolbarButton` / `ToggleGroupItem`, `ToolbarSeparator` | |
+| `ToolPicker`, `InkPicker value: number`, `WidthPicker value: number` (indexes) | `PencilToolPicker`, `PencilInkPicker value: string` (the ink), `PencilWidthPicker value: number` (the scale) | **care**. All three take `defaultValue` |
+| `PencilToolbar` that placed itself at the bottom and found `PencilActions` by type | an in-flow kit `Toolbar` (`variant="floating"`); `PencilToolbarPinned` for the pinned group | position it yourself |
+| CanvasMiniMap `position`; Canvas `cursor` | `side: 'top' \| 'bottom'` + `align: 'start' \| 'end'`; `className="cursor-crosshair"` or `style={{ cursor }}` | |
+| VideoPreview, VideoTimeline, PlaybackControls, PlaybackTimecode `clock` | `playback` | |
+| `PlaybackControls`, `PlaybackTimecode` (+ props), slot `playback-timecode` | `VideoPreviewControls`, `VideoPreviewTimecode`, slot `video-preview-timecode` | the controls are a kit `Toolbar` |
+| `rulerSteps`; Waveform `tone="primary"` | private; `className="text-primary"` (tones `default`, `muted`, `success`, `warning`, `destructive`) | |
+
+A component's props and data types follow it: `ComboBoxProps`, `ComboBoxInputProps` and `ComboBoxContentProps` are `ComboboxProps`, `ComboboxFieldProps` and `ComboboxContentProps`; `ListBoxSectionProps` and `DropdownMenuSectionProps` have no counterpart (a group takes UI SDK's props); `DateRangePickerProps` and `DateRangePickerContentProps` are `DatePickerProps` and `DatePickerContentProps`; `CalendarCellProps`, `ColorAreaProps`, `ColorSliderProps`, `ColorThumbProps`, `ColorSwatchPickerProps` and `ColorSwatchPickerItemProps` are the props of the parts that replace them (`ComponentProps<typeof CalendarDay>` and so on); `ColorFieldGroupProps` is `ColorPickerFieldProps`; `CommandInputProps`, `CommandListProps`, `CommandGroupProps`, `CommandItemProps`, `CommandPageProps` and `CommandFooterProps` are the `CommandMenu…Props` of the same part; `FileItemProps` and `FileListProps` are `FileUploadItemProps` and `FileUploadListProps`; `ToolPickerProps`, `InkPickerProps` and `WidthPickerProps` are `PencilToolPickerProps`, `PencilInkPickerProps` and `PencilWidthPickerProps`; `PencilToolButtonProps` is `ToolbarButtonProps`; `PlaybackControlsProps` and `PlaybackTimecodeProps` are `VideoPreviewControlsProps` and `VideoPreviewTimecodeProps`; `ComposerFabProps` and `ComposerOutletProps` are not public; `SyntaxHighlightingProps`, `SyntaxHighlightingTitle`, `SyntaxHighlightingContent`, `SyntaxHighlightingContentProps`, `SyntaxHighlightingCopyButton` and `SyntaxHighlightingCopyButtonProps` are CodeEditor's (see [Other components](#other-components)). The Docstream types the kit no longer re-exports come from `@brett_lamy/docstream`: `ReplayMeta`, `ReplayPointerTrack`, `ReplayConsoleEntry`, `ReplayConsoleLevel`, `ReplayDevtoolsState`, `ReplayRequest`, `ReplayStageHandle`, `ReplayStageLayout`, `ReplayStageProps` from `/replay`; `StrudelRackProps`, `RackGridProps`, `StepGridProps`, `ControlProps`, `GridItem`, `GridLayout`, `StrudelArg`, `StrudelCall`, `StrudelChain`, `StrudelMix`, `StrudelSong`, `StrudelTempo`, `StrudelTrack`, `MiniNode`, `MiniAtom`, `MiniGroup`, `MiniLayers`, `MiniAlternation`, `MiniPolymeter`, `MiniSequence`, `MiniSlice`, `MiniStep`, `MiniSubcycle`, `MiniOp` from `/strudel`.
+
+### Before and after for the ones that need care
+
+**A tool that stays on** (Button `active`):
+
+```tsx
+// before
+<Button variant="quiet" size="icon-sm" active={starred} onClick={toggle} aria-label="Star"><Icon name="star" /></Button>
+// now
+<Toggle variant="quiet" size="icon-sm" pressed={starred} onPressedChange={setStarred} aria-label="Star"><Icon name="star" /></Toggle>
+```
+
+**The Tailscale panel** (`TailscaleMenu`):
+
+```tsx
+// before
+<TailscaleMenu variant="radio" onExitNode={choose} detail="4 pages…" />
+<TailscaleStatusBadge compact />
+// now
+<PopoverTitle className="sr-only">Tailscale connection</PopoverTitle>
+<div className="flex flex-col gap-3">
+  <TailscaleSummary detail="4 pages…" />
+  <TailscaleExitNodes onAction={choose} />
+  <TailscaleLoginButton size="sm" variant="outline" />
+</div>
+<TailscaleStatusBadge variant="pill" />
+```
+
+**Forms and model-driven fields** (`Form`, NaturalTimeInput, FileUploadDropzone, FilterBar):
+
+```tsx
+// before
+<Form onSubmit={save} className="gap-6">…</Form>
+<TimeInput label="When" description="…" invalid error="…" dateOrder="DMY" debounceMs={50} />
+<FileDropZone size="compact" invalid error="Add a file" onFiles={add} />
+<FilterBar fields={fields} value={filters} onValueChange={setFilters} hotkey="f" showMatch />
+// now
+<FieldGroup className="gap-6" render={<form onSubmit={save} />}>…</FieldGroup>
+<Field invalid>
+  <FieldLabel>When</FieldLabel>
+  <NaturalTimeInput parse={{ dateOrder: 'DMY', debounceMs: 50 }} />
+  <FieldDescription>…</FieldDescription>
+  <FieldError>…</FieldError>
+</Field>
+<Field invalid>
+  <FileUploadDropzone orientation="horizontal" onFiles={add} />
+  <FieldError>Add a file</FieldError>
+</Field>
+<FilterBar fields={fields} value={filters} onValueChange={setFilters}>
+  <FilterToolbar><FilterMenu shortcut="f" /><FilterList /><FilterMatch /><FilterClear /></FilterToolbar>
+</FilterBar>
+```
+
+**Credenza → the Dialog flow.** Every Credenza part is a Dialog part, and `Dialog` is responsive by default:
+
+```tsx
+// before
+<Credenza open={open} onOpenChange={setOpen} view={view}>
+  <CredenzaBackdrop />
+  <CredenzaContent>
+    <CredenzaHeader><CredenzaBack hidden={view === 'menu'} onClick={back} /><CredenzaTitle>{title}</CredenzaTitle><CredenzaClose /></CredenzaHeader>
+    <CredenzaView>…</CredenzaView>
+  </CredenzaContent>
+</Credenza>
+// now
+<Dialog open={open} onOpenChange={setOpen} view={view}>
+  <DialogBackdrop />
+  <DialogContent variant="tray">
+    <DialogHeader variant="bar"><DialogBack hidden={view === 'menu'} onClick={back} /><DialogTitle>{title}</DialogTitle><DialogClose /></DialogHeader>
+    <DialogView>…</DialogView>
+  </DialogContent>
+</Dialog>
+
+// A Dialog that must stay a centered card on a phone now says so:
+<Dialog presentation="dialog">…</Dialog>
+
+// before
+<PasskeyEnrollDialog open={open} onOpenChange={setOpen} appName="Notes" />
+// now (from vault-gate)
+<VaultEnrollDialog open={open} onOpenChange={setOpen} appName="Notes" />
+<VaultEnrollDialog appName="Notes"><DialogTrigger render={<Button />}>Protect…</DialogTrigger></VaultEnrollDialog>
+```
+
+**A sheet that steps between views** (`SheetContent animateHeight`). Keep the header outside the view, so the sheet stays named while the title changes:
+
+```tsx
+// before
+<Sheet><SheetContent animateHeight>{step === 'pick' ? <Pick /> : <Confirm />}</SheetContent></Sheet>
+// now
+<Sheet view={step}>
+  <SheetBackdrop />
+  <SheetContent>
+    <SheetClose />
+    <SheetHeader><SheetTitle>{TITLES[step]}</SheetTitle></SheetHeader>
+    <SheetView>{step === 'pick' ? <Pick /> : <Confirm />}</SheetView>
+  </SheetContent>
+</Sheet>
+```
+
+**EdgeDrawer and SideDrawer** become a contained Sheet and an AdaptivePane:
+
+```tsx
+// before
+<EdgeDrawer side="start" open={open} onOpenChange={setOpen} aria-label="Menu" width={280} zIndex={20} className="bg-sidebar">…</EdgeDrawer>
+// now
+<Sheet contained side="start" open={open} onOpenChange={setOpen}>
+  <SheetBackdrop />
+  <SheetContent variant="panel" keepMounted initialFocus="content" aria-label="Menu" className="w-70 bg-sidebar">…</SheetContent>
+</Sheet>
+
+// before
+<SideDrawer presentation={wide ? 'fixed' : 'auto'} open={open} onOpenChange={setOpen} title="Thread" width={360}>{children}</SideDrawer>
+// now
+<AdaptivePane side="end" presentation={wide ? 'column' : 'auto'} open={open} onOpenChange={setOpen} columnWidth={360} drawerWidth="min(360px, 88%)">
+  <AdaptivePaneHeader><AdaptivePaneTitle>Thread</AdaptivePaneTitle><AdaptivePaneClose /></AdaptivePaneHeader>
+  <div className="min-h-0 flex-1 overflow-y-auto">{children}</div>
+</AdaptivePane>
+
+// before: a column hidden by presentation, a separate drawer state, two class props
+<AdaptivePane presentation={narrow ? 'drawer' : navOpen ? 'column' : 'hidden'} open={narrow && navOpen} drawerMaxWidth="84%"
+  columnClassName="flex flex-col border-r bg-card" className="flex flex-col border-r bg-card">…</AdaptivePane>
+// now: `open` is "shown" in every presentation
+<AdaptivePane presentation={narrow ? 'drawer' : 'column'} open={navOpen} onOpenChange={setNavOpen} className="border-r border-border bg-card">…</AdaptivePane>
+```
+
+**Context menus** are a trigger part of DropdownMenu:
+
+```tsx
+// before
+<ContextMenu onAction={run}>
+  <ContextMenuTrigger className="rounded-xl">…</ContextMenuTrigger>
+  <ContextMenuContent aria-label="Photo actions"><ContextMenuItem value="copy">Copy</ContextMenuItem></ContextMenuContent>
+</ContextMenu>
+// now
+<DropdownMenu onAction={run}>
+  <DropdownMenuContextTrigger className="rounded-xl">…</DropdownMenuContextTrigger>
+  <DropdownMenuContent aria-label="Photo actions"><DropdownMenuItem value="copy">Copy</DropdownMenuItem></DropdownMenuContent>
+</DropdownMenu>
+```
+
+**TabView and TabBar** are looks of `Tabs`. The look moves from the bar to the root, and a tab's label is its children:
+
+```tsx
+// before
+<TabView orientation="vertical" defaultValue="blui">
+  <TabViewBar variant="workspace">
+    <TabViewList aria-label="Workspaces">
+      <TabViewTab value="blui" aria-label="BL UI HQ"><TabViewPill /></TabViewTab>
+    </TabViewList>
+  </TabViewBar>
+</TabView>
+<TabBar items={items} value={tab} onValueChange={setTab} />
+// now
+<Tabs variant="workspace" defaultValue="blui">
+  <TabsBar>
+    <TabsList aria-label="Workspaces">
+      <TabsTab value="blui" aria-label="BL UI HQ"><TabsPill /></TabsTab>
+    </TabsList>
+  </TabsBar>
+</Tabs>
+<Tabs variant="bar" value={tab} onValueChange={(next) => next && setTab(next)} className="contents">
+  <TabsBar>
+    <TabsList aria-label="Tabs">
+      {items.map((it) => <TabsTab key={it.value} value={it.value} icon={it.icon}>{it.title}</TabsTab>)}
+    </TabsList>
+  </TabsBar>
+</Tabs>
+```
+
+**Display components** (QR codes, avatar groups, Celebrate):
+
+```tsx
+// before
+<QRSvg value={url} title="Join" color="black" />
+<AvatarGroup onSelect={(i) => open(people[i])}>{people.map((p) => <Avatar key={p.id} c={{ f: p.first, l: p.last }} />)}</AvatarGroup>
+<span className="relative isolate inline-grid"><Celebrate fire={n} /><Badge>Done</Badge></span>
+// now
+<QRCode value={url} aria-label="Join" className="text-black" />
+<AvatarGroup menu onAction={(id) => open(id)}>{people.map((p) => <Avatar key={p.id} name={p.name} />)}</AvatarGroup>
+<Celebrate fire={n}><Badge>Done</Badge></Celebrate>
+```
+
+**SchemaTree** is a `Tree` drawn from `schemaTreeItems`:
+
+```tsx
+// before
+<SchemaTree schema={schema} loading={loading} variant="card" onAction={(_id, { table, column }) => { if (!column) insert(table) }} />
+// now
+<Tree aria-label="Database schema" items={schemaTreeItems(schema)} icons={false} density="compact" loading={loading}
+  emptyState="No tables yet" className="rounded-panel bg-card p-1 shadow-hairline"
+  onAction={(_value, { node }) => { const n = node as SchemaTreeNode | undefined; if (n?.kind === 'table') insert(n.table) }} />
+```
+
+**List rows and the trace timeline:**
+
+```tsx
+// before
+<ListRow title="Draft" onDelete={remove} edit={editing} leading={<Avatar name="Me" />} subtitle="Me" selected destructive center />
+<TraceTimeline label="Session" orientation="vertical" top={8} bottom={8} railWidth={56} renderPreview={(t) => <Thumb t={t} />} previewLines={3} />
+// now
+<ListRow title="Draft" trailingActions={[{ label: 'Delete', destructive: true, onAction: remove }]} editing={editing}
+  icon={<Avatar name="Me" />} description="Me" current tone="destructive" justify="center" />
+<TraceTimeline aria-label="Session" orientation="vertical" className="inset-y-2 w-14">
+  <TraceTimelinePreview lines={3}>{(t) => <Thumb t={t} />}</TraceTimelinePreview>
+</TraceTimeline>
+```
+
+**Pickers** (ColorField, a ColorPicker's popover, Combobox's field, FontPicker):
+
+```tsx
+// before
+<ColorField defaultValue="#7f5af0" />
+<ColorPicker defaultValue="#7f5af0"><Popover><ColorPickerTrigger /><ColorPickerContent /></Popover></ColorPicker>
+<ComboboxInput chips clearable clearLabel="Clear cities" placeholder="Add a city" />
+<FontPicker aria-label="Font" value={font} onValueChange={setFont} size="sm" side="left" />
+// now
+<ColorInput defaultValue="#7f5af0" />
+<ColorPicker defaultValue="#7f5af0"><ColorPickerTrigger /><ColorPickerContent /></ColorPicker>
+<ComboboxField>
+  <ComboboxChips><ComboboxInput placeholder="Add a city" /></ComboboxChips>
+  <ComboboxClear aria-label="Clear cities" />
+  <ComboboxTrigger />
+</ComboboxField>
+<FontPicker aria-label="Font" value={font} onValueChange={setFont}>
+  <FontPickerTrigger size="sm" />
+  <FontPickerContent side="left" />
+</FontPicker>
+```
+
+A plain combobox field is `<ComboboxField><ComboboxInput placeholder="Search" /><ComboboxTrigger /></ComboboxField>`, or `<ComboboxField />` alone.
+
+**Bars** (EditBar, DebugToolbar, IndexBar):
+
+```tsx
+// before
+<EditBar count={n} allFav={allFav} onFav={toggleFav} onDelete={remove} />
+<DebugToolbar size="compact" onAction={run} />
+<IndexBar avail={new Set(letters)} onLetter={jump} top={56} bottom={10} />
+// now
+<Toolbar variant="bar" aria-label="Edit" className="absolute inset-x-0 bottom-0">
+  <ToolbarButton disabled={!n} onClick={toggleFav}>{allFav ? 'Unfavorite' : 'Favorite'}</ToolbarButton>
+  <ToolbarText aria-live="polite">{n ? `${n} selected` : 'Select items'}</ToolbarText>
+  <ToolbarButton tone="destructive" disabled={!n} onClick={remove}>Delete</ToolbarButton>
+</Toolbar>
+<DebugToolbar variant="plain" size="sm" onAction={run} />
+<IndexBar items={alphabetItems(letters)} onJump={jump} className="top-14 bottom-2.5" />
+```
+
+**SplitViewStack** is a NavigationStack in the column:
+
+```tsx
+// before
+<SplitViewDetail>
+  <SplitViewStack resetKey={value.sidebar}>
+    <Albums />   {/* rows call useSplitViewStack().push(<AlbumPage a={a} />, { key: a.id }) */}
+  </SplitViewStack>
+</SplitViewDetail>
+// now
+<SplitViewDetail>
+  <NavigationStack resetKey={value.sidebar} renderPage={(key) => <AlbumPage value={key} />}>
+    <NavigationStackPage value="albums">
+      <NavigationStackBar>
+        <NavigationStackLeading><SplitViewToggle /></NavigationStackLeading>
+        <NavigationStackTitle>Recently Added</NavigationStackTitle>
+      </NavigationStackBar>
+      <NavigationStackContent>
+        <NavigationStackLargeTitle />
+        <AlbumGrid />   {/* a tile calls useNavigationStack().push(`album:${id}`) */}
+      </NavigationStackContent>
+    </NavigationStackPage>
+  </NavigationStack>
+</SplitViewDetail>
+```
+
+**Sidebar:**
+
+```tsx
+// before
+<Sidebar variant="overlay">
+  <Sidebar.Header><Sidebar.Workspace name="Northwind" detail="Sales" initial="N" /></Sidebar.Header>
+  <Sidebar.Content>
+    <Sidebar.Search />
+    <Sidebar.Section title="Pipeline">
+      <Sidebar.Item icon="inbox" label="Inbox" badge={6} active tone="var(--primary)" onClick={go} />
+    </Sidebar.Section>
+  </Sidebar.Content>
+</Sidebar>
+// now
+<Sidebar presentation="drawer">
+  <SidebarHeader><SidebarWorkspace title="Northwind" description="Sales" /></SidebarHeader>
+  <SidebarContent aria-label="Northwind">
+    <SidebarSearch shortcut="/" onClick={openSearch} />
+    <SidebarSection title="Pipeline">
+      <SidebarItem icon="tray" title="Inbox" trailing={6} current tint="var(--primary)" onClick={go} />
+    </SidebarSection>
+  </SidebarContent>
+</Sidebar>
+```
+
+The old icon keys map to icon names: `home` → `house`, `inbox` → `tray`, `box` → `cube`, `cal` → `calendar`, `user` → `person-bust`, `code` → `branch` or `terminal`, `search` → `magnifyingglass`. In a drawer, pressing an item now closes the drawer after its `onClick` (call `event.preventDefault()` to keep it open).
+
+**Tables** (ResultTable, RequestTable's controller, the SQL console):
+
+```tsx
+// before
+<ResultTable result={result} durationMs={ms} maxHeight="20rem" resizable />
+<RequestTable controller={createRequestTableController()} columns={[{ id: 'from', title: 'From' } as RequestColumn<Row>, 'status']} rows={rows} />
+<SqlConsole sidebar={false} transfer={false} headerActions={<Picker />} layout="stacked" />
+// now: the console renders its results; a host with rows of its own uses DataTable
+<DataTable aria-label="Result 1" rows={rows} columns={columns} selectionMode="none" toolbar={<Summary />} />
+<RequestTable controller={createDataTableController()} columns={[{ id: 'from', title: 'From' } as DataTableColumn<Row>, 'status']} rows={rows} />
+<SqlConsole>
+  <SqlConsoleHeader><Picker /></SqlConsoleHeader>
+  <SqlConsoleEditor />
+  <SqlConsoleResults />
+</SqlConsole>
+```
+
+**WorkbenchTheme** is a theme scope:
+
+```tsx
+// before
+<WorkbenchTheme appearance={appearance} tint={tint} className="p-4">…</WorkbenchTheme>
+const scheme = useWorkbenchAppearance()
+// now
+<ThemeScope scope="workbench" appearance={appearance} tint={tint} className="p-4">…</ThemeScope>
+const scheme = useScopeAppearance('workbench')
+```
+
+**Editors** (CodeEditor's line numbers, OpenCode's size and chrome):
+
+```tsx
+// before
+<CodeEditor onLineNumberClick={jump} lineNumberClickable={ran} lineNumberLabel={label} scrollToLine={line} />
+<OpenCode theme={appearance ?? 'dark'} className="rounded-none border-0" height={620} />
+// now
+<CodeEditor lineNumbers={{ onClick: jump, clickable: ran, label }} revealLine={line} />
+<OpenCode appearance={appearance} variant="plain" className="h-[620px]" />
+```
+
+**The composer's buttons, pills and messages:**
+
+```tsx
+// before
+<ComposerButton aria-label="Context"><Icon name="doc" /></ComposerButton>
+<PopoverTrigger render={<ComposerButton variant="pill" tint aria-label="Model: Opus" />}><ComposerPillLabel icon={glyph}>Opus</ComposerPillLabel></PopoverTrigger>
+<WbPopoverContent side="top">…</WbPopoverContent>
+<ComposerSelect aria-label="Effort" options={[{ id: 'low', label: 'Low' }]} tint menuClassName="min-w-60" />
+<MessageScroller items={messages.map((m) => ({ id: m.id, anchor: m.user, node: <Message m={m} /> }))} />
+<UserMessage images={[url]}>…</UserMessage>
+// now
+<Button variant="quiet" size="icon-sm" aria-label="Context"><Icon name="doc" /></Button>
+<PopoverTrigger render={<ComposerPill icon={glyph} aria-label="Model: Opus" className="text-primary" />}>Opus</PopoverTrigger>
+<PopoverContent variant="surface" palette="trigger" side="top">…</PopoverContent>
+<ComposerSelect aria-label="Effort" items={[{ value: 'low', label: 'Low' }]} className="text-primary" />
+<MessageScroller>
+  {messages.map((m) => <MessageScrollerItem key={m.id} value={m.id} anchor={m.user}><Message m={m} /></MessageScrollerItem>)}
+</MessageScroller>
+<UserMessage attachments={[{ id: 'a', name: 'shot.png', src: url, kind: 'image' }]}>…</UserMessage>
+```
+
+**FloatingChat and the chat container:**
+
+```tsx
+// before
+<ArtifactChatContainer chatSide="right" chatOpen={open} onChatOpenChange={setOpen} fabPosition="bottom-right"
+  tone="dark" appearance="glass" working={busy} onAdd={() => setBusy(false)}>
+  <ArtifactChatContainer.Content>…</ArtifactChatContainer.Content>
+  <ArtifactChatContainer.Chat>…</ArtifactChatContainer.Chat>
+  <ArtifactChatContainer.Composer><div style={{ padding: 8 }}><Composer /></div></ArtifactChatContainer.Composer>
+</ArtifactChatContainer>
+<FloatingSheet dismissible minimizable={false} detents={[0.5]} label="Chat" tone="dark" appearance="glass" fabPosition="bottom-left" />
+// now (the docks pad the composer: drop your own padding)
+<ArtifactChatContainer chatSide="end" open={open} onOpenChange={setOpen} fabAlign="end"
+  appearance="dark" variant="glass" working={busy} onComposingChange={(composing) => { if (composing) setBusy(false) }}>
+  <ArtifactChatContainerContent>…</ArtifactChatContainerContent>
+  <ArtifactChatContainerChat>…</ArtifactChatContainerChat>
+  <ArtifactChatContainerComposer><Composer /></ArtifactChatContainerComposer>
+</ArtifactChatContainer>
+<FloatingSheet collapse="hide" snapPoints={[0.5]} aria-label="Chat" appearance="dark" variant="glass" fabAlign="start" />
+```
+
+FloatingChat on its own is `<ArtifactChatContainer layout="floating">` over the page, or a sheet: `<FloatingSheet bodyAlign="end" aria-label="Chat"><FloatingSheetBody>{transcript}</FloatingSheetBody><FloatingSheetFoot>{composer}</FloatingSheetFoot></FloatingSheet>`. `minimizable={false}` is `collapse="none"`, `dismissible` is `collapse="hide"`; a `fabPosition` maps to `fabSide` and `fabAlign` (`bottom-right` → `fabAlign="end"`, `center-left` → `fabSide="start"`, `top-left` → `fabSide="top" fabAlign="start"`).
+
+**PencilKit:**
+
+```tsx
+// before
+<PencilCanvas ink={PK_INKS[ink]} width={PK_W[width].m} hint="Draw">
+  <PencilToolbar><ToolPicker value={tool} /><PencilToolbarDivider /><InkPicker value={ink} /><PencilActions /></PencilToolbar>
+</PencilCanvas>
+// now
+<PencilCanvas ink={ink} width={scale} emptyState="Draw">
+  <PencilToolbar className="absolute inset-x-2.5 bottom-3.5 mx-auto">
+    <PencilToolPicker value={tool} /><ToolbarSeparator /><PencilInkPicker value={ink} />
+    <PencilToolbarPinned><ToolbarSeparator /><PencilActions canClear={history.canClear} /></PencilToolbarPinned>
+  </PencilToolbar>
+</PencilCanvas>
+```
+
 ## Buttons and toggles
 
-[Button](https://blamy.github.io/ui/#/button), [PlainButton](https://blamy.github.io/ui/#/plain-button), [Toggle](https://blamy.github.io/ui/#/toggle), [ToggleGroup](https://blamy.github.io/ui/#/toggle-group), [Segmented](https://blamy.github.io/ui/#/segmented), [Switch](https://blamy.github.io/ui/#/switch), [Checkbox](https://blamy.github.io/ui/#/checkbox), [RadioGroup](https://blamy.github.io/ui/#/radio-group), [Slider](https://blamy.github.io/ui/#/slider), [Progress](https://blamy.github.io/ui/#/progress), [ProgressRing](https://blamy.github.io/ui/#/progress-ring), [Separator](https://blamy.github.io/ui/#/separator), [Label](https://blamy.github.io/ui/#/label), [Kbd](https://blamy.github.io/ui/#/kbd), [Avatar](https://blamy.github.io/ui/#/avatar), [PencilKit](https://blamy.github.io/ui/#/pencilkit).
+[Button](https://blamy.github.io/ui/#/button) (and its "Unstyled" section, for PlainButton), [Toggle and ToggleGroup](https://blamy.github.io/ui/#/toggle), [Segmented](https://blamy.github.io/ui/#/segmented), [Switch](https://blamy.github.io/ui/#/switch), [Checkbox](https://blamy.github.io/ui/#/checkbox), [RadioGroup](https://blamy.github.io/ui/#/radio-group), [Slider](https://blamy.github.io/ui/#/slider), [Progress](https://blamy.github.io/ui/#/progress), [ProgressRing](https://blamy.github.io/ui/#/progress-ring), [Separator](https://blamy.github.io/ui/#/separator), [Label](https://blamy.github.io/ui/#/label), [Kbd](https://blamy.github.io/ui/#/kbd), [Avatar](https://blamy.github.io/ui/#/avatar), [PencilKit](https://blamy.github.io/ui/#/pencilkit).
 
 | Module | 5.x | 6.0 |
 | --- | --- | --- |
 | `button` | `isPending` | Return a Promise from `onClick`: the button is pending (`data-pending`, `aria-busy`) until it settles. There is no `pending` prop. |
-| `button` | `ButtonProps` (react-aria props + `title`) | UI SDK `Button` props + `variant`, `size`, `active`. New: `focusableWhenDisabled`, `pendingAnnouncement`, `render`. `type` still defaults to `"button"`. |
-| `plain-button` | `PlainButton onPress` | `PlainButton onClick` (UI SDK `Button`, unstyled) |
-| `plain-button` | `PlainToggleButton isSelected / defaultSelected / onChange` | `pressed` / `defaultPressed` / `onPressedChange(pressed, details)`; in a ToggleGroup it takes `value` (was `id`) |
-| `plain-button` | `PlainButton`, `PlainToggleButton` components | UI SDK's `Button` and `Toggle` themselves, re-exported under those names (`PlainButton === Button`); same props, no wrapper in the tree |
-| `toggle` | `Toggle isSelected / defaultSelected / onChange` | `pressed` / `defaultPressed` / `onPressedChange(pressed, details)`. New: `ToggleIcon`, `createToggleController`. |
-| `toggle-group` | `selectionMode="single" \| "multiple"` | `multiple` (single by default) |
-| `toggle-group` | `selectedKeys` / `defaultSelectedKeys` (`Set`) | `value` / `defaultValue` (`string[]`) |
-| `toggle-group` | `onSelectionChange(keys)` | `onValueChange(value: string[], details)` |
-| `toggle-group` | `disallowEmptySelection` | `deselectable={false}` |
-| `toggle-group` | `ToggleGroupItem id` | `ToggleGroupItem value` |
-| `toggle-group` | sliding card `data-slot="toggle-group-indicator"` in each item | one `data-slot="selection-indicator"` in the group (filled single groups). Item slot is `toggle`. New: `createToggleGroupController`. |
+| `button` | `ButtonProps` (react-aria props + `title`) | UI SDK `Button` props + `variant` (`default`, `secondary`, `outline`, `ghost`, `quiet`, `contrast`, `destructive`, `link`), `size`. New: `focusableWhenDisabled`, `pendingAnnouncement`, `render`, `ButtonVariant`, `ButtonSize`. `type` still defaults to `"button"`. |
+| `button` | `active` (a quiet tool that stays on) | `Toggle variant="quiet" pressed` (see [the table above](#components-that-merged-moved-or-were-renamed)) |
+| `plain-button` | `PlainButton onPress` | UI SDK's `Button`, unstyled: `import { Button as SdkButton } from '@ui-sdk/react/button'`, `onClick` |
+| `plain-button` | `PlainToggleButton isSelected / defaultSelected / onChange` | UI SDK's `Toggle` (`import { Toggle as SdkToggle } from '@ui-sdk/react/toggle'`): `pressed` / `defaultPressed` / `onPressedChange(pressed, details)`; in a ToggleGroup it takes `value` (was `id`) |
+| `toggle` | `Toggle isSelected / defaultSelected / onChange` | `pressed` / `defaultPressed` / `onPressedChange(pressed, details)`. New: `variant="quiet"`, sizes `icon-sm` / `icon` / `icon-lg`, `ToggleIcon`, `createToggleController`. |
+| `toggle-group` → `toggle` | `ToggleGroup` from `@/components/ui/toggle-group` | the same names from `@/components/ui/toggle` |
+| `toggle` (ToggleGroup) | `selectionMode="single" \| "multiple"` | `multiple` (single by default) |
+| `toggle` (ToggleGroup) | `selectedKeys` / `defaultSelectedKeys` (`Set`) | `value` / `defaultValue` (`string[]`) |
+| `toggle` (ToggleGroup) | `onSelectionChange(keys)` | `onValueChange(value: string[], details)` |
+| `toggle` (ToggleGroup) | `disallowEmptySelection` | `deselectable={false}` |
+| `toggle` (ToggleGroup) | `ToggleGroupItem id` | `ToggleGroupItem value` |
+| `toggle` (ToggleGroup) | sliding card `data-slot="toggle-group-indicator"` in each item | one `data-slot="selection-indicator"` in the group (filled single groups), drawn with Segmented's track. Item slot is `toggle`. New: `createToggleGroupController`. |
 | `segmented` | `options={[{ id, label }]} value onChange(id)` | `SegmentedItem value` children, `value` / `defaultValue` / `onValueChange(value \| null, details)`. `SegmentedOption` removed. |
 | `segmented` | `aria-label` defaulted to `"Segmented control"` | No default: pass `aria-label` |
 | `segmented` | slots `segmented`, `segmented-indicator` | `segmented-control`, `segmented-control-item`, `segmented-control-indicator`. New: `createSegmentedControlController`. |
@@ -228,18 +864,24 @@ UI SDK's text controls listen to the native `input` event: `fireEvent.change(inp
 | `slider` | `minValue` / `maxValue`, `formatOptions` | `min` / `max`, `format` (Intl options or a function) |
 | `slider` | `onChange` / `onChangeEnd` | `onValueChange(value, details)` / `onValueCommit(value, details)` |
 | `slider` | `SliderTrack` (hit area, rail and fill) `> SliderThumb` | `SliderControl > SliderTrack > SliderIndicator + SliderThumb`. `SliderOutput` is `SliderValue`. New: `thumbLabels`, `createSliderController`. |
+| `slider` | `tone="onDark" \| "onLight"`, `SliderTone`; `trackColor` / `fillColor` / `thumbColor` | `variant="on-dark" \| "on-light"`, `SliderVariant`; the `--bl-slider-track` / `--bl-slider-fill` / `--bl-slider-thumb` variables in a class |
+| `segmented`, `switch` | one size | `size: 'sm' \| 'default' \| 'lg'` on Segmented (36px by default; the 5.x size is `sm`), `size: 'default' \| 'sm'` on Switch; replace `scale-*` hacks with `size="sm"` |
 | `progress`, `progress-ring` | `minValue` / `maxValue`, `formatOptions`, `valueLabel`, `isIndeterminate` | `min` / `max`, `format`, `getValueLabel`, leave `value` out. New parts: `ProgressLabel`, `ProgressValue`, `ProgressTrack`, `ProgressIndicator`. ProgressRing's slot is `progress`. |
 | `separator` | `elementType="div"` | `render={<div />}`; new `decorative` |
 | `label` | auto-wired by its field's context | a native `<label>`: `htmlFor`, or wrap the control; inside a `Field`, use `FieldLabel`. New variant `control`. |
 | `kbd` | react-aria `Keyboard` (a shortcut slot inside a menu item) | a plain `<kbd>`; new `keys="mod+k"` prop. In a menu, use the item's `shortcut`. |
 | `avatar` | `src` drew an `<img>` over the initials, removed on error | `AvatarImage` shows once loaded; initials show while loading and on failure. New: `AvatarImage`, `AvatarFallback`, `onLoadingStatusChange`. |
-| `avatar` | `AvatarGroup` overflow `data-slot="avatar-overflow"` | `data-overflow` attribute; its trigger slot is `dropdown-menu-trigger` |
+| `avatar` | `c={{ f: 'Ada', l: 'Lovelace' }}`, `color` | `name="Ada Lovelace"` (the hue hashes the same letters), `tint` |
+| `avatar` → `avatar-group` | `AvatarGroup` from `@/components/ui/avatar`, a menu by default, `onSelect(index)` | `@/components/ui/avatar-group`; `menu` is opt-in, `onAction(value, details)` with the avatar's `key` as `value` |
+| `avatar-group` | `AvatarGroup` overflow `data-slot="avatar-overflow"` | `data-overflow` attribute; with `menu`, its trigger slot is `dropdown-menu-trigger` |
 | `avatar` | with `card`: a `<span role="img">` that only a pointer could open | the root is a `<button type="button">` named after the person, in the Tab order; focus opens the card after the delay, Escape closes it. Tests: `getByRole('img', { name })` → `getByRole('button', { name })` |
 | `avatar` | status dot named `online` / `idle` / `dnd` / `offline` | `Online` / `Idle` / `Do not disturb` / `Offline` |
 | `avatar` | `AvatarGroup menu={false}` with no `label`: a group with no name | named "N people" unless `label`, like the menu variant |
-| `pencilkit` | `ToolPicker` / `InkPicker` / `WidthPicker onChange` | `onValueChange(value, details)`; `PencilToolButton onClick`, `disabled` |
-| `pencilkit` | `PencilCanvas onStrokesChange(strokes, source: 'draw' \| 'erase')`, `PencilStrokesChangeSource` | `onStrokesChange(strokes, details)` with `details.reason`; types `PencilStrokesChangeDetails`, `PencilStrokesChangeReason` |
-| `pencilkit` | `PencilToolbar` a plain `<div>`, `PencilActions` a `role="group"` usable anywhere | `PencilToolbar` is a UI SDK `Toolbar` ("Drawing tools", one tab stop); `PencilActions` is a `ToolbarGroup` and must sit inside a `PencilToolbar`; disabled actions use `aria-disabled` |
+| `pencilkit` | `ToolPicker` / `InkPicker` / `WidthPicker` `value` (an index), `onChange` | `PencilToolPicker` / `PencilInkPicker` / `PencilWidthPicker`: `value` is the tool, the ink color or the width's scale; `defaultValue`, `onValueChange(value, details)`. The pickers are the kit's `ToggleGroup`. |
+| `pencilkit` | `PencilToolButton`, `PencilToolbarDivider` | the kit's `ToolbarButton` / `ToggleGroupItem` and `ToolbarSeparator` |
+| `pencilkit` | `PencilCanvas onStrokesChange(strokes, source: 'draw' \| 'erase')`, `PencilStrokesChangeSource` | `onStrokesChange(strokes, details)` with `details.reason`; types `PencilStrokesChangeDetails`, `PencilStrokesChangeReason`. A `PencilCanvas` inside a `Canvas` is the board's drawing layer. |
+| `pencilkit` | `PencilToolbar` a plain `<div>` pinned to the canvas's bottom, `PencilActions` a `role="group"` usable anywhere | `PencilToolbar` is the kit's `Toolbar` (`variant="floating"`, "Drawing tools", one tab stop) in the flow: position it with classes; `PencilActions` is a `ToolbarGroup` and must sit inside a `PencilToolbar`, usually in `PencilToolbarPinned`; disabled actions use `aria-disabled` |
+| `pencilkit` | `usePencilHistory` kept a redo stack of strokes; Clear lost them | snapshot history: an erase or a clear is one undoable step; it also returns `canClear` |
 
 ```tsx
 // 5.x
@@ -278,7 +920,7 @@ For Checkbox and Radio, a `className` that styled the old row (gap, text size, o
 
 ## Forms and text fields
 
-[Field](https://blamy.github.io/ui/#/field), [Input](https://blamy.github.io/ui/#/input), [Textarea](https://blamy.github.io/ui/#/textarea), [SearchField](https://blamy.github.io/ui/#/search-field), [Form](https://blamy.github.io/ui/#/form), [FilterInput](https://blamy.github.io/ui/#/filter-input), [SqlEditor](https://blamy.github.io/ui/#/sql-console), [Spreadsheet](https://blamy.github.io/ui/#/spreadsheet).
+[Field](https://blamy.github.io/ui/#/field), [Input](https://blamy.github.io/ui/#/input), [Textarea](https://blamy.github.io/ui/#/textarea), [SearchInput](https://blamy.github.io/ui/#/search-input) (was SearchField), [Forms](https://blamy.github.io/ui/#/form), FilterInput (on [Filter](https://blamy.github.io/ui/#/filter)), [SqlEditor](https://blamy.github.io/ui/#/sql-console), [Spreadsheet](https://blamy.github.io/ui/#/spreadsheet).
 
 `TextField` is gone. Its module is now `@/components/ui/field` (registry item `field`; the old item and file are deleted, with no alias), and `Field` owns only `name`, `disabled` and `invalid`: everything about the value moves onto the control.
 
@@ -286,21 +928,24 @@ For Checkbox and Radio, a `className` that styled the old row (gap, text size, o
 | --- | --- | --- |
 | `text-field` → `field` | `import … from '@/components/ui/text-field'` | `import … from '@/components/ui/field'` |
 | `field` | `TextField`, `TextFieldProps` | `Field` (see the table below) |
-| `field` | `Label` inside a field | `FieldLabel` (same `variant`s) |
+| `field` | `Label` inside a field | `FieldLabel` (same `variant`s; `field` is now the default, so `variant="field"` can go) |
 | `field` | `FieldDescription` (a `<span>`) | `FieldDescription` (a `<p>`, `m-0`); right inside a `FieldSet` it describes the set |
 | `field` | `FieldError` children `(validation) => validation.validationErrors…` | `FieldError` children `(state) => state.message`; `match?: boolean \| ValidityKey`. A static message needs `invalid` on the Field. |
 | `field` | — | New: `FieldSet`, `FieldLegend`, `FieldGroup`, `FieldControl` (`render={<select />}` for a native control), `useFieldControl` |
 | `input` | react-aria `Input` | UI SDK `Input`: native `onChange` still works; new `onValueChange(value, details)`, `controller`, `render`, `createInputController` |
 | `input` | `data-focused`, `data-focus-visible`, `data-hovered`, `data-invalid` on a bare input | `focus:`, `focus-visible:`, `hover:`, `aria-invalid:`; `data-filled`, `data-disabled`, `data-readonly`, `data-required` (and `data-invalid` / `data-valid` / `data-focused` inside a `Field`) |
 | `textarea` | react-aria `TextArea` | UI SDK `Textarea`; new `autoResize`, `submitShortcut` (`"enter"` \| `"mod+enter"`), `onSubmit(value, details)` |
-| `search-field` | `onChange(value)` | `onValueChange(value, details)`; `reason` is `input-change`, `clear-press` (the button and Escape) or `imperative`. `onChange` is now the input's native handler. |
-| `search-field` | `onSubmit(value)` | `onSubmit(value, details)`: `details` is UI SDK's change details (`reason` `enter-key` or `imperative`, `event`, `source`, `cancel()`); with `onSubmit`, Enter no longer submits a surrounding form, unless `details.cancel()` leaves the key to it. Agents can `submit` the field. New type `SearchFieldSubmitReason`. |
-| `search-field` | a fixed prop list | every `Input` prop goes to the input (`disabled`, `name`, `controller`, `id`, `ref`…); `className` / `style` still style the pill |
-| `form` | react-aria `Form` (`validationErrors`, `validationBehavior`) | a native `<form>` (`flex flex-col gap-5`); those two props are gone |
+| `search-field` → `search-input` | `SearchField`, `SearchFieldProps` | `SearchInput`, `SearchInputProps` (slot `search-input`); new `size` (`sm` 32px, `default` 36px), `icon`, `clearable` |
+| `search-input` | `onChange(value)` | `onValueChange(value, details)`; `reason` is `input-change`, `clear-press` (the button and Escape) or `imperative`. `onChange` is now the input's native handler. |
+| `search-input` | `onSubmit(value)` | `onSubmit(value, details)`: `details` is UI SDK's change details (`reason` `enter-key` or `imperative`, `event`, `source`, `cancel()`; type `SearchInputSubmitDetails`); with `onSubmit`, Enter no longer submits a surrounding form, unless `details.cancel()` leaves the key to it. Agents can `submit` the field. |
+| `search-input` | a fixed prop list | every `Input` prop goes to the input (`disabled`, `name`, `controller`, `id`, `ref`…); `className` / `style` still style the pill |
+| `form` | react-aria `Form` (`validationErrors`, `validationBehavior`) | removed: `<FieldGroup className="gap-5" render={<form onSubmit={save} />}>`, a native `<form>`; those two props are gone |
 | `form` | `FormSection title description` | `FieldSet` + `FieldLegend` + `FieldDescription` from `field`; slot `form-section` → `field-set` |
 | `filter-input` | `onValueChange(text)` | `onValueChange(text, details)` |
-| `filter-input` | the result read out by a `role="status"` region inside it | UI SDK's `announce()` (`[data-ui-sdk-announcer]`); the input's `aria-describedby` is the hint only |
-| `sql-editor` | `onChange`, `isDisabled`, `isReadOnly`, `isRunning` | `onValueChange(value, details)`, `disabled`, `readOnly`, `running` |
+| `filter-input` | the result read out by a `role="status"` region inside it | UI SDK's `announce()` (`[data-ui-sdk-announcer]`); the input's `aria-describedby` is the hint only. The box is a `SearchInput` (`role="searchbox"`) |
+| `filter-input` | `query` (the parser options), `useFilterQuery({ debounce, now })` | `parse`; `debounceMs`, `reference` |
+| `sql-editor` | `onChange`, `isDisabled`, `isReadOnly`, `isRunning` | `onValueChange(value, details)`, `disabled`, `readOnly`, `pending` (`data-pending`) |
+| `sql-editor` | `size`, `footer`, `actions`, `runLabel` | `rows` (default 8); the footer is the children: `<SqlEditorFooter>{actions}</SqlEditorFooter>`, `<SqlEditorRun>Label</SqlEditorRun>`, `{false}` for none |
 | `sql-editor` | Run on Ctrl+Enter or ⌘+Enter everywhere | ⌘+Enter on Apple platforms, Ctrl+Enter elsewhere (`submitShortcut="mod+enter"`) |
 | `sql-editor` | textarea slot `sql-editor-input` | `textarea` (select `[data-slot=sql-editor] textarea`) |
 | `sql-editor` | ⌥↑ / ⌥↓ step through `history`; Escape brings the draft back | ↑ with the caret on the first line and ↓ on the last (no modifier), UI SDK's `createInputHistory`; ↓ past the newest brings the draft back, and Escape is no longer claimed. A step reports `reason: 'imperative'` (Textarea has no `history-key` reason yet); cancel it in `onValueChange` and the key goes to the browser. |
@@ -312,6 +957,7 @@ For Checkbox and Radio, a `className` that styled the old row (gap, text size, o
 | `spreadsheet` | — | New: `columnWidths` / `defaultColumnWidths` / `onColumnWidthsChange(widths, details)`, types `SpreadsheetValueChangeReason`, `SpreadsheetColumnWidthsChangeReason` |
 | `spreadsheet` | the grid focused with `aria-activedescendant`; a `[data-slot=spreadsheet-selection]` overlay; A1 selected before focus | roving focus on the `gridcell`s (read `document.activeElement`); cells carry `aria-selected`, `data-selected`, `data-active` and `data-range-edge` (`top right bottom left`) to style the outline from; nothing is active until focus enters. The sort result is announced with `announce()`. |
 | `spreadsheet` | a paste without tabs guessed a CSV delimiter | a paste is tab-separated, as spreadsheets copy |
+| `spreadsheet` | `onSort(info)`, `footer`, `columnName` | `onSorted(info)` (after a sort ran), or a controlled `sort` / `defaultSort` / `onSortChange(sort, details)`; `statusBar`; removed. New: `emptyState`, `density="default"` |
 
 | On `<TextField>` in 5.x | In 6.0 |
 | --- | --- |
@@ -333,7 +979,7 @@ For Checkbox and Radio, a `className` that styled the old row (gap, text size, o
 
 // 6.0
 <Field name="email" invalid={taken ? true : undefined} disabled={busy}>
-  <FieldLabel variant="field">Email</FieldLabel>
+  <FieldLabel>Email</FieldLabel>
   <Input type="email" required value={email} onValueChange={setEmail} placeholder="you@example.com" />
   <FieldDescription>We never share it.</FieldDescription>
   <FieldError />
@@ -345,18 +991,18 @@ A custom rule and a server error:
 ```tsx
 const problem = username.length < 3 ? 'Too short.' : ''
 
-<Form onSubmit={save}>
+<FieldGroup className="gap-5" render={<form onSubmit={save} />}>
   <Field name="username" invalid={problem ? true : undefined}>
-    <FieldLabel variant="field">Username</FieldLabel>
+    <FieldLabel>Username</FieldLabel>
     <Input value={username} onValueChange={setUsername} />
     <FieldError>{problem}</FieldError>
   </Field>
   <Field name="email" invalid={errors.email ? true : undefined}>
-    <FieldLabel variant="field">Email</FieldLabel>
+    <FieldLabel>Email</FieldLabel>
     <Input type="email" required onValueChange={() => setErrors({})} />
     <FieldError>{(state) => errors.email || state.message}</FieldError>
   </Field>
-</Form>
+</FieldGroup>
 ```
 
 ```tsx
@@ -370,31 +1016,34 @@ const problem = username.length < 3 ? 'Too short.' : ''
 </FieldSet>
 ```
 
-Other fields that borrowed `FieldDescription` and `FieldError` from `text-field` (DateField, DatePicker, Select, Combobox, RadioGroup, ColorField, TimeInput, CronEditor) import them from `@/components/ui/field` and sit inside a `<Field>`.
+Other fields that borrowed `FieldDescription` and `FieldError` from `text-field` (DateInput, DatePicker, Select, Combobox, RadioGroup, ColorInput, NaturalTimeInput, FileUpload, MarkdownEditor) import them from `@/components/ui/field` and sit inside a `<Field>`; none of them takes a `label`, `error` or `invalid` of its own any more. CronEditor has two text boxes and a toggle group, so it keeps its own labels: group it in a `FieldSet` with a `FieldLegend`.
+
+`Form` is gone: a form is a `FieldGroup` rendered as a `<form>`. `FieldGroup` has a `gap-3`, so add the 5.x form's `gap-5` with a class, and put the form's own props (`onSubmit`, `action`, `noValidate`) on the `<form>` in `render`.
 
 ## Menus, selects and lists
 
-[DropdownMenu](https://blamy.github.io/ui/#/dropdown-menu), [ContextMenu](https://blamy.github.io/ui/#/context-menu), [Select](https://blamy.github.io/ui/#/select), [Combobox](https://blamy.github.io/ui/#/combobox), [Listbox](https://blamy.github.io/ui/#/list-box), [Breadcrumb](https://blamy.github.io/ui/#/breadcrumb), [TailscaleMenu](https://blamy.github.io/ui/#/tailscale-menu).
+[DropdownMenu](https://blamy.github.io/ui/#/dropdown-menu) (with its "Context menus" section, for ContextMenu), [Select](https://blamy.github.io/ui/#/select), [Combobox](https://blamy.github.io/ui/#/combobox), [Listbox](https://blamy.github.io/ui/#/listbox), [Breadcrumb](https://blamy.github.io/ui/#/breadcrumb), the Tailscale panel (on [Sign in with Tailscale](https://blamy.github.io/ui/#/tailscale-login)).
 
 Rules for the whole family: items take `value` (was `id`) and `label` (was `textValue`); open state is on the root; sections are `…Group` + `…GroupLabel`; render-function collection children are gone (map children, or pass `items` to the root with an **empty** content part); `popoverClassName` and `className` merge into the content part's `className` (it is the popup and the list in one element); the open, active row is `data-highlighted`.
 
 | Module | 5.x | 6.0 |
 | --- | --- | --- |
-| `dropdown-menu` | `DropdownMenu` = `MenuTrigger`, first pressable child is the trigger | `DropdownMenu` root (`open`, `onOpenChange`, `onAction(value, details)`, `items`, `presentation`, `modal`, `loop`, `controller`…) + `DropdownMenuTrigger` (`className={buttonVariants({ … })}`) |
-| `dropdown-menu` | `DropdownMenuContent aria-label onAction selectionMode selectedKeys disabledKeys items placement popoverClassName` | `DropdownMenuContent side align sideOffset alignOffset finalFocus keepMounted className`; `onAction` moves to the root (and sees submenu rows); no `aria-label` needed; `disabled` on each item |
+| `dropdown-menu` | `DropdownMenu` = `MenuTrigger`, first pressable child is the trigger | `DropdownMenu` root (`open`, `onOpenChange`, `onAction(value, details)`, `items`, `presentation`, `modal`, `loop`, `controller`…) + `DropdownMenuTrigger` (`render={<Button … />}`) |
+| `dropdown-menu` | `DropdownMenuContent aria-label onAction selectionMode selectedKeys disabledKeys items placement popoverClassName` | `DropdownMenuContent side align sideOffset alignOffset finalFocus keepMounted className`, and new `size` (`sm` for a dense desktop menu) and `palette` (`trigger` paints it from the trigger's theme scope); `onAction` moves to the root (and sees submenu rows); no `aria-label` needed; `disabled` on each item |
 | `dropdown-menu` | `DropdownMenuItem id variant="destructive" shortcut={<DropdownMenuShortcut>⌘R</…>} onAction href isDisabled` | `value`, `destructive`, `shortcut="mod+r"` (drawn per platform, sets `aria-keyshortcuts`), `onSelect(event)`, `render={<a href />}`, `disabled`, `closeOnSelect` |
 | `dropdown-menu` | selectable items via `selectionMode` | `DropdownMenuCheckboxItem` (`checked`, `onCheckedChange`) and `DropdownMenuRadioGroup` (`value`, `onValueChange`) + `DropdownMenuRadioItem` |
 | `dropdown-menu` | `DropdownMenuSection title`, `DropdownMenuLabel` | `DropdownMenuGroup` + `DropdownMenuGroupLabel` |
 | `dropdown-menu` | `DropdownMenuSub` wrapping an item and a content | `DropdownMenuSub` wrapping `DropdownMenuSubTrigger` + `DropdownMenuSubContent` |
-| `dropdown-menu` | `dropdownMenuItemVariants({ variant })`, generic `…Props<T>` | `dropdownMenuItemVariants()` (destructive is `data-destructive:`), non-generic props. New: `DropdownMenuItems`, `createMenuController`, `MenuData`. |
-| `context-menu` | `ContextMenu` was the area `div` (`className`, `isDisabled`, `longPressDelay`, `anchor`) | `ContextMenu` root (no element) + `ContextMenuTrigger` (the area: `className`, `disabled`); `longPressDelay` and `anchor` removed. The area is no longer `relative`. |
-| `context-menu` | `ContextMenuSection`, `ContextMenuLabel` | `ContextMenuGroup`, `ContextMenuGroupLabel`; new checkbox, radio and sub parts as in DropdownMenu |
+| `dropdown-menu` | `dropdownMenuItemVariants({ variant })`, generic `…Props<T>` | `dropdownMenuItemVariants()` (destructive is `data-destructive:`), non-generic props. New: `DropdownMenuItems`, `createDropdownMenuController`, `DropdownMenuData` (items take `icon` and `description`). |
+| `context-menu` → `dropdown-menu` | `ContextMenu` was the area `div` (`className`, `isDisabled`, `longPressDelay`, `anchor`) | a `DropdownMenu` root (no element) + `DropdownMenuContextTrigger` (the area: `className`, `disabled`) + `DropdownMenuContent`; `longPressDelay` and `anchor` removed. The area is no longer `relative`. |
+| `context-menu` → `dropdown-menu` | `ContextMenuItem`, `ContextMenuSection`, `ContextMenuLabel`, `ContextMenuSeparator`, `ContextMenuShortcut`, `ContextMenuSub` | `DropdownMenuItem`, `DropdownMenuGroup`, `DropdownMenuGroupLabel`, `DropdownMenuSeparator`, `DropdownMenuShortcut`, `DropdownMenuSub`; one set of parts for both menus |
 | `select` | `Select` rendered a label/trigger/error column; `onChange(key)`, `selectionMode`, `isInvalid`, `className` | `Select` renders no element: wrap it in a `Field`. `onValueChange(value \| null, details)`, `multiple`, `items`, `disabled`, `required`, `readOnly`, `name`… |
 | `select` | `Label` child | `FieldLabel` in the `Field`, `SelectLabel`, or `aria-label` on `SelectTrigger` |
 | `select` | `SelectTrigger` role `button` | role `combobox` |
-| `select` | `SelectContent items placement popoverClassName renderEmptyState` | `SelectContent side align sideOffset keepMounted className`; `items` on the root |
+| `select` | `SelectContent items placement popoverClassName renderEmptyState` | `SelectContent side align sideOffset keepMounted className` (+ `size`, `palette`); `items` on the root. `SelectTrigger size` gains `lg` |
 | `select` | `SelectItem id textValue isDisabled`, `SelectSection title` | `SelectItem value label disabled`, `SelectGroup` + `SelectGroupLabel`. New: `SelectSeparator`, `createSelectController`. |
 | `combobox` | `ComboBox`, `ComboBoxInput`, `ComboBoxContent`, `ComboBoxItem`, `ComboBoxSection` | `Combobox`, `ComboboxInput`, `ComboboxContent`, `ComboboxItem`, `ComboboxGroup` + `ComboboxGroupLabel` (lower-case **b**, no alias) |
+| `combobox` | `ComboBoxInput` drew the filled field, the chevron, chips and the clear button | `ComboboxField` (the box, `size`) holds a bare `ComboboxInput`, `ComboboxTrigger` (the chevron), `ComboboxClear` and `ComboboxChips`; `<ComboboxField />` alone is the input and the chevron |
 | `combobox` | the root rendered a label column | no element: wrap it in a `Field` |
 | `combobox` | `defaultItems` / `items` + render function, `defaultFilter` | `items` (filtered by `filter`, default `'contains'` on `label` + `keywords`; `filter={false}` shows them as given) |
 | `combobox` | `inputValue` / `onInputChange` | `query` / `defaultQuery` / `onQueryChange(query, details)` |
@@ -402,11 +1051,12 @@ Rules for the whole family: items take `value` (was `id`) and `label` (was `text
 | `combobox` | `allowsEmptyCollection` + `renderEmptyState` | `<ComboboxEmpty>` beside `<ComboboxList>` in the content |
 | `combobox` | `menuTrigger` | removed; open on focus with a controller's `open()` |
 | `combobox` | chevron slot `combobox-button` | `combobox-trigger`. New: `ComboboxLabel`, `ComboboxSeparator`, `createComboboxController`. |
-| `list-box` | `selectionMode` (default `none`), `selectedKeys`, `onSelectionChange`, `disallowEmptySelection`, `onAction`, `items` + render function | always selects (single by default): `value` / `onValueChange`, `multiple`, `activation`, `deselectable`, `items`. In a single list the arrow keys select; pass `activation="manual"` if moving must not change the value. |
-| `list-box` | `ListBox`, `ListBoxItem`, `ListBoxProps`, `ListBoxItemProps`, `listBoxVariants`, `listBoxItemVariants` | `Listbox`, `ListboxItem`, `ListboxProps`, `ListboxItemProps`, `listboxVariants`, `listboxItemVariants` (UI SDK's spelling, lower-case **b**; the module stays `@/components/ui/list-box`) |
-| `list-box` | `ListBoxItem id textValue isDisabled onAction href` | `value`, `label`, `disabled`; a per-item action is an `onClick` on the item, or a menu |
-| `list-box` | `ListBoxSection`, `ListBoxHeader` | `ListboxGroup`, `ListboxGroupLabel`. New: `ListboxSeparator`, `createListboxController`. |
-| `breadcrumb` | `onPress` on entries, `id: Key` | `onClick`, `id: string \| number` |
+| `list-box` → `listbox` | `selectionMode` (default `none`), `selectedKeys`, `onSelectionChange`, `disallowEmptySelection`, `onAction`, `items` + render function | always selects (single by default): `value` / `onValueChange`, `multiple`, `activation`, `deselectable`, `items`. In a single list the arrow keys select; pass `activation="manual"` if moving must not change the value. |
+| `list-box` → `listbox` | `ListBox`, `ListBoxItem`, `ListBoxProps`, `ListBoxItemProps`, `listBoxVariants`, `listBoxItemVariants` from `@/components/ui/list-box` | `Listbox`, `ListboxItem`, `ListboxProps`, `ListboxItemProps`, `listboxVariants`, `listboxItemVariants` from `@/components/ui/listbox` (UI SDK's spelling, lower-case **b**) |
+| `listbox` | `ListBoxItem id textValue isDisabled onAction href variant` | `value`, `label`, `disabled` (the item follows the list's `variant`); a per-item action is an `onClick` on the item, or a menu |
+| `listbox` | `ListBoxSection`, `ListBoxHeader` | `ListboxGroup`, `ListboxGroupLabel`. New: `ListboxSeparator`, `createListboxController`. |
+| `breadcrumb` | `onPress` on entries, `id: Key` | `onClick(event)` (`preventDefault()` routes an `href` yourself), `id: string \| number` |
+| `breadcrumb` | an entry's sibling picker `items`, `selectedId`; `BreadcrumbEllipsis label` | `siblings`, `currentSibling`; `aria-label` |
 | `breadcrumb` | react-aria `Link`s through a `RouterProvider` | native `<a href>` links (full navigation unless something above intercepts them); for client routing give the entry `onClick={() => navigate(path)}` and no `href` |
 | `breadcrumb` | `BreadcrumbEntry.label: ReactNode` + `textValue` for a rich label | `label: string`, the plain-text name (menus type-select by it); rich content goes in the new `children`. `{ label: <b>ui</b>, textValue: 'ui' }` becomes `{ label: 'ui', children: <b>ui</b> }`. `BreadcrumbItem label` is a string too. |
 | `breadcrumb` | collapsing measured in React effects | the `breadcrumb` primitive (`lib/breadcrumb-primitive.ts`): root `data-collapsed` while items are hidden, `data-current` on the last shown item, and an agent entry named by `aria-label` with `activate(value)` |
@@ -427,7 +1077,7 @@ Rules for the whole family: items take `value` (was `id`) and `label` (was `text
 
 // 6.0
 <DropdownMenu onAction={(value) => run(value)}>
-  <DropdownMenuTrigger className={buttonVariants({ variant: 'secondary', size: 'icon' })} aria-label="More">
+  <DropdownMenuTrigger render={<Button variant="secondary" size="icon" />} aria-label="More">
     <Icon name="ellipsis" />
   </DropdownMenuTrigger>
   <DropdownMenuContent>
@@ -452,16 +1102,16 @@ A menu from data: `<DropdownMenu items={branches.map((b) => ({ value: b.name, la
   </ContextMenuContent>
 </ContextMenu>
 
-// 6.0
-<ContextMenu onAction={run}>
-  <ContextMenuTrigger className="rounded-xl" disabled={locked}><Tile /></ContextMenuTrigger>
-  <ContextMenuContent aria-label="Tile actions">
-    <ContextMenuItem value="copy">Copy</ContextMenuItem>
-  </ContextMenuContent>
-</ContextMenu>
+// 6.0: a context menu is a DropdownMenu opened by its context trigger
+<DropdownMenu onAction={run}>
+  <DropdownMenuContextTrigger className="rounded-xl" disabled={locked}><Tile /></DropdownMenuContextTrigger>
+  <DropdownMenuContent aria-label="Tile actions">
+    <DropdownMenuItem value="copy">Copy</DropdownMenuItem>
+  </DropdownMenuContent>
+</DropdownMenu>
 ```
 
-Give `ContextMenuTrigger` `tabIndex={0}` if nothing inside it is focusable, so the menu key and Shift+F10 reach it.
+Give `DropdownMenuContextTrigger` `tabIndex={0}` if nothing inside it is focusable, so the menu key and Shift+F10 reach it. When the context trigger's own gesture opened the menu, focus goes back to the element that was pressed.
 
 ```tsx
 // 5.x
@@ -474,7 +1124,7 @@ Give `ContextMenuTrigger` `tabIndex={0}` if nothing inside it is focusable, so t
 
 // 6.0
 <Field invalid={bad ? true : undefined} className="w-60">
-  <FieldLabel variant="field">Repeat</FieldLabel>
+  <FieldLabel>Repeat</FieldLabel>
   <Select items={repeats.map((r) => ({ value: r.id, label: r.name }))} value={repeat} onValueChange={setRepeat}>
     <SelectTrigger />
     <SelectContent align="end" />
@@ -495,9 +1145,12 @@ Give `ContextMenuTrigger` `tabIndex={0}` if nothing inside it is focusable, so t
 
 // 6.0
 <Field>
-  <FieldLabel variant="field">Assignee</FieldLabel>
+  <FieldLabel>Assignee</FieldLabel>
   <Combobox items={people.map((p) => ({ value: p.id, label: p.name, keywords: [p.email] }))} value={id} onValueChange={setId}>
-    <ComboboxInput placeholder="Search the team" />
+    <ComboboxField>
+      <ComboboxInput placeholder="Search the team" />
+      <ComboboxTrigger />
+    </ComboboxField>
     <ComboboxContent>
       <ComboboxEmpty>No one matches.</ComboboxEmpty>
       <ComboboxList />
@@ -525,38 +1178,42 @@ A `Selection` becomes a `string[]` (`'all'` has no equivalent: pass every value)
 | `dropdown-menu`, `dropdown-menu-content` | `menu-content` |
 | `dropdown-menu-item` | `menu-item`, `menu-checkbox-item`, `menu-radio-item`; a submenu row `menu-trigger` |
 | `dropdown-menu-section`, `dropdown-menu-label`, `dropdown-menu-separator`, `dropdown-menu-shortcut` | `menu-group` (`menu-radio-group`), `menu-group-label`, `menu-separator`, `menu-shortcut` |
-| `context-menu` | `menu-context-trigger` |
+| `context-menu` | `menu-context-trigger` (on `DropdownMenuContextTrigger`) |
 | `select` (root) | none; `select-trigger`, `select-value`, `select-content`, `select-item`, `select-group`, `select-group-label`, `select-separator` |
-| `combobox` (root), `combobox-button` | none, `combobox-trigger`; `combobox-input` is the `<input>`; new `combobox-list`, `combobox-empty`, `combobox-group` |
+| `combobox` (root), `combobox-button` | none, `combobox-trigger`; `combobox-input` is the `<input>`; new `combobox-field`, `combobox-list`, `combobox-empty`, `combobox-group` |
 | `list-box`, `list-box-item`, `list-box-section`, `list-box-header` | `listbox`, `listbox-item`, `listbox-group`, `listbox-group-label`, `listbox-separator` |
 
 ## Overlays
 
 [Popover](https://blamy.github.io/ui/#/popover), [Tooltip](https://blamy.github.io/ui/#/tooltip), [HoverCard](https://blamy.github.io/ui/#/hover-card), [Dialog](https://blamy.github.io/ui/#/dialog), [Sheet](https://blamy.github.io/ui/#/sheet), [Passkey vault](https://blamy.github.io/ui/#/passkey-vault).
 
-Every overlay is a root + a trigger part + a content part. The trigger has no look of its own: move the old child Button's `variant` and `size` into `className={buttonVariants({ … })}` on the trigger and its children into the trigger. Modal overlays need an explicit **backdrop** part for the scrim (`DialogBackdrop`, `AlertDialogBackdrop`, `SheetBackdrop`); without one there is no dim. Render-function children `{({ close }) => …}` are gone: close with a Close part (`DialogClose`, `AlertDialogClose`, `PopoverClose`, `SheetClose`), which takes `action` (runs first; a returned Promise keeps the overlay open and the part pending) and `value` (comes back as `details.returnValue`), or with a controller.
+Every overlay is a root + a trigger part + a content part. The trigger has no look of its own: move the old child Button into `render={<Button variant="…" size="…" />}` on the trigger and its children into the trigger. Modal overlays need an explicit **backdrop** part for the scrim (`DialogBackdrop`, `AlertDialogBackdrop`, `SheetBackdrop`); without one there is no dim. Render-function children `{({ close }) => …}` are gone: close with a Close part (`DialogClose`, `AlertDialogClose`, `PopoverClose`, `SheetClose`), which takes `action` (runs first; a returned Promise keeps the overlay open and the part pending) and `value` (comes back as `details.returnValue`), or with a controller.
 
 | Module | 5.x | 6.0 |
 | --- | --- | --- |
 | `popover` | `PopoverTrigger` wrapper with `isOpen` / `onOpenChange` | `Popover` root (`open`, `onOpenChange`, `modal`, `openOnHover`, `delay`, `closeDelay`, `presentation`, `controller`, `container`) + `PopoverTrigger` part |
 | `popover` | `Popover` = a bare styled surface (used with a `Dialog` or `ListBox` inside) | removed as a surface: `<PopoverContent variant="surface">` inside a `<Popover>`. Selects, comboboxes and menus own their own content parts. |
-| `popover` | `PopoverContent` (`placement`, `offset`, `{close}` children) | `PopoverContent` (`variant: 'panel' \| 'surface'`, `side`, `align`, `sideOffset` 8, `alignOffset`, `initialFocus`, `finalFocus`, `keepMounted`). Name it with `PopoverTitle` (`className="sr-only"` to hide it): an `aria-label` on the content loses to the trigger's name. |
+| `popover` | `PopoverContent` (`placement`, `offset`, `{close}` children) | `PopoverContent` (`variant: 'panel' \| 'surface'`, `side`, `align`, `sideOffset` 8, `alignOffset`, `initialFocus`, `finalFocus`, `keepMounted`, `arrow`, `palette`). Name it with `PopoverTitle` (`className="sr-only"` to hide it): an `aria-label` on the content loses to the trigger's name. |
 | `popover` | `<Heading slot="title">`, `close()` | `PopoverTitle`, `<PopoverClose render={<Button size="sm" />}>Done</PopoverClose>`. New: `PopoverArrow`, `PopoverDescription`, `createPopoverController`. |
 | `tooltip` | `TooltipTrigger` wrapper (`delay` 500, `closeDelay` 200, `isOpen`, `isDisabled`, `trigger`) + `Tooltip` content | `Tooltip` root (`delay`, `closeDelay`, `open`, `disabled`, `type`, `toggleable`, `closeOnPress`, `shortcut`, `controller`) + `TooltipTrigger` part + `TooltipContent` (`side` top, `arrow`). `trigger="focus"` has no equivalent. |
 | `tooltip` | `TooltipProps` = content props | `TooltipProps` = root props; `TooltipContentProps` = content props. New: `TooltipArrow`, `TooltipShortcut`, `createTooltipController`. |
 | `tooltip` | always `aria-describedby` | names a trigger that has no name (`aria-labelledby`) and describes the others; `type` overrides |
 | `hover-card` | `HoverCardTrigger` = a wrapper `<span>` around its first child | `HoverCard` root (`delay` 600, `closeDelay` 300, `open`, `disabled`, `controller`) + `HoverCardTrigger`, which **is** the element (an `<a>` by default: `href`, or `render={<button aria-label="…" />}`) |
 | `hover-card` | `HoverCard` = the card (`placement`, `contentClassName`, `triggerRef`) | `HoverCardContent` (`side` bottom, `align`, `sideOffset`, `arrow` default false); merge `contentClassName` into `className` |
-| `hover-card` | `useHoverCard()` | removed: `createHoverCardController<Payload>()` with `HoverCardTrigger controller payload`, or `controller.open({ anchor, payload })` for targets you hit-test yourself |
+| `hover-card` | `useHoverCard()`, `UseHoverCardOptions`, `HoverCardState`, `HoverCardTriggerComponentProps` | removed: `createHoverCardController<Payload>()` with `HoverCardTrigger controller payload`, or `controller.open({ anchor, payload })` for targets you hit-test yourself |
 | `hover-card` | one card open at a time across independent cards, the next opening instantly | only within one shared controller; independent cards each wait their `delay`. Keyboard focus opens after the same delay. |
-| `dialog` | `DialogTrigger` wrapper | `Dialog` root (`open`, `onOpenChange`, `dismissible`, `modal`, `presentation`, `controller`, `container`) + `DialogTrigger` part |
-| `dialog` | `DialogContent` = overlay + modal + dialog (`size`, `isDismissable`, `role`, `overlayClassName`, `{close}`) | `DialogContent` (`size: 'default' \| 'lg'`, `initialFocus`, `finalFocus`) + a separate `DialogBackdrop` (`overlayClassName` → its `className`) |
+| `hover-card` | `HoverCardHeader media subtitle action` | `icon`, `description`, `trailing` (the kit's row anatomy); the title is an `h3` |
+| `dialog` | `DialogTrigger` wrapper | `Dialog` root (`open`, `onOpenChange`, `dismissible`, `modal`, `presentation`, `view`, `controller`, `container`) + `DialogTrigger` part |
+| `dialog` | a centered card everywhere | `presentation="auto"` by default: a sheet when the nearest size-class scope is compact, the card otherwise. Pass `presentation="dialog"` to keep the card on a phone; `AlertDialog` is always centered |
+| `dialog` | `DialogContent` = overlay + modal + dialog (`size`, `isDismissable`, `role`, `overlayClassName`, `{close}`) | `DialogContent` (`size: 'default' \| 'lg'`, `variant: 'default' \| 'tray'`, `initialFocus`, `finalFocus`) + a separate `DialogBackdrop` (`overlayClassName` → its `className`) |
+| `dialog` | `DialogHeader`, `DialogFooter orientation` | the same, plus `DialogHeader variant="bar"` (back, title, × in one row), `DialogBack`, `DialogView`: the [Dialog flow](#components-that-merged-moved-or-were-renamed) that replaces Credenza |
 | `dialog` | `size="alert"`, `DialogAction` | `AlertDialog`, `AlertDialogTrigger`, `AlertDialogBackdrop`, `AlertDialogContent`, `AlertDialogHeader`, `AlertDialogTitle`, `AlertDialogDescription`, `AlertDialogFooter` (`orientation`), `AlertDialogClose` (`variant: default \| cancel \| destructive`, `value`, `action`) |
 | `dialog` | `DialogClose` = always the round × | alone, the round ×; with children or `render`, any element that closes (`value`, `action`, `disabled`) |
-| `dialog` | `dialogOverlayClass` | removed. New: `createDialogController`, `createAlertDialogController`, `createConfirm`. |
-| `sheet` | `Sheet` wrapper + `SheetContent side` | `Sheet` root (UI SDK's Drawer: `side`, `open`, `onOpenChange`, `dismissible`, `modal`, `snapPoints`, `snapPoint`, `onSnapPointChange`, `physics`, `controller`) + `SheetTrigger` + `SheetBackdrop` + `SheetContent` (`grabber`, `animateHeight`) |
-| `sheet` | sheets only animated in and out | every side follows a drag and springs back or away (reason `swipe`); `dismissible={false}` stops the swipe. New: `SheetHandle`, `createSheetController`. |
-| `passkey-enroll-dialog` | `isOpen`, `onOpenChange(open)` | `open`, `onOpenChange(open, details)` |
+| `dialog` | `dialogOverlayClass`, `DialogActionProps`, `dialogActionVariants` | removed. New: `createDialogController`, `createAlertDialogController`, `createConfirm`. |
+| `sheet` | `Sheet` wrapper + `SheetContent side` | `Sheet` root (UI SDK's Drawer: `side`, `open`, `onOpenChange`, `dismissible`, `modal`, `snapPoints`, `snapPoint`, `onSnapPointChange`, `physics`, `view`, `contained`, `controller`) + `SheetTrigger` + `SheetBackdrop` + `SheetContent` (`grabber`, `variant: 'card' \| 'panel'`, `swipe`) |
+| `sheet` | sheets only animated in and out | every side follows a drag and springs back or away (reason `swipe`); `dismissible={false}` stops the swipe. New: `SheetHandle`, `SheetView`, `createSheetController`. |
+| `sheet` | `SheetHeader` / `SheetBody` were Dialog's (slots `dialog-header`, `dialog-body`) | their own parts, slots `sheet-header`, `sheet-body` |
+| `passkey-enroll-dialog` → `vault-gate` | `PasskeyEnrollDialog isOpen onOpenChange(open)` | `VaultEnrollDialog`: `open` / `defaultOpen` / `onOpenChange(open, details)`, all optional, or a `DialogTrigger` child |
 | `lib/primitives` | `focusRing` on `data-focus-visible:`; `popoverMotion` on `data-entering` / `data-exiting` | `focus-visible:`; transitions on `data-starting-style` / `data-ending-style`, `origin-(--transform-origin)`, `data-[side=…]`. |
 
 ```tsx
@@ -576,7 +1233,7 @@ Every overlay is a root + a trigger part + a content part. The trigger has no lo
 
 // 6.0
 <Dialog onOpenChange={(open) => open && reset()}>
-  <DialogTrigger className={buttonVariants({ variant: 'secondary' })}>Rename…</DialogTrigger>
+  <DialogTrigger render={<Button variant="secondary" />}>Rename…</DialogTrigger>
   <DialogBackdrop className="backdrop-blur-sm" />
   <DialogContent>
     <DialogHeader><DialogTitle>Rename</DialogTitle></DialogHeader>
@@ -603,7 +1260,7 @@ Every overlay is a root + a trigger part + a content part. The trigger has no lo
 
 // 6.0
 <AlertDialog>
-  <AlertDialogTrigger className={buttonVariants({ variant: 'destructive' })}>Delete…</AlertDialogTrigger>
+  <AlertDialogTrigger render={<Button variant="destructive" />}>Delete…</AlertDialogTrigger>
   <AlertDialogBackdrop />
   <AlertDialogContent>
     <AlertDialogHeader><AlertDialogTitle>Delete photo?</AlertDialogTitle></AlertDialogHeader>
@@ -628,7 +1285,7 @@ Focus starts on the first `AlertDialogClose`, so put the safe answer first. An o
 
 // 6.0
 <Sheet side="right" dismissible={false}>
-  <SheetTrigger className={buttonVariants({ variant: 'secondary' })}>Filters</SheetTrigger>
+  <SheetTrigger render={<Button variant="secondary" />}>Filters</SheetTrigger>
   <SheetBackdrop />
   <SheetContent aria-label="Filters">
     <SheetFooter><SheetClose render={<Button size="pill" />} action={apply}>Apply</SheetClose></SheetFooter>
@@ -670,7 +1327,7 @@ For a target you hit-test yourself (a canvas item, a map pin), call `controller.
 
 ## Tabs, disclosure and scroll areas
 
-[Tabs](https://blamy.github.io/ui/#/tabs), [TabView](https://blamy.github.io/ui/#/tab-view), [TabBar](https://blamy.github.io/ui/#/tab-bar), [Disclosure and DisclosureGroup](https://blamy.github.io/ui/#/disclosure), [ScrollArea](https://blamy.github.io/ui/#/scroll-area).
+[Tabs](https://blamy.github.io/ui/#/tabs) (with TabView's looks and the bottom tab bar), [Disclosure and DisclosureGroup](https://blamy.github.io/ui/#/disclosure), [ScrollArea](https://blamy.github.io/ui/#/scroll-area).
 
 | Module | 5.x | 6.0 |
 | --- | --- | --- |
@@ -680,13 +1337,14 @@ For a target you hit-test yourself (a canvas item, a map pin), call `controller.
 | `tabs` | `keyboardActivation="manual"`, `isDisabled` / `disabledKeys` | `activation="manual"`, `disabled` on each `TabsTab` |
 | `tabs` | `TabDirection`, `useTabPanelDirection()` | removed: panels read `data-activation-direction` and `data-starting-style` |
 | `tabs` | slots `tab-list`, `tab`, `tab-indicator`, `tab-panel` | `tabs-list`, `tabs-tab`, `tabs-indicator`, `tabs-panel` |
-| `tab-view` | `selectedKey` / `onSelectionChange`, `TabViewTab id textValue`, `TabViewPanel id shouldForceMount` | `value` / `onValueChange`, `TabViewTab value`, `TabViewPanel value keepMounted` |
-| `tab-view` | `TabViewIndicator` inside each tab; `variant="pill" attention` | one `TabViewIndicator` inside `TabViewList`; `TabViewPill attention` inside each tab |
-| `tab-view` | tab render state `{ isSelected, isHovered, … }` | `{ selected, disabled }`; hover with `group-hover/tab:` |
-| `tab-view` | `TabViewAction onPress isDisabled`, `TabViewPanels items` | `onClick`, `disabled`; `TabViewPanels` is a plain `div` |
-| `tabs`, `tab-view` | a tab was a `div` | UI SDK's tab, a `<button type="button">` (the kit resets its border, background and font); a tab that holds controls of its own takes `render={<div />}` |
-| `tab-view` | `data-placement` on `TabView` and `TabViewBar` | `data-bar-placement` (`top`, `bottom`, `start`, `end`) |
-| `tab-bar` | `items[].id`, `selected`, `onSelect(id)` | `items[].value`, `value` / `defaultValue`, `onValueChange(value, details)`; new `aria-label` (default "Tabs") |
+| `tab-view`, `tab-bar` → `tabs` | `TabView`, `TabViewBar`, `TabViewList`, `TabViewTab`, `TabViewPanels`, `TabViewPanel`… from their own modules | `Tabs` with `variant` (`segmented`, `underline`, `bar`, `rail`, `workspace`, `plain`) and `side`, and the parts `TabsBar`, `TabsList`, `TabsTab`, `TabsIndicator`, `TabsPill`, `TabsSeparator`, `TabsAction`, `TabsHeader`, `TabsFooter`, `TabsPanels`, `TabsPanel`, all from `@/components/ui/tabs` (see [the table above](#components-that-merged-moved-or-were-renamed)) |
+| `tabs` (TabView) | `selectedKey` / `onSelectionChange`, `TabViewTab id textValue`, `TabViewPanel id shouldForceMount` | `value` / `onValueChange`, `TabsTab value`, `TabsPanel value keepMounted` |
+| `tabs` (TabView) | `TabViewIndicator` inside each tab; `variant="pill" attention` | one `TabsIndicator` inside `TabsList` (the list draws one unless you place your own); `TabsPill attention` inside each tab |
+| `tabs` (TabView) | tab render state `{ isSelected, isHovered, … }` (`TabRenderProps`) | `{ selected, disabled }`; hover with `group-hover/tab:` |
+| `tabs` (TabView) | `TabViewAction onPress isDisabled title`, `TabViewPanels items` | `TabsAction onClick disabled` with the label as children; `TabsPanels` is a plain `div`, and a `TabsPanel` inside it stacks with its own scroll |
+| `tabs` | a tab was a `div` | UI SDK's tab, a `<button type="button">` (the kit resets its border, background and font); a tab that holds controls of its own takes `render={<div />}` |
+| `tabs` (TabView) | `data-placement` on `TabView` and `TabViewBar` | `data-side` (`top`, `bottom`, `start`, `end`) and `data-variant` on the root and the bar |
+| `tabs` (TabBar) | `TabBar items[].id`, `selected`, `onSelect(id)` | a composition: `<Tabs variant="bar">` + `TabsBar` + `TabsList aria-label` + one `TabsTab value icon` per item |
 | `disclosure` | `DisclosureGroup` of `Disclosure`s, `expandedKeys` / `onExpandedChange` (`Set`), `allowsMultipleExpanded` | `DisclosureGroup` (UI SDK Accordion) of `DisclosureGroupItem`s, `value` / `onValueChange(string[], details)`, `multiple`; new `collapsible`, `keepMounted`, `hiddenUntilFound` |
 | `disclosure` | standalone `Disclosure isExpanded / onExpandedChange` | `Disclosure open / onOpenChange(open, details)` (UI SDK Collapsible) |
 | `disclosure` | `DisclosureTrigger level={3}` | standalone: no heading built in; in a group: `DisclosureGroupHeader` (h3, `render={<h4 />}`) wraps `DisclosureGroupTrigger` |
@@ -708,7 +1366,11 @@ For a target you hit-test yourself (a canvas item, a map pin), call `controller.
   <TabsList aria-label="Settings"><TabsTab value="a">A</TabsTab><TabsTab value="b" disabled>B</TabsTab></TabsList>
   <TabsPanel value="a">…</TabsPanel>
 </Tabs>
-<TabBar items={[{ value: 'a', title: 'A', icon: 'star' }]} value={t} onValueChange={setT} />
+<Tabs variant="bar" value={t} onValueChange={(next) => next && setT(next)}>
+  <TabsBar>
+    <TabsList aria-label="Tabs"><TabsTab value="a" icon="star">A</TabsTab></TabsList>
+  </TabsBar>
+</Tabs>
 ```
 
 ```tsx
@@ -732,7 +1394,7 @@ For a target you hit-test yourself (a canvas item, a map pin), call `controller.
 
 ## Dates
 
-[Calendar](https://blamy.github.io/ui/#/calendar), [DateField](https://blamy.github.io/ui/#/date-field), [DatePicker](https://blamy.github.io/ui/#/date-picker), [TimeInput](https://blamy.github.io/ui/#/time-input).
+[Calendar](https://blamy.github.io/ui/#/calendar), [DateInput](https://blamy.github.io/ui/#/date-input) (was DateField and TimeField), [DatePicker](https://blamy.github.io/ui/#/date-picker), [NaturalTimeInput](https://blamy.github.io/ui/#/natural-time-input) (was TimeInput).
 
 Values are ISO strings, not `@internationalized/date` objects; `null` means empty. Helpers come from `@ui-sdk/core/date` (`todayDate`, `addDays`, `addMonths`, `toISODate`, `formatDate`…). Dates are Gregorian only, and there is no time-zone segment.
 
@@ -754,15 +1416,16 @@ Values are ISO strings, not `@internationalized/date` objects; `null` means empt
 | `calendar` | `focusedValue` / `onFocusChange`, `firstDayOfWeek="mon"` | `month` / `defaultMonth` / `onMonthChange` (`'2026-09'`), `onFocusedChange`, `weekStartsOn={1}` |
 | `calendar` | `CalendarCell date`, `CalendarGrid offset={{ months: 1 }}` | `CalendarDay value`, `CalendarGrid offset={1}`. New parts: `CalendarHeading`, `CalendarPrevious`, `CalendarNext`, `CalendarMonthSelect`, `CalendarYearSelect`, `CalendarWeekdays`, `CalendarWeeks`; `createCalendarController`. |
 | `calendar` | `isDisabled`, `isReadOnly`, `allowsNonContiguousRanges`; `isInvalid`, `errorMessage`, `createCalendar`, `pageBehavior` | `disabled`, `readOnly`, `allowUnavailable` (and `minDays` / `maxDays`); the others are removed |
-| `date-field` | `DateField` / `TimeField` = a wrapper with `Label`, `DateInput`, `FieldError` | `DateField` / `TimeField` = the segmented input itself, inside a `Field`. `DateInput` and `dateInputVariants` are `DateField` and `dateFieldVariants`. |
-| `date-field` | `DateSegment` | `DateFieldSegment` / `TimeFieldSegment` |
-| `date-field` | `onChange`, `isRequired`, `isInvalid`, `placeholderValue`, `validate` | `onValueChange`, `required`, `invalid` on the `Field`; the others are removed. `granularity` and `hourCycle` stay. |
+| `date-field` → `date-input` | `DateField` / `TimeField` = a wrapper with `Label`, an inner `DateInput`, `FieldError` | `DateInput` / `TimeInput` from `@/components/ui/date-input` = the segmented input itself, inside a `Field`. 5.x's inner `DateInput` part and its `dateInputVariants` are now the control's root and recipe (the recipe draws the shared field surface, with `size`). |
+| `date-input` | `DateSegment` | `DateInputSegment` / `TimeInputSegment` |
+| `date-input` | `onChange`, `isRequired`, `isInvalid`, `placeholderValue`, `validate` | `onValueChange`, `required`, `invalid` on the `Field`; the others are removed. `granularity` and `hourCycle` stay. New: `createDateInputController`, `createTimeInputController`. |
 | `date-picker` | `DateRangePicker`, `DateRangePickerField`, `DateRangePickerContent` | `DatePicker mode="range"`, `DatePickerField`, `DatePickerContent` |
 | `date-picker` | `Label` / `FieldError` children | wrap the `DatePicker` in a `Field` |
-| `date-picker` | a segmented input; `granularity="minute"` | a text input (`DatePickerInput`) that parses on Enter or blur; date only (compose a `TimeField`, or use `DateField granularity="minute"`) |
+| `date-picker` | a segmented input; `granularity="minute"` | a text input (`DatePickerInput`) that parses on Enter or blur; date only (compose a `TimeInput`, or use `DateInput granularity="minute"`) |
 | `date-picker` | `DatePickerContent calendarProps={{ visibleMonths: 2 }} placement` | calendar props on the root (`months`, `pageBy`, `min`, `max`, `unavailable`…); `side` / `align` on the content; content children are calendar parts and `DatePickerPreset`s, not a `<Calendar>` |
-| `date-picker` | `isOpen`, `shouldCloseOnSelect`, `onChange` | `open`, `closeOnSelect`, `onValueChange`. New: `DatePickerTrigger` (named "Choose date, …"), `DatePickerClear`, `DatePickerHint`, `presentation`, `createDatePickerController`. |
-| `time-input` | `onValueChange({ text, result, … })`, `onChange(text)`, `isInvalid` | `onParseChange({ text, result, … })`, `onValueChange(text, details)`, `invalid` |
+| `date-picker` | `isOpen`, `shouldCloseOnSelect`, `onChange` | `open`, `closeOnSelect`, `onValueChange`. New: `DatePickerTrigger` (named "Choose date, …"), `DatePickerClear`, `DatePickerHint`, `presentation`, `size` (on the root), `createDatePickerController`. The calendar inside is `CalendarMonths`, which wraps its months on a narrow box. |
+| `time-input` → `natural-time-input` | `TimeInput onValueChange({ text, result, … })`, `onChange(text)`, `isInvalid`, `label`, `description`, `error` | `NaturalTimeInput onParseChange({ text, result, … })`, `onValueChange(text, details)`; put it in a `Field` (`invalid`, `FieldLabel`, `FieldDescription`, `FieldError`) |
+| `natural-time-input` | `dateOrder`, `backend`, `weekStart`, `bareWeekday(s)`, `nextWeekday`, `dayParts`, `until`, `debounceMs` | `parse={{ … }}` (`NaturalTimeInputParseOptions`); `timeZone`, `locale`, `reference`, `maxOccurrences` stay top-level. A parse failure sets `aria-invalid` on the input |
 
 ```tsx
 // 5.x
@@ -780,7 +1443,7 @@ Values are ISO strings, not `@internationalized/date` objects; `null` means empt
   defaultValue={['2026-09-08', '2026-09-13']}
   unavailable={{ weekday: [0, 6] }} onValueChange={(r) => r && save(r[0], r[1])} />
 <Field>
-  <FieldLabel variant="field">Stay</FieldLabel>
+  <FieldLabel>Stay</FieldLabel>
   <DatePicker mode="range" months={2} defaultValue={['2026-09-08', '2026-09-13']} onValueChange={setRange}>
     <DatePickerField />
     <DatePickerContent />
@@ -790,9 +1453,9 @@ Values are ISO strings, not `@internationalized/date` objects; `null` means empt
 
 ## Color
 
-[ColorField](https://blamy.github.io/ui/#/color-field), [ColorPicker](https://blamy.github.io/ui/#/color-picker).
+[ColorPicker](https://blamy.github.io/ui/#/color-picker), with its "ColorInput" section (was ColorField).
 
-Colors are CSS strings, not `Color` objects. Color math comes from `@ui-sdk/core/color` (`parseColor`, which returns `null` on bad input, `formatColor`, `convertColor`, `contrastRatio`, `mixColor`, `isInGamut`, `toGamut`).
+Colors are CSS strings, not `Color` objects. Color math comes from `@ui-sdk/core/color` (`parseColor`, which returns `null` on bad input, `formatColor`, `convertColor`, `contrastRatio`, `mixColor`, `isInGamut`, `toGamut`). The `color-field` module is gone: its parts are parts of `color-picker`, under UI SDK's names.
 
 | 5.x | 6.0 |
 | --- | --- |
@@ -803,17 +1466,18 @@ Colors are CSS strings, not `Color` objects. Color math comes from `@ui-sdk/core
 
 | Module | 5.x | 6.0 |
 | --- | --- | --- |
-| `color-field` | `ColorField` = a wrapper holding `Label`, `ColorFieldGroup`, `FieldError` | `ColorField` = the filled field itself (a UI SDK `ColorPicker` root), inside a `Field`; `size` is on `ColorField`; children default to `<ColorFieldSwatch /><ColorFieldInput />` |
-| `color-field` | `isInvalid`, `validate`, `errorMessage` | `invalid` on the `Field` |
-| `color-field` | `channel` + `colorSpace` | `<ColorField space="hsl"><ColorFieldChannelInput channel="hue" /></ColorField>` |
-| `color-field` | `colorFieldGroupVariants`; `ColorFieldGroup` required | `colorFieldVariants`; `ColorFieldGroup` only inside a `ColorPicker` |
-| `color-field` | `ColorSwatch color?: string \| Color` (fell back to the picker in context) | `ColorSwatch color: string` (required, no context); inside a picker use `ColorFieldSwatch` |
+| `color-field` → `color-picker` | `ColorField` = a wrapper holding `Label`, `ColorFieldGroup`, `FieldError` | `ColorInput` = the filled field itself (a UI SDK `ColorPicker` root drawn with `fieldSurfaceVariants`), inside a `Field`; `size` is on `ColorInput`; children default to `<ColorPickerSwatch /><ColorPickerInput />` |
+| `color-picker` | `ColorField isInvalid`, `validate`, `errorMessage` | `invalid` on the `Field` |
+| `color-picker` | `channel` + `colorSpace` | `<ColorInput space="hsl"><ColorPickerChannelInput channel="hue" /></ColorInput>`; a unit (° or %) follows the number |
+| `color-picker` | `ColorFieldGroup`, `colorFieldGroupVariants`; `ColorFieldInput`, `ColorFieldChannelInput`, `ColorFieldSwatch` | `ColorPickerField` (the box inside a `ColorPicker`, `size`), `fieldSurfaceVariants` from `input`; `ColorPickerInput`, `ColorPickerChannelInput`, `ColorPickerSwatch` |
+| `color-picker` | `ColorSwatch color?: string \| Color` (fell back to the picker in context) | `ColorSwatch color: string` (required, no context); inside a picker use `ColorPickerSwatch` |
 | `color-picker` | `ColorPicker` rendered no element | renders a `div role="group"`: name it, and give it layout classes or none |
+| `color-picker` | `ColorPicker` around a `PopoverTrigger` with the trigger and content | the root holds the popover state (`open`, `defaultOpen`, `onOpenChange`, `presentation`, a sheet in a compact scope): put `ColorPickerTrigger` and `ColorPickerContent` straight in. A `<Popover>` inside still works when several triggers share one picker |
 | `color-picker` | `ColorArea colorSpace xChannel yChannel` | `ColorPickerArea x y` (space from the root); `ColorPickerAreaCanvas` for OKLCH |
 | `color-picker` | `ColorThumb` | `ColorPickerAreaThumb` / `ColorPickerSliderThumb` |
 | `color-picker` | `ColorSlider colorSpace channel` | `ColorPickerSlider channel`; `className` styles the track |
 | `color-picker` | `ColorSwatchPicker` (own value), `ColorSwatchPickerItem color` | `ColorPickerSwatches` (follows the picker's color), `ColorPickerSwatchItem value` |
-| `color-picker` | `ColorPickerTrigger` (a Button in a `DialogTrigger`), `ColorPickerContent placement` | `ColorPickerTrigger` (a `PopoverTrigger`), `ColorPickerContent side align`. New: `ColorPickerEyeDropper`, `createColorPickerController`. |
+| `color-picker` | `ColorPickerTrigger` (a Button in a `DialogTrigger`, always hex), `ColorPickerContent placement` | `ColorPickerTrigger` (the picker's popover trigger; shows the value in the picker's `format`, `colorPickerTriggerVariants`), `ColorPickerContent side align`. New: `ColorPickerEyeDropper`, `createColorPickerController`. |
 
 ```tsx
 // 5.x
@@ -831,23 +1495,21 @@ Colors are CSS strings, not `Color` objects. Color math comes from `@ui-sdk/core
 
 // 6.0
 <Field invalid={bad ? true : undefined}>
-  <FieldLabel variant="field">Accent</FieldLabel>
-  <ColorField size="sm" defaultValue="#7f5af0" onValueChange={setAccent} />
+  <FieldLabel>Accent</FieldLabel>
+  <ColorInput size="sm" defaultValue="#7f5af0" onValueChange={setAccent} />
   <FieldError>Pick a darker color.</FieldError>
 </Field>
 <ColorPicker aria-label="Accent" value={accent} onValueChange={setAccent}>
-  <Popover>
-    <ColorPickerTrigger />
-    <ColorPickerContent align="end" swatches={presets} alpha />
-  </Popover>
+  <ColorPickerTrigger />
+  <ColorPickerContent align="end" swatches={presets} alpha />
 </ColorPicker>
 ```
 
-`ColorPicker` goes outside the `Popover`, so the trigger and the content share its state. In a composed panel the picker is the panel: `<ColorPicker aria-label="Accent" className="grid gap-4"><ColorPickerArea /><ColorPickerSlider channel="hue" label="Hue" /><ColorPickerSwatches aria-label="Presets">…</ColorPickerSwatches></ColorPicker>`.
+In a composed panel the picker is the panel: `<ColorPicker aria-label="Accent" className="grid gap-4"><ColorPickerArea /><ColorPickerSlider channel="hue" label="Hue" /><ColorPickerSwatches aria-label="Presets">…</ColorPickerSwatches></ColorPicker>`. A picker with a field inside: `<ColorPicker …><ColorPickerField size="sm"><ColorPickerSwatch /><ColorPickerInput /></ColorPickerField></ColorPicker>`.
 
 ## Trees
 
-[Tree](https://blamy.github.io/ui/#/tree), [CallStack](https://blamy.github.io/ui/#/call-stack), [ObjectTree](https://blamy.github.io/ui/#/object-tree), SchemaTree (on [SQL console](https://blamy.github.io/ui/#/sql-console)).
+[Tree](https://blamy.github.io/ui/#/tree) (with its "Database schema" section, for SchemaTree), [CallStack](https://blamy.github.io/ui/#/call-stack), [ObjectTree](https://blamy.github.io/ui/#/object-tree), [ObjectValue](https://blamy.github.io/ui/#/object-value).
 
 `Tree` is UI SDK's Tree. The data form (`items`) keeps sort, search, flatten, icons, git status, context menus, previews, rename and drag and drop; without `items` or `paths`, `Tree` is UI SDK's composition (`TreeItem`, `TreeItemLabel`, `TreeItemIndicator`, `TreeItemCheckbox`, `TreeGroup`).
 
@@ -858,12 +1520,15 @@ Colors are CSS strings, not `Color` objects. Color math comes from `@ui-sdk/core
 | `tree` | `onAction(node)` on double-click or Return | `onAction(value, details)` on a press or Return; may return a Promise |
 | `tree` | `activationMode: 'doubleClick' \| 'singleClick'` (5.17; default double) | `actionOn: 'double-press' \| 'press'` (default `press`). UI SDK's own `activation` is a different thing: whether the arrow keys select. |
 | `tree` | `defaultExpanded: 'all' \| 'none' \| ids`, `expandedIds` | `defaultExpanded: 'all' \| ids` (leave out for none), `autoExpand`; new controlled `expanded` / `onExpandedChange` |
-| `tree` | `icons: 'minimal' \| 'standard' \| 'complete' \| 'none'`, `density` (or a number) | `icons: boolean`, `density: 'compact' \| 'default' \| 'relaxed'` |
+| `tree` | `icons: 'minimal' \| 'standard' \| 'complete' \| 'none'`, `density` (or a number) | `icons: boolean`, `density: 'compact' \| 'default' \| 'comfortable'` (`TreeDensity`, 24 / 30 / 36px rows) |
 | `tree` | `renamingId`, `onRename(node, name)`, `onRenameEnd()` | `editing`, `onRename(node, label, details)` (return `false` to keep the field open), `onEditingChange(editing \| null, details: TreeEditingChangeDetails)` (UI SDK change details: a cancel is `reason === 'escape-key'`, and `details.cancel()` refuses the change). F2 starts a rename when `onRename` is set. A controlled `editing` is truly controlled: F2 only asks through `onEditingChange`, and the field opens when you pass the id back. |
-| `tree` | — | New: `checkable`, `checked`, `onCheckedChange`, `loadChildren`, `current`, `emptyMessage`, `controller`, `createTreeController`, `treeFromPaths`, `treeVariants`, `treeRowVariants`. Slot `tree-view` wraps UI SDK's `tree`, `tree-item`, `tree-label`. |
-| `schema-tree` | `isLoading`; `onSelectTable(table)` / `onSelectColumn(table, column)` on selection | `loading`; `onAction(id, { table, column?, event })` on a press or Return |
+| `tree` | `TreeFileIcon`, `TreeFolderIcon` | `FileBadgeIcon`, `FolderIcon` from `@/lib/file-icons`, with `FileTypeIcon` (what the rows draw) and `fileTypeOf(name)` |
+| `tree` | — | New: `checkable`, `checked`, `onCheckedChange`, `loadChildren`, `current`, `loading` (placeholder rows), `emptyState` (the kit's `EmptyState`; a string is its title), `renderRow(node, state)` for a row of your own, `controller`, `createTreeController`, `treeFromPaths`, `treeVariants`, `treeRowVariants`. `onAction`'s details carry the `node`. Slot `tree-view` wraps UI SDK's `tree`, `tree-item`, `tree-label`. |
+| `schema-tree` → `tree` | `SchemaTree schema isLoading`; `onSelectTable(table)` / `onSelectColumn(table, column)` on selection | `<Tree items={schemaTreeItems(schema)} loading …>` (`schemaTreeItems`, `SchemaTreeNode` from `@/lib/pglite-schema`); `onAction(value, { node })` on a press or Return, where `node` is a `SchemaTreeNode` (`kind`, `table`, `column`) |
 | `call-stack` | `selectedId`, `defaultSelectedId`, `onSelect(frame, index)` | `value`, `defaultValue`, `onValueChange(value, { frame, index, reason, cancel })` |
-| `object-tree` | `onSelect(node \| null)` | `value` / `defaultValue` (a row key, `objectTreeKey(ids)`) / `onValueChange(key, { node, reason, cancel })`, `mode`; Return on a row acts like a double press; indent reads `--tree-level` |
+| `call-stack`, `object-tree` | `rowHeight` (px), `emptyMessage`; their own row recipes | `density` (Tree's scale, default `compact`), `emptyState`; the rows are Tree's (`treeRowVariants`), and `data-kind` / `data-row` sit on the `tree-label` |
+| `object-tree` | `onSelect(node \| null)` | `value` / `defaultValue` (a row key, `objectTreeKey(ids)`) / `onValueChange(key, { node, reason, cancel })`, `mode`; Return on a row acts like a double press; indent reads `--tree-level`. `aria-label` defaults to "Values"; new `onValueCopy(text, node)` |
+| `object-value` | `expandable` | `actions`; new `onValueCopy(text)` |
 
 ```tsx
 // 5.x
@@ -882,7 +1547,7 @@ Colors are CSS strings, not `Color` objects. Color math comes from `@ui-sdk/core
 
 ## Tables and logs
 
-[LogList](https://blamy.github.io/ui/#/log-list), [RequestTable](https://blamy.github.io/ui/#/request-table), ResultTable (on [SQL console](https://blamy.github.io/ui/#/sql-console)).
+[LogList](https://blamy.github.io/ui/#/log-list), [DataTable](https://blamy.github.io/ui/#/data-table) (with its "Query results" section, for ResultTable), [RequestTable](https://blamy.github.io/ui/#/request-table), [SQL console](https://blamy.github.io/ui/#/sql-console).
 
 Rows take real roving focus (no `aria-activedescendant`): style them with `focus-visible:` on the row, not `group-data-focus-visible/grid:`.
 
@@ -890,17 +1555,20 @@ Rows take real roving focus (no `aria-activedescendant`): style them with `focus
 | --- | --- | --- |
 | `log-list`, `request-table` | `selectedId`, `defaultSelectedId`, `onSelectionChange(id)` | `value`, `defaultValue`, `onValueChange(value, details)` |
 | `log-list`, `request-table` | `onRowPress(row, index)` | `onAction(id, { row, index, reason, event })` |
-| `log-list`, `request-table` | `ref` to `LogListHandle` / `RequestTableHandle` | `controller` from `createLogListController()` / `createRequestTableController()`; `ref` reaches the root `<div>` |
+| `log-list`, `request-table` | `ref` to `LogListHandle` / `RequestTableHandle` | `controller` from `createLogListController()` / `createDataTableController()` (RequestTable is a preset of DataTable); `ref` reaches the root `<div>` |
 | `log-list`, `request-table` | `scrollToId(id, 'nearest')` | `controller.scrollToId(id, { align: 'auto' })`; also `focus()`, `setValue()`, and `setExpanded()` / `setPlayhead()` / `setSort()` / `setColumnWidths()` |
 | `log-list` | `expandedIds: Set`, `onExpandedChange(Set)` | `expanded: RowId[]`, `onExpandedChange(RowId[], details)` |
 | `log-list` | `onFollowChange(following)` | `onFollowingChange(following, details)` |
 | `request-table` | `onSortChange(sort)`, `onColumnWidthsChange(widths)` (every move) | `(sort, details)`, `(widths, details)` (once, on release) |
 | `request-table` | `RequestLink onPress isDisabled` | `onClick`, `disabled` |
 | `request-table` | a sort button inside each column header | the column header itself is pressed (click, Enter, Space) |
-| `request-table` | `stackBelow={480}` | `breakpoints={{ medium: 480 }}` (`RequestTableBreakpoints`, defaults `medium` 480 and `regular` 760): two-line rows below `medium`; the root writes `data-size-class` |
+| `request-table` | `stackBelow={480}` | `breakpoints={{ medium: 480 }}` (`DataTableBreakpoints`, defaults `medium` 480 and `regular` 760): two-line rows below `medium`; the root writes `data-size-class` |
 | `request-table` | column `hideBelow: number` (px; `type` 760, `size` 640) | `hideBelow: 'medium' \| 'regular'`, a size class; `type` and `size` both hide below `regular` (760px), so `size` now hides from 760px rather than 640px |
-| `request-table` | `data-playhead`, `--request-*` on the root | on `[data-slot=request-table-grid]` |
-| `result-table` | react-aria Table (`data-hovered`, `data-resizing`, a row header) | `hover:`, `focus-visible:`, `data-dragging` on the resizer; every body cell is a `gridcell`. New: `columnWidths`, `onColumnWidthsChange`. |
+| `request-table` | `data-playhead`, `--request-*` on the root | `--data-table-*` on `[data-slot=data-table-grid]`; the engine's slots are `data-table`, `data-table-row`, `data-table-cell`…, and the request parts keep `request-table-name`, `-bar`, `-link`, `-playhead` |
+| `request-table` | `RequestColumn`, `RequestSort`, `requestTableVariants`, `sortRequests` | `DataTableColumn`, `DataTableSort`, `dataTableVariants`, `sortDataTableRows`; sizes under 1 kB read "280 B" |
+| `log-list`, `request-table` | `density: 'compact' \| 'comfortable'`; an empty list's text | adds `default`; `emptyState` (the kit's `EmptyState`) |
+| `result-table` → `data-table` | `ResultTable result durationMs maxRows maxHeight onCopy toolbar emptyMessage resizable` (react-aria Table) | removed: the SQL console renders each result with `DataTable` (virtualized, every column resizes, a value too long for its cell opens in a popover). A host with rows of its own writes `<DataTable rows columns selectionMode="none" toolbar>`; the console's height is `--sql-console-result-height` |
+| `sql-console` | `sidebar`, `transfer`, `headerActions`, `layout`, `resultMaxHeight` | compose `SqlConsoleHeader` (with `SqlConsoleDatabaseMenu`), `SqlConsoleSidebar`, `SqlConsoleEditor`, `SqlConsoleResults`; two columns only with a sidebar in a medium box |
 
 ```tsx
 // 5.x
@@ -925,7 +1593,7 @@ The queue is UI SDK's toaster; `toast` and `createToaster` are UI SDK's. A regio
 | 5.x | 6.0 |
 | --- | --- |
 | `<Toaster />` | `<ToastRegion />` (banners) and `<ToastRegion variant="hud" />` (the HUD) |
-| `<Toaster queue={q}>{children}</Toaster>` | `<ToastProvider toaster={q}>{children}</ToastProvider>` + `<ToastRegion toaster={q} />` |
+| `<Toaster queue={q}>{children}</Toaster>` | `<ToastProvider toaster={q}>{children}</ToastProvider>` + `<ToastRegion toaster={q} />` (a banner region with no `toaster` shows the nearest provider's queue) |
 | `placement="top" \| "bottom" \| "top-end" \| "bottom-end"` | `side="top" \| "bottom"`, `align="start" \| "center" \| "end"`; `placement="center"` is gone |
 | `inline` | removed: a region renders into the nearest `BLProvider` root; `container` overrides |
 | `expand` | `expanded` |
@@ -969,13 +1637,14 @@ Built on UI SDK's FileInput. Every part handles plain `File`s: `FileEntry` is go
 | `file-upload` | `onFiles(entries: FileEntry[], info)` | `onFiles(files: File[], details)`; `info.source` (`drop` / `browse` / `paste`) is `details.reason` (`drop` / `picker` / `paste`). Only accepted files arrive; `onReject(rejected)` gets the rest. |
 | `file-upload` | `acceptDirectory`, `defaultCamera` | `directory`, `capture="user" \| "environment" \| true` |
 | `file-upload` | `pasteable` | removed: a drop zone takes pastes while focus is inside it; `pasteTarget="document"` for the page |
-| `file-upload` | `FileDropZone isInvalid isDisabled`, react-aria DropZone props | `invalid`, `disabled`, `target`, `pasteTarget`, `render`; children state `{ dragging, dragAccept, dragReject, disabled }` |
-| `file-upload` | `FileUploadButton isDisabled onPress` | `disabled`; it is a UI SDK trigger with `buttonVariants` |
-| `file-upload` | slots `file-drop-zone`, `file-upload`, `data-drop-target` | `file-input-dropzone`, `file-upload` (the root, with `data-busy`), `data-dragging` / `data-drag-accept` / `data-drag-reject`; listed rows `file-input-item` (`[data-file-id]` selects any row) |
-| `file-upload` | `FileList children(item)` returns anything | must return a `<FileItem item={item} />`; rejected rows are listed after the accepted ones |
+| `file-upload` | `FileDropZone`, `FileUploadButton`, `FileList`, `FileItem`, `FileThumbnail` (+ their props and `fileDropZoneVariants`, `fileItemVariants`) | `FileUploadDropzone`, `FileUploadTrigger`, `FileUploadList`, `FileUploadItem`, `FileUploadThumbnail` (+ `fileUploadDropzoneVariants`, `fileUploadItemVariants`): every part carries the root's name |
+| `file-upload` | `FileDropZone isInvalid isDisabled size="compact"`, react-aria DropZone props | `FileUploadDropzone disabled orientation="horizontal" target pasteTarget render`; invalid comes from a `Field` around it (`<Field invalid>` + `<FieldError>`); children state `{ dragging, dragAccept, dragReject, disabled }` |
+| `file-upload` | `FileUploadButton isDisabled onPress` | `FileUploadTrigger disabled`; it is a UI SDK trigger with the kit's button look (`data-file-upload-trigger`) |
+| `file-upload` | slots `file-drop-zone`, `file-upload`, `data-drop-target`, `file-thumbnail`, `file-item`, `file-list` | `file-input-dropzone`, `file-upload` (the root, with `data-busy`), `data-dragging` / `data-drag-accept` / `data-drag-reject`; listed rows `file-input-item` (`[data-file-id]` selects any row); the kit's parts `file-upload-thumbnail`, `file-upload-item`, `file-upload-item-status`, `file-upload-list`, `file-upload-list-rejected` |
+| `file-upload` | `FileList children(item)` returns anything | `FileUploadList` children must return a `<FileUploadItem item={item} />`; rejected rows are listed after the accepted ones |
 | `file-upload-model` | `add(entries)`, `FileRules`, `validate(file, { path, files })` returning `false` | `add(files)` (while a `FileUpload` using the state is mounted), `FileUploadRules`, `validate(file)` returning a reason string |
 | `file-upload-model` | `RejectionCode` `type`, `too-large`, `too-small`, `too-many`, `invalid` | `RejectionReason` `file-type`, `file-too-large`, `file-too-small`, `too-many-files`, `duplicate` or your own string; `messages` keys renamed to match |
-| `file-upload-model` | `matchesAccept`, `parseAccept`, `validateFiles`, `readDropItems`, `entriesFromFileList`, `FileEntry`, `FilesInfo` | removed (FileInput does this). New: `inputProps`, `inputController`, `OnFiles`, `FileUploadInputProps`. |
+| `file-upload-model` | `matchesAccept`, `parseAccept`, `validateFiles`, `readDropItems`, `ReadDropOptions`, `entriesFromFileList`, `FileEntry`, `FilesInfo` | removed (FileInput does this). New: `inputProps`, `inputController`, `OnFiles`, `FileUploadInputProps`. |
 | `file-upload-model` | `useFileUpload`, `useFilePreview`, `UseFileUploadOptions`, `isBusy` | `useFileUpload`, `useFilePreview` from `lib/use-file-upload`; options `FileUploadOptions` (from `lib/file-upload-primitive`, with `controller`); `busy`. The list is the `fileUpload` primitive: `createFileUploadController()` drives it, agents can `remove`, `retry`, `clear`, `uploadAll` |
 | `file-upload-model`, `file-upload` | `files`, `defaultFiles`, `onFilesChange(files)` | `value`, `defaultValue`, `onValueChange(files, details)`: `details.reason` (`picker` / `drop` / `paste` / `remove-press` / `reset` / `imperative` / `reject` / `retry` / `clear` / `upload-start` / `progress` / `settle`), `source`, `id`, `added`, `removed`, `cancel()`. The hook still returns `files`; `remove`, `retry`, `clear` take `{ reason, event }`. |
 | `format-bytes`, `file-upload`, `file-upload-model`, `request-table`, `sql-console` | `formatBytes(n)`: binary units, "1.5 KB" for 1536 bytes, "5 MB" for 5 × 1024² | removed: every size reads through UI SDK's locale-aware `formatFileSize(n)` from `@ui-sdk/core/file-input` (as the Composer does): decimal units, "1.5 kB" for 1500 bytes, "5 MB" for 5,000,000, "840 byte". Write limits in decimal (`maxSize={5_000_000}`) so hints read round |
@@ -987,8 +1656,11 @@ Built on UI SDK's FileInput. Every part handles plain `File`s: `FileEntry` is go
 <FileUpload pasteable accept={['image/*']} messages={{ type: 'Images only' }} />
 
 // 6.0
-<FileDropZone invalid={!!error} directory onFiles={(files) => load(files)} />
-<FileUploadButton disabled={busy} capture="environment" onFiles={([file]) => setPhoto(file)}>Photo</FileUploadButton>
+<Field invalid={error ? true : undefined}>
+  <FileUploadDropzone directory onFiles={(files) => load(files)} />
+  <FieldError>{error}</FieldError>
+</Field>
+<FileUploadTrigger disabled={busy} capture="environment" onFiles={([file]) => setPhoto(file)}>Photo</FileUploadTrigger>
 <FileUpload accept={['image/*']} messages={{ 'file-type': 'Images only' }} />
 ```
 
@@ -1001,16 +1673,16 @@ Every part takes UI SDK's Command part names with the `CommandMenu` prefix, and 
 | 5.x | 6.0 |
 | --- | --- |
 | `CommandInput`, `CommandList`, `CommandPage`, `CommandGroup`, `CommandItem`, `CommandEmpty`, `CommandSeparator`, `CommandFooter`, `CommandLegendItem` | `CommandMenuInput`, `CommandMenuList`, `CommandMenuPage`, `CommandMenuGroup` + `CommandMenuGroupLabel`, `CommandMenuItem`, `CommandMenuEmpty` (beside the list, not in it), `CommandMenuSeparator`, `CommandMenuFooter`, `CommandMenuLegendItem` |
-| `<CommandMenu variant="dialog" isOpen onOpenChange hotkey container overlayClassName aria-label>` | `CommandMenuDialog` (`open`, `onOpenChange`, `controller`, `container`) + `CommandMenuDialogTrigger shortcut="mod+k"` + `CommandMenuDialogContent aria-label overlayClassName` around a `CommandMenu` |
+| `<CommandMenu variant="dialog" isOpen onOpenChange hotkey container overlayClassName aria-label>` | `CommandMenuDialog` (`open`, `onOpenChange`, `controller`, `container`) + the Dialog's `DialogTrigger shortcut="mod+k"` + `CommandMenuDialogContent aria-label backdropClassName` around a `CommandMenu` |
 | `CommandList maxHeight` | `className="max-h-…"` (default `max-h-90`) |
 | `CommandPage id="root"`, `onKeyDown(e, menu)` | the first page has no `value`; others `value="…"`; `onKeyDown(event, controller)` |
 | `CommandGroup heading forceMount` | a `CommandMenuGroupLabel` as the first child; `forceMount` removed |
-| `CommandItem shortcut="⇧⌘O"` (display only), `badge`, `onSelect(value)` | `trailing={<CommandMenuShortcut shortcut="mod+shift+o" />}` to display, or `shortcut="mod+shift+o"` to register it; `trailing` for a badge; `onSelect(event)` (or the menu's `onAction(value, details)`) |
+| `CommandItem title`, `shortcut="⇧⌘O"` (display only), `badge`, `onSelect(value)` | `trailing={<CommandMenuShortcut shortcut="mod+shift+o" />}` to display, or `shortcut="mod+shift+o"` to register it; `trailing` for a badge; `onSelect(event)` (or the menu's `onAction(value, details)`). `title` stays, and text children are the title too: `<CommandMenuItem>New thread</CommandMenuItem>` |
 | `boost`, `keywordWeight`, `searchDescription`, `ranking`, `escapeBehavior` | removed; pass commands as `items` to rank them. Escape always clears the search, then goes back a page, then closes. |
 | `onPageChange(page, pages)` | `onPagesChange(pages, details)` (`[]` on the first page) |
 | `menuRef`, `CommandMenuApi` | `controller={createCommandMenuController()}`; `useCommandMenu()` returns `{ query, pages, page, controller }` |
 | `useCommandActive()` | `useCommandMenuValue()` |
-| `CommandHighlight`, `commandMatch` | removed: string titles bold their matches; `matchRanges` / `fuzzyScore(text, query)` from `@ui-sdk/core/text-match` |
+| `CommandEmpty` text, `CommandHighlight`, `commandMatch`, `CommandMatch` | `CommandMenuEmpty` draws the kit's `EmptyState` (`icon`, `title` or text children, `description`, `action`); string titles bold their matches; `matchRanges` / `fuzzyScore(text, query)` from `@ui-sdk/core/text-match` |
 | `useHotkey(hotkey, handler, enabled)`, `matchesHotkey` | `useShortcut(enabled ? 'mod+k' : null, handler)` from `@ui-sdk/react/shortcuts` |
 | row `data-active` | `data-highlighted`; the root has `data-depth` and `data-direction` |
 
@@ -1028,7 +1700,7 @@ Every part takes UI SDK's Command part names with the `CommandMenu` prefix, and 
 
 // 6.0
 <CommandMenuDialog open={open} onOpenChange={setOpen}>
-  <CommandMenuDialogTrigger shortcut="mod+k" className={buttonVariants({ variant: 'secondary' })}>Search…</CommandMenuDialogTrigger>
+  <DialogTrigger shortcut="mod+k" render={<Button variant="secondary" />}>Search…</DialogTrigger>
   <CommandMenuDialogContent aria-label="Search docs">
     <CommandMenu>
       <CommandMenuInput placeholder="Search…" />
@@ -1062,15 +1734,18 @@ Every part takes UI SDK's Command part names with the `CommandMenu` prefix, and 
 | --- | --- |
 | `WorkspaceModel`, `WorkspaceModelInput` | `WorkspaceLayout`, `WorkspaceLayoutInput` (same shapes) |
 | `defaultModel` (required), `onModelChanged(model, meta)` | `defaultLayout` (optional), `onLayoutCommit(layout, details)`; new controlled `layout` + `onLayoutChange(layout, details)` (every change; `details.cancel()` refuses it) |
-| `meta.reason` (`set-model`…), `meta.isUserInteraction` | `details.action` (`set`…), `details.reason !== 'imperative'` |
+| `meta.reason` (`set-model`…), `meta.isUserInteraction` (`WorkspaceChangedMeta`, `WorkspaceChangeReason`) | `details.action` (`set`…), `details.reason !== 'imperative'` |
 | `workspaceRef`, `WorkspaceImperativeHandle`, `useWorkspaceRef()`, `useWorkspaceCallbackRef()` | `controller={createWorkspaceController()}`, `WorkspaceController`; `getModel` / `setModel` are `getLayout` / `setLayout`, and every write returns `boolean` |
 | `useParentWorkspace`, `useParentTabset`, `useParentTabsetState`, `useParentTab`, `useParentTabState` | removed: `renderTabsetToolbar(tabset, state)` and `renderTabContent(tab, { selected, visible, tabsetId })` receive the state; act through your controller with `tabset.id` |
 | `renderTab(tab, props)` spreading `props` | `renderTab(tab)` returning `WorkspaceTab` > `WorkspaceTabTrigger` + `WorkspaceTabClose` |
 | `WorkspaceTabCloseButton` | `WorkspaceTabClose` |
 | `disableDrop` (true rejects) | `accepts(tab, target)` (true allows) |
 | `hiddenTabBehavior` | `keepMounted: boolean \| (tab) => boolean` (`'activity'` is not offered) |
-| `renderSeparator`, `renderDragPreview`, `resizePreviewMode`, `serverRenderTabContent`, `styles` | removed: style `classNames.handle`, and the drag copy with `data-drag-preview:` in `classNames.tab` |
+| `renderSeparator`, `renderDragPreview`, `resizePreviewMode`, `serverRenderTabContent`, `styles` (`WorkspaceStyles`) | removed: style `classNames.handle`, and the drag copy with `data-drag-preview:` in `classNames.tab` |
 | `elementRef`; `classNames.tab` with `data-[tab-selected]:` | `ref`; `data-selected:`. Name the root with `aria-label`. |
+| `tabPlacement: 'top' \| 'bottom' \| 'left' \| 'right'` (prop, tabset field, toolbar state), `WorkspaceTabPlacement`, `data-tab-placement` | `tabSide: 'top' \| 'bottom' \| 'start' \| 'end'`, `WorkspaceTabSide`, `data-tab-side`; rename the field in layouts you saved |
+| the root drew a `rounded-xl border` card | no frame: add `rounded-card border border-border` where you want one |
+| — | New: `presentation: 'auto' \| 'docked' \| 'tabs'` (`auto` shows every tab in one bottom strip while the workspace's own box is compact), `WorkspacePresentation`, root `data-presentation` |
 
 ```tsx
 // 5.x
@@ -1093,7 +1768,7 @@ A controller works only while its Workspace is mounted, and there is no attach c
 
 ## Containers
 
-The containers UI SDK does not ship (NavigationStack, SplitView, Credenza, the drawers, Sidebar, List rows) are BL UI primitives now, built from UI SDK's behaviors: every state follows the `x` / `defaultX` / `onXChange(value, details)` shape, each one can be driven from outside with a controller (`createNavigationStackController()`, `createSplitViewController()`…), and each reads its size class from its own box with the kit's `bindSizeClass` instead of measuring pixels, and provides it to what it renders as a size-class scope (see [Size classes follow the container](#size-classes-follow-the-container)). For a shell of your own that only branches on compact, medium or regular, use `useSizeClass()` from `@/lib/container`: it returns `[ref, sizeClass]` and writes `data-size-class` on the element for CSS; wrap its children in `<SizeClassProvider value={sizeClass}>` so `presentation="auto"` popups inside follow it too. Keep `useContainerWidth` / `useContainerSize` for real pixels.
+The containers UI SDK does not ship (NavigationStack, SplitView, AdaptivePane, Sidebar, List rows) are BL UI primitives now, built from UI SDK's behaviors: every state follows the `x` / `defaultX` / `onXChange(value, details)` shape, each one can be driven from outside with a controller (`createNavigationStackController()`, `createSplitViewController()`…), and each reads its size class from its own box with the kit's `bindSizeClass` instead of measuring pixels, and provides it to what it renders as a size-class scope (see [Size classes follow the container](#size-classes-follow-the-container)). For a shell of your own that only branches on compact, medium or regular, use `useSizeClass()` from `@/lib/container`: it returns `[ref, sizeClass]` and writes `data-size-class` on the element for CSS; wrap its children in `<SizeClassProvider value={sizeClass}>` so `presentation="auto"` popups inside follow it too. Keep `useContainerWidth` / `useContainerSize` for real pixels.
 
 The hooks the 5.x containers were built from are gone, with UI SDK's behaviors, or the kit's own framework-free behaviors built on them, in their place (see [The kit's behaviors](https://blamy.github.io/ui/#/behaviors-kit)):
 
@@ -1102,7 +1777,7 @@ The hooks the 5.x containers were built from are gone, with UI SDK's behaviors, 
 | `useEdgeSwipe`, `EdgeSwipeConfig` | `bindEdgeSwipe(el, options)` from `@/lib/edge-swipe` (`BindEdgeSwipeOptions`) |
 | `usePullToRefresh` | `bindPullToRefresh(scroller, options)` from `@/lib/pull-to-refresh`, or `NavigationStackContent onRefresh` |
 | `useBackHistory`, `armBackHistory` | `bindBack(el, { onBack })` from `@/lib/back` |
-| `useScrollHidden` | `useChromeHidden()` from `@/lib/theme`; for floating chrome, `useHideOnScroll(hideOnScroll, scrollRef)` from `@/components/ui/floating-sheet` |
+| `useScrollHidden` | `useChromeHidden()` from `@/lib/theme`; for floating chrome, `useHideOnScroll(hideOnScroll, scrollRef)` from `@/lib/scroll-edge` |
 | `useSheetDrag`, `SHEET_TAP_SLOP`, `SHEET_MINIMIZE_TRAVEL`, `SheetDragOptions`, `SheetDragState` | a `Drawer` with `snapPoints`, `modalAbove`, `DrawerHandle` and `--drawer-progress` (see `floating-sheet.tsx`); any other vertical drag is `bindDrag` from `@ui-sdk/core` |
 | `useDrawerSwipe` | UI SDK's Drawer swipes shut on its own; AdaptivePane's `swipeToOpen` opens it |
 | `navigationPush` | removed |
@@ -1127,21 +1802,22 @@ The `screens` array of descriptors is gone. A stack is a list of page keys (`pag
 | `Screen.content` | children of `<NavigationStackContent>` (the page's scroller) |
 | `Screen.leading`, `Screen.trailing` | `<NavigationStackLeading>`, `<NavigationStackTrailing>` inside the Bar (leading still hides while there is a back button) |
 | `Screen.overlay` | any other child of the page, after the Bar and Content |
-| `Screen.grouped` | `NavigationStackPage grouped` |
+| `Screen.grouped` | `NavigationStackPage variant="grouped"` (`'plain' \| 'grouped'`) |
 | `Screen.hideChromeOnScroll: false` | `<NavigationStackBar hideOnScroll={false}>` |
 | `Screen.onRefresh` | `<NavigationStackContent onRefresh>` (touch only now; `controller.refresh()` runs it from a button or key) |
 | `Screen.maxW`, `Screen.bottomInset` | `<NavigationStackContent maxWidth bottomInset>` |
 | `NavigationStack defIns` | `bottomInset` (the default for every page) |
 | `rootBack={{ title, onPress }}` | `rootBack={{ title, onClick }}` |
 | `Screen`, `ScreenWrap`, `ScreenWrapProps` | removed: return `<NavigationStackPage>` elements from your own components |
-| — | New: `createNavigationStackController()` (`push`, `pop`, `popTo`, `replace`, `refresh`, `getPages`), `useNavigationStack()` (the same methods inside a page, `null` outside), `NavigationStackBack`, `onBarHiddenChange` |
+| — | New: `createNavigationStackController()` (`push`, `pop`, `popTo`, `replace`, `refresh`, `getPages`), `useNavigationStack()` (the same methods inside a page; it throws outside a stack), `NavigationStackBack`, `onBarHiddenChange`, `renderPage(key)` (draws a page that has no child of its own), `resetKey` (back to the first page when it changes) |
+| `safeTop` (a number or a CSS length) | `safeTop` in px (a number) |
 | `[data-slot=screen]`, `data-screen-key`, `data-screen-label` | `[data-slot=navigation-stack-page]`, `data-value`; the label is the text of `[data-slot=navigation-stack-title]` |
 | back button `button.bl-btn` | `[data-slot=navigation-stack-back]`. Pages carry `data-covered` (and `inert`) under the top, `data-starting-style` / `data-ending-style` as they push and pop, `data-swiping` and `--stack-progress` during an edge swipe, and `data-scrolled`; the bar `data-hidden` |
 
 ```tsx
 // 5.x
 const screens: Screen[] = [
-  { key: 'list', title: 'Contacts', largeTitle: true, subheader: <SearchField />, content: <Rows onPress={setSel} /> },
+  { key: 'list', title: 'Contacts', largeTitle: true, subheader: <SearchInput />, content: <Rows onPress={setSel} /> },
 ]
 if (sel) screens.push({ key: 'detail', title: sel.name, titleOnScroll: true, grouped: true,
   trailing: <Button>Edit</Button>, content: <Detail c={sel} /> })
@@ -1154,12 +1830,12 @@ if (sel) screens.push({ key: 'detail', title: sel.name, titleOnScroll: true, gro
     <NavigationStackBar><NavigationStackTitle>Contacts</NavigationStackTitle></NavigationStackBar>
     <NavigationStackContent>
       <NavigationStackLargeTitle />
-      <NavigationStackSubheader><SearchField /></NavigationStackSubheader>
+      <NavigationStackSubheader><SearchInput /></NavigationStackSubheader>
       <Rows onClick={setSel} />
     </NavigationStackContent>
   </NavigationStackPage>
   {sel ? (
-    <NavigationStackPage value="detail" grouped>
+    <NavigationStackPage value="detail" variant="grouped">
       <NavigationStackBar>
         <NavigationStackTitle showOnScroll>{sel.name}</NavigationStackTitle>
         <NavigationStackTrailing><Button>Edit</Button></NavigationStackTrailing>
@@ -1172,7 +1848,7 @@ if (sel) screens.push({ key: 'detail', title: sel.name, titleOnScroll: true, gro
 
 Rendering a page only while it is in `pages` is fine: a page you stop rendering as it pops stays on screen until it has slid out. Pages must be direct children of the stack (fragments and arrays are fine); a component of your own works as a page if it is the direct child, takes `value` and renders a `NavigationStackPage`. For a drill-down, keep the path and map it: `<NavigationStack pages={['root', ...path]} onPagesChange={(p) => setPath(p.slice(1))}>`.
 
-To push from inside a page, `useNavigationStack()?.push('detail', { reason: 'trigger-press', event })`. In a collapsed SplitView column the first page gets a back button to the previous column by itself, so a hand-made `leading` back button there can go (`rootBack={false}` turns it off).
+To push from inside a page, `useNavigationStack().push('detail', { reason: 'trigger-press', event })`. With neither `pages` nor `defaultPages`, a stack starts on its first page child. In a collapsed SplitView column the first page gets a back button to the previous column by itself, so a hand-made `leading` back button there can go (`rootBack={false}` turns it off).
 
 Escape now goes through UI SDK's layers: popups inside a page close first, the innermost stack pops next, and the first page leaves Escape alone. A push focuses the new page; a pop returns focus to what pushed it.
 
@@ -1195,11 +1871,16 @@ Every state on the root is a UI SDK value now, and the split view no longer meas
 | `useSplitView()` `.widthClass`, `.selection`, `.sidebarVisible`, `.setSidebarVisible`, `.supplementaryVisible`, `.setSupplementaryVisible`, `.topColumn`, `.widths` | `.sizeClass`, `.value`, `.sidebarOpen`, `.setSidebarOpen`, `.supplementaryOpen`, `.setSupplementaryOpen`, `.compactColumn`, `.columnWidths` |
 | `useSplitView().width` | removed: measure your own element with `useContainerWidth` |
 | `select`, `show`, `back`, `toggleSidebar`, `setColumnWidth` | the same; each takes `{ reason, event }` last and returns whether it happened |
+| `SplitViewItem id`, `subtitle`, `badge` | `value`, `description`, `trailing` (the row anatomy); new `disabled` (arrows skip it) and `render` |
 | `SplitViewItem onPress` (after the select) | `onClick(event)`, before the select; `event.preventDefault()` stops it |
 | `SplitViewItem` wrapped in `HoverCardTrigger` + `HoverCard` | `SplitViewItem preview={…}` |
 | `SplitViewSection expanded` / `defaultExpanded` / `onExpandedChange` | `open` / `defaultOpen` / `onOpenChange(open, details)` (UI SDK Collapsible) |
-| `SplitViewStack onDepthChange(depth)` | `onPagesChange(pages, details)` (keys from `"root"` to the top) |
-| root `data-width-class`, `data-sidebar-visible`; item `data-split-item`; stack `data-split-stack-can-pop`, page `data-top` | root `data-size-class`, `data-sidebar-open`; item `data-slot="split-view-item"` with `data-selected`; stack `data-can-pop`, pages `data-covered` |
+| `SplitViewStack` in a column, `onDepthChange(depth)`, `useSplitViewStack().push(node)` | a `NavigationStack` in the column (`onPagesChange(pages, details)`, `useNavigationStack().push(key)`, `renderPage`, `resetKey`); its first page gets the back button to the previous column when collapsed (see [the table above](#components-that-merged-moved-or-were-renamed)) |
+| `SplitViewHeader`/`SplitViewContent` on a pushed stack page | `NavigationStackBar` (+ `Leading`, `Title`, `Trailing`) and `NavigationStackContent` (+ `LargeTitle`) |
+| `SplitViewHeader titleOnScroll`, `titleAlign="leading"` | `showOnScroll`, `titleAlign="start"`; the back button is always named "Back to <title>" |
+| `SplitViewEmpty` | `EmptyState` from `@/components/ui/empty-state` (its title is now semibold foreground) |
+| `useSplitView().isSelected(column, id)` | `isCurrent(column, value)` |
+| root `data-width-class`, `data-sidebar-visible`; item `data-split-item` and its `selected` state; stack `data-split-stack-can-pop`, page `data-top` | root `data-size-class`, `data-sidebar-open`; item `data-slot="split-view-item"` with `data-current` (`group-data-current/item:`) and `aria-current`; a column's `className` and `style` land on the column's `<section>`; the stack is a NavigationStack (`data-can-pop`, pages `data-covered`) |
 
 ```tsx
 // 5.x
@@ -1217,31 +1898,32 @@ Every state on the root is a UI SDK value now, and the split view no longer meas
 <SplitView aria-label="Reminders" value={selection} onValueChange={setSelection}
   defaultSidebarOpen={{ medium: true }} sidebarOpen={sidebar} onSidebarOpenChange={setSidebar}
   onSizeClassChange={(sc) => setCompact(sc === 'compact')}>
-  <SplitViewItem id={id} title={l.title} onClick={pick(l)} preview={<ListCard l={l} />} />
+  <SplitViewItem value={id} title={l.title} onClick={pick(l)} preview={<ListCard l={l} />} />
   <SplitViewSection title="Chats" collapsible defaultOpen onOpenChange={(open) => setOpen(open)}>…</SplitViewSection>
 </SplitView>
 ```
 
-## Credenza
+## Credenza: now the Dialog flow
 
-[Credenza](https://blamy.github.io/ui/#/credenza).
+[Dialog](https://blamy.github.io/ui/#/dialog), section "Credenza: the responsive dialog".
 
-`Credenza` is UI SDK's Dialog with parts now, instead of one component that took everything as props. It is `presentation="auto"` by default: a centered card when the nearest size-class scope is medium or regular, a floating tray you drag down to dismiss when it is compact. `BLProvider` is a scope, and so are the containers inside it (a SplitView column, a NavigationStack, a SidebarProvider), so a Credenza that used to get `compact={…}` from one of them can leave `presentation` out, with or without a trigger; outside every scope "auto" falls back to a phone media query. Pass `presentation` when `compact` came from something else.
+`Credenza` is gone. What it did is what `Dialog` does now: `presentation="auto"` by default (a centered card when the nearest size-class scope is medium or regular, a sheet you drag down to dismiss when it is compact), and a `view` on the root, with `DialogView`, `DialogBack` and a travelling `DialogTitle`, for a flow that steps between screens. `DialogContent variant="tray"` is Credenza's floating tray in the sheet presentation, and `DialogHeader variant="bar"` its back / title / × row. `BLProvider` is a scope, and so are the containers inside it (a SplitView column, a NavigationStack, a SidebarProvider), so a Credenza that used to get `compact={…}` from one of them can leave `presentation` out, with or without a trigger; outside every scope "auto" falls back to a phone media query. Pass `presentation` when `compact` came from something else.
 
 | 5.x | 6.0 |
 | --- | --- |
+| `<Credenza>` | `<Dialog>` (`view`, `presentation`, `dismissible`, `open`, `onOpenChange`, `controller`) |
 | `onClose()` | `onOpenChange(open, details)`; reasons `escape-key`, `outside-press`, `close-press`, `swipe`, `imperative` |
 | `compact={bool}` | `presentation={bool ? 'sheet' : 'dialog'}`, or leave it out to follow the size class |
 | `isDismissable={false}` | `dismissible={false}`: Escape, the backdrop and the swipe are refused (`onDismissAttempt` runs) and the × is left out |
-| `title` | `<CredenzaTitle>` in a `<CredenzaHeader>`; with no title, name `CredenzaContent` with `aria-label` |
-| `canBack` + `onBack` | `<CredenzaBack hidden={!canBack} onClick={onBack} />`, first in the header |
-| the built-in × | `<CredenzaClose />`, last in the header; with children or `render` it is any closing element |
-| the built-in scrim | `<CredenzaBackdrop />`, the root's first child |
-| children | children of `<CredenzaView>`, which springs the height and cross-fades between `view`s |
-| `className`, `style` on the card (`[data-slot=credenza]`) | on `CredenzaContent` (`[data-slot=dialog-content]`, `data-presentation="dialog" \| "sheet"`); style the tray with `data-[presentation=sheet]:` |
-| `data-autofocus` | `autoFocus` on the control, or `initialFocus` on `CredenzaContent` |
-| `credenzaVariants({ compact })` | `credenzaVariants({ presentation: 'dialog' \| 'sheet' })` |
-| — | New: `CredenzaTrigger`, `createCredenzaController` |
+| `title` | `<DialogTitle>` in a `<DialogHeader variant="bar">`; with no title, name `DialogContent` with `aria-label` |
+| `canBack` + `onBack` | `<DialogBack hidden={!canBack} onClick={onBack} />`, first in the header |
+| the built-in × | `<DialogClose />`, last in the header; with children or `render` it is any closing element |
+| the built-in scrim | `<DialogBackdrop />`, the root's first child |
+| children | children of `<DialogView>`, which springs the height and slides between `view`s (the leaving step is `inert`) |
+| `className`, `style` on the card (`[data-slot=credenza]`) | on `DialogContent variant="tray"` (`[data-slot=dialog-content]`, `data-presentation="dialog" \| "sheet"`); style the tray with `data-[presentation=sheet]:` |
+| `data-autofocus` | `autoFocus` on the control, or `initialFocus` on `DialogContent` |
+| `credenzaVariants({ compact })` | `dialogVariants({ size, variant })` |
+| — | New: `DialogTrigger`, `createDialogController`; `SurfaceFlow` / `SurfaceFlowTitle` to drive a `DialogView` from a surface of your own |
 
 ```tsx
 // 5.x
@@ -1253,98 +1935,124 @@ Every state on the root is a UI SDK value now, and the split view no longer meas
 </Credenza>
 
 // 6.0
-<Credenza open={!!dialog} onOpenChange={(open) => { if (!open) setDialog(null) }}
+<Dialog open={!!dialog} onOpenChange={(open) => { if (!open) setDialog(null) }}
   presentation={compact ? 'sheet' : 'dialog'} dismissible={view !== 'deleting'} view={view}>
-  <CredenzaBackdrop />
-  <CredenzaContent className="bg-muted">
-    <CredenzaHeader>
-      <CredenzaBack hidden={view !== 'tracker'} onClick={() => setDialog('settings')} />
-      <CredenzaTitle>{TITLES[view]}</CredenzaTitle>
-      <CredenzaClose />
-    </CredenzaHeader>
-    <CredenzaView>
+  <DialogBackdrop />
+  <DialogContent variant="tray" className="bg-muted">
+    <DialogHeader variant="bar">
+      <DialogBack hidden={view !== 'tracker'} onClick={() => setDialog('settings')} />
+      <DialogTitle>{TITLES[view]}</DialogTitle>
+      <DialogClose />
+    </DialogHeader>
+    <DialogView>
       <div className="px-4 pt-1 pb-4">…</div>
-      <CredenzaClose render={<Button variant="secondary" />}>Cancel</CredenzaClose>
-    </CredenzaView>
-  </CredenzaContent>
-</Credenza>
+      <DialogClose render={<Button variant="secondary" />}>Cancel</DialogClose>
+    </DialogView>
+  </DialogContent>
+</Dialog>
 ```
 
-It is a real modal now: focus moves in whenever it opens (also when it mounts open), Tab stays inside, the rest of the layer host is inert, and focus goes back to the trigger. Pass `initialFocus="none"` on `CredenzaContent` to leave focus where it is. Escape is `preventDefault()`ed rather than stopped, so a window key listener behind it should skip `event.defaultPrevented` keys.
+It is a real modal now: focus moves in whenever it opens (also when it mounts open), Tab stays inside, the rest of the layer host is inert, and focus goes back to the trigger. Pass `initialFocus="none"` on `DialogContent` to leave focus where it is. Escape is `preventDefault()`ed rather than stopped, so a window key listener behind it should skip `event.defaultPrevented` keys. Every `Dialog` now follows the size class: a plain dialog of yours that must stay a centered card on a phone takes `presentation="dialog"`.
 
-## FloatingSheet and FloatingChat
+## FloatingSheet, FloatingChat and ArtifactChatContainer
 
-[FloatingSheet](https://blamy.github.io/ui/#/floating-sheet), [FloatingChat](https://blamy.github.io/ui/#/floating-chat).
+[FloatingSheet](https://blamy.github.io/ui/#/floating-sheet), [ArtifactChatContainer](https://blamy.github.io/ui/#/artifact-chat-container) (FloatingChat and ChatColumn are its floating and docked layouts now).
 
-The sheet is a bottom UI SDK Drawer in its own layer host, with snap points at the peek, each detent and full height. At the peek the page stays usable; above it the sheet is modal to its own box (Tab stays in the sheet, and the scrim dims and catches presses). Its contents never remount between stops.
+The sheet is a bottom UI SDK Drawer in its own layer host, with snap points at the peek, each stop and full height. At the peek the page stays usable; above it the sheet is modal to its own box (Tab stays in the sheet, and the scrim dims and catches presses). Its contents never remount between stops. `FloatingChat` is gone: the floating chat is `ArtifactChatContainer layout="floating"`, whose floating layer is a `FloatingSheet` (the kit has one engine for "peek, grow, fold into a button"), and `ChatColumn` is the container's docked column.
 
 | 5.x | 6.0 |
 | --- | --- |
-| `onOpenChange(open)` | `onOpenChange(open, details)`; reasons `swipe`, `handle-press`, `handle-key`, `imperative` |
+| `onOpenChange(open)` | `onOpenChange(open, details)`; reasons `swipe`, `handle-press`, `handle-key`, `escape-key`, `outside-press`, `imperative` (Escape and a scrim press can be canceled) |
 | `onDismiss()` | `onVisibleChange(visible, details)` (and `defaultVisible`); `onVisibleChange={(v) => { if (!v) close() }}` |
-| `useFloatingSheet().progress` live on every drag frame | the resting stop (0 at the peek, 1 full); style live effects off the `--fs-grown` variable on `[data-slot=floating-sheet-surface]` |
-| `label` named a region | `label` names the sheet (`role="dialog"`) |
+| `dismissible`, `minimizable` | `collapse: 'fab' \| 'hide' \| 'none'` (default `fab`): `dismissible` is `collapse="hide"`, `minimizable={false}` is `collapse="none"`; new controlled `minimized` / `defaultMinimized` / `onMinimizedChange(minimized, details)` |
+| `detents`, `label` | `snapPoints` (the same values), `aria-label` (it names the sheet, `role="dialog"`) |
+| `appearance: 'glass' \| 'sheet'`, `tone: 'auto' \| 'dark' \| 'light'` | `variant: 'glass' \| 'sheet'`, `appearance: 'auto' \| 'light' \| 'dark'` (`auto` mixes the material from the page's own tokens) |
+| `fabPosition` (eight corners and edges), `fabIcon` | `fabSide: 'top' \| 'bottom' \| 'start' \| 'end'` + `fabAlign: 'start' \| 'center' \| 'end'`; `<FloatingSheetFab>{icon}</FloatingSheetFab>` (the FAB button itself; `aria-label` names it) |
+| `FloatingSheet.Body`, `.Foot`, `.Fab`, `.Context`, `.useFloatingSheet` | `FloatingSheetBody`, `FloatingSheetFoot`, `FloatingSheetFab`, `useFloatingSheet()`; Body and Foot render where they are written (Body first) |
+| `useFloatingSheet().progress` live on every drag frame | the resting stop (0 at the peek, 1 full); style live effects off the `--fs-grown` variable on `[data-slot=floating-sheet-surface]`. `setOpen(open, given?)` and `setMinimized(m, given?)` go through the change callbacks |
 | cap `[data-slot=floating-sheet-cap]` | UI SDK's `DrawerHandle` (`[data-slot=drawer-handle]`, "Expand" / "Collapse"): a press steps to the next stop, arrow keys, Home and End move between stops |
 | scrim `[data-slot=floating-sheet-scrim]` | `[data-slot=drawer-backdrop]` |
-| FAB `[data-slot=floating-sheet-fab]`, morphed from the surface | a separate button named "Open", hooked by `[data-floating-sheet-fab]` (its `data-slot` is UI SDK's `button`), that pops in as the sheet is dragged below its peek |
-| `floatingSheetSurfaceVariants({ placement })` | `floatingSheetFabVariants({ appearance, position })`; the surface recipe keeps `appearance` and `hidden` |
+| FAB `[data-slot=floating-sheet-fab]`, morphed from the surface | a separate button named "Open " + the sheet's name, hooked by `[data-floating-sheet-fab]`, `inert` until the sheet folds |
+| `floatingSheetSurfaceVariants({ placement })` | `floatingSheetSurfaceVariants({ variant, hidden })`, `floatingSheetFabVariants({ variant, side, align })`, `floatingSheetVariants()` |
 | root variables `--ck-sheet-height`, `-width`, `-reveal`, `-radius`, `-grown`, `-minimize`, `-gutter`, `-dock-height`, `-scrim-opacity`… | removed; the surface reads UI SDK's `--drawer-progress` (`--fs-grown`, `--fs-extent`, `--fs-gutter`, `--fs-radius`). The body height, alpha, shadow and divider variables stay, on the surface. |
-| root `data-dragging` | `data-dragging` on the surface |
+| root `data-dragging`, `data-appearance="glass"`, `data-tone` | `data-dragging` on the surface; `data-variant`, and `data-appearance` only for an explicit appearance |
 | Escape on `document` | UI SDK's Escape, with focus in the sheet; it collapses to the peek |
+| `useHideOnScroll` from `@/components/ui/floating-sheet` | from `@/lib/scroll-edge` (the barrel name is unchanged) |
 
 ```tsx
 // 5.x
-<FloatingSheet dismissible visible={dockOpen} onDismiss={() => setDockOpen(false)} onOpenChange={setOpen} />
+<FloatingSheet dismissible visible={dockOpen} onDismiss={() => setDockOpen(false)} onOpenChange={setOpen} label="Dock" />
 
 // 6.0
-<FloatingSheet dismissible visible={dockOpen} onVisibleChange={(v) => { if (!v) setDockOpen(false) }} onOpenChange={setOpen} />
+<FloatingSheet collapse="hide" visible={dockOpen} onVisibleChange={(v) => { if (!v) setDockOpen(false) }} onOpenChange={setOpen} aria-label="Dock" />
 ```
 
-FloatingChat keeps its props except its three change callbacks, which take details now (`details.cancel()` keeps the state as it is): `onOpenChange(open, details)` (reasons `handle-press`, `swipe`, `escape-key`, `outside-press`, `trigger-press`, `imperative`), `onMinimizedChange(minimized, details)` (`swipe` for a drag below rest, `trigger-press` for the FAB or the folded bump, `imperative`) and `onComposingChange(composing, details)` (`trigger-press` for the working status, `handle-press` or `swipe` when opening the chat brings the composer back, `imperative`, which includes `working` starting or stopping on an uncontrolled chat). An open chat is a layer in UI SDK's stack: Escape and a press outside it close it. The scrim is no longer a focusable "Close" button but a decorative `[data-slot=floating-chat-scrim]` whose press is the layer's outside press. Its working-status button is a UI SDK Button marked `data-floating-chat-working`.
+| 5.x | 6.0 |
+| --- | --- |
+| `<FloatingChat>` over a page | `<ArtifactChatContainer layout="floating">` (or `layout="auto"`, which floats below its `breakpoint` and docks above it) |
+| `<ChatColumn>`, `ChatColumnTranscript`, `ChatColumnComposer` | the container's docked layout: an `aside` named by `chatLabel` (default "Chat"); for a column of your own, `Conversation` |
+| `ArtifactChatContainer.Content`, `.Chat`, `.Composer` | `ArtifactChatContainerContent`, `ArtifactChatContainerChat`, `ArtifactChatContainerComposer` (real parts: Chat and Composer render into the docks). The docks pad the composer: drop your own padding |
+| `chatOpen` / `defaultChatOpen` / `onChatOpenChange` | `open` / `defaultOpen` / `onOpenChange(open, details)` (FloatingSheet's reasons) |
+| `onMinimizedChange(minimized)` | `onMinimizedChange(minimized, details)` (`swipe`, `trigger-press`, `imperative`); new controlled `minimized` / `defaultMinimized` |
+| `onComposingChange(composing)`, `onAdd` | `composing` / `onComposingChange(composing, details)` (`trigger-press` for the working status, `handle-press` or `swipe` when opening the chat brings the composer back, `imperative`); `onAdd` is `onComposingChange(true, { reason: 'trigger-press' })` |
+| `chatSide: 'left' \| 'right'`, `fabPosition`, `appearance: 'glass' \| 'sheet'`, `tone` | `chatSide: 'start' \| 'end'`, `fabSide` + `fabAlign`, `variant`, `appearance: 'auto' \| 'light' \| 'dark'` (`auto` really follows the page; it was dark glass) |
+| `ArtifactChatContainer.Context`, `.useContainer`, `useArtifactChatContainer().width`, `.compact`, `.chatOpen`, `.setChatOpen` | `useArtifactChatContainer()`: `.sizeClass`, `.layout === 'floating'`, `.open`, `.setOpen(open, given?)`, `.composing`, `.minimized` |
+| root `data-layout="compact"`; the content was a `<main>` | `data-layout="floating" \| "split"`; a `div` (pass `role="main"` when it is the page's main) |
+| an open chat as a separate layer with a focusable "Close" scrim | the FloatingSheet's layer: Escape and a press outside bring it to rest, and the scrim is decorative |
+| — | New: `chatLabel`, `gutter` (12), `fabIcon`, `artifactChatContainerVariants` in the barrel; the root takes every `div` prop and `ref` |
 
-## SideDrawer
+## SideDrawer, EdgeDrawer and AdaptivePane
 
-[SideDrawer](https://blamy.github.io/ui/#/side-drawer), [AdaptivePane](https://blamy.github.io/ui/#/adaptive-pane).
+[AdaptivePane](https://blamy.github.io/ui/#/adaptive-pane) (SideDrawer is its `push` and `drawer` presentations), [Sheet](https://blamy.github.io/ui/#/sheet), section "Contained, and the panel look" (for EdgeDrawer).
 
-SideDrawer and AdaptivePane are primitives whose overlay presentations are UI SDK's Drawer, contained in their host: focus moves in and is trapped, Escape and a press on the scrim close, a swipe toward the edge closes, and focus goes back. Their children render once and move between presentations without remounting.
+`SideDrawer` is gone: it is an `AdaptivePane` on the `end` side. `EdgeDrawer` is gone too: it is a `<Sheet contained>` (the layer host of Sheet, which keeps the sheet inside its parent's box) with `SheetContent variant="panel"`. AdaptivePane's overlay presentations are UI SDK's Drawer, contained in their host: focus moves in and is trapped, Escape and a press on the scrim close, a swipe toward the edge closes, and focus goes back. Its children render once and move between presentations without remounting. While a page is pushed, the host's other children are `inert`.
 
 | Module | 5.x | 6.0 |
 | --- | --- | --- |
-| `side-drawer` | `mode: 'fixed' \| 'overlay'` + `compact` | `presentation: 'fixed' \| 'overlay' \| 'push' \| 'auto'` (default `auto`) |
-| `side-drawer` | `mode="fixed"`; `mode="overlay"` (pushed on a compact host); `mode="overlay" compact={false}`; `compact` | `presentation="fixed"`; leave it out (`auto`); `presentation="overlay"`; `presentation="push"` |
-| `side-drawer` | `compactBreakpoint` | `breakpoint` (still 520) |
-| `side-drawer` | `open` (required), `onClose()` | `open` / `defaultOpen` / `onOpenChange(open, details)` / `controller`; reasons `close-press`, `escape-key`, `outside-press`, `swipe`, `back`, `imperative` |
-| `side-drawer` | `sideDrawerVariants({ mode })` | `sideDrawerVariants({ presentation })` |
-| `side-drawer` | root `data-mode`, `data-presentation="sheet" \| "push"`; the push panel always rendered | root `data-presentation="fixed" \| "overlay" \| "push"`, `data-open` / `data-closed`; the push panel is rendered only while open or leaving |
-| `adaptive-pane` | `mode`, `AdaptivePaneMode` | `presentation`, `AdaptivePanePresentation` (same four values); root `data-presentation` |
-| `adaptive-pane` | `open`, `onClose()` | `open` / `defaultOpen` / `onOpenChange(open, details)` / `controller` |
-| `adaptive-pane` | `onOpen` (turned on the edge strip) | `swipeToOpen`; the open arrives as `onOpenChange(true, { reason: 'swipe' })` |
+| `side-drawer` → `adaptive-pane` | `<SideDrawer>` | `<AdaptivePane side="end">` |
+| `adaptive-pane` | SideDrawer `mode: 'fixed' \| 'overlay'` + `compact`; AdaptivePane `mode`, `AdaptivePaneMode` | `presentation: 'column' \| 'drawer' \| 'push' \| 'cover' \| 'hidden' \| 'auto'` (default `auto`), `AdaptivePanePresentation`; root `data-presentation` |
+| `adaptive-pane` | SideDrawer `mode="fixed"`; `mode="overlay"` (pushed on a compact host); `mode="overlay" compact={false}`; `compact` | `presentation="column"`; leave it out (`auto`: a column in a regular scope, a drawer in a medium one, a pushed page in a compact one); `presentation="drawer"`; `presentation="push"` |
+| `adaptive-pane` | SideDrawer `compactBreakpoint` | removed: `auto` reads the size-class scope |
+| `adaptive-pane` | SideDrawer `title`, its × and the push back button, `backLabel` | `<AdaptivePaneHeader><AdaptivePaneTitle>…</AdaptivePaneTitle><AdaptivePaneClose backLabel="…" /></AdaptivePaneHeader>`: × in a column, drawer or cover, "‹ backLabel" while pushed; the title names the pane unless you pass `aria-label` |
+| `adaptive-pane` | `open` (required), `onClose()`; `open` read only by the drawer | `open` / `defaultOpen` / `onOpenChange(open, details)` / `controller`; `open` means shown in every presentation (a closed column leaves the layout), so a column hidden with `presentation="hidden"` now passes `open={false}`. Reasons `close-press`, `escape-key`, `outside-press`, `swipe`, `back`, `imperative` |
+| `adaptive-pane` | SideDrawer `width`; AdaptivePane `onResize(width, mode)` on every move | `columnWidth` / `drawerWidth` (a number or a CSS length; the drawer defaults to `20rem`); `widths` / `defaultWidths` / `onWidthsChange({ column, drawer }, details)` once a resize settles |
+| `adaptive-pane` | `maxWidth: number \| string` | `maxWidth: number` (caps resizes); the drawer is capped at 85% (a `max-w-*` class changes it) |
+| `adaptive-pane` | `onOpen` (turned on the edge strip) | `swipeToOpen`; the open arrives as `onOpenChange(true, { reason: 'swipe' })`. It opens past a third of the host's width, or sooner with a flick |
 | `adaptive-pane` | `swipe` | unchanged: `swipe={false}` keeps the drawer from following a drag shut; `dismissible={false}` turns off every dismissal |
-| `adaptive-pane` | `onResize(width, mode)` on every move | `widths` / `defaultWidths` / `onWidthsChange({ column, drawer }, details)` once a resize settles |
-| `adaptive-pane` | `maxWidth: number \| string` | `maxWidth: number` (caps resizes) + `drawerMaxWidth: number \| string` (CSS) |
-| `adaptive-pane`, `edge-drawer` | `scrimClassName` | `backdropClassName` |
-| `adaptive-pane`, `edge-drawer` | `side: 'left' \| 'right'` (default `left`) | also UI SDK's logical `start` / `end`, which follow the reading direction; the default is `start` (the left in a left-to-right app, the right under `dir="rtl"`). SideDrawer's overlay comes from the `end`, the compact Sidebar's from the `start` |
-| `adaptive-pane` | `swipeToOpen` opened on any swipe from the strip | it opens past a third of the host's width, or sooner with a flick, as the edge swipes do |
+| `adaptive-pane` | `scrimClassName`, `scrim`, `shadow`; `columnClassName` / `columnStyle` beside `className` / `style` | removed (the scrim is `bg-overlay`, one panel shadow); one `className` / `style` on the pane in every presentation, or a function of `{ presentation, open, side }` |
+| `adaptive-pane` | `side: 'left' \| 'right'` (default `left`) | also UI SDK's logical `start` / `end`, which follow the reading direction; the default is `start` |
 | `adaptive-pane` | `hidden` unmounted the children | children stay mounted, off the page |
-| both | — | New: `createSideDrawerController()`, `createAdaptivePaneController()`, `columnClassName`, `aria-label` (the drawer's name), `dismissible`, `modal` |
+| `adaptive-pane` | `sideDrawerVariants`, `sideDrawerPageClass`, `--side-drawer-under`, slots `side-drawer-panel`, `-bar`, `-back`, `-close` | removed; `adaptivePanePageClass`, `--adaptive-pane-under`, `data-adaptive-pane-swiping` / `-settling`; slots `adaptive-pane-page`, `adaptive-pane-header`, `adaptive-pane-close` |
+| `adaptive-pane` | — | New: `createAdaptivePaneController()`, `aria-label`, `dismissible`, `modal` |
+| `edge-drawer` → `sheet` | `<EdgeDrawer side open onOpenChange aria-label>` (host `[data-slot=edge-drawer-host]`) | `<Sheet contained side open onOpenChange>` + `<SheetBackdrop />` + `<SheetContent variant="panel" aria-label>` (host `[data-slot=sheet-host]`, `data-variant="panel"` on the content) |
+| `sheet` | EdgeDrawer `width`, `maxWidth`, `shadow`, `className`, `style`; `zIndex`; `scrimClassName` | `SheetContent className` / `style` (the panel defaults to `w-80 max-w-[85%]`); the `--sheet-z` variable on the parent (default 30); `SheetBackdrop className` (default `bg-overlay`) |
+| `sheet` | EdgeDrawer `swipe={false}` | `SheetContent swipe={false}` (any variant) |
 
 ```tsx
 // 5.x
 <SideDrawer mode={wide ? 'fixed' : 'overlay'} open={open} onClose={() => setOpen(false)} title="Info">…</SideDrawer>
 <AdaptivePane mode={mode} open={open} onClose={() => setOpen(false)} onOpen={() => setOpen(true)}
   resizable onResize={(w, m) => save(m, w)} maxWidth="84%">…</AdaptivePane>
+<EdgeDrawer side="left" open={open} onOpenChange={setOpen} aria-label="Menu" zIndex={20}>…</EdgeDrawer>
 
 // 6.0
-<SideDrawer presentation={wide ? 'fixed' : 'auto'} open={open} onOpenChange={setOpen} title="Info">…</SideDrawer>
+<AdaptivePane side="end" presentation={wide ? 'column' : 'auto'} open={open} onOpenChange={setOpen}>
+  <AdaptivePaneHeader><AdaptivePaneTitle>Info</AdaptivePaneTitle><AdaptivePaneClose /></AdaptivePaneHeader>
+  …
+</AdaptivePane>
 <AdaptivePane presentation={mode} open={open} onOpenChange={setOpen} swipeToOpen
-  resizable onWidthsChange={(widths) => save(widths)} drawerMaxWidth="84%">…</AdaptivePane>
+  resizable onWidthsChange={(widths) => save(widths)} className="max-w-[84%]">…</AdaptivePane>
+<Sheet contained side="start" open={open} onOpenChange={setOpen}>
+  <SheetBackdrop />
+  <SheetContent variant="panel" aria-label="Menu">…</SheetContent>
+</Sheet>
 ```
 
 ## Sidebar
 
 [Sidebar](https://blamy.github.io/ui/#/sidebar).
 
-`SidebarProvider` can be controlled now (`open`, `onOpenChange(open, details)`, `controller`), and `breakpoint` is its size class's medium breakpoint. Crossing it resets `open` through `onOpenChange` with reason `content-resize`, which you can cancel. On a compact provider the sidebar is a Drawer contained in the provider.
+`SidebarProvider` can be controlled now (`open`, `onOpenChange(open, details)`, `controller`), and `breakpoint` is its size class's medium breakpoint. Crossing it resets `open` through `onOpenChange` with reason `content-resize`, which you can cancel. The provider is a size-class scope, and `Sidebar presentation="auto"` (the default) is a drawer while it is compact: the drawer is AdaptivePane's, contained in the provider. The parts are flat exports now, every part takes its element's props (`className`, `style`, `ref`, `aria-*`), and the row props follow the kit's row anatomy.
 
 | 5.x | 6.0 |
 | --- | --- |
@@ -1352,33 +2060,52 @@ SideDrawer and AdaptivePane are primitives whose overlay presentations are UI SD
 | `setOpen((o) => !o)` | `toggle()`, or `setOpen(!open)`: `setOpen` takes a boolean and returns whether it happened |
 | `onClick={toggle}` | `onClick={() => toggle()}` (`toggle` takes options, not an event) |
 | `SBCtx`, `SBCollapsedCtx` | removed; `useSidebarCollapsed()` |
-| `SidebarItem onPress`, `SidebarSearch onPress` | `onClick`. A collapsed item is named by its label, and `active` sets `aria-current="page"` |
-| `SidebarTrigger` (react-aria Button) | the primitive's trigger part: any button props, `render`, `aria-label` (default "Toggle sidebar"), `aria-expanded` |
+| `Sidebar.Header`, `.Content`, `.Footer`, `.Workspace`, `.Search`, `.Section`, `.Item` | `SidebarHeader`, `SidebarContent` (a `nav` landmark, `aria-label` default "Sidebar"), `SidebarFooter`, `SidebarWorkspace`, `SidebarSearch`, `SidebarSection` (a `group` named by its title), `SidebarItem` |
+| `Sidebar variant="overlay"` | `presentation="drawer"`; `variant` is only the look (`docked`, `rail`, `float`), and `presentation="column"` keeps a column at every width |
+| `SidebarItem onPress`, `SidebarSearch onPress` | `onClick`. In a drawer, pressing an item closes the drawer after `onClick` (reason `action`) unless it calls `event.preventDefault()` |
+| `SidebarItem label`, `active`, `tone`, `badge` | `title`, `current` (writes `aria-current="page"`), `tint` (a CSS color), `trailing` (a number or string is drawn as a small tinted `Badge`); new `description`, `disabled`, `render={<a href />}` |
+| `SidebarItem icon="inbox"` (a `SIDEBAR_ICONS` key) | `icon="tray"`: an `IconName` or any node. `home` → `house`, `inbox` → `tray`, `box` → `cube`, `cal` → `calendar`, `user` → `person-bust`, `code` → `branch` or `terminal`, `search` → `magnifyingglass` |
+| `SidebarWorkspace name detail initial` | `title`, `description`, `icon` (any node; the default tile is the title's first letter) |
+| `SidebarSearch` with a fixed `/` chip and no key, placeholder "Quick search" | `shortcut="/"` binds the key and draws the keycap; placeholder "Search" |
+| `SidebarTrigger` (react-aria Button) | the primitive's trigger part: any button props, `render`, `aria-label` (default "Toggle sidebar"), `aria-expanded`, `shortcut` |
+| `SidebarNav`, `SidebarNavProps`, `SIDEBAR_ICONS` | removed: they were demo compositions (now in the `split-view-demos` block) |
 | `Sidebar` | also takes `aria-label` (the drawer's name, default "Sidebar"); children no longer remount when the variant or size class changes |
-| — | New: `createSidebarController()` (`isOpen`, `setOpen`, `toggle`) |
+| — | New: `createSidebarController()` (`isOpen`, `setOpen`, `toggle`), `sidebarItemVariants`, `SidebarPresentation`, `SidebarState` |
 
 ```tsx
 // 5.x
 const { narrow, setOpen, toggle } = useSidebar()
 <button onClick={toggle}>…</button>
-<SidebarItem icon="home" label="Home" onPress={() => { go('home'); if (narrow) setOpen(false) }} />
+<Sidebar variant="overlay">
+  <Sidebar.Content>
+    <Sidebar.Item icon="home" label="Home" badge={3} active onPress={() => { go('home'); if (narrow) setOpen(false) }} />
+  </Sidebar.Content>
+</Sidebar>
 
 // 6.0
-const { compact, setOpen, toggle } = useSidebar()
+const { toggle } = useSidebar()
 <button onClick={() => toggle()}>…</button>
-<SidebarItem icon="home" label="Home" onClick={() => { go('home'); if (compact) setOpen(false) }} />
+<Sidebar presentation="drawer">
+  <SidebarContent>
+    <SidebarItem icon="house" title="Home" trailing={3} current onClick={() => go('home')} />
+  </SidebarContent>
+</Sidebar>
 ```
 
 ## Lists
 
-[Lists](https://blamy.github.io/ui/#/lists), [IndexBar](https://blamy.github.io/ui/#/index-bar), [MessageScroller](https://blamy.github.io/ui/#/message-scroller), [Conversation](https://blamy.github.io/ui/#/conversation), [ArtifactChatContainer](https://blamy.github.io/ui/#/artifact-chat-container).
+[Lists](https://blamy.github.io/ui/#/lists), [IndexBar](https://blamy.github.io/ui/#/index-bar), [TraceTimeline](https://blamy.github.io/ui/#/trace-timeline), [MessageScroller](https://blamy.github.io/ui/#/message-scroller), [Conversation](https://blamy.github.io/ui/#/conversation). ArtifactChatContainer is in [its own section](#floatingsheet-floatingchat-and-artifactchatcontainer).
 
 Swipe actions are UI SDK's `createSwipeActions` and reordering is `createReorder`, so both move the way UI SDK's do from the keyboard.
 
 | Module | 5.x | 6.0 |
 | --- | --- | --- |
+| `list` | `List.Section`, `List.Row` | `ListSection`, `ListRow` (flat exports); all three parts take `ref` and their element's props |
+| `list` | `List inset` | `List variant="inset"` (`'plain' \| 'inset'`, `listVariants`); new `density` (`compact` / `default` / `comfortable`: 36 / 46 / 56px rows) and `emptyState` |
+| `list` | `ListRow leading`, `subtitle`, `selected`, `destructive`, `center`, `edit` | `icon`, `description`, `current`, `tone="destructive"`, `justify="center"`, `editing` (a boolean); new `disabled` |
+| `list` | `ListRow onDelete` | `trailingActions={[{ label: 'Delete', destructive: true, onAction }]}` |
 | `list` | `ListRow onPress` | `onClick(event, details)` |
-| `list` | `ListRow rowRole="option"` | removed: a list whose rows are chosen is a `Listbox`; a row that only shows the chosen value is `selected`, or `accessory="check" checked` (both set `aria-current`) |
+| `list` | `ListRow rowRole="option"` | removed: a list whose rows are chosen is a `Listbox`; a row that only shows the chosen value is `current`, or `accessory="check" checked` (both set `aria-current`) |
 | `list` | `ListSection innerRef` | `ref` |
 | `list` | `ListSection onReorder(from, to)` | `onOrderChange(order, details)`: `order` is the rows' keys in their new order; `details.from` and `details.to` are the indexes |
 | `list` | a grip moved its row on ↑ / ↓ | Space or Enter picks the row up, ↑ ↓ Home End move it, Space or Enter drops it, Esc puts it back; each move is announced |
@@ -1387,12 +2114,18 @@ Swipe actions are UI SDK's `createSwipeActions` and reordering is `createReorder
 | `list` | one open row at a time across every list | an open row closes on any press outside it |
 | `list` | — | New: `ListRow controller={createListRowController()}` (`show('leading' \| 'trailing')`, `close()`) |
 | `list` | rows directly in the section; buttons `[data-row-action]`, grip `[data-row-grip]` | each row wrapped in `[data-slot=list-section-item]` inside `[data-slot=list-section-rows]` (a `list`); buttons `[data-slot=list-row-action]`, grip `[data-slot=list-section-handle]`; actions `[data-slot=list-row-actions][data-side=start \| end]` |
-| `index-bar` | `onJump(key, point, index)`, `onLetter(key)` | the same plus `details` (`reason` `drag`, `list-navigation`, `item-press`, `imperative`); keys stop at either end, PageUp and PageDown work; options are `[data-slot=index-bar-option]` with `data-highlighted` |
+| `index-bar` | `avail`, `onLetter(key)`, the exported `AL` | `items={alphabetItems(available)}` (`items` is required) and `onJump` |
+| `index-bar` | `onJump(key, point, index)` | `onJump(key, details)`: `details` has `index`, `item`, `reason` (`drag`, `list-navigation`, `item-press`, `imperative`) and `event`; keys stop at either end, PageUp and PageDown work; options are `[data-slot=index-bar-option]` with `data-highlighted` |
+| `index-bar` | `side: 'left' \| 'right'`, `label`, `top` / `bottom` / `width`, `value`, item `dim` | `side: 'start' \| 'end'` (default `end`), `aria-label`, classes on the rail (`className="top-14 bottom-2"`), `current` (`aria-current`), item `disabled` (`aria-disabled`, still reachable) |
+| `trace-timeline` | `label`, `top`, `bottom`, `railWidth`, `renderPreview`, `previewLines`, `previewWidth` | `aria-label` (default "Timeline"), classes on the rail, a `<TraceTimelinePreview lines width>{(time, stop) => …}</TraceTimelinePreview>` child; Alt+↑ / ↓ move between lanes, `[` / `]` between requests |
+| `message-scroller` | `items={[{ id, anchor, node }]}`, type `MessageScrollerItem` | `MessageScrollerItem value anchor` children (a component; items may be nested), `MessageScrollerItemProps`; new `aria-label`, `ref`, `--message-column-width` / `--message-gutter` |
 | `message-scroller` | `data-anchor="1"`; jump button `[data-slot=message-scroller-jump]` | `data-anchor=""`; `[data-slot=message-scroller-jump]` is the wrapper (`data-open` / `data-closed`), the button `[data-slot=message-scroller-jump-button]` |
-| `conversation` | `Suggestion onPress` | `onClick`; `[data-slot=suggestion]` is UI SDK's `[data-slot=button]` |
+| `conversation` | `Suggestion onPress` | `onClick`; it is the kit's `Button variant="outline" size="sm"` (`SuggestionProps` are Button's), so `[data-slot=suggestion]` is `[data-slot=button]` |
 | `conversation` | `WorkLog defaultOpen` | also `open` / `onOpenChange(open, details)` |
-| `artifact-chat-container` | `useArtifactChatContainer().width` | `.sizeClass` (`.compact` is unchanged) |
-| `artifact-chat-container` | `onMinimizedChange(minimized)` | `onMinimizedChange(minimized, details)`, FloatingChat's (`swipe`, `trigger-press`, `imperative`) |
+| `conversation` | `ConversationGreeting` | `ConversationEmpty title description icon action headingLevel` (it draws the kit's `EmptyState`; the title is an `h2`) |
+| `conversation` | `UserMessage images: string[]`; `ToolCall detail` | `attachments: ComposerAttachment[]` (what `Composer onSubmit` hands you); `description` |
+| `conversation` | `ConversationMessages` sniffed its children's types | `UserMessage` and `AssistantMessage` are scroller items (`value`, `anchor`), so a wrapped one still anchors |
+| `conversation` | `SettledBanner` | removed (it was a block's; it lives in `t3-clone`) |
 
 ```tsx
 // 5.x
@@ -1414,48 +2147,53 @@ Ordering by key reads better when your rows have ids: `onOrderChange={(order) =>
 
 ## Composer
 
-[Composer](https://blamy.github.io/ui/#/composer).
+[Composer](https://blamy.github.io/ui/#/composer), [PencilKit](https://blamy.github.io/ui/#/pencilkit) (for the image annotator).
 
-Most of the Composer keeps its props. The buttons are UI SDK Buttons, the select is a `DropdownMenu`, the add button and the drop zone are UI SDK's FileInput, and the bump drags with `bindDrag`.
+The Composer's parts are the kit's own now: its buttons are the kit's `Button`, its option pills `ComposerPill`, its select a `DropdownMenu` with the kit's small radio rows, its popovers `PopoverContent palette="trigger"`, and the add button and the drop zone are UI SDK's FileInput. The barrel lists what a caller needs (64 names, from 92), and the image annotator moved to PencilKit.
 
 | 5.x | 6.0 |
 | --- | --- |
-| `ComposerButton`, `ComposerStop`, `ComposerFab` `onPress`, `isDisabled` | `onClick`, `disabled`, `render` |
-| `ComposerSelect onChange(id)` | `onValueChange(id, details)` |
+| `ComposerButton` (`variant="ghost"`, `primary`, `destructive`), `composerButtonVariants` | the kit's `Button`: an icon tool is `variant="quiet" size="icon-sm"`; send and stop are their own parts |
+| `ComposerButton variant="pill"` + `ComposerPillLabel icon` | for a picker: `ComposerPill icon` with the label as children (the chevron and the label morph are built in), the trigger of `ComposerSelect` and of pickers of your own; for a plain action: `Button variant="quiet" size="sm"` |
+| `tint` on ComposerButton, ComposerSelect, ComposerAdd | `className="text-primary"` (`tint` is a CSS color everywhere else) |
+| `ComposerStop`, `ComposerFab` `onPress`, `isDisabled` | `onClick`, `disabled`, `render`; ComposerAdd, ComposerSend and ComposerStop take no `size` or `variant` (ComposerStop keeps `variant: 'ring' \| 'solid'`) |
+| `ComposerSelect options={[{ id, label }]} onChange(id)` | `items={[{ value, label, disabled? }]}`, `onValueChange(value, details)` (first; `details.cancel()` keeps the pill's value); new `disabled`, `open` / `defaultOpen` / `onOpenChange`, `side` / `align`, `ref`. `ComposerSelectOption` is `ComposerSelectItem`; `menuClassName` is gone (compose a `DropdownMenu` and a `ComposerPill` for more) |
+| `<ComposerMenuItem id="x" textValue="X">X</ComposerMenuItem>`, `composerMenuItemVariants` | `<DropdownMenuRadioItem value="x">X</DropdownMenuRadioItem>` inside a `DropdownMenuRadioGroup` in a `DropdownMenuContent size="sm"` |
+| `WbPopover` (a styled surface) | `<PopoverContent variant="surface" palette="trigger">` inside a `Popover`: `palette="trigger"` paints it from the trigger's theme scope |
 | `Composer onValueChange(markdown)`, `onAttachmentsChange(attachments)`, `onExpandedChange(expanded)`, `onCollapsedChange(collapsed)` | the same with `details` second (`reason`, `event`, `source`, `cancel()`); they run before the state moves, so `details.cancel()` keeps an uncontrolled value |
-| `ComposerBump onOpenChange(open)`, `onMinimizedChange(minimized)` | `onOpenChange(open, details)` (`press`, `drag`, `escape-key`, `imperative`), `onMinimizedChange(minimized, details)` (`drag`, `press`); `onMinimizedChange(false)` no longer fires on a tap when the bump isn't minimized |
+| `Composer fabPosition` | `fabAlign` (`start` / `center` / `end`; `data-fab-align`) |
+| `Composer annotator`, `annotateCanvas`, `ComposerAnnotatorProvider annotator` | `annotator` takes an `ImageAnnotatorEngine` (or `null`); pass an engine instead of `annotateCanvas`; `ImageAnnotatorProvider engine` |
+| — | New: `Composer disabled` (also `useComposer().disabled`, `data-disabled`) |
+| `ComposerBump onOpenChange(open)`, `onMinimizedChange(minimized)`, `inset` | `onOpenChange(open, details)` (`press`, `drag`, `escape-key`, `imperative`), `onMinimizedChange(minimized, details)` (`drag`, `press`), `gutter`; `onMinimizedChange(false)` no longer fires on a tap when the bump isn't minimized |
 | `ComposerQueue onItemsChange(items)`, `actions.edit()` / `sendNow()` / `remove()` | `onItemsChange(items, details)` (`queue`, `send`, `edit`, `remove`); the actions take the triggering event: `actions.remove(event.nativeEvent)` |
 | `useComposer().setValue(md)`, `addAttachment(a)`, `removeAttachment(id)`, `setExpanded(x)`, `setCollapsed(x)` | the same, with an optional `{ reason, event }` second (third for `updateAttachment`); each returns `false` when the change was canceled |
-| `ComposerSelect` committed an uncontrolled pick before `onValueChange` | `onValueChange` first; `details.cancel()` keeps the pill's value |
-| file sizes "84 KB" (1024-based) | UI SDK's locale-aware `formatFileSize`: "86 kB" (1000-based) |
-| `<ComposerMenuItem id="x" textValue="X">` | `<ComposerMenuItem value="x" label="X">` inside a `DropdownMenuRadioGroup` |
+| file sizes "84 KB" (1024-based) | "84 KB" in the editor chip's steps ("1.3 MB") |
 | `ComposerAdd allowsMultiple`, `acceptDirectory`, `defaultCamera`, `onPress` | `multiple`, `directory`, `capture="user" \| "environment" \| true`, `onClick` (runs before the picker opens) |
-| `ComposerAttach accept="image/*,.pdf"` | `acceptedFileTypes={['image/*', '.pdf']}` |
+| `ComposerAttach accept="image/*,.pdf"`, `ComposerAttachProps` | `<ComposerAdd icon="paperclip-diagonal" label="Attach files" acceptedFileTypes={['image/*', '.pdf']} />` |
 | the hidden "Attach files: drop or paste here" button | removed: drop on the card, use the + button, or paste with focus anywhere in the card |
 | drop overlay mounted only while hovered, `data-state` | always mounted and hidden; `data-dragging` while files hover |
 | `ComposerBumpProgress.settling` while a spring wrote `progress` every frame | `progress` and `reveal` jump to the rest value on release; `settling` is true while the bump's CSS transition runs. Drive your own transitions off `dragging` alone. |
-| `useComposerBump().handleProps` | `startDrag(event)`: call it from your handle's `onPointerDown` |
+| `useComposerBump().handleProps` | not public: `ComposerBumpHandle` is the handle, style it with classes |
 | `[data-slot=composer-send]`, `-stop`, `-attachment-open`, `-menu-item`, `-bump-grip` | `[data-state=send]` (or the button's name), the button named "Stop", `[data-attachment-open]`, `[data-slot=menu-radio-item]`, `[data-bump-grip]` |
-| `[data-slot=annotate-lightbox]` | the dialog named "Annotate image" (`[data-slot=dialog-content]`) |
-| `AnnotateLightbox src onClose onSave(dataUrl)`, open while mounted | UI SDK's open API: `open` / `defaultOpen` / `onOpenChange(open, details)`, `onOpenChangeComplete(open)`, `onSave(dataUrl, details)`. Cancel closes with `close-press`, Save with `action` after `onSave`, plus `escape-key` and `outside-press`; `details.cancel()` keeps it open. Unmount it from `onOpenChangeComplete(false)` so the exit plays. |
-| `ComposerAttachProps` | removed: `ComposerAttach` takes `ComposerAddProps` |
+| `AnnotateLightbox src onClose onSave(dataUrl)`, open while mounted, `[data-slot=annotate-lightbox]` | `ImageAnnotator` (PencilKit), with UI SDK's open API: `open` / `defaultOpen` / `onOpenChange(open, details)`, `onOpenChangeComplete(open)`, `onSave(dataUrl, details)`, `engine`. Cancel closes with `close-press`, Save with `action` after `onSave`, plus `escape-key` and `outside-press`; `details.cancel()` keeps it open. Unmount it from `onOpenChangeComplete(false)` so the exit plays. It is the dialog named "Annotate image" |
+| `ComposerAnnotator`, `ComposerAnnotatorProps`, `ComposerAnnotatorSurface`, `useComposerAnnotator` | `ImageAnnotatorEngine`, `ImageAnnotatorEngineProps`, `ImageAnnotatorSurface`, `useImageAnnotatorEngine` (from `@/components/ui/pencilkit/image-annotator`) |
 | `ComposerSeparator` a `<span role="separator" data-slot="composer-separator">` | the kit's `Separator orientation="vertical"` (`data-slot="separator"`) |
 | an open bump's Escape on `document` | the bump is a UI SDK layer, so a menu opened from it closes first |
 
 ```tsx
 // 5.x
-<ComposerSelect aria-label="Effort" options={efforts} value={effort} onChange={setEffort} />
+<ComposerSelect aria-label="Effort" options={efforts} value={effort} onChange={setEffort} tint />
 <ComposerAdd allowsMultiple={false} acceptDirectory defaultCamera="environment" onPress={track} />
 <ComposerAttach accept="image/*,.pdf" />
 <ComposerButton variant="pill" onPress={stopServer} isDisabled={!running}>Stop</ComposerButton>
-<div {...useComposerBump().handleProps}>…</div>
+<ComposerButton aria-label="Context" onPress={openContext}><Icon name="doc" /></ComposerButton>
 
 // 6.0
-<ComposerSelect aria-label="Effort" options={efforts} value={effort} onValueChange={(id) => setEffort(id)} />
+<ComposerSelect aria-label="Effort" items={efforts.map((e) => ({ value: e.id, label: e.label }))} value={effort} onValueChange={(value) => setEffort(value)} className="text-primary" />
 <ComposerAdd multiple={false} directory capture="environment" onClick={track} />
-<ComposerAttach acceptedFileTypes={['image/*', '.pdf']} />
-<ComposerButton variant="pill" onClick={stopServer} disabled={!running}>Stop</ComposerButton>
-<div className="touch-none" onPointerDown={(e) => bump.startDrag?.(e)} onClick={() => bump.toggle()}>…</div>
+<ComposerAdd icon="paperclip-diagonal" label="Attach files" acceptedFileTypes={['image/*', '.pdf']} />
+<Button variant="quiet" size="sm" onClick={stopServer} disabled={!running}>Stop</Button>
+<Button variant="quiet" size="icon-sm" aria-label="Context" onClick={openContext}><Icon name="doc" /></Button>
 ```
 
 ```tsx
@@ -1463,13 +2201,13 @@ Most of the Composer keeps its props. The buttons are UI SDK Buttons, the select
 {shot ? <AnnotateLightbox src={shot} onClose={() => setShot(null)} onSave={(png) => { save(png); setShot(null) }} /> : null}
 
 // 6.0
-<AnnotateLightbox src={shot} open={open} onOpenChange={setOpen} onSave={(png) => save(png)}
+<ImageAnnotator src={shot} open={open} onOpenChange={setOpen} onSave={(png) => save(png)}
   onOpenChangeComplete={(o) => { if (!o) setShot(null) }} />
 ```
 
 ## Filter and font picker
 
-[Filter](https://blamy.github.io/ui/#/filter), [FontPicker](https://blamy.github.io/ui/#/font-picker).
+[Filter](https://blamy.github.io/ui/#/filter) (with FilterInput), [FontPicker](https://blamy.github.io/ui/#/font-picker).
 
 | Module | 5.x | 6.0 |
 | --- | --- | --- |
@@ -1478,13 +2216,17 @@ Most of the Composer keeps its props. The buttons are UI SDK Buttons, the select
 | `filter` | `[data-slot=filter-announcer]` live region | UI SDK's `announce()` (one page region, `[data-ui-sdk-announcer]`; announcements are deferred, so tests `waitFor` them) |
 | `filter` | `FilterMenu children` = your trigger element | `render={<Button … />}` is the trigger, `children` its content |
 | `filter` | `FilterMenu label="Add"` | `children` (they replace the icon and "Filter") |
-| `filter` | `FilterMenu isOpen`, `placement="bottom end"` | `open`, `onOpenChange(open, details)`, `side` / `align` |
-| `filter` | `FilterToolbar` = react-aria Toolbar; `FilterClear isDisabled` | UI SDK Toolbar (`orientation`, `loop`, `controller`); `disabled` |
+| `filter` | `FilterMenu isOpen`, `placement="bottom end"`, `hotkey`, `popoverClassName` | `open`, `onOpenChange(open, details)`, `side` / `align`, `shortcut`, `contentProps={{ className }}` |
+| `filter` | `FilterBar` / `FilterToolbar` `hotkey`, `showMatch` | removed: compose the toolbar's children, `<FilterToolbar><FilterMenu shortcut="f" /><FilterList /><FilterMatch /><FilterClear /></FilterToolbar>` (the default children are still Menu, List, Clear) |
+| `filter` | `FilterChip onChange(filter, options?)`, `tone="preview"`; `FilterValueEditor onChange(value, options?)` | `onValueChange(filter, details)` (in a bar it runs first, and `details.cancel()` keeps the bar), `variant="preview"`; `onValueChange(value, details)` |
+| `filter` | `filterBarVariants`, `filterToolbarVariants`, `filterInputVariants` | removed (they had no variants) |
+| `filter` | `FilterToolbar` = react-aria Toolbar; `FilterClear isDisabled` | the kit's `Toolbar` (UI SDK's: `orientation`, `loop`, `controller`); `disabled`. `FilterMatch` takes button props (`FilterMatchProps`) |
 | `filter` | `[data-slot=filter-menu-trigger]`, `filter-menu`, `filter-toolbar` | `[data-filter-trigger]`, `popover-content`, `toolbar` |
 | `filter` | search fields `role="searchbox"`; the field list named "Fields" | `role="combobox"`; the list is named by its search ("Filter by"). Tests type with `fireEvent.input`. |
 | `font-picker` | `value` (required) + `onChange` on `FontPicker`, `FontList`, `FontStackPicker` | `value` / `defaultValue` / `onValueChange(value, details)` |
-| `font-picker` | `isDisabled`, `placement="bottom start"` | `disabled`, `side="bottom" align="start"` |
-| `font-picker` | `triggerProps` = react-aria Button props | `PopoverTrigger` props (`onClick`) |
+| `font-picker` | one `FontPicker` with `size`, `placement`, `className`, `triggerProps` | parts: `FontPicker` (the value, `preview`, `open` / `defaultOpen` / `onOpenChange`, `presentation`, `disabled`, `aria-label`) + `FontPickerTrigger` (`size` `sm` / `default` / `lg`, `className`, the trigger's props) + `FontPickerContent` (`side`, `align`); with no children it renders both |
+| `font-picker` | `isDisabled`, `placement="bottom start"` | `disabled` on the root, `side="bottom" align="start"` on `FontPickerContent` (`FontStackPicker` keeps `side` / `align`) |
+| `font-picker` | `fontPickerTriggerVariants`, `fontListItemVariants` | removed: the trigger is `selectTriggerVariants`, and the list rows are CommandMenu items |
 | `font-picker` | category filter `role="radio"`, `data-selected` | `ToggleGroup` buttons (`aria-pressed`, `data-pressed`) |
 | `font-picker` | the stack's chips are grid rows | a `list` of `listitem` chips, each with a sortable handle: drag it, or Space, arrows, Space; Delete or Backspace on a handle removes the font |
 | `font-picker` | rows `data-hovered`, `data-focused` | `data-highlighted` |
@@ -1498,51 +2240,70 @@ Most of the Composer keeps its props. The buttons are UI SDK Buttons, the select
 <FontPicker aria-label="Font" value={font} onChange={setFont} placement="left top" />
 
 // 6.0
-<FilterMenu fields={fields} state={state} hotkey="g" render={<Button variant="secondary" size="sm" />}>
+<FilterMenu fields={fields} state={state} shortcut="g" render={<Button variant="secondary" size="sm" />}>
   <Icon name="plus" />Add filter
 </FilterMenu>
-<FontPicker aria-label="Font" value={font} onValueChange={setFont} side="left" align="start" />
+<FontPicker aria-label="Font" value={font} onValueChange={setFont}>
+  <FontPickerTrigger />
+  <FontPickerContent side="left" align="start" />
+</FontPicker>
 ```
 
 ## Other components
 
-[CodeEditor](https://blamy.github.io/ui/#/code-editor), [CronEditor](https://blamy.github.io/ui/#/cron-editor), [DebugToolbar](https://blamy.github.io/ui/#/debug-toolbar), [EditBar](https://blamy.github.io/ui/#/edit-bar), [TailscaleLoginButton](https://blamy.github.io/ui/#/tailscale-login), [Morph](https://blamy.github.io/ui/#/morph), [VideoTimeline](https://blamy.github.io/ui/#/video-timeline).
+[CodeEditor](https://blamy.github.io/ui/#/code-editor), [CronEditor](https://blamy.github.io/ui/#/cron-editor), [DebugToolbar](https://blamy.github.io/ui/#/debug-toolbar), [Toolbar](https://blamy.github.io/ui/#/toolbar) (was EditBar), [Sign in with Tailscale](https://blamy.github.io/ui/#/tailscale-login), [Spinner](https://blamy.github.io/ui/#/spinner), [ProgressRing](https://blamy.github.io/ui/#/progress-ring), [ProgressStepper](https://blamy.github.io/ui/#/progress-stepper), [Morph](https://blamy.github.io/ui/#/morph), [Swap](https://blamy.github.io/ui/#/swap), [Canvas](https://blamy.github.io/ui/#/canvas), [VideoPreview](https://blamy.github.io/ui/#/video-preview), [VideoTimeline](https://blamy.github.io/ui/#/video-timeline), [Waveform](https://blamy.github.io/ui/#/waveform), [Terminal](https://blamy.github.io/ui/#/terminal), [MarkdownEditor](https://blamy.github.io/ui/#/markdown-editor), [OpenCode](https://blamy.github.io/ui/#/open-code), and the Docstream parts ([ReplayPreview](https://blamy.github.io/ui/#/replay-preview), [TuiPreview](https://blamy.github.io/ui/#/tui-preview), [StlViewer](https://blamy.github.io/ui/#/stl-viewer), [Strudel](https://blamy.github.io/ui/#/strudel)).
 
 | Module | 5.x | 6.0 |
 | --- | --- | --- |
-| `code-editor` | `onLineNumberPress`, `isLineNumberPressable` (also on `CodeEditorWindow`) | `onLineNumberClick`, `lineNumberClickable` |
+| `code-editor` | `onLineNumberPress`, `isLineNumberPressable`, `lineNumberLabel`, `lineNumberTitle` (also on `CodeEditorWindow`) | one object: `lineNumbers={{ onClick, clickable, label, title, side }}` (`CodeEditorLineNumbers`). `CodeEditorWindow` is CodeEditor's private renderer now (`lib/code-editor-window`) |
+| `code-editor` | `scrollToLine` prop, `contentClassName` | `revealLine` (the handle keeps `scrollToLine()`); a class on `<CodeEditorContent>` |
 | `code-editor` | gutter `onPress`, `isPressable`; marker `onPress`, `isActive` | gutter `onClick`, `clickable`; marker `onClick`, `active` |
 | `code-editor` | `[data-slot=code-editor-marker]`, `code-editor-gutter-cell`, `code-editor-copy` on pressable cells and the copy button | UI SDK's `[data-slot=button]`; select cells with `[data-code-editor-cell="marker"]` (or the gutter id) |
-| `code-editor` | `CodeEditorCopyButtonProps` = react-aria Button props | UI SDK Button props (`onClick`, `disabled`) |
+| `code-editor` | `CodeEditorCopyButton` react-aria Button props, `label`, `onCopy(value)` | the kit's `Button` (`variant="quiet" size="icon-sm"` unless you pass others): `onClick`, `disabled`, `aria-label` (default "Copy code"), `onValueCopy(value)` |
 | `code-editor` | `onChange(value, change)`, `onEdit(change)`, `CodeEditorChange` with `origin` (`input`, …) | `onValueChange(value, details)`, `onEdit(details)`: `CodeEditorValueChangeDetails`, UI SDK's change details (`reason`, `event`, `source`, `cancel()`) plus `from` / `to` / `newTo` / `text` / `removed`. `origin` is `reason`, and `input` is `input-change`. `cancel()` takes an edit back in an editor without `value` |
 | `code-editor` | `onSelectionChange(selection)` | `onSelectionChange(selection, details)`, `details.reason` `press` / `drag` / `caret-move` / `select-all` / `escape-key` / an edit's / `imperative` |
-| `code-editor` | gutter `onClick(lineNumber)`, `onLineNumberClick(lineNumber)`, marker `onClick(marker)` | `onClick(event, details)` / `onLineNumberClick(event, details)` with UI SDK's button details plus `details.line`; a marker's adds `details.marker`. A gutter whose cells hold controls of their own takes `focusable(lineNumber)` |
+| `code-editor` | gutter `onClick(lineNumber)`, `onLineNumberClick(lineNumber)`, marker `onClick(marker)` | `onClick(event, details)` (gutters, and `lineNumbers.onClick`) with UI SDK's button details plus `details.line`; a marker's adds `details.marker`. A gutter whose cells hold controls of their own takes `focusable(lineNumber)` |
 | `syntax-highlighting` | `SyntaxHighlighting`, `SyntaxHighlightingHeader` / `Title` / `CopyButton` / `Content`, `syntaxHighlightingVariants`, `useSyntaxHighlighting`, `SyntaxLineRange` (and the `syntax-highlighting` registry item) | removed: `<CodeEditor readOnly value={code} …>` with `CodeEditorHeader` / `Title` / `CopyButton` / `Content` (`CodeEditorContent value`, not `code`), `codeEditorVariants`, `useCodeEditor()` (`getValue()` for the text), `CodeLineRange`. Slots are `code-editor*`. |
-| `qr-svg` | `seed` | removed: `value` |
+| `qr-svg` → `qr-code` | `QRSvg seed`, `title`, `color`, an optional `value` | `QRCode value` (required), `aria-label`, a `text-*` class (the modules are `currentColor`), `onError` for text too long to encode; the matrix type is `QRMatrix` |
 | `utils` | `EASE` | removed: the `ease-ios` utility (`cubic-bezier(.32,.72,0,1)`) in CSS, or the spring tokens in `lib/motion.ts` |
 | `cron-editor` | `isDisabled`; preset chips `data-selected` | `disabled`; chips are Toggles (`data-pressed`) in a UI SDK `ToggleGroup` named "Presets" (one Tab stop, ← →; disabled chips have `aria-disabled`) |
 | `cron-editor` | `onValueChange(expression)` | `onValueChange(expression, details)`: `reason` `input-change` / `item-press` / `clear-press` / `reset` / `imperative`; `details.cancel()` refuses an uncontrolled change |
-| `video-preview` | `PlaybackControls` a row of Buttons (`[data-slot=playback-controls]`) | a UI SDK `Toolbar` named "Playback" (`[data-slot=toolbar]`): one Tab stop, ← → between the buttons |
-| `debug-toolbar`, `edit-bar` | a group of Buttons (`[data-slot=debug-toolbar]`, `[data-slot=edit-bar]`) | a UI SDK `Toolbar` (`[data-slot=toolbar]`): one Tab stop, ← → between actions; a disabled action stays focusable with `aria-disabled` |
-| `tailscale-login-button` | react-aria Button props (`isDisabled`); `[data-slot=tailscale-login-button]` | UI SDK Button props (`disabled`, `render`); select it by `[data-status]` or its name |
+| `cron-editor` | `from`, `debounceMs` | `reference`, `parse={{ debounceMs }}`; in plain-language mode the expression shows below with an "Edit expression" disclosure, and a hidden input always submits it |
+| `video-preview` | `PlaybackControls`, `PlaybackTimecode` (`[data-slot=playback-controls]`, a row of Buttons) | `VideoPreviewControls` (the kit's `Toolbar` named "Playback", `size` default `sm`: one Tab stop, ← → between the buttons), `VideoPreviewTimecode` (`[data-slot=video-preview-timecode]`) |
+| `video-preview`, `video-timeline` | `clock` | `playback` (one clock shared by several components) |
+| `debug-toolbar` | a group of Buttons (`[data-slot=debug-toolbar]`), its own dark slab and gripper; `size="compact"` | a preset of the kit's `Toolbar` (`variant` default `floating`, `size` `sm` / `default` / `lg`, one Tab stop, ← → between actions; a disabled action stays focusable with `aria-disabled`); `DebugToolbarButton` and `debugToolbarActions` for a row of your own. The labels are VS Code's ("Step into", "Reverse continue") |
+| `edit-bar` → `toolbar` | `EditBar count allFav onFav onDelete` | a composition on `<Toolbar variant="bar">` (`ToolbarButton`, `ToolbarText aria-live="polite"`); see [the table above](#components-that-merged-moved-or-were-renamed) |
+| `tailscale-login-button` → `tailscale-controls` | react-aria Button props (`isDisabled`), its own recipe; `[data-slot=tailscale-login-button]` | the kit's `Button` (`variant` default `contrast`, 36px; `disabled`, `render`); select it by `[data-status]` or its name |
 | `morph` | `dragToDismiss` moved the element with a transform | it uses the CSS `translate` property (`--morph-drag-y`), so a `translate-*` class of yours conflicts with the drag; `data-dragging` while held |
-| `morph` | `<Morph as="button" type="button">` | `<Morph render={<button type="button" />}>`, as on UI SDK parts; the element's props go under Morph's and the class names merge |
+| `morph` | `<Morph as="button" type="button">`, `id` (the shared-layout key) | `<Morph render={<button type="button" />}>`, as on UI SDK parts (the element's props go under Morph's and the class names merge); `layoutId` (`id` is the DOM id again) |
+| `number-morph`, `text-morph` | NumberMorph `locales`, `role="img"`; TextMorph `display: contents` at rest | `locale` and screen-reader text; TextMorph is `inline-block` (so `truncate` applies) |
 | `motion` | `useMotion()` (the framer-motion module), `loadMotion()` | removed: `import { motion, AnimatePresence } from 'framer-motion'`; delete `loadMotion()` calls (it did nothing) |
 | `motion` | — | New: `usePresence(present)`, `usePresenceList(items, keyOf)`, `useEnterExit(ref, present)` from `@/lib/presence`, which keep an element mounted through its exit on UI SDK's `animateIn` / `animateOut` (see [The kit's behaviors](https://blamy.github.io/ui/#/behaviors-kit)) |
-| `icon-swap`, `animated-height` | `IconSwap` and `ContentSwap` on framer's `AnimatePresence` | the kit's presence, with CSS on `data-starting-style` / `data-ending-style`; glyphs are `[data-slot=icon-swap-glyph]`, views `[data-slot=content-swap-view]`. Same props. |
+| `icon-swap`, `animated-height` → `swap` | `IconSwap id` and `ContentSwap id` on framer's `AnimatePresence` | `<Swap effect="pop" value>` and `<Swap value>` (`effect="slide"`) from `@/components/ui/swap`, on the kit's presence with CSS on `data-starting-style` / `data-ending-style`; slots `swap` and `swap-view` (the leaving view is `aria-hidden` and `inert`). `Chevron` is in `@/lib/icon` (`sw` → `strokeWidth`) |
+| `spinner` | `spin`, `variant`, `SpinnerVariant`, animations `beacon`, `cells`, `register`, `bands` | it animates unless `paused`; `pattern` (typed by `animation`), `SpinnerPattern`; `bars`, `merge`, `encode`, `scan`. A Spinner takes `label` or `aria-label` |
+| `progress-ring` | `size="md"`; CountdownRing `warnAt`, `warnColor`, `labelSize` | `size="default"`; `urgentAt`, `urgentColor` (`data-urgent`), removed. `showValue` needs 40px or more. Progress gains a `warning` tone |
+| `progress-stepper` | `steps` of type `ProgressStep`; states `done`, `active`, `todo` | `steps` of `ProgressStepItem` (or `ProgressStep` part children: `ProgressStepIcon`, `ProgressStepTrack`, `ProgressStepLabel`, `ProgressStepDescription`); `complete`, `current`, `upcoming` |
 | `canvas` | `camera` / `defaultCamera` / `onCameraChange(camera)`, `Camera { x, y, z }` | `viewport` / `defaultViewport` / `onViewportChange(viewport, details)`, UI SDK's `Viewport { x, y, zoom }` (every `.z` becomes `.zoom`); reasons `wheel`, `drag`, `pinch`, `zoom-key`, `move-key`, `focus-in`, `find-in-page`, `track-press`, `imperative` |
 | `canvas` | `zoomAt`, `fitCamera`, `clampZoom`, `MIN_ZOOM`, `MAX_ZOOM` from `canvas-math`; `useCanvas().camera` / `update(fn)` | `controller` from `createCanvasController()` (`zoomBy(k, at?)`, `zoomTo`, `fit(rect?, { padding })`, `reveal`, `panBy`, `setViewport`, `toCanvas`, `visible`), the same on `useCanvas()`; `minZoom` / `maxZoom` props (0.02 / 4); `toBoard` and `toScreen` take a `Viewport` |
 | `canvas` | `onCanvasPointerDown/Move/Up(e: React.PointerEvent, info)`, `onCanvasDoubleClick(e: React.MouseEvent, info)`, `info.camera` | DOM events (`PointerEvent`, `MouseEvent`; `e.currentTarget` isn't the canvas: use `info.screen`), `info.viewport` |
 | `canvas` | ⌘ + − 0 1 zoom | also plain + − 0, arrow keys you don't `preventDefault()` pan (Shift ×4), focusing a board item reveals it, find in page pans; zoom keys announce. The board is inside a `[data-slot=canvas-pane]`: read the viewport, not the board's `transform`. |
+| `canvas` | `cursor`; `CanvasMiniMap position="bottom-right"` | a class or `style={{ cursor }}` (grabbing wins while the view drags); `side` + `align` (`side="top" align="start"`). New: `useCanvas().addPointerLayer(layer)`, `ref` |
 | `trace-timeline` | `onValueChange(time, { phase, stop })` | `onValueChange(time, details)` with UI SDK's change details plus `stop`: `phase: 'start'` is `reason: 'track-press'`, `'move'` is `'drag'`, a key is `'step-key'`, Escape during a scrub is `'escape-key'` (back to where it began) |
 | `trace-timeline` | `phase: 'end'` | `onValueCommit(time, details)`, once per release, key, Escape or pinch take-back. `TraceValueInfo` is `TraceValueChangeDetails`, `TraceValueCommitDetails`, `TraceValueChangeReason`. |
 | `trace-timeline` | `onViewChange(view)` | `onViewChange(view, details)`, `details.reason` `wheel` / `pinch` / `zoom-key` / `double-press` / `drag` / `playhead` / `range-change` / `imperative`; `cancel()` keeps the view |
 | `trace-timeline` | `onFocusLane(laneKey)`, `onSelectThread(threadId, laneKey)`, `onSelectRequest(id)` | `focusedLane` / `defaultFocusedLane` / `onFocusedLaneChange(lane, details)`, `selectedThread` / `defaultSelectedThread` / `onSelectedThreadChange(thread, details)` (the lane is `details.lane`), `selectedRequest` / `defaultSelectedRequest` / `onSelectedRequestChange(request, details)` |
-| `video-timeline` | track toggles `data-selected` | `data-pressed`; Escape during a clip drag cancels it |
+| `video-timeline` | track toggles `data-selected` | `data-pressed`; Escape during a clip drag cancels it. New: `headerWidth` (56 in a compact container, with a per-track menu), and the playhead is the `--color-playhead` token |
 | `video-timeline` | `timeline`, `onChange(timeline)` (no `onChange`: read-only) | `value` / `defaultValue`, `onValueChange(value, details)` with `details.id` and `details.action` (`move` / `resize` / `delete` / `track`); `readOnly` |
 | `video-timeline` | `selection` / `defaultSelection` / `onSelectionChange(ids)`; `onZoomChange(zoom)` | `selectedClips` / `defaultSelectedClips` / `onSelectedClipsChange(ids, details)`; `onZoomChange(zoom, details)` |
 | `video-timeline` | `onDropMedia(mediaId, drop)` | `onDropMedia(mediaId, details)`: `TimelineDropDetails`, UI SDK's change details (`reason: 'drop'`) with `trackId`, `time` and `index`; `cancel()` refuses the drop |
 | `video-timeline` | every clip a Tab stop; ⇧←/→ nudged a clip a second; the ruler's Page Up/Down moved ten seconds | the clips are one Tab stop (⌥ + arrows move between them, Home/End along a track); ⇧←/→ trims the end, ⌥⇧←/→ the start, ↑/↓ change track; the ruler (UI SDK `Slider`) moves a second with ⇧ or Page Up/Down |
+| `waveform` | `tone="primary"` | `className="text-primary"`; tones `default`, `muted`, `success`, `warning`, `destructive`; `ref` |
+| `terminal` | `size: 'sm' \| 'md'` (default `md`) | `size: 'sm' \| 'default'` (default `default`) |
+| `markdown-editor` | `invalid`, `onKeyDown` / `onPaste` returning a boolean, `onFocus()` / `onBlur()`, `contentClassName`, `forwardRef` | a `Field` around it; `handleKeyDown` / `handlePaste` (ProseMirror's names); `onFocus(event)` / `onBlur(event)`; `classNames.content`; `ref` as a prop. The default look is the shared field surface |
+| `open-code` | `height` (a number), `theme: 'light' \| 'dark'`, `rounded-none border-0` to drop the card | size it with a class (`className="h-[620px]"`), `appearance` (default: the nearest ThemeScope's), `variant="plain"` (`openCodeVariants`) |
+| `workbench-theme` | `<WorkbenchTheme appearance tint>`, `useWorkbenchAppearance()`, `WorkbenchAppearanceProvider` | `<ThemeScope scope="workbench" appearance tint>` (its popups wear the scope too), `useScopeAppearance('workbench')` or `useThemeScope()?.appearance` |
+| `markdown-view` | `FbMd`, `HlPre`, `hlTokens`, `DocstreamRefContext` | removed. `MarkdownView` takes its root's `div` props and `ref`, and writes `data-streaming` |
+| `replay-preview`, `tui-preview`, `stl-viewer`, `strudel-player` | the parsers, helpers and demo data of each Docstream widget, re-exported by the kit (`parseStl`, `isTuiCodeBlock`, `getReplayMarkers`, `parseStrudel`…), and the `strudel-rack` and `strudel-syntax` modules | one thin module per widget that re-exports the component, its props and handle types and the functions that drive it; import the rest from `@brett_lamy/docstream/replay`, `/tui`, `/stl` and `/strudel` (see [the table above](#components-that-merged-moved-or-were-renamed)) |
 
 ```tsx
 // 5.x
@@ -1553,7 +2314,7 @@ const markers = (line) => sites(line).map((column) => ({ column, label: `Break a
 // 6.0
 const gutters = [{ id: 'bp', width: 16, onClick: toggle, clickable: canBreak, render: dot }]
 const markers = (line) => sites(line).map((column) => ({ column, label: `Break at ${column}`, active: on(line, column), onClick: () => flip(line, column) }))
-<CodeEditor readOnly lines={lines} gutters={gutters} markers={markers} onLineNumberClick={jump} lineNumberClickable={ran} />
+<CodeEditor readOnly lines={lines} gutters={gutters} markers={markers} lineNumbers={{ onClick: jump, clickable: ran }} />
 ```
 
 ```tsx
@@ -1573,21 +2334,20 @@ const [canvas] = useState(() => createCanvasController())
 
 ## What looks different
 
-6.0 was checked story by story against 5.16 screenshots. The look is the same except where UI SDK does something differently on purpose, or where a behavior fix changed what is drawn:
+6.0 was checked story by story against 5.16 screenshots. The first table is what changed because UI SDK does something differently on purpose, or because a behavior fix changed what is drawn. The second is the look the 6.0 design pass changed on purpose, so that the merged components share one surface, one radius, one focus ring and one set of heights; if a screenshot test of yours moves there, re-baseline it.
 
 | Where | 5.16 | 6.0 |
 | --- | --- | --- |
 | Date and time fields | `9/9/2026` | Zero-padded segments: `09/09/2026` |
 | Color fields and pickers | Uppercase hex | Lowercase hex; the hue track and thumb are painted for the current color |
 | Slider range value | `20–80` | `20 – 80` (UI SDK's format) |
-| File sizes (FileUpload, Composer, RequestTable, SQL console) | Binary units: `612 KB` | Decimal units from UI SDK's `formatFileSize`: `627 kB` |
+| File sizes (FileUpload, SQL console) | Binary units: `612 KB` | Decimal units from UI SDK's `formatFileSize`: `627 kB`. RequestTable writes "280 B" under 1 kB; the Composer keeps "84 KB" |
 | A dialog, alert or sheet rendered open | No focus ring until a key is pressed | Focus lands on its first control, with a ring |
 | Combobox | Matches from the start of an option | Matches anywhere in it |
 | Command menu | Ranked results | Results keep their written order; the inline Esc hint says "Clear" |
 | Command palette in a framed app | Offset from the page | Offset from the frame it is in |
-| Shortcut keycaps | `⌘⇧O` | Apple's order: `⇧⌘O` |
+| Shortcut keycaps (menus, tooltips, the command menu) | `⌘⇧O` | Apple's order: `⇧⌘O` |
 | Segmented control and toggle group, dark | Indicator hidden behind the panel | Indicator visible, in its token color |
-| Icon-only segmented control | 34px | 31px, the standard height |
 | Form radio rows | 12px label gap | The Field's 6px label gap |
 | Rejected files in FileUpload | In drop order | Listed after the accepted ones |
 | Disabled Calendar | Value hidden | Value shown, dimmed |
@@ -1595,5 +2355,35 @@ const [canvas] = useState(() => createCanvasController())
 | Chat transcripts and LogList markers | Up to 2px (transcripts) or about 40px (markers) off | Exactly at the bottom, exactly centered |
 | SQL editor footer hint | `⌘ ↵` and `⌥↑ history` | `⌘↵` and `↑ history` (history is the arrow keys now) |
 | Tooltips and popups | Whole pixels | Can land on half pixels, so text anti-aliases slightly differently |
+| A `Spinner` with `animation="ios"` | Frozen unless `spin` | Turns unless `paused` (and under Reduce Motion, as iOS's does) |
+
+| Where | 5.16 | 6.0 |
+| --- | --- | --- |
+| Every `Dialog` in a compact container | A centered card | A sheet from the bottom (`presentation="auto"`); `presentation="dialog"` keeps the card |
+| Modal cards (Dialog, its tray, Sheet, AlertDialog) | Radii of 20, 24, 28 or 14px | One radius, `rounded-sheet` (18px); a flow's title is `text-title` semibold (was 18px bold); a Dialog shown as a sheet has Sheet's grabber, and its footer buttons share the width |
+| Card, List section, DisclosureGroup inset | `rounded-card`; Card `elevated` had its own shadow | One `rounded-panel` surface; `elevated` is the `shadow-raised` token (a little stronger); CardTitle loses its −0.2px tracking |
+| Focus rings on Button, Toggle, ToggleGroup items, Checkbox, Radio, Switch, the Slider thumb | Soft halos of different sizes | One solid `ring-2` with an offset; tree, list and table rows get one 2px inset ring and one `primary/16` selection wash |
+| Field captions, descriptions, legends; List and form group headers | `muted-foreground` (under AA on the grouped grey) | `foreground/70`; a `FieldError` has a red exclamation icon and foreground text |
+| Text fields and pickers (Input, SearchInput, Select, Combobox, DateInput, DatePicker, ColorPicker, FontPicker, MarkdownEditor) | Each drew its own box; Select and FontPicker had a 3px halo | One filled field surface (`fieldSurfaceVariants`) with Input's inset primary edge on focus (and while a popup is open); 32 / 44 / 50px tall |
+| Segmented, Tabs `segmented`, ToggleGroup `filled` | 32px segmented track; a 40px filled ToggleGroup with its own card | One track: 36px by default with 15px labels (`size="sm"` is the 5.x 32px look); segments are medium, semibold when selected; filled ToggleGroup items share the width |
+| Button `icon-sm`, `pill` | Hugged the glyph (about 22–26px); `pill` padded | `icon-sm` is a fixed 28px square, `pill` is 44px tall, new `icon-lg` 44px circle |
+| Checkbox and Radio, unchecked | A light edge | The `--control-border` token (about 3.4:1 on white) |
+| Tab bar (`Tabs variant="bar"`), rail, workspace tabs | 10px labels; unselected tabs `tertiary-foreground` | 11px labels (`text-caption2`); unselected tabs `muted-foreground`; the bar is the shared iOS bar surface (`h-bar`, its hairline drawn as an inset shadow) |
+| Workspace | A `rounded-xl border` card | No frame (add `rounded-card border border-border`) |
+| SplitView and NavigationStack | Bar blur 18px; −28% parallax, 12% shade; edge shadows as gradient strips; 15.5px rows | Bar blur 20px on the shared bar surface; −30% parallax, 10% shade; edge shadows are tokens; the divider's hairline runs over the bar; 15px rows; back labels follow UIKit (title, then "Back", then the chevron) |
+| Empty columns, lists and trees (SplitViewEmpty, List, Tree, LogList, tables) | Each its own grey text | The shared `EmptyState`; in a pane its title is semibold foreground |
+| Sidebar | 10px section labels in `tertiary-foreground`; hand-drawn counts | 11px labels in `muted-foreground`; counts are small tinted Badges; 44px rows in a compact provider |
+| Popups | Popover, tooltip and toast radii and shadows of their own | `rounded-card` and the `shadow-popover` / `shadow-tooltip` / `shadow-hud` tokens: tooltip radius 9 → 10px, toast banner 16 → 14px, the toast's × a filled 30px circle; menu group labels are semibold; a popup shown as a sheet gains a grabber and 16px of top padding |
+| Avatar, Badge | A lighter gradient (some hues under 3:1, with a muddy olive band) | A darker OKLCH gradient that skips the olive band (every hue at least 3.5:1); single-digit Badges are circles, with tabular numbers |
+| Celebrate | Hex colors | The theme's tones |
+| ProgressStepper | 5px bars, a 3px line | 4px segments (Progress `sm`); complete steps get a check badge |
+| Toolbars: DebugToolbar, the edit bar, message actions | A dark hex slab with a gripper; hand-rolled bars | The kit's `Toolbar`: a floating popover card with tone colors and no gripper, or the iOS bar |
+| IndexBar and TraceTimeline cards | Their own shadows; 10.5px letters | `shadow-popover`; 11px letters |
+| ScrollArea "Jump to latest" | Translucent `bg-secondary` | The popover surface, with a fade-and-rise |
+| SQL console, Spreadsheet | Three header buttons; results in their own table | One "Database" menu; results in a DataTable with typed, end-aligned numeric headers and a value popover. Spreadsheet: the sort glyph always shows, numeric headers end-aligned, the kit's button for Add Row, a 1px resize rule |
+| Terminal, MarkdownEditor, CodeEditor, OpenCode | Their own insets, shadows and copy button | Terminal `px-3 py-2.5`; MarkdownEditor on the field surface (a hairline card in `variant="card"`); CodeEditor's copy button is the kit's Button; OpenCode is `rounded-card` and shows errors as an alert |
+| Composer | Card radius 15 / 22px; 12.5px pills; 9.5px tile badges; hand-styled suggestions | 14 / 18px on `shadow-raised`; 12px pills; 11px badges; a Suggestion is the 32px outline Button |
+| The floating chat | A bare composer with a bump | A FloatingSheet glass card with a cap around the composer; light glass in a light app; the FAB sits at least 16px from the edges |
+| Video timeline, Waveform, PencilKit | Red playhead (`destructive`); `muted` waveform barely lighter; black and white inks fixed | The `--color-playhead` token (still red by default); a compact 56px track header in a narrow container; `muted` is visibly lighter; Black and White inks follow the theme |
 
 Popups opened inside a `BLProvider` (or any layer host) stay inside it, as before, and a popup presented as a sheet now dims only that host.

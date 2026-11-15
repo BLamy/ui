@@ -1,5 +1,5 @@
 /* Class fragments shared by the shadcn primitives (badge … form). Internal — not exported from the package. */
-import { cva, type VariantProps } from 'class-variance-authority';
+import { cva } from 'class-variance-authority';
 
 /** Keyboard focus ring. */
 export const focusRing = 'outline-none focus-visible:ring-[3px] focus-visible:ring-ring/45';
@@ -70,7 +70,6 @@ export const sectionLabelVariants = cva('m-0 min-w-0', {
   },
   defaultVariants: { variant: 'grouped' },
 });
-export type SectionLabelVariant = NonNullable<VariantProps<typeof sectionLabelVariants>['variant']>;
 
 /** The layers of a dense data row (a log line, a table row): its own background stays free for a tint (a warning's
     wash), and hover, press and selection share a `::before` layer over it, so a selected warning still reads as one.

@@ -21,12 +21,17 @@ Import the stylesheet once — and, for the iOS palette, the bl-theme (it sets s
 ```
 
 ```tsx
-import { BLProvider, NavigationStack } from '@brett_lamy/ui';
+import { BLProvider, NavigationStack, NavigationStackPage, NavigationStackBar, NavigationStackTitle, NavigationStackContent } from '@brett_lamy/ui';
 
 export function App() {
   return (
     <BLProvider tint="#0a84ff">
-      <NavigationStack screens={screens} onPop={handlePop} />
+      <NavigationStack>
+        <NavigationStackPage value="home">
+          <NavigationStackBar><NavigationStackTitle>Home</NavigationStackTitle></NavigationStackBar>
+          <NavigationStackContent>…</NavigationStackContent>
+        </NavigationStackPage>
+      </NavigationStack>
     </BLProvider>
   );
 }
@@ -54,41 +59,46 @@ const stops: IndexBarItem<number>[] = turns.map((turn, index) => ({
 
 <IndexBar
   items={stops}
-  label="Jump to conversation turn"
+  aria-label="Jump to conversation turn"
   onJump={(sequence) => scrollToTurn(sequence)}
 />;
 ```
 
-If `items` is omitted or empty, the component retains its A-Z form:
+The A–Z rail of a contacts list is `alphabetItems`, which dims (but keeps reachable) the letters you leave out:
 
 ```tsx
+import { IndexBar, alphabetItems } from '@brett_lamy/ui';
+
 <IndexBar
-  avail={new Set(['A', 'B', 'K'])}
-  onLetter={(letter) => scrollToSection(letter)}
+  items={alphabetItems(['A', 'B', 'K'])}
+  onJump={(letter) => scrollToSection(letter)}
 />;
 ```
 
 ## Exports
 
 - Containers: `NavigationStack`, `SplitView`, `Dialog` (a card, or a tray with views in a compact container), `Sheet`, `AdaptivePane`, `Sidebar`
-- Lists and navigation: `List`, `ListSection`, `ListRow`, `IndexBar`, `Tabs` (segmented, underline, the iOS tab bar, rails), `EditBar`
-- Inputs and feedback: `SearchInput`, `Switch`, `Segmented`, plus shadcn-style primitives (`Button`, `Toggle`, `Select`, `Combobox`, …)
+- Lists and navigation: `List`, `ListSection`, `ListRow`, `IndexBar`, `Tabs` (segmented, underline, the iOS tab bar, rails), `Toolbar` (plain, floating, or the iOS bottom bar for edit mode), `Breadcrumb`, `Tree`, `DataTable`
+- Inputs and feedback: `Field`, `Input`, `SearchInput`, `Switch`, `Segmented`, `DateInput`, `ColorPicker`, `EmptyState`, plus shadcn-style primitives (`Button`, `Toggle`, `Select`, `Combobox`, …)
 - Motion: `springs`, `springCss`, `TextMorph`, `NumberMorph`, `AnimatedHeight`, `Swap`, `Celebrate`
 - Foundations: `BLProvider`, `ThemeScope`, `AppearanceProvider`, `Icon`, `Avatar`, `Spinner`
-- Team chat: `ChatShell` and its regions (`ChatShellNav`, `ChatShellSidebar`, `ChatShellMain`, `ChatShellHeader`, `ChatShellAside`, `ChatShellPanel`…), `FloatingSheet`, `ArtifactChatContainer` (the Discord parts — channels, messages, threads, members — live in the `discord-clone` registry block)
-- Workbench: `WorkbenchShell` and its parts (`WorkbenchSidebar`, `WorkbenchMain`, `WorkbenchHeader`, `WorkbenchDock`, `WorkbenchPanel`, `WorkbenchTabBar`, …), conversation parts (`Conversation`, `UserMessage`, `AssistantMessage`, `WorkLog`, `ToolCall`, …), `TerminalHeader` / `TerminalBody`, surfaces (`SurfacePicker`, `SurfaceBrowser`, `SurfaceFiles`, `SurfaceDiff`, `SurfaceAgents`), `Composer` and its parts, `ModelPicker`, `MessageScroller`, `MarkdownView`
-- Demo apps: `MapChatDemo`, `DeliveryTrackingDemo`, `SidebarDemo` (full apps — Discord, T3 Code, GitHub — are registry blocks)
+- Chat: `Composer` and its parts, conversation parts (`Conversation`, `UserMessage`, `AssistantMessage`, `WorkLog`, `ToolCall`, …), `MessageScroller`, `MarkdownView`, `FloatingSheet`, `ArtifactChatContainer`
+- Editors and media: `CodeEditor`, `MarkdownEditor`, `Terminal`, `Workspace`, `DebugToolbar`, `Canvas`, PencilKit (`PencilCanvas`, `PencilToolbar`, `ImageAnnotator`), the video parts
+- Blocks, installed from the registry rather than this package: the team-chat shell (`discord-clone`: `ChatShell` and its regions, channels, messages, members), the IDE workbench (`t3-clone`: `WorkbenchShell` and its parts, `WorkbenchComposer`, `ModelPicker`, the terminal dock and surfaces), the demo apps (`map-chat`, `delivery-tracking`, `split-view-demos`, `pencilkit-sketch`) and the full apps (GitHub, Apple Mail, VS Code, …)
 
 Every component exports its props type from the package root. See the Storybook catalog for interaction and responsive examples.
 
 ## Team chat
 
-`ChatShell` is a thin layout root: it measures its own width, owns the compact navigation drawer and applies the chat palette. Everything inside is a part you place yourself — leave out what a layout doesn't need. Parts read shell state (`width`, `compact`, `navOpen`, `setNavOpen`) through `useChatShell()`. A full Discord-style app ships as the `discord-clone` registry block, with its channel, message, member and composer parts (install it to own and edit them).
+`ChatShell` is a thin layout root: it measures its own width, owns the compact navigation drawer and applies the chat palette. Everything inside is a part you place yourself — leave out what a layout doesn't need. Parts read shell state (`width`, `compact`, `navOpen`, `setNavOpen`) through `useChatShell()`. It ships with the `discord-clone` registry block (`npx shadcn add https://blamy.github.io/ui/r/discord-clone.json`), with its channel, message, member and composer parts, so you own and edit them; the library parts it composes come from the package.
 
 ```tsx
 import {
   ChatShell, ChatShellNav, ChatShellSidebar, ChatShellMain, ChatShellHeader, ChatShellNavTrigger, ChatShellTitle,
-  ChatShellFooter, Tabs, TabsBar, TabsList, TabsTab, TabsPill, SidebarContent, SidebarSection,
+  ChatShellFooter,
+} from '@/components/blocks/discord-clone/components/chat-shell';
+import {
+  Tabs, TabsBar, TabsList, TabsTab, TabsPill, SidebarContent, SidebarSection,
   SidebarItem, Composer, ComposerCard, ComposerInput, ComposerFooter, ComposerSpacer, ComposerSend,
 } from '@brett_lamy/ui';
 
@@ -107,8 +117,8 @@ export function Chat() {
         <ChatShellSidebar>
           <SidebarContent>
             <SidebarSection title="Team">
-              <SidebarItem label="general" active={channel === 'general'} onClick={() => setChannel('general')} />
-              <SidebarItem label="dev" badge={2} active={channel === 'dev'} onClick={() => setChannel('dev')} />
+              <SidebarItem title="general" current={channel === 'general'} onClick={() => setChannel('general')} />
+              <SidebarItem title="dev" trailing={2} current={channel === 'dev'} onClick={() => setChannel('dev')} />
             </SidebarSection>
           </SidebarContent>
         </ChatShellSidebar>
@@ -142,14 +152,14 @@ export function Chat() {
 
 ## Workbench
 
-An adaptive IDE scaffold built from parts: a thin `WorkbenchShell` root that measures itself and owns region state, and parts you place yourself. Each part picks its presentation from the shell's width class — desktop columns (1120px and wider), a right-edge panel drawer (760–1119px), or a hamburger sidebar, compact panel page, bottom tab bar, and dismissible-sheet dock below that — measured from the shell's own container, not the viewport. The full T3 Code-style app is the `t3-clone` registry block.
+An adaptive IDE scaffold built from parts: a thin `WorkbenchShell` root that measures itself and owns region state, and parts you place yourself. Each part picks its presentation from the shell's width class — desktop columns (1120px and wider), a right-edge panel drawer (760–1119px), or a hamburger sidebar, compact panel page, bottom tab bar, and dismissible-sheet dock below that — measured from the shell's own container, not the viewport. It ships with the T3 Code-style app, the `t3-clone` registry block; the shell is a `ThemeScope scope="workbench"`, so its menus and drawers wear the workbench palette.
 
 ```tsx
 import {
   WorkbenchShell, WorkbenchSidebar, WorkbenchMain, WorkbenchHeader, WorkbenchSidebarTrigger, WorkbenchTitle,
   WorkbenchActions, WorkbenchDockTrigger, WorkbenchPanelTrigger, WorkbenchDock, WorkbenchPanel,
   WorkbenchTabBar, WorkbenchTab,
-} from '@brett_lamy/ui';
+} from '@/components/blocks/t3-clone/components/workbench/workbench-shell';
 
 export function Workbench() {
   return (
@@ -176,33 +186,50 @@ export function Workbench() {
 
 Descendants read and drive the shell with `useWorkbenchShell()` (`sidebarOpen`, `dockOpen`, `panelOpen`, `panelFullscreen`, their setters and toggles, `widthClass`, `compact`).
 
-`Composer` is compositional (like shadcn's InputGroup): `Composer` owns the draft, `ComposerCard` holds `ComposerInput` (the `@brett_lamy/docstream-editor` WYSIWYG editor; pasted images become attachment chips) and addons (`ComposerFooter`, `ComposerSelect`, `ModelPicker`, `ComposerSend`, …), and `ComposerBump`s attach above or below the card. `WorkbenchComposer` is the default composition. `MarkdownView` renders replies with `@brett_lamy/docstream`; `SurfaceFiles` and `SurfaceDiff` use `@pierre/trees` and `@pierre/diffs`.
+`Composer` is compositional (like shadcn's InputGroup): `Composer` owns the draft, `ComposerCard` holds `ComposerInput` (the `@brett_lamy/docstream-editor` WYSIWYG editor; pasted images become attachment chips) and addons (`ComposerFooter`, `ComposerSelect`, `ComposerPill`, `ComposerSend`, …), and `ComposerBump`s attach above or below the card. Its buttons, pills and menus are the kit's `Button` and `DropdownMenu`. The `t3-clone` block's `WorkbenchComposer` is a full composition (with its `ModelPicker`). `MarkdownView` renders replies with `@brett_lamy/docstream`; `SurfaceFiles` and `SurfaceDiff` use `@pierre/trees` and `@pierre/diffs`.
 
 ### Image annotation
 
-Pressing an attachment opens `AnnotateLightbox`, which draws on the image with `PencilKitAnnotator` by default; Save flattens the strokes into the image. The annotator is pluggable — swap it for every Composer below a `ComposerAnnotatorProvider`, or per composer with the `annotator` prop (`annotator={null}` opts out to a plain preview):
+Pressing an image attachment opens PencilKit's `ImageAnnotator`, which draws on the image with `PencilKitAnnotator` by default; Save flattens the strokes into the image. The engine is pluggable — swap it for every Composer below an `ImageAnnotatorProvider`, or per composer with the `annotator` prop (`annotator={null}` opts out to a plain preview):
 
 ```tsx
-import { ComposerAnnotatorProvider } from '@brett_lamy/ui';
+import { ImageAnnotatorProvider } from '@brett_lamy/ui';
 
-<ComposerAnnotatorProvider annotator={MyAnnotator}>
+<ImageAnnotatorProvider engine={MyEngine}>
   <App />
-</ComposerAnnotatorProvider>;
-// or per composer: <Composer annotator={MyAnnotator}> (annotator={null} opts out)
+</ImageAnnotatorProvider>;
+// or per composer: <Composer annotator={MyEngine}> (annotator={null} opts out)
 ```
 
-An annotator is a component that calls its `children` with `{ canvas, toolbar?, title? }`: the canvas is laid over the image (its first `<svg>` is flattened into the image on save), the toolbar sits under it.
+An engine is a component that calls its `children` with `{ canvas, toolbar?, title? }`: the canvas is laid over the image (its first `<svg>` is flattened into the image on save), the toolbar sits under it.
 
 ## PencilKit
 
-PencilKit's drawing surface in BL UI's language, on [perfect-freehand](https://github.com/steveruizok/perfect-freehand): `PencilCanvas`, the tool / ink / width pickers and undo bar, `usePencilHistory`, and `StrokePath` for rendering saved strokes.
+PencilKit's drawing surface in BL UI's language, on [perfect-freehand](https://github.com/steveruizok/perfect-freehand): `PencilCanvas`, the tool / ink / width pickers and undo bar on the kit's `Toolbar`, `usePencilHistory`, and `StrokePath` for rendering saved strokes. A full sketch app is the `pencilkit-sketch` registry block.
 
 ```tsx
-import { PencilKitDemo, demoStrokes } from '@brett_lamy/ui';
+import { useState } from 'react';
+import {
+  PencilCanvas, PencilToolbar, PencilToolbarPinned, PencilToolPicker, PencilActions, usePencilHistory, type PencilTool,
+} from '@brett_lamy/ui';
 
-<div style={{ position: 'relative', height: 540 }}>
-  <PencilKitDemo defaultStrokes={demoStrokes()} style={{ position: 'absolute', inset: 0 }} />
-</div>;
+function Sketch() {
+  const [tool, setTool] = useState<PencilTool>('pen');
+  const history = usePencilHistory();
+  return (
+    <div className="relative h-[540px]">
+      <PencilCanvas tool={tool} strokes={history.strokes} onStrokesChange={history.onStrokesChange} emptyState="Draw here">
+        <PencilToolbar className="absolute inset-x-2.5 bottom-3.5 mx-auto">
+          <PencilToolPicker value={tool} onValueChange={setTool} />
+          <PencilToolbarPinned>
+            <PencilActions onUndo={history.undo} onRedo={history.redo} onClear={history.clear}
+              canUndo={history.canUndo} canRedo={history.canRedo} canClear={history.canClear} />
+          </PencilToolbarPinned>
+        </PencilToolbar>
+      </PencilCanvas>
+    </div>
+  );
+}
 ```
 
 ## Workspace development
