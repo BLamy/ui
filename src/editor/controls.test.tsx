@@ -398,7 +398,7 @@ describe("attachment chip", () => {
     await mount({ markdown: "See ![image.png](attachment:att-1) here.\n", attachments })
     const chip = container.querySelector<HTMLElement>(".gb-attachment")!
     expect(chip.getAttribute("role")).toBe("button")
-    expect(chip.getAttribute("aria-label")).toBe("image.png, 2 KB")
+    expect(chip.getAttribute("aria-label")).toBe("image.png, 2 kB")
     expect(chip.tabIndex).toBe(0)
     await focus(chip)
     await key(chip, "Enter")

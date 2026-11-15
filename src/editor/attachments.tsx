@@ -43,13 +43,24 @@ export function attachmentName(file: File): string {
   return name || "image.png"
 }
 
-/** "84 KB", "1.3 MB". */
+const SIZE_UNITS = ["MB", "GB", "TB", "PB"]
+
+/**
+ * A size in decimal (SI) units: "280 B", "627 kB", "1.3 MB", one decimal from MB up and none
+ * below; "" for an unknown size.
+ */
 export function formatBytes(bytes: number | undefined): string {
   if (bytes === undefined || !Number.isFinite(bytes) || bytes < 0) return ""
-  if (bytes < 1024) return `${bytes} B`
-  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`
-  if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
-  return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`
+  if (Math.round(bytes) < 1000) return `${Math.round(bytes)} B`
+  if (Math.round(bytes / 1000) < 1000) return `${Math.round(bytes / 1000)} kB`
+  let value = bytes / 1e6
+  let unit = 0
+  // Round first so 999.96 MB reads "1.0 GB", not "1000.0 MB".
+  while (Math.round(value * 10) / 10 >= 1000 && unit < SIZE_UNITS.length - 1) {
+    value /= 1000
+    unit++
+  }
+  return `${value.toFixed(1)} ${SIZE_UNITS[unit]}`
 }
 
 export function readFileAsDataURL(file: File): Promise<string> {

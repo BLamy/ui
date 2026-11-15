@@ -38,6 +38,20 @@ tabs, checkboxes, popovers and dialogs are UI SDK components, sharing your app's
 
 `@brett_lamy/docstream` is a runtime dependency (pinned to the same version as the editor) because the editor uses the same parser, serializer, OpenAPI rendering, and asset helpers. Nothing in the install runs a build script, and the editor never references Docstream's optional almost-node playground (`@agent-wasm/core`) — see `liveRenderer` below to opt in.
 
+### Changes in 2.0.1
+
+No API changes.
+
+- **Docstream 2.0.1.** The pin moves to `@brett_lamy/docstream` 2.0.1, whose changes are additive:
+  styled TuiPreview controls and its `appearance` prop, code fences colored without WebGPU by a
+  fallback lexer, `renderCode`, 44px touch targets, and Strudel / STL viewer control details (see
+  "Changes in 2.0.1" in Docstream's README). Read-only pieces the editor reuses pick these up.
+- **File sizes in decimal units.** `formatBytes`, and with it the attachment chip's label and hover
+  card, writes sizes as `"280 B"`, `"627 kB"`, `"86 kB"`, `"1.3 MB"`: powers of 1000, SI spelling
+  (`kB`), one decimal from MB up and none below, `""` for an unknown size. 2.0.0 divided by 1024
+  and wrote `"84 KB"`. Hosts that match the chip's `aria-label` or text should expect the new
+  spelling.
+
 ### Upgrading to 2.0
 
 2.0 rebuilds the editor's interactive UI on [UI SDK](https://ui-sdk.dev). Documents, Markdown and

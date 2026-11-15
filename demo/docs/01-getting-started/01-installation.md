@@ -34,7 +34,7 @@ Every Tiptap peer is `^3.26.1`. All of them are required: `createGitbookExtensio
 
 | Dependency | Version | Why |
 | --- | --- | --- |
-| `@brett_lamy/docstream` | `2.0.0` (exact) | The parser, the serializer, and every read-only piece the editor reuses: demo viewer, command box, Mermaid, KaTeX, OpenAPI, replays, 3D models, property sheet, task icons. |
+| `@brett_lamy/docstream` | `2.0.1` (exact) | The parser, the serializer, and every read-only piece the editor reuses: demo viewer, command box, Mermaid, KaTeX, OpenAPI, replays, 3D models, property sheet, task icons. |
 | `gpu-lexer` | `0.0.2` | Code-block highlighting, language-agnostic, on WebGPU. Without WebGPU, blocks stay plain text. |
 | `lucide-react` | `^1.17.0` | Toolbar, menu and block icons. |
 

@@ -171,7 +171,7 @@ A multi-file source editor with a live React preview supplied by the host.
 | `GbCode`, `GbTable`, `GbLinkInner`, `GbMarkSpelling` | extensions | Inline code that combines with other marks, tables with `data-view` and alignment, link-inside-emphasis, emphasis spelling. |
 | `gitbookNodes` | extension array | Every GitBook node: hints, tabs, expandables, steppers, embeds, content refs, source refs, demos, command boxes, columns, figures, math, inline images, references, updates, OpenAPI, definitions, raw tags. |
 | `GbCodeBlock`, `GbCommand`, `GbDemo`, `GbReference` | extensions | Individual nodes: code block, `{% command %}` box, `{% demo %}` block, `@` / `#` / `$` chip. |
-| `GbAttachment`, `formatBytes` | extension, function | The attachment chip, with `removeAttachment`; `formatBytes(1536)` → `"2 KB"`. |
+| `GbAttachment`, `formatBytes` | extension, function | The attachment chip, with `removeAttachment`; `formatBytes(1536)` → `"2 kB"` (decimal units: `"280 B"`, `"627 kB"`, `"1.3 MB"`; `""` for an unknown size). |
 | `SlashMenu`, `createSlashMenu(items?)`, `SLASH_ITEMS`, `SlashItem` | extension, function, array, type | The `/` menu. `SlashItem` is `{ title, keywords, icon, run(editor) }`. |
 | `createReferenceSuggestion({ char, items?, allowFreeForm? })`, `resolveReferenceOptions(source, query)` | functions | One chip picker as an extension, and the option filtering it uses. |
 | `ReferenceOption`, `ReferenceSource`, `ReferenceSuggestionOptions`, `ReferenceTrigger` | types | `{ id, label?, description?, group? }`, list-or-function, picker options, `"@" \| "#" \| "$"`. |

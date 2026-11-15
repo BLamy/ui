@@ -5,7 +5,7 @@ export const MONO = "ui-monospace, 'SF Mono', Menlo, Consolas, monospace"
 
 /** A data URL makes Markdown unreadable: show its type and size instead. */
 export function shortenDataUrls(markdown: string): string {
-  return markdown.replace(/data:([\w/+.-]+);base64,[A-Za-z0-9+/=]+/g, (url, type: string) => `data:${type};base64,…(${Math.max(1, Math.round((url.length * 0.75) / 1024))} KB)`)
+  return markdown.replace(/data:([\w/+.-]+);base64,[A-Za-z0-9+/=]+/g, (url, type: string) => `data:${type};base64,…(${Math.max(1, Math.round((url.length * 0.75) / 1000))} kB)`)
 }
 
 export function Split({ children }: { children: ReactNode }) {
