@@ -36,9 +36,10 @@ import { useVault, useVaultState, vaultErrorMessage } from '@/lib/vault-react';
 
 /* The theme's primary (white on the iOS blue, 3.6:1) and its muted text (3.3:1 on a grouped background) are under
    WCAG AA for body-size text. These screens carry the text people must read to keep their data, so they darken the
-   primary where it holds text and use a stronger muted colour. In dark mode white on the primary already passes,
-   so the buttons and links take the theme's own primary there. */
-const vaultActionClass = 'bg-[color-mix(in_oklab,var(--primary)_78%,black)] dark:bg-primary';
+   primary where it holds text and use a stronger muted colour. The dark primary is the same system blue, so white
+   on it is 3.6:1 in both themes and the buttons keep the darkened fill in dark mode too; as text on the dark
+   surfaces the primary itself passes, so the links take the theme's own primary there. */
+const vaultActionClass = 'bg-[color-mix(in_oklab,var(--primary)_78%,black)]';
 const vaultLinkClass = 'text-[color-mix(in_oklab,var(--primary)_78%,black)] dark:text-primary';
 const vaultErrorClass = 'text-[color-mix(in_oklab,var(--destructive)_72%,black)] dark:text-destructive';
 const vaultMutedClass = 'text-foreground/70';

@@ -230,7 +230,7 @@ function SortMenu<T extends DataTableRow>({ columns, allColumns, sort }: { colum
       <DropdownMenu onAction={(id, { event }) => { api.internal.sortBy(id === ORIGINAL_ORDER ? null : id, { reason: 'item-press', event }); }}>
         <DropdownMenuTrigger
           aria-label="Sort by"
-          render={<Button variant="quiet" size="sm" className="h-6 gap-1 rounded-md px-1.5 text-caption font-medium" />}
+          render={<Button variant="quiet" size="sm" className="h-6 gap-1 rounded-md px-1.5 text-caption font-medium text-foreground/70" />}
         >
           <span>{sortedColumn ? dataTableColumnName(sortedColumn as never) : 'Sort'}</span>
           {sort ? <Icon name={sort.direction === 'ascending' ? 'arrow-up' : 'arrow-down'} size={10} sw={2.6} /> : <Icon name="chevron-up-down" size={12} sw={2} />}

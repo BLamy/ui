@@ -68,7 +68,8 @@ test.describe('without WebGPU', () => {
     await expect(errors).toContainText('Hour: 25 is out of range (0–23)');
     await expect(errors).toContainText('Month: 13 is out of range (1–12)');
     await expect(page.locator('[data-slot=cron-editor-next]')).toContainText('Fix the expression to see when it runs.');
-    await expect(page.locator('[data-slot=cron-editor-description]')).toHaveText('');
+    // An invalid expression has no words to show: the description is left out until it is valid again.
+    await expect(page.locator('[data-slot=cron-editor-description]')).toHaveCount(0);
 
     await typeInto(expression(page), '*/20 8-18 * * mon-fri');
     await expect(errors.locator('[data-slot=field-error]')).toHaveCount(0);

@@ -94,7 +94,19 @@ test('the toolbar uses the requested icons and order, grays unavailable Step out
   expect(await toolbar.getByRole('button').evaluateAll((buttons) => buttons.map((button) => button.getAttribute('aria-label')))).toEqual(['Continue', 'Step over', 'Step into', 'Step out', 'Step back', 'Reverse continue', 'Restart', 'Stop']);
   expect(await toolbar.getByRole('button').evaluateAll((buttons) => buttons.map((button) => [...button.querySelector('.codicon').classList].find((name) => name.startsWith('codicon-debug-'))))).toEqual(['codicon-debug-continue', 'codicon-debug-step-over', 'codicon-debug-step-into', 'codicon-debug-step-out', 'codicon-debug-step-back', 'codicon-debug-reverse-continue', 'codicon-debug-restart', 'codicon-debug-stop']);
   await expect(toolbar.getByRole('button', { name: 'Step out', exact: true })).toBeDisabled();
-  expect(await toolbar.locator('[data-action=step-out]').evaluate((button) => getComputedStyle(button).opacity)).toBe('0.4');
+  // An unavailable unfilled tool goes grey (the tertiary text color) at full opacity, not faded.
+  const glyph = (action) => toolbar.locator(`[data-action=${action}] .codicon`).evaluate((el) => getComputedStyle(el).color);
+  const tertiary = await toolbar.evaluate((el) => {
+    const probe = el.ownerDocument.createElement('span');
+    probe.className = 'text-tertiary-foreground';
+    el.append(probe);
+    const color = getComputedStyle(probe).color;
+    probe.remove();
+    return color;
+  });
+  expect(await toolbar.locator('[data-action=step-out]').evaluate((button) => getComputedStyle(button).opacity)).toBe('1');
+  expect(await glyph('step-out')).toBe(tertiary);
+  expect(await glyph('step-out')).not.toBe(await glyph('step-over'));
   const appearance = await toolbar.evaluate((el) => ({
     border: getComputedStyle(el).borderTopWidth,
     background: getComputedStyle(el).backgroundColor,
@@ -112,6 +124,7 @@ test('the toolbar uses the requested icons and order, grays unavailable Step out
   };
   for (let i = 1; i <= 5; i++) await step('step-into', i);
   await expect(toolbar.getByRole('button', { name: 'Step out', exact: true })).toBeEnabled();
+  expect(await glyph('step-out')).toBe(await glyph('step-over'));
   await step('step-over', 6);
   await step('step-into', 7);
   await step('step-out', 8);

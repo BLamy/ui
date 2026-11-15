@@ -38,7 +38,7 @@ export default function DatabaseSchema() {
           else if (n.kind === 'column') setChosen(`select ${n.column.name} from ${n.table.name};`)
         }}
         className="h-64 rounded-panel bg-card p-1 shadow-hairline" />
-      <p role="status" className="m-0 font-mono text-caption text-muted-foreground">{chosen}</p>
+      <p role="status" className="m-0 font-mono text-caption text-foreground/70">{chosen}</p>
     </div>
   )
 }

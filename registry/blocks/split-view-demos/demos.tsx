@@ -371,7 +371,7 @@ export function SplitViewResizableDemo({ children, initial = 900, min = 320, max
   const wc = w >= breakpoints.regular ? 'regular' : w >= breakpoints.medium ? 'medium' : 'compact';
   return (
     <div data-slot="split-view-resizable-demo" className="flex w-full flex-col items-start gap-2.5">
-      <div className="flex items-center gap-2 text-[12.5px] text-muted-foreground tabular-nums">
+      <div className="flex items-center gap-2 text-[12.5px] text-foreground/70 tabular-nums">
         {(['compact', 'medium', 'regular'] as const).map((c) => (
           <span key={c} className={cn('rounded-full px-2.5 py-1 font-semibold transition-colors duration-200', c === wc ? 'bg-primary text-primary-foreground' : 'bg-secondary')}>{c}</span>
         ))}

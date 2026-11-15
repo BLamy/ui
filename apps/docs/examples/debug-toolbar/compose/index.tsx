@@ -28,7 +28,7 @@ export default function DebugToolbarCompose() {
         <ToolbarSeparator />
         <ToolbarButton size="sm" onClick={() => setLog('Opened DevTools')}>DevTools</ToolbarButton>
       </DebugToolbar>
-      <p className="min-h-5 text-caption text-muted-foreground" aria-live="polite">{log}</p>
+      <p className="min-h-5 text-caption text-foreground/70" aria-live="polite">{log}</p>
     </div>
   )
 }

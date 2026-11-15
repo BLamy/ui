@@ -177,8 +177,10 @@ function FontListCore({
         // Wraps rather than scrolling sideways, so every category shows in a 320px popover.
         className="flex w-full shrink-0 flex-wrap gap-1 border-y border-border px-2 py-1.5"
       >
+        {/* The pressed category is a solid pill (background on foreground): the default toggle's blue on its 15%
+            tint is about 3:1, too faint for 13px text. */}
         {[{ id: 'all', label: 'All' }, ...FONT_CATEGORIES].map((c) => (
-          <ToggleGroupItem key={c.id} value={c.id} className="h-7 font-medium">{c.label}</ToggleGroupItem>
+          <ToggleGroupItem key={c.id} value={c.id} className="h-7 font-medium data-pressed:bg-foreground data-pressed:text-background">{c.label}</ToggleGroupItem>
         ))}
       </ToggleGroup>
       <CommandMenuList
@@ -268,7 +270,7 @@ function FontRow({ row, index, top, disabled, mark, systemLabel, lookup }: {
           {mark ? <span className="sr-only"> (in use)</span> : null}
         </>
       )}
-      trailing={detail ? <span id={detailId} aria-hidden="true" className="ms-auto shrink-0 text-caption text-muted-foreground">{detail}</span> : null}
+      trailing={detail ? <span id={detailId} aria-hidden="true" className="ms-auto shrink-0 text-caption text-foreground/70">{detail}</span> : null}
     />
   );
 }

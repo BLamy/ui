@@ -186,8 +186,9 @@ const chipButton =
   'cursor-pointer hover:bg-accent active:bg-secondary-strong focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring';
 
 /** The row's own buttons (Filter, Match, Clear all): the kit Toolbar's quiet `sm` tool (32px, Button's scale), so a
-    theme or size change to the toolbar reaches them. The chips keep their own parts. */
-const triggerButton = cn(toolbarButtonVariants({ variant: 'quiet', size: 'sm' }), 'shrink-0');
+    theme or size change to the toolbar reaches them. The chips keep their own parts. Their footnote text is
+    `foreground/70`, not quiet's muted grey (3.3:1 on a grouped background), so the labels pass AA. */
+const triggerButton = cn(toolbarButtonVariants({ variant: 'quiet', size: 'sm' }), 'shrink-0 not-data-disabled:text-foreground/70');
 
 const popupList = cn(listboxVariants({ variant: 'popup' }));
 const popupRow = listboxItemVariants({ variant: 'popup' });

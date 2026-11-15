@@ -273,7 +273,7 @@ export const sidebarItemVariants = cva(
       tinted: { true: 'font-semibold text-(color:--sidebar-tint) [&_[data-slot=sidebar-icon]]:text-(color:--sidebar-tint)', false: '' },
     },
     compoundVariants: [
-      { tinted: false, current: false, className: 'text-muted-foreground hover:text-foreground' },
+      { tinted: false, current: false, className: 'text-foreground/70 hover:text-foreground' },
       { tinted: false, current: true, className: 'text-foreground' },
     ],
     defaultVariants: { current: false, compact: false, tinted: false },
@@ -325,7 +325,7 @@ export function SidebarItem({ icon, title, description, trailing, current = fals
       {icon != null ? <RowGlyph icon={icon} /> : null}
       <span className="min-w-0 flex-1">
         <span className="block truncate">{title}</span>
-        {description != null ? <span className="block truncate text-caption font-normal text-muted-foreground">{description}</span> : null}
+        {description != null ? <span className="block truncate text-caption font-normal text-foreground/65">{description}</span> : null}
       </span>
       {trailing == null ? null : typeof trailing === 'number' || typeof trailing === 'string'
         ? <Badge size="sm" variant="tinted" className="shrink-0 tabular-nums">{trailing}</Badge>
@@ -420,7 +420,7 @@ export function SidebarAccount({ title, description, icon, className, ...props }
       )}
       <div className="min-w-0 flex-1 leading-tight whitespace-nowrap">
         <div className={cn('truncate font-semibold text-foreground', compact ? 'text-subhead' : 'text-footnote')}>{title}</div>
-        {description != null ? <div className={cn('truncate text-muted-foreground', compact ? 'text-footnote' : 'text-caption')}>{description}</div> : null}
+        {description != null ? <div className={cn('truncate text-foreground/65', compact ? 'text-footnote' : 'text-caption')}>{description}</div> : null}
       </div>
     </div>
   );

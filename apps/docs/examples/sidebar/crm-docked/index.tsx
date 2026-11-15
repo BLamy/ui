@@ -66,7 +66,7 @@ export default function DockedCrm() {
               <SidebarTrigger />
               <strong className="text-subhead text-foreground">{page}</strong>
             </header>
-            <p className="m-0 p-4 text-footnote text-muted-foreground">
+            <p className="m-0 p-4 text-footnote text-foreground/70">
               Press / to focus the search button, or pick a page.
             </p>
           </SidebarInset>

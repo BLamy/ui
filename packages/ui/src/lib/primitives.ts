@@ -67,7 +67,7 @@ export const sectionLabelVariants = cva('m-0 min-w-0', {
   variants: {
     variant: {
       grouped: 'text-footnote leading-[18px] font-normal tracking-[.02em] text-foreground/70 uppercase',
-      sidebar: 'text-caption2 leading-4 font-bold tracking-[.06em] whitespace-nowrap text-muted-foreground uppercase',
+      sidebar: 'text-caption2 leading-4 font-bold tracking-[.06em] whitespace-nowrap text-foreground/65 uppercase',
       menu: 'text-footnote leading-[18px] font-semibold text-muted-foreground',
     },
   },

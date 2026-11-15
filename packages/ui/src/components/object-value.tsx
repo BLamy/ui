@@ -27,7 +27,8 @@ const TINTS: Record<ValueTokenType, string> = {
   symbol: 'bl-tok-constant',
   regexp: 'bl-tok-operator',
   date: 'bl-tok-type',
-  error: 'text-destructive',
+  // The code theme's red (AA on the card in both schemes); the system red is 3.5:1 as small text.
+  error: 'bl-tok-constant',
   className: 'bl-tok-type',
   key: 'text-muted-foreground',
   punctuation: 'text-muted-foreground',

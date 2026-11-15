@@ -191,9 +191,9 @@ export function TailscaleStatusBadge({ tailscale, status: statusProp, tailnet: t
         {s.icon ? <Icon name={s.icon} size={12} sw={2.2} /> : <Spinner size={12} />}
         {s.label}
       </Badge>
-      {details && status === 'connected' && tailnet ? <span className="text-muted-foreground">{tailnet}</span> : null}
-      {details && status === 'error' && error ? <span className="text-destructive">{error}</span> : null}
-      {details && status === 'needs-approval' ? <span className="text-muted-foreground">An admin has to approve this device.</span> : null}
+      {details && status === 'connected' && tailnet ? <span className="text-foreground/70">{tailnet}</span> : null}
+      {details && status === 'error' && error ? <span className="text-foreground">{error}</span> : null}
+      {details && status === 'needs-approval' ? <span className="text-foreground/70">An admin has to approve this device.</span> : null}
       {details && status === 'signing-in' && loginUrl ? (
         <a href={loginUrl} target="_blank" rel="noopener noreferrer" className="rounded-sm font-semibold text-foreground underline outline-none focus-visible:ring-2 focus-visible:ring-ring">
           Continue to Tailscale

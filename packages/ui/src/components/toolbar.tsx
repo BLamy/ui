@@ -100,6 +100,12 @@ const tones: Record<ToolbarTone, string> = {
   destructive: 'not-data-disabled:text-destructive hover:not-data-disabled:text-destructive',
 };
 
+/* A bar's text action is 17px words, which need 4.5:1: the light system red is 3.4:1 on the bar, so a destructive
+   word (Delete) takes the red darkened toward black there; dark mode's red already passes. Icon tools keep the system
+   red (a glyph needs 3:1). */
+const barDestructive =
+  'not-data-disabled:text-[color-mix(in_oklab,var(--destructive)_72%,black)] hover:not-data-disabled:text-[color-mix(in_oklab,var(--destructive)_72%,black)] dark:not-data-disabled:text-destructive dark:hover:not-data-disabled:text-destructive';
+
 /** An unavailable tool with no fill of its own: grey at full opacity, as in the `bar` look, not Button's fade.
  *  Filled looks (`default`, `secondary`, `destructive`, `contrast`) keep Button's dimmed fill. */
 const unfilledDisabled = 'data-disabled:text-tertiary-foreground data-disabled:opacity-100';
@@ -123,7 +129,7 @@ export function toolbarButtonVariants({
   // In a bar, a button with no look of its own is the bar's text action.
   const look = variant ?? 'quiet';
   const base = toolbar === 'bar' && !variant ? barButton : cn(buttonVariants({ variant: look, size }), iconCorners[size], UNFILLED.has(look) && unfilledDisabled);
-  return cn(base, tones[tone]);
+  return cn(base, tones[tone], base === barButton && tone === 'destructive' && barDestructive);
 }
 
 export type ToolbarButtonProps = ComponentProps<typeof SdkToolbarButton> & {
