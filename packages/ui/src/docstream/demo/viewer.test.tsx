@@ -135,16 +135,19 @@ describe("DemoViewer code view: breadcrumb and file list handle (server markup)"
     const list = html.slice(html.indexOf("<ol"), html.indexOf("</ol>"))
     const names = [...list.matchAll(/docs-demo-crumb-text">([^<]+)</g)].map((m) => m[1])
     expect(names).toEqual(["blocks", "discord-clone", "index.tsx"])
-    expect(list).toContain('aria-haspopup="menu"')
+    // The segments are triggers outside the menu (its controller connects them as the page hydrates), so the server
+    // HTML doesn't claim a menu that can't open yet; viewer-a11y.test.tsx checks aria-haspopup once mounted.
+    expect(list).not.toContain('aria-haspopup="menu"')
     expect(list).toContain('aria-current="page"')
   })
 
   it("renders a vertical separator between the file list and the source", () => {
     const html = renderToString(<DemoViewer src="a/b" title="T" files={MULTI} />)
-    expect(html).toMatch(/class="docs-demo-files-handle" role="separator" tabindex="0" aria-orientation="vertical"/)
-    expect(html).toContain('aria-valuemin="140"')
-    expect(html).toContain('aria-valuenow="188"')
-    // The default width is the stylesheet's; no inline width until the reader drags.
-    expect(html).not.toContain("--docs-demo-files-w")
+    const handle = html.match(/<div class="docs-demo-files-handle"[^>]*>/)?.[0] ?? ""
+    expect(handle).toContain('role="separator"')
+    expect(handle).toContain('aria-orientation="vertical"')
+    expect(handle).toContain('aria-label="Resize file list"')
+    // The server renders the default width (188px) as the file list's flex basis.
+    expect(html).toMatch(/class="docs-demo-files-pane"[^>]*var\(--resizable-panel-size, 188px\)/)
   })
 })

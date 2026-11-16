@@ -254,9 +254,9 @@ Try the whole loop. Copy a src-only demo (its files come from this site's resolv
 | --- | --- | --- |
 | `createDocstreamClipboard(doc, { lookup?, serialize? })` | root | Representations for a parsed document or selection. `lookup(node)` supplies files for src-only demos (e.g. `peekDemoSource`). |
 | `createDocstreamClipboardFromMarkdown(md, options?)` | root | The same from Markdown, keeping the author's exact bytes in `payload.markdown`. |
-| `docstreamClipboardItems(clip)` | root | As react-aria `DragItem`s, for `useClipboard` / `useDrag`. |
+| `docstreamClipboardItems(clip)` | root | As drag items (one `{ [mime]: string }` record), for drag-and-drop libraries. |
 | `readDocstreamClipboard(dataTransfer)` | root | The payload from a paste / drop event, or `null`. |
-| `readDocstreamClipboardItems(items)` | root | The same from react-aria `DropItem`s. |
+| `readDocstreamClipboardItems(items)` | root | The same from drop items (`{ kind, types, getText }`). |
 | `parseDocstreamClipboard(json)` | root | Validate a payload string. |
 | `CopyDemoButton` | root | Icon button: `{ clipboard: () => DocstreamClipboard \| null, label?, className? }`. |
 | `useDocstreamCopy(produce)` | `/demo` | The hook behind it — spread `props` and `ref` on any focusable element; ⌘C / Ctrl+C on it copies too. |

@@ -307,7 +307,7 @@ describe("player behaviour", () => {
     stage.doc = doc
     stage.time = 1000
     const el = await mount(<ReplayPreview events={replayDemoEvents} lazy={false} inspections={[{ time: 1500, element: 'input[placeholder="Search tasks"]', label: "The search box" }]} />)
-    await act(async () => el.querySelector<HTMLElement>('[data-slot="replay-devtools-buttons"] button')!.click())
+    await act(async () => el.querySelector<HTMLElement>('[data-part="replay-devtools-buttons"] button')!.click())
     await act(async () => (stage.props as ReplayStageProps).onTimeUpdate?.(1600))
     const panel = el.querySelector<HTMLElement>('[data-slot="replay-devtools"]')!
     const tab = () => panel.querySelector('[role=tab][aria-selected="true"]')!.textContent
@@ -317,19 +317,19 @@ describe("player behaviour", () => {
     expect(highlight.textContent).toBe("input.field 220 × 32")
     await act(async () => [...panel.querySelectorAll<HTMLElement>("[role=tab]")].find((t) => t.textContent === "Elements")!.click())
     expect(tab()).toBe("Elements")
-    const selected = panel.querySelector('[data-slot="replay-devtools-node"][data-selected]')!
+    const selected = panel.querySelector('[data-part="replay-devtools-node"][data-selected]')!
     expect(selected.textContent).toBe('<input placeholder="Search tasks" class="field"></input>')
     expect(panel.textContent).not.toContain(":hover")
     // Its ancestors are open: html, body, main and form all show their children.
-    expect([...panel.querySelectorAll('[data-slot="replay-devtools-node"][aria-expanded="true"]')].map((n) => n.querySelector('[data-part="tag"]')!.textContent)).toEqual(["<html", "<body", "<main", "<form"])
+    expect([...panel.querySelectorAll('[data-part="replay-devtools-node"][data-expanded]')].map((n) => n.querySelector('[data-part="tag"]')!.textContent)).toEqual(["<html", "<body", "<main", "<form"])
     expect(panel.querySelector('[data-slot="replay-devtools-breadcrumb"]')!.textContent).toBe("htmlbodymainforminput.field")
     const box = el.querySelector<HTMLElement>('[data-slot="replay-preview-highlight"]')!
     expect([box.style.left, box.style.top, box.style.width, box.style.height]).toEqual(["40px", "60px", "220px", "32px"])
     expect(box.textContent).toBe("input.field 220 × 32")
     // Clicking another node selects it; the tree is the user's now.
-    const button = [...panel.querySelectorAll<HTMLElement>('[data-slot="replay-devtools-node"]')].find((n) => n.textContent?.startsWith("<button"))!
+    const button = [...panel.querySelectorAll<HTMLElement>('[data-part="replay-devtools-node"]')].find((n) => n.textContent?.startsWith("<button"))!
     await act(async () => button.click())
-    expect(panel.querySelector('[data-slot="replay-devtools-node"][data-selected]')!.textContent).toContain("<button")
+    expect(panel.querySelector('[data-part="replay-devtools-node"][data-selected]')!.textContent).toContain("<button")
     expect(el.querySelector('[data-slot="replay-devtools-status"]')).toBeNull()
     stage.doc = null
   })
@@ -348,7 +348,7 @@ describe("player behaviour", () => {
     await playTo(2100)
     const panel = el.querySelector<HTMLElement>('[data-slot="replay-devtools"]')!
     expect(panel.querySelector('[role=tab][aria-selected="true"]')!.textContent).toBe("Sources")
-    expect(panel.querySelector('[data-slot="replay-devtools-files"] [aria-current]')!.textContent).toBe("checkout.ts")
+    expect(panel.querySelector('[data-slot="replay-devtools-files"] [role=tab][aria-selected="true"]')!.textContent).toBe("checkout.ts")
     const line88 = () => panel.querySelector('[data-slot="replay-devtools-code-line"][data-line="88"]')!
     expect(line88().hasAttribute("data-focus")).toBe(true)
     expect(line88().hasAttribute("data-breakpoint")).toBe(true)
@@ -404,7 +404,7 @@ describe("player behaviour", () => {
   it("disableDevtools removes the buttons, the panel and the inspections", async () => {
     stage.time = 8000
     const el = await mount(<ReplayPreview events={replayDemoEvents} lazy={false} disableDevtools inspections={[{ time: 7600, request: "/api/checkout", label: "Checkout answered 500" }]} />)
-    expect(el.querySelector('[data-slot="replay-devtools-buttons"]')).toBeNull()
+    expect(el.querySelector('[data-part="replay-devtools-buttons"]')).toBeNull()
     expect(el.querySelector('[data-slot="replay-devtools"]')).toBeNull()
     expect(el.innerHTML).not.toContain("Checkout answered 500")
   })
@@ -417,9 +417,12 @@ describe("player behaviour", () => {
     const playing = (p: boolean) => act(async () => props().onPlayingChange?.(p))
     expect(props().initialTime).toBe(3000)
     expect(props().loop).toBe(false)
-    const band = el.querySelector<HTMLElement>('[data-slot="replay-preview-window"]')!
-    expect(band.style.getPropertyValue("--replay-window-start")).toBe(String(3000 / DEMO_DURATION))
-    expect(band.style.getPropertyValue("--replay-window-size")).toBe(String(2000 / DEMO_DURATION))
+    // The window's place is set on the scrubber, where the band and the played fill both read it.
+    expect(el.querySelector('[data-slot="replay-preview-window"]')).not.toBeNull()
+    const scrubber = el.querySelector<HTMLElement>('[data-slot="replay-preview-scrubber"]')!
+    expect(scrubber.hasAttribute("data-window")).toBe(true)
+    expect(scrubber.style.getPropertyValue("--replay-window-start")).toBe(String(3000 / DEMO_DURATION))
+    expect(scrubber.style.getPropertyValue("--replay-window-size")).toBe(String(2000 / DEMO_DURATION))
     expect(el.querySelector('input[type="range"]')!.getAttribute("aria-valuetext")).toContain("segment 0:03 to 0:05")
 
     // Play from inside: at the window's end the stage pauses there, and the center button replays the segment.
@@ -495,18 +498,24 @@ describe("player behaviour", () => {
     expect(stage.props?.speed).toBe(0.5)
   })
 
-  it("leaves the arrow keys to the scrubber's range input, and ignores keys with modifiers", async () => {
+  it("leaves the arrow keys to the scrubber, which steps by its own step, and ignores keys with modifiers", async () => {
     const el = await mount(<ReplayPreview events={replayDemoEvents} lazy={false} />)
     const range = el.querySelector("input[type=range]")!
     const before = stage.calls.length
+    // The slider's own keys: a 10 ms step, 5 s with Shift, the ends with Home and End. Never the player's ±5 s.
     press(range, "ArrowRight")
+    expect(stage.calls.slice(before)).toEqual(["seek:2010"])
     press(range, "Home")
-    expect(stage.calls.length).toBe(before)
+    expect(stage.calls.slice(before)).toEqual(["seek:2010", "seek:0"])
+    await act(async () => void range.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", shiftKey: true, bubbles: true, cancelable: true })))
+    expect(stage.calls.at(-1)).toBe("seek:7000")
+    const stepped = stage.calls.length
     await act(async () => void range.dispatchEvent(new KeyboardEvent("keydown", { key: "k", bubbles: true, metaKey: true })))
-    expect(stage.calls.length).toBe(before)
+    expect(stage.calls.length).toBe(stepped)
     // …but J/L and K still work from the slider.
     press(range, "k")
-    expect(stage.calls.length).toBe(before + 1)
+    expect(stage.calls.length).toBe(stepped + 1)
+    expect(stage.calls.at(-1)).toBe("toggle")
   })
 
   it("a marker button seeks a beat before its moment and reports the press", async () => {

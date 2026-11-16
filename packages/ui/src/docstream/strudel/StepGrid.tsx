@@ -1,13 +1,16 @@
 /* Mini-notation drawn as a step sequencer: sequences are rows whose steps share the width by weight, `[ ]`
    nests a row inside a step, `< >` shows its one-per-cycle choices, `,` stacks rows. Click a step to toggle
-   it with a rest; double-click to type a new value. Operators show as badges (×2, (3,8), ?, !3). */
-import { useState, type ReactNode } from "react"
+   it with a rest; double-click it (or press F2) to type a new value. Operators show as badges (×2, (3,8), ?, !3).
+   The keys are the `step-grid` primitive (step-grid.ts): one tab stop, arrows between the steps. */
+import type { ReactNode } from "react"
+import type { ChangeDetails } from "@ui-sdk/core"
+import { StepGridCell, StepGridEditor, StepGridRoot } from "./step-grid-parts"
 import { miniAtoms, type MiniAtom, type MiniGroup, type MiniOp, type MiniSequence, type MiniStep } from "./ast/mini"
 
 export interface StepGridProps {
   mini: MiniGroup
-  /** Called with the atom and its new text. */
-  onAtomChange: (atom: MiniAtom, text: string) => void
+  /** Called with the atom, its new text, and how: a step pressed (`"press"`) or a value typed (`"input-commit"`). */
+  onAtomChange: (atom: MiniAtom, text: string, details: ChangeDetails<"press" | "input-commit">) => void
   /** Accessible name for the grid. */
   label?: string
 }
@@ -44,42 +47,7 @@ function badge(op: MiniOp): string | null {
   }
 }
 
-function AtomCell({ atom, fallback, onAtomChange }: { atom: MiniAtom; fallback: string; onAtomChange: StepGridProps["onAtomChange"] }) {
-  const [editing, setEditing] = useState(false)
-  if (editing) {
-    return (
-      <input
-        className="strudel-step__input"
-        defaultValue={atom.value}
-        aria-label="Step value"
-        autoFocus
-        onBlur={(e) => {
-          setEditing(false)
-          const v = e.currentTarget.value.trim()
-          if (v && v !== atom.value && /^[\p{L}\p{Nl}0-9~\-#.^_]+$/u.test(v)) onAtomChange(atom, v)
-        }}
-        onKeyDown={(e) => {
-          if (e.key === "Enter") e.currentTarget.blur()
-          if (e.key === "Escape") setEditing(false)
-        }}
-      />
-    )
-  }
-  return (
-    <button
-      type="button"
-      className="strudel-step__cell"
-      data-rest={atom.rest || undefined}
-      aria-pressed={!atom.rest}
-      aria-label={atom.rest ? "Rest" : atom.value}
-      title={atom.rest ? "Rest — click to fill, double-click to type" : `${atom.value} — click to rest, double-click to type`}
-      onClick={() => onAtomChange(atom, atom.rest ? fallback : "~")}
-      onDoubleClick={() => setEditing(true)}
-    >
-      {atom.rest ? "" : atom.value}
-    </button>
-  )
-}
+const VALUE = /^[\p{L}\p{Nl}0-9~\-#.^_]+$/u
 
 export function StepGrid({ mini, onAtomChange, label }: StepGridProps) {
   // A rest that's filled back in becomes the row's most common sound/value.
@@ -87,31 +55,55 @@ export function StepGrid({ mini, onAtomChange, label }: StepGridProps) {
   for (const a of miniAtoms(mini, { ops: false })) if (!a.rest) counts.set(a.value, (counts.get(a.value) ?? 0) + 1)
   const fallback = [...counts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? "x"
 
-  const row = (seq: MiniSequence, key: number | string): ReactNode => (
+  // A step is keyed by its place in the pattern's structure: the path of layer and step indexes down to it, like
+  // "0.2/1.0". A typed value never changes it (a source offset would shift with every longer or shorter value before
+  // it), and neither does the order the cells happen to render in.
+  const atoms = new Map<string, MiniAtom>()
+
+  const cell = (atom: MiniAtom, key: string): ReactNode => {
+    atoms.set(key, atom)
+    return (
+      <>
+        <StepGridCell
+          value={key}
+          pressed={!atom.rest}
+          className="strudel-step__cell"
+          data-rest={atom.rest || undefined}
+          aria-label={atom.rest ? "Rest" : atom.value}
+          title={atom.rest ? "Rest — click to fill, double-click or F2 to type" : `${atom.value} — click to rest, double-click or F2 to type`}
+        >
+          {atom.rest ? "" : atom.value}
+        </StepGridCell>
+        <StepGridEditor value={key} className="strudel-step__input" defaultValue={atom.value} aria-label="Step value" />
+      </>
+    )
+  }
+
+  const row = (seq: MiniSequence, key: number | string, path: string): ReactNode => (
     <div key={key} className="strudel-step__row">
-      {seq.steps.map((s, i) => step(s, i))}
+      {seq.steps.map((s, i) => step(s, i, `${path}.${i}`))}
     </div>
   )
 
-  const group = (g: MiniGroup): ReactNode =>
+  const group = (g: MiniGroup, path: string): ReactNode =>
     g.type === "sequence" ? (
-      row(g, 0)
+      row(g, 0, `${path}0`)
     ) : (
       <div className="strudel-step__layers" data-kind={g.type}>
-        {g.layers.map((l, i) => row(l, i))}
+        {g.layers.map((l, i) => row(l, i, `${path}${i}`))}
       </div>
     )
 
-  const step = (s: MiniStep, key: number): ReactNode => {
+  const step = (s: MiniStep, key: number, path: string): ReactNode => {
     const badges = s.ops.map(badge).filter((b): b is string => !!b)
     const slice = s.slice
     let body: ReactNode
-    if (slice.type === "atom") body = <AtomCell atom={slice} fallback={fallback} onAtomChange={onAtomChange} />
-    else if (slice.type === "subcycle") body = <div className="strudel-step__nest">{group(slice.body)}</div>
+    if (slice.type === "atom") body = cell(slice, path)
+    else if (slice.type === "subcycle") body = <div className="strudel-step__nest">{group(slice.body, `${path}/`)}</div>
     else
       body = (
         <div className="strudel-step__nest" data-kind={slice.type} title={slice.type === "alternation" ? "One per cycle" : "Polymeter"}>
-          <div className="strudel-step__layers">{slice.layers.map((l, i) => row(l, i))}</div>
+          <div className="strudel-step__layers">{slice.layers.map((l, i) => row(l, i, `${path}/${i}`))}</div>
         </div>
       )
     return (
@@ -122,9 +114,22 @@ export function StepGrid({ mini, onAtomChange, label }: StepGridProps) {
     )
   }
 
+  const drawn = group(mini, "")
   return (
-    <div className="strudel-steps" role="group" aria-label={label ?? "Steps"}>
-      {group(mini)}
-    </div>
+    <StepGridRoot
+      className="strudel-steps"
+      aria-label={label ?? "Steps"}
+      onStepPress={(key, details) => {
+        const atom = atoms.get(key)
+        if (atom) onAtomChange(atom, atom.rest ? fallback : "~", details)
+      }}
+      onStepEdit={({ step: key, text }, details) => {
+        const atom = atoms.get(key)
+        const value = text.trim()
+        if (atom && value && value !== atom.value && VALUE.test(value)) onAtomChange(atom, value, details)
+      }}
+    >
+      {drawn}
+    </StepGridRoot>
   )
 }

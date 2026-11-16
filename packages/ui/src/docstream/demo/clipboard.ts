@@ -1,7 +1,7 @@
 /* Copy / paste of docstream content that contains `{% demo %}` blocks.
 
-   A copy writes one clipboard item with three representations (react-aria `DragItem` shape,
-   so `useClipboard` / `useDrag` can write it; `writeDocstreamClipboard` writes it to a raw
+   A copy writes one clipboard item with three representations (a `{ [mime]: string }` record,
+   the drag-item shape drag-and-drop libraries take; `writeDocstreamClipboard` writes it to a raw
    `DataTransfer`):
 
    - `text/plain` and `text/markdown`: renderable docstream Markdown — every demo carries its
@@ -44,7 +44,7 @@ export interface DocstreamClipboard {
   text: string
 }
 
-/** A react-aria `DragItem`: one representation per MIME type. */
+/** A drag/clipboard item: one representation per MIME type. */
 export type DocstreamClipboardItem = Record<string, string>
 
 /** Every `{% demo %}` node in a document (inside tabs, hints, lists …), in document order. */
@@ -142,7 +142,7 @@ export function createDocstreamClipboardFromMarkdown(markdown: string, options: 
   return { ...clip, payload: { ...clip.payload, markdown } }
 }
 
-/** The clipboard as react-aria `DragItem`s (for `useClipboard`'s `getItems` / `useDrag`). */
+/** The clipboard as drag items (one record of representations by MIME type). */
 export function docstreamClipboardItems(clip: DocstreamClipboard): DocstreamClipboardItem[] {
   return [
     {
@@ -200,14 +200,14 @@ export function readDocstreamClipboard(data: Pick<DataTransfer, "getData" | "typ
   return parseDocstreamClipboard(data.getData(DOCSTREAM_CLIPBOARD_TYPE))
 }
 
-/** Minimal react-aria `DropItem` shape (text items). */
+/** Minimal drop-item shape (text items), as drag-and-drop libraries hand them over. */
 export interface DocstreamDropItem {
   kind: string
   types?: Set<string>
   getText?: (type: string) => Promise<string>
 }
 
-/** The docstream payload among react-aria `DropItem`s (`useClipboard`'s `onPaste`, `useDrop`). */
+/** The docstream payload among drop items (a paste or drop handler's). */
 export async function readDocstreamClipboardItems(items: readonly DocstreamDropItem[]): Promise<DocstreamClipboardPayload | null> {
   for (const item of items) {
     if (item.kind === "text" && item.types?.has(DOCSTREAM_CLIPBOARD_TYPE) && item.getText) {

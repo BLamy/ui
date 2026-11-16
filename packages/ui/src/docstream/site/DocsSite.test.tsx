@@ -28,15 +28,22 @@ afterEach(() => {
   host.remove()
 })
 
-const render = (el: React.ReactElement) => act(() => root.render(el))
+// UI SDK's parts settle a tick after they mount (and after a press), so rendering and clicking wait for it.
+const settle = () => act(async () => { await new Promise((resolve) => setTimeout(resolve, 0)) })
+const render = async (el: React.ReactElement) => {
+  await act(async () => root.render(el))
+  await settle()
+}
 const text = (sel: string) => [...host.querySelectorAll(sel)].map((n) => n.textContent?.trim())
-const click = (el: Element | null) =>
-  act(() => {
+const click = async (el: Element | null) => {
+  await act(async () => {
     el!.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true, button: 0 }))
   })
+  await settle()
+}
 
 describe("DocsSite", () => {
-  it("puts sections in the header as tabs; the sidebar and pager stay inside the current one", () => {
+  it("puts sections in the header as tabs; the sidebar and pager stay inside the current one", async () => {
     const files = {
       "SUMMARY.md": "## Getting started\n\n* [Intro](README.md)\n* [Button](button.md)\n\n## Blocks\n\n* [Blocks](blocks/README.md)\n  * [Notes](blocks/notes.md)\n  * [Music](blocks/music.md)\n",
       "README.md": "# Intro\n\nHi.",
@@ -46,7 +53,7 @@ describe("DocsSite", () => {
       "blocks/music.md": "# Music\n\nPlay.",
     }
     const tabs = [{ title: "Components", path: "" }, { title: "Blocks", path: "blocks" }]
-    render(<DocsSite files={files} tabs={tabs} routing="memory" initialPath="button" />)
+    await render(<DocsSite files={files} tabs={tabs} routing="memory" initialPath="button" />)
     const tabLinks = () => [...host.querySelectorAll(".ds-site-tabs-header .ds-site-tab")]
     expect(tabLinks().map((a) => a.textContent)).toEqual(["Components", "Blocks"])
     expect(tabLinks()[0]!.getAttribute("aria-current")).toBe("page")
@@ -54,21 +61,21 @@ describe("DocsSite", () => {
     // The last Components page has no Next into Blocks.
     expect(host.querySelector('.ds-site-pager-link[data-dir="next"]')).toBeNull()
 
-    click(tabLinks()[1]!)
+    await click(tabLinks()[1]!)
     expect(host.querySelector(".ds-site-page-title")?.textContent).toBe("Blocks")
     expect(tabLinks()[1]!.getAttribute("aria-current")).toBe("page")
     expect(text(".ds-site-sidebar .ds-site-nav-link")).toEqual(["Blocks", "Notes", "Music"])
     expect(host.querySelector('.ds-site-pager-link[data-dir="prev"]')).toBeNull()
 
-    click(host.querySelector('.ds-site-pager-link[data-dir="next"]'))
+    await click(host.querySelector('.ds-site-pager-link[data-dir="next"]'))
     expect(host.querySelector(".ds-site-page-title")?.textContent).toBe("Notes")
     expect(host.querySelector(".ds-site-columns")?.getAttribute("data-layout")).toBe("wide")
     // `layout` is site frontmatter: no property sheet for it.
     expect(host.querySelector("[data-document-properties]")).toBeNull()
   })
 
-  it("builds the sidebar from the files and opens on the home page", () => {
-    render(<DocsSite files={FILES} title="Acme" routing="memory" />)
+  it("builds the sidebar from the files and opens on the home page", async () => {
+    await render(<DocsSite files={FILES} title="Acme" routing="memory" />)
     expect(text(".ds-site-nav-group-title")).toEqual(["Guides", "Reference"])
     expect(text(".ds-site-nav-link")).toEqual(["Acme docs", "Quick start", "Theming"])
     expect(host.querySelector(".ds-site-page-title")?.textContent).toBe("Acme docs")
@@ -76,11 +83,11 @@ describe("DocsSite", () => {
     expect(host.querySelectorAll("h1")).toHaveLength(1)
   })
 
-  it("navigates through rewritten relative links, with breadcrumbs, lede and pager", () => {
-    render(<DocsSite files={FILES} routing="memory" />)
+  it("navigates through rewritten relative links, with breadcrumbs, lede and pager", async () => {
+    await render(<DocsSite files={FILES} routing="memory" />)
     const link = host.querySelector<HTMLAnchorElement>(".ds-site-article [data-docstream] a")!
     expect(link.getAttribute("href")).toBe("#/guides/quick-start")
-    click(link)
+    await click(link)
     expect(host.querySelector(".ds-site-page-title")?.textContent).toBe("Quick start")
     expect(host.querySelector(".ds-site-lede")?.textContent).toBe("Five minutes to a page.")
     expect(text(".ds-site-crumbs span")).toEqual(["Guides"])
@@ -90,15 +97,15 @@ describe("DocsSite", () => {
 
     const cross = host.querySelector<HTMLAnchorElement>(".ds-site-article [data-docstream] a")!
     expect(cross.getAttribute("href")).toBe("#/reference/theming#dark-mode")
-    click(cross)
+    await click(cross)
     expect(host.querySelector(".ds-site-page-title")?.textContent).toBe("Theming")
   })
 
-  it("routes through the URL hash and follows back/forward", () => {
+  it("routes through the URL hash and follows back/forward", async () => {
     window.history.replaceState(null, "", "/#/reference/theming")
-    render(<DocsSite files={FILES} />)
+    await render(<DocsSite files={FILES} />)
     expect(host.querySelector(".ds-site-page-title")?.textContent).toBe("Theming")
-    click(host.querySelector('.ds-site-nav-link[href="#/guides/quick-start"]'))
+    await click(host.querySelector('.ds-site-nav-link[href="#/guides/quick-start"]'))
     expect(window.location.hash).toBe("#/guides/quick-start")
     act(() => {
       window.history.replaceState(null, "", "/#/")
@@ -107,20 +114,20 @@ describe("DocsSite", () => {
     expect(host.querySelector(".ds-site-page-title")?.textContent).toBe("Acme docs")
   })
 
-  it("accepts old bare-hash links by slug", () => {
+  it("accepts old bare-hash links by slug", async () => {
     window.history.replaceState(null, "", "/#theming")
-    render(<DocsSite files={FILES} />)
+    await render(<DocsSite files={FILES} />)
     expect(host.querySelector(".ds-site-page-title")?.textContent).toBe("Theming")
   })
 
-  it("shows a not-found page for unknown paths", () => {
-    render(<DocsSite files={FILES} routing="memory" initialPath="nope" />)
+  it("shows a not-found page for unknown paths", async () => {
+    await render(<DocsSite files={FILES} routing="memory" initialPath="nope" />)
     expect(host.querySelector(".ds-site-page-title")?.textContent).toBe("Page not found")
   })
 
-  it("searches every page and jumps to the heading", () => {
-    render(<DocsSite files={FILES} routing="memory" />)
-    click(host.querySelector(".ds-site-search-btn"))
+  it("searches every page and jumps to the heading", async () => {
+    await render(<DocsSite files={FILES} routing="memory" />)
+    await click(host.querySelector(".ds-site-search-btn"))
     const input = host.querySelector<HTMLInputElement>(".ds-site-search input")!
     act(() => {
       const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!
@@ -129,22 +136,22 @@ describe("DocsSite", () => {
     })
     const hits = text(".ds-site-search-hit-title")
     expect(hits[0]).toContain("Dark mode")
-    click(host.querySelector(".ds-site-search-hit"))
+    await click(host.querySelector(".ds-site-search-hit"))
     expect(host.querySelector(".ds-site-search")).toBeNull()
     expect(host.querySelector(".ds-site-page-title")?.textContent).toBe("Theming")
   })
 
-  it("toggles the theme on the site in memory mode", () => {
-    render(<DocsSite files={FILES} routing="memory" defaultTheme="light" themeStorageKey={false} />)
+  it("toggles the theme on the site in memory mode", async () => {
+    await render(<DocsSite files={FILES} routing="memory" defaultTheme="light" themeStorageKey={false} />)
     const site = host.querySelector<HTMLElement>(".ds-site")!
     expect(site.dataset.theme).toBe("light")
-    click(host.querySelector('[aria-label="Switch to dark theme"]'))
+    await click(host.querySelector('[aria-label="Switch to dark theme"]'))
     expect(site.dataset.theme).toBe("dark")
   })
 
-  it("lets a site embedded in a page's demo follow its own links", () => {
+  it("lets a site embedded in a page's demo follow its own links", async () => {
     const inner = { "README.md": "# Inner\n\nGo to [two](two.md).", "two.md": "# Two" }
-    render(
+    await render(
       <DocsSite
         files={FILES}
         routing="memory"
@@ -160,7 +167,7 @@ describe("DocsSite", () => {
     )
     const link = host.querySelector<HTMLAnchorElement>(".inner .ds-site-article [data-docstream] a")!
     expect(link.dataset.dsSlug).toBe("two")
-    click(link)
+    await click(link)
     expect(host.querySelector(".inner .ds-site-page-title")?.textContent).toBe("Two")
     expect(host.querySelector(".ds-site-page-title")?.textContent).toBe("Acme docs")
   })
@@ -176,7 +183,7 @@ describe("DocsSite", () => {
         "docs/api/specs/pets.json": JSON.stringify(spec),
         "docs/img/logo.svg": "<svg xmlns=\"http://www.w3.org/2000/svg\"/>",
       }
-      render(<DocsSite files={files} routing="memory" initialPath="api/pets" />)
+      await render(<DocsSite files={files} routing="memory" initialPath="api/pets" />)
       await act(async () => {
         await new Promise((r) => setTimeout(r, 20))
       })

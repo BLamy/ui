@@ -1,13 +1,13 @@
 export { StrudelPlayer } from "./StrudelPlayer"
-export type { StrudelPlayerProps } from "./StrudelPlayer"
+export type { StrudelCodeChangeDetails, StrudelPanelChangeReason, StrudelPlayerProps } from "./StrudelPlayer"
 export { StrudelRack, STRUDEL_PARAMS, trackName } from "./StrudelRack"
-export type { StrudelRackProps } from "./StrudelRack"
+export type { StrudelRackChangeDetails, StrudelRackChangeReason, StrudelRackControl, StrudelRackProps } from "./StrudelRack"
 export { StepGrid } from "./StepGrid"
 export { RackGrid } from "./RackGrid"
 export type { GridItem, GridLayout, RackGridProps } from "./RackGrid"
 export type { StepGridProps } from "./StepGrid"
 export { Fader, Knob } from "./controls"
-export type { ControlProps } from "./controls"
+export type { ControlProps, ControlValueChangeDetails, ControlValueChangeReason } from "./controls"
 export {
   DEFAULT_SAMPLES,
   getStrudelSnapshot,

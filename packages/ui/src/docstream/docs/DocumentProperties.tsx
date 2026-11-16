@@ -1,5 +1,9 @@
 import { useEffect, useState } from "react"
-import { ChevronRight, Plus, X } from "lucide-react"
+import { Check, ChevronRight, Plus, X } from "lucide-react"
+import { Checkbox, CheckboxIndicator } from "@ui-sdk/react/checkbox"
+import { DetailsCollapsible } from "../ui/details-collapsible"
+import { Input } from "@ui-sdk/react/input"
+import { Textarea } from "@ui-sdk/react/textarea"
 import { parseDocument, stringify } from "yaml"
 import type { DocumentPropertiesNode } from "../gitbook/ast"
 import { readDocumentProperties, removeDocumentProperty, setDocumentProperty, type DocumentPropertyValue } from "../gitbook/properties"
@@ -21,7 +25,9 @@ function PropertyField({ name, value, onChange }: { name: string; value: Documen
   const [draft, setDraft] = useState(rendered)
   const [error, setError] = useState<string>()
   useEffect(() => { setDraft(rendered); setError(undefined) }, [rendered])
-  if (typeof value === "boolean") return <input type="checkbox" aria-label={name} checked={value} onChange={(event) => onChange(event.currentTarget.checked)} />
+  if (typeof value === "boolean") return <Checkbox className="docs-property-checkbox" aria-label={name} checked={value} onCheckedChange={(next) => onChange(next === true)}>
+    <CheckboxIndicator><Check size={11} strokeWidth={3} aria-hidden="true" /></CheckboxIndicator>
+  </Checkbox>
   const complex = value !== null && typeof value === "object"
   const multiline = complex || (typeof value === "string" && value.includes("\n"))
   const change = (text: string) => {
@@ -41,10 +47,9 @@ function PropertyField({ name, value, onChange }: { name: string; value: Documen
     } catch (cause) { setError(cause instanceof Error ? cause.message : String(cause)) }
   }
   return <div className="docs-property-field">
-    {multiline ? <textarea aria-label={name} value={draft} rows={Math.min(6, draft.split("\n").length)} aria-invalid={!!error || undefined}
-      onChange={(event) => change(event.currentTarget.value)} onBlur={commit} />
-      : <input type={typeof value === "number" ? "number" : "text"} aria-label={name} value={draft} placeholder="Empty"
-        onChange={(event) => change(event.currentTarget.value)} />}
+    {multiline ? <Textarea aria-label={name} value={draft} rows={Math.min(6, draft.split("\n").length)} aria-invalid={!!error || undefined}
+      onValueChange={change} onBlur={commit} />
+      : <Input type={typeof value === "number" ? "number" : "text"} aria-label={name} value={draft} placeholder="Empty" onValueChange={change} />}
     {error ? <span role="alert" className="docs-properties-error">{error}</span> : null}
   </div>
 }
@@ -55,11 +60,12 @@ export function DocumentProperties({ properties, onChange, defaultOpen = false, 
   const [adding, setAdding] = useState(false)
   const [name, setName] = useState("")
   const keys = Object.keys(values)
-  return <details className={["docs-document-properties", className].filter(Boolean).join(" ")} data-document-properties="" open={defaultOpen || undefined}>
-    <summary><ChevronRight size={13} aria-hidden="true" /><span>Properties</span><span className="docs-properties-count">{keys.length}</span></summary>
+  return <DetailsCollapsible defaultOpen={defaultOpen} className={["docs-document-properties", className].filter(Boolean).join(" ")} data-document-properties=""
+    triggerClassName="docs-properties-trigger" panelClassName="docs-properties-panel"
+    summary={<><ChevronRight size={13} aria-hidden="true" /><span>Properties</span><span className="docs-properties-count">{keys.length}</span></>}>
     {error ? <div className="docs-properties-error" role="alert">
       <p>{error}</p>
-      {onChange ? <textarea aria-label="Document properties YAML" value={properties.yaml} onChange={(event) => onChange({ ...properties, yaml: event.currentTarget.value })} />
+      {onChange ? <Textarea aria-label="Document properties YAML" value={properties.yaml} onValueChange={(yaml) => onChange({ ...properties, yaml })} />
         : <pre>{properties.yaml}</pre>}
     </div> : <>
       <dl className="docs-properties-list">
@@ -67,7 +73,7 @@ export function DocumentProperties({ properties, onChange, defaultOpen = false, 
           <dt>{key}</dt>
           <dd>{onChange ? <PropertyField name={key} value={values[key]} onChange={(value) => onChange(setDocumentProperty(properties, key, value))} />
             : <span className="docs-property-value">{values[key] === null ? "Empty" : typeof values[key] === "boolean" ? String(values[key]) : textValue(values[key])}</span>}</dd>
-          {onChange ? <button type="button" className="docs-property-remove" aria-label={`Remove ${key} property`} onClick={() => onChange(removeDocumentProperty(properties, key))}><X size={13} /></button> : null}
+          {onChange ? <button type="button" className="docs-property-remove" aria-label={`Remove ${key} property`} onClick={() => onChange(removeDocumentProperty(properties, key))}><X size={13} aria-hidden="true" /></button> : null}
         </div>)}
       </dl>
       {onChange ? adding ? <form className="docs-property-add" onSubmit={(event) => {
@@ -75,10 +81,10 @@ export function DocumentProperties({ properties, onChange, defaultOpen = false, 
         const key = name.trim()
         if (!key || Object.hasOwn(values, key)) return
         onChange(setDocumentProperty(properties, key, "")); setName(""); setAdding(false)
-      }}><input aria-label="Property name" placeholder="Property name" autoFocus value={name} onChange={(event) => setName(event.currentTarget.value)} />
+      }}><Input aria-label="Property name" placeholder="Property name" autoFocus value={name} onValueChange={setName} />
         <button type="submit" disabled={!name.trim() || Object.hasOwn(values, name.trim())}>Add</button>
         <button type="button" onClick={() => { setAdding(false); setName("") }}>Cancel</button></form>
-        : <button type="button" className="docs-property-add" onClick={() => setAdding(true)}><Plus size={13} />Add property</button> : null}
+        : <button type="button" className="docs-property-add" onClick={() => setAdding(true)}><Plus size={13} aria-hidden="true" />Add property</button> : null}
     </>}
-  </details>
+  </DetailsCollapsible>
 }

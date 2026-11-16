@@ -2,18 +2,31 @@
    a gain fader, its sound and scale, a step grid for its pattern, and a knob for each effect it uses (plus any
    you add) — and the song gets a master strip with the tempo. Every control edits the code in place (edit.ts),
    so the code stays the source of truth: what you turn is what you'd have typed. */
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { AudioWaveform, Drum, KeyboardMusic, Plus, X } from "lucide-react"
+import { Menu, MenuContent, MenuItem, MenuTrigger } from "@ui-sdk/react/menu"
+import { SegmentedControl, SegmentedControlItem } from "@ui-sdk/react/segmented-control"
+import { Select, SelectContent, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@ui-sdk/react/select"
+import { Toggle } from "@ui-sdk/react/toggle"
 import { miniAtoms, type MiniAtom } from "./ast/mini"
 import { findCall, parseStrudel, StrudelSyntaxError, type StrudelArg, type StrudelCall, type StrudelSong, type StrudelTrack } from "./ast/program"
 import { formatNumber, isAudible, mixCode, removeMethod, setMethod, setMiniAtom, setMiniSource, setTempo, type StrudelMix } from "./ast/edit"
 import { Fader, Knob, defaultFormat } from "./controls"
+import type { StrudelRackChangeDetails, StrudelRackChangeReason, StrudelRackControl } from "./rack-types"
+
+export type { StrudelRackChangeDetails, StrudelRackChangeReason, StrudelRackControl } from "./rack-types"
 import { StepGrid } from "./StepGrid"
 import { RackGrid, type GridLayout } from "./RackGrid"
 
 export interface StrudelRackProps {
-  code: string
-  onChange: (code: string) => void
+  /** The Strudel code the rack is drawn from. Controlled: pass the code `onValueChange` reports. */
+  value?: string
+  /** @deprecated Use `value`. */
+  code?: string
+  /** The edited code, and which control edited it and how. */
+  onValueChange?: (code: string, details: StrudelRackChangeDetails) => void
+  /** @deprecated Use `onValueChange`. Still called, with the same details. */
+  onChange?: (code: string, details: StrudelRackChangeDetails) => void
   /** The code to play for the current mute/solo mix (the written code with silenced tracks). */
   onPlayableChange?: (code: string) => void
   className?: string
@@ -102,6 +115,37 @@ export function trackName(track: StrudelTrack): string {
   return track.sound ? `${role} · ${track.sound}` : role
 }
 
+/** One of the LCD's choices: a select named by the label before it, or by `name` when it has none of its own. */
+function RackSelect({ label, name, value, options, onChange }: {
+  label?: string
+  name?: string
+  value: string
+  options: readonly string[]
+  onChange: (value: string, how: { reason: "item-press" | "list-navigation"; event?: Event }) => void
+}) {
+  return (
+    <Select
+      items={[...options]}
+      value={value}
+      onValueChange={(next, { reason, event }) => {
+        if (typeof next === "string" && (reason === "item-press" || reason === "list-navigation")) onChange(next, { reason, ...(event ? { event } : {}) })
+      }}
+    >
+      {label ? <SelectLabel render={<span />} className="strudel-select__label">{label}</SelectLabel> : null}
+      <SelectTrigger className="strudel-select" aria-label={name}>
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent className="strudel-popup" align="start" sideOffset={8}>
+        {options.map((option) => (
+          <SelectItem key={option} value={option} className="strudel-popup__item">
+            {option}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  )
+}
+
 function Device({
   song,
   track,
@@ -113,7 +157,7 @@ function Device({
   track: StrudelTrack
   mix: StrudelMix
   onMix: (kind: "mute" | "solo") => void
-  onChange: (code: string) => void
+  onChange: (code: string, details: StrudelRackChangeDetails) => void
 }) {
   const { code } = song
   const chain = track.chain
@@ -133,8 +177,12 @@ function Device({
   const name = trackName(track)
   const Icon = track.kind === "drums" ? Drum : track.kind === "melodic" ? KeyboardMusic : AudioWaveform
 
-  const set = (method: string, value: number) => onChange(setMethod(code, chain, method, formatNumber(value)))
-  const setAtom = (mini: Mini) => (atom: MiniAtom, text: string) => onChange(setMiniAtom(code, mini, atom, text))
+    type How = { reason: StrudelRackChangeReason; event?: Event }
+  const emit = (next: string, control: StrudelRackControl, { reason, event }: How, param?: string) =>
+    onChange(next, { reason, ...(event ? { event } : {}), control, track: track.index, ...(param ? { param } : {}) })
+  const set = (method: string, value: number, control: StrudelRackControl, how: How) =>
+    emit(setMethod(code, chain, method, formatNumber(value)), control, how, control === "effect" ? method : undefined)
+  const setAtom = (mini: Mini) => (atom: MiniAtom, text: string, how: How) => emit(setMiniAtom(code, mini, atom, text), "steps", how)
 
   return (
     <section className="strudel-device" data-kind={track.kind} data-audible={audible} aria-label={name}>
@@ -144,12 +192,12 @@ function Device({
         <span className="strudel-device__name" title={code.slice(track.start, track.end)}>
           {name}
         </span>
-        <button type="button" className="strudel-device__toggle" data-kind="mute" aria-pressed={mix.muted?.has(track.index) || track.muted} onClick={() => onMix("mute")} title="Mute">
+        <Toggle className="strudel-device__toggle" data-kind="mute" pressed={!!(mix.muted?.has(track.index) || track.muted)} onPressedChange={() => onMix("mute")} aria-label="Mute" title="Mute">
           M
-        </button>
-        <button type="button" className="strudel-device__toggle" data-kind="solo" aria-pressed={!!mix.solo?.has(track.index)} onClick={() => onMix("solo")} title="Solo">
+        </Toggle>
+        <Toggle className="strudel-device__toggle" data-kind="solo" pressed={!!mix.solo?.has(track.index)} onPressedChange={() => onMix("solo")} aria-label="Solo" title="Solo">
           S
-        </button>
+        </Toggle>
       </header>
       <div className="strudel-device__body">
         <Fader
@@ -161,38 +209,31 @@ function Device({
           disabled={!!gainCall && gain === null}
           {...(gainCall && gain === null ? { display: "∿", title: "Modulated by a pattern" } : {})}
           format={pct}
-          onChange={(v) => set("gain", v)}
+          onValueChange={(v, how) => set("gain", v, "gain", how)}
         />
         <div className="strudel-device__main">
           {(synth || scaleMatch) && (
             <div className="strudel-device__selects strudel-lcd">
               {synth && (
-                <label>
-                  <span>Sound</span>
-                  <select value={synth.value} onChange={(e) => onChange(setMiniAtom(code, sound!, synth, e.target.value))}>
-                    {SYNTHS.map((s) => (
-                      <option key={s}>{s}</option>
-                    ))}
-                  </select>
-                </label>
+                <div className="strudel-device__field">
+                  <RackSelect label="Sound" value={synth.value} options={SYNTHS} onChange={(value, how) => emit(setMiniAtom(code, sound!, synth, value), "sound", how)} />
+                </div>
               )}
               {scaleMatch && (
-                <label>
-                  <span>Key</span>
-                  <select
+                <div className="strudel-device__field">
+                  <RackSelect
+                    label="Key"
                     value={scaleMatch[1]!.toUpperCase().replace(/^([A-G])B$/, "$1b")}
-                    onChange={(e) => onChange(setMiniSource(code, scale!, `${e.target.value}${scaleMatch[2]}:${scaleMatch[3]}`))}
-                  >
-                    {NOTES.map((n) => (
-                      <option key={n}>{n}</option>
-                    ))}
-                  </select>
-                  <select value={scaleMatch[3]} onChange={(e) => onChange(setMiniSource(code, scale!, `${scaleMatch[1]}${scaleMatch[2]}:${e.target.value}`))}>
-                    {(MODES.includes(scaleMatch[3]!) ? MODES : [scaleMatch[3]!, ...MODES]).map((m) => (
-                      <option key={m}>{m}</option>
-                    ))}
-                  </select>
-                </label>
+                    options={NOTES}
+                    onChange={(value, how) => emit(setMiniSource(code, scale!, `${value}${scaleMatch[2]}:${scaleMatch[3]}`), "key", how)}
+                  />
+                  <RackSelect
+                    name="Scale"
+                    value={scaleMatch[3]!}
+                    options={MODES.includes(scaleMatch[3]!) ? MODES : [scaleMatch[3]!, ...MODES]}
+                    onChange={(value, how) => emit(setMiniSource(code, scale!, `${scaleMatch[1]}${scaleMatch[2]}:${value}`), "scale", how)}
+                  />
+                </div>
               )}
             </div>
           )}
@@ -216,30 +257,27 @@ function Device({
                     format={spec.format ?? defaultFormat}
                     disabled={value === null}
                     {...(value === null ? { display: "∿", title: `${p} is modulated: ${code.slice(call.argsRange.start, call.argsRange.end)}` } : {})}
-                    onChange={(v) => set(p, v)}
+                    onValueChange={(v, how) => set(p, v, "effect", how)}
                   />
-                  <button type="button" className="strudel-device__remove" aria-label={`Remove ${spec.label}`} onClick={() => onChange(removeMethod(code, chain, p))}>
+                  <button type="button" className="strudel-device__remove" aria-label={`Remove ${spec.label}`} onClick={(event) => emit(removeMethod(code, chain, p), "effect", { reason: "remove-press", event: event.nativeEvent }, p)}>
                     <X size={10} />
                   </button>
                 </div>
               )
             })}
             {missing.length > 0 && (
-              <label className="strudel-device__add" title="Add an effect">
-                <Plus size={14} aria-hidden="true" />
-                <select
-                  aria-label={`Add an effect to ${name}`}
-                  value=""
-                  onChange={(e) => e.target.value && set(e.target.value, STRUDEL_PARAMS[e.target.value]!.default)}
-                >
-                  <option value="">Add…</option>
+              <Menu onAction={(effect, { event }) => set(effect, STRUDEL_PARAMS[effect]!.default, "effect", { reason: "item-press", ...(event ? { event } : {}) })}>
+                <MenuTrigger className="strudel-device__add" aria-label={`Add an effect to ${name}`} title="Add an effect">
+                  <Plus size={14} aria-hidden="true" />
+                </MenuTrigger>
+                <MenuContent className="strudel-popup" align="start" sideOffset={8}>
                   {missing.map((p) => (
-                    <option key={p} value={p}>
-                      {STRUDEL_PARAMS[p]!.label} ({p})
-                    </option>
+                    <MenuItem key={p} value={p} label={STRUDEL_PARAMS[p]!.label} className="strudel-popup__item">
+                      {STRUDEL_PARAMS[p]!.label} <span className="strudel-popup__hint">{p}</span>
+                    </MenuItem>
                   ))}
-                </select>
-              </label>
+                </MenuContent>
+              </Menu>
             )}
           </div>
         </div>
@@ -248,11 +286,24 @@ function Device({
   )
 }
 
-/** Equipment generated from Strudel code. Controlled: `code` in, edited code out through `onChange`. */
-export function StrudelRack({ code, onChange, onPlayableChange, className, layout = "rack", persistKey }: StrudelRackProps) {
+/** Equipment generated from Strudel code. Controlled: `value` in, edited code out through `onValueChange` (with what edited it). */
+export function StrudelRack({ value, code: legacyCode, onValueChange, onChange: legacyOnChange, onPlayableChange, className, layout = "rack", persistKey }: StrudelRackProps) {
+  const code = value ?? legacyCode ?? ""
+  const onChange = (next: string, details: StrudelRackChangeDetails) => {
+    onValueChange?.(next, details)
+    legacyOnChange?.(next, details)
+  }
   const [saved] = useState(() => load(persistKey))
   const [mode, setMode] = useState<"rack" | "grid">(saved.mode ?? layout)
   const [grid, setGrid] = useState<GridLayout>(saved.grid ?? { order: [], sizes: {} })
+  // The master strip, and the switch in it, mounts again in the other layout: focus goes back to the switch.
+  const layoutSwitch = useRef<HTMLDivElement>(null)
+  const switched = useRef(false)
+  useEffect(() => {
+    if (!switched.current) return
+    switched.current = false
+    layoutSwitch.current?.querySelector<HTMLElement>('[data-slot="segmented-control-item"][data-checked]')?.focus()
+  }, [mode])
   useEffect(() => {
     if (!persistKey) return
     try {
@@ -314,7 +365,7 @@ export function StrudelRack({ code, onChange, onPlayableChange, className, layou
           max={2}
           defaultValue={0.5}
           format={(v) => `${Math.round(v * 240)} bpm`}
-          onChange={(v) => onChange(setTempo(song, v))}
+          onValueChange={(v, { reason, event }) => onChange(setTempo(song, v), { reason, ...(event ? { event } : {}), control: "tempo" })}
         />
         {master && (
           <Knob
@@ -325,20 +376,30 @@ export function StrudelRack({ code, onChange, onPlayableChange, className, layou
             max={2}
             defaultValue={1}
             format={pct}
-            onChange={(v) => onChange(setMethod(code, master, "postgain", formatNumber(v)))}
+            onValueChange={(v, { reason, event }) => onChange(setMethod(code, master, "postgain", formatNumber(v)), { reason, ...(event ? { event } : {}), control: "output" })}
           />
         )}
         <span className="strudel-rack__summary">
           {song.tracks.length} track{song.tracks.length === 1 ? "" : "s"}
           {song.layout === "stack" ? " · stack" : song.layout === "labels" ? " · $:" : ""}
         </span>
-        <div className="strudel-rack__mode" role="radiogroup" aria-label="Layout">
+        <SegmentedControl
+          className="strudel-rack__mode"
+          aria-label="Layout"
+          ref={layoutSwitch}
+          value={mode}
+          onValueChange={(next) => {
+            if (next !== "rack" && next !== "grid") return
+            switched.current = true
+            setMode(next)
+          }}
+        >
           {(["rack", "grid"] as const).map((m) => (
-            <button key={m} type="button" role="radio" aria-checked={mode === m} onClick={() => setMode(m)}>
+            <SegmentedControlItem key={m} value={m}>
               {m}
-            </button>
+            </SegmentedControlItem>
           ))}
-        </div>
+        </SegmentedControl>
       </div>
   )
   const devices = song.tracks.map((t) => ({

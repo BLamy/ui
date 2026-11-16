@@ -125,3 +125,96 @@ describe("demo canvas and single-file preview sizing", () => {
     expect(preview).not.toContain("120px")
   })
 })
+
+describe("TuiPreview and StlViewer chrome take the page's tokens", () => {
+  const block = (selector: string) => {
+    const at = styles.indexOf(`${selector} {`)
+    expect(at, selector).toBeGreaterThanOrEqual(0)
+    return styles.slice(at, styles.indexOf("}", at))
+  }
+  const coarse = (() => {
+    const at = styles.indexOf("@media (pointer: coarse) {\n  .docstream-tui__button")
+    expect(at).toBeGreaterThanOrEqual(0)
+    return styles.slice(at, styles.indexOf("\n}\n", at))
+  })()
+
+  it("the TUI's buttons and source toggle are styled, with a visible focus ring", () => {
+    const button = block(".docstream-tui__button")
+    expect(button).toContain("appearance: none;")
+    expect(button).toContain("border: 1px solid var(--docstream-tui-line);")
+    expect(block('.docstream-tui__button[data-variant="primary"]')).toContain("background: var(--docstream-tui-primary);")
+    expect(block(".docstream-tui__button:focus-visible,\n.docstream-tui__source-trigger:focus-visible")).toContain("outline: 2px solid var(--docstream-tui-ring);")
+    expect(block(".docstream-tui__source-trigger::-webkit-details-marker")).toContain("display: none;")
+  })
+
+  it("every token falls back to the host's shadcn names outside a docstream article, and 2.0.0's border hook still works", () => {
+    const root = block(".docstream-tui")
+    expect(root).toContain("--docstream-tui-line: var(--docstream-tui-border, var(--gb-border, var(--border,")
+    expect(root).toContain("--docstream-tui-panel: var(--gb-panel, var(--card, Canvas));")
+    expect(root).toContain("--docstream-tui-ring: var(--ring,")
+    expect(root).toContain("--docstream-tui-mono: var(--font-mono, ui-monospace,")
+  })
+
+  it("the placeholder screen and the source use the mono stack", () => {
+    expect(block(".docstream-tui__placeholder")).toContain("font-family: var(--docstream-tui-mono);")
+    expect(block(".docstream-tui__code")).toContain("font-family: var(--docstream-tui-mono);")
+  })
+
+  it("touch layouts get 44px targets", () => {
+    expect(coarse).toMatch(/\.docstream-tui__button \{[^}]*height: 44px;/)
+    expect(coarse).toMatch(/\.docstream-tui__source-trigger \{[^}]*min-height: 44px;/)
+    expect(coarse).toMatch(/\.docstream-stl__reset \{[^}]*min-height: 44px;/)
+  })
+
+  it("the STL Reset pill takes the card pair, not a white fallback, outside an article", () => {
+    const reset = block(".docstream-stl__reset")
+    expect(reset).toContain("background: var(--gb-panel, var(--card, Canvas));")
+    expect(reset).toContain("color: var(--gb-panel-foreground, var(--card-foreground, CanvasText));")
+    expect(block(".docstream-stl__reset:focus-visible")).toContain("outline: 2px solid")
+  })
+})
+
+describe("2.0.1 touch targets, focus ring and the replay play disc", () => {
+  const coarse = (() => {
+    const at = styles.indexOf("@media (pointer: coarse) {\n  .docs-copy {")
+    expect(at).toBeGreaterThanOrEqual(0)
+    return styles.slice(at, styles.indexOf("\n}\n", at))
+  })()
+  const inCoarse = (selector: string) => {
+    const at = coarse.indexOf(`${selector} {`)
+    expect(at, selector).toBeGreaterThanOrEqual(0)
+    return coarse.slice(at, coarse.indexOf("}", at))
+  }
+
+  it("code-fence copy buttons are 44px on touch, and the floating one shows without a hover", () => {
+    expect(inCoarse(".docs-copy")).toContain("min-width: 44px;")
+    expect(inCoarse(".docs-copy")).toContain("min-height: 44px;")
+    expect(inCoarse(".docs-code-header .docs-copy")).toContain("height: 44px;")
+    expect(inCoarse(".docs-code-copy-float")).toContain("opacity: 1;")
+  })
+
+  it("a copy button's focus ring is visible, and outranks the hover-only opacity", () => {
+    const ring = styles.lastIndexOf(".docs-copy:focus-visible {")
+    const css = styles.slice(ring, styles.indexOf("}", ring))
+    expect(css).toContain("outline: 2px solid var(--gb-primary);")
+    expect(css).toContain("opacity: 1;")
+    expect(ring).toBeGreaterThan(styles.indexOf(".docs-code-copy-float {"))
+  })
+
+  it("the replay player's controls and play disc are at least 44px on touch, in the replay layer", () => {
+    expect(coarse).toContain("@layer docstream.replay {")
+    expect(inCoarse(':where([data-slot="replay-preview-controls"] button, [data-slot="replay-preview-speed"])')).toContain("min-width: 44px;")
+    expect(inCoarse(':where([data-slot="replay-preview-controls"] button, [data-slot="replay-preview-speed"])')).toContain("height: 44px;")
+    expect(inCoarse(':where([data-slot="replay-preview-center"] > button)')).toContain("min-height: 44px;")
+    const disc = styles.slice(styles.indexOf(':where([data-slot="replay-preview-center"] > button) {'))
+    expect(disc.slice(0, disc.indexOf("}"))).toContain("width: 56px;")
+  })
+
+  it("the play disc follows the appearance: a light disc with a dark icon on light color-schemes", () => {
+    const at = styles.indexOf(':where([data-slot="replay-preview-center"] > button) {')
+    const css = styles.slice(at, styles.indexOf("}", at))
+    expect(css).toContain("color: var(--replay-play-foreground, light-dark(#18181b, #ffffff));")
+    expect(css).toContain("background: var(--replay-play-background, light-dark(rgba(255, 255, 255, 0.9), rgba(9, 9, 11, 0.72)));")
+    expect(css).not.toContain("var(--foreground")
+  })
+})

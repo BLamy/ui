@@ -74,7 +74,7 @@ describe("createDocstreamClipboard", () => {
 })
 
 describe("clipboard representations", () => {
-  it("one react-aria item with text/plain, text/markdown and the JSON payload", () => {
+  it("one item with text/plain, text/markdown and the JSON payload", () => {
     const clip = createDocstreamClipboardFromMarkdown(INLINE)
     const [item] = docstreamClipboardItems(clip)
     expect(Object.keys(item).sort()).toEqual([DOCSTREAM_CLIPBOARD_TYPE, "text/markdown", "text/plain"].sort())

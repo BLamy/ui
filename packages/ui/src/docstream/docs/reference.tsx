@@ -1,4 +1,5 @@
-import { createContext, useContext, useId, useState, type ReactNode } from "react"
+import { createContext, useContext, useState, type ReactNode } from "react"
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "@ui-sdk/react/hover-card"
 import { ArrowUpRight, AtSign, FolderGit2, Globe, Hash } from "lucide-react"
 
 import type { CitationDef, ReferenceNode } from "../gitbook/ast"
@@ -46,7 +47,6 @@ function CitationHoverCard({ node }: { node: ReferenceNode }) {
   const [preview, setPreview] = useState<CitationPreview | null>(null)
   const [imageFailed, setImageFailed] = useState(false)
   const [requested, setRequested] = useState(false)
-  const cardId = useId()
   const host = node.url ? hostnameOf(node.url) : null
 
   const requestPreview = () => {
@@ -61,35 +61,30 @@ function CitationHoverCard({ node }: { node: ReferenceNode }) {
 
   return (
     <span className="docs-cite-wrap" onMouseEnter={requestPreview} onFocus={requestPreview}>
-      <a
-        className="docs-cite"
-        href={node.url}
-        target="_blank"
-        rel="noreferrer"
-        aria-describedby={cardId}
-        onClick={() => onReferenceClick?.(node)}
-      >
-        {node.id}
-      </a>
-      <span className="docs-cite-card" id={cardId} role="tooltip">
-        {preview?.image && !imageFailed ? (
-          <span className="docs-cite-card-image-wrap">
-            <img className="docs-cite-card-image" src={preview.image} alt="" onError={() => setImageFailed(true)} />
+      <HoverCard delay={300} closeDelay={150} onOpenChange={(open) => { if (open) requestPreview() }}>
+        <HoverCardTrigger className="docs-cite" href={node.url} target="_blank" rel="noreferrer" onClick={() => onReferenceClick?.(node)}>
+          {node.id}
+        </HoverCardTrigger>
+        <HoverCardContent render={<span />} className="docs-cite-card" side="bottom" sideOffset={10} collisionPadding={16}>
+          {preview?.image && !imageFailed ? (
+            <span className="docs-cite-card-image-wrap">
+              <img className="docs-cite-card-image" src={preview.image} alt="" onError={() => setImageFailed(true)} />
+            </span>
+          ) : null}
+          <span className="docs-cite-card-body">
+            <span className="docs-cite-card-source">
+              {favicon ? <img className="docs-cite-card-favicon" src={favicon} alt="" /> : <Globe className="docs-cite-card-favicon" />}
+              <span>{siteName}</span>
+            </span>
+            <span className="docs-cite-card-title">{title}</span>
+            {preview?.description ? <span className="docs-cite-card-description">{preview.description}</span> : null}
+            <span className="docs-cite-card-url">
+              {node.url}
+              <ArrowUpRight aria-hidden="true" />
+            </span>
           </span>
-        ) : null}
-        <span className="docs-cite-card-body">
-          <span className="docs-cite-card-source">
-            {favicon ? <img className="docs-cite-card-favicon" src={favicon} alt="" /> : <Globe className="docs-cite-card-favicon" />}
-            <span>{siteName}</span>
-          </span>
-          <span className="docs-cite-card-title">{title}</span>
-          {preview?.description ? <span className="docs-cite-card-description">{preview.description}</span> : null}
-          <span className="docs-cite-card-url">
-            {node.url}
-            <ArrowUpRight aria-hidden="true" />
-          </span>
-        </span>
-      </span>
+        </HoverCardContent>
+      </HoverCard>
     </span>
   )
 }

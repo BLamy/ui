@@ -473,7 +473,7 @@ Edge cases worth knowing:
 - The summary is **plain text**: `**bold**` inside it shows the asterisks.
 - The opening tag must be exactly `<details>` — `<details open>` isn't recognized, and expandables always start closed.
 - Expandables don't nest: the first `</details>` closes the block. Put a nested level in a hint or tabs instead.
-- Expandables are native `<details>` elements, so browser find-in-page opens them when it matches hidden text.
+- Expandables work without JavaScript: server HTML renders them as native `<details>`, and once hydrated they are a disclosure button whose closed panel is `hidden="until-found"`. Either way, browser find-in-page opens them when it matches hidden text.
 
 ## Combining them
 

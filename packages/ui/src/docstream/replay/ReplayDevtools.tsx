@@ -6,9 +6,21 @@
 
    Everything is a function of the playhead: scrub back and the lists shrink to what DevTools showed then. A row's
    time jumps the player there. Esc closes the panel. An inspection (inspections.ts) selects its request or
-   message and marks it. Plain React + plain CSS, like the player. */
-import { useEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent, type ReactElement } from 'react'
-import { ChevronRight, CircleX, Info, Network, SquareTerminal, TriangleAlert, X } from 'lucide-react'
+   message and marks it.
+
+   Its controls are UI SDK's: toggles for the two buttons, tabs for the panels and a request's details, a select
+   and a segmented control in the toolbars, collapsibles for stack traces and header sections, and a tree for the
+   Elements pane. The docked panel with its resize separator and the Network table's selectable rows are primitives
+   of UI SDK's core (devtools-primitives.ts). Plain CSS, like the player. */
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type ReactNode } from 'react'
+import { bindLayer, createStickToBottom } from '@ui-sdk/core'
+import { Collapsible, CollapsiblePanel, CollapsibleTrigger } from '@ui-sdk/react/collapsible'
+import { SegmentedControl, SegmentedControlItem } from '@ui-sdk/react/segmented-control'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@ui-sdk/react/select'
+import { Toggle, ToggleGroup } from '@ui-sdk/react/toggle'
+import { Tree, TreeGroup, TreeItem, TreeItemIndicator, TreeItemLabel } from '@ui-sdk/react/tree'
+import { ChevronDown, ChevronRight, CircleX, Info, Network, SquareTerminal, TriangleAlert, X } from 'lucide-react'
+import { DevtoolsPanelResize, DevtoolsPanelRoot, RequestRow, RequestTable, Tabs, TabsList, TabsPanel, TabsTab } from './devtools-parts'
 import type { ReplayConsoleEntry, ReplayDevtoolsState, ReplayRequest } from './devtools'
 import { sourceName, type ResolvedReplayEvidence } from './evidence'
 import type { ResolvedReplayInspection } from './inspections'
@@ -29,40 +41,46 @@ export function DevtoolsButtons({ counts, open, onOpen }: {
   counts: ReplayDevtoolsState['counts']; open: ReplayDevtoolsTab | null; onOpen: (tab: ReplayDevtoolsTab) => void
 }) {
   const { requests, failed, errors, warnings } = counts
+  // One of the two is pressed while its tab is the open one; pressing it again closes the panel.
   return (
-    <div data-slot="replay-devtools-buttons">
-      <button
-        type="button"
-        data-slot="replay-devtools-button"
+    <ToggleGroup
+      data-part="replay-devtools-buttons"
+      aria-label="DevTools"
+      value={open === 'console' || open === 'network' ? [open] : []}
+      onValueChange={(next) => {
+        const pressed = (next[0] ?? open) as ReplayDevtoolsTab | null
+        if (pressed) onOpen(pressed)
+      }}
+    >
+      <Toggle
+        value="console"
+        data-part="replay-devtools-button"
         data-tab="console"
-        aria-pressed={open === 'console'}
         aria-label={`Console: ${errors} ${errors === 1 ? 'error' : 'errors'}, ${warnings} ${warnings === 1 ? 'warning' : 'warnings'}`}
         title="Console"
-        onClick={() => onOpen('console')}
       >
-        <SquareTerminal size={14} strokeWidth={2} />
+        <SquareTerminal size={14} strokeWidth={2} aria-hidden="true" />
         {errors ? <span data-part="failed">{errors}</span> : null}
         {warnings ? <span data-part="warn">{warnings}</span> : null}
-      </button>
-      <button
-        type="button"
-        data-slot="replay-devtools-button"
+      </Toggle>
+      <Toggle
+        value="network"
+        data-part="replay-devtools-button"
         data-tab="network"
-        aria-pressed={open === 'network'}
         aria-label={`Network: ${requests} ${requests === 1 ? 'request' : 'requests'}, ${failed} failed`}
         title="Network"
-        onClick={() => onOpen('network')}
       >
-        <Network size={14} strokeWidth={2} />
+        <Network size={14} strokeWidth={2} aria-hidden="true" />
         <span data-part="count">{requests}</span>
         {failed ? <span data-part="failed">{failed}</span> : null}
-      </button>
-    </div>
+      </Toggle>
+    </ToggleGroup>
   )
 }
 
 /** The panel over the page: Console and Network, cut at the playhead. `inspection` selects and marks its target;
- *  `autoFocus` (default true) moves focus into the panel as it opens — off when an inspection opened it mid-play. */
+ *  `autoFocus` (default true) moves focus into the panel as it opens — off when an inspection opened it mid-play.
+ *  A named region docked inside the stage (not a dialog: it's part of the player, and the page stays in reach). */
 export function DevtoolsPanel({ state, tab, onTab, onClose, onSeek, inspection, autoFocus = true, onInteract, elements, sources }: {
   state: ReplayDevtoolsState; tab: ReplayDevtoolsTab; onTab: (tab: ReplayDevtoolsTab) => void
   onClose: () => void; onSeek: (ms: number) => void; inspection?: ResolvedReplayInspection | null; autoFocus?: boolean
@@ -73,31 +91,43 @@ export function DevtoolsPanel({ state, tab, onTab, onClose, onSeek, inspection, 
   /** The Sources tab: the debugger's source excerpts and logpoints. */
   sources?: SourcesProps
 }) {
-  const panel = useRef<HTMLDivElement>(null)
+  const panel = useRef<HTMLElement>(null)
   // Opened by an inspection, the panel starts taller: its point is the request's details.
-  const [height, setHeight] = useState(inspection ? 72 : 58)
+  const [startSize] = useState(inspection ? 72 : 58)
   // Focus moves in as the panel opens (not later, when the user is already working in it).
   useEffect(() => { if (autoFocus) panel.current?.focus({ preventScroll: true }) }, [])
 
-  // Drag the top edge to resize, as a fraction of the stage.
-  const resize = (e: ReactPointerEvent<HTMLDivElement>) => {
-    const stage = panel.current?.parentElement
-    if (!stage) return
-    e.preventDefault()
-    const el = e.currentTarget
-    el.setPointerCapture(e.pointerId)
-    const box = stage.getBoundingClientRect()
-    const move = (ev: PointerEvent) => setHeight(Math.min(92, Math.max(22, ((box.bottom - ev.clientY) / box.height) * 100)))
-    const up = () => { el.removeEventListener('pointermove', move); el.removeEventListener('pointerup', up) }
-    el.addEventListener('pointermove', move)
-    el.addEventListener('pointerup', up)
-  }
+  // Escape closes the panel while focus is in it. The panel joins UI SDK's layer stack for as long as it holds focus,
+  // so a popup opened inside it (the level select's list) sits above it and takes the first Escape itself.
+  const close = useRef(onClose)
+  close.current = onClose
+  useEffect(() => {
+    const el = panel.current
+    if (!el) return
+    let unbind: (() => void) | undefined
+    const enter = () => {
+      unbind ??= bindLayer(el, { onDismiss: (reason) => { if (reason === 'escape-key') close.current() } })
+    }
+    const leave = (event: FocusEvent) => {
+      if (event.relatedTarget instanceof Node && el.contains(event.relatedTarget)) return
+      unbind?.()
+      unbind = undefined
+    }
+    el.addEventListener('focusin', enter)
+    el.addEventListener('focusout', leave)
+    if (el.contains(el.ownerDocument.activeElement)) enter()
+    return () => {
+      el.removeEventListener('focusin', enter)
+      el.removeEventListener('focusout', leave)
+      unbind?.()
+    }
+  }, [])
 
   const onKeyDown = (e: ReactKeyboardEvent) => {
     onInteract?.()
-    if (e.key === 'Escape') { e.stopPropagation(); onClose() }
-    // The player's own keys (space, arrows, J/K/L) stay out of the panel.
-    else if (!(e.target as HTMLElement).closest('input')) e.stopPropagation()
+    const target = e.target as HTMLElement
+    // Escape goes on to the layer stack (above); the player's own keys (space, arrows, J/K/L) stay out of the panel.
+    if (e.key !== 'Escape' && !target.closest('input')) e.stopPropagation()
   }
 
   const tabs: { id: ReplayDevtoolsTab; label: string }[] = [
@@ -106,51 +136,39 @@ export function DevtoolsPanel({ state, tab, onTab, onClose, onSeek, inspection, 
     ...(sources ? [{ id: 'sources' as const, label: 'Sources' }] : []),
     { id: 'network', label: 'Network' },
   ]
+  // A tab that has gone (Elements without a document) falls back to Network, as before.
+  const shown: ReplayDevtoolsTab = tab === 'elements' && !elements ? 'network' : tab === 'sources' && !sources ? 'network' : tab
   return (
-    <div
+    <DevtoolsPanelRoot
       ref={panel}
-      data-slot="replay-devtools"
-      role="dialog"
+      defaultSize={startSize}
       aria-label="DevTools"
       tabIndex={-1}
       onKeyDown={onKeyDown}
       onPointerDown={onInteract}
       onWheel={onInteract}
-      style={{ height: `${height}%` }}
     >
-      <div data-slot="replay-devtools-resize" aria-hidden="true" onPointerDown={resize} />
-      <div data-slot="replay-devtools-tabs">
-        <div data-slot="replay-devtools-tablist" role="tablist" aria-label="DevTools panels">
-        {tabs.map((t) => (
-          <button
-            key={t.id}
-            type="button"
-            role="tab"
-            aria-selected={tab === t.id}
-            onClick={() => onTab(t.id)}
-            onKeyDown={(e) => {
-              if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
-                e.preventDefault()
-                const i = tabs.findIndex((x) => x.id === t.id) + (e.key === 'ArrowRight' ? 1 : -1)
-                onTab(tabs[(i + tabs.length) % tabs.length]!.id)
-              }
-            }}
-            tabIndex={tab === t.id ? 0 : -1}
-          >
-            {t.label}
-            {t.id === 'console' && state.counts.errors ? <span data-part="failed">{state.counts.errors}</span> : null}
-            {t.id === 'network' && state.counts.failed ? <span data-part="failed">{state.counts.failed}</span> : null}
-          </button>
-        ))}
+      <DevtoolsPanelResize aria-label="Resize DevTools" />
+      <Tabs value={shown} onValueChange={(next) => { if (next) onTab(next as ReplayDevtoolsTab) }}>
+        <div data-slot="replay-devtools-tabs">
+          <TabsList data-part="replay-devtools-tablist" aria-label="DevTools panels">
+            {tabs.map((t) => (
+              <TabsTab key={t.id} value={t.id}>
+                {t.label}
+                {t.id === 'console' && state.counts.errors ? <span data-part="failed">{state.counts.errors}</span> : null}
+                {t.id === 'network' && state.counts.failed ? <span data-part="failed">{state.counts.failed}</span> : null}
+              </TabsTab>
+            ))}
+          </TabsList>
+          <button type="button" data-slot="replay-devtools-close" aria-label="Close DevTools" onClick={onClose}><X size={14} aria-hidden="true" /></button>
         </div>
-        <button type="button" data-slot="replay-devtools-close" aria-label="Close DevTools" onClick={onClose}><X size={14} /></button>
-      </div>
-      {tab === 'console'
-        ? <ConsolePane state={state} onSeek={onSeek} inspected={inspection?.tab === 'console' ? inspection : null} />
-        : tab === 'elements' && elements ? <ElementsPane {...elements} />
-        : tab === 'sources' && sources ? <SourcesPane {...sources} />
-        : <NetworkPane state={state} onSeek={onSeek} inspected={inspection?.tab === 'network' ? inspection : null} />}
-    </div>
+        {shown === 'console'
+          ? <ConsolePane state={state} onSeek={onSeek} inspected={inspection?.tab === 'console' ? inspection : null} />
+          : shown === 'elements' && elements ? <ElementsPane {...elements} />
+          : shown === 'sources' && sources ? <SourcesPane {...sources} />
+          : <NetworkPane state={state} onSeek={onSeek} inspected={inspection?.tab === 'network' ? inspection : null} />}
+      </Tabs>
+    </DevtoolsPanelRoot>
   )
 }
 
@@ -158,6 +176,12 @@ export function DevtoolsPanel({ state, tab, onTab, onClose, onSeek, inspection, 
 
 type LevelFilter = 'all' | 'error' | 'warn' | 'info'
 const LEVEL_ICON = { error: CircleX, warn: TriangleAlert, info: Info } as const
+const LEVELS: { value: LevelFilter; label: string }[] = [
+  { value: 'all', label: 'All levels' },
+  { value: 'error', label: 'Errors' },
+  { value: 'warn', label: 'Warnings' },
+  { value: 'info', label: 'Info' },
+]
 
 function ConsolePane({ state, onSeek, inspected }: {
   state: ReplayDevtoolsState; onSeek: (ms: number) => void; inspected: ResolvedReplayInspection | null
@@ -172,44 +196,43 @@ function ConsolePane({ state, onSeek, inspected }: {
       (!q || e.message.toLowerCase().includes(q)))
   }, [state.console, query, level])
   // Follow new messages as they're logged, unless you've scrolled up to read (or an inspection is showing one).
-  const pinned = useRef(true)
+  const [stick] = useState(() => createStickToBottom({ threshold: 8 }))
+  useEffect(() => (list.current ? stick.connect(list.current) : undefined), [stick])
   const inspectedId = inspected?.messageId
   const shown = inspectedId !== undefined && rows.some((r) => r.id === inspectedId)
   useEffect(() => {
-    const el = list.current
-    if (el && pinned.current && !shown) el.scrollTop = el.scrollHeight
-  }, [rows.length, shown])
-  useEffect(() => {
-    if (shown) list.current?.querySelector('[data-inspected]')?.scrollIntoView?.({ block: 'nearest' })
-  }, [shown, inspected?.id])
+    if (!shown) return
+    stick.release()
+    list.current?.querySelector('[data-inspected]')?.scrollIntoView?.({ block: 'nearest' })
+  }, [shown, inspected?.id, stick])
   return (
-    <div data-slot="replay-devtools-pane" data-pane="console">
+    <TabsPanel value="console" data-part="replay-devtools-pane" data-pane="console">
       <div data-slot="replay-devtools-toolbar">
         <input type="search" aria-label="Filter console" placeholder="Filter" value={query} onChange={(e) => setQuery(e.currentTarget.value)} />
-        <select aria-label="Log levels" value={level} onChange={(e) => setLevel(e.currentTarget.value as LevelFilter)}>
-          <option value="all">All levels</option>
-          <option value="error">Errors</option>
-          <option value="warn">Warnings</option>
-          <option value="info">Info</option>
-        </select>
+        <Select items={LEVELS} value={level} onValueChange={(next) => { if (next) setLevel(next as LevelFilter) }}>
+          <SelectTrigger aria-label="Log levels">
+            <SelectValue />
+            <ChevronDown size={12} data-part="caret" aria-hidden="true" />
+          </SelectTrigger>
+          <SelectContent sideOffset={3}>
+            {LEVELS.map((l) => <SelectItem key={l.value} value={l.value}>{l.label}</SelectItem>)}
+          </SelectContent>
+        </Select>
         <span data-part="summary">
           {state.counts.errors ? <span data-part="failed">{state.counts.errors} {state.counts.errors === 1 ? 'error' : 'errors'}</span> : null}
           {state.counts.warnings ? <span data-part="warn">{state.counts.warnings} {state.counts.warnings === 1 ? 'warning' : 'warnings'}</span> : null}
         </span>
       </div>
-      <div
-        ref={list}
-        data-slot="replay-devtools-list"
-        role="log"
-        aria-label="Console messages"
-        onScroll={(e) => { const el = e.currentTarget; pinned.current = el.scrollHeight - el.scrollTop - el.clientHeight < 8 }}
-      >
-        {rows.length > MAX_ROWS ? <p data-slot="replay-devtools-later">{rows.length - MAX_ROWS} earlier messages aren&apos;t shown here</p> : null}
-        {rows.slice(-MAX_ROWS).map((entry) => <ConsoleRow key={entry.id} entry={entry} onSeek={onSeek} inspected={entry.id === inspectedId} />)}
-        {!rows.length ? <p data-slot="replay-devtools-empty">{state.console.length ? 'No messages match the filter' : 'Nothing logged yet'}</p> : null}
-        {state.counts.laterMessages ? <p data-slot="replay-devtools-later">{state.counts.laterMessages} more later in the recording</p> : null}
+      <div ref={list} data-slot="replay-devtools-list" role="log" aria-label="Console messages">
+        {/* One child that grows with the log: what the follower watches. */}
+        <div data-part="rows">
+          {rows.length > MAX_ROWS ? <p data-slot="replay-devtools-later">{rows.length - MAX_ROWS} earlier messages aren&apos;t shown here</p> : null}
+          {rows.slice(-MAX_ROWS).map((entry) => <ConsoleRow key={entry.id} entry={entry} onSeek={onSeek} inspected={entry.id === inspectedId} />)}
+          {!rows.length ? <p data-slot="replay-devtools-empty">{state.console.length ? 'No messages match the filter' : 'Nothing logged yet'}</p> : null}
+          {state.counts.laterMessages ? <p data-slot="replay-devtools-later">{state.counts.laterMessages} more later in the recording</p> : null}
+        </div>
       </div>
-    </div>
+    </TabsPanel>
   )
 }
 
@@ -224,10 +247,10 @@ function ConsoleRow({ entry, onSeek, inspected }: { entry: ReplayConsoleEntry; o
   return (
     <div data-slot="replay-devtools-message" data-level={entry.level} data-inspected={inspected || undefined}>
       {entry.trace?.length ? (
-        <details>
-          <summary>{body}</summary>
-          <ol data-part="trace">{entry.trace.map((frame, i) => <li key={i}>{frame}</li>)}</ol>
-        </details>
+        <Collapsible data-part="entry">
+          <CollapsibleTrigger data-part="line">{body}</CollapsibleTrigger>
+          <CollapsiblePanel render={<ol />} data-part="trace">{entry.trace.map((frame, i) => <li key={i}>{frame}</li>)}</CollapsiblePanel>
+        </Collapsible>
       ) : <div data-part="line">{body}</div>}
       <button type="button" data-part="time" aria-label={`Go to ${time(entry.time)}`} onClick={() => onSeek(entry.time)}>{time(entry.time)}</button>
     </div>
@@ -238,6 +261,11 @@ function ConsoleRow({ entry, onSeek, inspected }: { entry: ReplayConsoleEntry; o
 
 type RequestFilter = 'all' | 'fetch' | 'failed'
 type Row = ReplayRequest & { pending: boolean }
+const REQUEST_FILTERS: { value: RequestFilter; label: string }[] = [
+  { value: 'all', label: 'All' },
+  { value: 'fetch', label: 'Fetch/XHR' },
+  { value: 'failed', label: 'Failed' },
+]
 
 const statusText = (r: Row) => (r.pending ? '(pending)' : r.status === undefined ? (r.failed ? '(failed)' : '—') : r.status === 0 ? '(failed)' : String(r.status))
 
@@ -271,20 +299,21 @@ function NetworkPane({ state, onSeek, inspected }: {
   }, [state.network])
 
   return (
-    <div data-slot="replay-devtools-pane" data-pane="network" data-detail={selected ? '' : undefined}>
+    <TabsPanel value="network" data-part="replay-devtools-pane" data-pane="network" data-detail={selected ? '' : undefined}>
       <div data-slot="replay-devtools-toolbar">
         <input type="search" aria-label="Filter requests" placeholder="Filter" value={query} onChange={(e) => setQuery(e.currentTarget.value)} />
-        <div data-slot="replay-devtools-chips" role="radiogroup" aria-label="Request types">
-          {(['all', 'fetch', 'failed'] as const).map((f) => (
-            <button key={f} type="button" role="radio" aria-checked={filter === f} onClick={() => setFilter(f)}>
-              {f === 'all' ? 'All' : f === 'fetch' ? 'Fetch/XHR' : 'Failed'}
-            </button>
-          ))}
-        </div>
+        <SegmentedControl
+          data-part="replay-devtools-chips"
+          aria-label="Request types"
+          value={filter}
+          onValueChange={(next) => { if (next) setFilter(next as RequestFilter) }}
+        >
+          {REQUEST_FILTERS.map((f) => <SegmentedControlItem key={f.value} value={f.value}>{f.label}</SegmentedControlItem>)}
+        </SegmentedControl>
       </div>
       <div data-slot="replay-devtools-network">
         <div ref={table} data-slot="replay-devtools-table-wrap">
-          <table data-slot="replay-devtools-table">
+          <RequestTable aria-label="Requests" value={selectedId} onValueChange={setSelectedId}>
             <thead>
               <tr>
                 <th scope="col">Name</th>
@@ -294,15 +323,12 @@ function NetworkPane({ state, onSeek, inspected }: {
             </thead>
             <tbody>
               {rows.slice(-MAX_ROWS).map((r) => (
-                <tr
+                <RequestRow
                   key={r.id}
+                  value={r.id}
                   data-failed={(r.failed && !r.pending) || undefined}
                   data-pending={r.pending || undefined}
-                  aria-selected={r.id === selectedId}
                   data-inspected={r.id === inspectedId || undefined}
-                  tabIndex={0}
-                  onClick={() => setSelectedId(r.id === selectedId ? null : r.id)}
-                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedId(r.id === selectedId ? null : r.id) } }}
                 >
                   <td title={r.url}><span data-part="name">{r.name}</span></td>
                   <td>{statusText(r)}</td>
@@ -322,27 +348,22 @@ function NetworkPane({ state, onSeek, inspected }: {
                       </td>
                     </>
                   )}
-                </tr>
+                </RequestRow>
               ))}
             </tbody>
-          </table>
+          </RequestTable>
           {!rows.length ? <p data-slot="replay-devtools-empty">{state.network.length ? 'No requests match the filter' : 'No requests yet'}</p> : null}
           {rows.length > MAX_ROWS ? <p data-slot="replay-devtools-later">{rows.length - MAX_ROWS} earlier requests aren&apos;t shown here</p> : null}
         </div>
         {selected ? <RequestDetail request={selected} onClose={() => setSelectedId(null)} onSeek={onSeek} /> : null}
       </div>
-    </div>
+    </TabsPanel>
   )
 }
 
-type DetailTab = 'headers' | 'payload' | 'response'
+const DETAIL_TABS = ['headers', 'payload', 'response'] as const
 
 function RequestDetail({ request, onClose, onSeek }: { request: Row; onClose: () => void; onSeek: (ms: number) => void }) {
-  const [tab, setTab] = useState<DetailTab>('headers')
-  const pretty = (body?: string) => {
-    if (body === undefined || body === '') return undefined
-    try { return JSON.stringify(JSON.parse(body), null, 2) } catch { return body }
-  }
   const general: [string, string][] = [
     ['Request URL', request.url],
     ['Request Method', request.method],
@@ -353,42 +374,40 @@ function RequestDetail({ request, onClose, onSeek }: { request: Row; onClose: ()
   ]
   return (
     <div data-slot="replay-devtools-detail">
-      <div data-slot="replay-devtools-detail-tabs">
-        <button type="button" aria-label="Close request details" data-slot="replay-devtools-close" onClick={onClose}><X size={13} /></button>
-        <div data-slot="replay-devtools-tablist" role="tablist" aria-label={`${request.name} details`}>
-          {(['headers', 'payload', 'response'] as const).map((t) => (
-            <button key={t} type="button" role="tab" aria-selected={tab === t} onClick={() => setTab(t)}>
-              {t[0]!.toUpperCase() + t.slice(1)}
-            </button>
-          ))}
+      <Tabs defaultValue="headers">
+        <div data-slot="replay-devtools-detail-tabs">
+          <button type="button" aria-label="Close request details" data-slot="replay-devtools-close" onClick={onClose}><X size={13} aria-hidden="true" /></button>
+          <TabsList data-part="replay-devtools-tablist" aria-label={`${request.name} details`}>
+            {DETAIL_TABS.map((t) => <TabsTab key={t} value={t}>{t[0]!.toUpperCase() + t.slice(1)}</TabsTab>)}
+          </TabsList>
         </div>
-      </div>
-      <div data-slot="replay-devtools-detail-body">
-        {tab === 'headers' ? (
-          <>
-            <Section title="General" rows={general} />
-            {request.responseHeaders ? <Section title="Response Headers" rows={Object.entries(request.responseHeaders)} /> : null}
-            {request.requestHeaders ? <Section title="Request Headers" rows={Object.entries(request.requestHeaders)} /> : null}
-            <button type="button" data-slot="replay-devtools-jump" onClick={() => onSeek(request.time)}>Go to {time(request.time)} in the recording</button>
-          </>
-        ) : (
-          <Body text={pretty(tab === 'payload' ? request.requestBody : request.responseBody)} empty={tab === 'payload' ? 'This request has no recorded payload' : request.pending ? 'Waiting for the response' : 'The recording has no response body for this request'} />
-        )}
-      </div>
+        <TabsPanel value="headers" data-part="replay-devtools-detail-body">
+          <Section title="General" rows={general} />
+          {request.responseHeaders ? <Section title="Response Headers" rows={Object.entries(request.responseHeaders)} /> : null}
+          {request.requestHeaders ? <Section title="Request Headers" rows={Object.entries(request.requestHeaders)} /> : null}
+          <button type="button" data-slot="replay-devtools-jump" onClick={() => onSeek(request.time)}>Go to {time(request.time)} in the recording</button>
+        </TabsPanel>
+        <TabsPanel value="payload" data-part="replay-devtools-detail-body">
+          <Body text={request.requestBody} empty="This request has no recorded payload" />
+        </TabsPanel>
+        <TabsPanel value="response" data-part="replay-devtools-detail-body">
+          <Body text={request.responseBody} empty={request.pending ? 'Waiting for the response' : 'The recording has no response body for this request'} />
+        </TabsPanel>
+      </Tabs>
     </div>
   )
 }
 
 function Section({ title, rows }: { title: string; rows: [string, string][] }) {
   return (
-    <details open data-slot="replay-devtools-section">
-      <summary><ChevronRight size={12} data-part="chevron" />{title}</summary>
-      <dl>
+    <Collapsible defaultOpen data-part="replay-devtools-section">
+      <CollapsibleTrigger><ChevronRight size={12} data-part="chevron" aria-hidden="true" />{title}</CollapsibleTrigger>
+      <CollapsiblePanel render={<dl />}>
         {rows.map(([k, v]) => (
           <div key={k}><dt>{k}</dt><dd>{v}</dd></div>
         ))}
-      </dl>
-    </details>
+      </CollapsiblePanel>
+    </Collapsible>
   )
 }
 
@@ -412,9 +431,16 @@ function useSpans(text: string | undefined): Span[] | null {
   return spans && spans.for === text ? spans.spans : null
 }
 
+/** JSON reads indented; anything else as it was sent. */
+const pretty = (body?: string) => {
+  if (body === undefined || body === '') return undefined
+  try { return JSON.stringify(JSON.parse(body), null, 2) } catch { return body }
+}
+
 /** A request or response body, syntax-highlighted. Plain until the spans arrive. A <div> of spans, not
  *  <pre><code>, so a host's code-block styles (cards, margins, inline-code pills) can't reach it. */
-function Body({ text, empty }: { text?: string; empty: string }) {
+function Body({ text: raw, empty }: { text?: string; empty: string }) {
+  const text = useMemo(() => pretty(raw), [raw])
   const spans = useSpans(text)
   if (text === undefined) return <p data-slot="replay-devtools-empty">{empty}</p>
   return (
@@ -425,7 +451,7 @@ function Body({ text, empty }: { text?: string; empty: string }) {
 }
 
 function highlight(code: string, spans: Span[], offset = 0) {
-  const out: (string | ReactElement)[] = []
+  const out: ReactNode[] = []
   let cursor = 0
   spans.forEach((span, i) => {
     const start = Math.max(span.start - offset, 0)
@@ -476,17 +502,31 @@ function pageValue(name: string, value: string): string | null {
   return kept.length ? kept.join(' ') : null
 }
 
-/** The replayed page's DOM as a collapsible tree, Chrome's Elements panel in miniature. */
+/** A row of the tree as it stands now: the page is read once per render, then drawn from this. */
+type NodeRow =
+  | { kind: 'text'; id: string; text: string }
+  | {
+      kind: 'element'; id: string; el: Element; tag: string; attrs: [string, string][]
+      /** Whether it has children to open (a lone short text child shows inline instead). */
+      branch: boolean; open: boolean; inlineText: string | null; children: NodeRow[]; more: number
+    }
+
+const clip = (s: string, n: number) => (s.length > n ? s.slice(0, n - 1) + '…' : s)
+
+/** The replayed page's DOM as a tree, Chrome's Elements panel in miniature. Branches render their children only
+ *  while open, so a large page costs what's showing. */
 function ElementsPane({ getDocument, selected, onSelect, onHover }: ElementsProps) {
   const doc = getDocument()
   const root = doc?.documentElement ?? null
   // Expanded nodes (live DOM nodes, so the tree survives the page mutating under it).
   const [expanded] = useState(() => new Set<Node>())
   const [, bump] = useState(0)
-  const toggle = (node: Node) => {
-    if (expanded.has(node)) expanded.delete(node)
-    else expanded.add(node)
-    bump((n) => n + 1)
+  // The tree names its items by string: one id per node, for as long as the node lives.
+  const [ids] = useState(() => ({ of: new WeakMap<Node, string>(), next: 0 }))
+  const idOf = (node: Node) => {
+    let id = ids.of.get(node)
+    if (!id) ids.of.set(node, (id = `node-${++ids.next}`))
+    return id
   }
   // A new selection opens its ancestors and scrolls into view.
   const tree = useRef<HTMLDivElement>(null)
@@ -494,27 +534,127 @@ function ElementsPane({ getDocument, selected, onSelect, onHover }: ElementsProp
     if (!selected) return
     for (let n: Node | null = selected.parentNode; n && n !== doc; n = n.parentNode) expanded.add(n)
     bump((n) => n + 1)
-    requestAnimationFrame(() => tree.current?.querySelector('[data-selected]')?.scrollIntoView?.({ block: 'nearest' }))
+    requestAnimationFrame(() => tree.current?.querySelector('[data-slot="tree-label"][data-selected]')?.scrollIntoView?.({ block: 'nearest' }))
   }, [selected, doc, expanded])
 
-  if (!root) return <div data-slot="replay-devtools-pane" data-pane="elements"><p data-slot="replay-devtools-empty">The page isn't loaded yet</p></div>
+  if (!root) return <TabsPanel value="elements" data-part="replay-devtools-pane" data-pane="elements"><p data-slot="replay-devtools-empty">The page isn't loaded yet</p></TabsPanel>
+
+  // The rows that show, and the nodes behind them (rebuilt on every render, as the page changes under it).
+  const shown = new Map<string, Node>()
+  const open: string[] = []
+  const read = (node: Node): NodeRow | null => {
+    if (node.nodeType === Node.TEXT_NODE) {
+      const text = node.textContent?.replace(/\s+/g, ' ').trim()
+      if (!text) return null
+      const id = idOf(node)
+      shown.set(id, node)
+      return { kind: 'text', id, text: clip(text, 140) }
+    }
+    if (node.nodeType !== Node.ELEMENT_NODE) return null
+    const el = node as Element
+    const id = idOf(el)
+    shown.set(id, el)
+    const kids = [...el.childNodes].filter((c) => c.nodeType === Node.ELEMENT_NODE || (c.nodeType === Node.TEXT_NODE && c.textContent?.trim()))
+    // A lone short text child shows inline, as Chrome does.
+    const inlineText = kids.length === 1 && kids[0]!.nodeType === Node.TEXT_NODE && (kids[0]!.textContent?.trim().length ?? 0) <= 80 ? kids[0]!.textContent!.trim() : null
+    const branch = kids.length > 0 && inlineText === null
+    const isOpen = branch && expanded.has(el)
+    if (isOpen) open.push(id)
+    return {
+      kind: 'element', id, el, tag: el.tagName.toLowerCase(),
+      attrs: [...el.attributes].flatMap((a) => {
+        const value = pageValue(a.name, a.value)
+        return value === null ? [] : [[a.name, value] as [string, string]]
+      }),
+      branch, open: isOpen, inlineText,
+      children: isOpen ? kids.slice(0, MAX_CHILDREN).flatMap((child) => read(child) ?? []) : [],
+      more: isOpen ? Math.max(0, kids.length - MAX_CHILDREN) : 0,
+    }
+  }
+  const top = read(root)
+  const elementOf = (id: string | null | undefined) => {
+    const node = id ? shown.get(id) : undefined
+    return node && node.nodeType === Node.ELEMENT_NODE ? (node as Element) : null
+  }
+
+  const row = (r: NodeRow): ReactNode => {
+    if (r.kind === 'text') {
+      return (
+        <TreeItem key={r.id} value={r.id}>
+          <TreeItemLabel data-part="replay-devtools-node" data-kind="text">{r.text}</TreeItemLabel>
+        </TreeItem>
+      )
+    }
+    const { tag } = r
+    return (
+      <TreeItem key={r.id} value={r.id} branch={r.branch} label={tag}>
+        <TreeItemLabel data-part="replay-devtools-node" data-kind="element" onPointerEnter={() => onHover(r.el)}>
+          {r.branch ? <TreeItemIndicator data-part="twisty"><ChevronRight size={11} /></TreeItemIndicator> : <span data-part="twisty" />}
+          <span data-part="tag">&lt;{tag}</span>
+          {r.attrs.map(([name, value]) => (
+            <span key={name} data-part="attr">
+              {' '}<span data-part="attr-name">{name}</span>{value !== '' ? <>=&quot;<span data-part="attr-value">{clip(value, 80)}</span>&quot;</> : null}
+            </span>
+          ))}
+          <span data-part="tag">&gt;</span>
+          {r.inlineText !== null ? <><span data-part="text">{clip(r.inlineText, 80)}</span><span data-part="tag">&lt;/{tag}&gt;</span></> : null}
+          {r.branch && !r.open ? <><span data-part="ellipsis">…</span><span data-part="tag">&lt;/{tag}&gt;</span></> : null}
+          {!r.branch && r.inlineText === null ? <span data-part="tag">&lt;/{tag}&gt;</span> : null}
+        </TreeItemLabel>
+        {r.open ? (
+          <TreeGroup>
+            {r.children.map(row)}
+            {r.more ? (
+              <TreeItem value={`${r.id}-more`}>
+                <TreeItemLabel data-part="replay-devtools-node" data-kind="text">… {r.more} more</TreeItemLabel>
+              </TreeItem>
+            ) : null}
+            <div data-part="replay-devtools-node" data-kind="close" aria-hidden="true"><span data-part="tag">&lt;/{tag}&gt;</span></div>
+          </TreeGroup>
+        ) : null}
+      </TreeItem>
+    )
+  }
+
   const path: Element[] = []
   for (let n: Element | null = selected && selected.isConnected ? selected : null; n; n = n.parentElement) path.unshift(n)
   return (
-    <div data-slot="replay-devtools-pane" data-pane="elements">
-      <div ref={tree} data-slot="replay-devtools-elements" role="tree" aria-label="Elements" onPointerLeave={() => onHover(null)}>
-        <ElementRow node={root} depth={0} expanded={expanded} selected={selected} onToggle={toggle} onSelect={onSelect} onHover={onHover} />
+    <TabsPanel value="elements" data-part="replay-devtools-pane" data-pane="elements">
+      <div ref={tree} data-slot="replay-devtools-elements" onPointerLeave={() => onHover(null)}>
+        <Tree
+          aria-label="Elements"
+          expandOnPress={false}
+          value={selected && selected.isConnected ? idOf(selected) : null}
+          // Only an element can be selected, and the page's selection never clears.
+          onValueChange={(id, details) => {
+            const el = elementOf(id)
+            if (el) onSelect(el)
+            else details.cancel()
+          }}
+          expanded={open}
+          onExpandedChange={(next) => {
+            for (const [id, node] of shown) {
+              if (next.includes(id)) expanded.add(node)
+              else expanded.delete(node)
+            }
+            bump((n) => n + 1)
+          }}
+          // The row the keyboard is on shows on the page, as the hovered one does.
+          onHighlight={(id) => onHover(elementOf(id))}
+        >
+          {top ? row(top) : null}
+        </Tree>
       </div>
       {path.length ? (
-        <div data-slot="replay-devtools-breadcrumb" aria-label="Selected element's ancestors">
-          {path.map((el, i) => (
-            <button key={i} type="button" data-current={el === selected || undefined} onClick={() => onSelect(el)} onPointerEnter={() => onHover(el)} onPointerLeave={() => onHover(null)}>
+        <nav data-slot="replay-devtools-breadcrumb" aria-label="Selected element's ancestors">
+          {path.map((el) => (
+            <button key={idOf(el)} type="button" data-current={el === selected || undefined} aria-current={el === selected || undefined} onClick={() => onSelect(el)} onPointerEnter={() => onHover(el)} onPointerLeave={() => onHover(null)}>
               {crumb(el)}
             </button>
           ))}
-        </div>
+        </nav>
       ) : null}
-    </div>
+    </TabsPanel>
   )
 }
 
@@ -524,74 +664,6 @@ const crumb = (el: Element) => {
   const classes = pageValue('class', el.getAttribute('class') ?? '')
   const cls = classes ? '.' + classes.split(' ').slice(0, 2).join('.') : ''
   return tag + id + cls
-}
-
-const clip = (s: string, n: number) => (s.length > n ? s.slice(0, n - 1) + '…' : s)
-
-function ElementRow({ node, depth, expanded, selected, onToggle, onSelect, onHover }: {
-  node: Node; depth: number; expanded: Set<Node>; selected: Element | null
-  onToggle: (node: Node) => void; onSelect: (el: Element) => void; onHover: (el: Element | null) => void
-}) {
-  if (node.nodeType === Node.TEXT_NODE) {
-    const text = node.textContent?.replace(/\s+/g, ' ').trim()
-    return text ? <div data-slot="replay-devtools-node" data-kind="text" style={{ paddingInlineStart: depth * 14 + 16 }}>{clip(text, 140)}</div> : null
-  }
-  if (node.nodeType !== Node.ELEMENT_NODE) return null
-  const el = node as Element
-  const tag = el.tagName.toLowerCase()
-  const kids = [...el.childNodes].filter((c) => c.nodeType === Node.ELEMENT_NODE || (c.nodeType === Node.TEXT_NODE && c.textContent?.trim()))
-  const open = expanded.has(el)
-  const isSelected = el === selected
-  const attrs = [...el.attributes].flatMap((a) => {
-    const value = pageValue(a.name, a.value)
-    if (value === null) return []
-    return [
-      <span key={a.name} data-part="attr">
-        {' '}<span data-part="attr-name">{a.name}</span>{value !== '' ? <>=&quot;<span data-part="attr-value">{clip(value, 80)}</span>&quot;</> : null}
-      </span>,
-    ]
-  })
-  // A lone short text child shows inline, as Chrome does.
-  const inlineText = kids.length === 1 && kids[0]!.nodeType === Node.TEXT_NODE && (kids[0]!.textContent?.trim().length ?? 0) <= 80 ? kids[0]!.textContent!.trim() : null
-  return (
-    <>
-      <div
-        data-slot="replay-devtools-node"
-        data-kind="element"
-        data-selected={isSelected || undefined}
-        role="treeitem"
-        aria-selected={isSelected}
-        aria-expanded={kids.length && inlineText === null ? open : undefined}
-        tabIndex={isSelected ? 0 : -1}
-        style={{ paddingInlineStart: depth * 14 }}
-        onClick={() => onSelect(el)}
-        onPointerEnter={() => onHover(el)}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelect(el) }
-          else if ((e.key === 'ArrowRight' && !open) || (e.key === 'ArrowLeft' && open)) { e.preventDefault(); onToggle(el) }
-        }}
-      >
-        {kids.length && inlineText === null ? (
-          <button type="button" data-part="twisty" aria-label={open ? 'Collapse' : 'Expand'} tabIndex={-1} onClick={(e) => { e.stopPropagation(); onToggle(el) }}>
-            <ChevronRight size={11} style={{ rotate: open ? '90deg' : '0deg' }} />
-          </button>
-        ) : <span data-part="twisty" />}
-        <span data-part="tag">&lt;{tag}</span>{attrs}<span data-part="tag">&gt;</span>
-        {inlineText !== null ? <><span data-part="text">{clip(inlineText, 80)}</span><span data-part="tag">&lt;/{tag}&gt;</span></> : null}
-        {kids.length && inlineText === null && !open ? <><span data-part="ellipsis">…</span><span data-part="tag">&lt;/{tag}&gt;</span></> : null}
-        {!kids.length ? <span data-part="tag">&lt;/{tag}&gt;</span> : null}
-      </div>
-      {open && inlineText === null ? (
-        <>
-          {kids.slice(0, MAX_CHILDREN).map((child, i) => (
-            <ElementRow key={i} node={child} depth={depth + 1} expanded={expanded} selected={selected} onToggle={onToggle} onSelect={onSelect} onHover={onHover} />
-          ))}
-          {kids.length > MAX_CHILDREN ? <div data-slot="replay-devtools-node" data-kind="text" style={{ paddingInlineStart: (depth + 1) * 14 + 16 }}>… {kids.length - MAX_CHILDREN} more</div> : null}
-          <div data-slot="replay-devtools-node" data-kind="close" style={{ paddingInlineStart: depth * 14 + 16 }}><span data-part="tag">&lt;/{tag}&gt;</span></div>
-        </>
-      ) : null}
-    </>
-  )
 }
 
 /* ── Sources ─────────────────────────────────────────────────────────────────────── */
@@ -625,7 +697,7 @@ function SourcesPane({ evidence, at, path, line, onPath }: SourcesProps) {
     if (target === undefined) return
     code.current?.querySelector(`[data-line="${target}"]`)?.scrollIntoView?.({ block: 'center' })
   }, [current?.path, target])
-  if (!current) return <div data-slot="replay-devtools-pane" data-pane="sources"><p data-slot="replay-devtools-empty">No sources were read</p></div>
+  if (!current) return <TabsPanel value="sources" data-part="replay-devtools-pane" data-pane="sources"><p data-slot="replay-devtools-empty">No sources were read</p></TabsPanel>
   const points = evidence.logpoints.filter((lp) => lp.path === current.path)
   const focus = new Set(current.focus)
   // A logpoint on a line the excerpt doesn't hold still gets a row of its own.
@@ -635,39 +707,40 @@ function SourcesPane({ evidence, at, path, line, onPath }: SourcesProps) {
   const lexed = lineSpans(current.lines, sourceSpans)
   const digits = String(rows.at(-1)?.line ?? 0).length
   return (
-    <div data-slot="replay-devtools-pane" data-pane="sources">
+    <TabsPanel value="sources" data-part="replay-devtools-pane" data-pane="sources">
       <div data-slot="replay-devtools-sources">
-        <ul data-slot="replay-devtools-files" aria-label="Files">
-          {evidence.files.map((f) => (
-            <li key={f.path}>
-              <button type="button" aria-current={f.path === current.path || undefined} title={f.path} onClick={() => onPath(f.path)}>
-                {sourceName(f.path)}
-              </button>
-            </li>
-          ))}
-        </ul>
-        <div ref={code} data-slot="replay-devtools-code" aria-label={current.path} style={{ '--replay-devtools-lineno': `${digits}ch` } as CSSProperties}>
-          {rows.map((r, i) => {
-            const lp = points.find((p) => p.line === r.line)
-            const gap = i > 0 && r.line - rows[i - 1]!.line > 1
-            return (
-              <div key={r.line}>
-                {gap ? <div data-slot="replay-devtools-code-gap" aria-hidden="true">⋯</div> : null}
-                <div
-                  data-slot="replay-devtools-code-line"
-                  data-line={r.line}
-                  data-focus={focus.has(r.line) || r.line === line || undefined}
-                  data-paused={r.line === pausedLine || undefined}
-                  data-breakpoint={lp ? '' : undefined}
-                >
-                  <span data-part="hits">{r.hits ?? ''}</span>
-                  <span data-part="lineno">{lp ? <i data-part="breakpoint" title={`Logpoint: ${lp.expression}`} /> : null}{r.line}</span>
-                  <span data-part="text">{r.text ? (lexed?.has(r.line) ? highlight(r.text, lexed.get(r.line)!.spans, lexed.get(r.line)!.offset) : r.text) : ' '}</span>
+        {/* The files are tabs beside the code: the arrow keys move through them and show each one. */}
+        <Tabs orientation="vertical" value={current.path} onValueChange={(next) => { if (next) onPath(next) }}>
+          <div data-slot="replay-devtools-files">
+            <TabsList aria-label="Files">
+              {evidence.files.map((f) => (
+                <TabsTab key={f.path} value={f.path} title={f.path}>{sourceName(f.path)}</TabsTab>
+              ))}
+            </TabsList>
+          </div>
+          <TabsPanel value={current.path} ref={code} data-part="replay-devtools-code" style={{ '--replay-devtools-lineno': `${digits}ch` } as CSSProperties}>
+            {rows.map((r, i) => {
+              const lp = points.find((p) => p.line === r.line)
+              const gap = i > 0 && r.line - rows[i - 1]!.line > 1
+              return (
+                <div key={r.line}>
+                  {gap ? <div data-slot="replay-devtools-code-gap" aria-hidden="true">⋯</div> : null}
+                  <div
+                    data-slot="replay-devtools-code-line"
+                    data-line={r.line}
+                    data-focus={focus.has(r.line) || r.line === line || undefined}
+                    data-paused={r.line === pausedLine || undefined}
+                    data-breakpoint={lp ? '' : undefined}
+                  >
+                    <span data-part="hits">{r.hits ?? ''}</span>
+                    <span data-part="lineno">{lp ? <i data-part="breakpoint" title={`Logpoint: ${lp.expression}`} /> : null}{r.line}</span>
+                    <span data-part="text">{r.text ? (lexed?.has(r.line) ? highlight(r.text, lexed.get(r.line)!.spans, lexed.get(r.line)!.offset) : r.text) : ' '}</span>
+                  </div>
                 </div>
-              </div>
-            )
-          })}
-        </div>
+              )
+            })}
+          </TabsPanel>
+        </Tabs>
         {watches.length ? (
           <section data-slot="replay-devtools-watch" aria-label="Watch">
             <h3 data-part="title">Watch</h3>
@@ -690,7 +763,7 @@ function SourcesPane({ evidence, at, path, line, onPath }: SourcesProps) {
           </section>
         ) : null}
       </div>
-    </div>
+    </TabsPanel>
   )
 }
 

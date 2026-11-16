@@ -1,16 +1,16 @@
 ---
-description: Every subpath export of @brett_lamy/ui/docstream — what it contains, what it pulls into your bundle, and when to reach for it.
+description: Every subpath export of @brett_lamy/docstream — what it contains, what it pulls into your bundle, and when to reach for it.
 ---
 
 # Package entries
 
-`@brett_lamy/ui/docstream` is one package with 23 exports: the root and 22 subpaths. The root has nearly everything; the narrower entries let a host import only the layer it needs — a server that only parses, an answer pane that only streams, a page that only plays a replay. Two entries are behind **optional** peer dependencies, and nothing else in the package ever imports them.
+`@brett_lamy/docstream` is one package with 23 exports: the root and 22 subpaths. The root has nearly everything; the narrower entries let a host import only the layer it needs — a server that only parses, an answer pane that only streams, a page that only plays a replay. Two entries are behind **optional** peer dependencies, and nothing else in the package ever imports them.
 
 ```mermaid
 graph TD
   G["/gitbook — parser, serializer, AST (no React)"]
   S["/streamdown — GitbookStreamdown"]
-  R["@brett_lamy/ui/docstream (root)"]
+  R["@brett_lamy/docstream (root)"]
   O["/openapi"]
   P["/playground"]
   V["/viz"]
@@ -33,7 +33,7 @@ Arrows point from a layer to the entries built on it; dotted arrows are optional
 
 | Import | What you get | Imports eagerly | Loads on demand |
 | --- | --- | --- | --- |
-| `@brett_lamy/ui/docstream` | Most of the API: renderers, embeds, demos, parser. Not `/playground`, `/viz`, `/vite`, the replay stage/timeline helpers or the Strudel studio internals | react, react-dom, framer-motion, lucide-react, react-aria, gpu-lexer, yaml | pele, katex, rrweb, @strudel/web, acorn |
+| `@brett_lamy/docstream` | Most of the API: renderers, embeds, demos, parser. Not `/playground`, `/viz`, `/vite`, the replay stage/timeline helpers or the Strudel studio internals | react, react-dom, framer-motion, lucide-react, gpu-lexer, yaml | pele, katex, rrweb, @strudel/web, acorn |
 | `/gitbook` | Parser, serializer, AST types, pure helpers | yaml | — |
 | `/streamdown` | `GitbookStreamdown` + the context/actions it needs | same as root | pele, katex, rrweb, @strudel/web, acorn |
 | `/properties` | `DocumentProperties` | react, lucide-react, yaml | — |
@@ -51,7 +51,7 @@ Arrows point from a layer to the entries built on it; dotted arrows are optional
 | `/viz` | `VizEmbed` | **@brett_lamy/viz-engine** (+ its stylesheet) | — |
 | `/playground` | almost-node live previews | same as root | **@agent-wasm/core**, plus root's lazy set |
 | `/source` | Source-file clients and `SourcePreview` | react | — |
-| `/demo` | Demo viewer, resolvers, VFS, clipboard, Markdown resolution | react, react-dom, framer-motion, lucide-react, react-aria, gpu-lexer | — |
+| `/demo` | Demo viewer, resolvers, VFS, clipboard, Markdown resolution | react, react-dom, framer-motion, lucide-react, gpu-lexer | — |
 | `/site` | `DocsSite`, `buildDocsTree`, docs search — a site from a folder of Markdown ([Docs sites](../02-docs-site/README.md)) | same as root, plus yaml | same as root |
 | `/site/styles.css` | Site chrome styles alone (already inside `/styles.css`) | — | — |
 | `/vite` | `docstreamSources` Vite plugin (Node-only) | vite, node:fs, node:path | — |
@@ -72,7 +72,7 @@ These aren't conventions — `src/entry-boundary.test.ts` checks them on every t
 
 ## The entries
 
-### `@brett_lamy/ui/docstream`
+### `@brett_lamy/docstream`
 
 The renderers (`GitbookStreamdown`, `MarkdownContent`, `DocsRenderer`, `MathFormula`), page actions, code/copy primitives, task and property components, citations and chips, every embed component (replay, video, STL, Strudel player, OpenAPI), Mermaid/Pele and split cards, thumbnails, the demo system, source clients, asset resolution, and the full parser/serializer API. It also re-exports `createInlineDemoProject` and `createReactDemoFiles` — plain-data helpers that never touch almost-node.
 

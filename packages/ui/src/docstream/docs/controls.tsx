@@ -1,7 +1,9 @@
-/* Small accessible controls shared by the demo viewer, tabs and page actions: a pill tab strip
-   (tabs semantics, roving focus) and a segmented radio group. */
-import { useId, type CSSProperties, type KeyboardEvent, type ReactNode } from "react"
-import { motion, useReducedMotion } from "framer-motion"
+/* Small controls shared by the demo viewer, tabs and page actions, on UI SDK: a pill tab strip (Tabs) and a
+   segmented single choice (Segmented Control). Their selection is one indicator element that slides to the
+   chosen item, measured by UI SDK into CSS variables (see `.docs-pill-indicator` in styles.css). */
+import type { CSSProperties, ReactNode } from "react"
+import { SegmentedControl, SegmentedControlIndicator, SegmentedControlItem } from "@ui-sdk/react/segmented-control"
+import { TabsIndicator, TabsList, TabsTab } from "@ui-sdk/react/tabs"
 
 export interface PillOption<T extends string> {
   id: T
@@ -10,82 +12,23 @@ export interface PillOption<T extends string> {
   ariaLabel?: string
 }
 
-const SPRING = { type: "spring", bounce: 0.18, duration: 0.45 } as const
+const join = (...names: (string | undefined)[]) => names.filter(Boolean).join(" ")
 
-/** Arrow/Home/End move focus (and selection) across a row of buttons. */
-export function rovingKeyDown<T extends string>(
-  event: KeyboardEvent<HTMLElement>,
-  ids: readonly T[],
-  current: T,
-  select: (id: T) => void,
-  orientation: "horizontal" | "vertical" = "horizontal",
-) {
-  const prev = orientation === "horizontal" ? "ArrowLeft" : "ArrowUp"
-  const next = orientation === "horizontal" ? "ArrowRight" : "ArrowDown"
-  const index = ids.indexOf(current)
-  let target = -1
-  if (event.key === prev) target = (index - 1 + ids.length) % ids.length
-  else if (event.key === next) target = (index + 1) % ids.length
-  else if (event.key === "Home") target = 0
-  else if (event.key === "End") target = ids.length - 1
-  if (target < 0) return
-  event.preventDefault()
-  select(ids[target])
-  const buttons = event.currentTarget.querySelectorAll<HTMLElement>("[data-roving]")
-  buttons[target]?.focus()
-}
-
-/** A tab strip with a sliding pill. `panelId(id)` wires aria-controls when the panels exist. */
-export function PillTabs<T extends string>({
-  options,
-  value,
-  onChange,
-  label,
-  panelId,
-  tabId,
-  className,
-}: {
+/** The pill tab list. Place it inside a `Tabs` root from `@ui-sdk/react/tabs`, with a `TabsPanel` per option. */
+export function PillTabsList<T extends string>({ options, label, className }: {
   options: readonly PillOption<T>[]
-  value: T
-  onChange: (id: T) => void
   label: string
-  panelId?: (id: T) => string
-  tabId?: (id: T) => string
   className?: string
 }) {
-  const layoutId = useId()
-  const reduced = useReducedMotion()
   return (
-    <div
-      className={className ? `docs-pills ${className}` : "docs-pills"}
-      role="tablist"
-      aria-label={label}
-      onKeyDown={(event) => rovingKeyDown(event, options.map((o) => o.id), value, onChange)}
-    >
-      {options.map((option) => {
-        const selected = option.id === value
-        return (
-          <button
-            key={option.id}
-            id={tabId?.(option.id)}
-            type="button"
-            role="tab"
-            data-roving=""
-            aria-selected={selected}
-            aria-controls={panelId?.(option.id)}
-            aria-label={option.ariaLabel}
-            tabIndex={selected ? 0 : -1}
-            className="docs-pill"
-            onClick={() => onChange(option.id)}
-          >
-            {selected ? (
-              <motion.span layoutId={`pill-${layoutId}`} className="docs-pill-indicator" transition={reduced ? { duration: 0 } : SPRING} />
-            ) : null}
-            <span className="docs-pill-label">{option.label}</span>
-          </button>
-        )
-      })}
-    </div>
+    <TabsList aria-label={label} className={join("docs-pills", className)}>
+      {options.map((option) => (
+        <TabsTab key={option.id} value={option.id} aria-label={option.ariaLabel} className="docs-pill">
+          <span className="docs-pill-label">{option.label}</span>
+        </TabsTab>
+      ))}
+      <TabsIndicator className="docs-pill-indicator" />
+    </TabsList>
   )
 }
 
@@ -105,37 +48,20 @@ export function Segmented<T extends string>({
   className?: string
   style?: CSSProperties
 }) {
-  const layoutId = useId()
-  const reduced = useReducedMotion()
   return (
-    <div
-      className={className ? `docs-pills docs-segmented ${className}` : "docs-pills docs-segmented"}
-      style={style}
-      role="radiogroup"
+    <SegmentedControl
+      value={value}
+      onValueChange={(next) => { if (next !== null) onChange(next as T) }}
       aria-label={label}
-      onKeyDown={(event) => rovingKeyDown(event, options.map((o) => o.id), value, onChange)}
+      className={join("docs-pills docs-segmented", className)}
+      style={style}
     >
-      {options.map((option) => {
-        const selected = option.id === value
-        return (
-          <button
-            key={option.id}
-            type="button"
-            role="radio"
-            data-roving=""
-            aria-checked={selected}
-            aria-label={option.ariaLabel}
-            tabIndex={selected ? 0 : -1}
-            className="docs-pill"
-            onClick={() => onChange(option.id)}
-          >
-            {selected ? (
-              <motion.span layoutId={`seg-${layoutId}`} className="docs-pill-indicator" transition={reduced ? { duration: 0 } : SPRING} />
-            ) : null}
-            <span className="docs-pill-label">{option.label}</span>
-          </button>
-        )
-      })}
-    </div>
+      <SegmentedControlIndicator className="docs-pill-indicator" />
+      {options.map((option) => (
+        <SegmentedControlItem key={option.id} value={option.id} aria-label={option.ariaLabel} className="docs-pill">
+          <span className="docs-pill-label">{option.label}</span>
+        </SegmentedControlItem>
+      ))}
+    </SegmentedControl>
   )
 }

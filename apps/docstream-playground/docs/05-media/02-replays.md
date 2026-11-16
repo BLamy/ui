@@ -352,6 +352,8 @@ The player is plain CSS in `@brett_lamy/ui/docstream/styles.css`, inside the `do
 
 `--card` `--background` `--foreground` `--muted` `--muted-foreground` `--border` `--primary` `--ring` `--destructive` `--success` `--warning` `--tertiary-foreground`
 
+The big play disc sits over a recorded page of any color, so it doesn't take the page's tokens: it follows the color-scheme, a light disc with a dark icon on light pages and a dark one with a white icon on dark pages, with at least 8:1 between icon and disc over any page. Retheme it with `--replay-play-background`, `--replay-play-foreground` and `--replay-play-ring`. On touch screens every button in the control bar is at least 44px, and the disc is 56px.
+
 Parts are addressable by `data-slot`: `replay-preview` (with `data-state="loading|paused|playing"` and `data-chrome`), `replay-preview-bar`, `-stage`, `-poster`, `-pointer`, `-controls`, `-scrubber` and `-markers`; the DevTools are `replay-devtools-buttons` (each `replay-devtools-button` has `data-tab`) and the panel `replay-devtools`.
 
 ## See also

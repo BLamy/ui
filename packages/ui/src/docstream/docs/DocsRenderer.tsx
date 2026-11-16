@@ -1,5 +1,6 @@
 import { useContext, useEffect, useId, useMemo, useState, type ComponentProps, type ReactNode } from "react"
-import { motion, useReducedMotion } from "framer-motion"
+import { Tabs as TabsRoot, TabsIndicator, TabsList, TabsPanel, TabsTab } from "@ui-sdk/react/tabs"
+import { DetailsCollapsible } from "../ui/details-collapsible"
 import {
   AlertTriangle,
   CheckCircle2,
@@ -22,7 +23,7 @@ import { DemoBlock } from "../demo/DemoViewer"
 import type { DemoResolver, InlineDemoRuntime } from "../demo/types"
 import { CopyButton } from "./copy"
 import { SplitCard, SplitResult, SplitSource } from "./SplitCard"
-import { PillTabs, rovingKeyDown } from "./controls"
+import { PillTabsList } from "./controls"
 import { DocPageActions, type DocPageActionsOptions } from "./PageActions"
 import { useSyncedTab } from "./tabs-sync"
 import { ReplayPreview } from "../replay/ReplayPreview"
@@ -38,6 +39,7 @@ import { XStateDiagram, isXStateLanguage } from "../xstate"
 import { CapnpDiagram, CapnpEmbed, isCapnpLanguage, isCapnpUrl, isWorkerdConfig } from "../capnp"
 import { TsCircuit, isTsCircuitLanguage } from "../tscircuit"
 import { HighlightedCode } from "./HighlightedCode"
+import { CodeRenderContext, type CodeBlockRenderer } from "./code-render"
 import { CitationSources, InlineReference } from "./reference"
 import { ImageThumbnail, leadingThumbnail, thumbnailLabel } from "./ImageThumbnail"
 import { DocumentProperties } from "./DocumentProperties"
@@ -188,47 +190,17 @@ function codeOnlyTabs(block: Extract<Block, { type: "tabs" }>): CodeBlockNode[] 
   return codes
 }
 
-/** The underline tab strip shared by tab sets and command boxes. */
-function TabStrip({ titles, active, onSelect, label, baseId }: {
-  titles: string[]
-  active: number
-  onSelect: (index: number) => void
-  label: string
-  baseId: string
-}) {
-  const reduced = useReducedMotion()
-  const ids = titles.map((_, i) => String(i))
+/** The underline tab strip shared by tab sets and command boxes; it sits inside their `Tabs` root. */
+function TabStrip({ titles, label }: { titles: string[]; label: string }) {
   return (
-    <div
-      className="docs-tabs-header"
-      role="tablist"
-      aria-label={label}
-      onKeyDown={(event) => rovingKeyDown(event, ids, String(active), (id) => onSelect(Number(id)))}
-    >
+    <TabsList className="docs-tabs-header" aria-label={label}>
       {titles.map((title, i) => (
-        <button
-          key={i}
-          id={`${baseId}-tab-${i}`}
-          type="button"
-          role="tab"
-          data-roving=""
-          aria-selected={i === active}
-          aria-controls={`${baseId}-panel`}
-          tabIndex={i === active ? 0 : -1}
-          className={i === active ? "docs-tab-active" : ""}
-          onClick={() => onSelect(i)}
-        >
-          {i === active ? (
-            <motion.span
-              className="docs-tab-indicator"
-              layoutId={`docs-tab-indicator-${baseId}`}
-              transition={reduced ? { duration: 0 } : { type: "spring", bounce: 0.2, duration: 0.6 }}
-            />
-          ) : null}
+        <TabsTab key={String(i)} value={String(i)}>
           <span className="docs-tab-label">{title}</span>
-        </button>
+        </TabsTab>
       ))}
-    </div>
+      <TabsIndicator className="docs-tab-indicator" />
+    </TabsList>
   )
 }
 
@@ -238,115 +210,117 @@ function CommandBox({ block }: { block: CommandNode }) {
   const [local, setLocal] = useState<PackageManager>(PACKAGE_MANAGERS[0])
   const active: PackageManager = synced && (PACKAGE_MANAGERS as readonly string[]).includes(synced) ? (synced as PackageManager) : local
   const commands = useMemo(() => packageManagerCommands(block.command, block.overrides), [block.command, block.overrides])
-  const baseId = useId()
-  const index = PACKAGE_MANAGERS.indexOf(active)
-  const select = (i: number) => {
-    const pm = PACKAGE_MANAGERS[i]
+  const select = (value: string | null) => {
+    const pm = PACKAGE_MANAGERS[Number(value)]
+    if (!pm) return
     setLocal(pm)
     setSynced(pm)
   }
   return (
-    <div className="docs-tabs docs-tabs-code docs-command" data-sync={block.sync ?? "pm"} data-pm={active}>
+    <TabsRoot
+      value={String(PACKAGE_MANAGERS.indexOf(active))}
+      onValueChange={select}
+      render={<div className="docs-tabs docs-tabs-code docs-command" data-sync={block.sync ?? "pm"} data-pm={active} />}
+    >
       <div className="docs-tabs-code-head">
         <span className="docs-tabs-code-term" aria-hidden="true">
           <Terminal width={12} height={12} strokeWidth={2.4} />
         </span>
-        <TabStrip titles={[...PACKAGE_MANAGERS]} active={index} onSelect={select} label="Package manager" baseId={baseId} />
+        <TabStrip titles={[...PACKAGE_MANAGERS]} label="Package manager" />
         <span className="docs-tabs-code-title" />
         <CopyButton text={commands[active]} label={`Copy ${active} command`} />
       </div>
-      <div className="docs-tabs-code-body" role="tabpanel" id={`${baseId}-panel`} aria-labelledby={`${baseId}-tab-${index}`}>
-        <pre>
-          <HighlightedCode code={commands[active]} language="sh" lineNumbers={false} />
-        </pre>
-      </div>
-    </div>
+      {PACKAGE_MANAGERS.map((pm, i) => (
+        <TabsPanel key={pm} value={String(i)} className="docs-tabs-code-body">
+          <pre>
+            <HighlightedCode code={commands[pm]} language="sh" lineNumbers={false} />
+          </pre>
+        </TabsPanel>
+      ))}
+    </TabsRoot>
   )
 }
 
 function Tabs({ block, liveRenderer, sourceRenderer }: { block: Extract<Block, { type: "tabs" }> } & Renderers) {
   const [local, setLocal] = useState(0)
   const [synced, setSynced] = useSyncedTab(block.sync)
+  const renderCode = useContext(CodeRenderContext)
   const syncedIndex = synced === null ? -1 : block.tabs.findIndex((t) => t.title === synced)
   const active = Math.min(syncedIndex >= 0 ? syncedIndex : local, Math.max(0, block.tabs.length - 1))
-  const baseId = useId()
   const codes = useMemo(() => codeOnlyTabs(block), [block])
-  const select = (index: number) => {
+  const select = (value: string | null) => {
+    const index = Number(value)
+    if (value === null || !block.tabs[index]) return
     setLocal(index)
-    const title = block.tabs[index]?.title
-    if (block.sync && title !== undefined) setSynced(title)
+    const title = block.tabs[index].title
+    if (block.sync) setSynced(title)
   }
-  const header = (
-    <TabStrip
-      titles={block.tabs.map((t) => t.title)}
-      active={active}
-      onSelect={select}
-      label={block.sync ? `${block.sync} options` : "Content tabs"}
-      baseId={baseId}
-    />
-  )
+  const root = { value: String(active), onValueChange: select }
+  const panels = (className: string) =>
+    block.tabs.map((tab, i) => (
+      <TabsPanel key={String(i)} value={String(i)} className={className}>
+        <Blocks blocks={tab.children} liveRenderer={liveRenderer} sourceRenderer={sourceRenderer} />
+      </TabsPanel>
+    ))
 
   if (block.title) {
     const Heading = `h${block.level ?? 2}` as const
     const headingId = slugify(block.title)
     return (
-      <section className="docs-tabs-section" data-sync={block.sync} aria-labelledby={headingId}>
+      <TabsRoot {...root} render={<section className="docs-tabs-section" data-sync={block.sync} aria-labelledby={headingId} />}>
         <div className="docs-tabs-section-head">
           <Heading id={headingId} className="docs-tabs-section-title">{block.title}</Heading>
-          <PillTabs
+          <PillTabsList
             options={block.tabs.map((t, i) => ({ id: String(i), label: t.title }))}
-            value={String(active)}
-            onChange={(id) => select(Number(id))}
             label={`${block.title}: ${block.sync ? `${block.sync} options` : "options"}`}
-            tabId={(id) => `${baseId}-tab-${id}`}
-            panelId={() => `${baseId}-panel`}
           />
         </div>
-        <div className="docs-tabs-section-body" role="tabpanel" id={`${baseId}-panel`} aria-labelledby={`${baseId}-tab-${active}`}>
-          <Blocks blocks={block.tabs[active]?.children ?? []} liveRenderer={liveRenderer} sourceRenderer={sourceRenderer} />
-        </div>
-      </section>
+        {panels("docs-tabs-section-body")}
+      </TabsRoot>
     )
   }
 
   if (codes) {
     const code = codes[active]
     const shell = codes.every((c) => c.language && SHELL_LANGUAGES.has(c.language.toLowerCase()))
-    const numbered = code.lineNumbers && code.code.includes("\n") && !shell
+    const numbered = (c: CodeBlockNode) => c.lineNumbers && c.code.includes("\n") && !shell
     return (
-      <div className="docs-tabs docs-tabs-code" data-sync={block.sync}>
+      <TabsRoot {...root} render={<div className="docs-tabs docs-tabs-code" data-sync={block.sync} />}>
         <div className="docs-tabs-code-head">
           {shell ? (
             <span className="docs-tabs-code-term" aria-hidden="true">
               <Terminal width={12} height={12} strokeWidth={2.4} />
             </span>
           ) : null}
-          {header}
+          <TabStrip titles={block.tabs.map((t) => t.title)} label={block.sync ? `${block.sync} options` : "Content tabs"} />
           <span className="docs-tabs-code-title">{code.title}</span>
           <CopyButton text={code.code} label={`Copy ${block.tabs[active]?.title ?? "code"}`} />
         </div>
-        <div className="docs-tabs-code-body" role="tabpanel" id={`${baseId}-panel`} aria-labelledby={`${baseId}-tab-${active}`}>
-          <pre className={numbered ? "docs-code-numbered" : ""}>
-            <HighlightedCode code={code.code} language={code.language} lineNumbers={numbered} />
-          </pre>
-        </div>
-      </div>
+        {codes.map((c, i) => {
+          const highlighted = <HighlightedCode code={c.code} language={c.language} lineNumbers={numbered(c)} />
+          const custom = renderCode?.(c, { placement: "tab", highlighted })
+          return (
+            <TabsPanel key={String(i)} value={String(i)} className="docs-tabs-code-body">
+              {custom != null ? custom : <pre className={numbered(c) ? "docs-code-numbered" : ""}>{highlighted}</pre>}
+            </TabsPanel>
+          )
+        })}
+      </TabsRoot>
     )
   }
 
   return (
-    <div className="docs-tabs" data-sync={block.sync}>
-      {header}
-      <div className="docs-tabs-body" role="tabpanel" id={`${baseId}-panel`} aria-labelledby={`${baseId}-tab-${active}`}>
-        <Blocks blocks={block.tabs[active]?.children ?? []} liveRenderer={liveRenderer} sourceRenderer={sourceRenderer} />
-      </div>
-    </div>
+    <TabsRoot {...root} render={<div className="docs-tabs" data-sync={block.sync} />}>
+      <TabStrip titles={block.tabs.map((t) => t.title)} label={block.sync ? `${block.sync} options` : "Content tabs"} />
+      {panels("docs-tabs-body")}
+    </TabsRoot>
   )
 }
 
 function BlockView({ block, liveRenderer, sourceRenderer }: { block: Block } & Renderers) {
   const onTaskStateChange = useContext(TaskStateChangeContext)
   const tui = useContext(TuiContext)
+  const renderCode = useContext(CodeRenderContext)
   switch (block.type) {
     case "paragraph": {
       // A paragraph that opens with a thumbnail sets its text beside it.
@@ -382,7 +356,7 @@ function BlockView({ block, liveRenderer, sourceRenderer }: { block: Block } & R
       if (isCapnpLanguage(block.language) && isWorkerdConfig(block.code)) return <CapnpDiagram code={block.code} {...(block.title ? { title: block.title } : {})} />
       if (isTsCircuitLanguage(block.language)) return <TsCircuit code={block.code} title={block.title ?? undefined} />
       if (isTuiCodeBlock(block) && tui.options !== false) {
-        return <TuiPreview {...tui.options} code={block.code} language={block.language ?? undefined} title={block.title ?? tui.options?.title} isStreaming={tui.isStreaming || block.closingFence === ""} />
+        return <TuiPreview {...tui.options} code={block.code} language={block.language ?? undefined} title={block.title ?? tui.options?.title} streaming={tui.isStreaming || block.closingFence === ""} />
       }
       if (block.language === "mermaid") {
         return (
@@ -398,6 +372,13 @@ function BlockView({ block, liveRenderer, sourceRenderer }: { block: Block } & R
       }
       if (block.live && isReactLanguage(block.language) && liveRenderer) {
         return <LiveFence block={block} liveRenderer={liveRenderer} />
+      }
+      if (renderCode) {
+        const custom = renderCode(block, {
+          placement: "block",
+          highlighted: <HighlightedCode code={block.code} language={block.language} lineNumbers={block.lineNumbers} />,
+        })
+        if (custom != null) return <>{custom}</>
       }
       return (
         <div className="docs-code" data-language={block.language ?? undefined}>
@@ -438,12 +419,17 @@ function BlockView({ block, liveRenderer, sourceRenderer }: { block: Block } & R
       return block.command ? <CommandBox block={block} /> : null
     case "expandable":
       return (
-        <details className="docs-expandable">
-          <summary>{block.summary}</summary>
-          <div className="docs-expandable-body">
-            <Blocks blocks={block.children} liveRenderer={liveRenderer} sourceRenderer={sourceRenderer} />
-          </div>
-        </details>
+        <DetailsCollapsible
+          className="docs-expandable"
+          triggerClassName="docs-expandable-trigger"
+          panelClassName="docs-expandable-body"
+          summary={<>
+            <ChevronRight className="docs-expandable-caret" width={14} height={14} strokeWidth={2.2} aria-hidden="true" />
+            {block.summary}
+          </>}
+        >
+          <Blocks blocks={block.children} liveRenderer={liveRenderer} sourceRenderer={sourceRenderer} />
+        </DetailsCollapsible>
       )
     case "stepper":
       return (
@@ -740,6 +726,12 @@ export interface DocRenderOptions {
   envHost?: DocstreamEnvHost
   /** Variables to declare in addition to the frontmatter's `env`. */
   env?: readonly string[]
+  /**
+   * Draws fenced code blocks yourself: `(block, { placement, highlighted }) => ReactNode`. Return `null` or
+   * `undefined` for docstream's own rendering. Widget fences (mermaid, xstate, tscircuit, strudel, tui, live
+   * React) are not passed to it. Provided through context, so nested renderers inherit it.
+   */
+  renderCode?: CodeBlockRenderer
 }
 
 /** The variables a document declares in its frontmatter's `env`. */
@@ -753,8 +745,9 @@ function withEnv(doc: DocumentNode, { envHost, env }: DocRenderOptions, children
   return <DocstreamEnvProvider declared={declared} host={envHost}>{children}</DocstreamEnvProvider>
 }
 
-function withDemoContext({ demoResolver, demoRuntime, demoDependencies, demoVFS, onTaskStateChange, tui, isStreaming }: DocRenderOptions, children: ReactNode) {
+function withDemoContext({ demoResolver, demoRuntime, demoDependencies, demoVFS, onTaskStateChange, tui, isStreaming, renderCode }: DocRenderOptions, children: ReactNode) {
   let out = children
+  if (renderCode) out = <CodeRenderContext.Provider value={renderCode}>{out}</CodeRenderContext.Provider>
   if (tui !== undefined || isStreaming !== undefined) out = <TuiProvider options={tui} isStreaming={isStreaming}>{out}</TuiProvider>
   if (onTaskStateChange) out = <TaskStateChangeContext.Provider value={onTaskStateChange}>{out}</TaskStateChangeContext.Provider>
   if (demoVFS) out = <DocstreamDemoVFSContext.Provider value={demoVFS}>{out}</DocstreamDemoVFSContext.Provider>
@@ -812,10 +805,11 @@ export function MarkdownContent({
   env,
   tui,
   isStreaming,
+  renderCode,
 }: { markdown: string; className?: string } & Renderers & DocRenderOptions) {
   const doc = useMemo(() => parseMarkdown(markdown), [markdown])
   return withDemoContext(
-    { demoResolver, demoRuntime, demoDependencies, demoVFS, onTaskStateChange, tui, isStreaming },
+    { demoResolver, demoRuntime, demoDependencies, demoVFS, onTaskStateChange, tui, isStreaming, renderCode },
     withEnv(doc, { envHost, env }, <div data-docstream="" className={className}>
       <PageActionsBar markdown={markdown} options={pageActions} />
       {documentProperties && doc.properties ? <DocumentProperties properties={doc.properties} defaultOpen={typeof documentProperties === "object" && documentProperties.defaultOpen} /> : null}
@@ -841,9 +835,10 @@ export function DocsRenderer({
   env,
   tui,
   isStreaming,
+  renderCode,
 }: { doc: DocumentNode; /** Source for page actions; defaults to `serializeMarkdown(doc)`. */ markdown?: string } & Renderers & DocRenderOptions) {
   return withDemoContext(
-    { demoResolver, demoRuntime, demoDependencies, demoVFS, onTaskStateChange, tui, isStreaming },
+    { demoResolver, demoRuntime, demoDependencies, demoVFS, onTaskStateChange, tui, isStreaming, renderCode },
     withEnv(doc, { envHost, env }, <article className="docs-article">
       <PageActionsBar markdown={markdown ?? (() => serializeMarkdown(doc))} options={pageActions} />
       {documentProperties && doc.properties ? <DocumentProperties properties={doc.properties} defaultOpen={typeof documentProperties === "object" && documentProperties.defaultOpen} /> : null}
