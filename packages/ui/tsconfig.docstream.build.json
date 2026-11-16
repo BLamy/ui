@@ -1,0 +1,24 @@
+{
+  "extends": "./tsconfig.lib.json",
+  "compilerOptions": {
+    "composite": false,
+    "incremental": false,
+    "emitDeclarationOnly": false,
+    "tsBuildInfoFile": null,
+    "noEmit": false,
+    "rootDir": "src/docstream",
+    "outDir": "dist/docstream",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "customConditions": []
+  },
+  "include": [
+    "src/docstream"
+  ],
+  "exclude": [
+    "src/docstream/**/*.test.ts",
+    "src/docstream/**/*.test.tsx",
+    "src/docstream/**/__fixtures__"
+  ]
+}

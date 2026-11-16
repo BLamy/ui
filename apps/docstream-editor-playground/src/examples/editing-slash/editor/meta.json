@@ -1,0 +1,16 @@
+{
+  "title": "Slash menu",
+  "description": "Type / in the editor. Every block it inserts shows up in the Markdown pane as you go.",
+  "height": 724,
+  "status": "Live",
+  "variants": [
+    {
+      "id": "default",
+      "label": "Built-in menu"
+    },
+    {
+      "id": "custom",
+      "label": "Custom items"
+    }
+  ]
+}

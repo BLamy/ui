@@ -1,0 +1,15 @@
+{
+  "name": "diagram",
+  "title": "Diagram",
+  "description": "Nodes, edges, labels and regions on a Canvas, as plain data. Lines keep their thickness at any zoom, text hides when it's too small to read, and only what's near the view is drawn. With editable: selecting, dragging, deleting and undo as one gesture, named ports, and connecting with validation. Every node and edge can be reached by keyboard, and says what it connects to.",
+  "page": "diagram",
+  "exports": [
+    "Diagram",
+    "DiagramNodeBody",
+    "diagramNodeVariants",
+    "diagramEdgeVariants"
+  ],
+  "imports": [
+    "Diagram"
+  ]
+}

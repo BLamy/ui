@@ -1,0 +1,6 @@
+{
+  "title": "Parser explorer",
+  "description": "Type on the left. `parseMarkdown` → AST, `serializeMarkdown` → the same bytes back, `documentOutline`, `flattenForPlainMarkdown`, and `DocsRenderer` on the same tree.",
+  "height": 500,
+  "status": "Live"
+}

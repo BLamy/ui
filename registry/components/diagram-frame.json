@@ -1,0 +1,14 @@
+{
+  "name": "diagram-frame",
+  "title": "DiagramFrame",
+  "description": "A board with a panel: a column beside it when there's the room, and a tray under it when there isn't, which leaves the board uncovered to watch and press on.",
+  "exports": [
+    "DiagramFrame",
+    "DiagramPanelField",
+    "DiagramPanelSection",
+    "PANEL_BESIDE_FROM"
+  ],
+  "imports": [
+    "DiagramFrame"
+  ]
+}

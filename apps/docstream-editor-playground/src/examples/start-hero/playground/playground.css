@@ -1,0 +1,93 @@
+.pg {
+  display: grid;
+  gap: 12px;
+  font-size: 13px;
+  color: var(--foreground);
+}
+
+.pg-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 16px;
+  color: var(--muted-foreground);
+}
+.pg-bar label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.pg-bar select,
+.pg-bar button {
+  font: inherit;
+  color: inherit;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 2px 8px;
+}
+.pg-bar button {
+  margin-left: auto;
+  cursor: pointer;
+}
+
+.pg-panes {
+  display: grid;
+  gap: 12px;
+}
+@container (min-width: 760px) {
+  .pg-panes {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+}
+
+.pg-pane {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  max-height: 560px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--card);
+}
+.pg-pane > header,
+.pg-pane > footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 14px;
+  font-size: 12px;
+  color: var(--muted-foreground);
+}
+.pg-pane > header {
+  font-weight: 600;
+  border-bottom: 1px solid var(--border);
+}
+.pg-pane > header span {
+  font-weight: 400;
+}
+.pg-pane > footer {
+  border-top: 1px solid var(--border);
+}
+
+/* The editor's own wrapper is a centred 860px page with room to scroll past the end; here it fills the pane. */
+.pg-pane > .gb.pg-editor {
+  flex: 1;
+  overflow: auto;
+  max-width: none;
+  margin: 0;
+  padding: 8px 16px 24px;
+  border-bottom: 0;
+}
+
+.pg-source pre {
+  flex: 1;
+  margin: 0;
+  padding: 14px;
+  overflow: auto;
+  background: var(--muted);
+  font: 12px/1.55 ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}

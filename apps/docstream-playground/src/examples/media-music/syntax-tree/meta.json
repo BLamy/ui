@@ -1,0 +1,6 @@
+{
+  "title": "The syntax tree, live",
+  "description": "Type in the box: `parseStrudel` re-reads it on every keystroke. Click a step to rest it (`setMiniAtom`), add reverb (`setMethod`), or solo a track (`mixCode`). No audio, no Strudel runtime.",
+  "status": "Parser only",
+  "height": 640
+}

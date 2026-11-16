@@ -1,0 +1,11 @@
+{
+  "title": "A mesh made in the page",
+  "description": "`mesh.ts` builds triangles and writes binary STL; `parseStl` reads it back and `StlViewer` draws it from a `blob:` URL. Drag to orbit.",
+  "status": "WebGL",
+  "height": 560,
+  "variants": [
+    { "id": "torus", "label": "Torus" },
+    { "id": "gear", "label": "Gear" },
+    { "id": "wave", "label": "Wave" }
+  ]
+}

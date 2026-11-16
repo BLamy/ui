@@ -1,0 +1,6 @@
+{
+  "title": "Custom player chrome",
+  "description": "`ReplayStage` plays the page; the scrubber, marker ticks, speed button and pointer are this demo's own code, fed by the pure timeline helpers.",
+  "status": "Live",
+  "height": 560
+}

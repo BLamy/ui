@@ -1,0 +1,71 @@
+.wpg {
+  container-type: inline-size;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+  height: 100%;
+  min-height: 420px;
+}
+
+@container (min-width: 720px) {
+  .wpg {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+}
+
+.wpg-pane {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border: 1px solid var(--gb-border, rgba(128, 128, 128, 0.3));
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--gb-panel, transparent);
+}
+
+.wpg-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--gb-muted-foreground, #6b7280);
+  border-bottom: 1px solid var(--gb-border, rgba(128, 128, 128, 0.3));
+}
+
+.wpg-badge,
+.wpg-count {
+  margin-left: auto;
+  font-weight: 500;
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(128, 128, 128, 0.12);
+}
+
+.wpg-badge[data-ok] {
+  background: rgba(22, 163, 74, 0.14);
+  color: #16a34a;
+}
+
+.wpg-source textarea {
+  flex: 1;
+  min-height: 360px;
+  resize: none;
+  border: 0;
+  outline: none;
+  padding: 12px;
+  font: 12.5px/1.6 ui-monospace, SFMono-Regular, Menlo, monospace;
+  background: transparent;
+  color: inherit;
+  tab-size: 2;
+}
+
+.wpg-render {
+  flex: 1;
+  overflow: auto;
+  padding: 4px 16px 16px;
+  max-height: 560px;
+}

@@ -1,0 +1,10 @@
+{
+  "title": "Primitives",
+  "description": "`CollapsibleCode` and `CopyButton`; the eight `TaskCheckbox` states; a custom `SplitCard`, `Mermaid` and `MathFormula`.",
+  "status": "Live",
+  "variants": [
+    { "id": "code", "label": "Code" },
+    { "id": "tasks", "label": "Tasks" },
+    { "id": "split", "label": "Split cards" }
+  ]
+}

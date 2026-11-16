@@ -1,0 +1,6 @@
+{
+  "title": "Terminal in an AI response",
+  "description": "A real OpenTUI preview inside GitbookStreamdown. Toggle the streaming state, click Run, and type in the terminal.",
+  "height": 580,
+  "status": "OpenTUI"
+}

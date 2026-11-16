@@ -1,0 +1,6 @@
+{
+  "title": "A project folder behind the editor",
+  "description": "Relative paths render through `resolveAsset`. Press **Choose file…** or **Upload…** on any embed or figure, or drop a file of your own: the log shows each host callback and the URL it returned.",
+  "height": 900,
+  "status": "Live"
+}

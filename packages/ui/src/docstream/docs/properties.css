@@ -1,0 +1,28 @@
+.docs-document-properties {
+  color: var(--muted-foreground, #787878);
+  font: inherit;
+  font-size: 13px;
+  line-height: 1.5;
+  margin-block: 0 20px;
+}
+.docs-document-properties > summary { display: flex; align-items: center; gap: 6px; width: fit-content; padding-block: 5px; cursor: pointer; list-style: none; user-select: none; }
+.docs-document-properties > summary::-webkit-details-marker { display: none; }
+.docs-document-properties[open] > summary > svg { transform: rotate(90deg); }
+.docs-properties-count { font-variant-numeric: tabular-nums; opacity: .65; margin-left: 2px; }
+.docs-properties-list { margin: 6px 0; }
+.docs-property-row { display: grid; grid-template-columns: minmax(80px, 130px) minmax(0, 1fr) 22px; align-items: start; gap: 10px; padding-block: 6px; border-bottom: 1px solid var(--border, #e8e8e8); }
+.docs-property-row dt { padding-block: 3px; overflow-wrap: anywhere; }
+.docs-property-row dd { margin: 0; min-width: 0; color: var(--foreground, #242424); }
+.docs-property-value { display: block; white-space: pre-wrap; overflow-wrap: anywhere; padding-block: 3px; }
+.docs-document-properties :is(input:not([type="checkbox"]), textarea) { box-sizing: border-box; width: 100%; min-width: 0; padding: 3px 5px; color: var(--foreground, #242424); font: inherit; line-height: inherit; background: transparent; border: 0; border-radius: 4px; }
+.docs-document-properties textarea { resize: vertical; }
+.docs-document-properties input[type="checkbox"] { accent-color: var(--primary, #a87900); margin: 6px 0; }
+.docs-document-properties :is(input, textarea, button, summary):focus-visible { outline: 2px solid var(--primary, #a87900); outline-offset: 2px; }
+.docs-document-properties button { display: inline-flex; align-items: center; justify-content: center; gap: 5px; color: inherit; background: transparent; border: 0; border-radius: 4px; font: inherit; cursor: pointer; }
+.docs-property-remove { padding: 6px 3px; opacity: 0; }
+.docs-property-row:hover .docs-property-remove, .docs-property-remove:focus-visible { opacity: 1; }
+.docs-property-add { display: flex; align-items: center; gap: 8px; margin-block: 8px 0; padding: 3px 0; }
+.docs-property-add input { max-width: 240px; }
+.docs-property-add button { padding: 3px 6px; }
+.docs-properties-error { color: var(--destructive, #bc3030); font-size: 12px; overflow-wrap: anywhere; }
+.docs-properties-error pre { white-space: pre-wrap; }

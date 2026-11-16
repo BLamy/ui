@@ -1,0 +1,118 @@
+.inbox {
+  container-type: inline-size;
+  display: grid;
+  grid-template-columns: minmax(220px, 300px) 1fr;
+  height: 100%;
+  font-size: 13.5px;
+  background: var(--background, #fff);
+  color: var(--foreground, #18181b);
+}
+
+.inbox-list {
+  overflow-y: auto;
+  border-right: 1px solid var(--border, #e4e4e7);
+  background: var(--muted, #f4f4f5);
+}
+
+.inbox-list-head {
+  display: flex;
+  justify-content: space-between;
+  padding: 14px 14px 8px;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.inbox-list-head span {
+  color: var(--primary, #4f46e5);
+  font-size: 12px;
+}
+
+.inbox-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  padding: 10px 14px;
+  border: 0;
+  border-top: 1px solid var(--border, #e4e4e7);
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.inbox-item[aria-current] {
+  background: var(--card, #fff);
+  box-shadow: inset 3px 0 0 var(--primary, #4f46e5);
+}
+
+.inbox-item-top {
+  display: flex;
+  justify-content: space-between;
+}
+
+.inbox-item-top time,
+.inbox-item-preview,
+.inbox-meta {
+  opacity: 0.6;
+  font-size: 12px;
+}
+
+.inbox-item-subject i {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-right: 6px;
+  border-radius: 99px;
+  background: var(--primary, #4f46e5);
+}
+
+.inbox-item-preview {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.inbox-view {
+  padding: 20px 24px;
+  overflow-y: auto;
+  line-height: 1.6;
+}
+
+.inbox-view h3 {
+  margin: 0 0 2px;
+  font-size: 18px;
+}
+
+.inbox-empty {
+  display: grid;
+  place-items: center;
+  opacity: 0.5;
+}
+
+.inbox-back {
+  display: none;
+  margin-bottom: 10px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--primary, #4f46e5);
+  font: inherit;
+  cursor: pointer;
+}
+
+@container (max-width: 520px) {
+  .inbox {
+    grid-template-columns: 1fr;
+  }
+
+  .inbox[data-open] .inbox-list,
+  .inbox:not([data-open]) .inbox-view {
+    display: none;
+  }
+
+  .inbox-back {
+    display: inline;
+  }
+}

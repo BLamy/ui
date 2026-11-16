@@ -1,0 +1,13 @@
+{
+  "name": "cloudflare-diagram",
+  "title": "CloudflareDiagram",
+  "description": "Cloudflare's services on a Diagram: each a node with what it can call and receive as ports, from a catalog generated from Cloudflare's docs, Wrangler's schema and the Workers types. A connection can only be one the catalog says there is, and it offers the real methods. No Cloudflare artwork. ELK is an optional peer. What it's given is a system, which saves as JSON: it says what's wrong with one, a search of the catalog adds a service, and a service's machine opens in a StateDiagram.",
+  "page": "cloudflare-diagram",
+  "npmEntry": "@brett_lamy/ui/cloudflare",
+  "exports": [
+    "CloudflareDiagram"
+  ],
+  "imports": [
+    "CloudflareDiagram"
+  ]
+}

@@ -1,0 +1,5 @@
+{
+  "title": "Live diagram",
+  "description": "The `Mermaid` component behind every mermaid fence. Type a different diagram — a syntax error shows Pele's message in place of the drawing.",
+  "status": "Live"
+}

@@ -1,0 +1,44 @@
+{
+  "compilerOptions": {
+    "target": "es2022",
+    "lib": ["es2022", "dom", "dom.iterable"],
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "strict": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "types": ["vite/client", "node"],
+    "paths": {
+      "@brett_lamy/ui/docstream": ["../../packages/ui/src/docstream/index.ts"],
+      "@brett_lamy/ui/docstream/site": [
+        "../../packages/ui/src/docstream/site/index.ts"
+      ],
+      "@brett_lamy/ui/docstream/playground": [
+        "../../packages/ui/src/docstream/playground/index.ts"
+      ],
+      "@brett_lamy/ui/docstream/replay": [
+        "../../packages/ui/src/docstream/replay/index.ts"
+      ],
+      "@brett_lamy/ui/docstream/replay/demo": [
+        "../../packages/ui/src/docstream/replay/demo/index.ts"
+      ],
+      "@brett_lamy/ui/docstream/stl": [
+        "../../packages/ui/src/docstream/stl/index.ts"
+      ],
+      "@brett_lamy/ui/docstream/strudel": [
+        "../../packages/ui/src/docstream/strudel/index.ts"
+      ]
+    }
+  },
+  "include": [
+    "src",
+    "docs.test.ts",
+    "../../packages/ui/src/docstream/env.d.ts"
+  ],
+  "references": [
+    {
+      "path": "../../packages/ui"
+    }
+  ]
+}
