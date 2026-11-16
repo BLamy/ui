@@ -38,9 +38,7 @@
         // Imported as `@ui-sdk/*` through `workspace:@brett_lamy/ui-sdk-*@*` aliases. Knip resolves those imports to the
         // workspace's files and matches them by its package name, so it never counts the alias as used.
         "@ui-sdk/core",
-        "@ui-sdk/react",
-        // Used from CSS only (`@import "tailwindcss/utilities.css"` in packages/ui/src/styles.css), which knip does not read.
-        "tailwindcss"
+        "@ui-sdk/react"
       ],
       // The root vitest config only lists the packages' own configs, and the root has no stories (apps/catalog does).
       // Without this, the plugins' default globs pick up vendor/ui-sdk (a git submodule with its own toolchain).
@@ -57,23 +55,15 @@
       ],
       "project": [
         "src/**/*.{ts,tsx}"
-      ],
-      // Imported from CSS only (`@import "@vscode/codicons/dist/codicon.css"` in src/styles.css).
-      "ignoreDependencies": ["@vscode/codicons"]
+      ]
     },
     "registry": {
       "entry": [
         "blocks/*/page.tsx",
-        "blocks/**/*.stories.tsx",
-        // The package's own exports (`./blocks/types`, `./components/types`): the shapes meta.json and manifests follow.
-        "blocks/types.ts",
-        "components/types.ts"
+        "blocks/**/*.stories.tsx"
       ],
       "project": [
         "**/*.{ts,tsx}"
-      ],
-      "ignoreDependencies": [
-        "@brett_lamy/ui"
       ]
     },
     "apps/docs": {
@@ -85,7 +75,9 @@
       ],
       "project": [
         "src/**/*.{ts,tsx}",
-        "examples/**/*.{ts,tsx}"
+        "examples/**/*.{ts,tsx}",
+        // The Tailwind sheet main.tsx imports: its `@import "@brett_lamy/registry/styles.css"` is the app's use of the registry.
+        "src/site/site.css"
       ],
       "ignoreDependencies": [
         "@tiptap/.+",
@@ -103,8 +95,7 @@
       ],
       "ignoreDependencies": [
         "highlight.js",
-        "use-sync-external-store",
-        "@brett_lamy/ui"
+        "use-sync-external-store"
       ]
     }
   }

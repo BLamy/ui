@@ -2585,6 +2585,7 @@ Diagram, DiagramFrame, StateDiagram, CloudflareDiagram and docstream's capnp fen
 | The canvas named by `aria-label` | The diagram is a `group` named by `aria-label`; its board is "<name> board" |
 | — | `controller` (`createDiagramController`), `useDiagram`, `DiagramToolbar`, `emptyState`, `loading`, `undoable` |
 | `direction: 'RIGHT' \| 'DOWN' \| …` (useDiagramLayout, StateDiagram) | `'right' \| 'down' \| 'left' \| 'up'` |
+| `layoutDiagram`, `useDiagramLayout`, `createDiagramLayoutEngine`, `DIAGRAM_ELK_OPTIONS`… and their types from `@brett_lamy/ui` | from the engine's own entries only: `@brett_lamy/ui/lib/diagram-layout` (`@/lib/diagram-layout`) and `@brett_lamy/ui/lib/diagram-layout/react` for `useDiagramLayout` |
 | `<DiagramFrame host size title panel status cover onBoardKeyDown>{(bar) => …}</DiagramFrame>` | Flat parts: `DiagramFrame`, `DiagramFrameBoard` (takes `onKeyDown`, and a `ref` for a layout's `host`), `DiagramFrameBar` (the status), `DiagramFramePanel` (`title`), `DiagramFrameCover`, `DiagramFrameTrigger`, `useDiagramFrame` |
 | `DiagramPanelSection`, `DiagramPanelField({ slot, onCommit })` | `DiagramFrameSection`, `DiagramFrameInput({ onValueCommit })` |
 | `PANEL_BESIDE_FROM` (560) | `breakpoints` (`{ medium: 440, regular: 720 }`) |

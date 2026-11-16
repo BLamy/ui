@@ -220,6 +220,8 @@ It works at 10,000 nodes. These are medians of 3 runs, in headless Chromium on a
 
 The view is where it matters: the smallest zoom is 2%, so a board this size doesn't all fit on the screen even then, and what's drawn is what's near it.
 
+Zooming restyles as little as it can. The board doesn't carry the zoom as a CSS variable (its Canvas has `zoomVariable` off), as a variable that changes restyles everything under it, every frame: at 2,000 nodes that was 85 ms a frame of zooming, and it's 8.3 ms. Lines and rings keep their thickness from a zoom that moves in steps of about 9%, and `children` get `--canvas-zoom` the same way, so a Canvas overlay part there is within about 4.5% of its thickness on screen. Measuring a large layout's words, a frame's worth at a time, adds nothing to the page around it.
+
 ## A panel beside it
 
 [DiagramFrame](#/diagram-frame) puts a panel beside a board: a column when there's the room, a drawer that doesn't dim the board at medium sizes, and a page pushed over it on a phone, with a bar on the board to open it. It's what `StateDiagram` and `CloudflareDiagram` are made of.
@@ -283,7 +285,7 @@ With no nodes, the shared [EmptyState](#/empty-state) shows over the board ("Not
 | `fitPadding` | `24` | Air around what's fitted, in px, for the first fit and ⌘0. |
 | `background`, `panning`, `autoFocus` | as on `Canvas` | Passed to it. A resting cursor is a class: `className="cursor-crosshair"`. |
 | `overlay` | — | Over the board in screen space, outside its keys: a `DiagramToolbar`, a status. `useDiagram()` works here. |
-| `children` | — | More of the board layer. `useCanvas` works here. |
+| `children` | — | More of the board layer. `useCanvas` works here, and `--canvas-zoom` is set (in steps) for Canvas overlay parts. |
 | `aria-label` | "Diagram" | Its name; the board is "<name> board". |
 | `className`, `style`, `ref` | — | Merged onto the root. |
 

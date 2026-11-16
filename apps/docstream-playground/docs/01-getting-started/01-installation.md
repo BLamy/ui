@@ -9,20 +9,21 @@ docstream is part of BL UI: it comes with `@brett_lamy/ui`, at `@brett_lamy/ui/d
 {% command %}npm install @brett_lamy/ui react react-dom{% endcommand %}
 
 {% hint style="info" %}
-React and React DOM (19 or newer) are peer dependencies: docstream uses your app's copy. Its interactive parts (tabs, menus, popovers, hover cards, the site's sidebar and search, the replay and Strudel controls) are [UI SDK](https://ui-sdk.dev) components, from the same copy of UI SDK as the rest of BL UI (`@ui-sdk/core` and `@ui-sdk/react`, which `@brett_lamy/ui` brings). Everything else it needs — the GitBook parser, the code highlighter, Pele, KaTeX, rrweb, Strudel — is a regular dependency and installs with it.
+React and React DOM (19) are peer dependencies: docstream uses your app's copy. Its interactive parts (tabs, menus, popovers, hover cards, the site's sidebar and search, the replay and Strudel controls) are [UI SDK](https://ui-sdk.dev) components, from the same copy of UI SDK as the rest of BL UI (`@ui-sdk/core` and `@ui-sdk/react`, which `@brett_lamy/ui` brings). Everything else it needs — the GitBook parser, the code highlighter, Pele, KaTeX, rrweb, Strudel — is a regular dependency and installs with it.
 {% endhint %}
 
 ## Peer dependencies
 
 | Peer | Range | Required | Needed for |
 | --- | --- | --- | --- |
-| `react` | `>=19` | Yes | Everything that renders. |
-| `react-dom` | `>=19` | Yes | Everything that renders. |
-| `@ui-sdk/core` | `^0.1.0-beta.2` | Yes | The behaviors under every interactive part: keyboard, focus, dismissal, ARIA. |
-| `@ui-sdk/react` | `^0.1.0-beta.2` | Yes | The UI SDK components docstream renders. |
+| `react` | `^19` | Yes | Everything that renders. |
+| `react-dom` | `^19` | Yes | Everything that renders. |
 | `@agent-wasm/core` | `>=0.4.0` | Optional | The `@brett_lamy/ui/docstream/playground` entry: live code fences and runnable inline `{% demo %}` files, run by almost-node (a Vite dev server in the browser). |
 | `@brett_lamy/viz-engine` | `>=0.2.0` | Optional | The `@brett_lamy/ui/docstream/viz` entry: `VizEmbed`. |
+| `xstate` | `^5.33.3` | Optional | The `@brett_lamy/ui/docstream/xstate/machine` entry (`parseXState`, `xstateToMermaid`), which an ` ```xstate ` fence loads when it's displayed. Without it the fence keeps its source and shows the import error where the diagram would be. |
 | `vite` | `>=5` | Optional | The `@brett_lamy/ui/docstream/vite` plugin (`docstreamSources`), imported from `vite.config.ts`. |
+
+UI SDK (`@ui-sdk/core`, `@ui-sdk/react`) isn't a peer: it is a dependency of `@brett_lamy/ui`, so docstream and the rest of BL UI share its one copy. `@brett_lamy/ui` has other optional peers (ELK, PGlite, Tailscale) for kit components; docstream never loads them.
 
 The optional peers are only ever imported by their own entry. A test (`packages/ui/src/docstream/entry-boundary.test.ts` in BL UI's repository) walks the module graph of every other entry — static, type-only and dynamic imports — and fails if almost-node shows up, so an app that never installs `@agent-wasm/core` typechecks and bundles cleanly.
 

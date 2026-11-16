@@ -238,13 +238,28 @@ export function Dock({ dark, tile, onAlfred, prefs, onPrefs }: { dark: boolean; 
   const [near, setNear] = useState(false);
   const [focused, setFocused] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  // The icons' cards stay off from a menu opening until the pointer moves or a key is pressed after it: the right-click
+  // that opened it rested on an icon, and that card mustn't come up under a pointer that hasn't moved since.
+  const [cardsOff, setCardsOff] = useState(false);
+  useEffect(() => {
+    if (!cardsOff || menuOpen) return;
+    const on = () => setCardsOff(false);
+    window.addEventListener('pointermove', on);
+    window.addEventListener('keydown', on, true);
+    return () => {
+      window.removeEventListener('pointermove', on);
+      window.removeEventListener('keydown', on, true);
+    };
+  }, [cardsOff, menuOpen]);
   const box = useRef<HTMLDivElement>(null);
   const shown = !hide || near || focused || menuOpen;
   const onMenuOpenChange = (open: boolean) => {
     setMenuOpen(open);
+    if (open) setCardsOff(true);
     // The menu is gone when it closes, and a pointer that was on it never reports leaving: ask the browser where the
-    // pointer is once it has caught up.
-    if (!open) setTimeout(() => setNear(box.current?.querySelector(':hover') != null), 150);
+    // pointer is once it has caught up. Over the Dock or its edge strip, that is: the menu is inside the same box and may
+    // still be on its way out (and under the pointer) by then, which isn't the Dock.
+    if (!open) setTimeout(() => setNear(box.current?.querySelector('[data-slot=macos-dock]:hover, [data-slot=macos-dock-edge]:hover') != null), 150);
   };
   // One menu for the whole Dock. Its payload is the icon it was opened on (that app's Open or Show and Quit above the
   // preferences), or null for the Dock itself (the preferences alone).
@@ -303,8 +318,8 @@ export function Dock({ dark, tile, onAlfred, prefs, onPrefs }: { dark: boolean; 
             const running = d.isOpen(app.id);
             return (
               <DropdownMenuContextTrigger key={app.id} payload={app.id} data-dock-app={app.id} className="grid">
-                {/* Resting on an icon trades its name label for a card about the app; never while a menu is up. */}
-                <HoverCard disabled={menuOpen}>
+                {/* Resting on an icon trades its name label for a card about the app; never while a menu is up, nor until the pointer moves after one. */}
+                <HoverCard disabled={cardsOff}>
                   <HoverCardTrigger render={<SdkButton aria-label={`${running ? 'Show' : 'Open'} ${app.name}`} onClick={() => d.open(app.id)} className={cn(slot, 'group/card')} />}>
                     <DockLabel dark={dark}>{app.name}</DockLabel>
                     <AppTile app={app} size={tile} />

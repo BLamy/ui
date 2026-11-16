@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import * as xstate from 'xstate';
-import { createActor, createMachine } from 'xstate';
+import { createActor, createMachine, type AnyStateMachine } from 'xstate';
 import { uploadMachine } from '../stories/upload-machine';
 import { machineToDraft } from './state-diagram-model';
 import { SETTLE_LIMIT, SimulationClock, TIMER_LIMIT, activeLeaves, activeStateIds, createSimulation, standInConfig, type Simulation } from './state-diagram-simulation';
@@ -237,7 +237,7 @@ describe('running the spike’s machine', () => {
     const noop = () => undefined;
     const never = xstate.fromPromise(() => new Promise<never>(() => undefined));
     const names = standInConfig(config).names;
-    const real = createActor((uploadMachine as never as { provide: (i: object) => never }).provide({
+    const real = createActor((uploadMachine as never as { provide: (i: object) => AnyStateMachine }).provide({
       guards: Object.fromEntries(names.guards.map((g) => [g, () => true])),
       actions: Object.fromEntries(names.actions.map((a) => [a, noop])),
       actors: Object.fromEntries(names.actors.map((a) => [a, never])),
@@ -279,7 +279,7 @@ describe('running the spike’s machine', () => {
     const s = sim(c);
     const real = createActor(createMachine(c as never)).start();
     const events = ['GO', 'STAY', 'BACK'];
-    const compare = () => expect(s.get().events.sort()).toEqual(events.filter((e) => real.getSnapshot().can({ type: e } as never)).sort());
+    const compare = () => expect([...s.get().events].sort()).toEqual(events.filter((e) => real.getSnapshot().can({ type: e } as never)).sort());
     compare();
     s.send('GO'); real.send({ type: 'GO' } as never);
     compare();

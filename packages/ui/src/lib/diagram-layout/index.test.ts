@@ -15,17 +15,17 @@ describe('what isn’t connected', () => {
   };
 
   it('goes in rows, where it would otherwise be one long column', async () => {
-    const loose = await layoutDiagram({ nodes: nodes(40) }, { worker: false });
+    const loose = await layoutDiagram({ nodes: nodes(40) }, {});
     expect(new Set(loose.nodes.map((n) => n.x)).size).toBeGreaterThan(3);
     expect(spread(loose.nodes)).toBeGreaterThan(0.8);
     for (let i = 0; i < loose.nodes.length; i++) for (let j = i + 1; j < loose.nodes.length; j++) expect(overlap(loose.nodes[i]!, loose.nodes[j]!)).toBe(false);
     // Asked for what it was, it's one column, which is what this is here to stop.
-    const column = await layoutDiagram({ nodes: nodes(40) }, { worker: false, elk: { 'elk.hierarchyHandling': 'INCLUDE_CHILDREN' } });
+    const column = await layoutDiagram({ nodes: nodes(40) }, { elk: { 'elk.hierarchyHandling': 'INCLUDE_CHILDREN' } });
     expect(new Set(column.nodes.map((n) => n.x)).size).toBe(1);
   });
 
   it('keeps what is connected together, and in order', async () => {
-    const out = await layoutDiagram({ nodes: nodes(12), edges: [{ id: 'a', from: 'n0', to: 'n1' }, { id: 'b', from: 'n1', to: 'n2' }] }, { worker: false });
+    const out = await layoutDiagram({ nodes: nodes(12), edges: [{ id: 'a', from: 'n0', to: 'n1' }, { id: 'b', from: 'n1', to: 'n2' }] }, {});
     const at = (id: string) => out.nodes.find((n) => n.id === id)!;
     expect(at('n0').x).toBeLessThan(at('n1').x);
     expect(at('n1').x).toBeLessThan(at('n2').x);

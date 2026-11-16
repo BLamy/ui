@@ -80,15 +80,14 @@ export function clearTextCache(): void {
 
 const PROBE = 'position:absolute;left:0;top:0;width:0;height:0;overflow:hidden;visibility:hidden;pointer-events:none;contain:layout style;';
 
-/**
- * Measures many runs in one go, so there's only one layout however many there are, and returns a measurer that knows
- * them. Measuring inside `host` gets `host`'s fonts. Without a document, it returns estimates.
- */
-export function measureText(runs: readonly TextRun[], host?: Element | null, maxWidth = DIAGRAM_TEXT_MAX_WIDTH): TextMeasurer {
-  if (typeof document === 'undefined') return (text, kind) => estimateText(text, kind, maxWidth);
-  // Nothing has a size in something that isn't drawn, a `display: none` tab say, so that measures in the page, and a caller
-  // that cares (`useShownVersion`) measures again once it's shown.
-  const parent = host && host.getClientRects().length ? host : document.body;
+/** One probe per place to measure in, which stays there. Putting one in and taking it out again each time changes what the
+ *  last child of that place is, and a `:last-child` rule anywhere in the page then restyles all of it: a whole diagram,
+ *  for every frame's worth of a large layout's measuring. */
+const probes = new WeakMap<Element, { probe: HTMLElement; rulers: Record<DiagramTextKind, HTMLElement> }>();
+
+function probeIn(parent: Element) {
+  const known = probes.get(parent);
+  if (known && known.probe.parentNode === parent) return known;
   const probe = document.createElement('div');
   probe.setAttribute('data-slot', 'diagram-measure');
   probe.setAttribute('aria-hidden', 'true');
@@ -103,6 +102,22 @@ export function measureText(runs: readonly TextRun[], host?: Element | null, max
     rulers[kind] = ruler;
   }
   parent.append(probe);
+  const made = { probe, rulers };
+  probes.set(parent, made);
+  return made;
+}
+
+/**
+ * Measures many runs in one go, so there's only one layout however many there are, and returns a measurer that knows
+ * them. Measuring inside `host` gets `host`'s fonts. Without a document, it returns estimates.
+ */
+export function measureText(runs: readonly TextRun[], host?: Element | null, maxWidth = DIAGRAM_TEXT_MAX_WIDTH): TextMeasurer {
+  if (typeof document === 'undefined') return (text, kind) => estimateText(text, kind, maxWidth);
+  // Nothing has a size in something that isn't drawn, a `display: none` tab say, so that measures in the page, and a caller
+  // that cares (`useShownVersion`) measures again once it's shown.
+  const parent = host && host.getClientRects().length ? host : document.body;
+  const { probe, rulers } = probeIn(parent);
+  const measuring: HTMLElement[] = [];
   try {
     const known = {} as Record<DiagramTextKind, Map<string, TextSize>>;
     for (const kind of Object.keys(rulers) as DiagramTextKind[]) {
@@ -125,6 +140,7 @@ export function measureText(runs: readonly TextRun[], host?: Element | null, max
         : `position:absolute;width:max-content;max-width:${maxWidth}px;white-space:normal;overflow-wrap:anywhere;`;
       el.textContent = run.text;
       probe.append(el);
+      measuring.push(el);
       pending.push({ run, el });
     }
     if (pending.length) {
@@ -137,12 +153,15 @@ export function measureText(runs: readonly TextRun[], host?: Element | null, max
     }
     return (text, kind) => known[kind].get(text) ?? estimateText(text, kind, maxWidth);
   } finally {
-    probe.remove();
+    for (const el of measuring) el.remove();
   }
 }
 
-/** How many runs to measure in one frame when there's no hurry. */
+/** Up to how many runs are measured straight away, in the same tick. */
 const GENTLE_CHUNK = 250;
+/** How long a frame's share of measuring should take, in ms. What a run costs depends on the machine and the page, so the
+ *  share's size follows what the last one took. */
+const GENTLE_BUDGET = 4;
 
 /**
  * Measures like `measureText`, a frame's worth at a time, so a large diagram doesn't stop the page: 5,000 labels in one go
@@ -150,10 +169,15 @@ const GENTLE_CHUNK = 250;
  * diagram goes straight through, in the same tick.
  */
 export async function measureTextGently(runs: readonly TextRun[], host?: Element | null, maxWidth = DIAGRAM_TEXT_MAX_WIDTH): Promise<TextMeasurer> {
-  if (runs.length > GENTLE_CHUNK) await nextFrame();
-  for (let i = 0; i + GENTLE_CHUNK < runs.length; i += GENTLE_CHUNK) {
+  if (runs.length <= GENTLE_CHUNK) return measureText(runs, host, maxWidth);
+  await nextFrame();
+  let size = 100;
+  for (let i = 0; i + size < runs.length; i += size) {
     // What this remembers is what the last call finds waiting for it.
-    measureText(runs.slice(i, i + GENTLE_CHUNK), host, maxWidth);
+    const started = performance.now();
+    measureText(runs.slice(i, i + size), host, maxWidth);
+    const took = performance.now() - started;
+    size = Math.max(25, Math.min(1000, Math.round((size * GENTLE_BUDGET) / Math.max(took, 0.5))));
     await nextFrame();
   }
   return measureText(runs, host, maxWidth);

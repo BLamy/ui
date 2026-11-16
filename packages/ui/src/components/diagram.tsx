@@ -172,6 +172,15 @@ const CURRENT_LEAF = 'bg-primary/15 [box-shadow:0_0_0_calc(2px/var(--diagram-z))
 const CURRENT_CONTAINER = '[box-shadow:0_0_0_calc(1.5px/var(--diagram-z))_var(--primary)]';
 const nodeRadius = (n: DiagramNode<any>) => (isContainer(n) ? 'rounded-card' : n.kind === 'initial' ? 'rounded-full' : 'rounded-ctl');
 
+/** The same node drawn the same, though it's a new object: new data from a layout or an owner's state is mostly what was
+ *  there, and redrawing thousands of nodes for it would take a frame of its own. */
+const sameNode = (a: DiagramNode<unknown>, b: DiagramNode<unknown>) => a === b || (
+  a.id === b.id && a.x === b.x && a.y === b.y && a.w === b.w && a.h === b.h && a.kind === b.kind && a.label === b.label
+  && a.detail === b.detail && a.parent === b.parent && a.data === b.data && a.ports === b.ports
+);
+const sameNodeView = (a: NodeViewProps, b: NodeViewProps) =>
+  a.selected === b.selected && a.selectable === b.selectable && a.current === b.current && a.label === b.label && a.renderNode === b.renderNode && sameNode(a.node, b.node);
+
 const NodeView = memo(function NodeView({ node, selected, selectable, current, label, renderNode }: NodeViewProps) {
   return (
     <div
@@ -192,11 +201,18 @@ const NodeView = memo(function NodeView({ node, selected, selectable, current, l
       {renderNode ? renderNode(node) : <DiagramNodeBody node={node} />}
     </div>
   );
-});
+}, sameNodeView);
 
 /* ── An edge ── */
 
-const EdgeView = memo(function EdgeView({ edge, d, arrow, selected, selectable, current, label }: { edge: DiagramEdge<unknown>; d: string; arrow: string; selected?: boolean; selectable?: boolean; current?: boolean; label: string }) {
+interface EdgeViewProps { edge: DiagramEdge<unknown>; d: string; arrow: string; selected?: boolean; selectable?: boolean; current?: boolean; label: string }
+
+/** An edge is drawn from its route, its kind and its name, which are all that's compared. */
+const sameEdgeView = (a: EdgeViewProps, b: EdgeViewProps) =>
+  a.d === b.d && a.arrow === b.arrow && a.selected === b.selected && a.selectable === b.selectable && a.current === b.current && a.label === b.label
+  && a.edge.id === b.edge.id && a.edge.kind === b.edge.kind;
+
+const EdgeView = memo(function EdgeView({ edge, d, arrow, selected, selectable, current, label }: EdgeViewProps) {
   const look = edgeLook(edge.kind);
   return (
     <path
@@ -215,7 +231,10 @@ const EdgeView = memo(function EdgeView({ edge, d, arrow, selected, selectable, 
       className={edgeClass(`${look}:${selected ? '1' : ''}:${current ? '1' : ''}`)}
     />
   );
-});
+}, sameEdgeView);
+
+const sameEdgeLabel = (a: { edge: DiagramEdge<unknown>; box: Rect }, b: { edge: DiagramEdge<unknown>; box: Rect }) =>
+  a.edge.id === b.edge.id && a.edge.label === b.edge.label && a.box.x === b.box.x && a.box.y === b.box.y;
 
 const EdgeLabel = memo(function EdgeLabel({ edge, box }: { edge: DiagramEdge<unknown>; box: Rect }) {
   return (
@@ -230,7 +249,7 @@ const EdgeLabel = memo(function EdgeLabel({ edge, box }: { edge: DiagramEdge<unk
       {edge.label}
     </div>
   );
-});
+}, sameEdgeLabel);
 
 /** An arrowhead as a marker: its size goes by the line's thickness, so it's 7 px on screen from 100% up. Below that it
  *  shrinks with the board, down to 40%, so arrows don't outgrow the nodes they point at. */
@@ -921,6 +940,10 @@ export function Diagram<N = unknown, E = unknown>({
     '. Plus and minus zoom, Command+0 fits.',
   ].join('');
 
+  const onBoard = (el: EventTarget | null) => {
+    const board = ref.current?.querySelector('[data-slot=canvas]');
+    return !!board && el instanceof Node && board.contains(el);
+  };
   const root = usePart(handle, 'root', {}, {
     ref: rootRef,
     'aria-label': ariaLabel,
@@ -929,8 +952,9 @@ export function Diagram<N = unknown, E = unknown>({
     // Holding Space to pan drops a drag in progress, the same as a pinch does. It's the canvas's key, so it isn't handed on.
     onKeyDownCapture: (e: ReactKeyboardEvent) => { if (e.key === ' ') cancel(); },
     onLostPointerCapture: cancel,
-    onFocus: () => { focusWithin.current = true; },
-    onBlur: (e: ReactFocusEvent) => { if (!e.relatedTarget || !ref.current?.contains(e.relatedTarget as Node)) { focusWithin.current = false; setRingOn(null); } },
+    // What the keys go to is the board's: focus on the toolbar or a field in the overlay has left it, ring and all.
+    onFocus: (e: ReactFocusEvent) => { focusWithin.current = onBoard(e.target); },
+    onBlur: (e: ReactFocusEvent) => { if (!onBoard(e.relatedTarget)) { focusWithin.current = false; setRingOn(null); } },
     children: (
       <DiagramContext.Provider value={context}>
         <Canvas
@@ -943,6 +967,8 @@ export function Diagram<N = unknown, E = unknown>({
           controller={canvas}
           fit={laid.bounds}
           fitPadding={fitPadding}
+          // A zoom that changes every frame would restyle every node under it: the parts that use it get it in steps.
+          zoomVariable={false}
           background={background}
           panning={panning}
           autoFocus={autoFocus}
@@ -963,10 +989,12 @@ export function Diagram<N = unknown, E = unknown>({
             {rings.length ? <div data-slot="diagram-rings" className="absolute top-0 left-0" style={{ '--diagram-z': lineZoom } as CSSProperties}>{rings}</div> : null}
           </div>
           {portDots}
-          {guides.length ? <CanvasGuides guides={guides} /> : null}
-          {marquee ? <CanvasMarquee rect={marquee} /> : null}
           {connection}
-          {children}
+          <div data-part="board-parts" className="absolute top-0 left-0" style={{ '--canvas-zoom': lineZoom } as CSSProperties}>
+            {guides.length ? <CanvasGuides guides={guides} /> : null}
+            {marquee ? <CanvasMarquee rect={marquee} /> : null}
+            {children}
+          </div>
         </Canvas>
         {/* Over the board, and outside it: its keys (Space, the zoom keys) aren't a button's or a field's. */}
         <div data-slot="diagram-overlay" className="pointer-events-none absolute inset-0 z-10 *:pointer-events-auto">

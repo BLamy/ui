@@ -19,7 +19,9 @@
   --gb-panel: var(--card, #ffffff);
   --gb-panel-foreground: var(--card-foreground, #18181b);
   --gb-muted: var(--muted, #f4f4f5);
-  --gb-muted-foreground: var(--muted-foreground, #71717a);
+  /* Secondary text (labels, captions, notes, statuses) is small, so it must read at 4.5:1: the host's muted color,
+     pulled a quarter of the way toward the panel's text color (an iOS-style translucent muted is about 3.5:1). */
+  --gb-muted-foreground: color-mix(in srgb, var(--muted-foreground, #71717a) 75%, var(--gb-panel-foreground));
   --gb-border: var(--border, #e4e4e7);
   --gb-accent: var(--accent, #f4f4f5);
   --gb-accent-foreground: var(--accent-foreground, #18181b);
@@ -175,7 +177,8 @@
   text-decoration: underline;
 }
 
-:is([data-docstream], .docs-article) code {
+/* Not the library's CodeEditor (a host's renderCode draws fences with it): its code element brings its own box. */
+:is([data-docstream], .docs-article) code:where(:not(.bl-syntax-code)) {
   background: var(--gb-muted);
   border-radius: 4px;
   padding: 0.15em 0.35em;
@@ -806,9 +809,11 @@ summary:is(.docs-expandable-trigger, .oas-response-trigger)::-webkit-details-mar
   --docstream-tui-panel: var(--gb-panel, var(--card, Canvas));
   --docstream-tui-panel-fg: var(--gb-panel-foreground, var(--card-foreground, CanvasText));
   --docstream-tui-muted: var(--gb-muted, var(--muted, rgba(128, 128, 128, 0.08)));
-  --docstream-tui-muted-fg: var(--gb-muted-foreground, var(--muted-foreground, color-mix(in srgb, currentColor 62%, transparent)));
+  --docstream-tui-muted-fg: var(--gb-muted-foreground, color-mix(in srgb, var(--muted-foreground, color-mix(in srgb, currentColor 62%, transparent)) 75%, var(--docstream-tui-panel-fg)));
   --docstream-tui-primary: var(--gb-primary, var(--primary, #4f46e5));
   --docstream-tui-primary-fg: var(--gb-primary-foreground, var(--primary-foreground, #fafafa));
+  /* The Run button's fill: the primary deepened until its label reads at 4.5:1 (a system blue with white is ~3.6:1). */
+  --docstream-tui-primary-fill: color-mix(in oklab, var(--docstream-tui-primary) 82%, black);
   --docstream-tui-ring: var(--ring, var(--gb-primary, #6366f1));
   --docstream-tui-danger: var(--gb-danger, var(--destructive, #dc2626));
   --docstream-tui-mono: var(--font-mono, ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace);
@@ -860,7 +865,7 @@ summary:is(.docs-expandable-trigger, .oas-response-trigger)::-webkit-details-mar
 
 .docstream-tui__button[data-variant="primary"] {
   border-color: transparent;
-  background: var(--docstream-tui-primary);
+  background: var(--docstream-tui-primary-fill);
   color: var(--docstream-tui-primary-fg);
 }
 
@@ -869,7 +874,7 @@ summary:is(.docs-expandable-trigger, .oas-response-trigger)::-webkit-details-mar
 }
 
 .docstream-tui__button[data-variant="primary"]:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--docstream-tui-primary) 88%, var(--docstream-tui-panel-fg));
+  background: color-mix(in oklab, var(--docstream-tui-primary-fill) 88%, black);
 }
 
 .docstream-tui__button:active:not(:disabled) {
@@ -1876,16 +1881,17 @@ details[open] > .docstream-tui__source-trigger .docstream-tui__caret {
   display: block;
 }
 
-/* Syntax tokens (HighlightedCode). Palenight on dark color-schemes, same-hue AA colors on light ones.
-   Override any --docs-tok-* property to retheme. */
-.docs-tok-keyword { color: var(--docs-tok-keyword, light-dark(#8839C4, #C792EA)); }
-.docs-tok-type { color: var(--docs-tok-type, light-dark(#A15C00, #FFCB6B)); }
-.docs-tok-function { color: var(--docs-tok-function, light-dark(#2F5BD3, #82AAFF)); }
-.docs-tok-string { color: var(--docs-tok-string, light-dark(#23803A, #A5D6A7)); }
-.docs-tok-number { color: var(--docs-tok-number, light-dark(#C2410C, #F78C6C)); }
-.docs-tok-constant { color: var(--docs-tok-constant, light-dark(#C8283F, #F07178)); }
-.docs-tok-operator { color: var(--docs-tok-operator, light-dark(#0B7285, #89DDFF)); }
-.docs-tok-comment { color: var(--docs-tok-comment, light-dark(#6E6E7A, #8A8A98)); font-style: italic; }
+/* Syntax tokens (HighlightedCode). The kit's one syntax palette: each color reads --docs-tok-*, then CodeEditor's
+   --bl-syntax-*, then the defaults (Palenight on dark color-schemes, same-hue colors on light ones), every one AA
+   (4.5:1) on the code surfaces of its scheme, tinted lines included. Override either property to retheme. */
+.docs-tok-keyword { color: var(--docs-tok-keyword, var(--bl-syntax-keyword, light-dark(#8839C4, #C792EA))); }
+.docs-tok-type { color: var(--docs-tok-type, var(--bl-syntax-type, light-dark(#975300, #FFCB6B))); }
+.docs-tok-function { color: var(--docs-tok-function, var(--bl-syntax-function, light-dark(#2E5AD2, #82AAFF))); }
+.docs-tok-string { color: var(--docs-tok-string, var(--bl-syntax-string, light-dark(#0F732E, #A5D6A7))); }
+.docs-tok-number { color: var(--docs-tok-number, var(--bl-syntax-number, light-dark(#B73600, #F78C6C))); }
+.docs-tok-constant { color: var(--docs-tok-constant, var(--bl-syntax-constant, light-dark(#C11F39, #F07178))); }
+.docs-tok-operator { color: var(--docs-tok-operator, var(--bl-syntax-operator, light-dark(#006D80, #89DDFF))); }
+.docs-tok-comment { color: var(--docs-tok-comment, var(--bl-syntax-comment, light-dark(#63636E, #9393A1))); font-style: italic; }
 
 .docs-code-line {
   display: flex;

@@ -142,7 +142,9 @@ describe("TuiPreview and StlViewer chrome take the page's tokens", () => {
     const button = block(".docstream-tui__button")
     expect(button).toContain("appearance: none;")
     expect(button).toContain("border: 1px solid var(--docstream-tui-line);")
-    expect(block('.docstream-tui__button[data-variant="primary"]')).toContain("background: var(--docstream-tui-primary);")
+    // The Run button's fill is the primary deepened until its label reads at 4.5:1 (white on a system blue is ~3.6:1).
+    expect(block('.docstream-tui__button[data-variant="primary"]')).toContain("background: var(--docstream-tui-primary-fill);")
+    expect(block(".docstream-tui")).toContain("--docstream-tui-primary-fill: color-mix(in oklab, var(--docstream-tui-primary) 82%, black);")
     expect(block(".docstream-tui__button:focus-visible,\n.docstream-tui__source-trigger:focus-visible")).toContain("outline: 2px solid var(--docstream-tui-ring);")
     expect(block(".docstream-tui__source-trigger::-webkit-details-marker")).toContain("display: none;")
   })
@@ -216,5 +218,53 @@ describe("2.0.1 touch targets, focus ring and the replay play disc", () => {
     expect(css).toContain("color: var(--replay-play-foreground, light-dark(#18181b, #ffffff));")
     expect(css).toContain("background: var(--replay-play-background, light-dark(rgba(255, 255, 255, 0.9), rgba(9, 9, 11, 0.72)));")
     expect(css).not.toContain("var(--foreground")
+  })
+})
+
+describe("secondary text and code colors read at 4.5:1", () => {
+  it("docstream's muted text pulls the host's muted color toward the text color", () => {
+    expect(styles).toContain("--gb-muted-foreground: color-mix(in srgb, var(--muted-foreground, #71717a) 75%, var(--gb-panel-foreground));")
+  })
+
+  it("syntax tokens read --docs-tok-*, then CodeEditor's --bl-syntax-*, then the shared AA defaults", () => {
+    for (const [kind, light, dark] of [
+      ["keyword", "#8839C4", "#C792EA"], ["type", "#975300", "#FFCB6B"], ["function", "#2E5AD2", "#82AAFF"], ["string", "#0F732E", "#A5D6A7"],
+      ["number", "#B73600", "#F78C6C"], ["constant", "#C11F39", "#F07178"], ["operator", "#006D80", "#89DDFF"], ["comment", "#63636E", "#9393A1"],
+    ]) {
+      expect(styles).toContain(`.docs-tok-${kind} { color: var(--docs-tok-${kind}, var(--bl-syntax-${kind}, light-dark(${light}, ${dark})));`)
+    }
+  })
+})
+
+describe("one syntax palette, AA in both schemes", () => {
+  const kit = readFileSync(new URL("../../styles.css", import.meta.url), "utf8")
+  const editor = readFileSync(new URL("../../docstream-editor/styles.css", import.meta.url), "utf8")
+  const KINDS = ["keyword", "type", "function", "string", "number", "constant", "operator", "comment"]
+  const pair = (sheet: string, re: (kind: string) => RegExp, kind: string) => {
+    const m = re(kind).exec(sheet)
+    expect(m, kind).not.toBeNull()
+    return [m![1]!.toUpperCase(), m![2]!.toUpperCase()]
+  }
+  const ours = (kind: string) => pair(styles, (k) => new RegExp(`\\.docs-tok-${k} \\{[^}]*light-dark\\((#\\w{6}), (#\\w{6})\\)`), kind)
+  const lum = (hex: string) => {
+    const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255).map((v) => (v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4))
+    return 0.2126 * r! + 0.7152 * g! + 0.0722 * b!
+  }
+  const ratio = (a: string, b: string) => (Math.max(lum(a), lum(b)) + 0.05) / (Math.min(lum(a), lum(b)) + 0.05)
+
+  it("CodeEditor (--bl-syntax-*), docstream (--docs-tok-*) and the editor draw the same colors", () => {
+    for (const kind of KINDS) {
+      expect(pair(kit, (k) => new RegExp(`\\.bl-tok-${k}\\{[^}]*light-dark\\((#\\w{6}),(#\\w{6})\\)`), kind), kind).toEqual(ours(kind))
+      expect(pair(editor, (k) => new RegExp(`\\.gb-syntax-${k} \\{[^}]*light-dark\\((#\\w{6}), (#\\w{6})\\)`), kind), kind).toEqual(ours(kind))
+    }
+  })
+
+  // The code surfaces each scheme draws tokens on: cards, fences and inline code, a highlighted or changed line.
+  const LIGHT = ["#FFFFFF", "#EEEEEE", "#F2F2F7", "#E5E5EA", "#E2E2E8", "#DFEFFF", "#FFE9E8"]
+  const DARK = ["#000000", "#1C1C1E", "#1E1E22", "#272729", "#2C2C2E"]
+  it.each(KINDS)("%s reads at 4.5:1 on every code surface", (kind) => {
+    const [light, dark] = ours(kind)
+    for (const bg of LIGHT) expect(ratio(light!, bg), `${kind} ${light} on ${bg}`).toBeGreaterThanOrEqual(4.5)
+    for (const bg of DARK) expect(ratio(dark!, bg), `${kind} ${dark} on ${bg}`).toBeGreaterThanOrEqual(4.5)
   })
 })

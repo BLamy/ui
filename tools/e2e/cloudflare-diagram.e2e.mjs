@@ -1,7 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-/* CloudflareDiagram, through its docs demos, with real input. Not run in the 6.0 integration wave (no Playwright there):
-   updated to the 6.0 parts and attributes by reading, so run it before trusting it. */
+/* CloudflareDiagram, through its docs demos, with real input. */
 
 const panel = (page) => page.locator('[data-slot=cloudflare-panel]');
 const service = (page, id) => page.locator(`[data-slot=diagram-node][data-node="${id}"]`);
@@ -10,6 +9,8 @@ const port = async (page, node, name) => {
   return { x: b.x + b.width / 2, y: b.y + b.height / 2 };
 };
 const edges = (page) => page.locator('[data-demo-edges]').getAttribute('data-demo-edges');
+/** The catalog search: its combobox, by name (the Combobox also renders a hidden form input). */
+const catalogSearch = (page) => page.getByRole('combobox', { name: 'Search Cloudflare’s services' });
 const open = async (page, demo) => {
   await page.goto(`/?demo=cloudflare-diagram/${demo}&theme=light`, { waitUntil: 'load' });
   await page.locator('[data-slot=cloudflare-service]').first().waitFor({ timeout: 30_000 });
@@ -123,7 +124,7 @@ test.describe('connecting', () => {
     const lines = page.locator('[data-slot=diagram-edge]');
     expect(new Set(await lines.evaluateAll((els) => els.map((el) => el.getAttribute('d')))).size).toBe(1);
     const name = page.locator('[data-field="binding-name"]');
-    const selectedEdges = () => page.locator('[data-slot=diagram-edge][data-selected=true]').evaluateAll((els) => els.map((el) => el.getAttribute('data-edge')));
+    const selectedEdges = () => page.locator('[data-slot=diagram-edge][data-selected]').evaluateAll((els) => els.map((el) => el.getAttribute('data-edge')));
     // Pressing the same place on the line goes to each in turn, and back round.
     const ids = await lines.evaluateAll((els) => els.map((el) => el.getAttribute('data-edge')));
     const seen = [];
@@ -296,9 +297,9 @@ test.describe('only to read', () => {
     await page.mouse.click(box.x + box.width / 2, box.y + 10);
     await expect(panel(page).locator('[data-action=remove-machine]')).toHaveCount(0);
     await panel(page).locator('[data-action=open-machine]').click();
-    await expect(page.locator('[data-slot=state-diagram] [data-slot=diagram-node][data-node="room.empty"]')).toHaveCount(1);
-    await expect(page.locator('[data-slot=edit-add-state]')).toHaveCount(0);
-    await expect(page.locator('[data-slot=simulation-event]').first()).toBeVisible();
+    await expect(page.locator('[data-state-diagram] [data-slot=diagram-node][data-node="room.empty"]')).toHaveCount(1);
+    await expect(page.locator('[data-action=add-state]')).toHaveCount(0);
+    await expect(page.locator('[data-action=send]').first()).toBeVisible();
     await page.locator('[data-action=machine-back]').click();
     await expect(panel(page).locator('[data-action=open-machine]')).toBeFocused();
     // Nothing that doesn't have one offers one.
@@ -319,7 +320,7 @@ test.describe('a system', () => {
   test.beforeEach(async ({ page }) => { await open(page, 'system'); });
 
   test('a search of the catalog adds a service', async ({ page }) => {
-    const search = page.locator('[data-slot=cloudflare-search] input');
+    const search = catalogSearch(page);
     await search.fill('zzzzzz');
     await expect(page.getByText('Nothing matches')).toBeVisible();
     await search.fill('kv');
@@ -357,7 +358,7 @@ test.describe('a system', () => {
     await page.mouse.move(board.x + board.width - 20, board.y + 200, { steps: 6 });
     await page.mouse.up();
     await page.keyboard.up('Space');
-    const search = page.locator('[data-slot=cloudflare-search] input');
+    const search = catalogSearch(page);
     await search.fill('d1');
     await search.press('Enter');
     await expect(service(page, 'd1')).toHaveCount(1);
@@ -456,23 +457,23 @@ test.describe('a system', () => {
     await press(page, 'room');
     await expect(panel(page).locator('[data-slot=cloudflare-machine-receives]')).toHaveText('Receives: FILE_READY, VIEWER_JOINED, VIEWER_LEFT');
     await panel(page).locator('[data-action=open-machine]').click();
-    await expect(page.locator('[data-slot=state-diagram]')).toBeVisible();
-    await expect(page.locator('[data-slot=state-diagram] [data-slot=diagram-node][data-node="room.empty"]')).toHaveCount(1);
+    await expect(page.locator('[data-state-diagram]')).toBeVisible();
+    await expect(page.locator('[data-state-diagram] [data-slot=diagram-node][data-node="room.empty"]')).toHaveCount(1);
     await expect(page.locator('[data-action=machine-back]')).toBeFocused();
     await expect(page.locator('[data-slot=cloudflare-machine-bar]')).toContainText('Room’s machine');
     // The board and its panel are out of reach underneath, and as they were.
     await expect(page.locator('[data-cloudflare-diagram] > [inert] [data-slot=diagram-node][data-node=room]')).toHaveCount(1);
     await expect(page.locator('[data-cloudflare-diagram] > [inert] [data-action=open-machine]')).toHaveCount(1);
     // Renaming the event that's sent there means nothing receives it now.
-    await page.locator('[data-slot=state-diagram] [data-slot=diagram-edge-label]', { hasText: 'FILE_READY' }).first().waitFor();
-    const line = page.locator('[data-slot=state-diagram] [data-slot=diagram-edge][data-edge*="FILE_READY"]');
+    await page.locator('[data-state-diagram] [data-slot=diagram-edge-label]', { hasText: 'FILE_READY' }).first().waitFor();
+    const line = page.locator('[data-state-diagram] [data-slot=diagram-edge][data-edge*="FILE_READY"]');
     await pressOnEdge(page, await line.getAttribute('data-edge'));
-    const name = page.locator('[data-slot=edit-event] input');
+    const name = page.locator('input[data-field=event]');
     await name.fill('RENAMED');
     await name.press('Enter');
     await expect.poll(async () => JSON.stringify((await json(page)).services.find((s) => s.id === 'room').machine)).toContain('RENAMED');
     await page.locator('[data-action=machine-back]').click();
-    await expect(page.locator('[data-slot=state-diagram]')).toHaveCount(0);
+    await expect(page.locator('[data-state-diagram]')).toHaveCount(0);
     await expect(panel(page).locator('[data-action=open-machine]')).toBeFocused();
     await expect.poll(() => issueCodes(page)).toEqual(['event-not-received']);
     await expect(panel(page).locator('[data-slot=cloudflare-machine-receives]')).toContainText('RENAMED');
@@ -487,7 +488,7 @@ test.describe('a system', () => {
     await expect(panel(page).locator('[data-action=add-machine]')).toHaveCount(0);
     await press(page, 'consumer');
     await panel(page).locator('[data-action=add-machine]').click();
-    await expect(page.locator('[data-slot=state-diagram] [data-slot=diagram-node][data-node="consumer.idle"]')).toHaveCount(1);
+    await expect(page.locator('[data-state-diagram] [data-slot=diagram-node][data-node="consumer.idle"]')).toHaveCount(1);
     await page.locator('[data-action=machine-back]').click();
     await expect(service(page, 'consumer').locator('[data-part=machine]')).toHaveCount(1);
     await panel(page).locator('[data-action=remove-machine]').click();
@@ -562,7 +563,7 @@ test.describe('a system', () => {
     // A machine that won't draw says why, on the service, and when it's opened.
     await expect(panel(page).locator('[data-slot=cloudflare-machine-problem]')).toContainText('nowhere');
     await panel(page).locator('[data-action=open-machine]').click();
-    await expect(page.locator('[data-slot=state-diagram]')).toContainText('nowhere');
+    await expect(page.locator('[data-state-diagram]')).toContainText('nowhere');
     await page.locator('[data-action=machine-back]').click();
     await expect(service(page, 'broken')).toHaveCount(1);
     // What can't be drawn isn't the board's to lose, carrying events or not.
@@ -601,9 +602,9 @@ test.describe('a system', () => {
       await expect(service(page, 'w')).toHaveCount(1);
       await press(page, 'm');
       await panel(page).locator('[data-action=open-machine]').click();
-      await expect(page.locator('[data-slot=state-diagram]'), JSON.stringify(machine)).toBeVisible();
+      await expect(page.locator('[data-state-diagram]'), JSON.stringify(machine)).toBeVisible();
       await page.locator('[data-action=machine-back]').click();
-      await expect(page.locator('[data-slot=state-diagram]'), JSON.stringify(machine)).toHaveCount(0);
+      await expect(page.locator('[data-state-diagram]'), JSON.stringify(machine)).toHaveCount(0);
       await expect(service(page, 'm'), JSON.stringify(machine)).toHaveCount(1);
     }
     expect(errors).toEqual([]);
@@ -633,7 +634,7 @@ test.describe('a system', () => {
     };
     await press2('Admin', 'room');
     await side('Admin').locator('[data-action=open-machine]').click();
-    await side('Admin').locator('[data-slot=edit-add-state]').click();
+    await side('Admin').locator('[data-action=add-state]').click();
     await expect(page.locator('[data-demo-shared]')).toHaveAttribute('data-demo-shared', 'room:differs');
     await side('Admin').locator('[data-action=machine-back]').click();
     // Taking it out of one leaves the other, and only the one that lost it is wrong.
@@ -689,7 +690,7 @@ test.describe('a system and wrangler.jsonc', () => {
   });
 
   test('something new on the board goes in the file, and reading it back is the same', async ({ page }) => {
-    const search = page.locator('[data-slot=cloudflare-search] input');
+    const search = catalogSearch(page);
     await search.fill('d1');
     await search.press('Enter');
     await expect(service(page, 'd1')).toHaveCount(1);
@@ -735,16 +736,17 @@ test.describe('a system, at a phone’s size', () => {
     // Select it on the board, then open the panel: at a phone's size it's a page pushed over the board.
     const box = await service(page, 'room').boundingBox();
     await page.mouse.click(box.x + box.width / 2, box.y + 5);
-    await page.locator('[data-slot=diagram-frame-trigger]').click();
+    await page.locator('[data-diagram-frame-trigger]').click();
     await expect(page.locator('[data-slot=diagram-frame][data-presentation=push] [data-slot=cloudflare-panel]')).toBeVisible();
     await page.locator('[data-action=open-machine]').click();
-    await expect(page.locator('[data-slot=state-diagram]')).toBeVisible();
+    await expect(page.locator('[data-state-diagram]')).toBeVisible();
     await expect(page.locator('[data-action=machine-back]')).toBeFocused();
-    // The board and the panel are inert under the cover.
-    await expect(page.locator('[data-slot=diagram-frame-board]')).toHaveAttribute('inert', '');
+    // The board and the panel are inert under the cover (the machine's StateDiagram is a frame with a board of its own).
+    await expect(page.locator('[data-cloudflare-diagram] > [data-slot=diagram-frame-board]')).toHaveAttribute('inert', '');
+    await expect(page.locator('[data-cloudflare-diagram] > [inert] [data-slot=cloudflare-panel]')).toHaveCount(1);
     await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
     await page.locator('[data-action=machine-back]').click();
-    await expect(page.locator('[data-slot=state-diagram]')).toHaveCount(0);
+    await expect(page.locator('[data-state-diagram]')).toHaveCount(0);
     await expect(page.locator('[data-action=open-machine]')).toBeFocused();
     await expect.poll(() => page.evaluate(() => document.activeElement?.tagName)).not.toBe('BODY');
   });
@@ -761,11 +763,11 @@ test.describe('at a phone’s size', () => {
     await connect(page, 'worker', 'env', 'r2', 'binding:r2_buckets');
     await expect.poll(() => edges(page)).toContain('worker>r2');
     // The new connection's selected: the panel says what's on offer across it, and its back button returns to the board.
-    await page.locator('[data-slot=diagram-frame-trigger]').click();
+    await page.locator('[data-diagram-frame-trigger]').click();
     await expect(page.locator('[data-slot=cloudflare-panel] [data-operation]')).toHaveCount(7);
     await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
     await page.getByRole('button', { name: 'Board' }).click();
-    await expect(page.locator('[data-slot=diagram-frame-trigger]')).toBeFocused();
+    await expect(page.locator('[data-diagram-frame-trigger]')).toBeFocused();
   });
 });
 
@@ -798,10 +800,15 @@ test.describe('a workerd config', () => {
     await expect(cards.nth(1)).toHaveAttribute('aria-label', 'event-log.capnp');
     await expect.poll(() => nodesIn(cards.nth(1)), { timeout: 30_000 }).toEqual(['main', 'main.ProofAccount']);
     await expect(cards.nth(1).locator('[data-docstream-capnp-notes]')).toContainText('listens on 127.0.0.1:19610 for main');
-    // The source is a press away, and back.
-    await cards.nth(0).locator('.docs-capnp-toggle').click();
-    await expect(cards.nth(0).locator('.docs-capnp-source')).toContainText('durableObjectNamespace');
-    await cards.nth(0).locator('.docs-capnp-toggle').click();
+    // The source is a press away, under the board (which stays), and back.
+    const source = cards.nth(0).locator('.docs-capnp-source-body');
+    await expect(source).toBeHidden();
+    await cards.nth(0).locator('.docs-capnp-source-trigger').click();
+    await expect(source).toBeVisible();
+    await expect(source).toContainText('durableObjectNamespace');
+    expect(await nodesIn(cards.nth(0))).toEqual(['kv:cache', 'main', 'main.Room']);
+    await cards.nth(0).locator('.docs-capnp-source-trigger').click();
+    await expect(source).toBeHidden();
     await expect.poll(() => nodesIn(cards.nth(0))).toEqual(['kv:cache', 'main', 'main.Room']);
   });
 });

@@ -2,8 +2,10 @@ import { StrictMode, useSyncExternalStore } from 'react';
 import { createRoot } from 'react-dom/client';
 import { DemoFullscreen, demoFromSearch } from '@brett_lamy/ui/docstream';
 import { DocsSite, humanize, type BuildDocsTreeOptions } from '@brett_lamy/ui/docstream/site';
+// The library's stylesheet first (as the installation page tells an app to; it carries the editor's sheet, layered, so
+// that isn't imported again), then docstream's: the kit's parts docstream draws (a workerd config's CloudflareDiagram) need it.
+import '@brett_lamy/ui/styles.css';
 import '@brett_lamy/ui/docstream/styles.css';
-import '@brett_lamy/ui/docstream-editor/styles.css';
 import './site.css';
 import { demoResolver } from './demos';
 import { liveRenderer } from './live-renderer';

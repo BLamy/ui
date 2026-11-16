@@ -15,9 +15,11 @@ app, and the app's own bundler tree-shakes. The full explanation, with examples,
 - **Blocks** are `blocks/<slug>/` (e.g. `github-clone`, `discord-clone`, `t3-clone`, `map-chat`). Each has `meta.json`
   (`{ name, title, description, categories, files, dependencies? }`, see `blocks/types.ts`) and a `page.tsx` whose default export
   is the whole block. A block imports only `react`, `@/components/ui/*`, `@/lib/*`, its own files and the npm packages in
-  `meta.json`'s `dependencies` (the build fails otherwise). Files are installed together into `components/blocks/<slug>/`.
-  Blocks may own complex, product-specific components (for example `t3-clone/components/workbench/*`). An optional
-  `<slug>.stories.tsx` is picked up by Storybook (not listed in `files`). Add the block to the docs Blocks page with a
+  `meta.json`'s `dependencies` (the build fails otherwise). Never the library's parts from `@brett_lamy/ui`; the one
+  exception is docstream, which the registry doesn't copy: a block that uses it imports `@brett_lamy/ui/docstream/<entry>`
+  (or `@brett_lamy/ui/docstream-editor/<entry>`) by name and lists `@brett_lamy/ui` in `dependencies`. Files are installed
+  together into `components/blocks/<slug>/`. Blocks may own complex, product-specific components (for example
+  `t3-clone/components/workbench/*`). An optional `<slug>.stories.tsx` is picked up by Storybook (not listed in `files`). Add the block to the docs Blocks page with a
   `{% demo src="blocks/<slug>" layout="multi" %}` line in `apps/docs/pages/blocks.md` (pages-md fails until you do).
 - **`bl-ui`** (`registry:style`) is generated from `packages/ui/src/tokens.css` (the `@theme inline` variables) and `styles.css`.
   It adds no npm dependency on `@brett_lamy/ui`. **`bl-theme`** (`registry:theme`, opt-in) is generated from `theme.css`: the iOS
@@ -32,8 +34,8 @@ app, and the app's own bundler tree-shakes. The full explanation, with examples,
   `nx run @brett_lamy/registry:registry`).
 - `node tools/registry/build.mjs --static --url http://localhost:4501/r --out /tmp/reg-root/r` — a static registry for another
   host, for testing `npx shadcn add http://localhost:4501/r/<item>.json` locally (`cd /tmp/reg-root && python3 -m http.server 4501`).
-- `node tools/registry/build.mjs --check` — fail if the committed files are stale, or a manifest exports a name the npm barrel
-  (`packages/ui/src/index.ts`) does not (CI).
+- `node tools/registry/build.mjs --check` — fail if the committed files are stale, or a manifest exports a name that neither the
+  npm barrel (`packages/ui/src/index.ts`) nor the module's own entry does (CI).
 
 ## The npm package
 

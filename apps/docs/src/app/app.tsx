@@ -40,6 +40,9 @@ function followSiteLinks(e: MouseEvent) {
   window.location.hash = href.slice(SITE_URL.length + 1);
 }
 
+/** A page in the wide layout: `layout: wide` added to its frontmatter (a block page's carries its `env`). */
+const wide = (source: string) => (source.startsWith('---\n') ? `---\nlayout: wide\n${source.slice(4)}` : `---\nlayout: wide\n---\n\n${source}`);
+
 /** The docs as DocsSite's virtual file system: a SUMMARY.md for the sidebar, one file per page. */
 function docsFiles(): Record<string, string> {
   const files: Record<string, string> = {};
@@ -55,16 +58,16 @@ function docsFiles(): Record<string, string> {
   // Pages outside the components list: the block shells (listed under Blocks below) and any pointer an old name leaves.
   for (const p of NAV.standalone) if (p.id !== SITE_BLOCKS) files[`${p.id}.md`] = pageSource(p.id);
   // Blocks: the overview, then one wide page per block.
-  summary.push('## Blocks', '', `* [Overview](${SITE_BLOCKS}/README.md)`);
+  const overview = NAV.standalone.find((p) => p.id === SITE_BLOCKS);
+  summary.push('## Blocks', '', `* [${overview?.title ?? 'Overview'}](${SITE_BLOCKS}/README.md)`);
   // The shells some blocks are built from, documented like components (ChatShell, WorkbenchShell): nav.json lists them
   // as standalone pages of the Blocks section, so they sit with the blocks rather than among the library's components.
   for (const p of NAV.standalone) if (p.section === 'Blocks' && p.id !== SITE_BLOCKS) summary.push(`* [${p.title}](${p.id}.md)`);
-  files[`${SITE_BLOCKS}/README.md`] = `---\nlayout: wide\n---\n\n${pageSource(SITE_BLOCKS)}`;
+  files[`${SITE_BLOCKS}/README.md`] = wide(pageSource(SITE_BLOCKS));
   for (const b of BLOCK_PAGES) {
     const file = `${b.id}.md`;
     summary.push(`* [${b.title}](${file})`);
-    const env = b.env?.length ? `env: [${b.env.join(', ')}]\n` : '';
-    files[file] = `---\nlayout: wide\n${env}---\n\n${pageSource(b.id)}`;
+    files[file] = wide(pageSource(b.id));
   }
   files['SUMMARY.md'] = summary.join('\n') + '\n';
   return files;

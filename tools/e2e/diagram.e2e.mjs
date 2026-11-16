@@ -251,7 +251,7 @@ test.describe('editing', () => {
     const a = await nodeBox(page, 'a'), b = await nodeBox(page, 'b');
     await page.mouse.click(a.x, a.y);
     expect(await selected(page)).toBe('a');
-    await expect(page.locator('[data-node=a]')).toHaveAttribute('data-selected', 'true');
+    await expect(page.locator('[data-node=a]')).toHaveAttribute('data-selected', '');
     await page.keyboard.down('Shift');
     await page.mouse.click(b.x, b.y);
     await page.keyboard.up('Shift');
@@ -267,7 +267,7 @@ test.describe('editing', () => {
     const line = await page.locator('[data-slot=diagram-edge][data-edge=bc]').boundingBox();
     await page.mouse.click(line.x + line.width / 2, line.y + line.height / 2);
     expect(await selected(page)).toBe('bc');
-    await expect(page.locator('[data-slot=diagram-edge][data-edge=bc]')).toHaveAttribute('data-selected', 'true');
+    await expect(page.locator('[data-slot=diagram-edge][data-edge=bc]')).toHaveAttribute('data-selected', '');
     const label = await page.locator('[data-slot=diagram-edge-label][data-edge=ab]').boundingBox();
     await page.mouse.click(label.x + label.width / 2, label.y + label.height / 2);
     expect(await selected(page)).toBe('ab');
@@ -736,10 +736,13 @@ test.describe('the keyboard', () => {
     await page.goto('/?demo=diagram/machine&theme=light', { waitUntil: 'load' });
     await page.locator('[data-slot=diagram-node]').first().waitFor({ timeout: 30_000 });
     await page.locator('[data-slot=canvas]').focus();
+    // `upload` is the machine's root, the background: the first thing to reach is its initial marker.
     await press(page, 'Home');
-    expect(await focused(page)).toBe('node:upload');
+    expect(await focused(page)).toBe('node:upload.__initial');
+    await press(page, 'PageDown');
+    expect(await focused(page)).toBe('node:upload.worker');
     await press(page, 'Alt+ArrowDown');
-    expect(await focused(page)).toMatch(/^node:upload\./);
+    expect(await focused(page)).toMatch(/^node:upload\.worker\./);
     await expect(page.locator('[data-slot=diagram-node]').first()).not.toHaveAttribute('aria-pressed');
     const before = await focused(page);
     await press(page, 'Delete', 'ControlOrMeta+a');
@@ -1223,7 +1226,7 @@ test.describe('StateDiagram simulates', () => {
   const now = (page) => page.locator('[data-slot=simulation-now]');
   const awkward = async (page, name) => {
     await page.goto('/?demo=state-diagram/simulate-awkward&theme=light', { waitUntil: 'load' });
-    await page.getByRole('button', { name }).click();
+    await page.getByRole('radio', { name }).click();
     await expect(page.locator('[data-slot=simulation-panel]')).toBeVisible({ timeout: 30_000 });
   };
 
@@ -1405,9 +1408,10 @@ test.describe('StateDiagram simulates', () => {
     await expect(pushed).toBeVisible();
     await expect(page.locator('[data-slot=adaptive-pane]')).toHaveAttribute('data-presentation', 'push');
     // It fills the window and no more, and scrolls inside itself.
+    // Once it has slid in.
+    await expect.poll(async () => { const b = await pushed.boundingBox(); return b.x + b.width; }).toBeLessThanOrEqual(390.5);
     const box = await pushed.boundingBox();
     expect(box.x).toBeGreaterThanOrEqual(0);
-    expect(box.x + box.width).toBeLessThanOrEqual(390.5);
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
     // The board under it is inert while it's pushed.
     await finish(page, 'verifyToken: done').click();
@@ -1426,7 +1430,10 @@ test.describe('StateDiagram simulates', () => {
     await page.locator('[data-diagram-frame-trigger]').click({ timeout: 30_000 });
     await expect(page.locator('[data-slot=adaptive-pane]')).toHaveAttribute('data-presentation', 'drawer');
     await expect(page.locator('[data-slot=simulation-panel]')).toBeVisible();
-    // Non-modal: the board still takes the keys and presses while it's open.
+    // Opening it took focus into it.
+    await expect(page.locator('[data-slot=drawer-content]')).toBeFocused();
+    // Non-modal: the board still takes the keys and presses while it's open, once it's laid out.
+    await expect.poll(() => page.locator('[data-slot=diagram-node]').count(), { timeout: 30_000 }).toBe(40);
     await page.locator('[data-slot=canvas]').focus();
     await page.keyboard.press('Home');
     await expect(page.locator('[data-slot=diagram-ring][data-focused]')).toHaveCount(1);
@@ -1439,7 +1446,9 @@ test.describe('StateDiagram simulates', () => {
     await page.locator('[data-slot=adaptive-pane]').getByRole('button', { name: 'Close Simulation' }).click();
     const open = page.locator('[data-diagram-frame-trigger]');
     await expect(open).toBeVisible();
-    await expect(page.locator('[data-slot=adaptive-pane]')).toHaveCount(0);
+    // A closed column stays mounted, hidden, so a run in it keeps going.
+    await expect(page.locator('[data-slot=adaptive-pane]')).toBeHidden();
+    await expect(page.locator('[data-slot=adaptive-pane]')).toHaveAttribute('data-closed', '');
     await open.click();
     await expect(page.locator('[data-slot=simulation-panel]')).toBeVisible();
     await expect(open).toHaveCount(0);
@@ -1447,7 +1456,8 @@ test.describe('StateDiagram simulates', () => {
     await expect(page.locator('[data-slot=diagram-frame-panel-body]')).toBeFocused();
     await page.getByRole('button', { name: 'Close Simulation' }).press('Enter');
     await expect(open).toBeFocused();
-    await expect(page.locator('[data-slot=adaptive-pane]')).toHaveCount(0);
+    await expect(page.locator('[data-slot=adaptive-pane]')).toBeHidden();
+    await expect(page.locator('[data-slot=adaptive-pane]')).toHaveAttribute('data-closed', '');
     await open.press('Enter');
     await expect(page.locator('[data-slot=diagram-frame-panel-body]')).toBeFocused();
     // The run goes on through that.
@@ -1485,7 +1495,7 @@ test.describe('StateDiagram edits', () => {
   const select = async (page, id) => {
     const b = await node(page, id).boundingBox();
     await page.mouse.click(b.x + Math.min(b.width / 2, 12), b.y + Math.min(b.height / 2, 12));
-    await expect(node(page, id)).toHaveAttribute('data-selected', 'true');
+    await expect(node(page, id)).toHaveAttribute('data-selected', '');
   };
   /** Layers over the board don't take a press, so it goes where the pointer would. */
   const pressOn = async (page, id) => {
@@ -1518,21 +1528,21 @@ test.describe('StateDiagram edits', () => {
     const before = await graph(page);
     await expect(page.locator('[data-slot=edit-panel] [data-action=undo]')).toBeDisabled();
     await page.locator('[data-slot=edit-panel] [data-action=add-state]').click();
-    await expect(node(page, 'door.state')).toHaveAttribute('data-selected', 'true');
+    await expect(node(page, 'door.state')).toHaveAttribute('data-selected', '');
     await expect(field(page, 'edit-name')).toHaveValue('state');
     await rename(page, 'broken');
-    await expect(node(page, 'door.broken')).toHaveAttribute('data-selected', 'true');
+    await expect(node(page, 'door.broken')).toHaveAttribute('data-selected', '');
     await expect(node(page, 'door.state')).toHaveCount(0);
     await expect(field(page, 'edit-name')).toHaveValue('broken');
 
     await connect(page, 'door.broken', 'door.closed');
     const made = edge(page, 'door.broken:EVENT->door.closed');
     await expect(made).toHaveCount(1);
-    await expect(made).toHaveAttribute('data-selected', 'true');
+    await expect(made).toHaveAttribute('data-selected', '');
     await expect(field(page, 'edit-event')).toHaveValue('EVENT');
     await field(page, 'edit-event').fill('REPAIR');
     await field(page, 'edit-event').press('Enter');
-    await expect(edge(page, 'door.broken:REPAIR->door.closed')).toHaveAttribute('data-selected', 'true');
+    await expect(edge(page, 'door.broken:REPAIR->door.closed')).toHaveAttribute('data-selected', '');
     await field(page, 'edit-guard').fill('canRepair');
     await field(page, 'edit-guard').press('Enter');
     await expect(page.locator('[data-slot=diagram-edge-label]', { hasText: 'REPAIR [canRepair]' })).toHaveCount(1);
@@ -1548,7 +1558,7 @@ test.describe('StateDiagram edits', () => {
     await expect(edge(page, 'door.broken:EVENT->door.closed')).toHaveCount(1);
     await expect(edge(page, 'door.broken:REPAIR->door.closed')).toHaveCount(1);
     await connect(page, 'door.broken', 'door.closed');
-    await expect(edge(page, 'door.broken:EVENT2->door.closed')).toHaveAttribute('data-selected', 'true');
+    await expect(edge(page, 'door.broken:EVENT2->door.closed')).toHaveAttribute('data-selected', '');
 
     // Back through all of it, one at a time.
     for (let i = 0; i < 8; i++) await page.locator('[data-slot=edit-panel] [data-action=undo]').click();
@@ -1566,7 +1576,7 @@ test.describe('StateDiagram edits', () => {
     await open(page);
     await select(page, 'door.closed');
     await rename(page, 'shut');
-    await expect(node(page, 'door.shut')).toHaveAttribute('data-selected', 'true');
+    await expect(node(page, 'door.shut')).toHaveAttribute('data-selected', '');
     for (const id of ['door.open:CLOSE->door.shut', 'door.locked:UNLOCK->door.shut', 'door.shut:OPEN->door.open', 'door.shut:LOCK->door.locked']) await expect(edge(page, id)).toHaveCount(1);
     // It's still where it starts.
     await expect(edge(page, 'door.__initial->door.shut')).toHaveCount(1);
@@ -1789,20 +1799,20 @@ test.describe('StateDiagram edits', () => {
     };
     // Where it goes.
     await pressLabel('CLOSE');
-    await expect(edge(page, 'door.open:CLOSE->door.closed')).toHaveAttribute('data-selected', 'true');
+    await expect(edge(page, 'door.open:CLOSE->door.closed')).toHaveAttribute('data-selected', '');
     await dragEnd('to', 'door.jammed');
     await expect(edge(page, 'door.open:CLOSE->door.jammed')).toHaveCount(1);
     await expect(edge(page, 'door.open:CLOSE->door.closed')).toHaveCount(0);
     // Where it comes from.
     await pressLabel('UNLOCK');
-    await expect(edge(page, 'door.locked:UNLOCK->door.closed')).toHaveAttribute('data-selected', 'true');
+    await expect(edge(page, 'door.locked:UNLOCK->door.closed')).toHaveAttribute('data-selected', '');
     await dragEnd('from', 'door.open');
     await expect(edge(page, 'door.open:UNLOCK->door.closed')).toHaveCount(1);
     await expect(edge(page, 'door.locked:UNLOCK->door.closed')).toHaveCount(0);
     // A timer can go somewhere else, but it goes with its state.
     await pressLabel('after 5000');
     const timer = 'door.open:xstate.after.5000.door.open->door.closed';
-    await expect(edge(page, timer)).toHaveAttribute('data-selected', 'true');
+    await expect(edge(page, timer)).toHaveAttribute('data-selected', '');
     await dragEnd('from', 'door.locked');
     await expect(refusal(page)).toContainText('goes with what its state does');
     await expect(edge(page, timer)).toHaveCount(1);
@@ -1859,11 +1869,14 @@ test.describe('StateDiagram edits', () => {
     await expect(opener).toBeVisible({ timeout: 30_000 });
     await expect.poll(() => page.locator('[data-slot=diagram-node]').count(), { timeout: 30_000 }).toBeGreaterThan(3);
     await select(page, 'door.open');
-    await expect(page.locator('[data-slot=diagram-frame-bar]')).toContainText('open');
+    // The bar says where the run is, and the run goes on while you edit.
+    await expect(page.locator('[data-slot=diagram-frame-bar]')).toContainText('In closed');
     await opener.click();
     await expect(page.locator('[data-slot=adaptive-pane]')).toHaveAttribute('data-presentation', 'push');
     await page.getByRole('tab', { name: 'Edit' }).click();
     await expect(page.locator('[data-slot=edit-panel]')).toBeVisible();
+    // What was selected on the board is what the panel edits.
+    await expect(field(page, 'edit-name')).toHaveValue('open');
     await rename(page, 'ajar');
     await page.getByRole('button', { name: 'Back to Board' }).click();
     await expect(node(page, 'door.ajar')).toHaveCount(1);
@@ -1894,7 +1907,7 @@ test.describe('StateDiagram edits', () => {
       return { x: m.a * p.x + m.e, y: m.d * p.y + m.f };
     });
     await page.mouse.click(at.x, at.y);
-    await expect(line).toHaveAttribute('data-selected', 'true');
+    await expect(line).toHaveAttribute('data-selected', '');
     await expect(field(page, 'edit-guard')).toBeVisible();
     await field(page, 'edit-guard').fill('hasEnoughBytes');
     await field(page, 'edit-guard').press('Enter');

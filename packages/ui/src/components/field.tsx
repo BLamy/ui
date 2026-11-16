@@ -34,7 +34,9 @@ import { cn, cx } from '@/lib/utils';
      <Field>…</Field>
      <FieldDescription>You can change these later.</FieldDescription>
    </FieldSet> */
-export function Field({ className, ...props }: ComponentProps<typeof SdkField>) {
+export type FieldProps = ComponentProps<typeof SdkField>;
+
+export function Field({ className, ...props }: FieldProps) {
   return <SdkField className={cx('group flex flex-col gap-1.5', className)} {...props} />;
 }
 

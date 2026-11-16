@@ -1,14 +1,15 @@
 import { test, expect } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
 
-/* Not run in the 6.0 integration wave (no Playwright there): updated to the 6.0 parts and attributes by reading, so run it
-   before trusting it. The cloudflare-studio block, through its docs demo, with real input: the spike's file upload built from nothing by hand,
+/* The cloudflare-studio block, through its docs demo, with real input: the spike's file upload built from nothing by hand,
    kept through a reload, exported, and at a phone's width. Each test has a browser context of its own, so nothing's saved
    to begin with. */
 
 const panel = (page) => page.locator('[data-slot=cloudflare-panel]');
 const service = (page, id) => page.locator(`[data-slot=diagram-node][data-node="${id}"]`);
 const services = (page) => page.locator('[data-slot=cloudflare-service]');
+/** The catalog search: its combobox, by name (the Combobox also renders a hidden form input). */
+const catalogSearch = (page) => page.getByRole('combobox', { name: 'Search Cloudflare’s services' });
 const port = async (page, node, name) => {
   const b = await page.locator(`[data-slot=diagram-port][data-port-of="${node}"][data-port="${name}"]`).boundingBox();
   return { x: b.x + b.width / 2, y: b.y + b.height / 2 };
@@ -52,7 +53,7 @@ const bind = async (page, name) => {
   await expect(field).toHaveValue(name);
 };
 const add = async (page, kind) => {
-  const search = page.locator('[data-slot=cloudflare-search] input');
+  const search = catalogSearch(page);
   await search.fill(kind.replace('-', ' '));
   await page.locator(`[role=option][data-kind="${kind}"]`).click();
 };
@@ -100,7 +101,7 @@ test('the file upload, from nothing, by hand, kept through a reload, and exporte
   // Room gets a machine, and the consumer tells it a file's ready.
   await press(page, 'durable-objects');
   await panel(page).locator('[data-action=add-machine]').click();
-  await expect(page.locator('[data-slot=state-diagram]')).toBeVisible();
+  await expect(page.locator('[data-state-diagram]')).toBeVisible();
   await page.locator('[data-action=machine-back]').click();
   const toRoom = await page.locator('[data-slot=diagram-edge]').evaluateAll((els) => els.map((el) => el.getAttribute('data-edge')).find((id) => /^workers-2.*durable/.test(id)));
   const line = await page.locator(`[data-slot=diagram-edge][data-edge="${toRoom}"]`).evaluate((el) => { const p = el.getPointAtLength(el.getTotalLength() / 2), m = el.getScreenCTM(); return { x: m.a * p.x + m.e, y: m.d * p.y + m.f }; });
@@ -165,12 +166,12 @@ test.describe('at a phone’s width', () => {
     await open(page);
     await expect(services(page)).toHaveCount(6);
     await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
-    await page.locator('[data-slot=diagram-frame-trigger]').click();
+    await page.locator('[data-diagram-frame-trigger]').click();
     await expect(page.locator('[data-slot=diagram-frame][data-presentation=push] [data-slot=cloudflare-panel]')).toBeVisible();
-    // An edit in the pushed panel, then wider: the edit's still there, and the inspector's a column beside the board.
-    await page.locator('[data-slot=cloudflare-search] input').fill('kv');
+    // An edit in the pushed panel, then wider with it still open: the edit's still there, and the inspector's a column
+    // beside the board.
+    await catalogSearch(page).fill('kv');
     await page.locator('[role=option][data-kind="kv"]').click();
-    await page.getByRole('button', { name: 'Board' }).click();
     await expect(services(page)).toHaveCount(7);
     await page.setViewportSize({ width: 1100, height: 780 });
     await expect(services(page)).toHaveCount(7);

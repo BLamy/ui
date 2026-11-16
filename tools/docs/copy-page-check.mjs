@@ -53,10 +53,12 @@ function structure() {
         lines.push(`${pad}code ${el.dataset.language ?? ''}${header ? ' +header' : ''}${numbered ? ' +lines' : ''} ${text(el.querySelector('pre')).slice(0, 60)}`);
       } else if (c.contains('docs-demo')) {
         const viewer = c.contains('docs-demo-single') ? 'single' : 'multi';
-        const variants = [...el.querySelectorAll('.docs-demo-variants [role=radio], .docs-demo-variants button')].map(text);
+        // The demo's own controls: a preview can render a document with demos of its own (the kitchen sink does).
+        const own = (sel) => [...el.querySelectorAll(sel)].filter((n) => n.parentElement?.closest('[data-docstream-demo]') === el);
+        const variants = own('.docs-demo-variants [role=radio], .docs-demo-variants button').map(text);
         const files = viewer === 'multi'
-          ? [...el.querySelectorAll('.docs-demo-file')].map(text)
-          : [...el.querySelectorAll('.docs-react-demo-code-copy, .docs-react-demo-code [aria-label^="Copy "]')].map((b) => b.getAttribute('aria-label').replace(/^Copy /, ''));
+          ? own('.docs-demo-file').map(text)
+          : own('.docs-react-demo-code-copy, .docs-react-demo-code [aria-label^="Copy "]').map((b) => b.getAttribute('aria-label').replace(/^Copy /, ''));
         const status = text(el.querySelector('.docs-demo-status'));
         lines.push(`${pad}demo ${viewer} "${text(el.querySelector('.docs-demo-title'))}" variants=[${variants.join(',')}] files=[${[...new Set(files)].join(',')}]${status ? ` status=${status}` : ''}`);
       } else if (c.contains('docs-hint')) lines.push(`${pad}hint ${[...c].find((x) => x.startsWith('docs-hint-')) ?? ''}`);
@@ -70,6 +72,10 @@ function structure() {
   if (article) walk(article, 0);
   return lines;
 }
+
+/** The Markdown outside its code fences: a demo's inline files are fenced, and a file can hold Markdown of its own
+ *  (the kitchen sink's document has demo tags, command boxes and tab sets), which is code here, not blocks. */
+const outsideFences = (md) => md.replace(/^(`{3,}|~{3,})[^\n]*\n[\s\S]*?^\1[ \t]*$/gm, '');
 
 /** Page lines vs render lines: the differing ones (statuses are compared separately — the Markdown can't carry them). */
 function diff(a, b) {
@@ -87,6 +93,25 @@ const settle = async (page) => {
   const h = await page.evaluate(() => (document.querySelector('.ds-site-scroll') ?? document.getElementById('bldocs-scroll'))?.scrollHeight ?? 900);
   await page.setViewportSize({ width: 1400, height: Math.min(h, 16000) });
   await page.waitForTimeout(1500);
+  await openDemos(page);
+};
+/* A demo loads its files once it's near the viewport (a long page is taller than the 16,000 px window), and a multi-file
+   viewer lists them on its Code tab, which it opens on only when it has nothing to preview (Markdown with inline files
+   and no runtime, as `?render&resolver=0` is). So bring every demo near, then open each multi-file viewer's Code tab: the
+   page and its renders are compared on the files each viewer has, not on which tab it opened on. */
+const openDemos = async (page) => {
+  const demos = page.locator('.dk-md [data-docstream-blocks] [data-docstream-demo]');
+  const count = await demos.count();
+  if (!count) return;
+  for (let i = 0; i < count; i++) await demos.nth(i).scrollIntoViewIfNeeded().catch(() => undefined);
+  await page.waitForTimeout(1200);
+  const multi = page.locator('.dk-md [data-docstream-blocks] [data-docstream-demo].docs-demo-multi');
+  for (let i = 0; i < (await multi.count()); i++) {
+    const code = multi.nth(i).locator('.docs-demo-tools').getByRole('tab', { name: 'Code', exact: true });
+    if (await code.count()) await code.click().catch(() => undefined);
+  }
+  await page.waitForFunction(() => !document.querySelector('.dk-md .docs-demo-code [aria-label="Loading files"], .dk-md .docs-demo-code [role="status"]'), undefined, { timeout: 15000 }).catch(() => undefined);
+  await page.waitForTimeout(500);
 };
 let failures = 0;
 const copied = {};
@@ -103,8 +128,9 @@ for (const id of pages) {
   const expected = readFileSync(join(ROOT, 'apps/docs/public/md', `${id}.md`), 'utf8');
   if (clip !== expected) problems.push('  clipboard ≠ apps/docs/public/md export');
   if (/\*\*Example — /.test(clip)) problems.push('  clipboard has the plain (non-renderable) demo form');
-  const demoTags = (clip.match(/^\{% demo /gm) ?? []).length;
-  const enddemos = (clip.match(/^\{% enddemo %\}$/gm) ?? []).length;
+  const blocks = outsideFences(clip);
+  const demoTags = (blocks.match(/^\{% demo /gm) ?? []).length;
+  const enddemos = (blocks.match(/^\{% enddemo %\}$/gm) ?? []).length;
   if (demoTags !== enddemos) problems.push(`  ${demoTags} demo tags but ${enddemos} {% enddemo %}: not every demo carries its files`);
   await settle(page);
   const want = await page.evaluate(structure);
@@ -157,12 +183,13 @@ if (pages.length) {
       sections: el.querySelectorAll('.gb-tabs-section').length,
       headings: el.querySelectorAll(':scope > :is(h1, h2, h3)').length,
     }));
+    const blocks = outsideFences(clip);
     const want = {
-      demos: (clip.match(/^\{% demo /gm) ?? []).length,
-      commands: (clip.match(/\{% command\b/g) ?? []).length,
-      sections: (clip.match(/^\{% tabs title=/gm) ?? []).length,
-      // Top-level headings only: the editor nests a tab panel's headings inside its tabs section.
-      headings: (clip.replace(/^(`{3,})[\s\S]*?^\1\s*$/gm, '').replace(/\{% tab\b[^%]*%\}[\s\S]*?\{% endtab %\}/g, '').match(/^#{1,3} /gm) ?? []).length,
+      demos: (blocks.match(/^\{% demo /gm) ?? []).length,
+      commands: (blocks.match(/\{% command\b/g) ?? []).length,
+      sections: (blocks.match(/^\{% tabs title=/gm) ?? []).length,
+      // Top-level headings only: the editor nests a tab panel's and a stepper step's headings inside their block.
+      headings: (blocks.replace(/\{% (tab|step)\b[^%]*%\}[\s\S]*?\{% end\1 %\}/g, '').match(/^#{1,3} /gm) ?? []).length,
     };
     want.viewers = want.demos;
     const bad = Object.keys(want).filter((k) => want[k] !== got[k]);

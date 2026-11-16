@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from 'react';
 import type { ChangeDetails } from '@ui-sdk/core';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { Badge } from '@/components/ui/badge';
@@ -243,14 +243,27 @@ export function CloudflareServiceNode({ node, icon, tone, className }: Cloudflar
   );
 }
 
-/** Brings something that's just been added into view, if the viewport's been moved away from where it went. */
-function RevealWhenPlaced({ node, onDone }: { node: DiagramNode<CloudflareServiceNodeData> | undefined; onDone: () => void }) {
+/** Services to bring into view once they've been placed again. `after` is the placing they were in when it was asked
+ *  for: the places given (a new array when a service is added), or ELK's last result (a new one for each new graph). */
+interface Reveal {
+  ids: string[];
+  after: unknown;
+}
+
+/** Brings what's just been added or connected into view, once it's been placed: wherever the viewport had been moved to,
+ *  and wherever laying out again has moved it to. */
+function RevealWhenPlaced({ nodes, placing, want, onDone }: { nodes: readonly DiagramNode<CloudflareServiceNodeData>[]; placing: unknown; want: Reveal | null; onDone: () => void }) {
   const { reveal } = useCanvas();
   useEffect(() => {
-    if (!node) return;
-    reveal({ x: node.x, y: node.y, w: node.w, h: node.h });
+    if (!want || placing === want.after) return;
+    const shown = nodes.filter((n) => want.ids.includes(n.id));
+    if (shown.length < want.ids.length) return;
+    const x = Math.min(...shown.map((n) => n.x)), y = Math.min(...shown.map((n) => n.y));
+    const w = Math.max(...shown.map((n) => n.x + n.w)) - x, h = Math.max(...shown.map((n) => n.y + n.h)) - y;
+    // Not `focus-in`: the Diagram leaves those to its keys, and this is asked for.
+    reveal({ x, y, w, h }, { padding: 24 }, { reason: 'imperative' });
     onDone();
-  }, [node]);
+  }, [nodes, placing, want, reveal, onDone]);
   return null;
 }
 
@@ -319,7 +332,10 @@ export function CloudflareDiagram({
   const select = (next: DiagramSelection) => setSelection(next, { reason: 'imperative' });
   const selectedService = selection.nodes.length === 1 && !selection.edges.length ? byId.get(selection.nodes[0] ?? '') : undefined;
   const selectedEdge = selection.edges.length === 1 && !selection.nodes.length ? edges.find((e) => e.id === selection.edges[0]) : undefined;
-  const [justAdded, setJustAdded] = useState<string | null>(null);
+  // What's to come into view once it's placed: something added, or both ends of a new connection, which ELK may move.
+  const placing: unknown = placed ?? laid.bounds;
+  const [toReveal, setToReveal] = useState<Reveal | null>(null);
+  const revealed = useCallback(() => setToReveal(null), []);
   const [openId, setOpenId] = useControllableChange<string | null, CloudflareMachineChangeReason>(openMachineProp, defaultOpenMachine, onOpenMachineChange);
 
   /* ── One history for the board, the panel and the machines. What's undone here is what was done here; something new
@@ -378,7 +394,10 @@ export function CloudflareDiagram({
       return edge ? [edge] : [];
     });
     send({ services: nextServices, edges: [...kept, ...made] }, details.reason, details.event);
-    if (details.reason === 'connect' && made[0]) select({ nodes: [], edges: [made[0].id] });
+    if (details.reason === 'connect' && made[0]) {
+      select({ nodes: [], edges: [made[0].id] });
+      if (!anyPlaced) setToReveal({ ids: [made[0].from, made[0].to], after: placing });
+    }
   };
   const changeEdge = (id: string, patch: Partial<CloudflareEdge>) => send({ edges: edges.map((e) => (e.id === id ? { ...e, ...patch } : e)) }, 'edit');
   const changeService = (id: string, patch: Partial<CloudflareService>) => send({ services: services.map((s) => (s.id === id ? { ...s, ...patch } : s)) }, 'edit');
@@ -394,7 +413,7 @@ export function CloudflareDiagram({
     const { system: next, id } = addService({ services, edges }, product.id);
     send(next, 'add');
     select({ nodes: [id], edges: [] });
-    setJustAdded(id);
+    setToReveal({ ids: [id], after: placing });
   };
 
   /* ── A machine, over the board ── */
@@ -402,9 +421,18 @@ export function CloudflareDiagram({
   const openService = opened?.machine ? opened : undefined;
   const focusOpener = useRef(false);
   useEffect(() => {
-    if (openService || !focusOpener.current) return;
+    if (openService || !focusOpener.current) return undefined;
     focusOpener.current = false;
-    panelRef.current?.querySelector<HTMLElement>('[data-action=open-machine]')?.focus({ preventScroll: true });
+    // The panel stays inert until the frame has seen the cover go, a render after this one, and focus can't go into it
+    // before then.
+    let frame = 0;
+    const focus = (tries: number) => {
+      const opener = panelRef.current?.querySelector<HTMLElement>('[data-action=open-machine]');
+      if (opener && !opener.closest('[inert]')) opener.focus({ preventScroll: true });
+      else if (opener && tries > 0) frame = requestAnimationFrame(() => focus(tries - 1));
+    };
+    focus(10);
+    return () => cancelAnimationFrame(frame);
   }, [openService]);
   const closeMachine = () => {
     focusOpener.current = true;
@@ -473,7 +501,7 @@ export function CloudflareDiagram({
           }
           {...diagram}
         >
-          <RevealWhenPlaced node={justAdded ? nodes.find((n) => n.id === justAdded) : undefined} onDone={() => setJustAdded(null)} />
+          <RevealWhenPlaced nodes={nodes} placing={placing} want={toReveal} onDone={revealed} />
         </Diagram>
         <DiagramFrameBar>
           <span data-slot="cloudflare-status" className="min-w-0 truncate">{status}</span>

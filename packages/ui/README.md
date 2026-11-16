@@ -89,7 +89,7 @@ import { IndexBar, alphabetItems } from '@brett_lamy/ui';
 - Chat: `Composer` and its parts, conversation parts (`Conversation`, `UserMessage`, `AssistantMessage`, `WorkLog`, `ToolCall`, …), `MessageScroller`, `MarkdownView`, `FloatingSheet`, `ArtifactChatContainer`
 - Editors and media: `CodeEditor`, `MarkdownEditor`, `Terminal`, `Workspace`, `DebugToolbar`, PencilKit (`PencilCanvas`, `PencilToolbar`, `ImageAnnotator`), the video parts
 - Canvas and diagrams: `Canvas`, `Diagram`, `DiagramFrame`, `StateDiagram` (XState, an optional peer; ELK lays diagrams out when asked, also optional); `CloudflareDiagram` and the Cloudflare catalog on their own entry, `@brett_lamy/ui/cloudflare`
-- Engines on their own entries (`@brett_lamy/ui/lib/<module>`): the passkey vault, PGlite, FFmpeg, Tailscale, the file-upload and table models; OpenCode's runtime on `@brett_lamy/ui/opencode`
+- Engines on their own entries (`@brett_lamy/ui/lib/<module>`): the passkey vault, PGlite, FFmpeg, Tailscale, the diagram layout (`lib/diagram-layout`, `lib/diagram-layout/react`), the file-upload and table models; OpenCode's runtime on `@brett_lamy/ui/opencode`
 - Blocks, installed from the registry rather than this package: the team-chat shell (`discord-clone`: `ChatShell` and its regions, channels, messages, members), the IDE workbench (`t3-clone`: `WorkbenchShell` and its parts, `WorkbenchComposer`, `ModelPicker`, the terminal dock and surfaces), the demo apps (`map-chat`, `delivery-tracking`, `split-view-demos`, `pencilkit-sketch`) and the full apps (GitHub, Apple Mail, VS Code, …)
 
 Every component exports its props type from the package root. See the Storybook catalog for interaction and responsive examples.

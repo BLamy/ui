@@ -270,7 +270,7 @@ describe('connecting', () => {
     edgeEnds: (id) => (id === 'e' ? { from: { node: 'a', port: 'out' }, to: { node: 'b', port: 'p1' } } : null),
   };
   const go = (events: DiagramGestureEvent[]) => {
-    let g = IDLE; let made: unknown;
+    let g: DiagramGesture = IDLE; let made: unknown;
     for (const e of events) { const step = stepDiagramGesture(g, e, ctx(none, { connect: conn })); g = step.gesture; if (step.connect) made = step.connect; }
     return { g, made };
   };

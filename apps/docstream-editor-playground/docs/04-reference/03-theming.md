@@ -65,14 +65,14 @@ Code blocks highlighted by gpu-lexer use docstream's `--docs-tok-*` tokens, so a
 
 | Token | Light default | Dark default |
 | --- | --- | --- |
-| `--docs-tok-comment` | `#6E6E7A` (italic) | `#8A8A98` |
-| `--docs-tok-string` | `#23803A` | `#A5D6A7` |
-| `--docs-tok-number` | `#C2410C` | `#F78C6C` |
+| `--docs-tok-comment` | `#63636E` (italic) | `#9393A1` |
+| `--docs-tok-string` | `#0F732E` | `#A5D6A7` |
+| `--docs-tok-number` | `#B73600` | `#F78C6C` |
 | `--docs-tok-keyword` | `#8839C4` | `#C792EA` |
-| `--docs-tok-type` | `#A15C00` | `#FFCB6B` |
-| `--docs-tok-function` | `#2F5BD3` | `#82AAFF` |
-| `--docs-tok-constant` | `#C8283F` | `#F07178` |
-| `--docs-tok-operator` | `#0B7285` | `#89DDFF` |
+| `--docs-tok-type` | `#975300` | `#FFCB6B` |
+| `--docs-tok-function` | `#2E5AD2` | `#82AAFF` |
+| `--docs-tok-constant` | `#C11F39` | `#F07178` |
+| `--docs-tok-operator` | `#006D80` | `#89DDFF` |
 
 ## Recipes
 

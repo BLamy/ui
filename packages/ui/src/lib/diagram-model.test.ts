@@ -360,7 +360,6 @@ describe('edge routes', () => {
 
   it('runs an edge between a compound and its own child inside the compound, either way round', () => {
     const box = nodes.find((n) => n.id === 'box')!;
-    const kid = nodes.find((n) => n.id === 'kid')!;
     const check = (g: ConnectorGeometry) => {
       finite(g);
       for (const p of g.pts) expect(inRect(p, box)).toBe(true);

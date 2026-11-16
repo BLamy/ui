@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import * as xstate from 'xstate';
-import { createActor, createMachine } from 'xstate';
+import { createActor, createMachine, type AnyStateMachine } from 'xstate';
 import { uploadMachine } from '../stories/upload-machine';
 import {
   StateEditRefused, addState, addTransition, eventNameProblem, inlineCodeIn, missingImplementations, removeItems, removeState, removeTransition, renameState, setInitial, setTransitionEvent,
-  setTransitionGuard, setTransitionSource, setTransitionTarget, stateAt, stateNameProblem, targetText, tryEdit, uniqueName, type MachineConfig, type TransitionPlace,
+  setTransitionGuard, setTransitionSource, setTransitionTarget, stateAt, stateNameProblem, targetText, tryEdit, uniqueName, type MachineConfig,
 } from './state-diagram-edit';
-import { machineEdgePlaces, machineStatePaths, machineToDraft, type MachineLike } from './state-diagram-model';
+import { machineEdgePlaces, machineStatePaths, machineToDraft, type MachineLike, type TransitionPlace } from './state-diagram-model';
 import { createSimulation } from './state-diagram-simulation';
 
 const uploadConfig = () => JSON.parse(JSON.stringify((uploadMachine as unknown as { config: object }).config)) as MachineConfig;
@@ -527,7 +527,7 @@ describe('saved as JSON and loaded', () => {
   /** The spike's run: the same 14 snapshots, with its actors, from `.provide()`. */
   async function run(config: MachineConfig) {
     const { implementations } = uploadMachine as unknown as { implementations: object };
-    const machine = (createMachine(config as never) as unknown as { provide: (i: object) => never }).provide(implementations);
+    const machine = (createMachine(config as never) as unknown as { provide: (i: object) => AnyStateMachine }).provide(implementations);
     const seen: string[] = [];
     const actor = createActor(machine);
     actor.subscribe((s: { value: unknown }) => seen.push(JSON.stringify(s.value)));

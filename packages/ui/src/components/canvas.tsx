@@ -89,7 +89,7 @@ export function useCanvas(options?: { optional?: boolean }): CanvasContextValue 
 }
 
 export function Canvas({
-  viewport, defaultViewport, onViewportChange, panning, fit, fitPadding, minZoom, maxZoom, message, autoFocus,
+  viewport, defaultViewport, onViewportChange, panning, fit, fitPadding, minZoom, maxZoom, message, autoFocus, zoomVariable,
   onCanvasPointerDown, onCanvasPointerMove, onCanvasPointerUp, onCanvasDoubleClick, onNavigationStart, onCanvasKeyDown, controller,
   background = 'dots', 'aria-label': ariaLabel = 'Canvas', 'aria-describedby': describedBy, overlay, children, className, style, ref: refProp,
 }: CanvasProps) {
@@ -104,7 +104,7 @@ export function Canvas({
     };
   }, []);
   const handle = usePrimitive(canvas, {
-    viewport, defaultViewport, onViewportChange, panning, fit, fitPadding, minZoom, maxZoom, message, autoFocus, onCanvasDoubleClick, onCanvasKeyDown, controller,
+    viewport, defaultViewport, onViewportChange, panning, fit, fitPadding, minZoom, maxZoom, message, autoFocus, zoomVariable, onCanvasDoubleClick, onCanvasKeyDown, controller,
     onCanvasPointerDown: (event, info) => {
       for (const layer of [...layers.current].reverse()) {
         if (layer.onPointerDown(event, info)) { claimed.current.set(event.pointerId, layer); return; }

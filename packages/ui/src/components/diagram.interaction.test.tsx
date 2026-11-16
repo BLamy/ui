@@ -98,6 +98,23 @@ describe('Diagram, by keyboard', () => {
     expect(seen.has('alone')).toBe(true);
   });
 
+  it('drops the ring when focus goes on to the toolbar over the board', () => {
+    render(<Diagram aria-label="Mail" nodes={NODES} edges={EDGES} overlay={<DiagramToolbar />} />);
+    board().focus();
+    key('Home');
+    expect(document.querySelectorAll('[data-slot=diagram-ring][data-focused]')).toHaveLength(1);
+    act(() => { screen.getByRole('button', { name: 'Zoom out' }).focus(); });
+    expect(document.querySelectorAll('[data-slot=diagram-ring][data-focused]')).toHaveLength(0);
+  });
+
+  it('keeps the zoom off its board, and hands it in steps to the parts that scale by it', () => {
+    render(<Diagram aria-label="Mail" nodes={NODES} edges={EDGES}><span data-testid="mine" /></Diagram>);
+    const world = document.querySelector('[data-slot=canvas-board]')!;
+    expect(world.getAttribute('style')).toMatch(/scale\(/);
+    expect(world.getAttribute('style')).not.toMatch(/--canvas-zoom/);
+    expect(screen.getByTestId('mine').parentElement!.style.getPropertyValue('--canvas-zoom')).not.toBe('');
+  });
+
   it('selects with Enter, adds with Shift+Enter, clears with Escape, and says why each time', () => {
     const onSelectionChange = vi.fn();
     const onAction = vi.fn();
@@ -135,6 +152,31 @@ describe('Diagram, by keyboard', () => {
     key('z', { metaKey: true, shiftKey: true });
     expect(onChange.mock.lastCall![1].reason).toBe('redo');
     expect(screen.queryByRole('button', { name: /^Triage/ })).toBeNull();
+  });
+
+  it('undoes for an owner that keeps copies of the arrays it was handed', () => {
+    function Copying({ onChange }: { onChange: (data: DiagramData, details: DiagramDataChangeDetails) => void }) {
+      const [data, setData] = useState<DiagramData>({ nodes: NODES, edges: EDGES });
+      return (
+        <Diagram aria-label="Mail" nodes={data.nodes} edges={data.edges} editable onDataChange={(next, details) => { onChange(next, details); setData({ nodes: [...next.nodes], edges: [...next.edges] }); }} />
+      );
+    }
+    const onChange = vi.fn();
+    render(<Copying onChange={onChange} />);
+    board().focus();
+    key('Home');
+    key('ArrowRight', { shiftKey: true });
+    key('ArrowRight', { shiftKey: true });
+    const x = () => parseFloat((document.querySelector('[data-node=inbox]') as HTMLElement).style.left);
+    expect(x()).toBe(16);
+    key('z', { metaKey: true });
+    expect(onChange.mock.lastCall![1].reason).toBe('undo');
+    expect(x()).toBe(8);
+    key('z', { metaKey: true });
+    expect(x()).toBe(0);
+    key('z', { metaKey: true, shiftKey: true });
+    expect(onChange.mock.lastCall![1].reason).toBe('redo');
+    expect(x()).toBe(8);
   });
 
   it('nudges with Shift and an arrow, 8 at a time or 1 with Alt', () => {

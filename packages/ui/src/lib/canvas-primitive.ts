@@ -93,6 +93,10 @@ export type CanvasOptions = {
   message?: (zoom: number) => string;
   /** Focus the canvas once it mounts, so keys work before a click. */
   autoFocus?: boolean;
+  /** Whether the board writes its zoom as `--canvas-zoom`, which the overlay parts divide by (default true). A change to it
+   *  restyles everything on the board, every frame of a zoom, so a board of thousands of items turns it off and writes
+   *  it, in steps, around the parts that use it (as `Diagram` does). */
+  zoomVariable?: boolean;
   /** A press that is not a navigation gesture. The canvas has captured the pointer. */
   onCanvasPointerDown?: (event: PointerEvent, info: CanvasPointerInfo) => void;
   /** Movement, hover included (no button down), unless the view is being panned or pinched. */
@@ -151,7 +155,7 @@ export const canvas = definePrimitive({
   name: 'canvas',
   options: {
     viewport: 'value', defaultViewport: 'value', onViewportChange: 'callback', panning: 'boolean', fit: 'value', fitPadding: 'number',
-    minZoom: 'number', maxZoom: 'number', message: 'callback', autoFocus: 'boolean',
+    minZoom: 'number', maxZoom: 'number', message: 'callback', autoFocus: 'boolean', zoomVariable: 'value',
     onCanvasPointerDown: 'callback', onCanvasPointerMove: 'callback', onCanvasPointerUp: 'callback',
     onCanvasDoubleClick: 'callback', onNavigationStart: 'callback', onCanvasKeyDown: 'callback', controller: 'value',
   },
@@ -235,8 +239,11 @@ export const canvas = definePrimitive({
       visible: () => fromCanvasRect(viewport.visible()),
       internal: {
         viewport,
-        /** The world's style: one transform for the whole board. */
-        style: (state: CanvasState) => viewport.style(state),
+        /** The world's style: one transform for the whole board, and its zoom as `--canvas-zoom` unless that's off. */
+        style: (state: CanvasState) => {
+          const style = viewport.style(state);
+          return context.options().zoomVariable === false ? style.replace(/;?--canvas-zoom:[^;]*/, '') : style;
+        },
         bindFindable: (el: HTMLElement) => viewport.bindFindable(el),
         mount(el: HTMLElement) {
           if (context.options().autoFocus) el.focus({ preventScroll: true });
@@ -395,7 +402,9 @@ export const canvas = definePrimitive({
       },
     }),
     // Fills the frame and scrolls, so find in page and focus can bring board items into view; it holds only the board.
+    // Not a tab stop: Chrome makes a scroller keyboard-focusable when nothing in it is, and the canvas is the one stop.
     pane: slot({
+      attrs: () => ({ tabindex: '-1' }),
       bind: (el, { api }) => api.internal.bindFindable(el),
     }),
     // Everything on the board, moved and scaled by one transform; `--canvas-zoom` is the scale.

@@ -203,13 +203,13 @@ Code is tokenized by `gpu-lexer` into `.docs-tok-*` spans. Each color is a custo
 | Token class | Custom property | Light | Dark |
 | --- | --- | --- | --- |
 | keyword | `--docs-tok-keyword` | `#8839C4` | `#C792EA` |
-| type | `--docs-tok-type` | `#A15C00` | `#FFCB6B` |
-| function | `--docs-tok-function` | `#2F5BD3` | `#82AAFF` |
-| string | `--docs-tok-string` | `#23803A` | `#A5D6A7` |
-| number | `--docs-tok-number` | `#C2410C` | `#F78C6C` |
-| constant | `--docs-tok-constant` | `#C8283F` | `#F07178` |
-| operator | `--docs-tok-operator` | `#0B7285` | `#89DDFF` |
-| comment | `--docs-tok-comment` (italic) | `#6E6E7A` | `#8A8A98` |
+| type | `--docs-tok-type` | `#975300` | `#FFCB6B` |
+| function | `--docs-tok-function` | `#2E5AD2` | `#82AAFF` |
+| string | `--docs-tok-string` | `#0F732E` | `#A5D6A7` |
+| number | `--docs-tok-number` | `#B73600` | `#F78C6C` |
+| constant | `--docs-tok-constant` | `#C11F39` | `#F07178` |
+| operator | `--docs-tok-operator` | `#006D80` | `#89DDFF` |
+| comment | `--docs-tok-comment` (italic) | `#63636E` | `#9393A1` |
 
 Set any of them to retheme; a single value applies in both schemes.
 

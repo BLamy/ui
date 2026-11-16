@@ -29,13 +29,14 @@ import {
 
 // The root entry (unlike `/replay`) keeps rrweb behind a dynamic import. The editor never
 // imports `/playground`: live previews run only through a host-supplied `liveRenderer`.
-import { DocsRenderer, ImageThumbnail, leadingThumbnail, MathFormula, PeleDiagram, ReplayFile, ReplayPreview, SplitResult, isReplayQaUrl, isRrwebUrl, thumbnailLabel } from "@brett_lamy/ui/docstream"
+// The Strudel player and its file checks come from the root too: the `/strudel` entry also carries the rack's parser
+// (acorn), which waits until a reader opens the rack.
+import { DocsRenderer, ImageThumbnail, leadingThumbnail, MathFormula, PeleDiagram, ReplayFile, ReplayPreview, SplitResult, StrudelPlayer, isReplayQaUrl, isRrwebUrl, isStrudelFile, isStrudelLanguage, thumbnailLabel } from "@brett_lamy/ui/docstream"
 import { useAsset } from "@brett_lamy/ui/docstream/assets"
 import { OpenApiOperation } from "@brett_lamy/ui/docstream/openapi"
 import { packageManagerCommands, parseBlocks, type DemoInlineFile, type DocumentNode, type HintStyle, type SourceRefNode } from "@brett_lamy/ui/docstream/gitbook"
 import { VideoEmbed } from "@brett_lamy/ui/docstream/video"
 import { StlViewer, isStlUrl } from "@brett_lamy/ui/docstream/stl"
-import { StrudelPlayer, isStrudelFile, isStrudelLanguage } from "@brett_lamy/ui/docstream/strudel"
 import { XStatePreview, isXStateLanguage } from "@brett_lamy/ui/docstream/xstate"
 import { CapnpEmbed, CapnpPreview, isCapnpLanguage, isCapnpUrl, isWorkerdConfig } from "@brett_lamy/ui/docstream/capnp"
 import { TsCircuitPreview, isTsCircuitLanguage } from "@brett_lamy/ui/docstream/tscircuit"

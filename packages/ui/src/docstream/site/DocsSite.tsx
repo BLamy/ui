@@ -34,7 +34,7 @@ import { parseMarkdown } from "../gitbook/parse"
 import { navCurrent, navNodes, navOpenFor } from "./nav"
 import { SiteNav } from "./SiteNav"
 import { SiteSearch } from "./SiteSearch"
-import { buildDocsTree, findLinkedAsset, findLinkedPage, type BuildDocsTreeOptions, type DocsFileContent, type DocsFiles, type DocsNavItem, type DocsPage, type DocsTree } from "./tree"
+import { buildDocsTree, findLinkedAsset, findLinkedPage, readFrontmatter, type BuildDocsTreeOptions, type DocsFileContent, type DocsFiles, type DocsNavItem, type DocsPage, type DocsTree } from "./tree"
 
 export type DocsSiteRouting = "hash" | "history" | "memory"
 export type DocsSiteTheme = "light" | "dark"
@@ -410,6 +410,17 @@ function useOverlayFrame(root: { current: HTMLElement | null }, active: boolean)
 }
 
 /** A complete docs site from Markdown files: sidebar from the file tree, search, outline, routing. */
+/** A page as Copy page gives it: Markdown that renders as the page anywhere. The site draws the title and lede itself,
+    so they come back as `# title` and a paragraph; of the site's frontmatter, `env` means something to any renderer
+    (the variables the page's demos read), so it stays, as frontmatter; the rest (`order`, `icon`, `layout`…) is the
+    site's own. */
+export function pageCopyMarkdown(page: Pick<DocsPage, "title" | "description" | "body" | "frontmatter">): string {
+  // A page whose frontmatter isn't only the site's keeps all of it in its body already.
+  const env = readFrontmatter(page.body).length ? [] : envNamesFromProperties(page.frontmatter)
+  const frontmatter = env.length ? `---\nenv: [${env.join(", ")}]\n---\n\n` : ""
+  return `${frontmatter}# ${page.title}\n\n${page.description ? `${page.description}\n\n` : ""}${page.body}`
+}
+
 export function DocsSite(props: DocsSiteProps) {
   const {
     files,
@@ -587,7 +598,7 @@ export function DocsSite(props: DocsSiteProps) {
   const next = index >= 0 ? order[index + 1] : undefined
 
   const actions = shown ? (typeof pageActions === "function" ? pageActions(shown) : pageActions) : false
-  const pageMarkdown = shown ? `# ${shown.title}\n\n${shown.description ? `${shown.description}\n\n` : ""}${shown.body}` : ""
+  const pageMarkdown = shown ? pageCopyMarkdown(shown) : ""
   const pageUrl = shown && typeof window !== "undefined" && routing !== "memory" ? new URL(href(shown.slug), window.location.href).href : undefined
 
   const content = shown ? (

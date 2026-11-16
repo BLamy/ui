@@ -2,5 +2,5 @@
    the BL site's own classes. One compile, so utilities keep a single order (a second sheet would re-emit shared
    classes after the first one's variants). main.tsx imports it in place of `@brett_lamy/registry/styles.css`.
    The site styles itself with the kit's parts and token utilities; nothing else lives here. */
-@import "../../../../registry/styles.css";
+@import "@brett_lamy/registry/styles.css";
 @source "./";

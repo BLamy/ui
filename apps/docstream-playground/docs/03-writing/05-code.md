@@ -188,13 +188,13 @@ Tokens fall into eight classes, each a CSS custom property with light and dark d
 ```css title="theme.css"
 :root {
   --docs-tok-keyword: #8839c4;
-  --docs-tok-type: #a15c00;
-  --docs-tok-function: #2f5bd3;
-  --docs-tok-string: #23803a;
-  --docs-tok-number: #c2410c;
-  --docs-tok-constant: #c8283f;
-  --docs-tok-operator: #0b7285;
-  --docs-tok-comment: #6e6e7a;
+  --docs-tok-type: #975300;
+  --docs-tok-function: #2e5ad2;
+  --docs-tok-string: #0f732e;
+  --docs-tok-number: #b73600;
+  --docs-tok-constant: #c11f39;
+  --docs-tok-operator: #006d80;
+  --docs-tok-comment: #63636e;
 }
 ```
 

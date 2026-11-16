@@ -93,7 +93,7 @@ const label = (name: string, guard: string | undefined) => (guard ? `${name} [${
 /** A machine as a draft for `useDiagramLayout`: a node for each state and each initial marker, and an edge for each way out,
  *  including `always`, `after`, `invoke` and transitions that stay where they are. Ids follow the machine's, and stay the
  *  same each time, so a state can be found again. */
-export function machineToDraft(machine: MachineLike, onEdge?: (transition: MachineTransition, edgeId: string, place: TransitionPlace) => void): DiagramDraft<StateNodeData, StateEdgeData> {
+export function machineToDraft(machine: MachineLike, onEdge?: (transition: MachineTransition, edgeId: string, place: TransitionPlace) => void): DiagramDraft<StateNodeData, StateEdgeData> & { edges: DiagramEdge<StateEdgeData>[] } {
   const nodes: DiagramDraftNode<StateNodeData>[] = [];
   const edges: DiagramEdge<StateEdgeData>[] = [];
   const used = new Map<string, number>();

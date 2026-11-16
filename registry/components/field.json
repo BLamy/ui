@@ -24,6 +24,7 @@
     "FieldGroup"
   ],
   "types": [
+    "FieldProps",
     "FieldLabelProps"
   ]
 }

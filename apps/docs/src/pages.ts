@@ -56,7 +56,10 @@ function blockSource(id: string) {
   const page = BLOCK_PAGES.find((b) => b.id === id);
   const block = blockSections.blocks.find((b) => `${SITE_BLOCKS}/${b.slug}` === id);
   if (!page || !block) return '';
-  return [`# ${page.title}`, page.description, block.lines.join('\n').trim()].filter(Boolean).join('\n\n') + '\n';
+  // `env` is the page's own (any renderer reads it: the variables its demo asks for), so it's in the Markdown that Copy page
+  // and View as Markdown give.
+  const env = page.env?.length ? `---\nenv: [${page.env.join(', ')}]\n---\n\n` : '';
+  return env + [`# ${page.title}`, page.description, block.lines.join('\n').trim()].filter(Boolean).join('\n\n') + '\n';
 }
 
 /** Every page by id (sidebar pages, the Blocks overview and each block), in order. */

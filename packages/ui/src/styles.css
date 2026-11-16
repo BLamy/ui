@@ -702,8 +702,8 @@ input:where([data-slot] *,[data-slot]):where(:not(.gb *))::placeholder{color:var
 .wb-md :where(p){margin:8px 0}
 .wb-md :where(ul,ol){margin:8px 0;padding-left:22px}
 .wb-md :where(li){margin:3px 0}
-.wb-md :where(code){font-family:ui-monospace,'SF Mono',Menlo,Consolas,monospace;font-size:.86em;background:var(--secondary);padding:2px 5px;border-radius:5px}
-.wb-md :where(pre){background:var(--code, var(--muted));color:var(--code-foreground, var(--foreground));border-radius:10px;padding:12px 14px;overflow:auto;font-size:12.5px;line-height:1.55;margin:10px 0}
+.wb-md :where(code:not(.bl-syntax-code)){font-family:ui-monospace,'SF Mono',Menlo,Consolas,monospace;font-size:.86em;background:var(--secondary);padding:2px 5px;border-radius:5px}
+.wb-md :where(pre:not(.bl-syntax-pre)){background:var(--code, var(--muted));color:var(--code-foreground, var(--foreground));border-radius:10px;padding:12px 14px;overflow:auto;font-size:12.5px;line-height:1.55;margin:10px 0}
 /* Keep copy controls beside the scrolling code so long lines cannot run underneath them. */
 .wb-md .docs-code:has(> .docs-code-copy-float){display:grid;grid-template-columns:minmax(0,1fr) 3rem;background:var(--gb-code-bg,var(--code,var(--muted)))}
 .wb-md .docs-code:has(> .docs-code-copy-float)>pre{grid-area:1/1;min-width:0;margin:0;border-radius:0;background:transparent}
@@ -720,15 +720,10 @@ input:where([data-slot] *,[data-slot]):where(:not(.gb *))::placeholder{color:var
 .wb-md :where(a:hover){text-decoration:underline}
 .wb-md :where(img){max-width:100%;border-radius:8px}
 
-/* ── Code colors in MarkdownView ── Docstream paints fence tokens with `.docs-tok-*`, each reading a --docs-tok-*
-   property; here those read CodeEditor's --bl-syntax-* knobs, so one theme setting colors a snippet the same in a
-   CodeEditor and in a MarkdownView fence. Unset knobs fall through to Docstream's defaults, which are CodeEditor's
-   palette (`light-dark()`). */
-.wb-md{
-  --docs-tok-keyword:var(--bl-syntax-keyword);--docs-tok-type:var(--bl-syntax-type);--docs-tok-function:var(--bl-syntax-function);
-  --docs-tok-string:var(--bl-syntax-string);--docs-tok-number:var(--bl-syntax-number);--docs-tok-constant:var(--bl-syntax-constant);
-  --docs-tok-operator:var(--bl-syntax-operator);--docs-tok-comment:var(--bl-syntax-comment)
-}
+/* A kit part a host draws in a reply (renderCode's CodeEditor) keeps its own look: the prose `pre` / `code` rules
+   above skip it, and since --foreground is the reply's currentColor here, CodeEditor's header text takes the reply's
+   color rather than handing its muted one to the title. */
+.wb-md .bl-syntax-header{color:inherit}
 /* A reply that opens with a heading starts at the top of its box, and the last block doesn't add space under it. */
 .wb-md .docs-article>[data-docstream-blocks]>:first-child{margin-top:0}
 .wb-md .docs-article>[data-docstream-blocks]>:last-child{margin-bottom:0}
@@ -770,7 +765,7 @@ input:where([data-slot] *,[data-slot]):where(:not(.gb *))::placeholder{color:var
   --gb-panel:var(--card);
   --gb-panel-foreground:currentColor;
   --gb-muted:var(--secondary);
-  --gb-muted-foreground:var(--muted-foreground);
+  --gb-muted-foreground:color-mix(in srgb,var(--muted-foreground) 75%,currentColor);
   --gb-border:var(--border);
   --gb-accent:var(--secondary);
   --gb-accent-foreground:currentColor;
@@ -878,13 +873,13 @@ input:where([data-slot] *,[data-slot]):where(:not(.gb *))::placeholder{color:var
 @keyframes blCodeCaret{0%,100%{opacity:1}50%{opacity:0}}
 @layer components{
 .bl-tok-keyword{color:var(--bl-syntax-keyword,light-dark(#8839C4,#C792EA))}
-.bl-tok-type{color:var(--bl-syntax-type,light-dark(#A15C00,#FFCB6B))}
-.bl-tok-function{color:var(--bl-syntax-function,light-dark(#2F5BD3,#82AAFF))}
-.bl-tok-string{color:var(--bl-syntax-string,light-dark(#23803A,#A5D6A7))}
-.bl-tok-number{color:var(--bl-syntax-number,light-dark(#C2410C,#F78C6C))}
-.bl-tok-constant{color:var(--bl-syntax-constant,light-dark(#C8283F,#F07178))}
-.bl-tok-operator{color:var(--bl-syntax-operator,light-dark(#0B7285,#89DDFF))}
-.bl-tok-comment{color:var(--bl-syntax-comment,light-dark(#6E6E7A,#8A8A98));font-style:var(--bl-syntax-comment-style,italic)}
+.bl-tok-type{color:var(--bl-syntax-type,light-dark(#975300,#FFCB6B))}
+.bl-tok-function{color:var(--bl-syntax-function,light-dark(#2E5AD2,#82AAFF))}
+.bl-tok-string{color:var(--bl-syntax-string,light-dark(#0F732E,#A5D6A7))}
+.bl-tok-number{color:var(--bl-syntax-number,light-dark(#B73600,#F78C6C))}
+.bl-tok-constant{color:var(--bl-syntax-constant,light-dark(#C11F39,#F07178))}
+.bl-tok-operator{color:var(--bl-syntax-operator,light-dark(#006D80,#89DDFF))}
+.bl-tok-comment{color:var(--bl-syntax-comment,light-dark(#63636E,#9393A1));font-style:var(--bl-syntax-comment-style,italic)}
 .bl-syntax{--_bl-syn-surface:var(--bl-syntax-surface,var(--card));position:relative;min-width:0;color:var(--bl-syntax-fg,var(--foreground))}
 .bl-syntax-card{box-sizing:border-box;border:1px solid var(--bl-syntax-border,var(--border));border-radius:var(--bl-syntax-radius,12px);background:var(--_bl-syn-surface);overflow:hidden}
 .bl-syntax-card>.bl-syntax-pre{border-radius:inherit}

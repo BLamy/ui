@@ -1776,25 +1776,25 @@
             "color": "var(--bl-syntax-keyword,light-dark(#8839C4,#C792EA))"
           },
           ".bl-tok-type": {
-            "color": "var(--bl-syntax-type,light-dark(#A15C00,#FFCB6B))"
+            "color": "var(--bl-syntax-type,light-dark(#975300,#FFCB6B))"
           },
           ".bl-tok-function": {
-            "color": "var(--bl-syntax-function,light-dark(#2F5BD3,#82AAFF))"
+            "color": "var(--bl-syntax-function,light-dark(#2E5AD2,#82AAFF))"
           },
           ".bl-tok-string": {
-            "color": "var(--bl-syntax-string,light-dark(#23803A,#A5D6A7))"
+            "color": "var(--bl-syntax-string,light-dark(#0F732E,#A5D6A7))"
           },
           ".bl-tok-number": {
-            "color": "var(--bl-syntax-number,light-dark(#C2410C,#F78C6C))"
+            "color": "var(--bl-syntax-number,light-dark(#B73600,#F78C6C))"
           },
           ".bl-tok-constant": {
-            "color": "var(--bl-syntax-constant,light-dark(#C8283F,#F07178))"
+            "color": "var(--bl-syntax-constant,light-dark(#C11F39,#F07178))"
           },
           ".bl-tok-operator": {
-            "color": "var(--bl-syntax-operator,light-dark(#0B7285,#89DDFF))"
+            "color": "var(--bl-syntax-operator,light-dark(#006D80,#89DDFF))"
           },
           ".bl-tok-comment": {
-            "color": "var(--bl-syntax-comment,light-dark(#6E6E7A,#8A8A98))",
+            "color": "var(--bl-syntax-comment,light-dark(#63636E,#9393A1))",
             "font-style": "var(--bl-syntax-comment-style,italic)"
           },
           ".bl-syntax": {
@@ -2304,14 +2304,6 @@
         ".wb-md": {
           "line-height": "1.6",
           "font-size": "14px",
-          "--docs-tok-keyword": "var(--bl-syntax-keyword)",
-          "--docs-tok-type": "var(--bl-syntax-type)",
-          "--docs-tok-function": "var(--bl-syntax-function)",
-          "--docs-tok-string": "var(--bl-syntax-string)",
-          "--docs-tok-number": "var(--bl-syntax-number)",
-          "--docs-tok-constant": "var(--bl-syntax-constant)",
-          "--docs-tok-operator": "var(--bl-syntax-operator)",
-          "--docs-tok-comment": "var(--bl-syntax-comment)\n",
           "--foreground": "currentColor"
         },
         ".wb-md :where(h1)": {
@@ -2340,14 +2332,14 @@
         ".wb-md :where(li)": {
           "margin": "3px 0"
         },
-        ".wb-md :where(code)": {
+        ".wb-md :where(code:not(.bl-syntax-code))": {
           "font-family": "ui-monospace,'SF Mono',Menlo,Consolas,monospace",
           "font-size": ".86em",
           "background": "var(--secondary)",
           "padding": "2px 5px",
           "border-radius": "5px"
         },
-        ".wb-md :where(pre)": {
+        ".wb-md :where(pre:not(.bl-syntax-pre))": {
           "background": "var(--code, var(--muted))",
           "color": "var(--code-foreground, var(--foreground))",
           "border-radius": "10px",
@@ -2429,6 +2421,9 @@
           "max-width": "100%",
           "border-radius": "8px"
         },
+        ".wb-md .bl-syntax-header": {
+          "color": "inherit"
+        },
         ".wb-md .docs-article>[data-docstream-blocks]>:first-child": {
           "margin-top": "0"
         },
@@ -2503,7 +2498,7 @@
           "--gb-panel": "var(--card)",
           "--gb-panel-foreground": "currentColor",
           "--gb-muted": "var(--secondary)",
-          "--gb-muted-foreground": "var(--muted-foreground)",
+          "--gb-muted-foreground": "color-mix(in srgb,var(--muted-foreground) 75%,currentColor)",
           "--gb-border": "var(--border)",
           "--gb-accent": "var(--secondary)",
           "--gb-accent-foreground": "currentColor",

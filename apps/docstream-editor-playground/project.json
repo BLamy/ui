@@ -20,7 +20,24 @@
       "options": {
         "command": "pnpm run dev",
         "cwd": "{projectRoot}"
-      }
+      },
+      "dependsOn": [
+        "^build"
+      ]
+    },
+    "build": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "outputs": [
+        "{projectRoot}/dist"
+      ],
+      "options": {
+        "command": "pnpm run build",
+        "cwd": "{projectRoot}"
+      },
+      "dependsOn": [
+        "^build"
+      ]
     }
   }
 }

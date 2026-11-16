@@ -3,8 +3,8 @@
    from sessionStorage["bldocs-render"] (tools/vr/copy-page.vr.mjs puts the clipboard there).
 
      ?render             with the docs' demo resolver (demos resolve from their folders; inline files are ignored)
-     ?render&resolver=0  without it: demos show the files they carry inline (the preview runs them in almost-node),
-                         as the Markdown renders anywhere else */
+     ?render&resolver=0  without it: demos show the files they carry inline, as the Markdown renders anywhere else
+                         (with no runtime to preview them, a viewer opens on their code) */
 import { useState } from 'react';
 import { GitbookStreamdown } from '@brett_lamy/ui/docstream';
 import { demoResolver } from '../demos';

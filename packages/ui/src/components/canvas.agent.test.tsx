@@ -19,7 +19,7 @@ describe('Canvas is agent-ready', () => {
   it('pans, zooms and fits through the bridge, as the agent', async () => {
     const onViewportChange = vi.fn();
     await mount(
-      <Canvas aria-label="Board" defaultViewport={{ x: 0, y: 0, zoom: 1 }} fit={{ x: 0, y: 0, width: 400, height: 300 }} onViewportChange={onViewportChange}>
+      <Canvas aria-label="Board" defaultViewport={{ x: 0, y: 0, zoom: 1 }} fit={{ x: 0, y: 0, w: 400, h: 300 }} onViewportChange={onViewportChange}>
         <div>Item</div>
       </Canvas>,
     );

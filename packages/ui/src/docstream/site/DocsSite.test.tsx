@@ -2,7 +2,8 @@
 import { act } from "react"
 import { createRoot, type Root } from "react-dom/client"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
-import { DocsSite } from "./DocsSite"
+import { DocsSite, pageCopyMarkdown } from "./DocsSite"
+import { buildDocsTree } from "./tree"
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
@@ -207,5 +208,18 @@ describe("DocsSite", () => {
     } finally {
       vi.unstubAllGlobals()
     }
+  })
+
+  it("copies a page as Markdown that keeps its env declaration, and drops the site's own frontmatter", () => {
+    const tree = buildDocsTree({
+      "docs/env.md": "---\nenv: [GITHUB_TOKEN, API_KEY]\norder: 2\ndescription: Read a token.\n---\n\n# Variables\n\nUses `GITHUB_TOKEN`.\n",
+      "docs/plain.md": "---\norder: 1\n---\n\n# Plain\n\nText.\n",
+      "docs/custom.md": "---\nenv: [TOKEN]\nowner: docs\n---\n\n# Custom\n\nText.\n",
+    })
+    const page = (slug: string) => tree.pages.find((p) => p.slug === slug)!
+    expect(pageCopyMarkdown(page("env"))).toBe("---\nenv: [GITHUB_TOKEN, API_KEY]\n---\n\n# Variables\n\nRead a token.\n\nUses `GITHUB_TOKEN`.\n")
+    expect(pageCopyMarkdown(page("plain"))).toBe("# Plain\n\nText.\n")
+    // Frontmatter that isn't only the site's stays in the body as written, env included, and isn't repeated.
+    expect(pageCopyMarkdown(page("custom")).match(/env:/g)).toHaveLength(1)
   })
 })

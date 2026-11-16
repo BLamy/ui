@@ -125,7 +125,9 @@ export const diagram = definePrimitive({
     const change = createChange(context);
     const history: { past: DiagramData<any, any>[]; future: DiagramData<any, any>[] } = { past: [], future: [] };
     /** A change asked of a controlled diagram, until its data comes back. */
-    let pending: { asked: DiagramData<any, any>; before: DiagramData<any, any>; mode: 'edit' | 'undo' | 'redo' } | null = null;
+    let pending: { before: DiagramData<any, any>; mode: 'edit' | 'undo' | 'redo' } | null = null;
+    /** The owner's data as it last arrived. Not `store.get()`, which already reads the props being handed over. */
+    let delivered: DiagramData<any, any> = store.get().data;
     const counts = () => store.set({ past: history.past.length, future: history.future.length });
     const settle = (before: DiagramData<any, any>, mode: 'edit' | 'undo' | 'redo') => {
       if (mode === 'edit') {
@@ -144,11 +146,13 @@ export const diagram = definePrimitive({
     // The owner's data, as it arrives: what was asked for moves history, anything else clears it.
     context.onOptions((_options, synced) => {
       const next = synced?.data;
-      const now = store.get().data;
-      if (!next || sameData(next, now)) return;
+      if (!next || sameData(next, delivered)) return;
+      delivered = next;
       const asked = pending;
       pending = null;
-      if (asked && sameData(asked.asked, next)) settle(asked.before, asked.mode);
+      // What comes back after a change is that change, even as copies of the arrays it was handed (an owner that
+      // spreads them into its state) or with something of the owner's own added.
+      if (asked) settle(asked.before, asked.mode);
       else if (history.past.length || history.future.length) {
         history.past = [];
         history.future = [];
@@ -162,7 +166,7 @@ export const diagram = definePrimitive({
       if (sameData(before, next)) return false;
       const mode = reason === 'undo' || reason === 'redo' ? reason : 'edit';
       const controlled = context.options().data !== undefined;
-      if (controlled) pending = { asked: next, before, mode };
+      if (controlled) pending = { before, mode };
       const accepted = change('data', next, { reason, event });
       if (!accepted) {
         pending = null;

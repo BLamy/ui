@@ -231,7 +231,7 @@
     }
   ],
   "standalone": [
-    { "id": "blocks", "title": "Blocks", "section": "Blocks", "wide": true },
+    { "id": "blocks", "title": "Overview", "section": "Blocks", "wide": true },
     { "id": "chat-shell", "title": "ChatShell", "section": "Blocks" },
     { "id": "workbench-shell", "title": "WorkbenchShell", "section": "Blocks" }
   ]

@@ -41,10 +41,6 @@ export { NOTHING_SELECTED, addConnection, checkConnection, deleteItems, diagramB
 export type {
   ConnectorRoute, DiagramConnection, DiagramEdge, DiagramIndex, DiagramModel, DiagramNode, DiagramNodeKind, DiagramPort, DiagramSelection, DiagramSide,
 } from './lib/diagram-model';
-export { DIAGRAM_ELK_OPTIONS, DiagramLayoutError, createDiagramLayoutEngine, fromElkGraph, layoutDiagram, runLayout, toElkGraph } from './lib/diagram-layout';
-export type { DiagramDirection, DiagramDraft, DiagramDraftNode, DiagramLayoutEngine, DiagramLayoutOptions, DiagramLayoutResult, ElkGraph } from './lib/diagram-layout';
-export { useDiagramLayout } from './lib/diagram-layout/react';
-export type { UseDiagramLayout, UseDiagramLayoutOptions } from './lib/diagram-layout/react';
 export { machineToDraft } from './lib/state-diagram-model';
 export type { MachineLike, StateEdgeData, StateNodeData } from './lib/state-diagram-model';
 export type { MachineConfig, MachineImplementations } from './lib/state-diagram-edit';
@@ -201,7 +197,7 @@ export type {
   MarkdownEditorValueChangeDetails, MarkdownEditorValueChangeReason, MarkdownEditorToolbarButtonProps,
 } from './components/markdown-editor';
 export { Field, FieldLabel, FieldDescription, FieldError, FieldSet, FieldLegend, FieldGroup, FieldControl, useFieldControl } from './components/field';
-export type { FieldLabelProps } from './components/field';
+export type { FieldProps, FieldLabelProps } from './components/field';
 export { Checkbox, CheckboxIndicator, CheckboxGroup, checkboxVariants, createCheckboxController, createCheckboxGroupController } from './components/checkbox';
 export type { CheckboxProps, CheckboxIndicatorProps, CheckboxGroupProps } from './components/checkbox';
 export { RadioGroup, Radio, RadioIndicator, radioGroupVariants, radioVariants, createRadioGroupController } from './components/radio-group';

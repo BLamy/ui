@@ -125,6 +125,37 @@ describe('CloudflareDiagram, editable', () => {
     expect(panel().querySelector('[data-slot=cloudflare-description]')).toBeTruthy();
   });
 
+  it('brings what it adds into view, with a reveal the Diagram doesn’t leave to its keys', async () => {
+    const onViewportChange = vi.fn();
+    shown({ editable: true, defaultServices: SERVICES, defaultEdges: EDGES, defaultViewport: { x: -9000, y: -9000, zoom: 1 }, onViewportChange });
+    await settle();
+    onViewportChange.mockClear();
+    await type(screen.getByRole('combobox', { name: 'Search Cloudflare’s services' }), 'd1');
+    fireEvent.click(screen.getAllByRole('option').find((o) => o.getAttribute('data-kind') === 'd1')!);
+    await settle();
+    // `focus-in` is what the Diagram cancels (its keys follow focus themselves), so the board stayed where it was.
+    expect(onViewportChange.mock.calls.map(([, details]) => details.reason)).toContain('imperative');
+    const [to] = onViewportChange.mock.calls.at(-1)!;
+    expect(to).not.toEqual({ x: -9000, y: -9000, zoom: 1 });
+  });
+
+  it('gives focus back to “Open its machine” when the machine’s closed, once the panel isn’t inert', async () => {
+    const machine = { id: 'room', initial: 'idle', states: { idle: { on: { GO: 'busy' } }, busy: {} } };
+    shown({ editable: true, defaultServices: [{ id: 'room', kind: 'durable-objects', label: 'Room', machine, at: { x: 0, y: 0 } }], defaultSelection: { nodes: ['room'], edges: [] } });
+    await settle();
+    fireEvent.click(panel().querySelector<HTMLElement>('[data-action=open-machine]')!);
+    await settle();
+    expect(document.querySelector('[data-state-diagram]')).toBeTruthy();
+    expect(panel().closest('[inert]')).toBeTruthy();
+    fireEvent.click(document.querySelector<HTMLElement>('[data-action=machine-back]')!);
+    await settle();
+    await settle();
+    expect(document.querySelector('[data-state-diagram]')).toBeNull();
+    const opener = panel().querySelector<HTMLElement>('[data-action=open-machine]')!;
+    expect(opener.closest('[inert]')).toBeNull();
+    expect(document.activeElement).toBe(opener);
+  });
+
   it('lists what’s wrong, with a way to each, and a connection the catalog says there isn’t is drawn as wrong', async () => {
     shown({ editable: true, defaultServices: SERVICES, defaultEdges: [{ id: 'bad', from: 'files', to: 'api', via: 'r2_buckets' }] });
     await settle();

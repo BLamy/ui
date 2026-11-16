@@ -67,7 +67,17 @@ describe('Canvas', () => {
     const world = root.querySelector('[data-slot="canvas-board"]')!;
     expect(world.getAttribute('style')).toMatch(/scale\(2\)/);
     expect(world.getAttribute('style')).toMatch(/--canvas-zoom: ?2/);
-    expect(root.querySelector('[data-slot="canvas-pane"]')).not.toBeNull();
+    // The pane scrolls, and Chrome would make a scroller with nothing tabbable in it a tab stop of its own.
+    expect(root.querySelector('[data-slot="canvas-pane"]')!.getAttribute('tabindex')).toBe('-1');
+  });
+
+  it('leaves --canvas-zoom off the board when asked, and still moves it with one transform', () => {
+    const controller = createCanvasController();
+    render(<Canvas aria-label="Board" controller={controller} zoomVariable={false} />);
+    const world = board().querySelector('[data-slot="canvas-board"]')!;
+    act(() => { controller.zoomTo(2); });
+    expect(world.getAttribute('style')).toMatch(/scale\(2\)/);
+    expect(world.getAttribute('style')).not.toMatch(/--canvas-zoom/);
   });
 
   it('zooms with + and −, and goes back to 100% with 0', () => {
@@ -327,7 +337,7 @@ describe('Canvas overlay parts', () => {
   it('take className and style after their own', () => {
     render(
       <Canvas aria-label="Board">
-        <CanvasFrame frame={{ x: 0, y: 0, w: 10, h: 10 }} className="outline-warning" style={{ opacity: 0.5 }} />
+        <CanvasFrame frame={{ x: 0, y: 0, w: 10, h: 10, rot: 0 }} className="outline-warning" style={{ opacity: 0.5 }} />
         <CanvasHandles handles={[{ id: 'nw', pt: { x: 0, y: 0 } }]} className="border-warning" />
         <CanvasMarquee rect={{ x: 0, y: 0, w: 5, h: 5 }} className="border-dashed" />
         <CanvasGuides guides={[{ x1: 0, y1: 0, x2: 10, y2: 0 }]} className="bg-warning" />
@@ -349,7 +359,7 @@ describe('Canvas overlay parts', () => {
       renders++;
       return (
         <>
-          <CanvasFrame frame={{ x: 10, y: 10, w: 100, h: 50 }} dashed />
+          <CanvasFrame frame={{ x: 10, y: 10, w: 100, h: 50, rot: 0 }} dashed />
           <CanvasHandles handles={[{ id: 'nw', pt: { x: 10, y: 10 } }]} />
           <CanvasMarquee rect={{ x: 0, y: 0, w: 20, h: 20 }} />
         </>

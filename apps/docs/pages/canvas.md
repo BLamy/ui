@@ -160,12 +160,13 @@ A frame never resizes below 24 (`MIN_SIZE`).
 | `minZoom` / `maxZoom` | 0.02 / 4 | How far out and in it zooms. |
 | `message` | "Zoom 150%" | What a screen reader hears after a zoom key: `(zoom) => string`. |
 | `autoFocus` | `false` | Focus the canvas on mount. |
+| `zoomVariable` | `true` | Whether the board writes its zoom as `--canvas-zoom`, which the overlay parts divide by. A change to it restyles everything on the board, every frame of a zoom: a board of thousands of items turns it off and sets `--canvas-zoom` itself around the parts that use it, in steps (as `Diagram` does). |
 | `overlay` | — | Drawn over the canvas in screen space. |
 | `aria-label` | "Canvas" | The region's name. |
 | `className` / `style` | — | Merged onto the canvas element. The resting cursor is yours (`cursor-crosshair`, or `style={{ cursor }}` for one that changes); the open and closed hand win while the view is dragged. |
 | `ref` | — | The canvas element. |
 
-The canvas carries `data-slot="canvas"` (with `data-panning` while Space is held and `data-grabbing` while the view is dragged), the scrolling pane find in page uses `canvas-pane`, the board layer `data-slot="canvas-board"` (with the zoom as `--canvas-zoom`), and the overlay parts `canvas-frame`, `canvas-handle`, `canvas-marquee`, `canvas-guide` and `canvas-minimap` (its view outline `canvas-minimap-view`).
+The canvas carries `data-slot="canvas"` (with `data-panning` while Space is held and `data-grabbing` while the view is dragged), the scrolling pane find in page uses `canvas-pane`, the board layer `data-slot="canvas-board"` (with the zoom as `--canvas-zoom`, unless `zoomVariable` is off), and the overlay parts `canvas-frame`, `canvas-handle`, `canvas-marquee`, `canvas-guide` and `canvas-minimap` (its view outline `canvas-minimap-view`).
 
 ## Accessibility and motion
 

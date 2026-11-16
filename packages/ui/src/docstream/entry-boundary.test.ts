@@ -1,32 +1,34 @@
-/* Hosts that don't install the optional `@agent-wasm/core` peer must be able to typecheck
-   and bundle every entry except `/playground`. Walk each entry's module graph (static,
-   type-only and dynamic imports alike) and make sure almost-node never shows up — in the
-   sources (`source` condition) and in the published build (`import` / `types`, dist/),
-   which `npm test` builds first. */
+/* Every docstream and docstream-editor entry keeps its module graph to itself. Walk each entry's graph (static, type-only
+   and dynamic imports alike, and through the library's own `@brett_lamy/ui/docstream…` imports into the entry they
+   name) in the sources (`source` condition) and in the published build (`import` / `types`, dist/), which `npm test`
+   builds first: hosts that don't install an optional peer (`@agent-wasm/core`, `@brett_lamy/viz-engine`, `xstate`) must
+   be able to typecheck and bundle every entry but that peer's own, and the heavy parsers (Babel, acorn, rrweb, ELK, the
+   Cloudflare catalog) load only when a page needs them. */
 import { execFileSync } from "node:child_process"
 import { existsSync, readFileSync } from "node:fs"
 import { dirname, join, relative, resolve } from "node:path"
 import { describe, expect, it } from "vitest"
 
-// docstream is part of @brett_lamy/ui, at `@brett_lamy/ui/docstream/*`: these are the library's entries under ./docstream, named here
-// as they were when it was a package of its own (`./xstate/machine` for `./docstream/xstate/machine`).
+// docstream and its editor are part of @brett_lamy/ui, at `@brett_lamy/ui/docstream/*` and `@brett_lamy/ui/docstream-editor/*`.
+// Entries are named here by their export key (`./docstream/xstate/machine`).
 const root = resolve(__dirname, "../..")
-const library = JSON.parse(readFileSync(join(root, "package.json"), "utf8")) as {
+const pkg = JSON.parse(readFileSync(join(root, "package.json"), "utf8")) as {
   exports: Record<string, ExportTarget>
   dependencies: Record<string, string>
   peerDependencies: Record<string, string>
   peerDependenciesMeta: Record<string, { optional?: boolean }>
 }
-const pkg = {
-  ...library,
-  exports: Object.fromEntries(
-    Object.entries(library.exports)
-      .filter(([name]) => name === "./docstream" || name.startsWith("./docstream/"))
-      .map(([name, target]) => [name === "./docstream" ? "." : `./${name.slice("./docstream/".length)}`, target]),
-  ),
-}
+const TREES = ["docstream", "docstream-editor"] as const
+const treeOf = (name: string) => TREES.find((tree) => name === `./${tree}` || name.startsWith(`./${tree}/`))
+const folded = Object.fromEntries(Object.entries(pkg.exports).filter(([name]) => treeOf(name)))
 // The library's optional peers each come in through one entry of docstream's, and nowhere else.
-const OPTIONAL_PEER_ENTRY: Record<string, string> = { "@brett_lamy/viz-engine": "./viz", "@agent-wasm/core": "./playground", xstate: "./xstate/machine" }
+const OPTIONAL_PEER_ENTRY: Record<string, string> = {
+  "@brett_lamy/viz-engine": "./docstream/viz",
+  "@agent-wasm/core": "./docstream/playground",
+  xstate: "./docstream/xstate/machine",
+}
+// The entries that are for an optional peer: the rest must never reach it.
+const PEER_ENTRIES = new Set(["./docstream/playground", "./docstream/viz"])
 
 /* A script entry carries `source` (and the monorepo's `@org/source`, the same file) plus the built `import` and
    `types`; a stylesheet is the built file, with `@org/source` pointing workspace consumers at its source. */
@@ -53,6 +55,17 @@ function resolveFile(from: string, spec: string): string | null {
   return null
 }
 
+/** The file a bare `@brett_lamy/ui/docstream…` import from `from` loads: the entry's source from a source file, its
+    declarations from a `.d.ts`, its build from a built module. Null for anything else (a peer, `@brett_lamy/ui/cloudflare`). */
+function resolveFolded(from: string, spec: string): string | null {
+  if (!spec.startsWith("@brett_lamy/ui/")) return null
+  const target = folded[`./${spec.slice("@brett_lamy/ui/".length)}`]
+  if (!target) return null
+  const inSource = relative(root, from).startsWith("src/")
+  const file = !isScript(target) ? (inSource ? target["@org/source"] : target.default) : inSource ? target.source : from.endsWith(".d.ts") ? target.types : target.import
+  return resolve(root, file)
+}
+
 function graph(entry: string, { dynamic = true } = {}): { files: string[]; bare: Set<string> } {
   const seen = new Set<string>()
   const bare = new Set<string>()
@@ -66,33 +79,38 @@ function graph(entry: string, { dynamic = true } = {}): { files: string[]; bare:
     for (const match of source.matchAll(file.endsWith(".css") ? CSS_IMPORT : IMPORT)) {
       if (!dynamic && match[2]) continue
       const spec = match[1] ?? match[2] ?? match[3]
-      if (!spec) continue
+      // A root-relative path is no package: it's text that reads like an import (a workerd config's
+      // `import "/workerd/workerd.capnp"`, in the editor's starter).
+      if (!spec || spec.startsWith("/")) continue
       if (spec.startsWith(".")) {
         const next = resolveFile(file, spec)
         if (next) queue.push(next)
-      } else {
-        bare.add(spec)
+        continue
       }
+      bare.add(spec)
+      const next = resolveFolded(file, spec)
+      if (next) queue.push(next)
     }
   }
   return { files: [...seen].map((f) => relative(root, f)), bare }
 }
 
-const entries = Object.entries(pkg.exports)
-  .filter(([name]) => name !== "./playground")
+const entries = Object.entries(folded)
+  .filter(([name]) => name !== "./docstream/playground")
   .flatMap(([name, target]): [string, string][] =>
     isScript(target) ? [[name, target.source], [name, target.import], [name, target.types]] : [[name, target.default], [name, target["@org/source"]]],
   )
 
 describe("entry boundaries", () => {
   it("publishes every entry from dist/, with sources behind the `source` condition", () => {
-    for (const [name, target] of Object.entries(pkg.exports)) {
+    for (const [name, target] of Object.entries(folded)) {
+      const tree = treeOf(name)!
       expect(target["@org/source"], name).toBe(isScript(target) ? target.source : target.default.replace("./dist/", "./src/"))
       if (!isScript(target)) {
-        expect(target.default, name).toMatch(/^\.\/dist\/docstream\/.*\.css$/)
+        expect(target.default, name).toMatch(new RegExp(`^\\./dist/${tree}/.*\\.css$`))
         continue
       }
-      expect(target.source, name).toMatch(/^\.\/src\/docstream\/.*\.tsx?$/)
+      expect(target.source, name).toMatch(new RegExp(`^\\./src/${tree}/.*\\.tsx?$`))
       expect(target.import, name).toBe(target.source.replace("./src/", "./dist/").replace(/\.tsx?$/, ".js"))
       expect(target.types, name).toBe(target.import.replace(/\.js$/, ".d.ts"))
     }
@@ -106,7 +124,7 @@ describe("entry boundaries", () => {
 
   it("keeps Babel and XState out of what every entry loads straight away, but the one that's for them", () => {
     for (const [name, target] of entries) {
-      if (name === "./xstate/machine") continue
+      if (name === "./docstream/xstate/machine") continue
       expect([...graph(target, { dynamic: false }).bare].filter((spec) => spec === "@babel/parser" || spec === "xstate"), name).toEqual([])
     }
   })
@@ -139,9 +157,9 @@ describe("entry boundaries", () => {
   // every entry but the optional-peer ones must import there: fully specified relative
   // imports, no stylesheet imports on the eager path.
   it("loads every dist entry in plain Node (except the optional-peer entries)", () => {
-    const specs = Object.entries(pkg.exports)
-      .filter(([name, target]) => isScript(target) && name !== "./playground" && name !== "./viz")
-      .map(([name]) => `@brett_lamy/ui/docstream${name.slice(1)}`)
+    const specs = Object.entries(folded)
+      .filter(([name, target]) => isScript(target) && !PEER_ENTRIES.has(name))
+      .map(([name]) => `@brett_lamy/ui${name.slice(1)}`)
     const script = `for (const s of ${JSON.stringify(specs)}) await import(s)`
     expect(() => execFileSync(process.execPath, ["--input-type=module", "-e", script], { cwd: root, stdio: "pipe" })).not.toThrow()
   })
@@ -162,7 +180,7 @@ describe("entry boundaries", () => {
   })
 
   // The Strudel rack's parser (acorn) loads only when a reader opens the rack.
-  it.each(entries.filter(([name]) => name !== "./strudel"))("%s (%s) loads acorn only through a dynamic import", (_name, target) => {
+  it.each(entries.filter(([name]) => name !== "./docstream/strudel"))("%s (%s) loads acorn only through a dynamic import", (_name, target) => {
     expect([...graph(target, { dynamic: false }).bare].filter((spec) => spec === "acorn")).toEqual([])
   })
 
