@@ -2,8 +2,10 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Diagram, DiagramToolbar, type DiagramData } from '@/components/ui/diagram'
 import {
-  DiagramFrame, DiagramFrameBar, DiagramFrameBoard, DiagramFrameCover, DiagramFrameInput, DiagramFramePanel, DiagramFrameSection,
+  DiagramFrame, DiagramFrameBar, DiagramFrameBoard, DiagramFrameCover, DiagramFrameCoverHeader, DiagramFramePanel, DiagramFrameSection,
 } from '@/components/ui/diagram-frame'
+import { Field, FieldError, FieldLabel } from '@/components/ui/field'
+import { Input } from '@/components/ui/input'
 import type { DiagramSelection } from '@/lib/diagram-model'
 
 const START: DiagramData = {
@@ -26,8 +28,16 @@ function Inspector() {
   const [data, setData] = useState(START)
   const [selection, setSelection] = useState<DiagramSelection>({ nodes: ['triage'], edges: [] })
   const [inside, setInside] = useState<string | null>(null)
+  const [refused, setRefused] = useState<string | null>(null)
   const node = selection.nodes.length === 1 ? data.nodes.find((n) => n.id === selection.nodes[0]) : undefined
-  const rename = (label: string) => setData((d) => ({ ...d, nodes: d.nodes.map((n) => (n.id === node?.id ? { ...n, label } : n)) }))
+  // A name has to be there, and one of a kind: what isn't stays as it was, and the field says why.
+  const rename = (label: string) => {
+    const name = label.trim()
+    if (!name) return setRefused('A step needs a name.')
+    if (data.nodes.some((n) => n.id !== node?.id && n.label === name)) return setRefused(`There’s a “${name}” already.`)
+    setRefused(null)
+    setData((d) => ({ ...d, nodes: d.nodes.map((n) => (n.id === node?.id ? { ...n, label: name } : n)) }))
+  }
   return (
     <DiagramFrame>
       <DiagramFrameBoard>
@@ -39,7 +49,7 @@ function Inspector() {
           selection={selection}
           onSelectionChange={setSelection}
           onAction={(item) => item.kind === 'node' && setInside(item.id)}
-          overlay={<DiagramToolbar side="top" />}
+          overlay={<DiagramToolbar />}
           aria-label="Mail rules"
         />
         <DiagramFrameBar>{node ? node.label : `${data.nodes.length} steps`}</DiagramFrameBar>
@@ -47,7 +57,11 @@ function Inspector() {
       <DiagramFramePanel title="Inspector" backLabel="Rules">
         {node ? (
           <DiagramFrameSection title="This step">
-            <DiagramFrameInput label="Name" value={node.label ?? ''} onValueCommit={rename} />
+            <Field invalid={!!refused}>
+              <FieldLabel>Name</FieldLabel>
+              <Input size="sm" value={node.label ?? ''} onValueCommit={rename} autoCapitalize="off" autoCorrect="off" spellCheck={false} />
+              <FieldError>{refused}</FieldError>
+            </Field>
             <div><Button variant="secondary" size="sm" onClick={() => setInside(node.id)}>Open it</Button></div>
           </DiagramFrameSection>
         ) : (
@@ -56,10 +70,7 @@ function Inspector() {
       </DiagramFramePanel>
       {inside ? (
         <DiagramFrameCover>
-          <div className="flex shrink-0 items-center gap-2 border-b border-border p-2">
-            <Button variant="secondary" size="sm" autoFocus onClick={() => setInside(null)}>Back to the rules</Button>
-            <span className="text-footnote font-semibold">Inside {data.nodes.find((n) => n.id === inside)?.label}</span>
-          </div>
+          <DiagramFrameCoverHeader title={`Inside ${data.nodes.find((n) => n.id === inside)?.label}`} backLabel="Rules" onBack={() => setInside(null)} />
           <div className="grid flex-1 place-items-center text-footnote text-foreground/70">What a step holds goes here.</div>
         </DiagramFrameCover>
       ) : null}

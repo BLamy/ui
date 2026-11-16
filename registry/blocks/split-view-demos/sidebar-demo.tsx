@@ -5,7 +5,7 @@ import {
   SidebarTrigger, SidebarAccount, useSidebar, type SidebarPresentation, type SidebarVariant,
 } from '@/components/ui/sidebar';
 import { ToggleGroup } from '@/components/ui/toggle';
-import { themeScopeProps } from '@/lib/theme';
+import { themeScopeProps, type Appearance } from '@/lib/theme';
 import { cn } from '@/lib/utils';
 
 const PAGES = [
@@ -69,16 +69,16 @@ function Page({ page }: { page: string }) {
 }
 
 /** One Sidebar, three looks, two presentations, plus a narrow container that turns `auto` into the drawer. */
-export function SidebarDemo({ variant: initialVariant = 'docked', presentation: initialPresentation = 'auto', dark = true }: {
+export function SidebarDemo({ variant: initialVariant = 'docked', presentation: initialPresentation = 'auto', appearance = 'dark' }: {
   variant?: SidebarVariant;
   presentation?: SidebarPresentation;
-  dark?: boolean;
+  appearance?: Appearance;
 }) {
   const [variant, setVariant] = useState<SidebarVariant>(initialVariant);
   const [presentation, setPresentation] = useState<SidebarPresentation>(initialPresentation);
   const [narrow, setNarrow] = useState(false);
   const [page, setPage] = useState('Home');
-  const scope = themeScopeProps({ scope: 'workbench', appearance: dark ? 'dark' : 'light' });
+  const scope = themeScopeProps({ scope: 'workbench', appearance });
   return (
     // A plain element (not <ThemeScope>): the demo's own chrome keeps content-box sizing.
     <div {...scope} className={cn(scope.className, 'grid justify-items-center gap-3 bg-background p-4 font-sans')}>
@@ -96,7 +96,7 @@ export function SidebarDemo({ variant: initialVariant = 'docked', presentation: 
         narrow ? 'w-[380px]' : 'w-full',
       )}>
         {/* Remounted per look and presentation, so each starts in its default state. */}
-        <SidebarProvider key={variant + presentation} defaultOpen={presentation !== 'drawer'} breakpoint={430}>
+        <SidebarProvider key={variant + presentation} defaultOpen={presentation !== 'drawer'} breakpoints={{ medium: 430 }}>
           <SidebarNav variant={variant} presentation={presentation} page={page} onPageChange={setPage} />
           <Page page={page} />
         </SidebarProvider>

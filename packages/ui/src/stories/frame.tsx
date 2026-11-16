@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { createContext, useContext, type ReactNode } from 'react';
 import { BLProvider, type AppearancePreference } from '@/lib/theme';
 
 /** Story-only helpers: sized frames wrapping BLProvider (BL UI containers are absolutely positioned). */
@@ -20,11 +20,21 @@ export function Phone({ children, w = 390, h = 720, appearance, tint, safeTop }:
   );
 }
 
+const PAD = 20;
+/** Set inside a Pad: a story's own Pad (a Dark story's) inside its meta's Pad takes over that frame instead of nesting. */
+const InPad = createContext(false);
+
 export function Pad({ children, w = 360, appearance, tint }: { children?: ReactNode; w?: number; appearance?: AppearancePreference; tint?: string }) {
+  const nested = useContext(InPad);
+  // Nested, the frame covers its parent exactly (its padding pulled back, its corners clipped by the parent's), so a
+  // Dark story shows one dark frame, not a dark card clipped inside a light one. A frame never overflows the canvas.
+  const style = nested ? { margin: -PAD } : { ...frameStyle, width: w, maxWidth: '100%' };
   return (
-    <div style={{ ...frameStyle, width: w }}>
+    <div style={style}>
       <BLProvider appearance={appearance} tint={tint}>
-        <div style={{ padding: 20 }}>{children}</div>
+        <InPad.Provider value>
+          <div style={{ padding: PAD }}>{children}</div>
+        </InPad.Provider>
       </BLProvider>
     </div>
   );

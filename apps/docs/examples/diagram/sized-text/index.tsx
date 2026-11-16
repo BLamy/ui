@@ -13,7 +13,7 @@ const NODES: DiagramNode[] = [
   words('nospaces', 'aVeryLongStateNameWithNoSpacesInItAtAllThatHasToBreakSomewhereOrItWillRunOutOfItsBox', 280, 90),
   words('cjk', '認証を確認しています', 0, 190, { detail: 'アップロードを待っています' }),
   words('cjklong', 'これはとても長い状態の名前で、折り返さなければ箱からはみ出してしまいます', 280, 190),
-  words('final', 'quarantined', 0, 280, { kind: 'final' }),
+  words('final', 'quarantined', 0, 280, { variant: 'double' }),
   words('emoji', '🚀 launching 🌕', 280, 280),
 ]
 

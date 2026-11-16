@@ -42,7 +42,7 @@ function pageApp(page: string) {
 
 export function Launcher({ initialPages, initialQuery = '', width, listHeight, autoFocus = true, onClose, controller }: LauncherProps) {
   const [query, setQuery] = useState(initialQuery);
-  const { dark } = useAlfred();
+  const dark = useAlfred().appearance === 'dark';
   const wide = width >= 600;
   return (
     <CommandMenu

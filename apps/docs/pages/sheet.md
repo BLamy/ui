@@ -63,6 +63,8 @@ The bottom sheet is full width with rounded top corners (the kit's modal radius,
 
 `contained` renders the sheet inside its positioned parent rather than BLProvider's root: the Sheet writes a layer host there (`data-slot="sheet-host"`, `absolute inset-0`, `contain: layout`), so its scrim, panel, focus trap and Escape stay in that box and the rest of the page outside it stays usable. The host stacks at `z-index: var(--sheet-z, 30)`; set `--sheet-z` on the parent to move it. `modal={false}` puts the panel beside a usable box, with no scrim. In a browser without the top layer (UI SDK would portal the sheet to the body) the sheet renders into that host instead, so it stays contained there too.
 
+`SheetContent variant="tray"` floats the card 10px in from the edges, every corner rounded: the phone filter sheet that wants Dialog's `tray` look stays a Sheet. The names are Dialog's: `default` (attached), `tray` (floating) and, Sheet's own, `panel`.
+
 `SheetContent variant="panel"` is the edge panel without chrome: full length, flush with its edge, divided from the page by a hairline, no grabber, on the page background, 20rem wide up to 85% of the host. Its children are the whole panel (its own classes lay them out), which is what a drawer of navigation or an inspector wants. AdaptivePane's drawer and Sidebar's overlay are a contained Sheet with a panel, and [FloatingSheet](https://blamy.github.io/ui/#/floating-sheet) is a contained bottom Sheet.
 
 ```tsx
@@ -130,7 +132,7 @@ Like Dialog: focus is trapped, the rest of the host is inert, Esc closes, focus 
 
 | Prop | Default | Effect |
 | --- | --- | --- |
-| `variant` | `card` | `card`: the modal sheet. `panel`: a full-length edge panel whose children are the whole panel. |
+| `variant` | `default` | Dialog's look names: `default`, the modal sheet attached to its edge; `tray`, the same card floating 10px in from the edges (over the safe area) with every corner rounded, as Dialog's `tray` and a resting FloatingSheet; `panel`, a full-length edge panel whose children are the whole panel. |
 | `grabber` | `true` | The grabber on bottom cards (a `SheetHandle` with snap points). |
 | `swipe` | `true` | Whether a drag toward its edge closes it (`false` writes UI SDK's `data-drawer-no-drag`). |
 | `keepMounted` | `false` | Keep the panel rendered while closed. |
@@ -159,11 +161,12 @@ Defined in `@/components/ui/sheet`. Base classes:
 pointer-events-auto relative box-border flex flex-col shadow-[0_0_40px_black] shadow-black/22 outline-none after:absolute after:bg-inherit after:content-[''] data-dragging:select-none
 ```
 
-**`variant`** — default `card`
+**`variant`** — default `default`
 
 | Value | Adds |
 | --- | --- |
-| `card` (default) | `bg-card text-card-foreground` |
+| `default` (default) | `bg-card text-card-foreground` |
+| `tray` | `rounded-sheet bg-card text-card-foreground after:hidden` |
 | `panel` | `bg-background text-foreground` |
 
 **`side`** — default `bottom`
@@ -175,4 +178,4 @@ pointer-events-auto relative box-border flex flex-col shadow-[0_0_40px_black] sh
 | `left` | `mr-auto h-full w-[85%] max-w-[360px] after:inset-y-0 after:right-full after:w-24` |
 | `right` | `ml-auto h-full w-[85%] max-w-[360px] after:inset-y-0 after:left-full after:w-24` |
 
-8 compound variants — see the source.
+12 compound variants — see the source.

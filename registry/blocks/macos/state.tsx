@@ -1,6 +1,7 @@
 /* The launcher's shared state: the clipboard history, calculator history, Trash, appearance, the power overlay,
    workflow drafts, and the "Copied" HUD — one context, so any page can act on it. */
 import { createContext, useContext, useState, type ReactNode } from 'react';
+import type { Appearance } from '@/lib/theme';
 import type { ToastHud } from '@/components/ui/toast';
 import { CLIPS, REPOS, TRASH, type Clip } from './data';
 
@@ -10,8 +11,8 @@ export interface IssueDraft { repo?: string; title?: string; label?: string }
 export interface RunningTimer { minutes: number; name: string; startedAt: number }
 
 export interface Alfred {
-  dark: boolean;
-  toggleDark: () => void;
+  appearance: Appearance;
+  toggleAppearance: () => void;
   /** The dark "Copied" pill. */
   hud: (title: string, icon?: string) => void;
   /** Writes to the system clipboard (when allowed), shows the HUD, and records it in the clipboard history. */
@@ -52,9 +53,9 @@ const INITIAL_HISTORY: CalcEntry[] = [
   { expr: '2^16', result: '65536' },
 ];
 
-export function AlfredProvider({ hud, dark, toggleDark, reset, close, children }: {
+export function AlfredProvider({ hud, appearance, toggleAppearance, reset, close, children }: {
   /** The desktop's HUD queue (`createHud()`), shown by its `<ToastRegion variant="hud" />`. */
-  hud: ToastHud; dark: boolean; toggleDark: () => void; reset: () => void; close: () => void; children: ReactNode;
+  hud: ToastHud; appearance: Appearance; toggleAppearance: () => void; reset: () => void; close: () => void; children: ReactNode;
 }) {
   const [clips, setClips] = useState(CLIPS);
   const [history, setHistory] = useState(INITIAL_HISTORY);
@@ -67,8 +68,8 @@ export function AlfredProvider({ hud, dark, toggleDark, reset, close, children }
 
   const showHud = hud;
   const value: Alfred = {
-    dark,
-    toggleDark,
+    appearance,
+    toggleAppearance,
     hud: (title, icon) => { hud(title, { type: 'success', data: icon ? { icon } : undefined }); },
     copy: (text, hud = 'Copied to Clipboard', from = 'Alfred') => {
       try { void navigator.clipboard?.writeText(text).catch(() => undefined); } catch { /* not allowed here — the HUD still confirms */ }

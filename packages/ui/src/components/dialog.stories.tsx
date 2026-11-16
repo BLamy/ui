@@ -36,7 +36,7 @@ function Alert({ open = true }: { open?: boolean }) {
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogClose variant="cancel">Cancel</AlertDialogClose>
-          <AlertDialogClose variant="destructive" value="confirm">Delete</AlertDialogClose>
+          <AlertDialogClose tone="destructive" value="confirm">Delete</AlertDialogClose>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
@@ -61,7 +61,7 @@ export const AlertStacked: Story = {
             </AlertDialogHeader>
             <AlertDialogFooter orientation="vertical">
               <AlertDialogClose value="keep">Keep a Copy</AlertDialogClose>
-              <AlertDialogClose variant="destructive" value="confirm">Delete from iPhone</AlertDialogClose>
+              <AlertDialogClose tone="destructive" value="confirm">Delete from iPhone</AlertDialogClose>
               <AlertDialogClose variant="cancel">Cancel</AlertDialogClose>
             </AlertDialogFooter>
           </AlertDialogContent>

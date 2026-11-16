@@ -51,7 +51,7 @@ function Summary({ w, diff }: { w: Worktree; diff: WorktreeDiff }) {
 }
 
 const STATUS_WORD = { added: 'Added', modified: 'Modified', deleted: 'Deleted' } as const;
-const STATUS_TONE = { added: 'success', modified: 'primary', deleted: 'destructive' } as const;
+const STATUS_TONE = { added: 'success', modified: 'default', deleted: 'destructive' } as const;
 
 /** A changed file's hover card: its name and folder, what the change is, and its lines in and out. */
 function ChangeCard({ file, diff, worktreeId }: { file: DiffFile; diff: WorktreeDiff; worktreeId: string }) {

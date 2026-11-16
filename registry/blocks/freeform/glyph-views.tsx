@@ -13,6 +13,6 @@ export function ShapeGlyph({ kind, size = 28, className }: { kind: ShapeKind; si
   );
 }
 
-export function StickyGlyph({ color, size = 36 }: { color: string; size?: number }) {
+export function StickyGlyph({ tint: color, size = 36 }: { tint: string; size?: number }) {
   return <span aria-hidden="true" className="block rounded-[3px] shadow-[0_4px_8px_-3px] shadow-black/35" style={{ width: size, height: size, background: color }} />;
 }

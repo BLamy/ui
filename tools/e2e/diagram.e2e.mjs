@@ -88,7 +88,7 @@ test.describe('text', () => {
     const z = Number(/scale\(([^)]+)\)/.exec(root.querySelector('[data-slot=canvas-board]').style.transform)[1]);
     const out = [];
     for (const node of root.querySelectorAll('[data-slot=diagram-node]')) {
-      if (!['node', 'final'].includes(node.dataset.kind)) continue;
+      if (node.dataset.kind !== 'node') continue;
       const box = node.getBoundingClientRect();
       for (const el of node.querySelectorAll('[data-slot=diagram-node-label], [data-slot=diagram-node-detail]')) {
         if (!el.textContent) continue;
@@ -96,17 +96,17 @@ test.describe('text', () => {
         range.selectNodeContents(el);
         const r = range.getBoundingClientRect();
         out.push({
-          node: node.dataset.node, kind: node.dataset.kind, text: el.textContent, w: box.width / z,
+          node: node.dataset.node, double: node.dataset.variant === 'double', text: el.textContent, w: box.width / z,
           left: (r.left - box.left) / z, right: (box.right - r.right) / z, top: (r.top - box.top) / z, bottom: (box.bottom - r.bottom) / z,
         });
       }
     }
     return out;
   });
-  /** A node's padding is 12 across, and a final state's inner line takes up 6 of that. Down, it's what's left of 8. */
+  /** A node's padding is 12 across, and a double border's inner line takes up 6 of that. Down, it's what's left of 8. */
   const clear = (list) => {
     for (const m of list) {
-      const across = m.kind === 'final' ? 7 : 9;
+      const across = m.double ? 7 : 9;
       expect.soft(Math.min(m.left, m.right), `${m.text}: across`).toBeGreaterThanOrEqual(across);
       expect.soft(Math.min(m.top, m.bottom), `${m.text}: down`).toBeGreaterThanOrEqual(3);
     }
@@ -129,8 +129,8 @@ test.describe('text', () => {
       await page.locator('[data-slot=diagram-node]').first().waitFor({ timeout: 30_000 });
       await expect.poll(() => nodeWidth(page, 'upload.worker.streaming')).toBeGreaterThan(60);
       const list = await margins(page.locator('[data-slot=diagram]'));
-      // 25 states have words: 15 ordinary ones (7 with a second line) and 10 final ones.
-      expect(list.filter((m) => m.kind === 'final')).toHaveLength(10);
+      // 25 states have words: 15 ordinary ones (7 with a second line) and 10 final ones, drawn with a double border.
+      expect(list.filter((m) => m.double)).toHaveLength(10);
       clear(list);
     });
   }
@@ -347,7 +347,7 @@ test.describe('editing', () => {
     }
   });
 
-  test('a selected node’s ring is the same thickness at any zoom', async ({ page }) => {
+  test('a selected node’s line is the same thickness at any zoom', async ({ page }) => {
     await open(page);
     const a = await nodeBox(page, 'a');
     await page.mouse.click(a.x, a.y);
@@ -356,7 +356,8 @@ test.describe('editing', () => {
       const spreads = [...getComputedStyle(el).boxShadow.matchAll(/(-?[\d.]+)px (-?[\d.]+)px (-?[\d.]+)px (-?[\d.]+)px/g)].map((m) => parseFloat(m[4]));
       return Math.max(...spreads) * z;
     });
-    const near = async () => expect(Math.abs((await ring()) - 3.6)).toBeLessThan(0.2);
+    // Selected is a 1.5 px line on its edge, with no gap (focus is the ring past a gap).
+    const near = async () => expect(Math.abs((await ring()) - 1.5)).toBeLessThan(0.2);
     await near();
     await zoomTo(page, 3.5);
     await near();
@@ -732,7 +733,7 @@ test.describe('the keyboard', () => {
     await expect(page.locator('[data-demo-changes]')).toHaveAttribute('data-demo-changes', '');
   });
 
-  test('a read-only diagram is reached the same way, and has nothing to select', async ({ page }) => {
+  test('a read-only diagram is reached the same way, selects, and changes nothing', async ({ page }) => {
     await page.goto('/?demo=diagram/machine&theme=light', { waitUntil: 'load' });
     await page.locator('[data-slot=diagram-node]').first().waitFor({ timeout: 30_000 });
     await page.locator('[data-slot=canvas]').focus();
@@ -743,8 +744,12 @@ test.describe('the keyboard', () => {
     expect(await focused(page)).toBe('node:upload.worker');
     await press(page, 'Alt+ArrowDown');
     expect(await focused(page)).toMatch(/^node:upload\.worker\./);
-    await expect(page.locator('[data-slot=diagram-node]').first()).not.toHaveAttribute('aria-pressed');
+    // Read-only means select and read: Enter selects what has focus, and Delete takes nothing away.
     const before = await focused(page);
+    const id = before.slice('node:'.length);
+    await expect(page.locator(`[data-node="${id}"]`)).toHaveAttribute('aria-pressed', 'false');
+    await press(page, 'Enter');
+    await expect(page.locator(`[data-node="${id}"]`)).toHaveAttribute('aria-pressed', 'true');
     await press(page, 'Delete', 'ControlOrMeta+a');
     expect(await focused(page)).toBe(before);
     await expect(page.locator('[data-slot=diagram-node]')).toHaveCount(40);
@@ -854,14 +859,14 @@ test.describe('connecting', () => {
     const plain = await center(page, 'plain');
     await page.mouse.click(plain.x, plain.y);
     await expect(page.locator('[data-slot=diagram-port][data-port-of=plain]')).toHaveCount(4);
-    const right = await page.locator('[data-slot=diagram-port][data-port-of=plain][data-side=r]').boundingBox();
+    const right = await page.locator('[data-slot=diagram-port][data-port-of=plain][data-side=right]').boundingBox();
     await pressAt(page, { x: right.x + right.width / 2, y: right.y + right.height / 2 });
     await moveTo(page, await center(page, 'other'));
     await page.mouse.up();
     expect(await edges(page)).toBe(`${FIRST} plain>other`);
     // To itself: a self-loop, with an arrowhead pointing back in.
     await page.mouse.click(plain.x, plain.y);
-    const top = await page.locator('[data-slot=diagram-port][data-port-of=plain][data-side=t]').boundingBox();
+    const top = await page.locator('[data-slot=diagram-port][data-port-of=plain][data-side=top]').boundingBox();
     await pressAt(page, { x: top.x + top.width / 2, y: top.y + top.height / 2 });
     await moveTo(page, { x: plain.x + 10, y: plain.y + 5 });
     await page.mouse.up();
@@ -982,6 +987,10 @@ test.describe('connecting', () => {
     expect((await edges(page)).split(' ').length).toBeLessThanOrEqual(2);
     expect(await edges(page)).toContain(FIRST);
     await expect(page.locator('[data-slot=diagram-connection]')).toHaveCount(0);
+    // That far out, a port's dot shrinks with the board rather than crowding its node (a phone's fitted view of a big system).
+    expect(await page.locator('[data-slot=diagram-port]').first().evaluate((el) => el.getBoundingClientRect().width)).toBeLessThan(1);
+    // At 100% it's its full 10 px on screen.
+    await zoomTo(page, 1);
     expect(await page.locator('[data-slot=diagram-port]').first().evaluate((el) => el.getBoundingClientRect().width)).toBeCloseTo(10, 0);
   });
 
@@ -1189,9 +1198,12 @@ test.describe('StateDiagram', () => {
     await expect(page.locator('[data-slot=diagram-edge]')).toHaveCount(43);
     await expect(page.locator('[data-slot=diagram-edge-label]')).toHaveCount(36);
     await expect(page.locator('[data-slot=diagram-divider]')).toHaveCount(2);
-    await expect(page.locator('[data-node="upload.worker.__initial"]')).toHaveAttribute('data-kind', 'initial');
-    await expect(page.locator('[data-node="upload.done"]')).toHaveAttribute('data-kind', 'final');
-    await expect(page.locator('[data-node="upload.processing"]')).toHaveAttribute('data-kind', 'parallel');
+    // The statechart look, on Diagram's generic looks.
+    await expect(page.locator('[data-node="upload.worker.__initial"]')).toHaveAttribute('data-kind', 'marker');
+    await expect(page.locator('[data-node="upload.done"]')).toHaveAttribute('data-variant', 'double');
+    await expect(page.locator('[data-node="upload.processing"]')).toHaveAttribute('data-kind', 'group');
+    await expect(page.locator('[data-node="upload.processing"]')).toHaveAttribute('data-variant', 'dashed');
+    await expect(page.locator('[data-node="upload.done"]')).toHaveAttribute('aria-label', /^done, final state/);
     // In a machine's words, with what it connects to.
     await expect(page.locator('[data-node="upload.worker.streaming"]')).toHaveAttribute('aria-label', /^streaming, state, in worker\./);
     // Labelled by name, always, after and guards.
@@ -1203,9 +1215,9 @@ test.describe('StateDiagram', () => {
   test('a config works, and one XState won’t have shows what it said, not a blank', async ({ page }) => {
     await page.goto('/?demo=state-diagram/config&theme=light', { waitUntil: 'load' });
     await expect.poll(() => page.locator('[data-slot=diagram-node]').count(), { timeout: 30_000 }).toBeGreaterThan(3);
-    await expect(page.locator('[data-slot=state-diagram-error]')).toHaveCount(0);
+    await expect(page.locator('[data-slot=diagram-error]')).toHaveCount(0);
     await page.getByRole('button', { name: 'One XState won’t have' }).click();
-    const error = page.locator('[data-slot=state-diagram-error]');
+    const error = page.locator('[data-slot=diagram-error]');
     await expect(error).toBeVisible();
     await expect(error).toContainText('nowhere');
     await expect(error).toHaveAttribute('role', 'alert');
@@ -1470,10 +1482,10 @@ test.describe('StateDiagram simulates', () => {
 
 test.describe('StateDiagram without xstate', () => {
   test('says what to install, when it can’t be loaded', async ({ page }) => {
-    // Installing the package brings xstate along, through docstream, so this is the only way to get here today.
+    // xstate is an optional peer: an app that hasn't installed it gets this.
     await page.route(/\/deps\/xstate/, (route) => route.abort());
     await page.goto('/?demo=state-diagram/config&theme=light', { waitUntil: 'load' });
-    const error = page.locator('[data-slot=state-diagram-error]');
+    const error = page.locator('[data-slot=diagram-error]');
     await expect(error).toBeVisible({ timeout: 30_000 });
     await expect(error).toHaveText('This needs xstate, an optional peer of @brett_lamy/ui: npm install xstate');
     await expect(error).toHaveAttribute('role', 'alert');
@@ -1484,8 +1496,11 @@ test.describe('StateDiagram without xstate', () => {
 test.describe('StateDiagram edits', () => {
   const node = (page, id) => page.locator(`[data-slot=diagram-node][data-node="${id}"]`);
   const edge = (page, id) => page.locator(`[data-slot=diagram-edge][data-edge="${id}"]`);
+  /** A refusal of something done on the board, or by a button, at the top of the panel. */
   const refusal = (page) => page.locator('[data-slot=edit-refusal]');
   const field = (page, slot) => page.locator(`input[data-field=${slot.replace('edit-', '')}]`);
+  /** A field's refusal: its FieldError, under it. */
+  const fieldError = (page, slot) => page.locator('[data-slot=field]', { has: field(page, slot) });
   const open = async (page, demo = 'state-diagram/edit') => {
     await page.goto(`/?demo=${demo}&theme=light`, { waitUntil: 'load' });
     await expect(page.locator('[data-slot=edit-panel]')).toBeVisible({ timeout: 30_000 });
@@ -1509,7 +1524,7 @@ test.describe('StateDiagram edits', () => {
   /** A real drag from the dot on one side of a selected state to the middle of another. */
   const connect = async (page, from, to) => {
     await select(page, from);
-    const dot = await page.locator(`[data-slot=diagram-port][data-port-of="${from}"][data-side=r]`).boundingBox();
+    const dot = await page.locator(`[data-slot=diagram-port][data-port-of="${from}"][data-side=right]`).boundingBox();
     const b = await node(page, to).boundingBox();
     await page.mouse.move(dot.x + dot.width / 2, dot.y + dot.height / 2);
     await page.mouse.down();
@@ -1526,7 +1541,7 @@ test.describe('StateDiagram edits', () => {
   test('adds a state, names it, connects it with a real drag, and takes it all back', async ({ page }) => {
     await open(page);
     const before = await graph(page);
-    await expect(page.locator('[data-slot=edit-panel] [data-action=undo]')).toBeDisabled();
+    await expect(page.locator('[data-state-diagram] [data-action=undo]')).toBeDisabled();
     await page.locator('[data-slot=edit-panel] [data-action=add-state]').click();
     await expect(node(page, 'door.state')).toHaveAttribute('data-selected', '');
     await expect(field(page, 'edit-name')).toHaveValue('state');
@@ -1561,12 +1576,12 @@ test.describe('StateDiagram edits', () => {
     await expect(edge(page, 'door.broken:EVENT2->door.closed')).toHaveAttribute('data-selected', '');
 
     // Back through all of it, one at a time.
-    for (let i = 0; i < 8; i++) await page.locator('[data-slot=edit-panel] [data-action=undo]').click();
-    await expect(page.locator('[data-slot=edit-panel] [data-action=undo]')).toBeDisabled();
+    for (let i = 0; i < 8; i++) await page.locator('[data-state-diagram] [data-action=undo]').click();
+    await expect(page.locator('[data-state-diagram] [data-action=undo]')).toBeDisabled();
     await expect.poll(() => graph(page)).toEqual(before);
     // And forward again.
-    for (let i = 0; i < 8; i++) await page.locator('[data-slot=edit-panel] [data-action=redo]').click();
-    await expect(page.locator('[data-slot=edit-panel] [data-action=redo]')).toBeDisabled();
+    for (let i = 0; i < 8; i++) await page.locator('[data-state-diagram] [data-action=redo]').click();
+    await expect(page.locator('[data-state-diagram] [data-action=redo]')).toBeDisabled();
     await expect(edge(page, 'door.broken:EVENT->door.closed')).toHaveCount(1);
     await expect(edge(page, 'door.broken:EVENT2->door.closed')).toHaveCount(1);
     await expect(edge(page, 'door.broken:REPAIR->door.closed')).toHaveCount(1);
@@ -1593,15 +1608,16 @@ test.describe('StateDiagram edits', () => {
     await expect(refusal(page)).toContainText('closed');
     await expect(refusal(page)).toHaveAttribute('role', 'alert');
     expect(await graph(page)).toEqual(before);
-    await expect(page.locator('[data-slot=edit-panel] [data-action=undo]')).toBeDisabled();
-    // A name that's taken, with the field going back to what it was.
+    await expect(page.locator('[data-state-diagram] [data-action=undo]')).toBeDisabled();
+    // A name that's taken, said under the field, which is invalid, and goes back to what it was.
     await rename(page, 'open');
-    await expect(refusal(page)).toContainText('already a state called “open”');
+    await expect(fieldError(page, 'edit-name')).toContainText('already a state called “open”');
+    await expect(field(page, 'edit-name')).toHaveAttribute('aria-invalid', 'true');
     await expect(field(page, 'edit-name')).toHaveValue('closed');
     expect(await graph(page)).toEqual(before);
     // A name that wouldn't work in a target.
     await rename(page, 'a.b');
-    await expect(refusal(page)).toContainText('dot');
+    await expect(fieldError(page, 'edit-name')).toContainText('dot');
     // The Delete key says the same, from the board.
     await pressOn(page, 'door.open');
     await pressOn(page, 'door.closed');
@@ -1663,22 +1679,22 @@ test.describe('StateDiagram edits', () => {
     await page.getByRole('button', { name: 'Start again' }).click();
     await expect(node(page, 'door.broken')).toHaveCount(0);
     // That's from outside, even though it's been seen before, so it can't be undone from here.
-    await expect(page.locator('[data-slot=edit-panel] [data-action=undo]')).toBeDisabled();
+    await expect(page.locator('[data-state-diagram] [data-action=undo]')).toBeDisabled();
     await page.getByRole('button', { name: 'Load it' }).click();
     await expect(node(page, 'door.broken')).toHaveCount(1);
     await expect.poll(() => graph(page)).toEqual(graphBefore);
     expect(await walk()).toEqual(runBefore);
     // There's nothing to undo from something that's only been loaded.
-    await expect(page.locator('[data-slot=edit-panel] [data-action=undo]')).toBeDisabled();
+    await expect(page.locator('[data-state-diagram] [data-action=undo]')).toBeDisabled();
     // And what XState won't have, from outside, says so.
     for (const bad of [{ id: 'x', initial: 'nope', states: { a: {} } }, { id: 'x', initial: 'a', states: { a: { on: { GO: 'nope' } } } }]) {
       await page.getByRole('textbox', { name: 'The config, as JSON' }).fill(JSON.stringify(bad));
       await page.getByRole('button', { name: 'Load it' }).click();
-      await expect(page.locator('[data-slot=state-diagram-error]')).toContainText('nope');
+      await expect(page.locator('[data-slot=diagram-error]')).toContainText('nope');
     }
     // And something else again brings it back.
     await page.getByRole('button', { name: 'Start again' }).click();
-    await expect(page.locator('[data-slot=state-diagram-error]')).toHaveCount(0);
+    await expect(page.locator('[data-slot=diagram-error]')).toHaveCount(0);
     await expect(node(page, 'door.closed')).toHaveCount(1);
   });
 
@@ -1738,7 +1754,7 @@ test.describe('StateDiagram edits', () => {
     expect(await node(page, 'door.closed').boundingBox()).toEqual(before);
     await page.mouse.up();
     expect(await node(page, 'door.closed').boundingBox()).toEqual(before);
-    await expect(page.locator('[data-slot=edit-panel] [data-action=undo]')).toBeDisabled();
+    await expect(page.locator('[data-state-diagram] [data-action=undo]')).toBeDisabled();
 
     // Select with a press, and let the keys do the rest. ⇧ with an arrow doesn't move it.
     await select(page, 'door.jammed');
@@ -1748,11 +1764,11 @@ test.describe('StateDiagram edits', () => {
     await page.keyboard.press('Shift+ArrowRight');
     await page.keyboard.press('Shift+ArrowDown');
     expect(await node(page, 'door.jammed').boundingBox()).toEqual(jammed);
-    await expect(page.locator('[data-slot=edit-panel] [data-action=undo]')).toBeDisabled();
+    await expect(page.locator('[data-state-diagram] [data-action=undo]')).toBeDisabled();
     await select(page, 'door.jammed');
     await page.keyboard.press('Delete');
     await expect(node(page, 'door.jammed')).toHaveCount(0);
-    await expect(page.locator('[data-slot=edit-panel] [data-action=undo]')).toBeEnabled();
+    await expect(page.locator('[data-state-diagram] [data-action=undo]')).toBeEnabled();
     // ⌘Z from the board undoes it, and ⌘⇧Z does it again.
     await page.keyboard.press('ControlOrMeta+z');
     await expect(node(page, 'door.jammed')).toHaveCount(1);
@@ -1817,11 +1833,11 @@ test.describe('StateDiagram edits', () => {
     await expect(refusal(page)).toContainText('goes with what its state does');
     await expect(edge(page, timer)).toHaveCount(1);
     // And it all undoes.
-    await page.locator('[data-slot=edit-panel] [data-action=undo]').click();
+    await page.locator('[data-state-diagram] [data-action=undo]').click();
     await expect(edge(page, 'door.locked:UNLOCK->door.closed')).toHaveCount(1);
-    await page.locator('[data-slot=edit-panel] [data-action=undo]').click();
+    await page.locator('[data-state-diagram] [data-action=undo]').click();
     await expect(edge(page, 'door.open:CLOSE->door.closed')).toHaveCount(1);
-    await expect(page.locator('[data-slot=edit-panel] [data-action=undo]')).toBeDisabled();
+    await expect(page.locator('[data-state-diagram] [data-action=undo]')).toBeDisabled();
   });
 
   test('a clock that was running doesn’t carry on into the next run', async ({ page }) => {

@@ -53,11 +53,13 @@ export function SwitchThumb({ className, ...props }: ComponentProps<typeof SdkSw
     <SdkSwitchThumb
       className={cx(
         [
-          'pointer-events-none absolute top-0.5 left-0.5 rounded-full bg-white shadow-[0_3px_8px_--alpha(black/22%),0_1px_1px_--alpha(black/14%)] transition-[translate,width] duration-spring-snappy ease-spring-snappy motion-reduce:transition-none',
+          'pointer-events-none absolute top-0.5 start-0.5 rounded-full bg-white shadow-[0_3px_8px_--alpha(black/22%),0_1px_1px_--alpha(black/14%)] transition-[translate,width] duration-spring-snappy ease-spring-snappy motion-reduce:transition-none',
+          // "On" is toward the end of the line: the knob travels by `--switch-dir`, -1 in right-to-left text (as iOS mirrors it).
+          '[--switch-dir:1] rtl:[--switch-dir:-1]',
           // default: a 27px knob that travels 20px and stretches to 33px.
-          'h-[27px] w-[27px] group-active/switch:not-data-disabled:w-[33px] data-checked:translate-x-5 data-checked:group-active/switch:not-data-disabled:translate-x-[14px]',
+          'h-[27px] w-[27px] group-active/switch:not-data-disabled:w-[33px] data-checked:translate-x-[calc(var(--switch-dir)*20px)] data-checked:group-active/switch:not-data-disabled:translate-x-[calc(var(--switch-dir)*14px)]',
           // sm: an 18px knob that travels 16px and stretches to 22px.
-          'group-data-[size=sm]/switch:h-[18px] group-data-[size=sm]/switch:w-[18px] group-data-[size=sm]/switch:group-active/switch:not-data-disabled:w-[22px] group-data-[size=sm]/switch:data-checked:translate-x-4 group-data-[size=sm]/switch:data-checked:group-active/switch:not-data-disabled:translate-x-3',
+          'group-data-[size=sm]/switch:h-[18px] group-data-[size=sm]/switch:w-[18px] group-data-[size=sm]/switch:group-active/switch:not-data-disabled:w-[22px] group-data-[size=sm]/switch:data-checked:translate-x-[calc(var(--switch-dir)*16px)] group-data-[size=sm]/switch:data-checked:group-active/switch:not-data-disabled:translate-x-[calc(var(--switch-dir)*12px)]',
         ],
         className,
       )}

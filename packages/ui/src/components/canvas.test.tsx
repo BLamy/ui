@@ -288,6 +288,25 @@ describe('Canvas API', () => {
     expect(board().className).toContain('focus-visible:after:ring-2');
   });
 
+  it('passes a div\'s other props to its root', () => {
+    const onFocus = vi.fn();
+    render(<Canvas aria-label="Board" id="board" data-testid="the-board" title="Board" onFocus={onFocus} />);
+    const root = board();
+    expect(root.id).toBe('board');
+    expect(root.dataset.testid).toBe('the-board');
+    expect(root.title).toBe('Board');
+    act(() => root.focus());
+    expect(onFocus).toHaveBeenCalled();
+  });
+
+  it('takes focus on a press without asking for the keyboard focus ring', () => {
+    render(<Canvas aria-label="Board" />);
+    const root = board();
+    const focus = vi.spyOn(root, 'focus');
+    fireEvent.pointerDown(root, { pointerId: 1, pointerType: 'mouse', button: 0, clientX: 10, clientY: 10 });
+    expect(focus).toHaveBeenCalledWith({ preventScroll: true, focusVisible: false });
+  });
+
   it('puts the minimap on a side and an end, in either text direction', () => {
     render(<Harness overlay={<CanvasMiniMap side="top" align="start" className="opacity-90" items={[]} />} />);
     const map = board().querySelector<HTMLElement>('[data-slot="canvas-minimap"]')!;

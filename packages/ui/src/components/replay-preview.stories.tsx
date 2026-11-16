@@ -22,8 +22,8 @@ export default meta;
 type Story = StoryObj<typeof ReplayPreview>;
 
 /* The bundled demo recording (docstream's, 58 events): a shopper whose checkout fails with a promo code. Paused at a fixed
-   time, so each story is a still frame. `lazy={false}` mounts the player at once instead of when it nears the viewport. */
-const paused = { events: replayDemoEvents, lazy: false } as const;
+   time, so each story is a still frame. `mounted` mounts the player at once instead of when it nears the viewport. */
+const paused = { events: replayDemoEvents, mounted: true } as const;
 
 /** The browser frame, paused just before checkout fails. */
 export const Default: Story = { args: { ...paused, initialTime: 6400 } };
@@ -47,7 +47,11 @@ export const DevtoolsOpen: Story = { args: { ...paused, initialTime: 8600, defau
 /** `chrome="minimal"`: a card, no browser frame. */
 export const Minimal: Story = { args: { ...paused, initialTime: 6400, chrome: 'minimal' } };
 
-/** Before the player is ready: the page-shaped skeleton at the recording's aspect ratio (`lazy`, scrolled out of view). */
-export const Poster: Story = { args: { events: replayDemoEvents, active: false } };
+/** Before the player mounts (`mounted={false}`): the same frame with the page-shaped skeleton at the recording's
+ *  aspect ratio. */
+export const Poster: Story = { args: { events: replayDemoEvents, mounted: false } };
+
+/** DevTools open in the dark: the panel's bars and rows are opaque, so the page doesn't show through. */
+export const DevtoolsDark: Story = { args: { ...paused, initialTime: 8600, defaultDevtoolsTab: 'network' }, parameters: { dark: true } };
 
 export const PhoneFrame: Story = { args: { ...paused, initialTime: 6400 }, parameters: { phone: true } };

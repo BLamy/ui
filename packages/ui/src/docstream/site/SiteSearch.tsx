@@ -8,7 +8,7 @@ import { useMemo, useRef, useState } from "react"
 import { Command, CommandEmpty, CommandGroup, CommandGroupLabel, CommandInput, CommandItem, CommandList } from "@ui-sdk/react/command"
 import { Dialog, DialogBackdrop, DialogContent, type DialogController } from "@ui-sdk/react/dialog"
 import { useShortcut } from "@ui-sdk/react/shortcuts"
-import { FileText, Hash, Search } from "lucide-react"
+import { Glyph } from "../ui/glyph"
 
 import { pressesInPlace } from "./press"
 import { createDocsSearchIndex, type DocsSearchResult } from "./search"
@@ -60,7 +60,7 @@ function Palette({ tree, controller, shortcut, href, onPick }: SiteSearchProps) 
 
   const items = [...hits].map(([value, r]) => (
     <CommandItem key={value} value={value} label={r.heading ?? r.page.title} className="ds-site-search-hit" render={<a href={href(r.page.slug, r.anchor ?? "")} />}>
-      {r.heading ? <Hash size={15} aria-hidden="true" /> : <FileText size={15} aria-hidden="true" />}
+      {r.heading ? <Glyph name="number" size={15} /> : <Glyph name="doc-text" size={15} />}
       <span className="ds-site-search-hit-main">
         <span className="ds-site-search-hit-title">
           {r.heading ? (
@@ -89,7 +89,7 @@ function Palette({ tree, controller, shortcut, href, onPick }: SiteSearchProps) 
       }}
     >
       <div ref={field} className="ds-site-search-field">
-        <Search size={17} aria-hidden="true" />
+        <Glyph name="magnifyingglass" size={17} />
         <CommandInput type="search" aria-label="Search documentation" placeholder="Search the docs…" />
         <kbd>esc</kbd>
       </div>

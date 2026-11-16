@@ -31,7 +31,7 @@ async function stroke(x0: number, x1: number, y = 20, pointerType = 'mouse') {
 describe('PencilCanvas', () => {
   it('commits a drawn stroke with its tool, ink and points, and hides the empty state', async () => {
     const onStrokesChange = vi.fn();
-    render(<PencilCanvas tool="marker" ink="tomato" width={2} emptyState="Draw here" onStrokesChange={onStrokesChange} />);
+    render(<PencilCanvas tool="marker" ink="tomato" widthScale={2} emptyState="Draw here" onStrokesChange={onStrokesChange} />);
     expect(surface().hasAttribute('data-empty')).toBe(true);
     expect(screen.getByText('Draw here')).toBeTruthy();
     await stroke(10, 60);
@@ -40,7 +40,7 @@ describe('PencilCanvas', () => {
     expect(details).toMatchObject({ reason: 'draw', canceled: false });
     expect(details.event?.type).toBe('pointerup');
     expect(strokes).toHaveLength(1);
-    expect(strokes[0]).toMatchObject({ tool: 'marker', color: 'tomato', width: 2, pressure: false, complete: true });
+    expect(strokes[0]).toMatchObject({ tool: 'marker', ink: 'tomato', widthScale: 2, pressure: false, complete: true });
     expect(strokes[0].points.length).toBeGreaterThan(5);
     expect(paths()).toBeGreaterThan(0);
     expect(screen.queryByText('Draw here')).toBeNull();

@@ -1,6 +1,6 @@
-/* ══ Diagram model — nodes, ports, edges and compounds as plain data, and the geometry of what connects them ══
+/* ══ Diagram model — nodes, ports, edges and groups as plain data, and the geometry of what connects them ══
    Nothing here renders, and it is the one place a connector gets its shape.
-   - a node is a box in board units, absolute rather than relative to its parent; `parent` nests it in a compound;
+   - a node is a box in board units, absolute rather than relative to its parent; `parent` nests it in a group;
    - a port is a named place on one side of a node;
    - an edge joins two nodes, or two of their ports. `points` is a route someone already worked out (a layout), and
      without it `edgeGeometry` finds one.
@@ -10,9 +10,9 @@ import { centerOf, dist, distToPolyline, inFrame, rectOf, rotatePt, unionRect, t
 
 /* ── The data ── */
 
-/** Top, right, bottom, left. */
-export type DiagramSide = 't' | 'r' | 'b' | 'l';
-export const DIAGRAM_SIDES: readonly DiagramSide[] = ['t', 'r', 'b', 'l'];
+/** A side of a box. Physical words, not `start` / `end`: a board doesn't mirror in a right-to-left language. */
+export type DiagramSide = 'top' | 'right' | 'bottom' | 'left';
+export const DIAGRAM_SIDES: readonly DiagramSide[] = ['top', 'right', 'bottom', 'left'];
 
 /** A box that may be turned about its center (degrees). A `Frame` is one. */
 export type DiagramBox = Rect & { rot?: number };
@@ -30,14 +30,28 @@ export interface DiagramPort {
   direction?: 'in' | 'out' | 'both';
 }
 
-/** What a node is drawn as. `compound`, `parallel`, `region` and `root` hold other nodes. */
-export type DiagramNodeKind = 'node' | 'compound' | 'parallel' | 'region' | 'root' | 'final' | 'initial';
+/** What a node is: a `node` (the default), a `group` that holds others, a `region` (a lane of a group, with a line
+ *  between it and the next), the `root` that holds everything and isn't a thing to select, or a small round `marker`. */
+export type DiagramNodeKind = 'node' | 'group' | 'region' | 'root' | 'marker';
+
+/** A node's border: one line (the default), a dashed line, or two lines. */
+export type DiagramNodeVariant = 'default' | 'dashed' | 'double';
+
+/** An edge's line: thin and quiet (the default), dashed, dotted, or strong. */
+export type DiagramEdgeVariant = 'default' | 'dashed' | 'dotted' | 'strong';
+
+/** An edge's color: `destructive` for something wrong with it, which is dashed as well, as a color isn't enough. */
+export type DiagramEdgeTone = 'default' | 'destructive';
+
+/** Whether a node holds others: a group, a region or the root. */
+export const holdsNodes = (node: { kind?: DiagramNodeKind }): boolean => node.kind === 'group' || node.kind === 'region' || node.kind === 'root';
 
 export interface DiagramNode<D = unknown> extends Rect {
   id: string;
-  /** The compound it sits in. A node moves with its parent. */
+  /** The group it sits in. A node moves with its parent. */
   parent?: string | null;
   kind?: DiagramNodeKind;
+  variant?: DiagramNodeVariant;
   label?: string;
   /** A second, quieter line. */
   detail?: string;
@@ -61,14 +75,9 @@ export interface DiagramEdge<D = unknown> {
   label?: string;
   /** Where a layout put the label, in board units. Without it `labelBox` finds a place. */
   labelBox?: Rect;
-  /** What it is, for drawing: `event`, `always`, `after`, `done`, `invoke`, `initial`, or your own. */
-  kind?: string;
+  variant?: DiagramEdgeVariant;
+  tone?: DiagramEdgeTone;
   data?: D;
-}
-
-export interface DiagramModel<N = unknown, E = unknown> {
-  nodes: readonly DiagramNode<N>[];
-  edges: readonly DiagramEdge<E>[];
 }
 
 /* ── Nesting ── */
@@ -151,14 +160,14 @@ export const isInside = <N>(index: DiagramIndex<N>, inner: string, outer: string
 
 /* ── Anchors ── */
 
-const NORMAL: Record<DiagramSide, Pt> = { t: { x: 0, y: -1 }, r: { x: 1, y: 0 }, b: { x: 0, y: 1 }, l: { x: -1, y: 0 } };
-const OPPOSITE: Record<DiagramSide, DiagramSide> = { t: 'b', r: 'l', b: 't', l: 'r' };
+const NORMAL: Record<DiagramSide, Pt> = { top: { x: 0, y: -1 }, right: { x: 1, y: 0 }, bottom: { x: 0, y: 1 }, left: { x: -1, y: 0 } };
+const OPPOSITE: Record<DiagramSide, DiagramSide> = { top: 'bottom', right: 'left', bottom: 'top', left: 'right' };
 
 /** A place on a box's side, in the board (rotation applied): the midpoint unless `at` says otherwise. */
 export function anchorPoint(box: DiagramBox, side: DiagramSide, at = 0.5): Pt {
-  const local: Pt = side === 't' ? { x: box.x + box.w * at, y: box.y }
-    : side === 'b' ? { x: box.x + box.w * at, y: box.y + box.h }
-    : side === 'l' ? { x: box.x, y: box.y + box.h * at }
+  const local: Pt = side === 'top' ? { x: box.x + box.w * at, y: box.y }
+    : side === 'bottom' ? { x: box.x + box.w * at, y: box.y + box.h }
+    : side === 'left' ? { x: box.x, y: box.y + box.h * at }
     : { x: box.x + box.w, y: box.y + box.h * at };
   return box.rot ? rotatePt(local, centerOf(box), box.rot) : local;
 }
@@ -169,7 +178,7 @@ export function anchorNormal(box: DiagramBox, side: DiagramSide): Pt {
   return box.rot ? rotatePt(n, { x: 0, y: 0 }, box.rot) : n;
 }
 
-/** The side whose midpoint is nearest `p`, the earlier of `t`, `r`, `b`, `l` on a tie. */
+/** The side whose midpoint is nearest `p`, the earlier of top, right, bottom, left on a tie. */
 export function nearestSide(box: DiagramBox, p: Pt): { side: DiagramSide; point: Pt } {
   let best: { side: DiagramSide; point: Pt; d: number } | null = null;
   for (const side of DIAGRAM_SIDES) {
@@ -393,13 +402,65 @@ export const dirOf = (angle: number): Pt => ({ x: Math.cos(angle), y: Math.sin(a
 /* ── Labels ── */
 
 /** Where a label of `size` sits beside a path: `t` of the way along it, moved off the line far enough that the line
- *  doesn't run through the text, and above it where there's a choice. */
-export function labelBox(pts: readonly Pt[], size: { w: number; h: number }, { t = 0.5, gap = 2 }: { t?: number; gap?: number } = {}): Rect {
+ *  doesn't run through the text, and above it where there's a choice (`flip` puts it on the other side). */
+export function labelBox(pts: readonly Pt[], size: { w: number; h: number }, { t = 0.5, gap = 2, flip = false }: { t?: number; gap?: number; flip?: boolean } = {}): Rect {
   const { point, dir } = pointAlong(pts, t);
   let nx = dir.y, ny = -dir.x;
   if (ny > 0 || (ny === 0 && nx < 0)) { nx = -nx; ny = -ny; }
+  if (flip) { nx = -nx; ny = -ny; }
   const off = gap + (Math.abs(nx) * size.w) / 2 + (Math.abs(ny) * size.h) / 2;
   return { x: point.x + nx * off - size.w / 2, y: point.y + ny * off - size.h / 2, w: size.w, h: size.h };
+}
+
+/** Where along a route a label tries to go, in order: beside the middle first, then out along the route, each above and
+ *  then below; then the same again, standing further off the line, a step at a time. */
+const LABEL_TRIES: readonly { t: number; flip: boolean; step: number }[] = [0, 1, 2].flatMap((step) =>
+  [0.5, 0.35, 0.65, 0.2, 0.8].flatMap((t) => [{ t, flip: false, step }, { t, flip: true, step }]));
+
+/** A label's box that keeps clear of what `overlap` says it covers (nodes, other labels): `given` if that's clear, or else
+ *  the first clear place along the route, then further off it, or failing all that the place that covers least. */
+export function labelBoxAvoiding(pts: readonly Pt[], size: { w: number; h: number }, overlap: (box: Rect) => number, given?: Rect): Rect {
+  if (given && overlap(given) <= 0) return given;
+  let best = given ?? null, least = given ? overlap(given) : Infinity;
+  for (const { t, flip, step } of LABEL_TRIES) {
+    const box = labelBox(pts, size, { t, flip, gap: 2 + step * (size.h + 8) });
+    const covered = overlap(box);
+    if (covered <= 0) return box;
+    if (covered < least) { least = covered; best = box; }
+  }
+  return best!;
+}
+
+/** Rects in a grid of `cell`-sized buckets, for asking quickly how much of a box they cover. */
+export function rectIndex(rects: readonly Rect[], cell = 160): { add: (r: Rect) => void; overlap: (box: Rect, except?: (r: Rect) => boolean) => number } {
+  const buckets = new Map<string, Rect[]>();
+  const cells = (r: Rect, visit: (key: string) => void) => {
+    for (let i = Math.floor(r.x / cell); i <= Math.floor((r.x + r.w) / cell); i++) {
+      for (let j = Math.floor(r.y / cell); j <= Math.floor((r.y + r.h) / cell); j++) visit(`${i},${j}`);
+    }
+  };
+  const add = (r: Rect) => cells(r, (key) => {
+    const list = buckets.get(key);
+    if (list) list.push(r);
+    else buckets.set(key, [r]);
+  });
+  for (const r of rects) add(r);
+  return {
+    add,
+    overlap: (box, except) => {
+      const seen = new Set<Rect>();
+      let area = 0;
+      cells(box, (key) => {
+        for (const r of buckets.get(key) ?? []) {
+          if (seen.has(r) || except?.(r)) continue;
+          seen.add(r);
+          const w = Math.min(box.x + box.w, r.x + r.w) - Math.max(box.x, r.x), h = Math.min(box.y + box.h, r.y + r.h) - Math.max(box.y, r.y);
+          if (w > 0 && h > 0) area += w * h;
+        }
+      });
+      return area;
+    },
+  };
 }
 
 /* ── An edge's route ── */
@@ -409,7 +470,7 @@ export const SELF_LOOP_SIZE = 24;
 
 /** A route from one place on a box to another that stays outside it. A self-loop. */
 export function selfLoopPath(box: DiagramBox, a: ConnectorEnd, b: ConnectorEnd, size = SELF_LOOP_SIZE): ConnectorGeometry {
-  const na = a.n ?? NORMAL.t, nb = b.n ?? na;
+  const na = a.n ?? NORMAL.top, nb = b.n ?? na;
   const a1 = { x: a.p.x + na.x * size, y: a.p.y + na.y * size };
   const b1 = { x: b.p.x + nb.x * size, y: b.p.y + nb.y * size };
   const dot = na.x * nb.x + na.y * nb.y;
@@ -433,17 +494,17 @@ export function facingSides(a: DiagramBox, b: DiagramBox): { from: DiagramSide; 
   const dx = cb.x - ca.x, dy = cb.y - ca.y;
   const gapX = Math.max(b.x - (a.x + a.w), a.x - (b.x + b.w)), gapY = Math.max(b.y - (a.y + a.h), a.y - (b.y + b.h));
   const across = gapX > 0 || gapY > 0 ? gapX >= gapY : Math.abs(dx) >= Math.abs(dy);
-  const from: DiagramSide = across ? (dx >= 0 ? 'r' : 'l') : dy >= 0 ? 'b' : 't';
+  const from: DiagramSide = across ? (dx >= 0 ? 'right' : 'left') : dy >= 0 ? 'bottom' : 'top';
   return { from, to: OPPOSITE[from] };
 }
 
-/** An edge between a compound and something inside it runs from the compound's nearest wall straight to the child. */
+/** An edge between a group and something inside it runs from the group's nearest wall straight to the child. */
 function wallToChild(outer: DiagramBox, inner: DiagramBox): { wall: ConnectorEnd; child: ConnectorEnd } {
-  const gaps: [DiagramSide, number][] = [['t', inner.y - outer.y], ['r', outer.x + outer.w - (inner.x + inner.w)], ['b', outer.y + outer.h - (inner.y + inner.h)], ['l', inner.x - outer.x]];
-  let side: DiagramSide = 'l', best = Infinity;
+  const gaps: [DiagramSide, number][] = [['top', inner.y - outer.y], ['right', outer.x + outer.w - (inner.x + inner.w)], ['bottom', outer.y + outer.h - (inner.y + inner.h)], ['left', inner.x - outer.x]];
+  let side: DiagramSide = 'left', best = Infinity;
   for (const [s, gap] of gaps) if (gap < best) { best = gap; side = s; }
   const c = centerOf(inner);
-  const p = side === 't' ? { x: c.x, y: outer.y } : side === 'b' ? { x: c.x, y: outer.y + outer.h } : side === 'l' ? { x: outer.x, y: c.y } : { x: outer.x + outer.w, y: c.y };
+  const p = side === 'top' ? { x: c.x, y: outer.y } : side === 'bottom' ? { x: c.x, y: outer.y + outer.h } : side === 'left' ? { x: outer.x, y: c.y } : { x: outer.x + outer.w, y: c.y };
   // A child dragged through that wall is met on its near side, not across its whole width.
   const near = best < 0 ? OPPOSITE[side] : side;
   return { wall: { p, n: NORMAL[near === side ? OPPOSITE[side] : side] }, child: { p: anchorPoint(inner, near), n: NORMAL[near] } };
@@ -469,8 +530,8 @@ export function edgeGeometry<N, E>(edge: DiagramEdge<E>, index: DiagramIndex<N>,
   if (a === b) {
     const loop = spread?.loop ?? 0;
     const ends: [ConnectorEnd, ConnectorEnd] = pa || pb
-      ? [pa ? portPoint(a, pa) : { p: anchorPoint(a, 't', 0.35), n: NORMAL.t }, pb ? portPoint(a, pb) : { p: anchorPoint(a, 't', 0.65), n: NORMAL.t }]
-      : [{ p: anchorPoint(a, 't', 0.35 - Math.min(loop, 3) * 0.08), n: NORMAL.t }, { p: anchorPoint(a, 't', 0.65 + Math.min(loop, 3) * 0.08), n: NORMAL.t }];
+      ? [pa ? portPoint(a, pa) : { p: anchorPoint(a, 'top', 0.35), n: NORMAL.top }, pb ? portPoint(a, pb) : { p: anchorPoint(a, 'top', 0.65), n: NORMAL.top }]
+      : [{ p: anchorPoint(a, 'top', 0.35 - Math.min(loop, 3) * 0.08), n: NORMAL.top }, { p: anchorPoint(a, 'top', 0.65 + Math.min(loop, 3) * 0.08), n: NORMAL.top }];
     return selfLoopPath(a, ends[0], ends[1], SELF_LOOP_SIZE + loop * 12);
   }
   const route = edge.route ?? 'elbow';
@@ -486,7 +547,41 @@ export function edgeGeometry<N, E>(edge: DiagramEdge<E>, index: DiagramIndex<N>,
   const to: ConnectorEnd = pb ? portPoint(b, pb) : { p: anchorPoint(b, sides.to, spread?.to ?? 0.5), n: anchorNormal(b, sides.to) };
   // Two ends closer than two runs out from each would overshoot and come back, so each only goes halfway.
   const apart = from.n ? (to.p.x - from.p.x) * from.n.x + (to.p.y - from.p.y) * from.n.y : Infinity;
-  return connectorPath(route, from, to, apart > 0 && apart < ELBOW_GAP * 2 ? apart / 2 : ELBOW_GAP);
+  const gap = apart > 0 && apart < ELBOW_GAP * 2 ? apart / 2 : ELBOW_GAP;
+  if (route === 'elbow') {
+    const around = elbowAround(from, to, a, b, gap);
+    if (around) return around;
+  }
+  return connectorPath(route, from, to, gap);
+}
+
+/** An elbow whose ends face away from each other (a port on the right of one card to a port on the left of a card to its
+ *  left, say) would run back through the cards. It goes around them instead: out of each end, then along a channel
+ *  between the two boxes, or past both of them on the side nearer the ends. Null when the plain elbow is fine. */
+export function elbowAround(from: ConnectorEnd, to: ConnectorEnd, a: Rect, b: Rect, gap = ELBOW_GAP): ConnectorGeometry | null {
+  const na = from.n, nb = to.n;
+  if (!na || !nb) return null;
+  const horizontal = Math.abs(na.x) > 0.5 && Math.abs(nb.x) > 0.5;
+  const vertical = Math.abs(na.y) > 0.5 && Math.abs(nb.y) > 0.5;
+  if (!horizontal && !vertical) return null;
+  // Work across x as "along" and y as "across", and turn the answer back for an upright pair.
+  const along = (p: Pt) => (horizontal ? p.x : p.y), across = (p: Pt) => (horizontal ? p.y : p.x);
+  const make = (u: number, v: number): Pt => (horizontal ? { x: u, y: v } : { x: v, y: u });
+  const da = along(na), db = along(nb);
+  const a1 = along(from.p) + da * gap, b1 = along(to.p) + db * gap;
+  // Facing each other with room between, or one behind the other going the same way: the plain elbow's middle is fine.
+  if ((b1 - a1) * da >= 0 && (a1 - b1) * db >= 0) return null;
+  const lo = (r: Rect) => (horizontal ? r.y : r.x), hi = (r: Rect) => (horizontal ? r.y + r.h : r.x + r.w);
+  let channel: number;
+  if (hi(a) + gap <= lo(b) - gap || hi(b) + gap <= lo(a) - gap) {
+    // There's a gap between them across the way: run along the middle of it.
+    channel = hi(a) <= lo(b) ? (hi(a) + lo(b)) / 2 : (hi(b) + lo(a)) / 2;
+  } else {
+    const before = Math.min(lo(a), lo(b)) - gap, after = Math.max(hi(a), hi(b)) + gap;
+    const cost = (c: number) => Math.abs(across(from.p) - c) + Math.abs(across(to.p) - c);
+    channel = cost(before) <= cost(after) ? before : after;
+  }
+  return polylinePath([from.p, make(a1, across(from.p)), make(a1, channel), make(b1, channel), make(b1, across(to.p)), to.p]);
 }
 
 /** The routes of many edges, by id. Edges that have no route of their own and leave the same side of a node share it out
@@ -521,7 +616,7 @@ export function edgeGeometries<N, E>(edges: readonly DiagramEdge<E>[], index: Di
   for (const [key, list] of onSide) {
     if (list.length < 2) continue;
     const side = key.slice(key.lastIndexOf('\0') + 1);
-    const horizontal = side === 't' || side === 'b';
+    const horizontal = side === 'top' || side === 'bottom';
     list.sort((p, q) => (horizontal ? p.other.x - q.other.x : p.other.y - q.other.y) || (p.edge < q.edge ? -1 : 1));
     list.forEach((item, i) => {
       const s = spread.get(item.edge) ?? {};
@@ -587,12 +682,11 @@ export interface DiagramDivider {
   y2: number;
 }
 
-/** The lines between the regions of each `parallel` node: halfway across each gap, wall to wall. Regions stacked one above
+/** The lines between the regions of each node that holds two or more: halfway across each gap, wall to wall. Regions stacked one above
  *  another get level lines, and regions side by side get upright ones. */
 export function regionDividers<N>(index: DiagramIndex<N>): DiagramDivider[] {
   const out: DiagramDivider[] = [];
   for (const p of index.nodes) {
-    if (p.kind !== 'parallel') continue;
     const regions = (index.children.get(p.id) ?? []).filter((n) => n.kind === 'region');
     if (regions.length < 2) continue;
     // Regions one above another overlap across, and regions side by side overlap down. Their sizes can differ, so where
@@ -627,8 +721,8 @@ export function diagramBounds(nodes: readonly Rect[], geometries: Iterable<{ pts
 /** The room a node keeps around its words, and the least it's drawn as. */
 export const NODE_PADDING = { x: 12, y: 8 };
 export const NODE_MIN_SIZE = { w: 72, h: 34 };
-/** An `initial` marker's size. */
-export const INITIAL_SIZE = 12;
+/** A `marker`'s size. */
+export const MARKER_SIZE = 12;
 
 type TextOf = (text: string, kind: 'label' | 'detail' | 'title' | 'edge') => { w: number; h: number };
 
@@ -636,7 +730,8 @@ type TextOf = (text: string, kind: 'label' | 'detail' | 'title' | 'edge') => { w
 export function diagramTextRuns(nodes: readonly DiagramNode<unknown>[], edges: readonly DiagramEdge<unknown>[] = []): { text: string; kind: 'label' | 'detail' | 'title' | 'edge' }[] {
   const runs: { text: string; kind: 'label' | 'detail' | 'title' | 'edge' }[] = [];
   for (const n of nodes) {
-    const holds = n.kind === 'compound' || n.kind === 'parallel' || n.kind === 'region' || n.kind === 'root';
+    if (n.kind === 'marker') continue;
+    const holds = holdsNodes(n);
     if (n.label) runs.push({ text: n.label, kind: holds ? 'title' : 'label' });
     if (n.detail) runs.push({ text: n.detail, kind: holds ? 'title' : 'detail' });
   }
@@ -646,16 +741,15 @@ export function diagramTextRuns(nodes: readonly DiagramNode<unknown>[], edges: r
 
 /** How big a node needs to be for its words. What holds other nodes gets its size from them, so this is the least it can
  *  be: wide enough for its title. */
-export function nodeTextSize(node: Pick<DiagramNode<unknown>, 'kind' | 'label' | 'detail'>, text: TextOf): { w: number; h: number } {
-  if (node.kind === 'initial') return { w: INITIAL_SIZE, h: INITIAL_SIZE };
-  const holds = node.kind === 'compound' || node.kind === 'parallel' || node.kind === 'region' || node.kind === 'root';
-  if (holds) {
+export function nodeTextSize(node: Pick<DiagramNode<unknown>, 'kind' | 'variant' | 'label' | 'detail'>, text: TextOf): { w: number; h: number } {
+  if (node.kind === 'marker') return { w: MARKER_SIZE, h: MARKER_SIZE };
+  if (holdsNodes(node)) {
     const title = node.label ? text(node.label, 'title') : { w: 0, h: 0 };
     const detail = node.detail ? text(` (${node.detail})`, 'title').w : 0;
     return { w: title.w + detail + NODE_PADDING.x * 2, h: title.h + NODE_PADDING.y * 2 };
   }
-  // A final state's border is a pixel thicker on each side, and its inner line takes up the rest of the padding.
-  const border = node.kind === 'final' ? 4 : 2;
+  // A double border is a pixel thicker on each side, and its inner line takes up the rest of the padding.
+  const border = node.variant === 'double' ? 4 : 2;
   const a = node.label ? text(node.label, 'label') : { w: 0, h: 0 };
   const b = node.detail ? text(node.detail, 'detail') : { w: 0, h: 0 };
   return {
@@ -668,7 +762,7 @@ export function nodeTextSize(node: Pick<DiagramNode<unknown>, 'kind' | 'label' |
  *  back as they were, so a memo on them holds. */
 export function sizeNodesToText<N>(nodes: readonly DiagramNode<N>[], text: TextOf): DiagramNode<N>[] {
   return nodes.map((n) => {
-    if (n.kind === 'compound' || n.kind === 'parallel' || n.kind === 'region' || n.kind === 'root') return n;
+    if (holdsNodes(n)) return n;
     const { w, h } = nodeTextSize(n, text);
     if (w === n.w && h === n.h) return n;
     return { ...n, x: n.x + (n.w - w) / 2, y: n.y + (n.h - h) / 2, w, h };
@@ -742,12 +836,12 @@ export function rerouteLabel(box: Rect, before: readonly Pt[], after: readonly P
   return { ...box, x: box.x + shift.x, y: box.y + shift.y };
 }
 
-/** The air a compound keeps around what's dragged inside it, and the room for its title. */
+/** The air a group keeps around what's dragged inside it, and the room for its title. */
 const COMPOUND_AIR = { top: 32, side: 12 };
 
 /**
  * Nodes moved by (dx, dy), with what's inside them, and edges that follow: a route keeps its shape and stays square, and its
- * label stays beside it. A compound grows if a child's dragged to its wall, and because this works from the same starting
+ * label stays beside it. A group grows if a child's dragged to its wall, and because this works from the same starting
  * data each time, it shrinks back if the child's dragged away again. Whatever didn't change comes back as the same object,
  * so a memo on it holds. Ids that don't exist are ignored.
  */
@@ -762,7 +856,7 @@ export function moveNodes<N, E>(
     moving.add(id);
     for (const d of descendantsOf(index, id)) moving.add(d);
   }
-  // The compounds that have to grow, from the inside out.
+  // The groups that have to grow, from the inside out.
   const grown = new Map<string, Rect>();
   const growFor = (id: string, box: Rect) => {
     const parentId = index.parent.get(id);

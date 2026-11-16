@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Button as SdkButton } from '@ui-sdk/react/button';
 import { Segmented, SegmentedItem } from '@/components/ui/segmented';
-import { useContainerWidth } from '@/lib/container';
+import { useContainerWidth, useSizeClassScope } from '@/lib/container';
 import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
 import { boundsOf } from './geometry';
@@ -38,7 +38,9 @@ export function BoardThumb({ board }: { board: Board }) {
   );
 }
 
-export function BoardGallery({ compact }: { compact: boolean }) {
+export function BoardGallery() {
+  // BLProvider's root measures the block's box: compact is its size class.
+  const compact = useSizeClassScope() === 'compact';
   const f = useFreeform();
   const [filter, setFilter] = useState<'all' | 'favorites'>('all');
   const boards = filter === 'favorites' ? f.boards.filter((b) => b.favorite) : f.boards;

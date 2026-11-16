@@ -83,12 +83,12 @@ function AccountDetail({ account: a, deleted, vault, now, editing, onEditing }: 
         )} />
       <Page>
         <DetailHeader
-          icon={<SiteTile title={draft.title || a.title} color={a.color} size={64} className={cn(deleted && 'grayscale')} />}
+          icon={<SiteTile title={draft.title || a.title} tint={a.color} size={64} className={cn(deleted && 'grayscale')} />}
           title={edit ? (
             <Input aria-label="Title" size="sm" value={draft.title} onChange={(e) => setDraft({ ...draft, title: e.target.value })}
               className="h-9 bg-card text-center text-[22px] font-bold" />
           ) : a.title}
-          subtitle={deleted ? `Deleted · ${a.deleted}` : `Last modified ${a.modified}`}
+          description={deleted ? `Deleted · ${a.deleted}` : `Last modified ${a.modified}`}
         />
 
         {deleted ? (
@@ -259,7 +259,7 @@ function WifiDetail({ network: n }: { network: WifiNetwork }) {
       <Page>
         <DetailHeader
           icon={<WifiTile size={64} />}
-          title={n.ssid} subtitle={`Last modified ${n.modified}`} />
+          title={n.ssid} description={`Last modified ${n.modified}`} />
         <Card>
           <Field label="Network Name" trailing={<CopyButton label="Network Name" value={n.ssid} />}>{n.ssid}</Field>
           <Field label="Password"

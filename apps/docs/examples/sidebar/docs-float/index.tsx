@@ -33,7 +33,7 @@ export default function FloatingDocs() {
   return (
     <div className="p-4">
       <div className="mx-auto h-[400px] overflow-hidden rounded-card shadow-hairline">
-        <SidebarProvider breakpoint={520}>
+        <SidebarProvider breakpoints={{ medium: 520 }}>
           <Sidebar variant="float" width={232}>
             <SidebarContent aria-label="Documentation" className="pt-2">
               <SidebarSection title="Getting started">

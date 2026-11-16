@@ -171,7 +171,7 @@ export const KIT: Record<string, ComponentSpec> = {
   },
   Toggle: {
     type: 'Toggle', title: 'Toggle', section: 'Buttons and toggles', source: 'kit', icon: 'switch-2',
-    description: "Two-state button on UI SDK's Toggle: tinted when on, in default, filled, outline and quiet variants.",
+    description: "Two-state button on UI SDK's Toggle: tinted when on, in default, secondary, outline and quiet variants.",
     module: '@/components/ui/toggle', tag: 'Toggle', focusable: true,
     props: [
       text('children', 'Mute'),
@@ -199,7 +199,7 @@ export const KIT: Record<string, ComponentSpec> = {
   },
   ToggleGroup: {
     type: 'ToggleGroup', title: 'ToggleGroup', section: 'Buttons and toggles', source: 'kit', icon: 'rectangle-split',
-    description: "UI SDK's ToggleGroup with single or multiple selection, roving arrow-key focus, and segmented (Segmented's track), outline (joined), default, filled and quiet looks.",
+    description: "UI SDK's ToggleGroup with single or multiple selection, roving arrow-key focus, and segmented (Segmented's track), outline (joined), default, secondary and quiet looks.",
     module: '@/components/ui/toggle', tag: 'ToggleGroup', uses: ['@/components/ui/toggle|ToggleGroupItem'], focusable: true,
     props: [
       { name: 'items', control: { kind: 'items' }, default: 'List, Grid, Board', part: '<ToggleGroupItem>s' },

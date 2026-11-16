@@ -21,21 +21,18 @@ export interface ControlProps {
   format?: (value: number) => string
   /** The new value, and why it changed. */
   onValueChange?: (value: number, details: ControlValueChangeDetails) => void
-  /** @deprecated Use `onValueChange`. Still called, with the same details. */
-  onChange?: (value: number, details: ControlValueChangeDetails) => void
   disabled?: boolean
   /** Shown instead of the value, e.g. "∿" for a modulated parameter. */
   display?: string
   title?: string
-  /** Knob only: "lg" for master controls. */
-  size?: "md" | "lg"
+  /** Knob only: `"lg"` for master controls (default `"default"`). */
+  size?: "default" | "lg"
 }
 
-/** Calls `onValueChange` and the deprecated `onChange`. */
-function reporter({ onValueChange, onChange }: Pick<ControlProps, "onValueChange" | "onChange">) {
+/** Calls `onValueChange`. */
+function reporter({ onValueChange }: Pick<ControlProps, "onValueChange">) {
   return (value: number, details: ControlValueChangeDetails) => {
     onValueChange?.(value, details)
-    onChange?.(value, details)
   }
 }
 
@@ -66,7 +63,7 @@ export function Knob(props: ControlProps) {
   return (
     <KnobRoot
       className="strudel-knob"
-      data-size={props.size ?? "md"}
+      data-size={props.size ?? "default"}
       value={props.value}
       onValueChange={reporter(props)}
       min={props.min}

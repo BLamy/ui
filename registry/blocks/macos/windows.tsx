@@ -7,7 +7,7 @@ import { Button as SdkButton } from '@ui-sdk/react/button';
 import { Spinner } from '@/components/ui/spinner';
 import { bindDrag } from '@ui-sdk/core';
 import { Icon } from '@/lib/icon';
-import { AppearanceProvider, BLProvider } from '@/lib/theme';
+import { AppearanceProvider, BLProvider, type Appearance } from '@/lib/theme';
 import { useOptionalTailscale } from '@/lib/tailscale-react';
 import { cn } from '@/lib/utils';
 import { appById, type DesktopApp } from './apps';
@@ -83,7 +83,8 @@ function useSettled() {
   return settled;
 }
 
-export function DesktopWindow({ win, dark, dock, phone }: { win: WindowState; dark: boolean; dock: boolean; phone?: PhoneView }) {
+export function DesktopWindow({ win, appearance, dock, phone }: { win: WindowState; appearance: Appearance; dock: boolean; phone?: PhoneView }) {
+  const dark = appearance === 'dark';
   const d = useDesktop();
   const settled = useSettled();
   const app = appById(win.app);

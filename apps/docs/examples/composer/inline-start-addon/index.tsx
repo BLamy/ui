@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { Composer, ComposerAddon, ComposerCard, ComposerInput, ComposerSelect, ComposerSend } from '@/components/ui/composer/composer'
+import { Composer, ComposerAddon, ComposerCard, ComposerInput, ComposerSelect, ComposerSend } from '@/components/ui/composer'
 import { ThemeScope } from '@/lib/theme'
 import { Icon } from '@/lib/icon'
 

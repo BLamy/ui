@@ -32,18 +32,18 @@ Ask the model for a `typescript tui`, `tsx tui`, `javascript tui`, or `jsx tui` 
 ```tsx title="Answer.tsx"
 import { GitbookStreamdown } from "@brett_lamy/ui/docstream"
 
-export function Answer({ text, isStreaming }) {
-  return <GitbookStreamdown markdown={text} isStreaming={isStreaming} />
+export function Answer({ text, streaming }) {
+  return <GitbookStreamdown markdown={text} streaming={streaming} />
 }
 ```
 
-Run stays disabled while `isStreaming` is true or the code fence is unclosed. When the response finishes, the reader chooses whether to run it. Source changes stop the previous program.
+Run stays disabled while `streaming` is true or the code fence is unclosed. When the response finishes, the reader chooses whether to run it. Source changes stop the previous program.
 
 {% demo src="interactive-tui/keyboard" %}
 
 ## Use the component directly
 
-`TuiPreview` (and `TuiEmbed`, a deprecated alias) is exported from the root and the small `@brett_lamy/ui/docstream/tui` entry. This entry uses no almost-node dependency. It runs without a stylesheet; `@brett_lamy/ui/docstream/styles.css` styles its toolbar, buttons, status line and source panel, from your `--card`, `--border`, `--primary`, `--ring` and `--font-mono` tokens when it sits outside a docstream article.
+`TuiPreview` is exported from the root and the small `@brett_lamy/ui/docstream/tui` entry. This entry uses no almost-node dependency. It runs without a stylesheet; `@brett_lamy/ui/docstream/styles.css` styles its toolbar, buttons, status line and source panel, from your `--card`, `--border`, `--primary`, `--ring` and `--font-mono` tokens when it sits outside a docstream article.
 
 ```tsx title="TerminalAttachment.tsx"
 import { TuiPreview } from "@brett_lamy/ui/docstream/tui"
@@ -53,7 +53,7 @@ import { TuiPreview } from "@brett_lamy/ui/docstream/tui"
   language="typescript"
   title="Generated terminal"
   height={360}
-  streaming={isStreaming}
+  streaming={streaming}
   onStateChange={(state) => console.log(state)}
 />
 ```
@@ -66,11 +66,11 @@ import { TuiPreview } from "@brett_lamy/ui/docstream/tui"
 | `height` | `360` | Terminal height in pixels, bounded to 160–720. Width follows the container. |
 | `runtimeUrl` | OpenTUI GitHub Pages example runtime | Trusted HTTP(S) URL, absolute or relative to the host page, including its deployment prefix. |
 | `appearance` | `auto` | `light` or `dark` terminal. `auto` follows the nearest `.dark` / `.light` class or `data-theme` / `data-appearance` attribute, else the page's `color-scheme` and the system setting. The root carries the result as `data-appearance`. Since 2.0.1; 2.0.0 was always dark. |
-| `theme` | from `appearance` | Explicit terminal colors over the appearance's: any of `{ mode, background, foreground }`. A complete object is used as given. |
-| `streaming` | `false` | Disables Run while source is still arriving. `isStreaming` is the deprecated 2.0.0 spelling. |
+| `theme` | from `appearance` | Explicit terminal colors over the appearance's: `{ background, foreground }`, either or both. Light or dark itself is `appearance`'s. |
+| `streaming` | `false` | Disables Run while source is still arriving. |
 | `startupTimeoutMs` | `30000` | Time allowed for the ready handshake, bounded to 1–120 seconds. |
 | `renderTimeoutMs` | `30000` | Time allowed for the first rendered frame, bounded to 1–120 seconds. |
-| `onStateChange` | — | Reports `idle`, `starting`, `running`, `error`, or `stopped`. `onStatusChange` is the deprecated 2.0.0 spelling and gets the same calls. |
+| `onStateChange` | — | Reports `idle`, `starting`, `running`, `error`, or `stopped`. |
 | `className` | — | Class on the preview section (`section.docstream-tui`). |
 
 Switching the appearance (or the page's theme, with `auto`) while a program runs ends it, like a source change: the terminal's colors are sent to the runtime when it starts. OpenTUI draws text white unless an example sets a color, so a light terminal is the dark one inverted: the runtime gets the inverse colors and the frame a CSS `invert(1) hue-rotate(180deg)` filter (the tscircuit preview does the same). Colors an example sets keep their hue. When you pass your own `background` or `foreground` in `theme`, they are sent as given, with no filter; then make sure the example sets readable colors.

@@ -48,7 +48,7 @@ function Playground({ initial }: { initial: Files }) {
         />
       </div>
       <div className="dsp-site">
-        <DocsSite files={files} title="Rocket" routing="memory" height="100%" themeToggle={false} palette={false} />
+        <DocsSite files={files} title="Rocket" routing="memory" height="100%" appearanceToggle={false} palette={false} />
       </div>
     </div>
   )

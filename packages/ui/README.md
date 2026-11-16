@@ -45,7 +45,7 @@ The package depends on our fork of UI SDK under upstream's names (`@ui-sdk/core`
 
 ## Docstream
 
-Docstream and its editor are part of this package: `@brett_lamy/ui/docstream` and its entries (`/site`, `/gitbook`, `/replay`, `/stl`, `/strudel`, `/xstate`, `/capnp`, `/playground`, `/viz`, `/vite`…), and `@brett_lamy/ui/docstream-editor` (`/editor`, `/convert`). They replace the npm packages `@brett_lamy/docstream` and `@brett_lamy/docstream-editor`, which stop at 2.0.1: rename `@brett_lamy/docstream` to `@brett_lamy/ui/docstream` in your imports. Docstream styles itself: import `@brett_lamy/ui/docstream/styles.css` when you render its components directly (`MarkdownView` brings it); the editor's sheet is already in `@brett_lamy/ui/styles.css`. Its optional peers are this package's: `@agent-wasm/core` (`/playground`), `@brett_lamy/viz-engine` (`/viz`), `vite` (`/vite`) and `xstate` (the xstate fence). Its own docs: [#/docstream](https://blamy.github.io/ui/#/docstream) and [#/docstream-editor](https://blamy.github.io/ui/#/docstream-editor).
+Docstream and its editor are part of this package: `@brett_lamy/ui/docstream` and its entries (`/site`, `/gitbook`, `/replay`, `/stl`, `/strudel`, `/xstate`, `/capnp`, `/playground`, `/viz`, `/vite`…), and `@brett_lamy/ui/docstream-editor` (`/editor`, `/convert`). They replace the npm packages `@brett_lamy/docstream` and `@brett_lamy/docstream-editor`, which stop at 2.0.1: rename `@brett_lamy/docstream` to `@brett_lamy/ui/docstream` in your imports. Docstream styles itself: import `@brett_lamy/ui/docstream/styles.css` once, after `@brett_lamy/ui/styles.css`, when you render Markdown (MarkdownView, Conversation, the docstream widgets) or its components directly: no JavaScript module imports CSS, so every entry loads in plain Node; the editor's sheet is already in `@brett_lamy/ui/styles.css`. Its optional peers are this package's: `@agent-wasm/core` (`/playground`), `@brett_lamy/viz-engine` (`/viz`), `vite` (`/vite`) and `xstate` (the xstate fence). Its own docs: [#/docstream](https://blamy.github.io/ui/#/docstream) and [#/docstream-editor](https://blamy.github.io/ui/#/docstream-editor).
 
 ## IndexBar
 
@@ -68,13 +68,13 @@ const stops: IndexBarItem<number>[] = turns.map((turn, index) => ({
 />;
 ```
 
-The A–Z rail of a contacts list is `alphabetItems`, which dims (but keeps reachable) the letters you leave out:
+The A–Z rail of a contacts list is `indexBarAlphabetItems`, which dims (but keeps reachable) the letters you leave out:
 
 ```tsx
-import { IndexBar, alphabetItems } from '@brett_lamy/ui';
+import { IndexBar, indexBarAlphabetItems } from '@brett_lamy/ui';
 
 <IndexBar
-  items={alphabetItems(['A', 'B', 'K'])}
+  items={indexBarAlphabetItems(['A', 'B', 'K'])}
   onJump={(letter) => scrollToSection(letter)}
 />;
 ```
@@ -216,7 +216,7 @@ PencilKit's drawing surface in BL UI's language, on [perfect-freehand](https://g
 ```tsx
 import { useState } from 'react';
 import {
-  PencilCanvas, PencilToolbar, PencilToolbarPinned, PencilToolPicker, PencilActions, usePencilHistory, type PencilTool,
+  PencilCanvas, PencilToolbar, PencilToolPicker, PencilActions, usePencilHistory, type PencilTool,
 } from '@brett_lamy/ui';
 
 function Sketch() {
@@ -225,12 +225,14 @@ function Sketch() {
   return (
     <div className="relative h-[540px]">
       <PencilCanvas tool={tool} strokes={history.strokes} onStrokesChange={history.onStrokesChange} emptyState="Draw here">
-        <PencilToolbar className="absolute inset-x-2.5 bottom-3.5 mx-auto">
-          <PencilToolPicker value={tool} onValueChange={setTool} />
-          <PencilToolbarPinned>
+        <PencilToolbar
+          className="absolute inset-x-2.5 bottom-3.5 mx-auto"
+          trailing={
             <PencilActions onUndo={history.undo} onRedo={history.redo} onClear={history.clear}
               canUndo={history.canUndo} canRedo={history.canRedo} canClear={history.canClear} />
-          </PencilToolbarPinned>
+          }
+        >
+          <PencilToolPicker value={tool} onValueChange={setTool} />
         </PencilToolbar>
       </PencilCanvas>
     </div>

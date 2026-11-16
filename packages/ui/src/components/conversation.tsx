@@ -8,8 +8,7 @@ import { MarkdownView, type MarkdownViewProps } from '@/components/ui/markdown-v
 import { MessageScroller, MessageScrollerItem, type MessageScrollerProps } from '@/components/ui/message-scroller';
 import { useInMessageScroller } from '@/lib/message-scroller-context';
 import type { ComposerAttachment } from '@/components/ui/composer/composer';
-import { attachmentKind } from '@/components/ui/composer/composer-files';
-import { formatFileSize } from '@/lib/file-size';
+import { attachmentKind, attachmentKindFace, attachmentMeta } from '@/components/ui/composer/composer-files';
 import { cn } from '@/lib/utils';
 import { pressable, brandTile } from '@/lib/primitives';
 import { Chevron, Icon, type IconName } from '@/lib/icon';
@@ -254,20 +253,29 @@ export function ConversationUserMessage({ attachments, anchor = true, className,
   const images = attachments?.filter((a) => a.src && (a.kind ?? attachmentKind(a.type, a.name)) === 'image') ?? [];
   const files = attachments?.filter((a) => !images.includes(a)) ?? [];
   return (
-    <MessageRoot data-slot="user-message" anchor={anchor} className={cn('my-2.5 flex justify-end', className)} {...props}>
+    <MessageRoot data-slot="conversation-user-message" anchor={anchor} className={cn('my-2.5 flex justify-end', className)} {...props}>
       <div className="grid max-w-[78%] justify-items-end gap-1.5">
         {images.length || files.length ? (
           <div className="flex flex-wrap items-end justify-end gap-1.5">
             {images.map((a) => (
               <img key={a.id} src={a.src} alt={a.name} className="h-[110px] max-w-[210px] rounded-xl border border-border object-cover" />
             ))}
-            {files.map((a) => (
-              <span key={a.id} className="flex max-w-[210px] min-w-0 items-center gap-1.5 rounded-xl border border-border bg-card px-2.5 py-1.5 text-caption">
-                <Icon name="doc" size={14} sw={1.9} className="shrink-0 text-muted-foreground" />
-                <span className="truncate font-medium text-foreground">{a.name}</span>
-                {a.size != null ? <span className="shrink-0 text-tertiary-foreground">{formatFileSize(a.size)}</span> : null}
-              </span>
-            ))}
+            {files.map((a) => {
+              // The same face the file had in the Composer: its kind's tinted glyph, its name, and "PDF · 1.4 MB".
+              const kind = a.kind ?? attachmentKind(a.type, a.name);
+              const face = attachmentKindFace[kind];
+              return (
+                <span key={a.id} data-kind={kind} className="flex max-w-[230px] min-w-0 items-center gap-2 rounded-xl border border-border bg-card py-1.5 ps-1.5 pe-2.5 text-caption">
+                  <span className={cn('grid size-7 shrink-0 place-items-center rounded-md', face.tone)}>
+                    <Icon name={face.icon} size={15} sw={1.8} />
+                  </span>
+                  <span className="flex min-w-0 flex-col">
+                    <span className="truncate font-medium text-foreground">{a.name}</span>
+                    <span className="truncate text-caption2 text-muted-foreground">{attachmentMeta(a, kind)}</span>
+                  </span>
+                </span>
+              );
+            })}
           </div>
         ) : null}
         {children != null && children !== '' ? (
@@ -280,7 +288,7 @@ export function ConversationUserMessage({ attachments, anchor = true, className,
 
 /** The agent's turn: its work log, its reply. */
 export function ConversationAssistantMessage({ anchor = false, className, ...props }: ConversationAssistantMessageProps) {
-  return <MessageRoot data-slot="assistant-message" anchor={anchor} className={cn('mt-1 mb-3.5', className)} {...props} />;
+  return <MessageRoot data-slot="conversation-assistant-message" anchor={anchor} className={cn('mt-1 mb-3.5', className)} {...props} />;
 }
 
 /* The three typing dots: a soft wave, staggered by .18s. */
@@ -293,7 +301,7 @@ export interface ConversationTypingProps extends React.HTMLAttributes<HTMLDivEle
 /** "Thinking": three dots, until the first token of a reply. ConversationMarkdown shows them while `streaming` has no text yet. */
 export function ConversationTyping({ className, ...props }: ConversationTypingProps) {
   return (
-    <div data-slot="typing-indicator" role="status" aria-label="Thinking" className={cn('flex gap-[5px] py-1.5', className)} {...props}>
+    <div data-slot="conversation-typing" role="status" aria-label="Thinking" className={cn('flex gap-[5px] py-1.5', className)} {...props}>
       {DOT_ANIM.map((anim, j) => (
         <span key={j} className={cn('size-1.5 rounded-full bg-tertiary-foreground motion-reduce:animate-none', anim)} />
       ))}
@@ -337,7 +345,7 @@ export function ConversationWorkLog({ summary, defaultOpen = false, open, onOpen
   const clock = <Icon name="clock-dial" size={12.5} sw={2} className="text-tertiary-foreground" />;
   if (!has) {
     return (
-      <div ref={ref} data-slot="work-log" className={cn('mt-0.5 mb-1.5', className)} {...props}>
+      <div ref={ref} data-slot="conversation-work-log" className={cn('mt-0.5 mb-1.5', className)} {...props}>
         <div className={row}>
           {clock}
           {summary}
@@ -346,7 +354,7 @@ export function ConversationWorkLog({ summary, defaultOpen = false, open, onOpen
     );
   }
   return (
-    <div ref={ref} data-slot="work-log" className={cn('mt-0.5 mb-1.5', className)} {...props}>
+    <div ref={ref} data-slot="conversation-work-log" className={cn('mt-0.5 mb-1.5', className)} {...props}>
       <Collapsible defaultOpen={defaultOpen} open={open} onOpenChange={onOpenChange}>
         <CollapsibleTrigger className={cn(row, pressable, 'group/work-log cursor-pointer rounded-sm border-0 bg-transparent p-0 leading-[inherit] outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring')}>
           {clock}
@@ -356,14 +364,15 @@ export function ConversationWorkLog({ summary, defaultOpen = false, open, onOpen
           </span>
         </CollapsibleTrigger>
         <CollapsiblePanel className="h-(--collapsible-panel-height) overflow-hidden transition-[height,opacity] duration-spring-smooth ease-spring-smooth data-starting-style:h-0 data-starting-style:opacity-0 data-ending-style:h-0 data-ending-style:opacity-0 motion-reduce:transition-none">
-          <div className="mt-1.5 mb-1 ms-[5px] grid gap-1.5 border-s border-border ps-3">{children}</div>
+          {/* The steps are a list: a screen reader says how many there are, and where each ends. */}
+          <ul role="list" className="m-0 mt-1.5 mb-1 ms-[5px] grid list-none gap-1.5 border-s border-border p-0 ps-3">{children}</ul>
         </CollapsiblePanel>
       </Collapsible>
     </div>
   );
 }
 
-export interface ConversationToolCallProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'title'> {
+export interface ConversationToolCallProps extends Omit<React.HTMLAttributes<HTMLLIElement>, 'title'> {
   icon?: IconName | (string & {});
   /** What the agent did. */
   title: React.ReactNode;
@@ -372,13 +381,13 @@ export interface ConversationToolCallProps extends Omit<React.HTMLAttributes<HTM
   /** A command or snippet, shown in a mono well. */
   code?: string;
   status?: 'done' | 'running' | 'error';
-  ref?: React.Ref<HTMLDivElement>;
+  ref?: React.Ref<HTMLLIElement>;
 }
 
-/** One step in a ConversationWorkLog. */
+/** One step in a ConversationWorkLog: an item of its list. */
 export function ConversationToolCall({ icon = 'checkmark', title, description, code, status = 'done', className, ref, ...props }: ConversationToolCallProps) {
   return (
-    <div ref={ref} data-slot="tool-call" data-status={status} className={cn('grid gap-1 text-caption text-muted-foreground', className)} {...props}>
+    <li ref={ref} data-slot="conversation-tool-call" data-status={status} className={cn('grid gap-1 text-caption text-muted-foreground', className)} {...props}>
       <div className="flex min-w-0 items-center gap-2">
         {status === 'running' ? (
           <span role="img" aria-label="Running" className="grid size-[13px] shrink-0 place-items-center">
@@ -393,6 +402,6 @@ export function ConversationToolCall({ icon = 'checkmark', title, description, c
         {description != null ? <span className="min-w-0 truncate text-caption2 text-tertiary-foreground">{description}</span> : null}
       </div>
       {code ? <pre className="wb-scroll m-0 overflow-x-auto rounded-lg bg-muted px-2.5 py-2 font-mono text-caption2 leading-[1.55] text-muted-foreground">{code}</pre> : null}
-    </div>
+    </li>
   );
 }

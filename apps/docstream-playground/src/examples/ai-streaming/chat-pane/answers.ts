@@ -42,7 +42,7 @@ ${F}
 ### Render it
 
 ${F}tsx title="Answer.tsx"
-<GitbookStreamdown markdown={md} isStreaming={!done} />
+<GitbookStreamdown markdown={md} streaming={!done} />
 ${F}
 {% endstep %}
 {% endstepper %}

@@ -1,7 +1,7 @@
 'use client';
 /* ══ Sidebar — an app's navigation column, with a collapsed rail, that becomes a drawer when the room runs out ══
    <SidebarProvider> owns open state and measures its own width (the sidebar primitive, `bindSizeClass`): below
-   `breakpoint` it is `compact`, and it is the size-class scope of everything it renders.
+   `breakpoints.medium` (640, as every size-class scope) it is `compact`, and it is the size-class scope of everything it renders.
    <Sidebar variant presentation> shows its children in one look (`docked` column, `rail` that collapses to its
    icons, `float` inset card) and one presentation: a `column` beside the inset, or a `drawer` over it. `auto` (the
    default) is a drawer while the scope is compact and a column otherwise. Both presentations are AdaptivePane's
@@ -31,7 +31,7 @@ import { Button as SdkButton } from '@ui-sdk/react/button';
 import { createParts, usePart, usePrimitive, type PartProps } from '@ui-sdk/react/primitive';
 import { useShortcut, useShortcutHint } from '@ui-sdk/react/shortcuts';
 import type { ChangeOptions } from '@ui-sdk/core';
-import { AdaptivePane } from '@/components/ui/adaptive-pane';
+import { AdaptivePane, resolveAdaptivePanePresentation } from '@/components/ui/adaptive-pane';
 import { Badge } from '@/components/ui/badge';
 import { Kbd } from '@/components/ui/kbd';
 import { Tooltip, TooltipContent, TooltipTrigger, createTooltipController, type TooltipController } from '@/components/ui/tooltip';
@@ -54,7 +54,7 @@ export interface SidebarContextValue {
   open: boolean;
   setOpen: (open: boolean, options?: ChangeOptions<SidebarOpenChangeReason>) => boolean;
   toggle: (options?: ChangeOptions<SidebarOpenChangeReason>) => boolean;
-  /** The provider's size class, measured from its own width against `breakpoint`. */
+  /** The provider's size class, measured from its own width against `breakpoints`. */
   sizeClass: SizeClass;
   /** `sizeClass === 'compact'`: a Sidebar with `presentation="auto"` is a drawer. */
   compact: boolean;
@@ -70,8 +70,8 @@ export function useSidebar() {
 export interface SidebarProviderProps extends SidebarOptions, Omit<PartProps<'div'>, 'children'> {
   children?: ReactNode;
 }
-export function SidebarProvider({ open, defaultOpen, onOpenChange, breakpoint, controller, children, className, ...props }: SidebarProviderProps) {
-  const handle = usePrimitive(sidebar, { open, defaultOpen, onOpenChange, breakpoint, controller } as SidebarOptions);
+export function SidebarProvider({ open, defaultOpen, onOpenChange, breakpoints, controller, children, className, ...props }: SidebarProviderProps) {
+  const handle = usePrimitive(sidebar, { open, defaultOpen, onOpenChange, breakpoints, controller } as SidebarOptions);
   const { api } = handle;
   return usePart(handle, 'provider', {}, {
     ...props,
@@ -147,7 +147,9 @@ export function Sidebar({
 }: SidebarProps) {
   const c = useSidebar();
   const scope = useSizeClassScope() ?? c.sizeClass;
-  const shown = presentation === 'auto' ? (scope === 'compact' ? 'drawer' : 'column') : presentation;
+  // AdaptivePane's `auto` rule, but for one size class: a navigation sidebar stays a column at medium (an iPad's
+  // split view keeps its sidebar beside the content), where a pane of tools becomes a drawer.
+  const shown = resolveAdaptivePanePresentation(presentation, 'start', scope, { medium: 'column' }) as 'column' | 'drawer';
   const column = shown === 'column';
   const collapsed = column && variant === 'rail' && !c.open;
   const float = column && variant === 'float';
@@ -362,8 +364,9 @@ export function SidebarSearch({ placeholder = 'Search', shortcut, className, ...
     >
       <RowGlyph icon="magnifyingglass" />
       <span className="min-w-0 flex-1 truncate">{placeholder}</span>
-      {/* The keys are the button's `aria-keyshortcuts`: the keycap is for the eye. */}
-      {shortcut ? <Kbd keys={shortcut} aria-hidden="true" className="shrink-0 bg-background" /> : null}
+      {/* The keys are the button's `aria-keyshortcuts`: the keycap is for the eye, and not on a touch layout (the
+          phone drawer), where there is no keyboard to press it on. */}
+      {shortcut && !panel?.compact ? <Kbd keys={shortcut} aria-hidden="true" className="shrink-0 bg-background pointer-coarse:hidden" /> : null}
     </RowButton>
   );
 }

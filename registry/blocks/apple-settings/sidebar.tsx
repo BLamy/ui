@@ -27,7 +27,7 @@ function PanePreview({ pane: p, value }: { pane: Pane; value?: string }) {
   const inside = [...new Set(p.sections.flatMap((sec) => sec.rows.map(rowName)).filter(Boolean))].slice(0, 4);
   return (
     <>
-      <HoverCardHeader icon={p.glyph && p.color ? <Tile glyph={p.glyph} color={p.color} size={36} /> : undefined} title={p.title} description={value || undefined} />
+      <HoverCardHeader icon={p.glyph && p.color ? <Tile glyph={p.glyph} tint={p.color} size={36} /> : undefined} title={p.title} description={value || undefined} />
       {p.blurb ? <p className="m-0 mt-2.5 text-footnote leading-snug text-foreground">{p.blurb}</p> : null}
       {inside.length ? <div className="mt-2.5 text-caption text-muted-foreground">{inside.join(' · ')}</div> : null}
     </>
@@ -44,7 +44,7 @@ function IosItem({ row }: { row: Extract<Row, { t: 'link' }> }) {
   return (
     <div className="relative flex w-full after:absolute after:right-0 after:bottom-0 after:left-[57px] after:h-px after:bg-border last:after:hidden has-data-selected:after:hidden">
       <SplitViewItem value={row.to} className="min-h-row gap-3 rounded-ctl px-4 text-body" preview={<PanePreview pane={p} value={value} />}>
-        <Tile glyph={p.glyph} color={p.color} />
+        <Tile glyph={p.glyph} tint={p.color} />
         <span className="min-w-0 flex-1 truncate">{p.title}</span>
         <span className="max-w-[45%] truncate text-callout text-muted-foreground group-data-current/item:text-white/80">{value}</span>
         <Disclosure />
@@ -60,7 +60,7 @@ function MacItem({ row }: { row: Extract<Row, { t: 'link' }> }) {
   return (
     <SplitViewItem value={row.to} className="min-h-[30px] gap-2 rounded-[7px] px-2 py-[3px] text-footnote"
       preview={<PanePreview pane={p} value={valueOf(row, s.values)} />}>
-      <Tile glyph={p.glyph} color={p.color} size={20} />
+      <Tile glyph={p.glyph} tint={p.color} size={20} />
       <span className="min-w-0 flex-1 truncate">{p.title}</span>
     </SplitViewItem>
   );

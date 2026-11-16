@@ -40,7 +40,7 @@ import {
 } from '@/components/ui/artifact-chat-container'
 import {
   Composer, ComposerCard, ComposerInput, ComposerFooter, ComposerSpacer, ComposerSend,
-} from '@/components/ui/composer/composer'
+} from '@/components/ui/composer'
 
 <ArtifactChatContainer working={busy} workingLabel="Updating the chart…">
   <ArtifactChatContainerContent><Artifact /></ArtifactChatContainerContent>
@@ -60,7 +60,7 @@ The container fills its parent (`h-full w-full`): give the parent a size.
 
 ## Presentations
 
-`presentation="auto"` (the default) reads the container's **own** width, not the viewport's: at `breakpoint` (760px) and above it docks the chat, below it floats it. The root carries `data-size-class` and `data-presentation`, and it is the size-class scope of what it renders, so dialogs and popovers opened inside with `presentation="auto"` follow it too. `presentation="split"` always docks; `presentation="floating"` always floats, the right choice for maps, canvases and other full-bleed artifacts.
+`presentation="auto"` (the default) reads the container's **own** width, not the viewport's: at `breakpoint` (760px) and above it docks the chat, below it floats it. The root carries `data-size-class` and `data-presentation`, and it is the size-class scope of what it renders, so dialogs and popovers opened inside with `presentation="auto"` follow it too. `presentation="split"` always docks; `presentation="floating"` always floats, the right choice for maps, canvases and other full-bleed artifacts. On a wide container the floating chat keeps the chat's width (`chatWidth`) and rests on the `chatSide` edge, as a Maps card does on an iPad, instead of stretching across the artifact; on a phone it spans the width.
 
 Drag the width across the breakpoint: the column slides away, the composer flies to the floating sheet's foot and the artifact grows into the room, keeping the draft.
 
@@ -78,7 +78,7 @@ The floating chat is a `FloatingSheet` (`variant="glass"` by default, `bodyAlign
 
 - **Rest.** With `peek={0}` it rests on the composer alone; a `peek` (px, or `'30%'` of the container) keeps the newest replies readable above it, fading at the top edge. A `Conversation` or `MessageScroller` in the Chat part sits at its newest line while the chat rests, and anchors new turns again once it grows.
 - **Grow.** Drag the cap up, press it, or use the arrow keys on it: the transcript grows over the artifact and the container dims. `Escape` and a press on the scrim bring it back to rest. `open` / `defaultOpen` / `onOpenChange(open, details)` control it (`details.reason`: `swipe`, `handle-press`, `handle-key`, `escape-key`, `outside-press`, `imperative`).
-- **Fold.** Drag it below rest and it folds into a FAB on the `fabSide` edge at `fabAlign` (bottom center by default), with `fabIcon` as its face; the FAB, named "Open " + `chatLabel`, brings it back. `minimized` / `defaultMinimized` / `onMinimizedChange(minimized, details)` control it (`swipe`, `trigger-press`, `imperative`).
+- **Fold.** Drag it below rest and it folds into a FAB on the `fabSide` edge at `fabAlign` (bottom center by default), (on a wide container, the `chatSide` end of the bottom edge, where the chat rested; on a phone, the middle), with `fabIcon` as its face; the FAB, named "Open " + `chatLabel`, brings it back. `minimized` / `defaultMinimized` / `onMinimizedChange(minimized, details)` control it (`swipe`, `trigger-press`, `imperative`).
 - **Scroll.** Resting on the composer alone, it slides away while the artifact scrolls down (or the shared chrome hides) and comes back on a scroll up; `hideOnScroll={false}` keeps it.
 
 {% demo src="artifact-chat-container/floating-peek" %}
@@ -89,7 +89,7 @@ While `working` is true, the floating composer's card becomes a tappable status 
 
 ## Appearance
 
-`appearance` is the chat's colour scheme: `auto` (default) follows the page; `light` and `dark` put the bl-theme's `sheet` scope on the chat surfaces only (the docked column, the floating sheet) so the chat can disagree with the page (a dark chat over a light map). The artifact keeps the page's theme, and popups opened from the chat wear the chat's. The composer wears the `glass` scope in the same appearance. To put the artifact in the same scheme as the chat, scope the `ArtifactChatContainerContent` yourself (a `className` of `dark` / `light`, or a `ThemeScope` inside it). `variant` is the floating chat's look: `glass` (default) blurs the artifact behind it, `sheet` is an opaque card.
+`appearance` is the chat's colour scheme: `auto` (default) follows the page; `light` and `dark` put the bl-theme's `sheet` scope on the chat surfaces only (the docked column, the floating sheet) so the chat can disagree with the page (a dark chat over a light map). The artifact keeps the page's theme, and popups opened from the chat wear the chat's. The composer wears the `glass` scope in the same appearance. To put the artifact in the same scheme as the chat, scope the `ArtifactChatContainerContent` yourself (a `className` of `dark` / `light`, or a `ThemeScope` inside it). `variant` is the floating chat's look: `glass` (default) blurs the artifact behind it, `card` is the opaque surface (an opaque card).
 
 ## Resting, peeking and folding: the words
 
@@ -112,7 +112,7 @@ Write the three parts as direct children, in any order. React context reaches th
 | --- | --- | --- | --- |
 | `presentation` | `'auto' \| 'split' \| 'floating'` | `'auto'` | Docked, floating, or decided by the container's width. |
 | `breakpoint` | `number` | `760` | Container width, px, below which `auto` floats the chat (the container's size class is `compact` under it). |
-| `chatWidth` | `number \| string` | `400` | Width of the docked column. |
+| `chatWidth` | `number \| string` | `400` | Width of the docked column, and of the floating chat on a wide container. |
 | `chatSide` | `'start' \| 'end'` | `'start'` | The inline edge the docked column sits on. |
 | `chatLabel` | `string` | `'Chat'` | Accessible name of the column, the floating sheet and (with "Open ") its FAB. |
 | `open` / `defaultOpen` / `onOpenChange` | `boolean` / `boolean` / `(open, details) => void` | `false` | The floating chat grown over the artifact. |
@@ -122,15 +122,15 @@ Write the three parts as direct children, in any order. React context reaches th
 | `composing` / `onComposingChange` | `boolean` / `(composing, details) => void` | `!working` | Whether the real composer shows while working. |
 | `peek` | `number \| '${number}%'` | `0` | Transcript kept visible above the resting floating composer. |
 | `gutter` | `number` | `12` | Inset of the floating chat from the container's edges. |
-| `variant` | `'glass' \| 'sheet'` | `'glass'` | The floating chat's look. |
+| `variant` | `'glass' \| 'card'` | `'glass'` | The floating chat's look: `card` is the opaque surface. |
 | `appearance` | `'auto' \| 'light' \| 'dark'` | `'auto'` | The chat's colour scheme. |
-| `fabSide` / `fabAlign` | `'top' \| 'bottom' \| 'start' \| 'end'` / `'start' \| 'center' \| 'end'` | `'bottom'` / `'center'` | Where the FAB rests. |
+| `fabSide` / `fabAlign` | `'top' \| 'bottom' \| 'start' \| 'end'` / `'start' \| 'center' \| 'end'` | `'bottom'` / the `chatSide` on a wide container, `'center'` on a phone | Where the FAB rests. |
 | `fabIcon` | `ReactNode` | a sparkle | The FAB's face. |
 | `hideOnScroll` | `boolean` | `true` | Hide the resting floating chat while the artifact scrolls down. |
 
 ## Hook
 
-`useArtifactChatContainer()` reads the container from anything inside it (the transcript's own header, for example) and throws outside one: `{ sizeClass, presentation, open, setOpen, composing, setComposing, minimized, setMinimized }`. The setters take an optional `{ reason, event }` and go through the same callbacks, so a controlled host hears them; `open` is always false while docked.
+`useArtifactChatContainer()` reads the container from anything inside it (the transcript's own header, for example) and throws outside one: `{ sizeClass, presentation, open, setOpen, composing, setComposing, minimized, setMinimized }`. The setters take an optional `{ reason, event }` and go through the same callbacks, so a controlled host hears them, and return `false` when the change was canceled, like every kit setter; `open` is always false while docked.
 
 ```tsx
 function TranscriptHeader() {

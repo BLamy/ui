@@ -148,7 +148,7 @@ The expression and the plain-English box are UI SDK fields (`Field` + `Input`) w
 | `disabled` | `false` | Disables the fields and chips. A disabled editor is the raw expression alone (read-only), without the plain-English box. |
 | `className`, `style` | — | Merged onto the root (`data-slot="cron-editor"`). Other div props pass through. |
 
-Parts carry `data-slot`s for tests and styling: `cron-editor-natural`, `cron-editor-expression` (the chosen expression and Edit expression), `cron-editor-fields` (each cell has `data-field`, and `data-active` / `data-invalid`), `cron-editor-description`, `cron-editor-presets` and `cron-editor-next`.
+Parts carry `data-slot`s for tests and styling: `cron-editor-natural`, `cron-editor-expression` (the chosen expression and Edit expression), `cron-editor-fields` (each cell has `data-field`, and `data-highlighted` while the caret is in it, `data-invalid`), `cron-editor-description`, `cron-editor-presets` and `cron-editor-next`.
 
 ## Hooks and helpers
 

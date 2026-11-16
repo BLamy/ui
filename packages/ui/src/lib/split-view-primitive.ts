@@ -16,7 +16,7 @@ import { bindBack } from '@/lib/back';
 import { bindEdgeSwipe } from '@/lib/edge-swipe';
 import { bindSizeClass, type SizeClass, type SizeClassBreakpoints } from '@/lib/size-class';
 import { bindScrollEdge } from '@/lib/scroll-edge';
-import { createStack, type StackExit } from '@/lib/stack';
+import { createPageStack, type PageStackExit } from '@/lib/stack';
 
 /* ══ SplitView — UISplitViewController as one primitive ══
    The primitive owns everything a split view decides: its size class (measured from its own box with
@@ -28,7 +28,7 @@ import { createStack, type StackExit } from '@/lib/stack';
 
      regular   sidebar · supplementary · detail tiled (the sidebar tiles; closing it slides it away)
      medium    supplementary · detail tiled; the sidebar floats over them (overlay) or pushes them (displace)
-     compact   one column at a time: the columns are the pages of a `createStack`, so a pick pushes the next
+     compact   one column at a time: the columns are the pages of a `createPageStack`, so a pick pushes the next
                one and back, Escape and a swipe from the leading edge pop, innermost stack first (a NavigationStack
                in a column is a stack too: it pops its own pages before the columns move)
 
@@ -170,7 +170,7 @@ type Store = {
   resizing: ResizeDraft | null;
   /** The compact stack's pages: the shown columns up to the top one. A stack only while compact (`active`). */
   pages: string[];
-  exiting: StackExit[];
+  exiting: PageStackExit[];
   /** The first layout has painted: from here on, moves animate. */
   ready: boolean;
   /** The item of each column with its tab stop (`createRovingFocus`). */
@@ -519,7 +519,7 @@ export const splitView = definePrimitive({
     const imperative = <R extends string>(o: Why<R> | undefined, fallback = 'imperative') =>
       ({ reason: (o?.reason ?? fallback) as R, event: o?.event });
 
-    const stack = createStack<Store, SplitViewCompactColumnChangeReason>(context, {
+    const stack = createPageStack<Store, SplitViewCompactColumnChangeReason>(context, {
       key: 'pages',
       exiting: 'exiting',
       // Popping a column is choosing the one under it.

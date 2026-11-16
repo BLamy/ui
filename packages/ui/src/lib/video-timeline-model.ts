@@ -48,11 +48,11 @@ export interface TimelineClip {
   data?: Record<string, unknown>;
 }
 
-export type TrackKind = 'video' | 'audio';
+export type TimelineTrackKind = 'video' | 'audio';
 
 export interface TimelineTrack {
   id: string;
-  kind: TrackKind;
+  kind: TimelineTrackKind;
   name?: string;
   clips: TimelineClip[];
   /** The main storyline: clips butt end to end and edits ripple. */
@@ -68,6 +68,18 @@ export interface TimelineTrack {
 export interface Timeline {
   /** Top to bottom: the first video track draws over the rest. */
   tracks: TimelineTrack[];
+}
+
+/** A piece of media the clips use, by the id they name: one map serves the VideoPreview that plays it and the
+ *  VideoTimeline that trims and labels by it, and each reads the fields it needs. */
+export interface TimelineMedia {
+  kind: 'video' | 'audio' | 'image';
+  /** What VideoPreview plays: an object URL or any playable URL. */
+  url?: string;
+  /** Seconds, VideoTimeline's trim limit (ignored for stills; none: no limit). */
+  duration?: number;
+  /** The clip label when the clip has none. */
+  name?: string;
 }
 
 /** Output geometry and frame rate. */

@@ -31,6 +31,8 @@ export type MessageScrollerState = {
   away: boolean;
   /** Inside a peek host (`[data-peek-host]`) resting at its peek (`data-peeking`). */
   resting: boolean;
+  /** The viewport is scrolled away from its top: content runs under its top edge (`data-scrolled`, for the fade). */
+  scrolled: boolean;
   streaming: boolean;
 };
 
@@ -44,6 +46,7 @@ export const messageScroller = definePrimitive({
     following: true,
     away: false,
     resting: false,
+    scrolled: false,
     streaming: !!options.streaming,
   }),
   sync: (options) => ({ streaming: !!options.streaming }),
@@ -73,7 +76,7 @@ export const messageScroller = definePrimitive({
     const spacer = () => context.element('spacer') as HTMLElement | null;
     const measureAway = () => {
       const el = viewport;
-      if (el) store.set({ away: el.scrollHeight - el.scrollTop - el.clientHeight > AWAY });
+      if (el) store.set({ away: el.scrollHeight - el.scrollTop - el.clientHeight > AWAY, scrolled: el.scrollTop > 0 });
     };
 
     /** Sizes the spacer so the latest anchor can sit `peek` from the top with its reply below it. */
@@ -236,6 +239,7 @@ export const messageScroller = definePrimitive({
         'aria-label': 'Messages',
         tabindex: '0',
         'data-resting': state.resting ? '' : undefined,
+        'data-scrolled': state.scrolled ? '' : undefined,
       }),
       bind: (el, { api }) => api.internal.connect(el),
     }),

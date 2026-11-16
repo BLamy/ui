@@ -58,6 +58,9 @@ export function ImageAnnotatorProvider({ engine, children }: ImageAnnotatorProvi
 export interface ImageAnnotatorProps extends Pick<DialogOptions, 'open' | 'defaultOpen' | 'onOpenChange' | 'onOpenChangeComplete'> {
   /** The image (a URL or a data URL). */
   src: string;
+  /** What the image shows (a file name, a caption): the image's alt text, and the lightbox's name ("Annotate:
+   *  {alt}"). Without it the image is presentational and the lightbox is "Annotate image". */
+  alt?: string;
   /**
    * Save pressed: the image with its strokes flattened into one PNG data URL. The lightbox then closes with reason
    * `action` and `returnValue` `"save"` (Cancel closes with `close-press` and `"cancel"`).
@@ -180,6 +183,7 @@ const lightboxChrome = (delay: string) =>
  */
 export function ImageAnnotator({
   src,
+  alt,
   open: openProp,
   defaultOpen = false,
   onOpenChange,
@@ -283,7 +287,7 @@ export function ImageAnnotator({
           'motion-reduce:[transition:opacity_150ms]',
         )}
       >
-        <img ref={setImg} src={src} alt="" className="block h-auto max-h-[68cqh] w-auto max-w-[86cqw] min-w-[min(340px,86cqw)]" />
+        <img ref={setImg} src={src} alt={alt ?? ''} className="block h-auto max-h-[68cqh] w-auto max-w-[86cqw] min-w-[min(340px,86cqw)]" />
         {surface ? (
           // The surface wears the image's appearance, not the lightbox's.
           <div data-slot="image-annotator-surface" data-appearance={surfaceAppearance} className={cn(themeScopeClass(surfaceAppearance), 'contents')}>
@@ -319,7 +323,7 @@ export function ImageAnnotator({
         className="fixed inset-0 z-400 bg-black/74 transition-opacity duration-280 ease-out data-starting-style:opacity-0 data-ending-style:opacity-0 data-ending-style:duration-300 motion-reduce:duration-150"
       />
       <DialogContent
-        aria-label={preview ? 'Preview image' : 'Annotate image'}
+        aria-label={(preview ? 'Preview' : 'Annotate') + (alt ? ': ' + alt : ' image')}
         data-preview={preview || undefined}
         data-theme-scope={LIGHTBOX_SCOPE['data-theme-scope']}
         // The content fills the host and centers the lightbox; presses on its empty area fall through to the

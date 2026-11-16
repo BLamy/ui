@@ -3,7 +3,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Avatar } from '@/components/ui/avatar';
 import { EmptyState as EmptyStateView } from '@/components/ui/empty-state';
 import { Toolbar, ToolbarButton, ToolbarText } from '@/components/ui/toolbar';
-import { IndexBar, alphabetItems } from '@/components/ui/index-bar';
+import { IndexBar, indexBarAlphabetItems } from '@/components/ui/index-bar';
 import { List, ListRow, ListSection } from '@/components/ui/list';
 import { Switch } from '@/components/ui/switch';
 import {
@@ -155,7 +155,7 @@ function ContactsDemo({ grouped }: { grouped?: boolean }) {
             </NavigationStackSubheader>
             {content}
           </NavigationStackContent>
-          <IndexBar items={alphabetItems(avail)} onJump={jump} className="top-14 bottom-2.5" />
+          <IndexBar items={indexBarAlphabetItems(avail)} onJump={jump} className="top-14 bottom-2.5" />
         </NavigationStackPage>
       </NavigationStack>
       {edit ? (

@@ -151,10 +151,7 @@ function kindOf(n: DiagramNode<any>, index: DiagramIndex<any>, noun: string): st
   const count = index.children.get(n.id)?.length ?? 0;
   const inside = count === 1 ? `holding 1 ${noun}` : `holding ${count} ${noun}s`;
   switch (n.kind) {
-    case 'initial': return 'start marker';
-    case 'final': return `final ${noun}`;
-    case 'compound': return `group, ${inside}`;
-    case 'parallel': return `parallel group, ${inside}`;
+    case 'group': return `group, ${inside}`;
     case 'region': return `region, ${inside}`;
     case 'root': return `diagram, ${inside}`;
     default: return noun;
@@ -175,13 +172,14 @@ export function describeNode(node: DiagramNode<any>, index: DiagramIndex<any>, a
   const parent = index.parent.get(node.id);
   const parentNode = parent ? index.byId.get(parent) : undefined;
   const where = parentNode && parentNode.kind !== 'root' ? `, in ${nameOf(parentNode, parentNode.id)}` : '';
-  const name = node.kind === 'initial' ? 'Start' : nameOf(node, node.id);
+  // A marker goes by its label ("Start, marker"), and is only a marker without one.
+  const head = node.kind === 'marker' ? (node.label ? `${node.label}, marker` : 'Marker') : `${nameOf(node, node.id)}, ${kindOf(node, index, noun)}`;
   const detail = node.detail ? ` ${node.detail}.` : '';
   const out = at?.out ?? [], into = at?.into ?? [];
   const going = (e: DiagramEdge<any>) => (e.to === node.id ? `${e.label ? `${e.label} ` : ''}back to itself` : `${e.label ? `${e.label} ` : ''}to ${nameOf(index.byId.get(e.to), e.to)}`);
   const coming = (e: DiagramEdge<any>) => `${e.label ? `${e.label} ` : ''}from ${nameOf(index.byId.get(e.from), e.from)}`;
   const none = !out.length && !into.length ? ' Not connected to anything.' : '';
-  return `${name}, ${kindOf(node, index, noun)}${where}.${detail}${listEdges(out, going, 'going out')}${listEdges(into, coming, 'coming in')}${none}`;
+  return `${head}${where}.${detail}${listEdges(out, going, 'going out')}${listEdges(into, coming, 'coming in')}${none}`;
 }
 
 /** What an edge is, and what it joins. */
@@ -208,10 +206,14 @@ export function viewportToShow<V extends Viewport>(viewport: V, box: Rect, size:
   return dx || dy ? { ...viewport, x: viewport.x + dx, y: viewport.y + dy } : viewport;
 }
 
-/** The viewport that shows all of `box`, centered, with `padding` px of air, and no closer than 100%: what a diagram
- *  shows until its view is moved. With nothing to show, the origin is in the middle at 100%. */
-export function fitViewport(box: Rect | null, size: { width: number; height: number }, padding = 24, { minZoom = 0.02, maxZoom = 1 }: { minZoom?: number; maxZoom?: number } = {}): Viewport {
-  if (!box || box.w <= 0 || box.h <= 0) return { x: size.width / 2, y: size.height / 2, zoom: 1 };
-  const zoom = Math.max(minZoom, Math.min(maxZoom, (size.width - padding * 2) / box.w, (size.height - padding * 2) / box.h));
-  return { zoom, x: size.width / 2 - (box.x + box.w / 2) * zoom, y: size.height / 2 - (box.y + box.h / 2) * zoom };
+/** The viewport that shows all of `box`, centered in what's left once `padding` px are taken from each side (one number
+ *  for all four, or each), and no closer than 100%: what a diagram shows until its view is moved. With nothing to show,
+ *  the origin is in the middle of that room at 100%. */
+export function fitViewport(box: Rect | null, size: { width: number; height: number }, padding: number | { top: number; right: number; bottom: number; left: number } = 24, { minZoom = 0.02, maxZoom = 1 }: { minZoom?: number; maxZoom?: number } = {}): Viewport {
+  const pad = typeof padding === 'number' ? { top: padding, right: padding, bottom: padding, left: padding } : padding;
+  const w = Math.max(1, size.width - pad.left - pad.right), h = Math.max(1, size.height - pad.top - pad.bottom);
+  const cx = pad.left + w / 2, cy = pad.top + h / 2;
+  if (!box || box.w <= 0 || box.h <= 0) return { x: cx, y: cy, zoom: 1 };
+  const zoom = Math.max(minZoom, Math.min(maxZoom, w / box.w, h / box.h));
+  return { zoom, x: cx - (box.x + box.w / 2) * zoom, y: cy - (box.y + box.h / 2) * zoom };
 }

@@ -20,7 +20,7 @@ React and React DOM (19) are peer dependencies: docstream uses your app's copy. 
 | `react-dom` | `^19` | Yes | Everything that renders. |
 | `@agent-wasm/core` | `>=0.4.0` | Optional | The `@brett_lamy/ui/docstream/playground` entry: live code fences and runnable inline `{% demo %}` files, run by almost-node (a Vite dev server in the browser). |
 | `@brett_lamy/viz-engine` | `>=0.2.0` | Optional | The `@brett_lamy/ui/docstream/viz` entry: `VizEmbed`. |
-| `xstate` | `^5.33.3` | Optional | The `@brett_lamy/ui/docstream/xstate/machine` entry (`parseXState`, `xstateToMermaid`), which an ` ```xstate ` fence loads when it's displayed. Without it the fence keeps its source and shows the import error where the diagram would be. |
+| `xstate` | `^5.33.3` | Optional | The `@brett_lamy/ui/docstream/xstate/machine` entry (`xstateToMermaid`), which an ` ```xstate ` fence loads when it's displayed. Without it the fence keeps its source and shows the import error where the diagram would be. |
 | `vite` | `>=5` | Optional | The `@brett_lamy/ui/docstream/vite` plugin (`docstreamSources`), imported from `vite.config.ts`. |
 
 UI SDK (`@ui-sdk/core`, `@ui-sdk/react`) isn't a peer: it is a dependency of `@brett_lamy/ui`, so docstream and the rest of BL UI share its one copy. `@brett_lamy/ui` has other optional peers (ELK, PGlite, Tailscale) for kit components; docstream never loads them.
@@ -150,7 +150,7 @@ Only docstream's UI SDK part modules carry a `"use client"` directive; the rende
 import { GitbookStreamdown } from "@brett_lamy/ui/docstream"
 
 export function Answer({ text, done }: { text: string; done: boolean }) {
-  return <GitbookStreamdown markdown={text} isStreaming={!done} />
+  return <GitbookStreamdown markdown={text} streaming={!done} />
 }
 ```
 

@@ -358,7 +358,7 @@ Swap appearance and tint on the fly. The components just re-read their nearest v
 
 ### Scoped appearance
 
-An explicit `dark` wins over the ambient appearance, so a player card can stay light or dark whatever the page around it does.
+An explicit `appearance` (`light` or `dark`) wins over the ambient one, so a player card can stay light or dark whatever the page around it does.
 
 {% demo src="theming/scoped-appearance" %}
 

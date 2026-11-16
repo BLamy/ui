@@ -90,6 +90,19 @@ describe('MarkdownEditor', () => {
     await waitFor(() => expect(bold.getAttribute('aria-pressed')).toBe('true'));
   });
 
+  it('toolbar={true} is the kit Toolbar of MarkdownEditorToolbarButtons, not docstream\'s own row', async () => {
+    const { ref } = await mount({ 'aria-label': 'Notes', defaultValue: 'plain words', toolbar: true });
+    const slot = document.querySelector('[data-slot=markdown-editor-toolbar]')!;
+    expect(slot.querySelector('[role=toolbar]')?.getAttribute('aria-label')).toBe('Formatting');
+    expect(document.querySelector('.gb-toolbar')).toBeNull();
+    const names = [...slot.querySelectorAll('button')].map((b) => b.getAttribute('aria-label'));
+    expect(names).toEqual(['Bold', 'Italic', 'Strikethrough', 'Inline code', 'Link']);
+    const italic = slot.querySelector<HTMLButtonElement>('button[aria-label=Italic]')!;
+    act(() => { ref.current!.editor!.commands.selectAll(); });
+    act(() => { fireEvent.click(italic); });
+    await waitFor(() => expect(ref.current!.getMarkdown()).toMatch(/[*_]plain words[*_]/));
+  });
+
   it('uncontrolled: setMarkdown replaces the document, reports Markdown and submits it with the form', async () => {
     const onValueChange = vi.fn();
     const { ref, container } = await mount({ 'aria-label': 'Body', defaultValue: 'one', onValueChange, name: 'body' });

@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Composer, ComposerAttachments, ComposerBump, ComposerBumpHandle, ComposerCard, ComposerExpand, ComposerFooter, ComposerInput, ComposerOptions, ComposerOptionsOutlet, ComposerSelect, ComposerSend, ComposerSpacer, ComposerText, type ComposerAttachment, type ComposerProps } from '@/components/ui/composer/composer';
+import { Composer, ComposerAttachments, ComposerBump, ComposerBumpHandle, ComposerCard, ComposerExpand, ComposerFooter, ComposerInput, ComposerOptions, ComposerOptionsOutlet, ComposerSelect, ComposerSend, ComposerSpacer, ComposerText, type ComposerAttachment, type ComposerProps } from '@/components/ui/composer';
 import { Icon } from '@/lib/icon';
 import { ModelPicker } from './model-picker';
 import { WORKBENCH_MODELS, WORKBENCH_PROVIDERS } from './models';

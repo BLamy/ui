@@ -5,7 +5,7 @@ import { fitViewport, viewportToShow, describeEdge, describeNode, edgesByNode, f
 const node = (id: string, x: number, y: number, extra: Partial<DiagramNode> = {}): DiagramNode => ({ id, label: id, x, y, w: 100, h: 40, ...extra });
 const nodes: DiagramNode[] = [
   node('a', 0, 0), node('b', 300, 0), node('c', 300, 200), node('d', 0, 200),
-  node('box', 600, 0, { kind: 'compound', w: 400, h: 300 }), node('k1', 650, 60, { parent: 'box' }), node('k2', 850, 200, { parent: 'box' }),
+  node('box', 600, 0, { kind: 'group', w: 400, h: 300 }), node('k1', 650, 60, { parent: 'box' }), node('k2', 850, 200, { parent: 'box' }),
   node('alone', 150, 500),
 ];
 // a → b → c → d → a is a cycle.
@@ -158,16 +158,19 @@ describe('what a screen reader hears', () => {
 
   it('names each kind', () => {
     const list: DiagramNode[] = [
-      node('r', 0, 0, { kind: 'root' }), node('p', 0, 0, { kind: 'parallel', parent: 'r' }), node('g', 0, 0, { kind: 'region', parent: 'p' }),
-      node('f', 0, 0, { kind: 'final', parent: 'g' }), node('i', 0, 0, { kind: 'initial', parent: 'g', label: undefined }), node('d', 0, 0, { detail: 'invoke verifyToken', parent: 'r' }),
+      node('r', 0, 0, { kind: 'root' }), node('p', 0, 0, { kind: 'group', variant: 'dashed', parent: 'r' }), node('g', 0, 0, { kind: 'region', parent: 'p' }),
+      node('f', 0, 0, { variant: 'double', parent: 'g' }), node('i', 0, 0, { kind: 'marker', parent: 'g', label: undefined }), node('d', 0, 0, { detail: 'invoke verifyToken', parent: 'r' }),
     ];
     const index = indexDiagram(list);
     const text = (id: string) => describeNode(index.byId.get(id)!, index, undefined);
     expect(text('r')).toBe('r, diagram, holding 2 nodes. Not connected to anything.');
-    expect(text('p')).toBe('p, parallel group, holding 1 node. Not connected to anything.');
+    expect(text('p')).toBe('p, group, holding 1 node. Not connected to anything.');
     expect(text('g')).toBe('g, region, holding 2 nodes, in p. Not connected to anything.');
-    expect(text('f')).toBe('f, final node, in g. Not connected to anything.');
-    expect(text('i')).toBe('Start, start marker, in g. Not connected to anything.');
+    // A border's a look, and says nothing; a marker goes by its label, if it has one.
+    expect(text('f')).toBe('f, node, in g. Not connected to anything.');
+    expect(text('i')).toBe('Marker, in g. Not connected to anything.');
+    const started = indexDiagram([node('s', 0, 0, { kind: 'marker', label: 'Start' })]);
+    expect(describeNode(started.byId.get('s')!, started, undefined)).toBe('Start, marker. Not connected to anything.');
     expect(text('d')).toBe('d, node. invoke verifyToken. Not connected to anything.');
   });
 
@@ -217,5 +220,18 @@ describe('the view follows', () => {
     const far = fitViewport({ x: 0, y: 0, w: 1504, h: 100 }, size);
     expect(far.zoom).toBeCloseTo(0.5);
     expect(far.x).toBeCloseTo(400 - 752 * 0.5);
+  });
+});
+
+describe('fitViewport', () => {
+  it('fits in what each side’s padding leaves, centered there', () => {
+    const v = fitViewport({ x: 0, y: 0, w: 100, h: 100 }, { width: 400, height: 400 }, { top: 60, right: 0, bottom: 140, left: 0 });
+    // 200 px tall is left, so 100 units fit at 2, capped at 1, and centered at y = 60 + 100.
+    expect(v.zoom).toBe(1);
+    expect(v.y).toBe(160 - 50);
+    expect(v.x).toBe(200 - 50);
+    const big = fitViewport({ x: 0, y: 0, w: 1000, h: 1000 }, { width: 400, height: 400 }, { top: 60, right: 0, bottom: 140, left: 0 });
+    expect(big.zoom).toBeCloseTo(0.2);
+    expect(big.y).toBeCloseTo(60);
   });
 });

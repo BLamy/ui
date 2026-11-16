@@ -79,7 +79,7 @@ export function NoteEditor({ notes, n, source, format, editorRef }: {
       onKeyDown={onSaveKey}
       className="min-h-[60vh] w-full resize-none border-0 bg-transparent p-0 font-mono text-detail leading-6 text-foreground outline-none" /> :
       <MarkdownEditor key={n.id} ref={editorRef} value={n.body} variant="plain" toolbar={format} aria-label={`${info.name} note`}
-        demoResolver={demos.resolver} demoVFS={demos.vfs} demoRuntime={demos.runtime}
+        demo={demos}
         resolveAsset={project.resolveAsset} pickFile={project.pickFile} onDropEmbeds={project.onDropEmbeds}
         placeholder="Start writing…" minHeight="60vh" handleKeyDown={onSaveKey}
         onValueChange={(markdown) => {

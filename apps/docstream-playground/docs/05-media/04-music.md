@@ -79,15 +79,14 @@ export function Song({ code, save }: { code: string; save: (code: string) => voi
 | `rackOpen` / `onRackOpenChange` | `boolean` / `(open, details) => void` | none | Control the rack panel. `details` is UI SDK's change details: `reason` is `"trigger-press"`, `"find-in-page"` or `"imperative"`, and `details.cancel()` keeps an uncontrolled panel as it was. |
 | `defaultCodeOpen` | `boolean` | `false` | Show the code under the player from the start (uncontrolled). |
 | `codeOpen` / `onCodeOpenChange` | `boolean` / `(open, details) => void` | none | Control the code panel, the same way. |
-| `onCodeChange` | `(code, details) => void` | none | The code after every rack edit and after **Revert edits**; `details.reason` is `"rack-edit"` or `"revert"`, `details.event` the click, key or drag behind it, and for a rack edit `details.rack` is the rack's own details (which control, and how; below). |
+| `onCodeChange` | `(code, details) => void` | none | The code after every rack edit and after **Revert edits**. `details` is UI SDK's `ChangeDetails`: `reason` is `"rack-edit"` or `"revert"`, `event` the click, key or drag behind it, `cancel()` keeps the code as it was; for a rack edit `details.rack` is the rack's own details (which control, and how; below). |
 | `samples` | `readonly string[]` | `DEFAULT_SAMPLES` | Sample banks to load before the first play, e.g. `["github:tidalcycles/dirt-samples"]`. |
 | `className` | `string` | none | Added to `figure.docstream-strudel`, which carries `data-state="idle" \| "loading" \| "playing"`. |
 | `style` | `CSSProperties` | none | Inline styles on the root figure. |
 | `ref` | `Ref<HTMLElement>` | none | The root figure. |
 | `aria-label` | `string` | `title` | The figure's accessible name. |
-| `showCode`, `showRack` | `boolean` | `false` | Deprecated spellings of `defaultCodeOpen` and `defaultRackOpen`, still honored. |
 
-The open/close trios, `onCodeChange`'s `details`, `style`, `ref` and `aria-label` are new in 2.0.1. A one-argument `onCodeChange` from 2.0.0 keeps working.
+The open/close trios, `onCodeChange`'s `details`, `style`, `ref` and `aria-label` are new in 2.0.1.
 
 ## The syntax tree
 
@@ -96,7 +95,7 @@ The rack is built on a parser you can use directly. `parseStrudel` reads the Jav
 {% demo src="media-music/syntax-tree" %}
 
 ```ts title="song.ts"
-import { parseStrudel, parseMini, setMethod, setTempo, mixCode, formatNumber } from "@brett_lamy/ui/docstream/strudel"
+import { parseStrudel, parseMini, setMethod, setTempo, mixCode, formatNumber } from "@brett_lamy/ui/docstream/strudel/rack"
 
 const song = parseStrudel(code)
 song.tempo        // { cps: 0.5, unit: "cps", call } from setcps / setcpm
@@ -127,14 +126,14 @@ mixCode(song, { solo: new Set([0]) })                             // the code wi
 
 ## Building blocks for your own studio
 
-`@brett_lamy/ui/docstream/strudel` also exports the pieces the player is made of:
+`@brett_lamy/ui/docstream/strudel/rack` exports the pieces the player is made of, with the parser they need (acorn), so `@brett_lamy/ui/docstream/strudel` itself loads it only when a reader opens the rack. The runtime functions stay on `@brett_lamy/ui/docstream/strudel`:
 
 | Export | Purpose |
 | --- | --- |
-| `StrudelRack` | The rack on its own: `value`, `onValueChange(code, details)`, `onPlayableChange` (the code for the current mute/solo mix), `layout="rack" \| "grid"`, and `persistKey` to remember the layout in `localStorage`. `code` and `onChange` are the deprecated spellings of `value` and `onValueChange`, and still work. |
+| `StrudelRack` | The rack on its own: `value`, `onValueChange(code, details)`, `onPlayableChange` (the code for the current mute/solo mix), `defaultVariant="rack" \| "grid"` (the look it opens in; the reader can switch), and `persistKey` to remember the layout in `localStorage`. |
 | `RackGrid` | The masonry grid: `items` (`{ key, label, node, span? }`), `layout`, `onLayoutChange`. |
 | `StepGrid` | A mini-notation tree as a step sequencer: `mini`, `onAtomChange(atom, text, details)` (`details.reason` is `"press"` for a toggle, `"input-commit"` for a typed value), `label`. |
-| `Knob`, `Fader` | The hardware controls, both ARIA sliders: drag (Shift for fine), arrows, Page Up/Down, Home/End, double-click to reset. Props: `label`, `value`, `min`, `max`, `log`, `defaultValue`, `format`, `onValueChange(value, details)`. `onChange` is the deprecated spelling, and gets the same details. |
+| `Knob`, `Fader` | The hardware controls, both ARIA sliders: drag (Shift for fine), arrows, Page Up/Down, Home/End, double-click to reset. Props: `label`, `value`, `min`, `max`, `log`, `defaultValue`, `format`, `onValueChange(value, details)`, and on a Knob `size` (`"default"` or `"lg"` for master controls). |
 | `STRUDEL_PARAMS`, `trackName` | The effects the rack draws knobs for, with ranges and defaults; a track's display name. |
 | `playStrudel`, `updateStrudel`, `stopStrudel` | Drive the shared runtime yourself. `playStrudel` must run from a user gesture. |
 | `subscribeStrudel`, `getStrudelSnapshot`, `strudelNow` | Who is playing (`{ owner, status }`) and the scheduler's position in cycles, for your own visuals. |
@@ -142,11 +141,11 @@ mixCode(song, { solo: new Set([0]) })                             // the code wi
 
 ```tsx title="Mixer.tsx"
 import { useState } from "react"
-import { StrudelRack } from "@brett_lamy/ui/docstream/strudel"
+import { StrudelRack } from "@brett_lamy/ui/docstream/strudel/rack"
 
 export function Mixer({ initial }: { initial: string }) {
   const [code, setCode] = useState(initial)
-  return <StrudelRack value={code} onValueChange={setCode} layout="grid" persistKey="my-song" />
+  return <StrudelRack value={code} onValueChange={setCode} defaultVariant="grid" persistKey="my-song" />
 }
 ```
 
@@ -154,7 +153,7 @@ Every edit says what made it. A knob or fader reports `onValueChange(value, deta
 
 ```tsx title="Studio.tsx"
 import { useState } from "react"
-import { Knob, StrudelRack, type StrudelRackChangeDetails } from "@brett_lamy/ui/docstream/strudel"
+import { Knob, StrudelRack, type StrudelRackChangeDetails } from "@brett_lamy/ui/docstream/strudel/rack"
 
 export function Studio({ initial, log }: { initial: string; log: (line: string) => void }) {
   const [code, setCode] = useState(initial)

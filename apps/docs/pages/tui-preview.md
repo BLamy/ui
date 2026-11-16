@@ -12,7 +12,7 @@
 {% tab title="shadcn CLI" %}
 {% command %}npx shadcn@latest add https://blamy.github.io/ui/r/tui-preview.json{% endcommand %}
 
-Copies the source into your project's `components/ui/` (with the parts it is built from) and adds BL UI's tokens to your CSS — no runtime package. It is yours to edit. Import from your alias:
+Adds one module to your project's `components/ui/` and installs `@brett_lamy/ui`, whose Docstream it imports by the package's name. The module only re-exports the widget, so there is nothing in it to edit; it gives the widget your alias. Import from your alias:
 
 ```tsx
 import { TuiPreview } from '@/components/ui/tui-preview'
@@ -21,17 +21,18 @@ import { TuiPreview } from '@/components/ui/tui-preview'
 {% tab title="npm" %}
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 
-Import the stylesheet once at your app's entry, then the parts from their module:
+Import the stylesheets once at your app's entry (the kit's, then docstream's, which this part renders with), then the parts from their module:
 
 ```tsx
 import '@brett_lamy/ui/styles.css'
+import '@brett_lamy/ui/docstream/styles.css'
 
 import { TuiPreview } from '@brett_lamy/ui/tui-preview'
 ```
 {% endtab %}
 {% endtabs %}
 
-The module re-exports Docstream's component with the types of its props and state (`TuiPreviewProps`, `TuiPreviewOptions`, `TuiPreviewState`, `TuiAppearance`, `TuiTheme`). `@brett_lamy/ui/tui` is the same module as its own entry, for a bundle that wants nothing else from the package. The default runtime URL (`DEFAULT_TUI_RUNTIME_URL`) and the fence test (`isTuiCodeBlock`) are Docstream's: import them from `@brett_lamy/ui/docstream/tui`.
+The module re-exports Docstream's component with the types of its props and state (`TuiPreviewProps`, `TuiPreviewOptions`, `TuiPreviewState`, `TuiAppearance`, `TuiTheme`). The default runtime URL (`DEFAULT_TUI_RUNTIME_URL`) and the fence test (`isTuiCodeBlock`) are Docstream's: import them from `@brett_lamy/ui/docstream/tui`.
 
 ## Usage
 
@@ -47,7 +48,7 @@ The terminal follows the page: with `appearance="auto"` (the default) it is ligh
 <TuiPreview code={program} appearance="dark" />
 ```
 
-The frame has its own origin, so its colors are sent to it rather than inherited. OpenTUI draws text white unless the program sets a color, so the light terminal is the dark one inverted. For exact colors, `theme` overrides any of the appearance's: `theme={{ background: '#101014' }}`. Changing the appearance while a program runs ends the program, like any other change of source.
+The frame has its own origin, so its colors are sent to it rather than inherited. OpenTUI draws text white unless the program sets a color, so the light terminal is the dark one inverted. For exact colors, `theme` overrides either of the appearance's: `theme={{ background: '#101014' }}`. Light or dark is `appearance`'s alone; `theme` holds only `background` and `foreground`. Changing the appearance while a program runs ends the program, like any other change of source.
 
 ## States
 
@@ -74,7 +75,7 @@ renderer.root.add(new TextRenderable(renderer, { content: "Hello from a TUI" }))
 ````
 
 ```tsx
-<MarkdownView markdown={response} streaming={isStreaming} />
+<MarkdownView markdown={response} streaming={streaming} />
 ```
 
 ## Runtime and lifecycle
@@ -96,14 +97,33 @@ Point `runtimeUrl` to another deployed copy or a local runtime during developmen
 | --- | --- | --- |
 | `code` | required | Complete terminal program. |
 | `language` | `typescript` | `typescript`, `javascript`, `tsx`, or `jsx`. |
-| `title` | terminal preview | Accessible preview and frame title. |
+| `title` | `OpenTUI preview` | The toolbar's title, the section's accessible name (unless you pass `aria-label` or `aria-labelledby`) and, with " terminal", the frame's title. |
 | `height` | `360` | Terminal height in pixels, bounded to 160–720. |
 | `runtimeUrl` | OpenTUI Pages frame | Browser runtime to run the program. |
 | `streaming` | `false` | Disable Run while the response is incomplete, as `MarkdownView`'s `streaming` does. |
 | `appearance` | `auto` | `auto` follows the surrounding scope or page; `light` or `dark` forces one. |
-| `theme` | from `appearance` | `{ mode?, background?, foreground? }`: explicit terminal colors over the ones `appearance` picks. |
+| `theme` | from `appearance` | `{ background?, foreground? }`: explicit terminal colors over the ones `appearance` picks. |
 | `startupTimeoutMs` · `renderTimeoutMs` | `30000` | How long the runtime has to report ready, and the program to draw its first frame. |
-| `className` | — | On the preview's root. |
 | `onStateChange` | — | `(state)` on each move between `idle`, `starting`, `running`, `error` and `stopped`. |
+| `ref` | — | The root `<section>`. |
+| `className`, `style`, `id`, `data-*`, `aria-*`, handlers | — | On the root `<section>` (`data-slot="tui-preview"`). |
+
+## Data attributes
+
+| Attribute | On | Value |
+| --- | --- | --- |
+| `data-tui-state` | the root | `idle`, `starting`, `running`, `error` or `stopped` |
+| `data-appearance` | the root | the resolved `light` or `dark` |
+| `data-slot` | the root and its parts | `tui-preview`, `tui-preview-toolbar`, `tui-preview-terminal`, `tui-preview-status`, `tui-preview-source` |
+| `data-inverted` | the frame | present when the light terminal is the dark one inverted |
+
+## Accessibility
+
+- The root is a `section` named by `title` (or your `aria-label` / `aria-labelledby`), so it is a region a screen reader can jump to.
+- Run, Stop, Retry and Focus terminal are buttons with visible labels and focus rings, 44px tall on touch screens. Run turns into Stop in place (and Stop back into Run again), so keyboard focus stays on the one button.
+- The running terminal is a focusable frame titled "<title> terminal" and described by the status line under it. Its status line is a polite live region ("Starting terminal…", "Terminal running."); an error is a `role="alert"` with the cause, so it is announced at once.
+- Keyboard input goes to the program once the frame has focus: click it or press **Focus terminal**. Inside the frame the OpenTUI runtime handles the keys, so a program that captures Tab keeps it: then click outside the frame, or use the browser's own way out of a frame (F6 to the address bar in most browsers). Stop is the Tab stop just before the frame.
+- The source sits under a **Source code** disclosure, a button with `aria-expanded`, highlighted with the same palette as the code fences beside it.
+- `streaming` disables Run, and the status line says why ("Waiting for the response to finish before running.").
 
 Set `MarkdownView`'s `tui` prop to `false` to render these fences as code only. Native process execution, SSH servers, audio devices, and FFmpeg decoding need a host runtime; the preview does not emulate them.

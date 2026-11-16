@@ -69,13 +69,12 @@ The menu opens below the caret and flips above it when there's no room below. It
 
 ## Your own items
 
-A `SlashItem` is a title, keywords, a [lucide](https://lucide.dev) icon and a `run(editor)` function. By the time `run` is called, the `/query` text has already been deleted, so `run` only has to insert. Pass your own list as `slashMenu={{ items }}`. It **replaces** the built-ins, so spread `SLASH_ITEMS` in to keep any of them.
+A `SlashItem` is a title, keywords, an icon (an `IconName` of the kit's [icon set](https://blamy.github.io/ui/#/icons), such as `"warning"`) and a `run(editor)` function. By the time `run` is called, the `/query` text has already been deleted, so `run` only has to insert. Pass your own list as `slashMenu={{ items }}`. It **replaces** the built-ins, so spread `SLASH_ITEMS` in to keep any of them.
 
 {% demo src="editing-slash/editor" variants="custom:Custom items" %}
 
 ```tsx title="Editor.tsx"
 import { GitbookEditor, SLASH_ITEMS, type SlashItem } from "@brett_lamy/ui/docstream-editor"
-import { CalendarDays, TriangleAlert } from "lucide-react"
 
 const items: SlashItem[] = [
   // Keep a few built-ins…
@@ -84,7 +83,7 @@ const items: SlashItem[] = [
   {
     title: "Warning",
     keywords: "caution careful hint callout",
-    icon: TriangleAlert,
+    icon: "warning",
     run: (editor) =>
       editor.chain().focus().insertContent({
         type: "gbHint",
@@ -95,7 +94,7 @@ const items: SlashItem[] = [
   {
     title: "Today's date",
     keywords: "now time stamp",
-    icon: CalendarDays,
+    icon: "calendar",
     run: (editor) => editor.chain().focus().insertContent(new Date().toISOString().slice(0, 10)).run(),
   },
 ]
@@ -107,12 +106,11 @@ export const Editor = () => <GitbookEditor slashMenu={{ items }} />
 
 ```ts title="snippet.ts"
 import { markdownPasteContent, type SlashItem } from "@brett_lamy/ui/docstream-editor"
-import { FileText } from "lucide-react"
 
 const releaseNote: SlashItem = {
   title: "Release note",
   keywords: "changelog template",
-  icon: FileText,
+  icon: "doc-text",
   run: (editor) => {
     const pasted = markdownPasteContent('## What changed\n\n{% hint style="success" %}\nShipped.\n{% endhint %}\n')
     if (pasted) editor.chain().focus().insertContent(pasted.content).run()

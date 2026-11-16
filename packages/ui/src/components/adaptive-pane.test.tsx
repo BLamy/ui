@@ -4,7 +4,7 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vite
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import {
   AdaptivePane, AdaptivePaneClose, AdaptivePaneHeader, AdaptivePaneTitle, AdaptivePaneTrigger, adaptivePanePageClass,
-  createAdaptivePaneController, type AdaptivePanePresentation,
+  createAdaptivePaneController, resolveAdaptivePanePresentation, type AdaptivePanePresentation,
 } from '@/components/ui/adaptive-pane';
 import { SizeClassProvider, type SizeClass } from '@/lib/container';
 
@@ -154,6 +154,30 @@ describe('AdaptivePane presentations', () => {
     rerender(<div><AdaptivePane presentation="cover" open><Field /></AdaptivePane></div>);
     expect(screen.getByRole<HTMLInputElement>('textbox', { name: 'Draft' })).toBe(input);
     expect(input.value).toBe('kept');
+  });
+
+  it('passes its ref and a div\'s props to the root in every presentation', () => {
+    let root: HTMLDivElement | null = null;
+    const onKeyDown = vi.fn();
+    const { rerender } = render(
+      <div><AdaptivePane presentation="column" open ref={(el: HTMLDivElement | null) => { root = el; }} id="inspector" data-testid="pane" inert onKeyDown={onKeyDown}><Field /></AdaptivePane></div>,
+    );
+    expect(root).toBe(screen.getByTestId('pane'));
+    expect((root as unknown as HTMLElement).id).toBe('inspector');
+    expect((root as unknown as HTMLElement).hasAttribute('inert')).toBe(true);
+    rerender(<div><AdaptivePane presentation="drawer" open data-testid="pane" onKeyDown={onKeyDown}><Field /></AdaptivePane></div>);
+    fireEvent.keyDown(screen.getByTestId('pane'), { key: 'a' });
+    expect(onKeyDown).toHaveBeenCalled();
+  });
+
+  it('writes its `auto` rule once, for the components built on it', () => {
+    expect(resolveAdaptivePanePresentation('auto', 'end', 'compact')).toBe('push');
+    expect(resolveAdaptivePanePresentation('auto', 'start', 'compact')).toBe('drawer');
+    expect(resolveAdaptivePanePresentation('auto', 'start', 'medium')).toBe('drawer');
+    expect(resolveAdaptivePanePresentation('auto', 'start', 'medium', { medium: 'column' })).toBe('column');
+    expect(resolveAdaptivePanePresentation('auto', 'start', 'regular')).toBe('column');
+    expect(resolveAdaptivePanePresentation('auto', 'start', undefined)).toBe('column');
+    expect(resolveAdaptivePanePresentation('cover', 'start', 'compact')).toBe('cover');
   });
 
   it('presents the drawer as a named dialog that Escape closes', () => {

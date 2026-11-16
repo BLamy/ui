@@ -39,8 +39,9 @@ export interface PencilCanvasProps extends Omit<React.ComponentProps<'div'>, 'on
   tool?: PencilTool;
   /** Ink for new strokes, any CSS color. Default the theme-following black (`pencilInks[0].value`). */
   ink?: string;
-  /** Width scale for new strokes (a `pencilWidths` scale). Default 1. */
-  width?: number;
+  /** How much new strokes scale the tool's nib (a `pencilWidths` scale, what `PencilWidthPicker` picks); not px.
+   *  Default 1. */
+  widthScale?: number;
   /** Controlled strokes. Omit for uncontrolled. */
   strokes?: PencilStroke[];
   /** Initial strokes when uncontrolled. */
@@ -63,7 +64,7 @@ const NO_STROKES: PencilStroke[] = [];
 export function PencilCanvas({
   tool = 'pen',
   ink = pencilInks[0].value,
-  width = 1,
+  widthScale = 1,
   strokes: strokesProp,
   defaultStrokes,
   onStrokesChange,
@@ -111,8 +112,8 @@ export function PencilCanvas({
   };
 
   // The latest props for the handlers below, which a Canvas or bindDrag holds on to between renders.
-  const latest = useRef({ tool, ink, width, board, disabled });
-  latest.current = { tool, ink, width, board, disabled };
+  const latest = useRef({ tool, ink, widthScale, board, disabled });
+  latest.current = { tool, ink, widthScale, board, disabled };
 
   const eraseAt = (e: PointerEvent) => {
     const { board: canvas } = latest.current;
@@ -122,7 +123,7 @@ export function PencilCanvas({
     commit(
       (ss) =>
         ss.filter((st) => {
-          const rad = reach + (pencilTools[st.tool].options.size * st.width) / 2;
+          const rad = reach + (pencilTools[st.tool].options.size * st.widthScale) / 2;
           for (let i = 0; i < st.points.length; i += 2) {
             const dx = st.points[i][0] - x,
               dy = st.points[i][1] - y;
@@ -136,9 +137,9 @@ export function PencilCanvas({
   };
 
   const begin = (e: PointerEvent) => {
-    const { tool: t, ink: color, width: w, board: canvas } = latest.current;
+    const { tool: t, ink, widthScale, board: canvas } = latest.current;
     if (t === 'eraser') return eraseAt(e);
-    live.current = { tool: t as PencilDrawTool, color, width: w, pressure: e.pointerType === 'pen', points: [at(e, canvas)], complete: false };
+    live.current = { tool: t as PencilDrawTool, ink, widthScale, pressure: e.pointerType === 'pen', points: [at(e, canvas)], complete: false };
     setV((v) => v + 1);
   };
 

@@ -115,6 +115,9 @@ export function ProgressRing({
   const sized = d.font ? 'text-(length:--ring-font)' : '';
   return (
     <SdkProgress
+      // Its own slot, so a rule or a test for the bar (`[data-slot=progress]`) never matches a ring. UI SDK names the
+      // element after its primitive; the rendered element's own `data-slot` is merged over that.
+      render={<div data-slot="progress-ring" />}
       {...props}
       className={cx(progressRingVariants({ tone }), className)}
       style={ringVars(d, tint, trackTint, style)}

@@ -2,7 +2,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import {
-  PencilActions, PencilInkPicker, PencilToolbar, PencilToolbarPinned, PencilToolPicker, PencilWidthPicker,
+  PencilActions, PencilInkPicker, PencilToolbar, PencilToolPicker, PencilWidthPicker,
 } from '@/components/ui/pencilkit/pencil-toolbar';
 import { ToolbarSeparator } from '@/components/ui/toolbar';
 
@@ -111,21 +111,31 @@ describe('PencilActions', () => {
 });
 
 describe('PencilToolbar', () => {
-  it('scrolls its pickers in a ScrollArea and keeps PencilToolbarPinned beside it', () => {
+  it('scrolls its pickers in a ScrollArea and keeps `trailing` beside it', () => {
     const { container } = render(
-      <PencilToolbar>
+      <PencilToolbar trailing={<><ToolbarSeparator /><PencilActions canUndo /></>}>
         <PencilToolPicker value="pen" />
-        <PencilToolbarPinned>
-          <ToolbarSeparator />
-          <PencilActions canUndo />
-        </PencilToolbarPinned>
       </PencilToolbar>,
     );
     const viewport = container.querySelector('[data-slot="scroll-area-viewport"]') as HTMLElement;
     expect(within(viewport).getByRole('group', { name: 'Tool' })).toBeTruthy();
     expect(within(viewport).queryByRole('group', { name: 'History' })).toBeNull();
-    const pinned = container.querySelector('[data-slot="pencil-toolbar-pinned"]') as HTMLElement;
+    const pinned = container.querySelector('[data-part="trailing"]') as HTMLElement;
     expect(within(pinned).getByRole('group', { name: 'History' })).toBeTruthy();
+  });
+
+  it('renders its children where they are written: a wrapped PencilActions scrolls with the tools', () => {
+    function History() { return <PencilActions canUndo />; }
+    const { container } = render(
+      <PencilToolbar>
+        <History />
+        <PencilToolPicker value="pen" />
+      </PencilToolbar>,
+    );
+    const viewport = container.querySelector('[data-slot="scroll-area-viewport"]') as HTMLElement;
+    const groups = within(viewport).getAllByRole('group').map((g) => g.getAttribute('aria-label'));
+    expect(groups).toEqual(['History', 'Tool']);
+    expect(container.querySelector('[data-part="trailing"]')).toBeNull();
   });
 
   it('sits in the flow: it does not position itself', () => {
@@ -137,14 +147,10 @@ describe('PencilToolbar', () => {
 describe('PencilToolbar as a UI SDK Toolbar', () => {
   function Bar() {
     return (
-      <PencilToolbar>
+      <PencilToolbar trailing={<><ToolbarSeparator /><PencilActions canUndo canRedo={false} /></>}>
         <PencilToolPicker value="pen" tools={['pen', 'eraser']} />
         <ToolbarSeparator />
         <PencilInkPicker value="black" inks={[{ value: 'black', label: 'Black' }, { value: 'tomato', label: 'Tomato' }]} />
-        <PencilToolbarPinned>
-          <ToolbarSeparator />
-          <PencilActions canUndo canRedo={false} />
-        </PencilToolbarPinned>
       </PencilToolbar>
     );
   }
@@ -176,11 +182,10 @@ describe('PencilInkPicker and PencilWidthPicker folded into a popover', () => {
   it('shows one button named by the current ink, opening the swatches; its arrow keys stay in the popover', async () => {
     const onValueChange = vi.fn();
     render(
-      <PencilToolbar>
+      <PencilToolbar trailing={<PencilActions canUndo />}>
         <PencilToolPicker tools={['pen', 'eraser']} />
         <ToolbarSeparator />
         <PencilInkPicker presentation="popover" inks={inks} onValueChange={onValueChange} />
-        <PencilToolbarPinned><PencilActions canUndo /></PencilToolbarPinned>
       </PencilToolbar>,
     );
     expect(screen.queryByRole('group', { name: 'Ink' })).toBeNull();

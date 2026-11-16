@@ -95,13 +95,18 @@ export const GroupOverflow: StoryObj<typeof AvatarGroup> = {
   ),
 };
 
-/** `menu`: the stack is one button that opens a menu of everyone. */
+/** `menu`: the stack is one button that opens a menu of everyone. The frame leaves room for the menu; the story opens it. */
 export const GroupMenu: StoryObj<typeof AvatarGroup> = {
   render: () => (
-    <AvatarGroup menu size={24} max={3} aria-label="Reviewers">
-      {PEOPLE.slice(0, 6).map((name) => <Avatar key={name} name={name} />)}
-    </AvatarGroup>
+    <div className="h-80">
+      <AvatarGroup menu size={24} max={3} aria-label="Reviewers">
+        {PEOPLE.slice(0, 6).map((name) => <Avatar key={name} name={name} />)}
+      </AvatarGroup>
+    </div>
   ),
+  play: async ({ canvasElement }) => {
+    canvasElement.querySelector<HTMLElement>('button')?.click();
+  },
 };
 
 /** `card`: a hover card about the person, opened by resting the pointer on the avatar or focusing it. */

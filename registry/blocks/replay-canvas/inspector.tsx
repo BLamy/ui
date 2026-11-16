@@ -91,7 +91,7 @@ function Player({ recording, time, label }: { recording: Recording | undefined; 
         initialTime={time}
         chrome="minimal"
         title={label}
-        disableDevtools
+        devtools={false}
       />
     </Section>
   );

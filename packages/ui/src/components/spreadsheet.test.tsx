@@ -45,7 +45,7 @@ describe('Spreadsheet', () => {
     expect(grid().getAttribute('aria-rowcount')).toBe('4');
     expect(grid().getAttribute('aria-colcount')).toBe('3');
     expect(grid().getAttribute('aria-multiselectable')).toBe('true');
-    expect(screen.getAllByRole('columnheader').map((h) => h.textContent)).toEqual(['', 'Name', 'Qty']);
+    expect(screen.getAllByRole('columnheader').map((h) => h.textContent)).toEqual(['Row number', 'Name', 'Qty']);
     expect(screen.getAllByRole('rowheader').map((h) => h.textContent)).toEqual(['1', '2', '3']);
     expect(column(0)).toEqual(['pear', 'apple', 'fig']);
     expect(screen.getByText('3 rows × 2 columns')).toBeTruthy();
@@ -224,9 +224,11 @@ describe('Spreadsheet', () => {
     expect(column(1)).toEqual(['3', '10', '']);
   });
 
-  it('shows an EmptyState over the body at the grid\'s width, or the one it is given', () => {
+  it('shows an EmptyState under the titles, beside the grid, or the one it is given', () => {
     const { rerender } = render(<Spreadsheet aria-label="Empty" defaultValue={[['Name', 'Qty']]} />);
     expect(document.querySelector('[data-slot=spreadsheet-empty]')?.textContent).toBe('No rowsPaste cells or add a row.');
+    // A grid owns only rows: the status region is not inside it.
+    expect(grid().contains(document.querySelector('[data-slot=spreadsheet-empty]'))).toBe(false);
     rerender(<Spreadsheet aria-label="Empty" defaultValue={[['Name', 'Qty']]} emptyState="Nothing yet" statusBar={false} />);
     expect(document.querySelector('[data-slot=spreadsheet-empty]')?.textContent).toBe('Nothing yet');
     expect(document.querySelector('[data-slot=spreadsheet-footer]')).toBeNull();

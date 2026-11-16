@@ -31,12 +31,12 @@ function useTypeOnMount(text: string | undefined) {
   return ref;
 }
 
-function City({ query, open }: { query?: string; open?: boolean }) {
+function City({ query, open, presentation }: { query?: string; open?: boolean; presentation?: 'popover' | 'sheet' | 'auto' }) {
   const ref = useTypeOnMount(query);
   return (
     <Field ref={ref}>
       <FieldLabel>City</FieldLabel>
-      <Combobox defaultOpen={open && !query}>
+      <Combobox defaultOpen={open && !query} presentation={presentation}>
         <ComboboxInputGroup>
           <ComboboxInput placeholder="Search cities" />
           <ComboboxTrigger />
@@ -58,6 +58,10 @@ export const Filtered: Story = { render: () => <Screen h={420}><City open query=
 export const Empty: Story = { render: () => <Screen h={320}><City open query="zz" /></Screen> };
 export const Closed: Story = { render: () => <Screen h={300}><City /></Screen> };
 export const OpenDark: Story = { render: () => <Screen dark h={560}><City open /></Screen> };
+/** As a bottom sheet (`presentation="sheet"`, or `"auto"` in a compact scope): the grabber, the input in the sheet's
+    header, and 44px rows in body text. */
+export const Sheet: Story = { render: () => <Screen h={560}><City open presentation="sheet" /></Screen> };
+export const SheetDark: Story = { render: () => <Screen dark h={560}><City open presentation="sheet" /></Screen> };
 
 const people = [
   { value: 'ana', label: 'Ana Torres', keywords: ['ana@northwind.dev'] },

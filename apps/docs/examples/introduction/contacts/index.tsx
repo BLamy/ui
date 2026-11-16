@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 import { Avatar } from '@/components/ui/avatar'
-import { IndexBar, alphabetItems } from '@/components/ui/index-bar'
+import { IndexBar, indexBarAlphabetItems } from '@/components/ui/index-bar'
 import { List, ListRow, ListSection } from '@/components/ui/list'
 import {
   NavigationStack,
@@ -108,7 +108,7 @@ export default function Contacts() {
                     </List>
                   </NavigationStackContent>
                   <IndexBar
-                    items={alphabetItems(letters)}
+                    items={indexBarAlphabetItems(letters)}
                     className="top-[118px] bottom-[70px]"
                     onJump={(L) =>
                       sections.current[L]?.scrollIntoView({ block: 'start' })

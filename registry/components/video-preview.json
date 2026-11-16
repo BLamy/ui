@@ -19,7 +19,6 @@
   "types": [
     "VideoPreviewProps",
     "VideoPreviewControlsProps",
-    "VideoPreviewTimecodeProps",
-    "PreviewMedia"
+    "VideoPreviewTimecodeProps"
   ]
 }

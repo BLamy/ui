@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Toggle } from '@/components/ui/toggle';
 import { FilterBar, FilterToolbar } from '@/components/ui/filter';
 import { FilterInput } from '@/components/ui/filter-input';
-import { LogList, LogListRowContent, createLogListController, type LogListController, type LogRowState } from '@/components/ui/log-list';
+import { LogList, LogListRowContent, createLogListController, type LogListController, type LogListRowState } from '@/components/ui/log-list';
 import { Slider } from '@/components/ui/slider';
 import { matchFilters, type Filter, type FilterField } from '@/lib/filter-model';
 import { Icon } from '@/lib/icon';
@@ -354,7 +354,7 @@ function RichDemo() {
     ),
   })), []);
   const [pressed, setPressed] = useState('Press a row');
-  const renderRow = useCallback((row: LogRow, state: LogRowState) => (
+  const renderRow = useCallback((row: LogRow, state: LogListRowState) => (
     <>
       <LogListRowContent row={row} expanded={state.expanded} cut={state.cut} disclosure={state.disclosure} formatTime={state.formatTime} />
       {state.index % 16 === 0 ? (

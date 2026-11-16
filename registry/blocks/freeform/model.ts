@@ -1,9 +1,11 @@
 /* Freeform's data model: a board is a list of items in z-order (first is backmost). Everything is plain data, so
    undo is a snapshot of the list and a board serializes as-is. Coordinates are board units: px at 100% zoom. */
-import type { PencilDrawTool, PencilPoint } from '@/components/ui/pencilkit/constants';
+import type { PencilDrawTool, PencilPoint } from '@/components/ui/pencilkit';
 import type { Frame } from '@/lib/canvas-math';
+import type { DiagramSide } from '@/lib/diagram-model';
 
-export type Side = 't' | 'r' | 'b' | 'l';
+/** A side of an item a connector is glued to: the diagram model's sides. */
+export type Side = DiagramSide;
 
 export type ShapeKind =
   | 'rect' | 'round' | 'ellipse' | 'triangle' | 'diamond' | 'pentagon' | 'hexagon'

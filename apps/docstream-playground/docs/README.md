@@ -48,7 +48,7 @@ import { GitbookStreamdown } from "@brett_lamy/ui/docstream"
 import "@brett_lamy/ui/docstream/styles.css"
 
 export function Answer({ text, done }: { text: string; done: boolean }) {
-  return <GitbookStreamdown markdown={text} isStreaming={!done} />
+  return <GitbookStreamdown markdown={text} streaming={!done} />
 }
 ```
 {% endtab %}

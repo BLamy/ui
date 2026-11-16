@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { VideoPreviewControls, VideoPreview, type PreviewMedia } from '@/components/ui/video-preview';
+import { VideoPreviewControls, VideoPreview } from '@/components/ui/video-preview';
+import type { TimelineMedia } from '@/components/ui/video-timeline';
 import { usePlaybackClock, type Playback } from '@/lib/playback';
 import {
   layoutTrack, timelineDuration, timelineLooks,
@@ -32,7 +33,7 @@ const SWATCHES = svgUrl('<svg xmlns="http://www.w3.org/2000/svg" width="1280" he
   + RAMP.map((c, i) => `<rect x="${(i * 1280) / 6}" y="500" width="${1280 / 6 + 1}" height="220" fill="${c}"/>`).join('')
   + '</svg>');
 
-const MEDIA: Record<string, PreviewMedia> = {
+const MEDIA: Record<string, TimelineMedia> = {
   sunrise: { url: card('Sunrise', '#D9762B'), kind: 'image' },
   harbour: { url: card('Harbour', '#2F7FC1'), kind: 'image' },
   market: { url: card('Market', '#B83A4B'), kind: 'image' },
@@ -201,5 +202,13 @@ export const Portrait: Story = {
 /** The viewer and its transport on a dark surface. */
 export const Dark: Story = {
   parameters: { dark: true },
+  render: (args) => <PreviewDemo {...args} timeline={TIMELINE} format={LANDSCAPE} />,
+};
+
+/** At a phone's width (390 × 520): the landscape picture fills the width and keeps its shape, and the transport stays
+    one row under it. */
+export const Phone390: Story = {
+  name: 'Phone',
+  parameters: { frame: { w: 358, h: 520 }, viewport: { defaultViewport: 'mobile1' } },
   render: (args) => <PreviewDemo {...args} timeline={TIMELINE} format={LANDSCAPE} />,
 };

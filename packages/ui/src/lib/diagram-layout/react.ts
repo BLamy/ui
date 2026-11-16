@@ -28,8 +28,12 @@ export function useDiagramLayout<N = unknown, E = unknown>(draft: DiagramDraft<N
   const { direction, elk, worker, host, initial } = options;
   const fonts = useFontVersion();
   const shown = useShownVersion(host);
-  const [state, setState] = useState<{ result: DiagramLayoutResult<N, E> | null; status: UseDiagramLayout['status']; error: UseDiagramLayout['error'] }>(
-    () => ({ result: initial ?? null, status: initial ? 'working' : 'pending', error: null }),
+  const [state, setState] = useState<{
+    result: DiagramLayoutResult<N, E> | null; status: UseDiagramLayout['status']; error: UseDiagramLayout['error'];
+    /** The graph the result is a layout of (`key`), and whether nothing's run since (`null`: the `initial` one). */
+    of: string | null;
+  }>(
+    () => ({ result: initial ?? null, status: initial ? 'working' : 'pending', error: null, of: null }),
   );
   const engine = useRef<DiagramLayoutEngine | null>(null);
   const started = useRef<DiagramLayoutOptions['worker'] | undefined>(undefined);
@@ -48,7 +52,7 @@ export function useDiagramLayout<N = unknown, E = unknown>(draft: DiagramDraft<N
     const current = latest.current;
     // Nothing to lay out (a diagram whose nodes all have places hands over an empty draft): no engine, so no ELK and no worker.
     if (!current.nodes.length) {
-      setState({ result: { nodes: [], edges: [], bounds: { x: 0, y: 0, w: 0, h: 0 }, engine: 'main-thread', ms: 0 }, status: 'ready', error: null });
+      setState({ result: { nodes: [], edges: [], bounds: { x: 0, y: 0, w: 0, h: 0 }, engine: 'main-thread', ms: 0 }, status: 'ready', error: null, of: key });
       lastGraph.current = null;
       return;
     }
@@ -68,7 +72,7 @@ export function useDiagramLayout<N = unknown, E = unknown>(draft: DiagramDraft<N
       const signature = JSON.stringify(graph);
       // A font that loaded and changed no sizes changes nothing.
       if (signature === lastGraph.current) {
-        setState((s) => ({ ...s, status: 'ready' }));
+        setState((s) => ({ ...s, status: 'ready', of: key }));
         return;
       }
       if (started.current !== worker) {
@@ -82,7 +86,7 @@ export function useDiagramLayout<N = unknown, E = unknown>(draft: DiagramDraft<N
       const result = await runLayout(current, { signal: stop.signal }, engine.current, graph);
       if (stop.signal.aborted) return;
       lastGraph.current = signature;
-      setState({ result, status: 'ready', error: null });
+      setState({ result, status: 'ready', error: null, of: key });
     })().catch((error: DiagramLayoutError | Error) => {
       if (!stop.signal.aborted) setState((s) => ({ ...s, status: 'error', error }));
     });
@@ -97,9 +101,15 @@ export function useDiagramLayout<N = unknown, E = unknown>(draft: DiagramDraft<N
   }, []);
 
   const result = state.result;
-  // Where things are is the layout's, and what they are is the draft's as it is now. A new name the same size, or new data,
-  // lays out the same, so no new layout brings it, and without this the last one's nodes were drawn as they were.
-  const now = useMemo(() => (result ? onLayout(draft, result) : null), [draft.nodes, draft.edges, result]);
+  // Where things are is the layout's, and what they are is the draft's: the draft as it is now, while the graph is the one
+  // laid out (a new name the same size, or new data, lays out the same, so no new layout brings it). A graph that has to be
+  // laid out again leaves the last picture as it was until its own layout lands: a new draft's names on the old places
+  // would be wrong anyway, and drawing them is a frame's worth of work (2,000 new nodes over 100) for nothing.
+  const shownDraft = useRef<{ draft: DiagramDraft<N, E>; result: DiagramLayoutResult<N, E> } | null>(null);
+  const fresh = state.of === null || state.of === key;
+  if (result && (fresh || shownDraft.current?.result !== result)) shownDraft.current = { draft, result };
+  const showing = shownDraft.current?.draft;
+  const now = useMemo(() => (result && showing ? onLayout(showing, result) : null), [showing?.nodes, showing?.edges, result]);
   return {
     nodes: now?.nodes ?? NOTHING, edges: now?.edges ?? NOTHING,
     bounds: result?.bounds, engine: result?.engine, ms: result?.ms,

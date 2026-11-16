@@ -8,6 +8,7 @@ import { formatColor, parseColor } from '@ui-sdk/core/color';
 import { ColorPicker, ColorPickerArea, ColorPickerInputGroup, ColorPickerInput, ColorPickerSlider, ColorPickerSwatch } from '@/components/ui/color-picker';
 import { Button as SdkButton } from '@ui-sdk/react/button';
 import { Toggle as SdkToggle } from '@ui-sdk/react/toggle';
+import { Input } from '@/components/ui/input';
 import { Popover, PopoverClose, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Segmented, SegmentedItem } from '@/components/ui/segmented';
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select';
@@ -178,11 +179,20 @@ export function NumberInput({ label, value, onChange, onBegin, min = -Infinity, 
 export function TextInput({ value, onCommit, placeholder, mono, multiline, label, className, invalid }: {
   value: string; onCommit: (v: string) => void; placeholder?: string; mono?: boolean; multiline?: boolean; label: string; className?: string; invalid?: boolean;
 }) {
+  const cls = cn(inputBox, mono && 'font-mono text-caption', invalid && 'shadow-[inset_0_0_0_1.5px_var(--destructive)]', className);
+  // One line is the kit's Input, which commits on Enter or leaving it and puts the text back on Escape.
+  if (!multiline) {
+    return <Input aria-label={label} size="sm" value={value} placeholder={placeholder} spellCheck={!mono} aria-invalid={invalid || undefined} className={cls} onValueCommit={onCommit} />;
+  }
+  return <MultilineText value={value} onCommit={onCommit} placeholder={placeholder} label={label} className={cls} />;
+}
+
+/** Several lines: ⌘Enter or leaving it commits, Escape puts it back. */
+function MultilineText({ value, onCommit, placeholder, label, className }: { value: string; onCommit: (v: string) => void; placeholder?: string; label: string; className: string }) {
   const [v, setV] = useState(value);
   useEffect(() => setV(value), [value]);
   const commit = () => { if (v !== value) onCommit(v); };
-  const cls = cn(inputBox, mono && 'font-mono text-caption', invalid && 'shadow-[inset_0_0_0_1.5px_var(--destructive)]', className);
-  return multiline ? (
+  return (
     <textarea
       aria-label={label}
       value={v}
@@ -191,18 +201,7 @@ export function TextInput({ value, onCommit, placeholder, mono, multiline, label
       onChange={(e) => setV(e.target.value)}
       onBlur={commit}
       onKeyDown={(e) => { if (e.key === 'Escape') { setV(value); e.currentTarget.blur(); } else if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { commit(); e.currentTarget.blur(); } }}
-      className={cn(cls, 'h-auto min-h-16 resize-y py-1.5 leading-[1.4]')}
-    />
-  ) : (
-    <input
-      aria-label={label}
-      value={v}
-      placeholder={placeholder}
-      spellCheck={!mono}
-      onChange={(e) => setV(e.target.value)}
-      onBlur={commit}
-      onKeyDown={(e) => { if (e.key === 'Enter') { commit(); e.currentTarget.blur(); } else if (e.key === 'Escape') { setV(value); e.currentTarget.blur(); } }}
-      className={cls}
+      className={cn(className, 'h-auto min-h-16 resize-y py-1.5 leading-[1.4]')}
     />
   );
 }

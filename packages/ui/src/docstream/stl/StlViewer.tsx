@@ -18,8 +18,8 @@ export interface StlViewerProps {
    * the file name.
    */
   "aria-label"?: string
-  /** Model color; any CSS color. Defaults to the element's `color` (the theme's primary). */
-  color?: string
+  /** The model's color: any CSS color. Defaults to the element's `color` (the theme's primary). */
+  tint?: string
   /** Turn slowly until the reader interacts. Ignored under prefers-reduced-motion. Defaults to true. */
   autoRotate?: boolean
 }
@@ -131,7 +131,7 @@ type Status = { kind: "loading" } | { kind: "error"; message: string } | { kind:
 
 /** Interactive WebGL preview of an `.stl` model: drag to orbit, pinch / ⌘-scroll or +/− to zoom, double-click to reset.
  *  The canvas is the `orbit` primitive (orbit.ts), which holds the view; this draws it. */
-export function StlViewer({ src, title, className, style, ref, "aria-label": ariaLabel, color, autoRotate = true }: StlViewerProps) {
+export function StlViewer({ src, title, className, style, ref, "aria-label": ariaLabel, tint, autoRotate = true }: StlViewerProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [status, setStatus] = useState<Status>({ kind: "loading" })
   const spinning = useRef(autoRotate)
@@ -192,7 +192,7 @@ export function StlViewer({ src, title, className, style, ref, "aria-label": ari
     const uColor = gl.getUniformLocation(program, "uColor")
     gl.enable(gl.DEPTH_TEST)
 
-    const resolveColor = () => cssColor(color ?? getComputedStyle(canvas).color)
+    const resolveColor = () => cssColor(tint ?? getComputedStyle(canvas).color)
     let rgb = resolveColor()
     let frame = 0
     const render = () => {
@@ -240,7 +240,7 @@ export function StlViewer({ src, title, className, style, ref, "aria-label": ari
       buffers.forEach((b) => gl.deleteBuffer(b))
       gl.deleteProgram(program)
     }
-  }, [mesh, color])
+  }, [mesh, tint])
 
   const reset = () => {
     spinning.current = false

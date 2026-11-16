@@ -40,6 +40,16 @@ describe('Waveform', () => {
     expect(container.querySelector('[data-slot="waveform"]')!.getAttribute('aria-hidden')).toBe('true');
   });
 
+  it('shows the loading band, not bars, while the peaks are not here', () => {
+    const { container, rerender } = render(<Waveform peaks={[]} rate={4} />);
+    const canvas = () => container.querySelector('[data-slot="waveform"]')!;
+    expect(canvas().hasAttribute('data-loading')).toBe(true);
+    rerender(<Waveform peaks={[]} rate={4} loading={false} />);
+    expect(canvas().hasAttribute('data-loading')).toBe(false);
+    rerender(<Waveform peaks={peaks} rate={4} />);
+    expect(canvas().hasAttribute('data-loading')).toBe(false);
+  });
+
   it('draws again in the new colour when the appearance changes', () => {
     const { rerender } = render(<AppearanceProvider value="light"><div><Waveform peaks={peaks} rate={4} /></div></AppearanceProvider>);
     expect(last()).toBe('rgb(0, 0, 0)');

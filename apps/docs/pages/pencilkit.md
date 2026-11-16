@@ -16,11 +16,9 @@ Freehand drawing in the manner of Apple's PencilKit: a surface that turns pointe
 Copies the source into your project's `components/ui/` (with the parts it is built from) and adds BL UI's tokens to your CSS — no runtime package. It is yours to edit. Import from your alias:
 
 ```tsx
-import { PencilCanvas } from '@/components/ui/pencilkit/pencil-canvas'
-import { PencilToolbar } from '@/components/ui/pencilkit/pencil-toolbar'
 import {
-  usePencilHistory,
-} from '@/components/ui/pencilkit/use-pencil-history'
+  PencilCanvas, PencilToolbar, usePencilHistory,
+} from '@/components/ui/pencilkit'
 ```
 {% endtab %}
 {% tab title="npm" %}
@@ -31,11 +29,9 @@ Import the stylesheet once at your app's entry, then the parts from their module
 ```tsx
 import '@brett_lamy/ui/styles.css'
 
-import { PencilCanvas } from '@brett_lamy/ui/pencilkit/pencil-canvas'
-import { PencilToolbar } from '@brett_lamy/ui/pencilkit/pencil-toolbar'
 import {
-  usePencilHistory,
-} from '@brett_lamy/ui/pencilkit/use-pencil-history'
+  PencilCanvas, PencilToolbar, usePencilHistory,
+} from '@brett_lamy/ui/pencilkit'
 ```
 {% endtab %}
 {% endtabs %}
@@ -49,15 +45,19 @@ const [ink, setInk] = useState('#0A84FF')
 
 <div className="relative h-96">
   <PencilCanvas tool={tool} ink={ink} strokes={history.strokes} onStrokesChange={history.onStrokesChange} />
-  <PencilToolbar className="absolute inset-x-3 bottom-3 mx-auto">
+  <PencilToolbar
+    className="absolute inset-x-3 bottom-3 mx-auto"
+    trailing={
+      <>
+        <ToolbarSeparator />
+        <PencilActions onUndo={history.undo} onRedo={history.redo} onClear={history.clear}
+          canUndo={history.canUndo} canRedo={history.canRedo} canClear={history.canClear} />
+      </>
+    }
+  >
     <PencilToolPicker value={tool} onValueChange={setTool} />
     <ToolbarSeparator />
     <PencilInkPicker value={ink} onValueChange={setInk} />
-    <PencilToolbarPinned>
-      <ToolbarSeparator />
-      <PencilActions onUndo={history.undo} onRedo={history.redo} onClear={history.clear}
-        canUndo={history.canUndo} canRedo={history.canRedo} canClear={history.canClear} />
-    </PencilToolbarPinned>
   </PencilToolbar>
 </div>
 ```
@@ -83,8 +83,8 @@ The drawing surface. On its own it fills its positioned parent (`absolute inset-
 | --- | --- | --- |
 | `tool` | `"pen"` | `pen`, `marker`, `pencil` or `eraser` (removes whole strokes it touches). |
 | `ink` | the theme's black | Any CSS color. The default, `var(--foreground)`, draws black on light paper and white on dark, as PencilKit's black does. |
-| `width` | `1` | Scales the tool's nib (`0.6`, `1`, `1.7`, `2.6` are the palette's widths). |
-| `strokes` / `defaultStrokes` | — | The strokes, controlled or not. A stroke is `{ tool, color, width, pressure, points, complete }`. |
+| `widthScale` | `1` | Multiplies the tool's nib, so it is a scale, not px (`0.6`, `1`, `1.7`, `2.6` are the palette's widths: what `PencilWidthPicker` picks). |
+| `strokes` / `defaultStrokes` | — | The strokes, controlled or not. A stroke is `{ tool, ink, widthScale, pressure, points, complete }`: the same `ink` and `widthScale` the canvas took when it was drawn (its drawn width is `pencilTools[tool].options.size * widthScale`). |
 | `onStrokesChange` | — | `(strokes, details)`, with `details.reason` `draw` or `erase`. |
 | `emptyState` | — | Shown centered while there are no strokes (`data-empty` is on the root then). |
 | `variant` | `"freehand"` | `plain` draws the raw polylines instead of the pressure outlines. |
@@ -109,12 +109,11 @@ A board that keeps strokes in its own model, to stack them with its other items,
 
 `PencilToolbar` is the kit's [Toolbar](https://blamy.github.io/ui/#/toolbar) (`variant="floating"` by default, named "Drawing tools"): Tab enters it once, and Left and Right move across the pickers (toggle groups join the toolbar's navigation) into `PencilActions`. Separate groups with the kit's `ToolbarSeparator`. It sits in the flow, so place it yourself (`absolute inset-x-3 bottom-3 mx-auto` over a canvas).
 
-**On a phone.** When its groups don't fit the room it has (a phone, a narrow pane, the annotator's footer), the toolbar folds the ink and width pickers into one round button showing the current ink, named "Ink and width: Blue". It opens both rows in a popover above the bar; the popover stays open while you pick (the button follows at once), and an outside press or Escape closes it. Every tool and `PencilToolbarPinned` (undo, redo, clear) stay in view. It measures its own fit, never the viewport, and unfolds once its box is wide enough again. Anything that still doesn't fit scrolls sideways under an edge fade.
+**On a phone.** When its groups don't fit the room it has (a phone, a narrow pane, the annotator's footer), the toolbar folds the ink and width pickers into one round button showing the current ink, named "Ink and width: Blue". It opens both rows in a popover above the bar; the popover stays open while you pick (the button follows at once), and an outside press or Escape closes it. Every tool and the toolbar's `trailing` content (undo, redo, clear) stay in view. It measures its own fit, never the viewport, and unfolds once its box is wide enough again. Anything that still doesn't fit scrolls sideways under an edge fade.
 
 | Part | Props | Notes |
 | --- | --- | --- |
-| `PencilToolbar` | Toolbar's (`variant`, `size`, `aria-label`, `orientation`…) | `variant="plain"` drops the card, for a bar inside another surface. `data-compact` is on it while it is folded. |
-| `PencilToolbarPinned` | a `div`'s | A direct child of `PencilToolbar`; its content stays in view. |
+| `PencilToolbar` | Toolbar's (`variant`, `size`, `aria-label`, `orientation`…), `trailing` | `children` are the tools, which scroll when they don't fit; `trailing` (undo, redo, clear, usually after a `ToolbarSeparator`) stays in view at the end. `variant="plain"` drops the card, for a bar inside another surface. `data-compact` is on it while it is folded. |
 | `PencilToolPicker` | `value`, `defaultValue` (`"pen"`), `onValueChange(tool, details)`, `tools`, `hoverCard` | Each tool is named (Pen, Marker, Pencil, Eraser) and shows its name in a tooltip. |
 | `PencilInkPicker` | `value`, `defaultValue` (the first ink), `onValueChange(ink, details)`, `inks`, `presentation` | `value` is the ink's color. `inks` is `{ value, label }[]`; the default six are Black and White (both follow the theme), Blue, Green, Yellow and Pink. |
 | `PencilWidthPicker` | `value`, `defaultValue` (`1`), `onValueChange(scale, details)`, `widths`, `hoverCard`, `presentation` | `value` is the width's scale. `widths` is `{ scale, dot, label }[]` (Fine, Regular, Bold, Heavy). |
@@ -147,6 +146,7 @@ To preview a brush before it is picked, give `PencilToolPicker` or `PencilWidthP
 | Prop | Default | Effect |
 | --- | --- | --- |
 | `src` | required | The image, a URL or a data URL. |
+| `alt` | — | What the image shows (a file name, a caption): the image's alt text and the lightbox's name, "Annotate: {alt}". Without it the image is presentational and the lightbox is "Annotate image". The Composer passes the attachment's file name. |
 | `open` / `defaultOpen` / `onOpenChange(open, details)` / `onOpenChangeComplete(open)` | — | UI SDK's open state. Cancel closes with reason `close-press` and `returnValue` `"cancel"`; Escape and an outside press with theirs. |
 | `onSave(dataUrl, details)` | — | Save pressed: the image with the strokes flattened, at the image's own resolution. The lightbox then closes with reason `action` and `returnValue` `"save"`. |
 | `engine` | the nearest `ImageAnnotatorProvider`'s, else `PencilKitAnnotator` | The drawing engine. `null` makes the lightbox a plain preview (the image and Close). |

@@ -792,7 +792,7 @@ export const spreadsheet = definePrimitive({
     corner: slot({
       role: 'columnheader',
       selects: selects<SpreadsheetState, unknown, object>(ALL),
-      attrs: () => ({ 'aria-label': 'Row number' }),
+      // Named by its (visually hidden) text, which axe's empty-table-header asks for: the component renders it.
       on: { pointerdown: (event, { api }) => api.internal.cornerPointerdown(event) },
     }),
 

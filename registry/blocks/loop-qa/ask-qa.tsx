@@ -7,7 +7,7 @@
    between docked and floating. */
 import type { CSSProperties } from 'react';
 import { useArtifactChatContainer } from '@/components/ui/artifact-chat-container';
-import { Composer, ComposerCard, ComposerFooter, ComposerInput, ComposerSend, ComposerSpacer, ComposerText } from '@/components/ui/composer/composer';
+import { Composer, ComposerCard, ComposerFooter, ComposerInput, ComposerSend, ComposerSpacer, ComposerText } from '@/components/ui/composer';
 import { ConversationAssistantMessage, Conversation, ConversationEmpty, ConversationMessages, ConversationSuggestions, ConversationMarkdown, ConversationSuggestion, ConversationToolCall, ConversationUserMessage, ConversationWorkLog } from '@/components/ui/conversation';
 import { SUGGESTIONS } from './agent';
 import { PROJECTS } from './data';
@@ -61,7 +61,7 @@ export function AskQA() {
                 </ConversationWorkLog>
               ) : null}
               <ConversationMarkdown markdown={m.text} streaming={qa.streaming === m.id} />
-              {m.runId && qa.streaming !== m.id ? <RunCard runId={m.runId} compact className="mt-3" /> : null}
+              {m.runId && qa.streaming !== m.id ? <RunCard runId={m.runId} density="compact" className="mt-3" /> : null}
             </ConversationAssistantMessage>
           ))}
         </ConversationMessages>

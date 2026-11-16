@@ -1,0 +1,21 @@
+{
+  "name": "gpu-cron",
+  "title": "Natural language to cron",
+  "description": "Plain English to a 5-field cron expression, by gpu-cron (an 89 KB WebGPU model, no CPU fallback): gpuCronAvailable asks first without downloading anything on a browser with no WebGPU, parseCronText proposes an expression, and useCronParse is the debounced React side CronEditor uses.",
+  "page": "cron-editor",
+  "exports": [
+    "useCronParse",
+    "parseCronText",
+    "gpuCronAvailable",
+    "describeCronError"
+  ],
+  "imports": [
+    "gpuCronAvailable",
+    "parseCronText"
+  ],
+  "types": [
+    "UseCronParseOptions",
+    "CronParseState",
+    "GpuCronMatch"
+  ]
+}

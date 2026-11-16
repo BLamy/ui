@@ -132,3 +132,28 @@ test('⌘1 returns to 100% zoom', async ({ page }) => {
   await settled(page, () => box(page, 'a'));
   expect((await box(page, 'a')).w).toBe(before.w);
 });
+
+test('a mouse press focuses the canvas for its keys without drawing the keyboard focus ring', async ({ page }) => {
+  // An empty spot of the board: a point whose topmost element is the canvas itself (no card, no overlay).
+  const spot = await page.locator('[data-slot=canvas]').evaluate((el) => {
+    const r = el.getBoundingClientRect();
+    for (let y = r.top + 20; y < r.bottom - 20; y += 20) {
+      for (let x = r.left + 20; x < r.right - 20; x += 20) {
+        const hit = document.elementFromPoint(x, y);
+        if (hit && el.contains(hit) && !hit.closest('[data-card],button,[data-slot=canvas-minimap]')) return { x, y };
+      }
+    }
+    return null;
+  });
+  expect(spot).not.toBeNull();
+  await page.mouse.click(spot.x, spot.y);
+  const canvas = page.locator('[data-slot=canvas]');
+  await expect(canvas).toBeFocused();
+  expect(await canvas.evaluate((el) => el.matches(':focus-visible'))).toBe(false);
+  // From the keyboard, the ring is back.
+  await page.keyboard.press('Shift+Tab');
+  await page.keyboard.press('Tab');
+  if (await canvas.evaluate((el) => el === document.activeElement)) {
+    expect(await canvas.evaluate((el) => el.matches(':focus-visible'))).toBe(true);
+  }
+});

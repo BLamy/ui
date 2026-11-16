@@ -483,9 +483,20 @@ it('stacks the preview under the terminal by its own width, not the viewport', a
   }
 });
 
-it('takes its appearance from the prop, else the nearest ThemeScope, else the ambient appearance, else dark', async () => {
+it('takes its appearance from the prop, else the nearest ThemeScope, else the ambient appearance, else the system setting', async () => {
+  const system = (dark: boolean) => vi.stubGlobal('matchMedia', (query: string) => ({
+    matches: dark && query === '(prefers-color-scheme: dark)', media: query, addEventListener: () => {}, removeEventListener: () => {},
+  }));
+  for (const dark of [false, true]) {
+    system(dark);
+    const f = fixture();
+    const view = render(<OpenCode host={f.host} loadRuntime={f.loadRuntime} browserTools={false} />);
+    await waitFor(() => expect(f.mount).toHaveBeenCalledTimes(1));
+    expect(f.mount.mock.calls[0]?.[0]).toMatchObject({ themeMode: dark ? 'dark' : 'light' });
+    view.unmount();
+  }
+  system(true);
   for (const [wrap, want] of [
-    [(c: ReactNode) => c, 'dark'],
     [(c: ReactNode) => <AppearanceProvider value="light">{c}</AppearanceProvider>, 'light'],
     [(c: ReactNode) => <ThemeScope scope="sheet" appearance="light">{c}</ThemeScope>, 'light'],
   ] as const) {
@@ -503,6 +514,7 @@ it('takes its appearance from the prop, else the nearest ThemeScope, else the am
   );
   await waitFor(() => expect(f.mount).toHaveBeenCalledTimes(1));
   expect(f.mount.mock.calls[0]?.[0]).toMatchObject({ themeMode: 'dark' });
+  vi.unstubAllGlobals();
 });
 
 it('is a card by default and plain on request, and passes ref and root props through', () => {

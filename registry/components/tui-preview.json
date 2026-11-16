@@ -12,5 +12,8 @@
     "TuiPreviewState",
     "TuiAppearance",
     "TuiTheme"
-  ]
+  ],
+  "css": {
+    "@import \"@brett_lamy/ui/docstream/styles.css\"": {}
+  }
 }

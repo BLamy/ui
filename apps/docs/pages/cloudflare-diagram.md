@@ -22,12 +22,12 @@ Import the stylesheet once at your app's entry, then the parts from their module
 ```tsx
 import '@brett_lamy/ui/styles.css'
 
-import { CloudflareDiagram } from '@brett_lamy/ui/cloudflare-diagram'
+import { CloudflareDiagram } from '@brett_lamy/ui/cloudflare'
 ```
 {% endtab %}
 {% endtabs %}
 
-On npm, everything on this page is also on one entry, `@brett_lamy/ui/cloudflare`: the diagram, the catalog, a system, `wrangler.jsonc` and workerd. Nothing Cloudflare's is in the main entry, `@brett_lamy/ui`, as the catalog is about 150 KB (26 KB gzipped): an app that doesn't draw Cloudflare's services never gets it. `tools/cloudflare/check-package.mjs` checks both, in the built package.
+On npm, everything on this page is on one entry, `@brett_lamy/ui/cloudflare`, and only there: the diagram and its parts, the catalog, a system, `wrangler.jsonc` and workerd. Nothing Cloudflare's is in the main entry, `@brett_lamy/ui`, as the catalog is about 150 KB (26 KB gzipped): an app that doesn't draw Cloudflare's services never gets it. `tools/cloudflare/check-package.mjs` checks both, in the built package.
 
 {% hint style="info" %}
 **No Cloudflare logos or artwork.** [Cloudflare's trademark page](https://www.cloudflare.com/trademark/) asks for written permission to use their logos and product icons, so this has none: services are named in words, drawn with the library's own icons, and an `icon` prop lets an app that has its own permission draw Cloudflare's. The same check looks for any of Cloudflare's images, by hash and by SVG path, in the package, the registry and these demos. Cloudflare is a trademark of Cloudflare, Inc., which doesn't endorse this library.
@@ -64,7 +64,7 @@ const edges = [
 </div>
 ```
 
-It's **read-only** unless it's `editable`, the same prop as Diagram's and StateDiagram's: a picture to inspect, where selecting a service or a connection shows what it is in the panel, and nothing moves, connects or is deleted. With no `at` on any service they're laid out by ELK, an optional peer. With a place for any of them, they stay where they say, and those without one go in a column to the right. Once something's moved, each has one, which saves as plain data and needs no ELK.
+It's **read-only** unless it's `editable`, the same prop as Diagram's and StateDiagram's: without `editable`, a diagram is a picture you can select in and read, where selecting a service or a connection shows what it is in the panel, and nothing moves, connects or is deleted. With no `at` on any service they're laid out by ELK, an optional peer. With a place for any of them, they stay where they say, and those without one go in a column to the right. Once something's moved, each has one, which saves as plain data and needs no ELK.
 
 ## Editing
 
@@ -79,7 +79,7 @@ const [system, setSystem] = useState({ services, edges })
 <CloudflareDiagram editable services={system.services} edges={system.edges} onDataChange={setSystem} />
 ```
 
-With `editable`, the panel has a search of the catalog (a Combobox: type, then pick, or press Enter for the first), and the toolbar over the board has undo and redo, with ⌘Z and ⇧⌘Z on the board. Drag from a port on the right of one service to a port on the left of another to connect them. `onDataChange(system, details)` has the whole system and `details.reason`: Diagram's `move`, `delete`, `connect`, `reconnect`, `undo` and `redo`, or `edit` for the panel and a machine, and `add` for the search. `details.cancel()` refuses a change when uncontrolled. Undo covers the board, the panel and the machines together; a new system from outside starts its history over.
+With `editable`, the panel has a search of the catalog (a Combobox: type, then pick, or press Enter for the first), and the board's `DiagramToolbar` has undo and redo, with ⌘Z and ⇧⌘Z on the board: the system's history, handed to the Diagram as its `history`, so it's the same toolbar and keys as every diagram. Drag from a port on the right of one service to a port on the left of another to connect them. `onDataChange(system, details)` has the whole system and `details.reason`: Diagram's `move`, `delete`, `connect`, `reconnect`, `undo` and `redo`, or `edit` for the panel and a machine, and `add` for the search. `details.cancel()` refuses a change when uncontrolled. Undo covers the board, the panel and the machines together; a new system from outside starts its history over.
 
 | What's joined | How it says so | What's on offer |
 | --- | --- | --- |
@@ -88,7 +88,7 @@ With `editable`, the panel has a search of the catalog (a Combobox: type, then p
 | `events`, on what publishes them, to a Queue | `via: 'events'` | Its event types, and R2's event categories |
 | `env` on a Durable Object, to a Container | `via: 'surface:Container'` | The methods of `Container`, reached through `DurableObjectState.container` |
 
-Only something that runs code has an `env`, so only it can have bindings: Workers, Durable Objects, Workflows, Pages, Agents, Dynamic Workers and Workers for Platforms. Anything else is refused as you drag, and the reason is said where you let go. The same two can be connected again, under a binding name of its own. A binding name is checked as you commit it: one that can't be on `env`, or that's already on that Worker, is refused, with why, and nothing changes.
+Only something that runs code has an `env`, so only it can have bindings: Workers, Durable Objects, Workflows, Pages, Agents, Dynamic Workers and Workers for Platforms. Anything else is refused as you drag, and the reason is said where you let go. The same two can be connected again, under a binding name of its own. A binding name is checked as you commit it: one that can't be on `env`, or that's already on that Worker, is refused, with why under the field (its `FieldError`), and nothing changes.
 
 ## A system, and what's wrong with it
 
@@ -238,15 +238,16 @@ Any product can go on a diagram. What has no binding or handler, like Data Loss 
 | `services`, `edges` | — | The system, controlled. `services`: `{ id, kind, label?, at?, binding?, resource?, machine? }`; `binding` is what a binding to it is called on `env`, unless its edge says otherwise, and `resource` is what's behind it at Cloudflare, like a bucket's name. `edges`: `{ id, from, to, via, binding?, operations?, events? }` |
 | `defaultServices`, `defaultEdges` | none | The system, left to the diagram |
 | `onDataChange` | — | `(system, details)` after a change; `details.reason` is `move`, `delete`, `connect`, `reconnect`, `undo`, `redo`, `edit` or `add` |
-| `editable` | `false` | Moving, adding, connecting and deleting services, and changing connections and machines. Without it, it's read-only |
-| `selection`, `defaultSelection`, `onSelectionChange` | nothing | What's selected, `{ nodes, edges }`, as on Diagram |
+| `onAction` | — | `(item, details)` when a service or a connection is activated (Enter, double-click), as on Diagram |
+| `editable` | `false` | Moving, adding, connecting and deleting services, and changing connections and machines. Without it, it's read-only: you can still select in it |
+| `selection`, `defaultSelection`, `onSelectionChange(selection, details)` | nothing | What's selected, `{ nodes, edges }`, as on Diagram |
 | `panelOpen`, `defaultPanelOpen`, `onPanelOpenChange` | open when it's a column | The panel, as on DiagramFrame |
 | `panelPresentation` | `auto` | `column` beside the board when there's room, a `drawer` at medium, a `push`ed page at a phone's size |
 | `openMachine`, `defaultOpenMachine`, `onOpenMachineChange` | none | Whose machine is open over the board, by the service's id, or `null` |
 | `direction` | `right` | Which way a layout runs: `right`, `down`, `left` or `up` |
 | `icon` | the library's own | What to draw for a product, for an app with permission to use Cloudflare's |
 | `emptyState` | an `EmptyState` | What an empty system shows. Editable, it says to search the catalog |
-| `children` | — | More for the top of the panel: a name field, an app's own actions |
+| `panelHeader` | — | At the top of the panel: a name field, an app's own actions |
 | `minimap`, `background`, `fitPadding`, `viewport`, `defaultViewport`, `onViewportChange` | as on Diagram | Passed to it |
 | `aria-label` | `Cloudflare services` | The diagram's name |
 | `className`, `style` | — | Merged onto the frame |
@@ -257,12 +258,24 @@ Any product can go on a diagram. What has no binding or handler, like Data Loss 
 | --- | --- |
 | `CloudflareServiceNode` | A service's card, for a plain Diagram's `renderNode`: its icon, name, what it is, a `machine` badge and its ports named. `tone` (`default`, `destructive`) overrides what its data says |
 | `cloudflareServiceVariants` | That card's recipe |
-| `serviceNode(service)` | A service as a Diagram node: its size and ports from the catalog, and its place if it has one |
-| `CloudflareServiceSearch` | The catalog search, for a toolbar of your own: `onAction(product, details)` when one's chosen |
+| `cloudflareServiceNode(service)` | A service as a Diagram node: its size and ports from the catalog, and its place if it has one |
+| `CloudflareServiceSearch` | The catalog search, for a toolbar of your own: `onAction(product, details)` when one's chosen, with `details.reason` `item-press` or `enter-key` |
+
+### `cloudflareBoardProps(system, options?)`
+
+The board half as a Diagram preset: `<Diagram {...cloudflareBoardProps(system)} />` draws a system as CloudflareDiagram's board does, with no frame or panel. It gives `nodes` (placed where they say, the rest in a column beside them, or with no places at all in layers by what reaches what, so no layout engine loads), `edges` labelled with what they're bound as and use, what's wrong as `tone: 'destructive'`, `renderNode` (a `CloudflareServiceNode`), `isValidConnection` (the catalog's rule), `portsOnly` and `noun: 'service'`. Options: `icon`, and `issues` (default `validateSystem(system)`). CloudflareDiagram draws its own board with it. Memoize it on the system, as `renderNode` is new each call.
+
+{% demo src="cloudflare-diagram/preset" %}
 
 ```tsx
-// Cloudflare's services on a plain Diagram, drawn the same way, with your own rules.
-<Diagram nodes={services.map((s) => ({ ...serviceNode(s), x: 0, y: 0 }))} renderNode={(node) => <CloudflareServiceNode node={node} />} />
+import { cloudflareBoardProps } from '@brett_lamy/ui/cloudflare'
+import { Diagram } from '@brett_lamy/ui/diagram'
+
+const board = useMemo(() => cloudflareBoardProps(system), [system])
+<Diagram {...board} aria-label="My system" />
+
+// Editable: add `editable` and `onDataChange`, and the catalog's rule refuses what can't be.
+<Diagram {...board} editable onDataChange={(data) => …} />
 ```
 
 ### A system
@@ -315,18 +328,19 @@ The frame carries `data-cloudflare-diagram` beside DiagramFrame's own. Elements 
 | --- | --- |
 | A service | `data-slot="cloudflare-service"` with `data-kind` and `data-problem`; in it `cloudflare-service-name`, `cloudflare-port-label` (`data-side="start"` or `"end"`) and a `data-part="machine"` badge |
 | The bar | `cloudflare-status` |
-| The panel | `cloudflare-panel`, with `cloudflare-search`, `cloudflare-hint`, `cloudflare-issues` and `cloudflare-issue` (`data-severity`, `data-code`, `data-edge`, `data-service`), `cloudflare-description`, `cloudflare-reached-by`, `cloudflare-reaches-with`, `cloudflare-no-ports`, `cloudflare-unknown`, `cloudflare-binding-name`, `cloudflare-refusal`, `cloudflare-edge-problem`, `cloudflare-events`, `cloudflare-event-problem`, `cloudflare-receivable`, `cloudflare-machine-receives`, `cloudflare-machine-problem`, `cloudflare-attribution` |
+| The panel | `cloudflare-panel`, with `cloudflare-search`, `cloudflare-hint`, `cloudflare-issues` and `cloudflare-issue` (`data-severity`, `data-code`, `data-edge`, `data-service`), `cloudflare-description`, `cloudflare-reached-by`, `cloudflare-reaches-with`, `cloudflare-no-ports`, `cloudflare-unknown`, `cloudflare-binding-name`, `cloudflare-edge-problem`, `cloudflare-events`, `cloudflare-event-problem`, `cloudflare-receivable`, `cloudflare-machine-receives`, `cloudflare-machine-problem`, `cloudflare-attribution`; a field's refusal is its `FieldError`, `data-part="refusal"` |
 | Operations | `data-part="operations"` (editable) or `cloudflare-operations` (read-only); each row has `data-operation`, and `data-used` when read-only |
 | Fields | `data-field`: `label`, `binding-name`, `events` |
-| Buttons | `data-action`: `delete`, `show-issue`, `remove-edge`, `add-machine`, `open-machine`, `remove-machine`, `machine-back`, and the toolbar's `undo` and `redo` |
-| An open machine | `cloudflare-machine-bar`, in DiagramFrame's cover |
+| Buttons | `data-action`: `delete`, `show-issue`, `remove-edge`, `add-machine`, `open-machine`, `remove-machine`; undo and redo are the `DiagramToolbar`'s |
+| An open machine | DiagramFrame's cover, headed by a `DiagramFrameCoverHeader` (`data-part="machine-bar"`) with its back button, "Services" |
 
 ## Accessibility
 
 - The diagram is a group named by `aria-label`, and every service and connection can be reached with the keyboard and says what it connects to, as on Diagram. A screen reader calls a node a "service".
-- The panel's problems are a polite live region, and each says what's wrong in words, with a "Wrong" or "Note" badge, so color isn't the only sign. A refused binding name and a connection that isn't real are alerts.
+- The panel's problems are a polite live region, and each says what's wrong in words, with a "Wrong" or "Note" badge, so color isn't the only sign. A connection that isn't real is an alert.
 - The search is a Combobox: arrow keys move through what matches, Enter adds the highlighted one, and focus stays in the search for another.
-- Undo and redo are toolbar buttons with their shortcuts in their tooltips, and ⌘Z / ⇧⌘Z (⌘Y) on the board; a field in the panel keeps its own.
+- Undo and redo are the DiagramToolbar's buttons, with their shortcuts in their tooltips, and ⌘Z / ⇧⌘Z (⌘Y) on the board; a field in the panel keeps its own.
+- A refused binding name is the field's `FieldError`, tied to it, and the field is marked invalid.
 - Opening a machine moves focus to its back button, and going back returns it to the button that opened it.
 - No product's image is drawn, so nothing's announced but its name.
 

@@ -36,6 +36,8 @@ import {
   acceptsFile,
   attachmentFileName,
   attachmentKind,
+  attachmentKindFace,
+  attachmentMeta,
   describeAccepted,
   fileExtension,
   readFileAsDataURL,
@@ -167,8 +169,6 @@ export interface ComposerContextValue {
   canAnnotate: boolean;
   /** The Docstream editor behind ComposerInput, once it has mounted. */
   editor: ComposerEditor | null;
-  /** The root element; bumps measure against it. */
-  rootRef: React.RefObject<HTMLDivElement | null>;
   /** How far the composer is collapsed: the full card, a single-row pill, or a FAB. */
   collapsed: ComposerCollapse;
   setCollapsed: (collapsed: ComposerCollapse, given?: ChangeGiven<ComposerCollapsedChangeReason>) => boolean;
@@ -668,7 +668,6 @@ export function Composer({
     canAnnotate: !!annotator,
     editor,
     setEditor,
-    rootRef,
     renderCard: outlet?.renderCard,
     collapsed,
     setCollapsed,
@@ -713,6 +712,7 @@ export function Composer({
           <ImageAnnotator
             key={annotated.id}
             src={annotated.src}
+            alt={annotated.name}
             engine={annotator}
             origin={origin.current}
             open={annotateOpen}
@@ -1066,7 +1066,9 @@ export function ComposerAddon({ align, className, ref, ...props }: ComposerAddon
 
 /** The footer row: `ComposerAddon align="block-end"` that wraps its controls. While the composer is compact it
     becomes the inline-end column of the single row (its ComposerOptions move to the bump). */
-export function ComposerFooter({ className, ...props }: Omit<ComposerAddonProps, 'align'>) {
+export type ComposerFooterProps = Omit<ComposerAddonProps, 'align'>;
+
+export function ComposerFooter({ className, ...props }: ComposerFooterProps) {
   return (
     <ComposerAddon
       data-slot="composer-footer"
@@ -1081,25 +1083,29 @@ export function ComposerFooter({ className, ...props }: Omit<ComposerAddonProps,
 }
 
 /** Pushes the controls after it to the end of a row. */
-export function ComposerSpacer({ className, ...props }: React.HTMLAttributes<HTMLSpanElement>) {
+export type ComposerSpacerProps = React.ComponentProps<'span'>;
+
+export function ComposerSpacer({ className, ...props }: ComposerSpacerProps) {
   return <span data-slot="composer-spacer" aria-hidden="true" className={cn('flex-1', className)} {...props} />;
 }
 
 /** A thin vertical rule between footer pills (the kit's Separator, on UI SDK's). */
-export function ComposerSeparator({ className, ...props }: Omit<SeparatorProps, 'orientation'>) {
+export type ComposerSeparatorProps = Omit<SeparatorProps, 'orientation'>;
+
+export function ComposerSeparator({ className, ...props }: ComposerSeparatorProps) {
   return <Separator orientation="vertical" className={cx('mx-0.5 h-4 self-center', className)} {...props} />;
 }
 
 /** Muted inline text with an optional leading icon (a bump's "Local checkout", a footer hint). */
-export function ComposerText({
-  icon,
-  className,
-  children,
-  ...props
-}: React.HTMLAttributes<HTMLSpanElement> & { icon?: IconName | (string & {}) }) {
+export interface ComposerTextProps extends React.ComponentProps<'span'> {
+  /** Leading glyph: an `Icon` name or a node, as on ComposerPill and ComposerAdd. */
+  icon?: IconName | (string & {}) | React.ReactNode;
+}
+
+export function ComposerText({ icon, className, children, ...props }: ComposerTextProps) {
   return (
     <span data-slot="composer-text" className={cn('flex min-w-0 items-center gap-[7px] text-caption text-muted-foreground', className)} {...props}>
-      {icon ? <Icon name={icon} size={13.5} sw={1.9} /> : null}
+      {typeof icon === 'string' ? <Icon name={icon} size={13.5} sw={1.9} /> : icon}
       {children}
     </span>
   );
@@ -1427,22 +1433,6 @@ export function ComposerExpand({ className, ...props }: ComposerExpandProps) {
 /** A thumbnail's dark well: the `terminal` theme scope (dark in either appearance). */
 const TERMINAL_WELL = themeScopeProps({ scope: 'terminal', appearance: 'dark' });
 /** Each kind's glyph and colour on its tile (video, audio and archive are iOS system hues: the `kind-*` tokens). */
-const KIND_FACE: Record<ComposerAttachmentKind, { icon: string; tone: string; label: string }> = {
-  image: { icon: 'photo', tone: 'bg-success/15 text-success', label: 'Image' },
-  video: { icon: 'video', tone: 'bg-kind-video/15 text-kind-video', label: 'Video' },
-  audio: { icon: 'music-note', tone: 'bg-kind-audio/15 text-kind-audio', label: 'Audio' },
-  pdf: { icon: 'doc', tone: 'bg-destructive/15 text-destructive', label: 'PDF' },
-  text: { icon: 'doc', tone: 'bg-primary/15 text-primary', label: 'Text' },
-  archive: { icon: 'archivebox', tone: 'bg-kind-archive/15 text-kind-archive', label: 'Archive' },
-  other: { icon: 'doc', tone: 'bg-muted-foreground/15 text-muted-foreground', label: 'File' },
-};
-
-/** "PDF · 1.2 MB" — the extension (or the kind) and the size. */
-function attachmentMeta(a: ComposerAttachment, kind: ComposerAttachmentKind) {
-  const ext = fileExtension(a.name).toUpperCase();
-  return [ext && ext.length <= 5 ? ext : KIND_FACE[kind].label, formatFileSize(a.size)].filter(Boolean).join(' · ');
-}
-
 /** The small dark badge in a thumbnail's corner (the annotate pencil, a file's extension). */
 function TileBadge({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
@@ -1485,7 +1475,7 @@ function FileTileFace({ a, kind }: { a: ComposerAttachment; kind: ComposerAttach
       </span>
     );
   }
-  const face = KIND_FACE[kind];
+  const face = attachmentKindFace[kind];
   return (
     <span className="flex h-[58px] w-[164px] min-w-0 items-center gap-2.5 px-2.5 text-left">
       <span className={cn('grid size-9 shrink-0 place-items-center rounded-lg', face.tone)}>
@@ -1542,7 +1532,9 @@ function AttachmentTile({ entry, recovery, children }: { entry: PresenceEntry<Co
  * Delete on a focused tile — removes one (an image's chip goes too). A block-start addon. The strip opens and
  * closes as a height morph, and tiles pop in and out while their neighbours slide.
  */
-export function ComposerAttachments({ className, ...props }: Omit<ComposerAddonProps, 'align'>) {
+export type ComposerAttachmentsProps = Omit<ComposerAddonProps, 'align'>;
+
+export function ComposerAttachments({ className, ...props }: ComposerAttachmentsProps) {
   const { attachments, annotate, canAnnotate, removeAttachment, editor, disabled } = useComposer();
   const strip = useRef<HTMLDivElement | null>(null);
   const presence = usePresence<HTMLDivElement>(attachments.length > 0);

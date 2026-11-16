@@ -1,4 +1,4 @@
-import { Composer, ComposerAddon, ComposerAdd, ComposerAttachments, ComposerCard, ComposerInput, ComposerSend, type ComposerProps } from '@/components/ui/composer/composer';
+import { Composer, ComposerAddon, ComposerAdd, ComposerAttachments, ComposerCard, ComposerInput, ComposerSend, type ComposerProps } from '@/components/ui/composer';
 import { useChatUsers } from './components/chat-users';
 
 export interface MessageComposerProps extends Omit<ComposerProps, 'children' | 'onSubmit'> {

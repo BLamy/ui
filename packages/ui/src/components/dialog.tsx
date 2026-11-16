@@ -82,7 +82,7 @@ import { SurfaceFlow, SurfaceFlowTitle, SurfaceHeaderContext, useSurfaceFlow, us
        <AlertDialogHeader><AlertDialogTitle>Delete photo?</AlertDialogTitle><AlertDialogDescription>…</AlertDialogDescription></AlertDialogHeader>
        <AlertDialogFooter>
          <AlertDialogClose variant="cancel">Cancel</AlertDialogClose>
-         <AlertDialogClose variant="destructive" value="confirm">Delete</AlertDialogClose>
+         <AlertDialogClose tone="destructive" value="confirm">Delete</AlertDialogClose>
        </AlertDialogFooter>
      </AlertDialogContent>
    </AlertDialog>
@@ -419,7 +419,10 @@ export function AlertDialogFooter({ className, orientation = 'horizontal', ...pr
       data-orientation={orientation}
       className={cn(
         'flex shadow-hairline-t',
-        orientation === 'vertical' ? 'flex-col [&>*+*]:shadow-hairline-t' : '[&>*]:flex-1 [&>*+*]:shadow-[inset_1px_0_0_var(--border)]',
+        // The answers round into the card's bottom corners, so an inset focus ring follows the curve the card clips to.
+        orientation === 'vertical'
+          ? 'flex-col [&>*+*]:shadow-hairline-t [&>*:last-child]:rounded-b-sheet'
+          : '[&>*]:flex-1 [&>*+*]:shadow-[inset_1px_0_0_var(--border)] [&>*:first-child]:rounded-es-sheet [&>*:last-child]:rounded-ee-sheet',
         className,
       )}
       {...props}
@@ -439,10 +442,14 @@ export const alertDialogCloseVariants = cva(
         default: 'font-normal',
         /** The preferred / cancel answer: semibold, like iOS. */
         cancel: 'font-semibold',
-        destructive: 'font-normal text-destructive',
+      },
+      /** The answer's semantic colour: `destructive` is the red answer (Delete, Erase). */
+      tone: {
+        default: '',
+        destructive: 'text-destructive',
       },
     },
-    defaultVariants: { variant: 'default' },
+    defaultVariants: { variant: 'default', tone: 'default' },
   },
 );
 
@@ -451,6 +458,6 @@ export type AlertDialogCloseProps = ComponentProps<typeof SdkAlertDialogClose> &
 /** An answer: an iOS alert button that closes the alert. Give the agreeing one `value="confirm"` (it is the
     `returnValue`, and what `createConfirm` resolves `true` for); an `action` runs before it closes, and a Promise it
     returns keeps the alert open, the button pending, until it settles. */
-export function AlertDialogClose({ className, variant, ...props }: AlertDialogCloseProps) {
-  return <SdkAlertDialogClose className={cx(alertDialogCloseVariants({ variant }), className)} {...props} />;
+export function AlertDialogClose({ className, variant, tone, ...props }: AlertDialogCloseProps) {
+  return <SdkAlertDialogClose className={cx(alertDialogCloseVariants({ variant, tone }), className)} {...props} />;
 }

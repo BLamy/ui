@@ -49,7 +49,7 @@ import { Tabs, TabsBar, TabsList, TabsTab } from '@/components/ui/tabs';
 import { cn, cx } from '@/lib/utils';
 import { SizeClassProvider } from '@/lib/container';
 import { barBottomHeight, sectionLabelVariants } from '@/lib/primitives';
-import { StackParentContext, scrollToTop, type StackParent } from '@/lib/stack-parent';
+import { StackParentContext, createReselect, scrollToTop, type Reselect as SharedReselect, type StackParent } from '@/lib/stack-parent';
 import {
   BackLabel, backName, barBackButton, barTitle, barTitleFade, barTitleHidden, centeredRoom, largeTitleText, useBackFit,
 } from '@/lib/nav-bar';
@@ -111,22 +111,7 @@ function useMergedRef<T>(own: { current: T | null }, theirs: Ref<T> | undefined)
 
 /* ── Context ── */
 /** Tells a column's stack (or content) that its place was picked again: a tab bar's selected tab, pressed. */
-interface Reselect {
-  emit: (column: SplitViewColumn) => void;
-  on: (column: SplitViewColumn, listener: () => void) => () => void;
-}
-function createReselect(): Reselect {
-  const listeners = new Map<SplitViewColumn, Set<() => void>>();
-  return {
-    emit: (column) => listeners.get(column)?.forEach((l) => l()),
-    on(column, listener) {
-      const set = listeners.get(column) ?? new Set();
-      listeners.set(column, set);
-      set.add(listener);
-      return () => { set.delete(listener); };
-    },
-  };
-}
+type Reselect = SharedReselect<SplitViewColumn>;
 
 interface RootContext {
   handle: Handle;
@@ -226,7 +211,7 @@ export function SplitView({
   const setTitle = useCallback((c: SplitViewColumn, t: string | undefined) => {
     setTitles((s) => (s[c] === t ? s : { ...s, [c]: t }));
   }, []);
-  const [reselect] = useState(createReselect);
+  const [reselect] = useState(() => createReselect<SplitViewColumn>());
   return usePart(handle, 'root', {}, {
     ...props,
     className: cx('group/split relative isolate h-full w-full touch-pan-y overflow-hidden bg-background', className),
@@ -374,7 +359,18 @@ export function SplitViewSidebar({ compactPresentation = 'stack', children, ...p
   } : null), [tabs]);
   // The tab groups the primitive needs to know which tab a value is in: each member's group, and each group's own.
   const all = [...entries.values()].map((e) => e.current).filter((e): e is TabEntry => e != null);
-  const groupsKey = JSON.stringify(all.flatMap((e) => (e.kind === 'member' ? [[e.value, e.group]] : e.group ? [[e.value, e.value]] : [])));
+  const groupsKey = JSON.stringify(all.flatMap((e) => (e.kind === 'member' ? [[e.value, e.group]] : e.kind === 'tab' && e.group ? [[e.value, e.value]] : [])));
+  // A row outside every tab can't be reached from the compact tab bar: say so while developing.
+  const strays = all.filter((e) => e.kind === 'stray').map((e) => e.value).join('\u0000');
+  const warnedStrays = useRef(new Set<string>());
+  useLayoutEffect(() => {
+    if (!tabs || !strays || (globalThis as { __UI_SDK_DEV__?: boolean }).__UI_SDK_DEV__ === false) return;
+    for (const value of strays.split('\u0000')) {
+      if (warnedStrays.current.has(value)) continue;
+      warnedStrays.current.add(value);
+      console.warn(`SplitViewSidebar: the row "${value}" is neither a \`tab\` nor inside a \`tab\` section, so with compactPresentation="tabs" it can't be reached on a phone. Make it a tab, or move it into a tab section.`);
+    }
+  }, [tabs, strays]);
   const setTabGroups = handle.api.internal.setTabGroups;
   useLayoutEffect(() => { setTabGroups(Object.fromEntries(JSON.parse(groupsKey) as [string, string][])); }, [setTabGroups, groupsKey]);
   // Showing a tab group's rows (its tab's first page): the section's title heads the column.
@@ -402,7 +398,9 @@ export function SplitViewSidebar({ compactPresentation = 'stack', children, ...p
    kit's Tabs `bar`, and the column on top is its tabpanel. */
 type TabEntry =
   | { kind: 'tab'; value: string; title: ReactNode; icon: ReactNode; disabled?: boolean; group?: boolean; el: () => Element | null }
-  | { kind: 'member'; value: string; group: string };
+  | { kind: 'member'; value: string; group: string }
+  /** A sidebar row that is neither a tab nor in a `tab` section: it has no place in the compact tab bar. */
+  | { kind: 'stray'; value: string };
 /** The tab group whose rows the sidebar shows as its tab's first page, and its title (the column's heading). */
 interface TabPage { group: string; title: ReactNode }
 const TabPageContext = createContext<TabPage | null>(null);
@@ -417,7 +415,7 @@ function useTabEntry(entry: TabEntry | null) {
   const registry = useContext(TabRegistryContext);
   const key = useId();
   const set = registry?.set;
-  const sig = entry ? JSON.stringify([entry.kind, entry.value, entry.group, entry.kind === 'tab' ? entry.disabled : null]) : '';
+  const sig = entry ? JSON.stringify([entry.kind, entry.value, 'group' in entry ? entry.group : null, entry.kind === 'tab' ? entry.disabled : null]) : '';
   const latest = useRef(entry);
   latest.current = entry;
   useLayoutEffect(() => {
@@ -442,11 +440,16 @@ function SidebarTabBar({ entries, label }: { entries: TabEntry[]; label: string 
     })
     .filter((t, i, list) => list.findIndex((u) => u.value === t.value) === i);
   const selected = state.value.sidebar ?? null;
-  const current = selected == null ? null : tabs.some((t) => t.value === selected) ? selected : state.tabGroup;
+  // A value in no tab (a row outside every tab, picked at a wider size) leaves the first tab selected, so the bar
+  // always says where you are and pressing it goes back to its first page.
+  const current = selected != null && tabs.some((t) => t.value === selected) ? selected : state.tabGroup ?? tabs[0]?.value ?? null;
   const { internal } = handle.api;
   // The selected tab pressed again, as on iOS: back to the tab's first page (a group's rows, or the first column
   // after the sidebar), and there, its stack back to its first page, then to the top.
+  const fallback = current != null && current !== selected && state.tabGroup == null;
   const again = (event: Event) => {
+    // The first tab, standing in for a value in no tab: pressing it picks it for real.
+    if (fallback && current != null) { internal.selectTab(current, { reason: 'item-press', event }); return; }
     const group = state.tabGroup;
     const root = group != null ? 'sidebar' : state.columns[0];
     if (state.compactColumn !== root) {
@@ -703,7 +706,9 @@ export function SplitViewSidebarTrigger({ className, children, shortcut, ...prop
     ...props,
     ...(shortcut ? { 'aria-keyshortcuts': hint.ariaKeyshortcuts } : null),
     className: cx(cn(
-      'bl-btn grid cursor-pointer place-items-center rounded-ctl border-0 bg-transparent px-2.5 py-2 text-primary outline-none',
+      'bl-btn relative grid cursor-pointer place-items-center rounded-ctl border-0 bg-transparent px-2.5 py-2 text-primary outline-none',
+      // On touch (the iPad layout) the hit area grows to at least 44px around the 42×38 button.
+      'pointer-coarse:after:absolute pointer-coarse:after:-inset-1.5',
       'transition-[background,scale] duration-150 hover:bg-secondary active:scale-[.94] focus-visible:ring-2 focus-visible:ring-ring',
     ), className),
     children: children ?? <Icon name="sidebar" size={22} sw={1.9} />,
@@ -794,7 +799,12 @@ export function SplitViewItem({
   const own = useRef<HTMLButtonElement | null>(null);
   const setRef = useMergedRef(own, ref);
   const group = useContext(TabGroupContext);
-  useTabEntry(tab ? { kind: 'tab', value, title, icon, disabled, el: () => own.current } : group != null ? { kind: 'member', value, group } : null);
+  useTabEntry(
+    tab ? { kind: 'tab', value, title, icon, disabled, el: () => own.current }
+      : group != null ? { kind: 'member', value, group }
+      : column === 'sidebar' ? { kind: 'stray', value }
+      : null,
+  );
   // A sidebar showing a tab group's rows hides every other row (the other tabs are in the bar).
   const page = useContext(TabPageContext);
   const off = page != null && group !== page.group;

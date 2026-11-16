@@ -1,6 +1,6 @@
 import type { ReactNode } from "react"
 import { ReactNodeViewRenderer } from "@tiptap/react"
-import { FolderOpen, Upload } from "lucide-react"
+import { Glyph } from "./glyph"
 import { Button } from "@ui-sdk/react/button"
 import { Checkbox, CheckboxIndicator } from "@ui-sdk/react/checkbox"
 import { FileInput, FileInputTrigger } from "@ui-sdk/react/file-input"
@@ -127,7 +127,7 @@ export function PickFileButton({ kind, current, onPick, label }: { kind: FilePic
         if (url) onPick(url)
       }}
     >
-      <FolderOpen className="size-3.5" aria-hidden="true" /> {label}
+      <Glyph name="folder" className="size-3.5" size={24} /> {label}
     </Button>
   )
 }
@@ -152,7 +152,7 @@ export function UploadFileButton({ kind, onPick, label }: { kind: FilePickKind; 
       }}
     >
       <FileInputTrigger className="gb-pick-file">
-        <Upload className="size-3.5" aria-hidden="true" /> {label}
+        <Glyph name="share" className="size-3.5" size={24} /> {label}
       </FileInputTrigger>
     </FileInput>
   )

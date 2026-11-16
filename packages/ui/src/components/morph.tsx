@@ -1,7 +1,7 @@
 'use client';
 import {
-  Children, createContext, forwardRef, isValidElement, useContext, useMemo, useRef,
-  type ComponentType, type HTMLAttributes, type PointerEvent as ReactPointerEvent, type ReactElement, type ReactNode,
+  Children, createContext, isValidElement, useContext, useMemo, useRef,
+  type AllHTMLAttributes, type ComponentType, type PointerEvent as ReactPointerEvent, type ReactElement, type ReactNode, type Ref,
 } from 'react';
 import { AnimatePresence, LayoutGroup, MotionConfig, motion, useReducedMotion, type Transition } from 'framer-motion';
 import { bindDrag, dragThreshold } from '@ui-sdk/core';
@@ -82,7 +82,10 @@ const FLICK_SPEED = 0.65;
 
 type MotionConflicts = 'onAnimationStart' | 'onAnimationEnd' | 'onAnimationIteration' | 'onDrag' | 'onDragStart' | 'onDragEnd' | 'onDragOver' | 'onDragEnter' | 'onDragLeave' | 'onDrop';
 
-export interface MorphProps extends Omit<HTMLAttributes<HTMLElement>, MotionConflicts> {
+/** Any HTML attribute, since `render` can make it any element (`href` and `target` on a link, `name` and `value` on a
+    button, `src` and `alt` on an image), minus the event names framer-motion uses for its own gestures. */
+export interface MorphProps extends Omit<AllHTMLAttributes<HTMLElement>, MotionConflicts | 'ref'> {
+  ref?: Ref<HTMLElement>;
   /** The shared identity: the same `layoutId` in both layouts (framer-motion's name). `id` stays the DOM id. */
   layoutId: string;
   /** Corner radius for this layout (px). Animated with the frame and kept undistorted while it scales. */
@@ -97,28 +100,20 @@ export interface MorphProps extends Omit<HTMLAttributes<HTMLElement>, MotionConf
   onDismiss?: () => void;
   /** Distance in px past which a released drag dismisses (default 120). */
   dismissDistance?: number;
-  /** How the frame animates: `true` (position and size, the default) or `position` (only moves; for text that
-      would stretch). */
+  /** How the frame animates: `true` (position and size, the default), `position` (only moves; for text that would
+      stretch) or `size` (only resizes, in place). */
   layout?: true | 'position' | 'size';
   /** Fade in on mount and out on unmount (inside `MorphPresence`), for an element that has no partner in the
       other layout. Leave off (the default) for shared elements — they morph rather than fade. */
   fade?: boolean;
-  /** Attributes of the rendered element that a `div` does not have (`href`, `src`, `alt`, `type`). */
-  href?: string;
-  src?: string;
-  alt?: string;
-  type?: 'button' | 'submit' | 'reset';
   [attr: `data-${string}`]: unknown;
 }
 
 /** An element that morphs between its layouts. Use inside a `<MorphGroup>`. */
-export const Morph = forwardRef<HTMLElement, MorphProps>(function Morph(
-  {
-    layoutId, radius, render, dragToDismiss, onDismiss, dismissDistance = 120, layout = true, fade = false,
-    className, style, children, ...rest
-  },
-  ref,
-) {
+export function Morph({
+  layoutId, radius, render, dragToDismiss, onDismiss, dismissDistance = 120, layout = true, fade = false,
+  className, style, children, ref, ...rest
+}: MorphProps) {
   const ctx = useContext(MorphContext);
   const reducedPref = useReducedMotion();
   const reduced = ctx?.reduced ?? !!reducedPref;
@@ -180,7 +175,7 @@ export const Morph = forwardRef<HTMLElement, MorphProps>(function Morph(
       {children}
     </M>
   );
-});
+}
 
 export interface MorphPresenceProps {
   children?: ReactNode;

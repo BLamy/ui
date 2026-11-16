@@ -65,7 +65,7 @@ const selectedTab = (root: ParentNode) => root.querySelector('[role=tab][aria-se
 
 describe("the scrubber (Slider)", () => {
   it("is a named slider in the scrubber, with the time as its value text, disabled until the stage is ready", async () => {
-    const el = await player(<ReplayPreview events={replayDemoEvents} lazy={false} />, { ready: false })
+    const el = await player(<ReplayPreview events={replayDemoEvents} mounted />, { ready: false })
     const scrubber = q(el, '[data-slot="replay-preview-scrubber"]')
     const slider = q<HTMLInputElement>(scrubber, '[data-slot="slider"] [role="slider"]')
     expect(slider.getAttribute("aria-label")).toBe("Playback position")
@@ -85,7 +85,7 @@ describe("the scrubber (Slider)", () => {
 
   it("its keys seek: arrows by a step, Page Up and Down by 5 s, Home and End to the ends, with focus staying on it", async () => {
     stage.time = 6000
-    const el = await player(<ReplayPreview events={replayDemoEvents} lazy={false} />)
+    const el = await player(<ReplayPreview events={replayDemoEvents} mounted />)
     const slider = q<HTMLInputElement>(el, '[data-slot="replay-preview-scrubber"] [role="slider"]')
     await focus(slider)
     await press("ArrowLeft")
@@ -109,7 +109,7 @@ describe("the scrubber (Slider)", () => {
 describe("the captions button (Toggle)", () => {
   const captions = "WEBVTT\n\n00:00.000 --> 00:09.000\nThe checkout fails\n"
   it("says whether captions are on, and Space or Enter turns them off and on", async () => {
-    const el = await player(<ReplayPreview events={replayDemoEvents} lazy={false} captions={captions} />)
+    const el = await player(<ReplayPreview events={replayDemoEvents} mounted captions={captions} />)
     const cc = q(el, '[data-part="replay-preview-captions"]')
     expect(cc.getAttribute("data-slot")).toBe("toggle")
     expect(cc.getAttribute("aria-label")).toBe("Captions")
@@ -131,7 +131,7 @@ describe("the captions button (Toggle)", () => {
 
 describe("the Console and Network buttons (ToggleGroup)", () => {
   it("are one named group with one tab stop; the arrows move between them and a press opens or closes the panel", async () => {
-    const el = await player(<ReplayPreview events={replayDemoEvents} lazy={false} />)
+    const el = await player(<ReplayPreview events={replayDemoEvents} mounted />)
     const group = q(el, '[data-part="replay-devtools-buttons"]')
     expect(group.getAttribute("role")).toBe("group")
     expect(group.getAttribute("aria-label")).toBe("DevTools")
@@ -167,7 +167,7 @@ describe("the Console and Network buttons (ToggleGroup)", () => {
   })
 
   it("Escape in the panel closes it and hands focus back to the player, whose keys work again", async () => {
-    const el = await player(<ReplayPreview events={replayDemoEvents} lazy={false} defaultDevtoolsTab="console" />)
+    const el = await player(<ReplayPreview events={replayDemoEvents} mounted defaultDevtoolsTab="console" />)
     const panel = panelOf(el)!
     await focus(q(panel, '[role=tab][aria-selected="true"]'))
     // Inside the panel the player's keys are the panel's.
@@ -181,7 +181,7 @@ describe("the Console and Network buttons (ToggleGroup)", () => {
   })
 
   it("Escape with focus outside the panel leaves it open, and doesn't reach the page as handled", async () => {
-    const el = await player(<ReplayPreview events={replayDemoEvents} lazy={false} defaultDevtoolsTab="console" />)
+    const el = await player(<ReplayPreview events={replayDemoEvents} mounted defaultDevtoolsTab="console" />)
     await focus(q(panelOf(el)!, '[role=tab][aria-selected="true"]'))
     const outside = document.body.appendChild(Object.assign(document.createElement("button"), { textContent: "Elsewhere" }))
     try {
@@ -200,7 +200,7 @@ describe("the DevTools panel", () => {
   it("its tabs are a named tablist: the arrows, Home and End select a tab and show its panel, labelled by the tab", async () => {
     stage.doc = document.implementation.createHTMLDocument("page")
     const evidence = { sources: [{ path: "src/a.ts", lines: [{ line: 1, text: "a()" }] }] }
-    const el = await player(<ReplayPreview events={replayDemoEvents} lazy={false} defaultDevtoolsTab="console" evidence={evidence} />)
+    const el = await player(<ReplayPreview events={replayDemoEvents} mounted defaultDevtoolsTab="console" evidence={evidence} />)
     const panel = panelOf(el)!
     const list = q(panel, '[data-part="replay-devtools-tablist"]')
     expect(list.getAttribute("role")).toBe("tablist")
@@ -232,7 +232,7 @@ describe("the DevTools panel", () => {
   })
 
   it("its top edge is a separator: the arrow keys resize the panel", async () => {
-    const el = await player(<ReplayPreview events={replayDemoEvents} lazy={false} defaultDevtoolsTab="console" />)
+    const el = await player(<ReplayPreview events={replayDemoEvents} mounted defaultDevtoolsTab="console" />)
     const panel = panelOf(el)!
     const handle = q(panel, '[data-slot="replay-devtools-resize"]')
     expect(handle.getAttribute("role")).toBe("separator")
@@ -256,7 +256,7 @@ describe("the DevTools panel", () => {
 
 describe("the Console pane", () => {
   it("the level filter is a named select: it opens from the keyboard, a choice filters the log, and Escape closes only the list", async () => {
-    const el = await player(<ReplayPreview events={replayDemoEvents} lazy={false} defaultDevtoolsTab="console" />)
+    const el = await player(<ReplayPreview events={replayDemoEvents} mounted defaultDevtoolsTab="console" />)
     const panel = panelOf(el)!
     const levels = () => all(panel, '[data-slot="replay-devtools-message"]').map((m) => m.getAttribute("data-level"))
     expect(levels()).toEqual(["log", "info", "info", "warn", "error"])
@@ -287,7 +287,7 @@ describe("the Console pane", () => {
   })
 
   it("a message with a stack trace is a disclosure: Enter shows its frames and hides them again", async () => {
-    const el = await player(<ReplayPreview events={replayDemoEvents} lazy={false} defaultDevtoolsTab="console" />)
+    const el = await player(<ReplayPreview events={replayDemoEvents} mounted defaultDevtoolsTab="console" />)
     const error = q(panelOf(el)!, '[data-slot="replay-devtools-message"][data-level="error"]')
     const trigger = q(error, '[data-slot="collapsible-trigger"]')
     expect(trigger.tagName).toBe("BUTTON")
@@ -309,7 +309,7 @@ describe("the Console pane", () => {
   })
 
   it("the log is a named live region", async () => {
-    const el = await player(<ReplayPreview events={replayDemoEvents} lazy={false} defaultDevtoolsTab="console" />)
+    const el = await player(<ReplayPreview events={replayDemoEvents} mounted defaultDevtoolsTab="console" />)
     const log = q(panelOf(el)!, '[data-slot="replay-devtools-list"]')
     expect(log.getAttribute("role")).toBe("log")
     expect(log.getAttribute("aria-label")).toBe("Console messages")
@@ -318,7 +318,7 @@ describe("the Console pane", () => {
 
 describe("the Network pane", () => {
   it("the request types are a named radio group: the arrows check the next one and filter the table", async () => {
-    const el = await player(<ReplayPreview events={replayDemoEvents} lazy={false} defaultDevtoolsTab="network" />)
+    const el = await player(<ReplayPreview events={replayDemoEvents} mounted defaultDevtoolsTab="network" />)
     const panel = panelOf(el)!
     const group = q(panel, '[data-part="replay-devtools-chips"]')
     expect(group.getAttribute("role")).toBe("radiogroup")
@@ -342,7 +342,7 @@ describe("the Network pane", () => {
   })
 
   it("the table is a named grid with one tab stop: the arrows move between requests, Enter opens one's details and closes them", async () => {
-    const el = await player(<ReplayPreview events={replayDemoEvents} lazy={false} defaultDevtoolsTab="network" />)
+    const el = await player(<ReplayPreview events={replayDemoEvents} mounted defaultDevtoolsTab="network" />)
     const panel = panelOf(el)!
     const table = q(panel, '[data-slot="replay-devtools-table"]')
     expect(table.tagName).toBe("TABLE")
@@ -374,7 +374,7 @@ describe("the Network pane", () => {
   })
 
   it("a request's details are tabs, and their sections are disclosures that start open", async () => {
-    const el = await player(<ReplayPreview events={replayDemoEvents} lazy={false} defaultDevtoolsTab="network" />)
+    const el = await player(<ReplayPreview events={replayDemoEvents} mounted defaultDevtoolsTab="network" />)
     const panel = panelOf(el)!
     await click(q(panel, "tr[data-failed]"))
     const detail = q(panel, '[data-slot="replay-devtools-detail"]')
@@ -422,7 +422,7 @@ describe("the Elements pane (Tree)", () => {
 
   it("is a named tree with one tab stop: Right opens a branch, Down and Up move through the rows, Left closes or goes to the parent", async () => {
     stage.doc = page()
-    const el = await player(<ReplayPreview events={replayDemoEvents} lazy={false} defaultDevtoolsTab="elements" />)
+    const el = await player(<ReplayPreview events={replayDemoEvents} mounted defaultDevtoolsTab="elements" />)
     const panel = panelOf(el)!
     const tree = q(panel, '[data-slot="replay-devtools-elements"] [data-slot="tree"]')
     expect(tree.getAttribute("role")).toBe("tree")
@@ -461,7 +461,7 @@ describe("the Elements pane (Tree)", () => {
 
   it("Enter selects the element (its row, the page's outline and the breadcrumb follow); text can be reached but not selected", async () => {
     stage.doc = page()
-    const el = await player(<ReplayPreview events={replayDemoEvents} lazy={false} defaultDevtoolsTab="elements" />)
+    const el = await player(<ReplayPreview events={replayDemoEvents} mounted defaultDevtoolsTab="elements" />)
     const tree = q(panelOf(el)!, '[data-slot="tree"]')
     const items = () => all(tree, "[role=treeitem]")
     const rowOf = (text: string) => items().find((i) => label(i).startsWith(text))!
@@ -496,7 +496,7 @@ describe("the Elements pane (Tree)", () => {
     const doc = document.implementation.createHTMLDocument("page")
     doc.body.innerHTML = "<div>Some text that is long enough to get a row of its own, past the eighty characters an inline one may have<b>bold</b></div>"
     stage.doc = doc
-    const el = await player(<ReplayPreview events={replayDemoEvents} lazy={false} defaultDevtoolsTab="elements" />)
+    const el = await player(<ReplayPreview events={replayDemoEvents} mounted defaultDevtoolsTab="elements" />)
     const tree = q(panelOf(el)!, '[data-slot="tree"]')
     const items = () => all(tree, "[role=treeitem]")
     await focus(items()[0])
@@ -519,7 +519,7 @@ describe("the Sources pane", () => {
     ],
   }
   it("the files are vertical tabs beside the code: Down shows the next file, whose panel the tab labels", async () => {
-    const el = await player(<ReplayPreview events={replayDemoEvents} lazy={false} defaultDevtoolsTab="sources" evidence={evidence} />)
+    const el = await player(<ReplayPreview events={replayDemoEvents} mounted defaultDevtoolsTab="sources" evidence={evidence} />)
     const panel = panelOf(el)!
     const list = q(panel, '[data-slot="replay-devtools-files"] [role=tablist]')
     expect(list.getAttribute("aria-label")).toBe("Files")

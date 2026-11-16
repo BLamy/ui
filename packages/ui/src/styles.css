@@ -76,7 +76,7 @@ input:where([data-slot] *,[data-slot]):where(:not(.gb *))::placeholder{color:var
    side you moved toward and leaves the other way. */
 @keyframes bl-panel-in{from{opacity:0;translate:calc(var(--bl-dx,0)*28px) calc(var(--bl-dy,0)*28px)}}
 @keyframes bl-panel-out{to{opacity:0;translate:calc(var(--bl-dx,0)*-28px) calc(var(--bl-dy,0)*-28px)}}
-@keyframes bl-progress-indeterminate{from{transform:translateX(-100%)}to{transform:translateX(250%)}}
+@keyframes bl-progress-indeterminate{from{transform:translateX(calc(var(--bl-progress-dir,1)*-100%))}to{transform:translateX(calc(var(--bl-progress-dir,1)*250%))}}
 /* ── Spinner loaders: seven animations with three variants each ───────────────────────────────────────────
    Ported from Dani Asyrofi's "Loading" (https://loading.daniasyrofi.com, MIT). Markup and timing tables are in
    components/spinner.tsx; names are prefixed bl-ld-. Timing is --bl-ld-d (duration) and --bl-ld-delay per element,
@@ -678,7 +678,7 @@ input:where([data-slot] *,[data-slot]):where(:not(.gb *))::placeholder{color:var
 
 /* ── ProgressStepper ───────────────────────────────────────────────────────────────────────
    Styled with utilities on the component; the current segment's sweep. */
-@keyframes bl-stepper-sweep{0%{transform:translateX(0)}100%{transform:translateX(200%)}}
+@keyframes bl-stepper-sweep{0%{transform:translateX(0)}100%{transform:translateX(calc(var(--bl-stepper-dir,1)*200%))}}
 
 /* ══ Workbench (WorkbenchShell, Composer, MarkdownView, terminal) — the `workbench` / `terminal` theme scopes ══ */
 /* BL UI Workbench — framework-owned CSS (scrollbars, caret pulse, spin, markdown). */

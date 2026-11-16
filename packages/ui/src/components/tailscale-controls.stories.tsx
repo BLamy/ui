@@ -32,7 +32,7 @@ const state = (status: TailscaleStatus, dark?: boolean): Story => ({
           status={status}
           tailnet="tail1234.ts.net"
           loginUrl={status === 'signing-in' ? 'https://login.tailscale.com/a/example' : null}
-          error="The Tailscale client failed to start."
+          description="The Tailscale client failed to start."
         />
       </div>
     </Pad>

@@ -25,13 +25,13 @@ afterEach(cleanup);
 const settle = (ms = 30) => act(async () => { await new Promise((r) => setTimeout(r, ms)); });
 const sheet = () => document.querySelector<HTMLElement>('[data-slot=drawer-content]');
 
-function Filters(props: Parameters<typeof Sheet>[0] & { onApply?: () => void }) {
-  const { onApply, ...root } = props;
+function Filters(props: Parameters<typeof Sheet>[0] & { onApply?: () => void; variant?: 'default' | 'tray' }) {
+  const { onApply, variant, ...root } = props;
   return (
     <Sheet {...root}>
       <SheetTrigger className={buttonVariants({ variant: 'secondary' })}>Filters</SheetTrigger>
       <SheetBackdrop />
-      <SheetContent>
+      <SheetContent variant={variant}>
         <SheetClose />
         <SheetHeader>
           <SheetTitle>Filters</SheetTitle>
@@ -68,6 +68,15 @@ describe('Sheet', () => {
     expect(backdrop?.hasAttribute('hidden')).toBe(false);
     expect(backdrop?.className).not.toContain('data-hidden');
     expect(onOpenChange).toHaveBeenLastCalledWith(true, expect.objectContaining({ reason: 'trigger-press' }));
+  });
+
+  it('wears Dialog\'s look names: `default` attached to its edge, `tray` floating in from it', async () => {
+    render(<Filters defaultOpen variant="tray" />);
+    await settle();
+    expect(sheet()!.getAttribute('data-variant')).toBe('tray');
+    expect(sheet()!.className).toMatch(/\brounded-sheet\b/);
+    expect(sheet()!.className).toContain('mx-2.5');
+    expect(sheet()!.querySelector('[data-slot=sheet-grabber]')).not.toBeNull();
   });
 
   it('comes from the side it is given, without a grabber', async () => {

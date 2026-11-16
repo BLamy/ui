@@ -1,0 +1,15 @@
+{
+  "name": "syntax-lexer",
+  "title": "Syntax lexer",
+  "description": "The kit's synchronous, dependency-free syntax lexer: gpu-lexer's token classes for ts / js, json, css, html, bash, python, sql, markdown and yaml, and a C-family default for the rest. CodeEditor's fallback and docstream's code fences both color with it.",
+  "exports": [
+    "fallbackSpans",
+    "FALLBACK_MAX_LENGTH",
+    "PLAIN_LANGUAGES",
+    "BUILTIN_TYPES"
+  ],
+  "types": [
+    "CodeTokenType",
+    "SyntaxSpan"
+  ]
+}

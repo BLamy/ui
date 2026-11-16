@@ -5,21 +5,21 @@ import { bindLayer, createChange, definePrimitive, type ChangeDetails } from '@u
 import { mount } from '@ui-sdk/core/testing';
 import { createParts } from '@ui-sdk/react/primitive';
 import { bindEdgeSwipe } from '@/lib/edge-swipe';
-import { createStack, type StackExit, type StackOptions, type StackReason } from '@/lib/stack';
+import { createPageStack, type PageStackExit, type PageStackOptions, type PageStackReason } from '@/lib/stack';
 
 (globalThis as { __UI_SDK_STRICT__?: boolean }).__UI_SDK_STRICT__ = true;
 
-type NavState = { pages: string[]; exiting: StackExit[]; on: boolean };
-type NavReason = StackReason | 'item-press';
+type NavState = { pages: string[]; exiting: PageStackExit[]; on: boolean };
+type NavReason = PageStackReason | 'item-press';
 type NavOptions = {
   pages?: string[];
   defaultPages?: string[];
   onPagesChange?: (pages: string[], details: ChangeDetails<NavReason>) => void;
-  back?: StackOptions<NavState, NavReason>['back'];
+  back?: PageStackOptions<NavState, NavReason>['back'];
   initialFocus?: (key: string) => HTMLElement | null | undefined | void;
   /** Whether it is a stack now; off, its pages stay but nothing pops. */
   on?: boolean;
-  /** Pages that never unmount (`createStack`'s `persistent`). */
+  /** Pages that never unmount (`createPageStack`'s `persistent`). */
   persistent?: boolean;
 };
 
@@ -36,7 +36,7 @@ const nav = definePrimitive({
   api: (context) => {
     const change = createChange(context);
     const { back, initialFocus, persistent } = context.options();
-    const stack = createStack<NavState, NavReason>(context, {
+    const stack = createPageStack<NavState, NavReason>(context, {
       key: 'pages',
       exiting: 'exiting',
       set: (value, details) => change('pages', value, details),
@@ -98,7 +98,7 @@ const escape = () => {
 };
 const frame = () => new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
 
-describe('createStack pages', () => {
+describe('createPageStack pages', () => {
   it('push, pop, popTo and replace change the pages, each with its reason', () => {
     const onPagesChange = vi.fn();
     const { view, stack } = open({ onPagesChange });
@@ -196,7 +196,7 @@ describe('createStack pages', () => {
   });
 });
 
-describe('createStack with controlled pages, rendered by React', () => {
+describe('createPageStack with controlled pages, rendered by React', () => {
   const { Root, Page } = createParts(nav, { root: 'div', page: 'section' });
   function Nav({ pages, onPagesChange }: { pages: string[]; onPagesChange?: NavOptions['onPagesChange'] }) {
     return (
@@ -242,7 +242,7 @@ describe('createStack with controlled pages, rendered by React', () => {
   });
 });
 
-describe('createStack focus', () => {
+describe('createPageStack focus', () => {
   it('focus moves into a pushed page, to the first element Tab reaches', async () => {
     const { view, stack, button } = open();
     button('home', 'Open').focus();
@@ -343,7 +343,7 @@ describe('createStack focus', () => {
   });
 });
 
-describe('createStack persistent pages', () => {
+describe('createPageStack persistent pages', () => {
   const { Root, Page } = createParts(nav, { root: 'div', page: 'section' });
   function Columns(props: { pages?: string[]; defaultPages?: string[] }) {
     return (
@@ -390,7 +390,7 @@ describe('createStack persistent pages', () => {
   });
 });
 
-describe('createStack Escape and nesting', () => {
+describe('createPageStack Escape and nesting', () => {
   it('Escape pops the top page, and on the first page it is left alone', async () => {
     const onPagesChange = vi.fn();
     const { view, stack } = open({ onPagesChange });
@@ -491,7 +491,7 @@ describe('createStack Escape and nesting', () => {
   });
 });
 
-describe('createStack platform back', () => {
+describe('createPageStack platform back', () => {
   /** `bindBack` as the stack sees it: what is bound now, newest last; a back goes to the newest that takes it. */
   function backs() {
     const bound: ((event: Event) => boolean | void)[] = [];
@@ -557,7 +557,7 @@ describe('createStack platform back', () => {
   });
 });
 
-describe('createStack swipe', () => {
+describe('createPageStack swipe', () => {
   it('refuses a swipe on its first page', () => {
     const { stack } = open();
     expect(stack.swipe.onStart()).toBe(false);
@@ -635,7 +635,7 @@ describe('createStack swipe', () => {
   });
 });
 
-describe('createStack active', () => {
+describe('createPageStack active', () => {
   it('switched off, the pages stay but nothing pops: no Escape, no back, no swipe', () => {
     const bound: unknown[] = [];
     const back: NavOptions['back'] = (_el, { onBack }) => {

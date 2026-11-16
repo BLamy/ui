@@ -5,17 +5,7 @@
   "page": "cron-editor",
   "exports": [
     "CronEditor",
-    "CRON_PRESETS",
-    "useCronParse",
-    "parseCronText",
-    "gpuCronAvailable",
-    "describeCronError",
-    "validateCron",
-    "cronProblems",
-    "nextCronRuns",
-    "describeCron",
-    "splitCron",
-    "CRON_FIELDS"
+    "CRON_PRESETS"
   ],
   "imports": [
     "CronEditor"
@@ -24,12 +14,6 @@
     "CronEditorProps",
     "CronPreset",
     "CronEditorChangeDetails",
-    "CronEditorChangeReason",
-    "CronValidation",
-    "CronFieldName",
-    "NextCronRunsOptions",
-    "UseCronParseOptions",
-    "CronParseState",
-    "GpuCronMatch"
+    "CronEditorChangeReason"
   ]
 }

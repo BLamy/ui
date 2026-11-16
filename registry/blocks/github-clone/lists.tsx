@@ -86,7 +86,7 @@ export function ItemRow({ ui, state, title, labels, meta, assignees, comments, s
             </HoverCard>
           ) : open}
           {status}
-          {labels.map((l) => <LabelChip key={l.name} label={l} dark={ui.dark} />)}
+          {labels.map((l) => <LabelChip key={l.name} label={l} appearance={ui.appearance} />)}
         </div>
         <div className="mt-1 text-caption text-muted-foreground">{meta}</div>
       </div>

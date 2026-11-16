@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react"
-import { StepGrid, mixCode, parseStrudel, setMethod, setMiniAtom, formatNumber, type StrudelSong } from "@brett_lamy/ui/docstream/strudel"
+import { StepGrid, mixCode, parseStrudel, setMethod, setMiniAtom, formatNumber, type StrudelSong } from "@brett_lamy/ui/docstream/strudel/rack"
 import { TreeView } from "./TreeView"
 
 const START = `setcps(0.5)

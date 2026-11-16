@@ -5,20 +5,20 @@ import {
 } from '@ui-sdk/core';
 import { bindBack } from '@/lib/back';
 import { bindEdgeSwipe } from '@/lib/edge-swipe';
-import { createStack, type StackExit, type StackReason } from '@/lib/stack';
+import { createPageStack, type PageStackExit, type PageStackReason } from '@/lib/stack';
 import { createParts } from '@ui-sdk/react/primitive';
 import { useState, type ReactNode } from 'react';
 import { Icon } from '@/lib/icon';
 
-type SettingsReason = StackReason | 'trigger-press';
-type SettingsState = { pages: string[]; exiting: StackExit[] };
+type SettingsReason = PageStackReason | 'trigger-press';
+type SettingsState = { pages: string[]; exiting: PageStackExit[] };
 type SettingsOptions = {
   pages?: string[];
   defaultPages?: string[];
   onPagesChange?: (pages: string[], details: ChangeDetails<SettingsReason>) => void;
 };
 
-/* A stack of pages that cover each other. `createStack` keeps the pages in the primitive's own state (so
+/* A stack of pages that cover each other. `createPageStack` keeps the pages in the primitive's own state (so
    `onPagesChange` hears every push and pop and can cancel one), runs each page's entrance and exit, moves focus
    in on a push and back on a pop, makes covered pages inert, pops on Escape, and, while there is a page to go back
    to, on the platform's back (`bindBack`) and an edge swipe (`bindEdgeSwipe`). */
@@ -32,7 +32,7 @@ const settings = definePrimitive({
   sync: (options) => (options.pages === undefined ? {} : { pages: options.pages }),
   api: (context) => {
     const change = createChange(context);
-    const stack = createStack<SettingsState, SettingsReason>(context, {
+    const stack = createPageStack<SettingsState, SettingsReason>(context, {
       key: 'pages',
       exiting: 'exiting',
       set: (value, details) => change('pages', value, details),

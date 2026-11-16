@@ -80,8 +80,8 @@ export interface OpenCodeBaseProps
   loadRuntime?: () => Promise<OpenCodeRuntime>;
   /** The visible title, and the name of the region, its terminal and its preview frames. Default `OpenCode`. */
   title?: string;
-  /** The terminal's color scheme. `'auto'` (the default) follows the nearest ThemeScope, else the ambient appearance, else dark.
-      Changing it restarts the session. */
+  /** The terminal's color scheme. `'auto'` (the default) follows the nearest ThemeScope, else the ambient appearance, else
+      the system setting, as CodeEditor's does. Changing it restarts the session. */
   appearance?: AppearancePreference;
   /** Start when mounted. Set false to require the Start button. */
   autoStart?: boolean;
@@ -100,6 +100,15 @@ export type OpenCodeProps = OpenCodeBaseProps & OpenCodeHostProps;
    The kit's Button runs Start/Stop, Reload and Close; the open ports are a ToggleGroup (one tab stop, arrows
    between ports). The terminal and the preview sit side by side unless the component's own box is compact
    (`data-size-class` from `useSizeClass`), where the preview stacks under the terminal. */
+/** The system's light / dark setting, for `appearance="auto"` with no scope or provider around. */
+const DARK_QUERY = '(prefers-color-scheme: dark)';
+const subscribeSystemDark = (notify: () => void) => {
+  const query = typeof matchMedia === 'function' ? matchMedia(DARK_QUERY) : null;
+  query?.addEventListener('change', notify);
+  return () => query?.removeEventListener('change', notify);
+};
+const readSystemDark = () => typeof matchMedia === 'function' && matchMedia(DARK_QUERY).matches;
+
 export function OpenCode({
   host,
   credentialStore,
@@ -121,7 +130,9 @@ export function OpenCode({
 }: OpenCodeProps) {
   const scopeAppearance = useThemeScope()?.appearance;
   const ambient = useAppearance();
-  const theme = (appearanceProp === 'auto' ? undefined : appearanceProp) ?? scopeAppearance ?? ambient ?? 'dark';
+  // `auto` resolves as CodeEditor's does: the nearest scope, the provider, then the system setting.
+  const systemDark = useSyncExternalStore(subscribeSystemDark, readSystemDark, () => false);
+  const theme = (appearanceProp === 'auto' ? undefined : appearanceProp) ?? scopeAppearance ?? ambient ?? (systemDark ? 'dark' : 'light');
   const terminal = useRef<HTMLDivElement>(null);
   const [sizeRef] = useSizeClass<HTMLElement>();
   const rootRef = useMemo(
@@ -447,8 +458,10 @@ export function OpenCode({
               className="absolute inset-0"
               icon={<Icon name="keyboard" />}
               title={state === 'stopped' ? `${title} stopped` : state === 'error' ? `${title} could not start` : `${title} isn't running`}
-              description="Start it to edit files and run commands in this browser. Servers the host opens appear beside it as live previews."
-              action={<Button size="sm" onClick={() => setStarted(true)}>Start OpenCode</Button>}
+              description={state === 'error'
+                ? 'Check the runtime and try again.'
+                : 'Start it to edit files and run commands in this browser. Servers the host opens appear beside it as live previews.'}
+              action={<Button size="sm" onClick={() => setStarted(true)}>{state === 'error' ? 'Try again' : 'Start OpenCode'}</Button>}
             />
           )}
         </div>

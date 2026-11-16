@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { ImageAnnotator } from '@/components/ui/pencilkit/image-annotator'
+import { ImageAnnotator } from '@/components/ui/pencilkit'
 
 // A light screenshot to mark up. In an app: a pasted or uploaded image's URL.
 const SHOT =

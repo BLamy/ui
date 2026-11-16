@@ -33,30 +33,30 @@ Arrows point from a layer to the entries built on it; dotted arrows are optional
 
 | Import | What you get | Imports eagerly | Loads on demand |
 | --- | --- | --- | --- |
-| `@brett_lamy/ui/docstream` | Most of the API: renderers, embeds, demos, parser. Not `/playground`, `/viz`, `/vite`, the replay stage/timeline helpers or the Strudel studio internals | react, react-dom, framer-motion, lucide-react, gpu-lexer, yaml | pele, katex, rrweb, @strudel/web, acorn |
+| `@brett_lamy/ui/docstream` | Most of the API: renderers, embeds, demos, parser. Not `/playground`, `/viz`, `/vite`, the replay stage/timeline helpers or the Strudel studio internals | react, react-dom, framer-motion, the kit's icons (`lib/icon`), gpu-lexer, yaml | pele, katex, rrweb, @strudel/web, acorn |
 | `/gitbook` | Parser, serializer, AST types, pure helpers | yaml | — |
 | `/streamdown` | `GitbookStreamdown` + the context/actions it needs | same as root | pele, katex, rrweb, @strudel/web, acorn |
-| `/properties` | `DocumentProperties` | react, lucide-react, yaml | — |
+| `/properties` | `DocumentProperties` | react, the kit's icons (`lib/icon`), yaml | — |
 | `/properties/styles.css` | Property sheet styles | — | — |
-| `/tasks` | `TaskCheckbox`, `TASK_STATE_ICONS` | react, react-dom, lucide-react | — |
+| `/tasks` | `TaskCheckbox`, `TASK_STATE_ICONS` | react, react-dom, the kit's icons (`lib/icon`) | — |
 | `/tasks/styles.css` | Task checkbox styles | — | — |
-| `/reference` | Mention/tag/citation chips and their context | react, lucide-react | — |
+| `/reference` | Mention/tag/citation chips and their context | react, the kit's icons (`lib/icon`) | — |
 | `/assets` | Asset URL resolution | react | — |
 | `/openapi` | `OpenApiOperation` | same as root (descriptions render as docstream Markdown) | same as root |
-| `/replay` | Replay player, headless stage, timeline helpers | react, framer-motion, lucide-react | rrweb |
+| `/replay` | Replay player, headless stage, timeline helpers | react, framer-motion, the kit's icons (`lib/icon`) | rrweb |
 | `/replay/demo` | `replayDemoEvents` sample recording | — | — |
 | `/video` | `VideoEmbed` | react | — |
 | `/stl` | `StlViewer`, `parseStl`, `isStlUrl` | react | — |
-| `/strudel` | Strudel player, rack, controls, syntax tree and edit helpers | react, lucide-react, gpu-lexer, acorn | @strudel/web |
+| `/strudel` | Strudel player, rack, controls, syntax tree and edit helpers | react, the kit's icons (`lib/icon`), gpu-lexer, acorn | @strudel/web |
 | `/viz` | `VizEmbed` | **@brett_lamy/viz-engine** (+ its stylesheet) | — |
 | `/playground` | almost-node live previews | same as root | **@agent-wasm/core**, plus root's lazy set |
 | `/source` | Source-file clients and `SourcePreview` | react | — |
-| `/demo` | Demo viewer, resolvers, VFS, clipboard, Markdown resolution | react, react-dom, framer-motion, lucide-react, gpu-lexer | — |
+| `/demo` | Demo viewer, resolvers, VFS, clipboard, Markdown resolution | react, react-dom, framer-motion, the kit's icons (`lib/icon`), gpu-lexer | — |
 | `/site` | `DocsSite`, `buildDocsTree`, docs search — a site from a folder of Markdown ([Docs sites](../02-docs-site/README.md)) | same as root, plus yaml | same as root |
 | `/site/styles.css` | Site chrome styles alone (already inside `/styles.css`) | — | — |
 | `/vite` | `docstreamSources` Vite plugin (Node-only) | vite, node:fs, node:path | — |
 | `/xstate` | `XStateDiagram`, the ` ```xstate ` fence's preview | react | its machine (`/xstate/machine`) |
-| `/xstate/machine` | `parseXState`, `xstateToMermaid`: an XState machine read from code | @babel/parser, **xstate** | — |
+| `/xstate/machine` | `xstateToMermaid`: an XState machine read from code, with the library's `parseXState` | @babel/parser, **xstate** | — |
 | `/capnp` | `CapnpDiagram`, the ` ```capnp ` fence: a workerd config drawn as Cloudflare services | react | `@brett_lamy/ui/cloudflare` |
 | `/tscircuit` | `TsCircuit`, the ` ```tscircuit ` fence's preview | react | its compiler worker |
 | `/styles.css` | The full stylesheet | — | — |
@@ -115,7 +115,7 @@ The pure engine: `parseMarkdown`, `parseBlocks`, `parseInline`, `serializeMarkdo
 
 ### `/replay` and `/replay/demo`
 
-`ReplayPreview` / `ReplayEmbed`, `ReplayFile`, `formatReplayTime`, the headless `ReplayStage` and `preloadReplayStage`, the rrweb-free timeline helpers (`getReplayMeta`, `getReplayMarkers`, `getReplayPointerTrack`, `replayPointerAt`), event-type enums, URL helpers (`isReplayQaUrl`, `normalizeReplayEmbedUrl`, `isRrwebUrl`) and `sanitizeReplayEvent`. `/replay/demo` holds `replayDemoEvents`, a small synthetic recording kept out of the main entry. See [Replays](../05-media/02-replays.md).
+`ReplayPreview`, `ReplayFile`, `formatReplayTime`, the headless `ReplayStage` and `preloadReplayStage`, the rrweb-free timeline helpers (`getReplayMeta`, `getReplayMarkers`, `getReplayPointerTrack`, `replayPointerAt`), event-type enums, URL helpers (`isReplayQaUrl`, `normalizeReplayEmbedUrl`, `isRrwebUrl`) and `sanitizeReplayEvent`. `/replay/demo` holds `replayDemoEvents`, a small synthetic recording kept out of the main entry. See [Replays](../05-media/02-replays.md).
 
 ### `/video`, `/stl`, `/strudel`
 
@@ -147,7 +147,7 @@ One stylesheet for every block. Import it once. See [Theming](../07-reference/01
 
 ### `/tui`
 
-`TuiPreview` and `TuiEmbed` run OpenTUI source in an isolated browser terminal after the reader clicks Run. They show source, startup/render status, errors, Retry, Stop, and keyboard focus controls. The entry needs no optional runtime peer or stylesheet; `tui` fenced code also works in the regular document and streaming renderers. See [Terminal previews](../04-interactive/06-terminal-previews.md).
+`TuiPreview` runs OpenTUI source in an isolated browser terminal after the reader clicks Run. It shows source, startup/render status, errors, Retry, Stop, and keyboard focus controls. The entry needs no optional runtime peer or stylesheet; `tui` fenced code also works in the regular document and streaming renderers. See [Terminal previews](../04-interactive/06-terminal-previews.md).
 
 ## Choosing an entry
 

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Composer, ComposerCard, ComposerFooter, ComposerInput, ComposerSend, ComposerSpacer } from '@/components/ui/composer/composer'
+import { Composer, ComposerCard, ComposerFooter, ComposerInput, ComposerSend, ComposerSpacer } from '@/components/ui/composer'
 import { ThemeScope } from '@/lib/theme'
 
 /**

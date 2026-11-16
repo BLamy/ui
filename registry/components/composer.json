@@ -52,5 +52,8 @@
     "ComposerAttachmentsChangeDetails",
     "ComposerExpandedChangeDetails",
     "ComposerCollapsedChangeDetails"
-  ]
+  ],
+  "css": {
+    "@import \"@brett_lamy/ui/docstream/styles.css\"": {}
+  }
 }

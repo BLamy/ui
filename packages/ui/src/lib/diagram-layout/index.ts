@@ -1,5 +1,5 @@
 /* ══ Diagram layout — where nodes go, by ELK ══
-   `elk.algorithm: layered` with `elk.hierarchyHandling: INCLUDE_CHILDREN` places nodes, compounds and the routes between
+   `elk.algorithm: layered` with `elk.hierarchyHandling: INCLUDE_CHILDREN` places nodes, groups and the routes between
    them, and with nothing inside anything, `SEPARATE_CHILDREN` packs what isn't connected into rows. In a browser it runs in a Web Worker: on the main thread, 2,000 nodes stop the page for about 5 s. On a server it
    runs in the process.
 
@@ -7,7 +7,7 @@
    a layout's first asked for, and an app with fixed positions never loads it. Nothing at module scope touches a browser
    API, so this is safe to import on a server. `lib/diagram-layout/react` has the hook. */
 import type { Pt, Rect } from '@/lib/canvas-math';
-import { diagramBounds, indexDiagram, nodeTextSize, type DiagramEdge, type DiagramNode, type DiagramSide } from '@/lib/diagram-model';
+import { diagramBounds, holdsNodes, indexDiagram, nodeTextSize, type DiagramEdge, type DiagramNode, type DiagramSide } from '@/lib/diagram-model';
 import { estimateText, type TextMeasurer } from '@/lib/diagram-text';
 
 /* ── What goes in and what comes out ── */
@@ -77,11 +77,11 @@ export interface ElkGraph {
 const ROOT = '__root';
 /** Room for a title along the top of what holds other nodes. */
 const COMPOUND_PADDING = '[top=32,left=16,bottom=16,right=16]';
-/** A region has no border of its own, and its parallel state's padding is already around it. */
+/** A region has no border of its own, and the padding of the group it's a lane of is already around it. */
 const REGION_PADDING = '[top=30,left=12,bottom=12,right=12]';
-const PARALLEL_PADDING = '[top=28,left=8,bottom=8,right=8]';
+const LANES_PADDING = '[top=28,left=8,bottom=8,right=8]';
 
-const SIDE: Record<DiagramSide, string> = { t: 'NORTH', r: 'EAST', b: 'SOUTH', l: 'WEST' };
+const SIDE: Record<DiagramSide, string> = { top: 'NORTH', right: 'EAST', bottom: 'SOUTH', left: 'WEST' };
 
 /** What these defaults are for: readable statecharts. They come from the Cloudflare diagrams spike. */
 export const DIAGRAM_ELK_OPTIONS: Readonly<Record<string, string>> = {
@@ -100,7 +100,6 @@ export const DIAGRAM_ELK_OPTIONS: Readonly<Record<string, string>> = {
 
 const portId = (node: string, port: string) => `${node}\0${port}`;
 
-const holdsOthers = (n: { kind?: string }) => n.kind === 'compound' || n.kind === 'parallel' || n.kind === 'region' || n.kind === 'root';
 
 /** A graph for ELK: nodes nested as their parents say, sized to their words, with every edge on the root, which is what
  *  `INCLUDE_CHILDREN` wants. Edges with a missing end are left out, and duplicate ids count once. */
@@ -113,10 +112,11 @@ export function toElkGraph<N, E>(draft: DiagramDraft<N, E>, options: Pick<Diagra
     const el: ElkGraph = { id: n.id };
     const hasChildren = !!index.children.get(n.id)?.length;
     const size = nodeTextSize(n, text);
-    if (hasChildren || holdsOthers(n)) {
+    if (hasChildren || holdsNodes(n)) {
       el.children = [];
       el.layoutOptions = {
-        'elk.padding': n.kind === 'region' ? REGION_PADDING : n.kind === 'parallel' ? PARALLEL_PADDING : COMPOUND_PADDING,
+        // A group of regions (lanes) keeps less air: each region has its own.
+        'elk.padding': n.kind === 'region' ? REGION_PADDING : index.children.get(n.id)?.some((c) => c.kind === 'region') ? LANES_PADDING : COMPOUND_PADDING,
         'elk.nodeSize.constraints': 'MINIMUM_SIZE',
         'elk.nodeSize.minimum': `(${n.w || size.w}, ${n.h || size.h})`,
       };
@@ -131,7 +131,7 @@ export function toElkGraph<N, E>(draft: DiagramDraft<N, E>, options: Pick<Diagra
       el.layoutOptions = { ...el.layoutOptions, 'elk.portConstraints': known ? 'FIXED_POS' : 'FIXED_SIDE' };
       el.ports = n.ports.map((p) => {
         const at = p.at ?? 0.5;
-        const place = !known ? null : p.side === 'l' ? { x: 0, y: at * el.height! } : p.side === 'r' ? { x: el.width!, y: at * el.height! } : p.side === 't' ? { x: at * el.width!, y: 0 } : { x: at * el.width!, y: el.height! };
+        const place = !known ? null : p.side === 'left' ? { x: 0, y: at * el.height! } : p.side === 'right' ? { x: el.width!, y: at * el.height! } : p.side === 'top' ? { x: at * el.width!, y: 0 } : { x: at * el.width!, y: el.height! };
         return { id: portId(n.id, p.id), width: 0, height: 0, ...place, layoutOptions: { 'elk.port.side': SIDE[p.side] } };
       });
     }
@@ -176,7 +176,7 @@ function dedupe<T extends { id: string }>(nodes: readonly T[]): T[] {
 const round = (v: number) => Math.round(v * 100) / 100;
 
 /** ELK's answer as nodes and edges, in absolute board units, in the order they were given. Each region is stretched to its
- *  parallel state's width, or height if they're side by side, which ELK doesn't do, so that dividers and titles line up. */
+ *  group's width, or height if they're side by side, which ELK doesn't do, so that dividers and titles line up. */
 export function fromElkGraph<N, E>(draft: DiagramDraft<N, E>, out: ElkGraph): Pick<DiagramLayoutResult<N, E>, 'nodes' | 'edges' | 'bounds'> {
   const boxes = new Map<string, Rect>();
   const placed = new Map<string, ElkGraph>();
@@ -200,7 +200,7 @@ export function fromElkGraph<N, E>(draft: DiagramDraft<N, E>, out: ElkGraph): Pi
     const ports = n.ports?.map((p) => {
       const got = placed.get(n.id)?.ports?.find((q) => q.id === portId(n.id, p.id));
       if (p.at !== undefined || got?.x === undefined || got.y === undefined) return p;
-      const at = p.side === 'l' || p.side === 'r' ? got.y / (box.h || 1) : got.x / (box.w || 1);
+      const at = p.side === 'left' || p.side === 'right' ? got.y / (box.h || 1) : got.x / (box.w || 1);
       return { ...p, at: round(at) };
     });
     nodes.push({ ...n, ...box, ...(ports ? { ports } : null) } as DiagramNode<N>);

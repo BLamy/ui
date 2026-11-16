@@ -87,7 +87,7 @@ The trigger is the kit's filled field (`fieldSurfaceVariants` from [Input](https
 
 ## Small screens
 
-`presentation="auto"` on the root shows the list as a bottom sheet on small touch screens (shaped like the kit's Sheet), `"sheet"` always does.
+`presentation="auto"` on the root shows the list as a bottom sheet on small touch screens (shaped like the kit's Sheet, grabber included, as Popover's and DropdownMenu's sheets are), `"sheet"` always does. In a sheet the rows are 44px touch targets in body text, also under a small field; only `size="sm"` on `SelectContent` keeps them dense there.
 
 ## Accessibility
 

@@ -18,9 +18,11 @@
     "ArtifactChatContainerComposer"
   ],
   "types": [
-    "ArtifactChatPresentation",
-    "ArtifactChatSide",
-    "ArtifactChatComposingChangeDetails",
-    "ArtifactChatComposingChangeReason"
+    "ArtifactChatContainerPresentation",
+    "ArtifactChatContainerSide",
+    "ArtifactChatContainerComposingChangeDetails",
+    "ArtifactChatContainerComposingChangeReason",
+    "ArtifactChatContainerOpenChangeDetails",
+    "ArtifactChatContainerMinimizedChangeDetails"
   ]
 }

@@ -59,7 +59,7 @@ export default function KitchenSink() {
     <MarkdownView
       markdown={streaming ? markdown.slice(0, streamedLength ?? 0) : markdown}
       streaming={streaming}
-      demoResolver={demoResolver}
+      demo={{ resolver: demoResolver }}
       sourceRenderer={renderSource}
       onReferenceClick={setPicked}
     />
@@ -113,7 +113,7 @@ export default function KitchenSink() {
                 onValueChange={setMarkdown}
                 toolbar
                 references={references}
-                demoResolver={demoResolver}
+                demo={{ resolver: demoResolver }}
                 minHeight={480}
               />
             </div>

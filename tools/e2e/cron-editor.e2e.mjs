@@ -89,14 +89,14 @@ test.describe('without WebGPU', () => {
     const field = expression(page);
     await field.click();
     await field.press('Home');
-    await expect(cell(page, 'minute')).toHaveAttribute('data-active', '');
+    await expect(cell(page, 'minute')).toHaveAttribute('data-highlighted', '');
     await field.press('ArrowRight');
     await field.press('ArrowRight'); // after "0 "
-    await expect(cell(page, 'hour')).toHaveAttribute('data-active', '');
+    await expect(cell(page, 'hour')).toHaveAttribute('data-highlighted', '');
     await field.press('End');
-    await expect(cell(page, 'dayOfWeek')).toHaveAttribute('data-active', '');
+    await expect(cell(page, 'dayOfWeek')).toHaveAttribute('data-highlighted', '');
     await page.keyboard.press('Tab');
-    await expect(page.locator('[data-slot=cron-editor-fields] [data-active]')).toHaveCount(0);
+    await expect(page.locator('[data-slot=cron-editor-fields] [data-highlighted]')).toHaveCount(0);
   });
 
   test('presets set the expression, with the matching chip pressed', async ({ page }) => {

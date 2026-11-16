@@ -4,7 +4,8 @@
    gpu-lexer answers one text at a time, and a round trip costs about 2 ms whatever the size. So what a frame asks for goes
    as one text: a screenful costs one round trip, not sixty. Without a hardware adapter, lexSyntax falls back to its small
    regular expression lexer, which is fine for a screenful. */
-import type { CodeHighlight, CodeToken } from '@/lib/code-editor-model';
+import type { CodeHighlight } from '@/lib/code-editor-model';
+import type { CodeToken } from '@/lib/syntax';
 import { lexSyntax, tokenizeLines, type SyntaxEngine } from '@/lib/syntax';
 
 export interface GpuCodeHighlightOptions {

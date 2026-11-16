@@ -14,7 +14,7 @@ import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { SRC, aliasOf, buildGraph, moduleExports } from '../registry/graph.mjs';
-import { npmSpecifier } from '../registry/package-exports.mjs';
+import { entryModuleOf, npmSpecifier } from '../registry/package-exports.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const PAGES = join(ROOT, 'apps/docs/pages');
@@ -58,6 +58,40 @@ for (const mod of graph.modules) {
   for (const v of [...ex.values, ...ex.types]) if (!definedIn.has(v)) definedIn.set(v, mod);
 }
 
+/** The package's other stylesheets an item asks the app for (its manifest's `css` imports of `@brett_lamy/ui/…`), minus
+ *  the ones `@brett_lamy/ui/styles.css` already carries: docstream's own sheet, for the parts that render docstream. */
+const KIT_SHEET = readFileSync(join(ROOT, 'packages/ui/src/styles.css'), 'utf8');
+function ownSheets(entry) {
+  return Object.keys(entry.css ?? {})
+    .map((key) => /^@import\s+["'](@brett_lamy\/ui\/[^"']+)["']/.exec(key)?.[1])
+    .filter((sheet) => sheet && !KIT_SHEET.includes(`"./${sheet.slice('@brett_lamy/ui/'.length)}"`));
+}
+
+/** A rule-16 widget module (CONVENTIONS): nothing in it but `export … from '@brett_lamy/ui/docstream/…'` lines. */
+function isDocstreamShim(file) {
+  const code = readFileSync(join(ROOT, SRC, file), 'utf8')
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/^\s*\/\/.*$/gm, '')
+    .replace(/^\s*['"]use client['"];?\s*$/m, '');
+  const statements = code.split(';').map((s) => s.trim()).filter(Boolean);
+  return statements.length > 0 && statements.every((s) => /^export\s+(type\s+)?\{[^}]*\}\s+from\s+['"]@brett_lamy\/ui\/docstream[^'"]*['"]$/.test(s));
+}
+
+/** The shadcn tab's line of prose: what the CLI writes and installs. An item built on Docstream installs
+ *  `@brett_lamy/ui` (docstream isn't copied, it's imported by the package's name); a widget's one-module re-export of
+ *  Docstream has nothing of its own to edit. */
+function cliProse(name, where) {
+  const item = graph.items.get(name);
+  const usesPackage = (item?.npm ?? []).some(([pkg]) => pkg === '@brett_lamy/ui');
+  if (!usesPackage) {
+    return `Copies the source into your project's ${where} (with the parts it is built from) and adds BL UI's tokens to your CSS — no runtime package. It is yours to edit. Import from your alias:`;
+  }
+  if (item.files.length === 1 && isDocstreamShim(item.files[0])) {
+    return `Adds one module to your project's ${where} and installs \`@brett_lamy/ui\`, whose Docstream it imports by the package's name. The module only re-exports the widget, so there is nothing in it to edit; it gives the widget your alias. Import from your alias:`;
+  }
+  return `Copies the source into your project's ${where} (with the parts it is built from), adds BL UI's tokens to your CSS and installs \`@brett_lamy/ui\` for Docstream, which it imports by the package's name. The copied source is yours to edit. Import from your alias:`;
+}
+
 export function installSection(entry) {
   const names = importNames(entry);
   // The shown names may live in several modules (List + IndexBar): one import line per module, one item per owner.
@@ -70,10 +104,16 @@ export function installSection(entry) {
   const items = [entry.name, ...new Set([...byModule.keys()].map((m) => graph.owner.get(m)))].filter((v, i, a) => a.indexOf(v) === i);
   // npm: each module's own entry point, the registry path under the package name (`@/components/ui/dialog` ↔
   // `@brett_lamy/ui/dialog`); a module without one comes from the root.
+  // A module inside a folder with an index.ts is imported by the folder (`@/components/ui/composer`).
   const byEntry = new Map();
+  const byAlias = new Map();
   for (const [mod, ns] of byModule) {
-    const from = npmSpecifier(graph, mod);
-    byEntry.set(from, [...(byEntry.get(from) ?? []), ...ns]);
+    for (const n of ns) {
+      const from = npmSpecifier(graph, mod, n);
+      byEntry.set(from, [...(byEntry.get(from) ?? []), n]);
+      const alias = aliasOf(entryModuleOf(graph, mod, n) ?? mod);
+      byAlias.set(alias, [...(byAlias.get(alias) ?? []), n]);
+    }
   }
   const files = graph.items.get(entry.name)?.files ?? [];
   const where = files.some((f) => f.startsWith('lib/')) ? '`lib/`' : '`components/ui/`';
@@ -82,18 +122,20 @@ export function installSection(entry) {
     '{% tab title="shadcn CLI" %}',
     command(`npx shadcn@latest add ${items.map((i) => `${REGISTRY_URL}/${i}.json`).join(' ')}`),
     '',
-    `Copies the source into your project's ${where} (with the parts it is built from) and adds BL UI's tokens to your CSS — no runtime package. It is yours to edit. Import from your alias:`,
+    cliProse(entry.name, where),
     '',
     IMPORT_FENCE,
-    [...byModule.entries()].map(([mod, ns]) => importLine(ns, aliasOf(mod))).join('\n'),
+    [...byAlias.entries()].map(([alias, ns]) => importLine(ns, alias)).join('\n'),
     '```',
     '{% endtab %}',
     '{% tab title="npm" %}',
     command('npm install @brett_lamy/ui'),
     '',
-    "Import the stylesheet once at your app's entry, then the parts from their module:",
+    ownSheets(entry).length
+      ? "Import the stylesheets once at your app's entry (the kit's, then docstream's, which this part renders with), then the parts from their module:"
+      : "Import the stylesheet once at your app's entry, then the parts from their module:",
     '',
-    IMPORT_FENCE, `import '@brett_lamy/ui/styles.css'`, '', [...byEntry.entries()].map(([from, ns]) => importLine(ns, from)).join('\n'), '```',
+    IMPORT_FENCE, `import '@brett_lamy/ui/styles.css'`, ...ownSheets(entry).map((sheet) => `import '${sheet}'`), '', [...byEntry.entries()].map(([from, ns]) => importLine(ns, from)).join('\n'), '```',
     '{% endtab %}',
     '{% endtabs %}',
   ].join('\n');

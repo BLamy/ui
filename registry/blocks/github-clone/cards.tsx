@@ -62,7 +62,7 @@ function ItemCard({ ui, state, number, title, when, verb, author, labels, childr
           {title} <span className="font-normal text-muted-foreground">#{number}</span>
         </div>
       </div>
-      {labels.length ? <div className="mt-2 flex flex-wrap gap-1 pl-6">{labels.map((l) => <LabelChip key={l.name} label={l} dark={ui.dark} />)}</div> : null}
+      {labels.length ? <div className="mt-2 flex flex-wrap gap-1 pl-6">{labels.map((l) => <LabelChip key={l.name} label={l} appearance={ui.appearance} />)}</div> : null}
       {children}
       <div className="mt-3 flex items-center gap-1.5 border-t border-border pt-3 text-caption text-muted-foreground">
         <Avatar name={`${author.f} ${author.l}`} src={author.avatar} size={16} /><b className="font-semibold text-foreground">{author.login}</b> {verb}

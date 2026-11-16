@@ -1,6 +1,6 @@
 import { animateIn, animateOut, bindLayer, sourceOf, type PrimitiveContext } from '@ui-sdk/core';
 
-/* ══ createStack — a stack of pages where the newest covers the rest ══
+/* ══ createPageStack — a stack of pages where the newest covers the rest ══
    The screens of an app's navigation, for any primitive: pages enter and leave with their animations
    (`animateIn`/`animateOut`, so `data-starting-style`/`data-ending-style`), the pages under the top one are inert
    and `data-covered`, focus goes into a pushed page and back to what had it once the page pops, and Escape, the
@@ -18,10 +18,10 @@ import { animateIn, animateOut, bindLayer, sourceOf, type PrimitiveContext } fro
    transitions finish, so CSS can settle them on a different spring than a push or a pop. ══ */
 
 /** Why a stack changed its own pages: Escape, the platform back, an edge swipe, or code. */
-export type StackReason = 'escape-key' | 'back' | 'swipe' | 'imperative';
+export type PageStackReason = 'escape-key' | 'back' | 'swipe' | 'imperative';
 
-/** A page that left and is animating out, kept in state under `StackOptions.exiting`. */
-export interface StackExit {
+/** A page that left and is animating out, kept in state under `PageStackOptions.exiting`. */
+export interface PageStackExit {
   /** The key the page had. */
   key: string;
   /** It leaves under the page that took its place (after `replace` or a push), rather than over the one it uncovers. */
@@ -29,18 +29,18 @@ export interface StackExit {
 }
 
 /** What every change method takes last. */
-export interface StackChangeOptions<Reason extends string = StackReason> {
-  reason?: Reason | StackReason;
+export interface PageStackChangeOptions<Reason extends string = PageStackReason> {
+  reason?: Reason | PageStackReason;
   event?: Event;
 }
 
-export interface StackOptions<State extends object, Reason extends string = StackReason> {
+export interface PageStackOptions<State extends object, Reason extends string = PageStackReason> {
   /** The state key holding the page keys, a `string[]` from the first page to the top one. */
   key: keyof State & string;
-  /** The state key holding the `StackExit` of each page animating out. Start it at `[]`. */
+  /** The state key holding the `PageStackExit` of each page animating out. Start it at `[]`. */
   exiting: keyof State & string;
   /** Asks for new pages; returns whether they went through. Pass `(value, details) => change('pages', value, details)`. */
-  set: (value: string[], details: { reason: Reason | StackReason; event?: Event }) => boolean;
+  set: (value: string[], details: { reason: Reason | PageStackReason; event?: Event }) => boolean;
   /** `bindBack`, so the platform's back pops the stack too. Passed in, so a stack without it doesn't carry it. */
   back?: (el: HTMLElement, options: { onBack: (event: Event) => boolean | void }) => () => void;
   /** Whether it is a stack right now. While false the pages stay as they are but nothing pops (no layer, no back,
@@ -100,14 +100,14 @@ const focus = (el: HTMLElement) => el.focus({ preventScroll: true });
  *    bind: (el, { api, key }) => api.stack.bindPage(el, key),
  *  })
  *  ``` */
-export function createStack<State extends object, Reason extends string = StackReason>(
+export function createPageStack<State extends object, Reason extends string = PageStackReason>(
   context: Pick<PrimitiveContext<any, State, any>, 'store' | 'onDestroy'>,
-  options: StackOptions<State, Reason>,
+  options: PageStackOptions<State, Reason>,
 ) {
-  type Details = StackChangeOptions<Reason>;
+  type Details = PageStackChangeOptions<Reason>;
   const { store } = context;
   const pagesOf = (state: State) => state[options.key] as string[];
-  const exitsOf = (state: State) => state[options.exiting] as StackExit[];
+  const exitsOf = (state: State) => state[options.exiting] as PageStackExit[];
   const pages = () => pagesOf(store.get());
   const isActive = () => options.active?.() ?? true;
   const bound = new Map<string, Page>();
@@ -332,7 +332,7 @@ export function createStack<State extends object, Reason extends string = StackR
    *  committed to (`shown`), so `present`/`pageAttrs` keep a controlled pop's page mounted for its exit in the
    *  same render. The renderer reads them again on that render; on the server nothing is bound, so it is
    *  undefined there, which is the right answer. */
-  const unheardExit = (state: State, key: string): StackExit | undefined => {
+  const unheardExit = (state: State, key: string): PageStackExit | undefined => {
     const next = pagesOf(state);
     if (options.persistent || next.includes(key) || !shown.includes(key) || !bound.has(key) || !isActive()) return undefined;
     const top = next.at(-1);
@@ -341,7 +341,7 @@ export function createStack<State extends object, Reason extends string = StackR
 
   const api = {
     /** The exit of a page that is leaving (recorded, or about to be), else undefined. */
-    exitOf(state: State, key: string): StackExit | undefined {
+    exitOf(state: State, key: string): PageStackExit | undefined {
       return exitsOf(state).find((exit) => exit.key === key) ?? unheardExit(state, key);
     },
     /** The page slot's `present`: the page is in the stack, or leaving (animating out, or popped by controlled
@@ -436,5 +436,5 @@ export function createStack<State extends object, Reason extends string = StackR
   return api;
 }
 
-/** What `createStack` returns. */
-export type Stack = ReturnType<typeof createStack>;
+/** What `createPageStack` returns. */
+export type PageStack = ReturnType<typeof createPageStack>;

@@ -12,6 +12,7 @@ import { Icon, type IconName } from '@/lib/icon';
 import { languageFromPath } from '@/lib/syntax';
 import { cn } from '@/lib/utils';
 import type { FileNode, Label, PullRequest } from './data';
+import type { Appearance } from '@/lib/theme';
 
 /* ── Palette ──
    GitHub's Primer colors. The block is an app with its own palette: `GITHUB_THEME` overrides the theme's shadcn
@@ -138,7 +139,8 @@ function rgb(hex: string) {
   const n = parseInt(hex.slice(1), 16);
   return [(n >> 16) & 255, (n >> 8) & 255, n & 255] as const;
 }
-export function LabelChip({ label, dark, className }: { label: Label; dark: boolean; className?: string }) {
+export function LabelChip({ label, appearance, className }: { label: Label; appearance: Appearance; className?: string }) {
+  const dark = appearance === 'dark';
   const [r, g, b] = rgb(label.color);
   const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
   const lift = (v: number) => Math.round(v + (255 - v) * (lum < 0.5 ? 0.45 : 0.15));
@@ -373,7 +375,7 @@ export function FileTree({ nodes, selected, onSelect, defaultOpen }: {
 export interface Layout {
   phone: boolean;
   wide: boolean;
-  dark: boolean;
+  appearance: Appearance;
 }
 
 /** Navigation the screens call back into (page.tsx owns the state). */

@@ -5,14 +5,14 @@ import type { DiagramEdge, DiagramNode } from '@/lib/diagram-model'
 const NODES: DiagramNode[] = [
   {
     id: 'worker', label: 'Worker', x: 40, y: 80, w: 130, h: 80,
-    ports: [{ id: 'sql', side: 'r', at: 0.25, kind: 'sql', label: 'DB', direction: 'out' }, { id: 'files', side: 'r', at: 0.75, kind: 'files', label: 'BUCKET', direction: 'out' }, { id: 'requests', side: 'l', label: 'requests', direction: 'in' }],
+    ports: [{ id: 'sql', side: 'right', at: 0.25, kind: 'sql', label: 'DB', direction: 'out' }, { id: 'files', side: 'right', at: 0.75, kind: 'files', label: 'BUCKET', direction: 'out' }, { id: 'requests', side: 'left', label: 'requests', direction: 'in' }],
   },
-  { id: 'd1', label: 'D1', x: 300, y: 40, w: 110, h: 50, ports: [{ id: 'in', side: 'l', kind: 'sql', label: 'queries', direction: 'in' }] },
-  { id: 'r2', label: 'R2', x: 300, y: 150, w: 110, h: 50, ports: [{ id: 'in', side: 'l', kind: 'files', label: 'objects', direction: 'in' }] },
+  { id: 'd1', label: 'D1', x: 300, y: 40, w: 110, h: 50, ports: [{ id: 'in', side: 'left', kind: 'sql', label: 'queries', direction: 'in' }] },
+  { id: 'r2', label: 'R2', x: 300, y: 150, w: 110, h: 50, ports: [{ id: 'in', side: 'left', kind: 'files', label: 'objects', direction: 'in' }] },
   { id: 'plain', label: 'No ports', x: 40, y: 240, w: 110, h: 40 },
   { id: 'other', label: 'Nor here', x: 300, y: 240, w: 110, h: 40 },
   // `covered`'s port is under `lid`, and can still be reached.
-  { id: 'covered', label: 'Covered', x: 480, y: 40, w: 110, h: 60, ports: [{ id: 'in', side: 'b', label: 'under the lid', direction: 'in' }] },
+  { id: 'covered', label: 'Covered', x: 480, y: 40, w: 110, h: 60, ports: [{ id: 'in', side: 'bottom', label: 'under the lid', direction: 'in' }] },
   { id: 'lid', label: 'Lid', x: 460, y: 85, w: 150, h: 50 },
 ]
 

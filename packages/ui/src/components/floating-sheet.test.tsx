@@ -3,6 +3,7 @@ import { useRef, useState } from 'react';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { FloatingSheet, FloatingSheetBody, FloatingSheetFab, FloatingSheetFooter, useFloatingSheet } from '@/components/ui/floating-sheet';
+import { SheetBack, SheetHeader, SheetTitle, SheetView } from '@/components/ui/sheet';
 import { useHideOnScroll } from '@/lib/scroll-edge';
 import { BLProvider } from '@/lib/theme';
 
@@ -81,6 +82,35 @@ describe('FloatingSheet', () => {
     // A contained Sheet: its layer host fills the sheet's box, not the app.
     expect(document.querySelector('[data-slot=floating-sheet] > [data-slot=sheet-host]')?.hasAttribute('data-layer-host')).toBe(true);
     expect(document.querySelector('[data-slot=sheet-host]')?.contains(sheet)).toBe(true);
+  });
+
+  it('takes a `view`, so Sheet\'s flow parts work inside it', async () => {
+    function Flow() {
+      const [step, setStep] = useState(0);
+      const ids = ['review', 'pay'];
+      return (
+        <Order view={ids[step]}>
+          <FloatingSheetBody>
+            <SheetHeader variant="bar">
+              <SheetBack hidden={step === 0} onClick={() => setStep(0)} />
+              <SheetTitle>{step === 0 ? 'Review order' : 'Pay with'}</SheetTitle>
+            </SheetHeader>
+            <SheetView><p>{ids[step]}</p></SheetView>
+          </FloatingSheetBody>
+          <FloatingSheetFooter><button type="button" onClick={() => setStep(1)}>Continue</button></FloatingSheetFooter>
+        </Order>
+      );
+    }
+    render(<Flow />);
+    await settle();
+    const view = () => document.querySelector<HTMLElement>('[data-slot=dialog-view]:not([inert])');
+    expect(view()?.dataset.view).toBe('review');
+    expect(document.querySelector('[data-slot=dialog-back]')?.hasAttribute('data-hidden')).toBe(true);
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    await settle();
+    expect(screen.getByText('Pay with')).toBeTruthy();
+    expect([...document.querySelectorAll<HTMLElement>('[data-slot=dialog-view]')].some((v) => v.dataset.view === 'pay')).toBe(true);
+    expect(document.querySelector('[data-slot=dialog-back]')?.hasAttribute('data-hidden')).toBe(false);
   });
 
   it('grows from its cap and reports the change with a reason', async () => {

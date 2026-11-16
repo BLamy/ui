@@ -1,4 +1,4 @@
-import type { MiniNode } from "@brett_lamy/ui/docstream/strudel"
+import type { MiniNode } from "@brett_lamy/ui/docstream/strudel/rack"
 
 // Draws a mini-notation node and its children, each with the slice of source it covers.
 export function TreeView({ node, source }: { node: MiniNode; source: string }) {

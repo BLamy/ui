@@ -111,8 +111,8 @@ export function servicePorts(kind: string): DiagramPort[] {
   const h = serviceNodeHeight(ins.length, outs.length);
   const at = (i: number) => (SERVICE_NODE.head + SERVICE_NODE.row * (i + 0.5)) / h;
   return [
-    ...ins.map((p, i): DiagramPort => ({ ...p, side: 'l', at: at(i), direction: 'in' })),
-    ...outs.map((p, i): DiagramPort => ({ ...p, side: 'r', at: at(i), direction: 'out' })),
+    ...ins.map((p, i): DiagramPort => ({ ...p, side: 'left', at: at(i), direction: 'in' })),
+    ...outs.map((p, i): DiagramPort => ({ ...p, side: 'right', at: at(i), direction: 'out' })),
   ];
 }
 

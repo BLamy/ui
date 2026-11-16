@@ -5,8 +5,28 @@
    lines). Sizes are the kit's formatFileSize (`@/lib/file-size`). Previews give up quietly (the tile falls back to
    its icon). */
 
+import { formatFileSize } from '@/lib/file-size';
+
 /** What an attachment is, for its tile: an image thumbnail, a video poster, a text excerpt, or an icon. */
 export type ComposerAttachmentKind = 'image' | 'video' | 'audio' | 'pdf' | 'text' | 'archive' | 'other';
+
+/** A file's face by kind: its glyph, the glyph's tinted tile and its name. The Composer's tile and a sent message's
+ *  chip (ConversationUserMessage) both draw it, so a file looks the same before and after it is sent. */
+export const attachmentKindFace: Record<ComposerAttachmentKind, { icon: string; tone: string; label: string }> = {
+  image: { icon: 'photo', tone: 'bg-success/15 text-success', label: 'Image' },
+  video: { icon: 'video', tone: 'bg-kind-video/15 text-kind-video', label: 'Video' },
+  audio: { icon: 'music-note', tone: 'bg-kind-audio/15 text-kind-audio', label: 'Audio' },
+  pdf: { icon: 'doc', tone: 'bg-destructive/15 text-destructive', label: 'PDF' },
+  text: { icon: 'doc', tone: 'bg-primary/15 text-primary', label: 'Text' },
+  archive: { icon: 'archivebox', tone: 'bg-kind-archive/15 text-kind-archive', label: 'Archive' },
+  other: { icon: 'doc', tone: 'bg-muted-foreground/15 text-muted-foreground', label: 'File' },
+};
+
+/** "PDF · 1.2 MB": the extension (or the kind) and the size. */
+export function attachmentMeta(a: { name?: string; size?: number }, kind: ComposerAttachmentKind): string {
+  const ext = fileExtension(a.name).toUpperCase();
+  return [ext && ext.length <= 5 ? ext : attachmentKindFace[kind].label, formatFileSize(a.size)].filter(Boolean).join(' · ');
+}
 
 const TEXT_EXT = new Set(
   (

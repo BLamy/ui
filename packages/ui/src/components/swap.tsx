@@ -51,7 +51,9 @@ const viewClass = {
   slide: cn(
     '[transition:opacity_var(--duration-enter)_var(--ease-enter),filter_var(--duration-enter)_var(--ease-enter),translate_var(--duration-spring-smooth)_var(--ease-spring-smooth),scale_var(--duration-spring-smooth)_var(--ease-spring-smooth)]',
     'data-ending-style:[transition:opacity_var(--duration-exit)_var(--ease-exit),filter_var(--duration-exit)_var(--ease-exit),translate_var(--duration-spring-smooth)_var(--ease-spring-smooth),scale_var(--duration-spring-smooth)_var(--ease-spring-smooth)]',
-    'data-starting-style:translate-x-(--swap-enter) data-ending-style:translate-x-(--swap-exit)',
+    // Along the reading order: in right-to-left text (`--swap-dir: -1`, set on the root) forward arrives from the left,
+    // as a navigation push does there.
+    'data-starting-style:translate-x-[calc(var(--swap-dir,1)*var(--swap-enter))] data-ending-style:translate-x-[calc(var(--swap-dir,1)*var(--swap-exit))]',
   ),
   pop: cn(
     '[transition:opacity_var(--duration-enter)_var(--ease-enter),filter_var(--duration-enter)_var(--ease-enter),scale_var(--duration-spring-bouncy)_var(--ease-spring-bouncy)]',
@@ -129,7 +131,7 @@ export function Swap({
       data-slot="swap"
       data-effect={effect}
       data-direction={effect === 'slide' ? direction : undefined}
-      className={cn(inline ? 'inline-grid *:[grid-area:1/1]' : 'relative', className)}
+      className={cn(inline ? 'inline-grid *:[grid-area:1/1]' : 'relative', 'rtl:[--swap-dir:-1]', className)}
       style={{ ...vars, ...style }}
     >
       {views.map((entry) => (

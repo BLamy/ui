@@ -152,7 +152,7 @@ function Thumb({ item: m }: { item: MediaItem }) {
   if (m.kind === 'audio') {
     return (
       <div className="grid size-full place-items-center bg-success/15 px-1.5 text-success">
-        {peaks.data ? <Waveform peaks={peaks.data.peaks} rate={peaks.data.rate} tone="success" className="h-3/4" /> : <Icon name="waveform" size={22} />}
+        {peaks.data || peaks.loading ? <Waveform peaks={peaks.data?.peaks ?? []} rate={peaks.data?.rate ?? 20} loading={peaks.loading} tone="success" className="h-3/4" /> : <Icon name="waveform" size={22} />}
       </div>
     );
   }

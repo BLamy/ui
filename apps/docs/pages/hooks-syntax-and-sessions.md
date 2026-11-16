@@ -8,7 +8,8 @@ All seven are public.
 // npm
 import { useSyntaxTokens, useCodeEditor } from '@brett_lamy/ui/code-editor'
 import { useCountdown } from '@brett_lamy/ui/progress-ring'
-import { useSessionRecording, useSessions, useSessionCloud, useCloud } from '@brett_lamy/ui'
+import { useSessionRecording, useSessions, useSessionCloud } from '@brett_lamy/ui'
+import { useCloud } from '@brett_lamy/ui/lib/durable-streams'
 
 // shadcn registry (aliases)
 import { useSyntaxTokens, useCodeEditor } from '@/components/ui/code-editor'  // …/r/code-editor.json
@@ -130,7 +131,7 @@ Details, from the source:
 
 Records the page with [rrweb](https://github.com/rrweb-io/rrweb) for as long as the component is mounted: one new session per mount (not per re-render). The events are appended to streams in `localStorage`, so a private browser is the whole system. If the cloud is switched on, it syncs meanwhile (see `useSessionCloud`).
 
-- **Export:** public, with `startSessionRecording`, `useSessions`, `useSessionCloud`, `sessionCloud`, `readSession`, `deleteSession`, `clearSessions`, `currentSessionId` and `storageUsage`. Registry item `session-recorder` (`@/lib/session-recorder`), which depends on `rrweb`, `append-stream` and `durable-streams`.
+- **Export:** public, with `useSessions` and `useSessionCloud`; the engine (`startSessionRecording`, `sessionCloud`, `readSession`, `deleteSession`, `clearSessions`, `currentSessionId`, `storageUsage`) is on `@brett_lamy/ui/lib/session-recorder`. Registry item `session-recorder` (`@/lib/session-recorder`), which depends on `rrweb`, `append-stream` and `durable-streams`.
 - **Needs:** nothing. It does its work in an effect, so it does nothing on the server.
 
 ```ts
@@ -259,7 +260,7 @@ Behaviors to know:
 
 The same status and settings, for **any** `CloudSync` you build yourself, which is what `useSessionCloud` calls with `sessionCloud`.
 
-- **Export:** public, with `CloudSync`, `DurableStreamsClient` and `cloudDeviceId`. Registry item `durable-streams` (`@/lib/durable-streams`).
+- **Export:** on `@brett_lamy/ui/lib/durable-streams` (not the root: it needs the engine beside it), with `CloudSync`, `DurableStreamsClient` and `cloudDeviceId`. Registry item `durable-streams` (`@/lib/durable-streams`).
 - **Needs:** nothing.
 
 ```ts
@@ -267,7 +268,8 @@ function useCloud(cloud: CloudSync): { status: CloudStatus; settings: CloudSetti
 ```
 
 ```tsx
-import { CloudSync, LocalStreams, useCloud } from '@brett_lamy/ui'
+import { CloudSync, useCloud } from '@brett_lamy/ui/lib/durable-streams'
+import { LocalStreams } from '@brett_lamy/ui/lib/append-stream'
 
 // module scope: one engine for the whole app
 const notes = new LocalStreams()
@@ -279,4 +281,4 @@ function NotesSync() {
 }
 ```
 
-It subscribes with `useSyncExternalStore` to the engine you pass, so create the `CloudSync` outside the component (or memoize it): a new instance each render would resubscribe each time. It only reads. Start and configure the engine with `notesCloud.configure({ enabled: true, url, token })`, and `notesCloud.start()` to begin syncing from existing settings (`configure` starts it for you). `CloudSync`'s second argument names streams to pull from the server read-through, and `LocalStreams` is the append-only store the engine mirrors (both are exported from the package root with the rest of the stream helpers).
+It subscribes with `useSyncExternalStore` to the engine you pass, so create the `CloudSync` outside the component (or memoize it): a new instance each render would resubscribe each time. It only reads. Start and configure the engine with `notesCloud.configure({ enabled: true, url, token })`, and `notesCloud.start()` to begin syncing from existing settings (`configure` starts it for you). `CloudSync`'s second argument names streams to pull from the server read-through, and `LocalStreams` is the append-only store the engine mirrors (`@brett_lamy/ui/lib/durable-streams` and `@brett_lamy/ui/lib/append-stream`; with the registry, `@/lib/durable-streams` and `@/lib/append-stream`).

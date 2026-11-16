@@ -6,7 +6,7 @@ import type { CatalogProduct } from '@/lib/cloudflare-catalog';
 import { CLOUDFLARE_CATALOG as C } from '@/lib/cloudflare-catalog.generated';
 import { SERVICE_NODE, catalogProduct, linkOf, runsCode, serviceNodeHeight, servicePorts, type CloudflareEdge, type CloudflareService } from '@/lib/cloudflare-services';
 import { inlineCodeIn } from '@/lib/state-diagram-edit';
-import { machineToDraft, type MachineLike } from '@/lib/state-diagram-model';
+import { machineToDraft, type StateMachineLike } from '@/lib/state-diagram-model';
 
 export interface CloudflareSystem {
   services: readonly CloudflareService[];
@@ -219,7 +219,7 @@ export function checkMachines(xstate: { createMachine: (config: never) => unknow
     if (!s.machine) continue;
     try {
       // XState only looks at where a state starts when it's asked, which drawing it does.
-      machineToDraft(xstate.createMachine(s.machine as never) as MachineLike);
+      machineToDraft(xstate.createMachine(s.machine as never) as StateMachineLike);
     } catch (e) {
       issues.push({ severity: 'error', code: 'machine', message: `${serviceName(s)}’s machine: ${e instanceof Error ? e.message : String(e)}`, service: s.id });
     }

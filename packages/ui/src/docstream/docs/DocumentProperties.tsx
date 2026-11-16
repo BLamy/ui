@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { Check, ChevronRight, Plus, X } from "lucide-react"
+import { Glyph } from "../ui/glyph"
 import { Checkbox, CheckboxIndicator } from "@ui-sdk/react/checkbox"
 import { DetailsCollapsible } from "../ui/details-collapsible"
 import { Input } from "@ui-sdk/react/input"
@@ -26,7 +26,7 @@ function PropertyField({ name, value, onChange }: { name: string; value: Documen
   const [error, setError] = useState<string>()
   useEffect(() => { setDraft(rendered); setError(undefined) }, [rendered])
   if (typeof value === "boolean") return <Checkbox className="docs-property-checkbox" aria-label={name} checked={value} onCheckedChange={(next) => onChange(next === true)}>
-    <CheckboxIndicator><Check size={11} strokeWidth={3} aria-hidden="true" /></CheckboxIndicator>
+    <CheckboxIndicator><Glyph name="check" size={11} sw={3} /></CheckboxIndicator>
   </Checkbox>
   const complex = value !== null && typeof value === "object"
   const multiline = complex || (typeof value === "string" && value.includes("\n"))
@@ -62,7 +62,7 @@ export function DocumentProperties({ properties, onChange, defaultOpen = false, 
   const keys = Object.keys(values)
   return <DetailsCollapsible defaultOpen={defaultOpen} className={["docs-document-properties", className].filter(Boolean).join(" ")} data-document-properties=""
     triggerClassName="docs-properties-trigger" panelClassName="docs-properties-panel"
-    summary={<><ChevronRight size={13} aria-hidden="true" /><span>Properties</span><span className="docs-properties-count">{keys.length}</span></>}>
+    summary={<><Glyph name="chevron-right" size={13} /><span>Properties</span><span className="docs-properties-count">{keys.length}</span></>}>
     {error ? <div className="docs-properties-error" role="alert">
       <p>{error}</p>
       {onChange ? <Textarea aria-label="Document properties YAML" value={properties.yaml} onValueChange={(yaml) => onChange({ ...properties, yaml })} />
@@ -73,7 +73,7 @@ export function DocumentProperties({ properties, onChange, defaultOpen = false, 
           <dt>{key}</dt>
           <dd>{onChange ? <PropertyField name={key} value={values[key]} onChange={(value) => onChange(setDocumentProperty(properties, key, value))} />
             : <span className="docs-property-value">{values[key] === null ? "Empty" : typeof values[key] === "boolean" ? String(values[key]) : textValue(values[key])}</span>}</dd>
-          {onChange ? <button type="button" className="docs-property-remove" aria-label={`Remove ${key} property`} onClick={() => onChange(removeDocumentProperty(properties, key))}><X size={13} aria-hidden="true" /></button> : null}
+          {onChange ? <button type="button" className="docs-property-remove" aria-label={`Remove ${key} property`} onClick={() => onChange(removeDocumentProperty(properties, key))}><Glyph name="xmark" size={13} /></button> : null}
         </div>)}
       </dl>
       {onChange ? adding ? <form className="docs-property-add" onSubmit={(event) => {
@@ -84,7 +84,7 @@ export function DocumentProperties({ properties, onChange, defaultOpen = false, 
       }}><Input aria-label="Property name" placeholder="Property name" autoFocus value={name} onValueChange={setName} />
         <button type="submit" disabled={!name.trim() || Object.hasOwn(values, name.trim())}>Add</button>
         <button type="button" onClick={() => { setAdding(false); setName("") }}>Cancel</button></form>
-        : <button type="button" className="docs-property-add" onClick={() => setAdding(true)}><Plus size={13} aria-hidden="true" />Add property</button> : null}
+        : <button type="button" className="docs-property-add" onClick={() => setAdding(true)}><Glyph name="plus" size={13} />Add property</button> : null}
     </>}
   </DetailsCollapsible>
 }

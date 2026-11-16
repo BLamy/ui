@@ -60,6 +60,10 @@ export const Bottom: Story = { args: { variant: 'bottom' } };
     strip stays continuous. */
 export const ZoomedRange: Story = { args: { from: 2, to: 4 } };
 
+/** While the peaks are loading (`loading`, by default while `peaks` is empty) a flat shimmering band stands where the
+    bars will be, as Filmstrip shimmers its cells. */
+export const Loading: Story = { args: { peaks: [], loading: true } };
+
 /** `gain` scales the bars like a clip's volume: 0.4 here. */
 export const Gain: Story = { args: { gain: 0.4 } };
 

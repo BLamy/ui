@@ -70,9 +70,9 @@ export const LIBRARIES: Library[] = [
   {
     id: 'tokens', name: 'Tokens', npm: '@brett_lamy/tokens', category: 'foundation', status: 'planned', icon: 'drop',
     tagline: 'Design tokens, themes, size classes and the class helpers everything else uses.',
-    description: 'The single source of color, type, radius, shadow and spring timing: tokens.css generates its TypeScript twin, the bl-theme maps it onto Tailwind v4, and BLProvider, ThemeScope and `appearance` retint any subtree. The size-class scope (`compact` / `medium` / `regular`, measured on a container, never the viewport) lives here too, because the providers are what measure it.',
+    description: 'The single source of color, type, radius, shadow and spring timing: tokens.css generates its TypeScript twin, the bl-theme maps it onto Tailwind v4, and BLProvider, ThemeScope and `appearance` retint any subtree. The size-class scope (`compact` / `medium` / `regular`, measured on a container, never the viewport) lives here too, because the providers are what measure it, and so does the synchronous syntax lexer whose token classes the shared syntax palette colors (CodeEditor and docstream\'s fences both use it).',
     dependsOn: ['ui-sdk'], external: ['clsx', 'tailwind-merge', 'class-variance-authority'],
-    modules: ['lib/tokens.generated.ts', 'lib/utils.ts', 'lib/theme.tsx', 'lib/theme-context.tsx', 'lib/primitives.ts', 'lib/size-class.ts', 'lib/container.ts'],
+    modules: ['lib/tokens.generated.ts', 'lib/utils.ts', 'lib/theme.tsx', 'lib/theme-context.tsx', 'lib/primitives.ts', 'lib/size-class.ts', 'lib/container.ts', 'lib/syntax-lexer.ts'],
     highlights: ['tokens.css → tokens.generated.ts, one source of truth', 'BLProvider, ThemeScope, `appearance` and `tint`', 'Size classes from a container\'s own box', '`cn`, `cx` and the shared focus and surface recipes'],
   },
   {
@@ -89,7 +89,7 @@ export const LIBRARIES: Library[] = [
   {
     id: 'icons', name: 'Icons', npm: '@brett_lamy/icons', category: 'foundation', status: 'planned', icon: 'star',
     tagline: 'An SF Symbols–style icon set as typed React components.',
-    description: 'Every glyph the kit draws, as one `<Icon name>` component with weights, aliases and search keywords, plus the chat, PencilKit and workbench shape sets and the file-type icons Tree uses. Icons animate between shapes, so they build on Motion.',
+    description: 'Every glyph the kit draws, as one `<Icon name>` component with weights, aliases and search keywords, plus the chat, PencilKit, workbench and documents shape sets (the last drawn for docstream and its editor) and the file-type icons Tree uses. Icons animate between shapes, so they build on Motion.',
     dependsOn: ['tokens', 'motion'],
     modules: ['lib/icon.tsx', 'lib/icon-shapes/', 'lib/file-icons.tsx'],
     highlights: ['`<Icon name="paperplane" weight="semibold" />`', 'Aliases and keywords for pickers and search', 'File-type, folder and badge icons'],
@@ -146,7 +146,8 @@ export const LIBRARIES: Library[] = [
     formerly: [{ npm: '@brett_lamy/docstream', last: '2.0.1' }],
     tagline: 'GitBook-flavored Markdown that renders while it streams.',
     description: 'A Markdown renderer for docs and AI answers: GitBook blocks (hints, tabs, steppers, cards), live React demos backed by real files, math, Mermaid, xstate machines and workerd configs drawn as diagrams, OpenAPI operations, citations, embeds, session replays and 3D models — and DocsSite, which turns a folder of Markdown into a site like this one. Part of @brett_lamy/ui since 6.0: import it from `@brett_lamy/ui/docstream` and its entries (`/site`, `/gitbook`, `/replay`…).',
-    dependsOn: ['ui-sdk'], external: ['katex', 'yaml', 'rrweb', 'xstate', '@strudel/web', 'lucide-react', '@brett_lamy/viz-engine (optional peer)'],
+    // Its glyphs are the kit's Icon set and its fences' synchronous lexer is the kit's (lib/syntax-lexer, with Tokens).
+    dependsOn: ['ui-sdk', 'tokens', 'icons'], external: ['katex', 'yaml', 'rrweb', 'gpu-lexer', 'pele', 'acorn', '@babel/parser', 'framer-motion', 'xstate', '@strudel/web', '@brett_lamy/viz-engine (optional peer)'],
     modules: ['docstream/'],
     highlights: ['Streams safely: unfinished blocks render as they arrive', 'Live demos from real files, in an in-browser Vite', 'DocsSite: a GitBook-style site from a folder of Markdown', 'Byte-for-byte round trip, Markdown ↔ AST'],
   },
@@ -263,5 +264,13 @@ export const SPLIT_CHANGES: Array<{ unit: string; imports: string; change: strin
   {
     unit: 'docstream/', imports: '@brett_lamy/ui/cloudflare',
     change: 'Docstream\'s capnp fence draws a workerd config with CloudflareDiagram, which it loads lazily from `@brett_lamy/ui/cloudflare`. Docstream ships in @brett_lamy/ui and Diagram doesn\'t, so after the split the fence loads `@brett_lamy/diagram/cloudflare` as an optional peer, the way the viz fence loads `@brett_lamy/viz-engine`: without it the fence shows the config\'s source.',
+  },
+  {
+    unit: 'docstream/', imports: '@brett_lamy/ui/lib/state-diagram-source',
+    change: 'Docstream\'s xstate fence reads a machine\'s source with the kit\'s `parseXState`, so the fence and StateDiagram read a machine one way. After the split it comes from `@brett_lamy/diagram/state-diagram-source` (Babel only, no ELK), as a dependency of docstream\'s xstate entry.',
+  },
+  {
+    unit: 'docstream/', imports: '@brett_lamy/ui/lib/state-diagram-model',
+    change: 'Docstream\'s xstate fence draws from the kit\'s `machineToDraft`, so the fence and StateDiagram label a machine one way. After the split it comes from `@brett_lamy/diagram/state-diagram-model` (no React, no ELK), as a dependency of docstream\'s xstate entry.',
   },
 ];

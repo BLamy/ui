@@ -1,0 +1,12 @@
+{
+  "name": "file-size",
+  "title": "File size",
+  "description": "A file size the way every part of the kit writes it: decimal units in the reader's locale (\"280 B\", \"627 kB\", \"1.3 MB\"), the steps of UI SDK's formatFileSize, empty when the size is unknown.",
+  "page": "file-upload",
+  "exports": [
+    "formatFileSize"
+  ],
+  "imports": [
+    "formatFileSize"
+  ]
+}

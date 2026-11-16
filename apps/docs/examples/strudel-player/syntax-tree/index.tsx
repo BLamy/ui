@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { Textarea } from '@/components/ui/textarea'
 import {
   parseStrudel, StrudelSyntaxError, type MiniGroup, type MiniStep, type StrudelArg, type StrudelSong,
-} from '@brett_lamy/ui/docstream/strudel'
+} from '@brett_lamy/ui/docstream/strudel/rack'
 
 const initial = `setcpm(120/4)
 drums: s("bd*2 [~ bd] sd ~, hh*8").gain(.8)

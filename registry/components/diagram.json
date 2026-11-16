@@ -1,13 +1,14 @@
 {
   "name": "diagram",
   "title": "Diagram",
-  "description": "Nodes, edges, labels and regions on a Canvas, as plain data, on one primitive (data, selection, history) with a controller and agent actions. Lines keep their thickness at any zoom, text hides when it's too small to read, and above 200 items only what's near the view is drawn. With editable: selecting, dragging, deleting and undo as one gesture, named ports, and connecting with validation; every change goes through onDataChange(data, details) and can be refused. One tab stop: every node and edge is reached by keyboard and says what it connects to. DiagramToolbar adds zoom, fit, undo and redo.",
+  "description": "Nodes, edges, labels and regions on a Canvas, as plain data, on one primitive (data, selection, history) with a controller and agent actions. Generic looks (a node's kind and border, an edge's line and tone), lines that keep their thickness at any zoom, labels and routes that keep clear of the nodes, and above 200 items only what's near the view is drawn. Read-only, it selects and reads; with editable: dragging, deleting and undo as one gesture, named ports, and connecting with validation; every change goes through onDataChange(data, details) and can be refused. One history: its own, or one handed to it (useDiagramHistory), driven by ⌘Z and DiagramToolbar's zoom, fit, undo and redo, with a fit that leaves room for the toolbar. One tab stop: every node and edge is reached by keyboard and says what it connects to; focus, selection and what's current are drawn three ways.",
   "page": "diagram",
   "exports": [
     "Diagram",
     "DiagramNodeBody",
     "DiagramToolbar",
     "useDiagram",
+    "useDiagramHistory",
     "createDiagramController",
     "diagramNodeVariants",
     "diagramEdgeVariants"

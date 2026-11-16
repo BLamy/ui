@@ -59,7 +59,7 @@ import {
 
 ## Alerts
 
-`AlertDialog` is the root, `AlertDialogTrigger` the button that opens it (`render` one of ours), `AlertDialogBackdrop` the scrim and `AlertDialogContent` the card. Put `AlertDialogTitle` and `AlertDialogDescription` in an `AlertDialogHeader`, and the answers — `AlertDialogClose`s — in an `AlertDialogFooter`. Each answer closes the alert; its `value` comes back as `details.returnValue` in `onOpenChange`, and an `action` runs first (a Promise it returns keeps the alert open, the button pending, until it settles). Use `variant="cancel"` for the preferred, semibold answer and `destructive` for the red one. Two answers sit side by side; `orientation="vertical"` on the footer stacks three or more. An alert has `role="alertdialog"`, focus starts on its first answer (so put the safe one first), and a press on the scrim never closes it, as on iOS; Esc still does.
+`AlertDialog` is the root, `AlertDialogTrigger` the button that opens it (`render` one of ours), `AlertDialogBackdrop` the scrim and `AlertDialogContent` the card. Put `AlertDialogTitle` and `AlertDialogDescription` in an `AlertDialogHeader`, and the answers — `AlertDialogClose`s — in an `AlertDialogFooter`. Each answer closes the alert; its `value` comes back as `details.returnValue` in `onOpenChange`, and an `action` runs first (a Promise it returns keeps the alert open, the button pending, until it settles). Use `variant="cancel"` for the preferred, semibold answer and `tone="destructive"` for the red one (a semantic colour, so it is a `tone`, as on rows). Two answers sit side by side; `orientation="vertical"` on the footer stacks three or more. An alert has `role="alertdialog"`, focus starts on its first answer (so put the safe one first), and a press on the scrim never closes it, as on iOS; Esc still does.
 
 {% demo src="dialog/alerts" %}
 
@@ -74,7 +74,7 @@ import {
     </AlertDialogHeader>
     <AlertDialogFooter>
       <AlertDialogClose variant="cancel">Cancel</AlertDialogClose>
-      <AlertDialogClose variant="destructive" value="confirm">Delete</AlertDialogClose>
+      <AlertDialogClose tone="destructive" value="confirm">Delete</AlertDialogClose>
     </AlertDialogFooter>
   </AlertDialogContent>
 </AlertDialog>
@@ -216,7 +216,7 @@ UI SDK traps focus inside the dialog, makes the rest of its host inert, closes o
 | `DialogClose` | The round ×, `aria-label="Close"` (left out when not `dismissible`); with children or `render`, any element that closes. `value`, `action`, `disabled`. |
 | `AlertDialogHeader`, `AlertDialogTitle`, `AlertDialogDescription` | Centered and compact. |
 | `AlertDialogFooter` | `orientation`: `horizontal` (default) or `vertical`. |
-| `AlertDialogClose` | An answer. `variant`: `default` · `cancel` (semibold) · `destructive`; `value`, `action`. |
+| `AlertDialogClose` | An answer. `variant`: `default` · `cancel` (semibold); `tone`: `default` · `destructive` (red); `value`, `action`. |
 
 ## Surface parts
 
@@ -271,4 +271,10 @@ cn( 'bl-btn box-border flex h-11 cursor-pointer items-center justify-center bord
 | --- | --- |
 | `default` (default) | `font-normal` |
 | `cancel` | `font-semibold` |
-| `destructive` | `font-normal text-destructive` |
+
+**`tone`** — default `default`
+
+| Value | Adds |
+| --- | --- |
+| `default` (default) | — |
+| `destructive` | `text-destructive` |

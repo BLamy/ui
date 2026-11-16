@@ -11,5 +11,8 @@
   ],
   "types": [
     "StlViewerProps"
-  ]
+  ],
+  "css": {
+    "@import \"@brett_lamy/ui/docstream/styles.css\"": {}
+  }
 }

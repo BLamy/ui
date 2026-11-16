@@ -47,11 +47,11 @@ const REPORTS = [
 ] as const;
 
 /** A CRM's navigation: a workspace, a search, two sections with counts, an account in the footer. */
-function CrmShell({ variant, presentation, open: initial, breakpoint = 560 }: Omit<Args, 'dark'> & { breakpoint?: number }) {
+function CrmShell({ variant, presentation, open: initial, breakpoint }: Omit<Args, 'dark'> & { breakpoint?: number }) {
   const [open, setOpen] = useState(initial);
   const [page, setPage] = useState('Deals');
   return (
-    <SidebarProvider open={open} onOpenChange={setOpen} breakpoint={breakpoint}>
+    <SidebarProvider open={open} onOpenChange={setOpen} breakpoints={breakpoint ? { medium: breakpoint } : undefined}>
       <Sidebar variant={variant} presentation={presentation} width={236}>
         <SidebarHeader>
           <SidebarAccount title="Northwind" description="Sales · Pro plan" />

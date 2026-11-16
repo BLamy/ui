@@ -2,7 +2,7 @@
    layer; none take pointer events (the canvas hits them by geometry), except the text being edited. */
 import { memo, useId, useLayoutEffect, useRef, type CSSProperties } from 'react';
 import { HoverCardHeader } from '@/components/ui/hover-card';
-import { StrokePath } from '@/components/ui/pencilkit/stroke-path';
+import { StrokePath } from '@/components/ui/pencilkit';
 import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
 import { arrowHead, polygonPoints } from '@/lib/diagram-model';
@@ -198,7 +198,7 @@ export function ItemPreview({ item }: { item: ImageItem | LinkItem }) {
 function Stroke({ item }: { item: StrokeItem }) {
   return (
     <svg className="pointer-events-none absolute top-0 left-0 overflow-visible" width="1" height="1" aria-hidden="true">
-      <StrokePath stroke={{ tool: item.tool, color: item.color, width: item.width, pressure: item.pen, points: item.points, complete: true }} />
+      <StrokePath stroke={{ tool: item.tool, ink: item.color, widthScale: item.width, pressure: item.pen, points: item.points, complete: true }} />
     </svg>
   );
 }

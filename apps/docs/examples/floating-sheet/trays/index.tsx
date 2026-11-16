@@ -2,9 +2,7 @@ import { useState, type ReactNode } from 'react'
 import { Button } from '@/components/ui/button'
 import { FloatingSheet, FloatingSheetBody, FloatingSheetFooter } from '@/components/ui/floating-sheet'
 import { ProgressStepper } from '@/components/ui/progress-stepper'
-import { SheetBack } from '@/components/ui/sheet'
-import { Swap } from '@/components/ui/swap'
-import { surfaceHeaderVariants, surfaceTitleVariants } from '@/lib/surface'
+import { SheetBack, SheetHeader, SheetTitle, SheetView } from '@/components/ui/sheet'
 import { cn } from '@/lib/utils'
 
 const steps = [
@@ -73,41 +71,31 @@ function Host({ children, note }: { children?: ReactNode; note: string }) {
   )
 }
 
-// One sheet, several trays: the kit's flow grammar on a FloatingSheet. Each
-// step sets its `peek`, so the height springs between steps; the title and the
-// content travel with Swap in the direction of the flow (forward from the
-// right, back from the left); SheetBack folds into the header bar once there is
-// a step to go back to.
+// One sheet, several trays: the kit's flow on a FloatingSheet, written with
+// Sheet's flow parts. `view` names the step and each step sets its `peek`, so
+// the height springs between steps; the bar header's title and the SheetView
+// travel the way the flow moves (forward from the end, back from the start),
+// and SheetBack folds into the bar once there is a step to go back to.
 export default function Trays() {
   const [step, setStep] = useState(0)
-  const [direction, setDirection] = useState<1 | -1>(1)
-  const go = (next: number) => {
-    setDirection(next > step ? 1 : -1)
-    setStep(next)
-  }
   const tray = trays[step]
   const last = step === trays.length - 1
   return (
     <Host note="Continue and the back chevron move through the trays: each has its own height, and the sheet springs between them while the content travels the way the flow moves.">
-      <FloatingSheet peek={tray.peek} variant="card" collapse="none" aria-label="Checkout" hideOnScroll={false}>
+      <FloatingSheet view={tray.id} peek={tray.peek} variant="card" collapse="none" aria-label="Checkout" hideOnScroll={false}>
         <FloatingSheetBody>
-          <div className={cn(surfaceHeaderVariants({ variant: 'bar' }), 'pt-1')}>
-            <SheetBack hidden={step === 0} onClick={() => go(step - 1)} />
-            <h3 className={cn(surfaceTitleVariants(), 'min-w-0 flex-1 py-px')}>
-              <Swap value={tray.id} direction={direction} distance={18} blur={3} inline>
-                {tray.title}
-              </Swap>
-            </h3>
-          </div>
-          <div className="overflow-x-clip px-5 pb-5">
-            <Swap value={tray.id} direction={direction}>
-              {tray.body}
-            </Swap>
+          {/* The body takes one child, the height of its window. */}
+          <div>
+            <SheetHeader variant="bar" className="pt-1">
+              <SheetBack hidden={step === 0} onClick={() => setStep(step - 1)} />
+              <SheetTitle>{tray.title}</SheetTitle>
+            </SheetHeader>
+            <SheetView className="px-5 pb-5">{tray.body}</SheetView>
           </div>
         </FloatingSheetBody>
         <FloatingSheetFooter>
           <div className="flex px-4 pt-2 pb-4">
-            <Button size="pill" className="flex-1" onClick={() => go(last ? 0 : step + 1)}>
+            <Button size="pill" className="flex-1" onClick={() => setStep(last ? 0 : step + 1)}>
               {last ? 'Start over' : 'Continue'}
             </Button>
           </div>

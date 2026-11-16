@@ -30,7 +30,7 @@ import {
 ```jsx
 <MessageScroller
   threadKey={thread.id}
-  streaming={isStreaming}
+  streaming={streaming}
   items={msgs.map(m => ({
     id: m.id,
     anchor: m.role === 'user',     // rows that start a turn

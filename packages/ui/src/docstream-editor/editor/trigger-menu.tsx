@@ -2,7 +2,8 @@ import { useMemo, type ReactNode } from "react"
 import type { Editor } from "@tiptap/core"
 import { Plugin, PluginKey } from "@tiptap/pm/state"
 import { ReactRenderer } from "@tiptap/react"
-import type { LucideIcon } from "lucide-react"
+import { Glyph } from "./glyph"
+import { type IconName } from "@brett_lamy/ui/lib/icon"
 import { matchRanges, matchSegments } from "@ui-sdk/core/text-match"
 import {
   TriggerMenu,
@@ -28,7 +29,7 @@ import { tiptapTriggerAdapter } from "./trigger-adapter"
 /** How a suggestion shows in the list. */
 export interface TriggerMenuEntry {
   title: string
-  icon: LucideIcon
+  icon: IconName
   /** Secondary text shown after the title (e.g. a display name or email). */
   description?: string
 }
@@ -91,7 +92,6 @@ function EditorTriggerMenu({ editor, triggers }: MenuProps) {
   const item = (trigger: EditorTrigger, data: TriggerMenuDataItem, query: string): ReactNode => {
     const entry = trigger.entry(data.value)
     if (!entry) return null
-    const Icon = entry.icon
     return (
       <TriggerMenuItem
         key={data.value}
@@ -101,7 +101,7 @@ function EditorTriggerMenu({ editor, triggers }: MenuProps) {
         className={(state) => (state.highlighted ? "slash-item slash-item-active" : "slash-item")}
       >
         <TriggerMenuItemIcon>
-          <Icon className="size-4" />
+          <Glyph name={entry.icon} className="size-4" size={16} />
         </TriggerMenuItemIcon>
         <span>
           <MatchedText text={entry.title} query={query} />

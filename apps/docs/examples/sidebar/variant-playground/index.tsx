@@ -29,7 +29,7 @@ const pages = [
 
 // One Sidebar: three looks (`variant`) and two presentations (`presentation`).
 // `auto` is a column, or a drawer while the provider is narrower than its
-// `breakpoint`: try the narrow container. The trigger toggles whichever shows.
+// `breakpoints`: try the narrow container. The trigger toggles whichever shows.
 export default function SidebarPlayground() {
   const [variant, setVariant] = useState<SidebarVariant>('docked')
   const [presentation, setPresentation] = useState<SidebarPresentation>('auto')
@@ -56,7 +56,7 @@ export default function SidebarPlayground() {
         )}
       >
         {/* Remounted per look and presentation, so each starts in its default state. */}
-        <SidebarProvider key={variant + presentation} defaultOpen={presentation !== 'drawer'} breakpoint={430}>
+        <SidebarProvider key={variant + presentation} defaultOpen={presentation !== 'drawer'} breakpoints={{ medium: 430 }}>
           <Sidebar variant={variant} presentation={presentation}>
             <SidebarHeader>
               <SidebarAccount title="Creamery Ops" description="Production workspace" />

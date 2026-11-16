@@ -754,9 +754,9 @@ it('provides its size class to what is inside, popups included', async () => {
   expect(seen).toBe('compact');
 });
 
-function Music({ sizeClass, onValueChange, detail }: { sizeClass: 'compact' | 'regular'; onValueChange?: SplitViewProps['onValueChange']; detail?: ReactNode }) {
+function Music({ sizeClass, onValueChange, detail, initial = 'albums' }: { sizeClass: 'compact' | 'regular'; onValueChange?: SplitViewProps['onValueChange']; detail?: ReactNode; initial?: string }) {
   return (
-    <SplitView aria-label="Music" sizeClass={sizeClass} defaultValue={{ sidebar: 'albums' }} onValueChange={onValueChange}>
+    <SplitView aria-label="Music" sizeClass={sizeClass} defaultValue={{ sidebar: initial }} onValueChange={onValueChange}>
       <SplitViewSidebar aria-label="Library" compactPresentation="tabs">
         <SplitViewHeader title="Music" />
         <SplitViewContent>
@@ -947,4 +947,45 @@ it('the sidebar trigger takes a glyph of its own and a shortcut, announced as ar
   expect(trigger.getAttribute('data-slot')).toBe('split-view-sidebar-trigger');
   expect(trigger.getAttribute('aria-keyshortcuts')).toBeTruthy();
   expect(screen.getByTestId('glyph').parentElement).toBe(trigger);
+});
+
+it('compactPresentation="tabs": a row outside every tab warns, and picked, leaves the first tab selected and a way back', async () => {
+  const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+  const onValueChange = vi.fn();
+  render(<Music sizeClass="compact" initial="other" onValueChange={onValueChange} />);
+  await settle();
+  expect(warn).toHaveBeenCalledWith(expect.stringContaining('"other" is neither a `tab` nor inside a `tab` section'));
+  warn.mockRestore();
+  const selected = [...document.querySelectorAll('[role=tab]')].filter((t) => t.getAttribute('aria-selected') === 'true').map((t) => t.textContent);
+  expect(selected).toEqual(['Listen Now']);
+  // Pressing it picks it for real.
+  await act(async () => screen.getByRole('tab', { name: 'Listen Now' }).click());
+  await settle();
+  expect(onValueChange).toHaveBeenLastCalledWith({ sidebar: 'listen' }, expect.objectContaining({ reason: 'item-press' }));
+});
+
+it('compactPresentation="tabs": nothing remounts across the compact boundary', async () => {
+  const detail = (
+    <NavigationStack defaultPages={['root']}>
+      <NavigationStackPage value="root"><input aria-label="Draft" /></NavigationStackPage>
+    </NavigationStack>
+  );
+  const { rerender } = render(<Music sizeClass="regular" detail={detail} />);
+  await settle();
+  const q = (s: string) => document.querySelector<HTMLElement>(s)!;
+  const sidebar = q('[data-slot="split-view-sidebar"]');
+  const column = q('[data-slot="split-view-detail"]');
+  const input = screen.getByLabelText('Draft') as HTMLInputElement;
+  const albums = screen.getByRole('button', { name: 'Albums', hidden: true });
+  input.value = 'typed';
+  rerender(<Music sizeClass="compact" detail={detail} />);
+  await settle();
+  expect(q('[data-slot="split-view-sidebar"]')).toBe(sidebar);
+  expect(q('[data-slot="split-view-detail"]')).toBe(column);
+  expect(screen.getByLabelText('Draft')).toBe(input);
+  expect(screen.getByRole('button', { name: 'Albums', hidden: true })).toBe(albums);
+  rerender(<Music sizeClass="regular" detail={detail} />);
+  await settle();
+  expect(q('[data-slot="split-view-detail"]')).toBe(column);
+  expect((screen.getByLabelText('Draft') as HTMLInputElement).value).toBe('typed');
 });

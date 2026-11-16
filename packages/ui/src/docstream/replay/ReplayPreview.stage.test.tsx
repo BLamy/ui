@@ -98,7 +98,7 @@ const press = (el: Element, key: string) => act(async () => void el.dispatchEven
 
 describe("a stage of your own", () => {
   it("takes rrweb's place: the frame, the poster and the controls are the same", () => {
-    const html = renderToString(<ReplayPreview stage={custom} lazy={false} />)
+    const html = renderToString(<ReplayPreview stage={custom} mounted />)
     for (const slot of ["replay-preview", "replay-preview-bar", "replay-preview-stage", "replay-preview-poster", "replay-preview-controls", "replay-preview-scrubber"]) {
       expect(html, slot).toContain(`data-slot="${slot}"`)
     }
@@ -112,7 +112,7 @@ describe("a stage of your own", () => {
   it("goes by the stage's ready and time, and the scrubber, keys and handle all drive it", async () => {
     const ref: { current: { seek(ms: number): void; toggle(): void; getCurrentTime(): number } | null } = { current: null }
     const times: number[] = []
-    await act(async () => root.render(<ReplayPreview stage={custom} lazy={false} playerRef={ref as never} onTimeUpdate={(t) => times.push(t)} />))
+    await act(async () => root.render(<ReplayPreview stage={custom} mounted ref={ref as never} onTimeUpdate={(t) => times.push(t)} />))
     const el = host.querySelector<HTMLElement>('[data-slot="replay-preview"]')!
     expect(el.dataset.state).toBe("loading")
     await act(async () => stage.props!.onReady?.({ duration: 60_000, width: 800, height: 600 }))
@@ -144,7 +144,7 @@ describe("a stage of your own", () => {
   })
 
   it("gets the chosen speed, and only what isn't about rrweb", async () => {
-    await mount(<ReplayPreview stage={custom} lazy={false} speeds={[2, 4]} />)
+    await mount(<ReplayPreview stage={custom} mounted speeds={[2, 4]} />)
     expect(stage.props!.speed).toBe(2)
     expect(Object.keys(stage.props!)).not.toContain("events")
     expect(Object.keys(stage.props!)).not.toContain("fit")
@@ -154,30 +154,30 @@ describe("a stage of your own", () => {
   })
 
   it("the URL bar goes by url, then the stage's href", async () => {
-    const withUrl = await mount(<ReplayPreview stage={custom} lazy={false} url="https://other.test/here" />)
+    const withUrl = await mount(<ReplayPreview stage={custom} mounted url="https://other.test/here" />)
     expect(withUrl.querySelector('[data-slot="replay-preview-url"]')!.getAttribute("title")).toBe("https://other.test/here")
-    await act(async () => root.render(<ReplayPreview stage={{ ...custom, href: "https://shop.test/next" }} lazy={false} />))
+    await act(async () => root.render(<ReplayPreview stage={{ ...custom, href: "https://shop.test/next" }} mounted />))
     expect(withUrl.querySelector('[data-slot="replay-preview-url"]')!.getAttribute("title")).toBe("https://shop.test/next")
   })
 
   it("a new duration is picked up without a new stage", async () => {
-    const el = await mount(<ReplayPreview stage={custom} lazy={false} />)
+    const el = await mount(<ReplayPreview stage={custom} mounted />)
     const first = stage.props
-    await act(async () => root.render(<ReplayPreview stage={{ ...custom, duration: 3_600_000 }} lazy={false} />))
+    await act(async () => root.render(<ReplayPreview stage={{ ...custom, duration: 3_600_000 }} mounted />))
     expect(el.querySelector<HTMLInputElement>('input[type="range"]')!.max).toBe("3600000")
     expect(el.querySelector("[data-fake-stage]")).not.toBeNull()
     expect(stage.props).not.toBe(first)
   })
 
   it("has no Console and Network buttons with nothing to show", async () => {
-    const el = await mount(<ReplayPreview stage={custom} lazy={false} />)
+    const el = await mount(<ReplayPreview stage={custom} mounted />)
     expect(el.querySelector('[data-part="replay-devtools-buttons"]')).toBeNull()
   })
 })
 
 describe("DevTools as data", () => {
   it("the buttons and the panel show what's handed over, cut at the playhead", async () => {
-    const el = await mount(<ReplayPreview stage={custom} lazy={false} devtools={data} />, 500)
+    const el = await mount(<ReplayPreview stage={custom} mounted devtools={data} />, 500)
     const network = () => el.querySelector<HTMLButtonElement>('[data-tab="network"]')!
     const consoleButton = () => el.querySelector<HTMLButtonElement>('[data-tab="console"]')!
     expect(network().getAttribute("aria-label")).toBe("Network: 1 request, 0 failed")
@@ -212,17 +212,17 @@ describe("DevTools as data", () => {
   })
 
   it("new data can come at any time", async () => {
-    const el = await mount(<ReplayPreview stage={custom} lazy={false} devtools={{ console: [], network: [] }} />, 500)
+    const el = await mount(<ReplayPreview stage={custom} mounted devtools={{ console: [], network: [] }} />, 500)
     expect(el.querySelector('[data-part="replay-devtools-buttons"]')).toBeNull()
-    await act(async () => root.render(<ReplayPreview stage={custom} lazy={false} devtools={data} />))
+    await act(async () => root.render(<ReplayPreview stage={custom} mounted devtools={data} />))
     expect(el.querySelector('[data-tab="network"]')!.getAttribute("aria-label")).toBe("Network: 1 request, 0 failed")
   })
 
-  it("false and disableDevtools both turn it off", async () => {
-    const off = await mount(<ReplayPreview stage={custom} lazy={false} devtools={false} />)
+  it("devtools={false} turns it off, and data turns it back on", async () => {
+    const off = await mount(<ReplayPreview stage={custom} mounted devtools={false} />)
     expect(off.querySelector('[data-part="replay-devtools-buttons"]')).toBeNull()
-    await act(async () => root.render(<ReplayPreview stage={custom} lazy={false} devtools={data} disableDevtools />))
-    expect(off.querySelector('[data-part="replay-devtools-buttons"]')).toBeNull()
+    await act(async () => root.render(<ReplayPreview stage={custom} mounted devtools={data} />))
+    expect(off.querySelector('[data-part="replay-devtools-buttons"]')).not.toBeNull()
   })
 
   it("markers come from the data too, under the same rules", async () => {
@@ -230,7 +230,7 @@ describe("DevTools as data", () => {
       ["network", 1_000, "GET 404", "https://shop.test/missing"],
       ["error", 5_000, "Console error", "broke"],
     ])
-    const el = await mount(<ReplayPreview stage={custom} lazy={false} devtools={data} markers />, 500)
+    const el = await mount(<ReplayPreview stage={custom} mounted devtools={data} markers />, 500)
     const labels = [...el.querySelectorAll('[data-slot="replay-preview-markers"] button')].map((b) => b.getAttribute("aria-label"))
     expect(labels).toEqual(["GET 404 at 0:01", "Console error at 0:05"])
     await act(async () => el.querySelector<HTMLButtonElement>('[data-kind="error"]')!.click())
@@ -242,7 +242,7 @@ describe("DevTools as data", () => {
       console: Array.from({ length: 2_500 }, (_, i) => ({ id: `m${i}`, time: i, level: "log" as const, message: `message ${i}`, args: [`message ${i}`], source: "console" as const })),
       network: Array.from({ length: 2_100 }, (_, i) => request({ id: `r${i}`, time: i, duration: 0, status: 200 })),
     }
-    const el = await mount(<ReplayPreview stage={custom} lazy={false} devtools={many} defaultDevtoolsTab="console" />, 10_000)
+    const el = await mount(<ReplayPreview stage={custom} mounted devtools={many} defaultDevtoolsTab="console" />, 10_000)
     const rows = el.querySelectorAll('[data-slot="replay-devtools-message"]')
     expect(rows).toHaveLength(2_000)
     expect(rows[rows.length - 1]!.textContent).toContain("message 2499")
@@ -296,14 +296,14 @@ describe("Elements through an interface", () => {
   const tabs = (el: Element) => [...el.querySelectorAll<HTMLElement>('[data-slot="replay-devtools-tabs"] [role=tab]')].map((t) => t.textContent)
 
   it("a stage with no document has no Elements tab", async () => {
-    const el = await mount(<ReplayPreview stage={custom} lazy={false} devtools={data} defaultDevtoolsTab="console" />, 500)
+    const el = await mount(<ReplayPreview stage={custom} mounted devtools={data} defaultDevtoolsTab="console" />, 500)
     expect(tabs(el)).toEqual(["Console", "Network"])
   })
 
   it("a stage with a document has one, as rrweb's does", async () => {
     stage.hasDocument = true
     stage.doc = page()
-    const el = await mount(<ReplayPreview stage={custom} lazy={false} devtools={data} defaultDevtoolsTab="console" />, 500)
+    const el = await mount(<ReplayPreview stage={custom} mounted devtools={data} defaultDevtoolsTab="console" />, 500)
     expect(tabs(el)).toEqual(["Elements", "Console", "Network"])
     await act(async () => [...el.querySelectorAll<HTMLElement>("[role=tab]")].find((t) => t.textContent === "Elements")!.click())
     expect(el.querySelector('[data-slot="replay-devtools-elements"]')!.textContent).toContain("<html")
@@ -322,7 +322,7 @@ describe("Elements through an interface", () => {
         return element === button ? { left: 40, top: 60, width: 200, height: 30 } : null
       },
     }
-    const el = await mount(<ReplayPreview stage={custom} lazy={false} devtools={data} elements={source} inspections={[{ time: 1_000, element: "#go", label: "The button" }]} defaultDevtoolsTab="console" />, 500)
+    const el = await mount(<ReplayPreview stage={custom} mounted devtools={data} elements={source} inspections={[{ time: 1_000, element: "#go", label: "The button" }]} defaultDevtoolsTab="console" />, 500)
     expect(tabs(el)).toEqual(["Elements", "Console", "Network"])
     expect(el.querySelector('[data-slot="replay-preview-highlight"]')).toBeNull()
     await moveTo(1_100)
@@ -335,14 +335,14 @@ describe("Elements through an interface", () => {
   it("a source that doesn't know where something is draws nothing for it", async () => {
     const doc = page()
     const source: ReplayElementsSource = { getDocument: () => doc, getElementRect: () => null }
-    const el = await mount(<ReplayPreview stage={custom} lazy={false} devtools={data} elements={source} inspections={[{ time: 1_000, element: "#go" }]} />, 1_100)
+    const el = await mount(<ReplayPreview stage={custom} mounted devtools={data} elements={source} inspections={[{ time: 1_000, element: "#go" }]} />, 1_100)
     expect(el.querySelector('[data-slot="replay-preview-highlight"]')).toBeNull()
   })
 
   it("a source with no rectangles leaves it to the document's own", async () => {
     const doc = page()
     doc.getElementById("go")!.getBoundingClientRect = () => ({ left: 1, top: 2, width: 3, height: 4, right: 4, bottom: 6, x: 1, y: 2, toJSON: () => ({}) }) as DOMRect
-    const el = await mount(<ReplayPreview stage={custom} lazy={false} devtools={data} elements={{ getDocument: () => doc }} inspections={[{ time: 1_000, element: "#go" }]} />, 1_100)
+    const el = await mount(<ReplayPreview stage={custom} mounted devtools={data} elements={{ getDocument: () => doc }} inspections={[{ time: 1_000, element: "#go" }]} />, 1_100)
     const box = el.querySelector<HTMLElement>('[data-slot="replay-preview-highlight"]')!
     expect([box.style.left, box.style.width]).toEqual(["1px", "3px"])
   })
@@ -350,7 +350,7 @@ describe("Elements through an interface", () => {
   it("elements={false} takes the tab away, even with a document there", async () => {
     stage.hasDocument = true
     stage.doc = page()
-    const el = await mount(<ReplayPreview stage={custom} lazy={false} devtools={data} elements={false} defaultDevtoolsTab="console" />, 500)
+    const el = await mount(<ReplayPreview stage={custom} mounted devtools={data} elements={false} defaultDevtoolsTab="console" />, 500)
     expect(tabs(el)).toEqual(["Console", "Network"])
   })
 })

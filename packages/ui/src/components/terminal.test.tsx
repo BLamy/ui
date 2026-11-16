@@ -93,6 +93,17 @@ describe('Terminal', () => {
     expect(terminal?.style.opacity).toBe('0.5');
   });
 
+  it('appearance holds a light or dark terminal whatever the page is, and auto adds nothing', async () => {
+    const el = await render(<Terminal core="builtin" appearance="dark" />);
+    const classes = () => [...el.querySelector('[data-slot=terminal]')!.classList];
+    expect(classes()).toEqual(expect.arrayContaining(['dark', 'scheme-dark']));
+    await act(async () => { root?.render(<Terminal core="builtin" appearance="light" />); });
+    expect(classes()).toEqual(expect.arrayContaining(['light', 'scheme-light']));
+    expect(classes()).not.toContain('dark');
+    await act(async () => { root?.render(<Terminal core="builtin" />); });
+    expect(classes().filter((c) => ['dark', 'light', 'scheme-dark', 'scheme-light'].includes(c))).toEqual([]);
+  });
+
   it('always fits its container', async () => {
     await render(<Terminal core="builtin" />);
     expect(instances[0].props.autoResize).toBe(true);

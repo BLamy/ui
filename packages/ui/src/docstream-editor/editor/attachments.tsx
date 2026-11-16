@@ -1,7 +1,7 @@
 import { Node, mergeAttributes } from "@tiptap/core"
 import type { Node as ProseMirrorNode } from "@tiptap/pm/model"
 import { NodeViewWrapper, type NodeViewProps } from "@tiptap/react"
-import { ImageIcon, X } from "lucide-react"
+import { Glyph } from "./glyph"
 import { useEffect, useState } from "react"
 import { Button } from "@ui-sdk/react/button"
 import { Dialog, DialogBackdrop, DialogClose, DialogContent, DialogTitle } from "@ui-sdk/react/dialog"
@@ -157,7 +157,7 @@ function AttachmentView({ node, selected, editor }: NodeViewProps) {
             {attachment.src ? (
               <img src={attachment.src} alt="" draggable={false} />
             ) : (
-              <ImageIcon className="gb-attachment-thumb-icon" aria-hidden="true" />
+              <Glyph name="photo" className="gb-attachment-thumb-icon" size={24} />
             )}
           </span>
           <span className="gb-attachment-name">{attachment.name}</span>
@@ -168,7 +168,7 @@ function AttachmentView({ node, selected, editor }: NodeViewProps) {
             <img className="gb-attachment-card-img" src={attachment.src} alt="" />
           ) : (
             <span className="gb-attachment-card-empty">
-              <ImageIcon className="size-5" aria-hidden="true" />
+              <Glyph name="photo" className="size-5" size={24} />
             </span>
           )}
           <span className="gb-attachment-card-meta">
@@ -187,12 +187,12 @@ function AttachmentView({ node, selected, editor }: NodeViewProps) {
             <img className="gb-attachment-viewer-img" src={attachment.src} alt={attachment.name} />
           ) : (
             <span className="gb-attachment-viewer-empty">
-              <ImageIcon className="size-6" aria-hidden="true" />
+              <Glyph name="photo" className="size-6" size={24} />
               {attachment.name}
             </span>
           )}
           <DialogClose className="gb-attachment-viewer-close" aria-label="Close">
-            <X className="size-4" aria-hidden="true" />
+            <Glyph name="xmark" className="size-4" size={24} />
           </DialogClose>
         </DialogContent>
       </Dialog>

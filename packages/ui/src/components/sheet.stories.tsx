@@ -23,14 +23,14 @@ const meta: Meta<typeof Sheet> = {
 export default meta;
 type Story = StoryObj<typeof Sheet>;
 
-function Demo({ side, dark, open = true, snapPoints }: { side: Side; dark?: boolean; open?: boolean; snapPoints?: number[] }) {
+function Demo({ side, dark, open = true, snapPoints, variant }: { side: Side; dark?: boolean; open?: boolean; snapPoints?: number[]; variant?: 'default' | 'tray' }) {
   return (
     <Screen dark={dark}>
       <div>
         <Sheet side={side} defaultOpen={open} snapPoints={snapPoints}>
           <SheetTrigger className={buttonVariants({ variant: 'secondary' })}>Filters</SheetTrigger>
           <SheetBackdrop />
-          <SheetContent className={snapPoints ? 'h-[calc(100%-48px)]' : undefined}>
+          <SheetContent variant={variant} className={snapPoints ? 'h-[calc(100%-48px)]' : undefined}>
             <SheetClose />
             <SheetHeader>
               <SheetTitle>Filters</SheetTitle>
@@ -66,6 +66,10 @@ export const Start: Story = { render: () => <Demo side="start" /> };
 export const StartDark: Story = { render: () => <Demo side="start" dark /> };
 export const Top: Story = { render: () => <Demo side="top" /> };
 /** Two places to rest: the grabber becomes a handle (press it, or use the arrow keys), and a drag settles on one. */
+/** `variant="tray"`: the card floats 10px in from the edges, every corner rounded, as Dialog's `tray`. */
+export const Tray: Story = { render: () => <Demo side="bottom" variant="tray" /> };
+export const TrayDark: Story = { render: () => <Demo side="bottom" variant="tray" dark /> };
+
 export const SnapPoints: Story = { render: () => <Demo side="bottom" snapPoints={[0.5, 1]} /> };
 export const Closed: Story = { render: () => <Demo side="bottom" open={false} /> };
 

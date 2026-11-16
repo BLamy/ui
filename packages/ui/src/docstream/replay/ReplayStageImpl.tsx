@@ -37,8 +37,8 @@ const ReplayStageImpl = forwardRef<ReplayStageHandle, ReplayStageProps>(function
   ref,
 ) {
   const boxRef = useRef<HTMLDivElement>(null)
-  const playerRef = useRef<HTMLDivElement>(null)
-  const replayerRef = useRef<Replayer | null>(null)
+  const hostRef = useRef<HTMLDivElement>(null)
+  const rrwebRef = useRef<Replayer | null>(null)
   const playingRef = useRef(false)
   const fedCountRef = useRef(0)
   const rafRef = useRef(0)
@@ -60,7 +60,7 @@ const ReplayStageImpl = forwardRef<ReplayStageHandle, ReplayStageProps>(function
 
   const time = useCallback(() => {
     try {
-      const replayer = replayerRef.current
+      const replayer = rrwebRef.current
       if (!replayer) return 0
       return Math.max(0, Math.min(replayer.getCurrentTime(), replayer.getMetaData().totalTime))
     } catch {
@@ -86,7 +86,7 @@ const ReplayStageImpl = forwardRef<ReplayStageHandle, ReplayStageProps>(function
   const handle = useMemo<ReplayStageHandle>(
     () => ({
       play(offset) {
-        const replayer = replayerRef.current
+        const replayer = rrwebRef.current
         if (!replayer) return
         let from = offset ?? time()
         try {
@@ -99,7 +99,7 @@ const ReplayStageImpl = forwardRef<ReplayStageHandle, ReplayStageProps>(function
         tick()
       },
       pause(offset) {
-        const replayer = replayerRef.current
+        const replayer = rrwebRef.current
         if (!replayer) return
         if (offset === undefined) replayer.pause()
         else replayer.pause(offset)
@@ -107,7 +107,7 @@ const ReplayStageImpl = forwardRef<ReplayStageHandle, ReplayStageProps>(function
         callbacks.current.onTimeUpdate?.(offset ?? time())
       },
       seek(ms) {
-        const replayer = replayerRef.current
+        const replayer = rrwebRef.current
         if (!replayer) return
         let total = ms
         try {
@@ -126,10 +126,10 @@ const ReplayStageImpl = forwardRef<ReplayStageHandle, ReplayStageProps>(function
       },
       getCurrentTime: time,
       isPlaying: () => playingRef.current,
-      getDocument: () => replayerRef.current?.iframe.contentDocument ?? null,
+      getDocument: () => rrwebRef.current?.iframe.contentDocument ?? null,
       getDuration() {
         try {
-          return replayerRef.current?.getMetaData().totalTime ?? meta.duration
+          return rrwebRef.current?.getMetaData().totalTime ?? meta.duration
         } catch {
           return meta.duration
         }
@@ -141,22 +141,22 @@ const ReplayStageImpl = forwardRef<ReplayStageHandle, ReplayStageProps>(function
 
   // Build / feed the Replayer. Appended events are fed live; a shorter list starts over.
   useEffect(() => {
-    if (replayerRef.current && prepared.length < fedCountRef.current) {
+    if (rrwebRef.current && prepared.length < fedCountRef.current) {
       try {
-        replayerRef.current.destroy()
+        rrwebRef.current.destroy()
       } catch {
         // Ignore stale player teardown.
       }
-      replayerRef.current = null
+      rrwebRef.current = null
       fedCountRef.current = 0
     }
     const hasSnapshot = prepared.some((event) => event.type === ReplayEventType.FullSnapshot)
-    if (!hasSnapshot || !playerRef.current) return
+    if (!hasSnapshot || !hostRef.current) return
 
-    if (!replayerRef.current) {
+    if (!rrwebRef.current) {
       const { autoplay, speed, skipInactive, initialTime } = options.current
       const replayer = new Replayer(prepared, {
-        root: playerRef.current,
+        root: hostRef.current,
         liveMode: false,
         speed,
         skipInactive,
@@ -183,7 +183,7 @@ const ReplayStageImpl = forwardRef<ReplayStageHandle, ReplayStageProps>(function
       // mutations recorded with the first snapshot (a trimmed recording stamps everything before its
       // window there): 1ms in, the first frame is the page as recorded at the start.
       replayer.pause(Math.max(initialTime, 1))
-      replayerRef.current = replayer
+      rrwebRef.current = replayer
       fedCountRef.current = prepared.length
       let duration = meta.duration
       try {
@@ -195,7 +195,7 @@ const ReplayStageImpl = forwardRef<ReplayStageHandle, ReplayStageProps>(function
       callbacks.current.onTimeUpdate?.(initialTime)
       if (autoplay) handle.play(initialTime)
     } else if (prepared.length > fedCountRef.current) {
-      for (let i = fedCountRef.current; i < prepared.length; i++) replayerRef.current.addEvent(prepared[i]!)
+      for (let i = fedCountRef.current; i < prepared.length; i++) rrwebRef.current.addEvent(prepared[i]!)
       fedCountRef.current = prepared.length
     }
   }, [prepared, meta, handle, setPlaying, tick, time])
@@ -204,23 +204,23 @@ const ReplayStageImpl = forwardRef<ReplayStageHandle, ReplayStageProps>(function
     () => () => {
       cancelAnimationFrame(rafRef.current)
       try {
-        replayerRef.current?.destroy()
+        rrwebRef.current?.destroy()
       } catch {
         // Ignore unmount teardown errors from rrweb.
       }
-      replayerRef.current = null
+      rrwebRef.current = null
       fedCountRef.current = 0
     },
     [],
   )
 
   useEffect(() => {
-    replayerRef.current?.setConfig({ speed, skipInactive })
+    rrwebRef.current?.setConfig({ speed, skipInactive })
   }, [speed, skipInactive])
 
   // rrweb's own cursor element; hosts drawing their own pointer overlay hide it.
   useEffect(() => {
-    const mouse = playerRef.current?.querySelector<HTMLElement>('.replayer-mouse')
+    const mouse = hostRef.current?.querySelector<HTMLElement>('.replayer-mouse')
     if (mouse) mouse.style.visibility = showMouse ? '' : 'hidden'
   })
 
@@ -275,7 +275,7 @@ const ReplayStageImpl = forwardRef<ReplayStageHandle, ReplayStageProps>(function
           } as CSSProperties
         }
       >
-        <div ref={playerRef} aria-hidden="true" style={{ position: 'relative', width: w, height: h, overflow: 'hidden' }} />
+        <div ref={hostRef} aria-hidden="true" style={{ position: 'relative', width: w, height: h, overflow: 'hidden' }} />
         {overlay ? <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>{overlay}</div> : null}
       </div>
     </div>

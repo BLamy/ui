@@ -194,13 +194,13 @@ function Deep({ prev, title }: { prev: string; title: string }) {
 
 /** The back label is the previous page's title when it fits beside the centered title… */
 export const BackLabelFits: Story = { render: () => <Deep prev="Settings" title="General" /> };
-/** …ellipsized when it doesn't (measured, not a character count)… */
-export const BackLabelTruncated: Story = { render: () => <Deep prev="Notifications and Focus" title="Scheduled Summary" /> };
-/** …"Back" when only a sliver is left, and just the chevron when "Back" doesn't fit either. */
+/** …"Back" when it doesn't (measured, not a character count: UIKit never cuts a back title short)… */
+export const BackLabelLong: Story = { render: () => <Deep prev="Notifications and Focus" title="Scheduled Summary" /> };
+/** …and just the chevron when "Back" doesn't fit either. */
 export const BackLabelFallback: Story = {
   render: () => <Deep prev="Accessibility Shortcuts" title="Background Sounds While Playing" />,
 };
-export const BackLabelTruncatedDark: Story = {
+export const BackLabelLongDark: Story = {
   render: () => <Deep prev="Notifications and Focus" title="Scheduled Summary" />,
   parameters: { dark: true },
 };

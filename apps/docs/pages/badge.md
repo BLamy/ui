@@ -27,7 +27,7 @@ import { Badge } from '@brett_lamy/ui/badge'
 
 ## Variants
 
-Seven variants. `default` is the solid accent, `secondary` a gray fill, `tinted` a 15% accent wash with accent text, `outline` a hairline ring with foreground text, and `destructive`, `success` and `warning` are solid red, green and orange (success and warning with black text: white on the light iOS green or yellow would be about 2:1). An `svg` child (an [Icon](https://blamy.github.io/ui/#/icons)) is sized to 12px (10px at `sm`) and sits before the text with a 4px gap. Badge keeps shadcn's `variant` for these colours rather than the kit's `tone`.
+Seven variants. `default` is the solid accent, `secondary` a gray fill, `tinted` a 15% accent wash with accent text (inked darker in light, so it reads at AA), `outline` a hairline ring with foreground text, and `destructive`, `success` and `warning` are solid red, green and orange (success and warning with black text: white on the light iOS green or yellow would be about 2:1). An `svg` child (an [Icon](https://blamy.github.io/ui/#/icons)) is sized to 12px (10px at `sm`) and sits before the text with a 4px gap. Badge keeps shadcn's `variant` for these colours rather than the kit's `tone`.
 
 {% demo src="badge/variants" %}
 
@@ -92,7 +92,7 @@ box-border inline-flex shrink-0 items-center justify-center gap-1 rounded-full l
 | --- | --- |
 | `default` (default) | `bg-primary text-primary-foreground` |
 | `secondary` | `bg-secondary text-secondary-foreground` |
-| `tinted` | `bg-primary/15 text-primary` |
+| `tinted` | `bg-primary/15 text-[color-mix(in_oklab,var(--primary)_78%,black)] dark:text-primary` |
 | `outline` | `text-foreground shadow-hairline` |
 | `destructive` | `bg-destructive text-white` |
 | `success` | `bg-success text-black` |

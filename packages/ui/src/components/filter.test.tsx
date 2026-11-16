@@ -142,6 +142,8 @@ describe('FilterBar', () => {
     const list = await screen.findByRole('listbox', { name: 'Status' });
     const opts = within(list).getAllByRole('option');
     expect(opts.map((o) => o.getAttribute('aria-selected'))).toEqual(['true', 'false', 'true']);
+    // Open has a colour dot: Done and In progress keep its room, so the three labels line up.
+    expect(opts.map((o) => o.children[1]?.className.includes('size-2'))).toEqual([true, true, true]);
     press(within(list).getByRole('option', { name: /^Done/ }));
     await waitFor(() => expect(chip('Status is any of Open, Done, In progress')).toBeTruthy());
     press(within(list).getByRole('option', { name: /^Open/ }));

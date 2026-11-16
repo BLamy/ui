@@ -57,8 +57,8 @@ function ready(source = terminal()) {
 
 describe("TuiPreview runtime lifecycle", () => {
   it("requires Run and a real correlated rendered message; iframe load and unrelated frames cannot report success", () => {
-    const onStatusChange = vi.fn()
-    mount(<TuiPreview code="const value = 1" language="tsx" appearance="dark" onStatusChange={onStatusChange} />)
+    const onStateChange = vi.fn()
+    mount(<TuiPreview code="const value = 1" language="tsx" appearance="dark" onStateChange={onStateChange} />)
     expect(state()).toBe("idle")
     expect(host.querySelector("iframe")).toBeNull()
     expect(host.querySelector("code")?.textContent).toBe("const value = 1")
@@ -86,7 +86,7 @@ describe("TuiPreview runtime lifecycle", () => {
     expect(state()).toBe("running")
     click("Focus terminal")
     expect(child.focus).toHaveBeenCalledOnce()
-    expect(onStatusChange.mock.calls.map(([value]) => value)).toEqual(["idle", "starting", "running"])
+    expect(onStateChange.mock.calls.map(([value]) => value)).toEqual(["idle", "starting", "running"])
     click("Stop")
     expect(state()).toBe("stopped")
     expect(host.querySelector("iframe")).toBeNull()
@@ -141,7 +141,7 @@ describe("TuiPreview runtime lifecycle", () => {
   })
 
   it("destroys the old program on source changes and does not restart for an equivalent theme object", () => {
-    const theme = { mode: "dark" as const, background: "#111", foreground: "#eee" }
+    const theme = { background: "#111", foreground: "#eee" }
     mount(<TuiPreview code="first()" theme={{ ...theme }} />)
     click("Run")
     const child = terminal()
@@ -226,9 +226,9 @@ describe("TuiPreview appearance and colors", () => {
     host.className = ""
   })
 
-  it("a complete 2.0.0 theme object is still sent exactly as given", () => {
+  it("appearance picks the scheme and theme the colors, which are sent exactly as given", () => {
     host.className = "dark"
-    mount(<TuiPreview code="test()" theme={{ mode: "light", background: "#fff", foreground: "#111" }} />)
+    mount(<TuiPreview code="test()" appearance="light" theme={{ background: "#fff", foreground: "#111" }} />)
     expect(root().dataset.appearance).toBe("light")
     expect(sentTheme()).toEqual({ mode: "light", background: "#fff", foreground: "#111" })
     expect(host.querySelector("iframe")!.style.filter).toBe("")
@@ -237,23 +237,32 @@ describe("TuiPreview appearance and colors", () => {
 })
 
 describe("TuiPreview names and controls", () => {
-  it("`streaming` blocks Run; the deprecated `isStreaming` still does, and `streaming` wins when both are set", () => {
+  it("`streaming` blocks Run until it turns false", () => {
     mount(<TuiPreview code="test()" streaming />)
     expect(button("Run").disabled).toBe(true)
     expect(host.textContent).toContain("Waiting for the response to finish")
-    mount(<TuiPreview code="test()" isStreaming />)
-    expect(button("Run").disabled).toBe(true)
-    mount(<TuiPreview code="test()" isStreaming streaming={false} />)
+    mount(<TuiPreview code="test()" streaming={false} />)
     expect(button("Run").disabled).toBe(false)
   })
 
-  it("onStateChange and the deprecated onStatusChange get the same calls", () => {
+  it("onStateChange gets every state", () => {
     const onStateChange = vi.fn()
-    const onStatusChange = vi.fn()
-    mount(<TuiPreview code="test()" onStateChange={onStateChange} onStatusChange={onStatusChange} />)
+    mount(<TuiPreview code="test()" onStateChange={onStateChange} />)
     click("Run")
     expect(onStateChange.mock.calls.map(([value]) => value)).toEqual(["idle", "starting"])
-    expect(onStatusChange.mock.calls).toEqual(onStateChange.mock.calls)
+  })
+
+  it("puts root props and ref on the section; aria-labelledby replaces the title as its name", () => {
+    const ref = { current: null as HTMLElement | null }
+    mount(<TuiPreview code="test()" ref={ref} id="preview" data-testid="tui" aria-labelledby="heading" style={{ maxWidth: 480 }} />)
+    const section = host.querySelector<HTMLElement>('[data-slot="tui-preview"]')!
+    expect(ref.current).toBe(section)
+    expect(section.id).toBe("preview")
+    expect(section.dataset.testid).toBe("tui")
+    expect(section.getAttribute("aria-labelledby")).toBe("heading")
+    expect(section.hasAttribute("aria-label")).toBe(false)
+    expect(section.style.maxWidth).toBe("480px")
+    expect(section.style.overflow).toBe("hidden")
   })
 
   it("Run turns into Stop in place, so keyboard focus stays on the button", () => {
@@ -320,22 +329,22 @@ describe("terminal fences in documents and AI responses", () => {
   })
 
   it("disables Run until streaming finishes, without automatically executing the completed response", () => {
-    mount(<GitbookStreamdown markdown={markdown} isStreaming />)
+    mount(<GitbookStreamdown markdown={markdown} streaming />)
     expect(button("Run").disabled).toBe(true)
     expect(host.textContent).toContain("Waiting for the response to finish")
     click("Run")
     expect(host.querySelector("iframe")).toBeNull()
-    mount(<GitbookStreamdown markdown={markdown} isStreaming={false} />)
+    mount(<GitbookStreamdown markdown={markdown} streaming={false} />)
     expect(button("Run").disabled).toBe(false)
     expect(host.querySelector("iframe")).toBeNull()
     click("Run")
     expect(ready().code).toBe('console.log("hello")')
-    mount(<GitbookStreamdown markdown={markdown + "\nMore response"} isStreaming />)
+    mount(<GitbookStreamdown markdown={markdown + "\nMore response"} streaming />)
     expect(host.querySelector("iframe")).toBeNull()
     expect(button("Run").disabled).toBe(true)
   })
 
-  it("keeps a partial fence inert even when the host omits isStreaming, and can disable previews entirely", () => {
+  it("keeps a partial fence inert even when the host omits streaming, and can disable previews entirely", () => {
     mount(<MarkdownContent markdown={'```tui\nconsole.log("partial")'} />)
     expect(button("Run").disabled).toBe(true)
     mount(<MarkdownContent markdown={markdown} tui={false} />)

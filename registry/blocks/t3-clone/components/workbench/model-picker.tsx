@@ -7,7 +7,7 @@ import { registerShortcut } from '@ui-sdk/react/shortcuts';
 import { Toggle as SdkToggle, ToggleGroup } from '@ui-sdk/react/toggle';
 import { cva } from 'class-variance-authority';
 import { motion } from 'framer-motion';
-import { ComposerPill } from '@/components/ui/composer/composer';
+import { ComposerPill } from '@/components/ui/composer';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Popover, PopoverContent, PopoverTitle, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@ui-sdk/react/button';

@@ -85,7 +85,7 @@ The ring has `role="timer"` and an `aria-label` of "N seconds left" (override wi
 | `showValue` | on from 26px | The seconds in the middle, sized with the ring (36% of its diameter), as ProgressRing's `showValue`. |
 | `ref`, DOM props | — | Passed to the root `span`. |
 
-A ProgressRing is UI SDK's Progress root, so it carries `data-slot="progress"` and its state attributes (`data-indeterminate`, `data-progressing`, `data-complete`); the value in the middle is `progress-value`. A CountdownRing carries `data-slot="countdown-ring"` (with `data-urgent` for the last seconds); the arc of either is `data-slot="progress-ring-arc"`.
+A ProgressRing is UI SDK's Progress root with a slot of its own, `data-slot="progress-ring"` (so a rule for the bar's `progress` never matches it), and UI SDK's state attributes (`data-indeterminate`, `data-progressing`, `data-complete`); the value in the middle is `progress-value`. A CountdownRing carries `data-slot="countdown-ring"` (with `data-urgent` for the last seconds); the arc of either is `data-slot="progress-ring-arc"`.
 
 ## cva recipes
 

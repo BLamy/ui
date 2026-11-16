@@ -213,10 +213,15 @@ function BarButton({ render, ...props }: BarButtonProps) {
 
 const dotStyle = (color: string) => ({ '--c': color }) as CSSProperties;
 
-function Mark({ icon, color, size = 14 }: { icon?: ReactNode; color?: string; size?: number }) {
-  if (icon) return <span className="grid shrink-0 place-items-center text-foreground/70">{typeof icon === 'string' ? <Icon name={icon} size={size} sw={2} /> : icon}</span>;
-  if (color) return <span aria-hidden="true" className="size-2 shrink-0 rounded-full bg-(--c)" style={dotStyle(color)} />;
-  return null;
+/** An option's icon or colour dot. In a column of options, `reserve` keeps the mark's room for one without a mark, so
+ *  the labels line up: `icon` (the icon's width; a dot is centred in it) or `dot`. */
+function Mark({ icon, color, size = 14, reserve }: { icon?: ReactNode; color?: string; size?: number; reserve?: 'icon' | 'dot' }) {
+  const mark = icon ? <span className="grid shrink-0 place-items-center text-foreground/70">{typeof icon === 'string' ? <Icon name={icon} size={size} sw={2} /> : icon}</span>
+    : color ? <span aria-hidden="true" className="size-2 shrink-0 rounded-full bg-(--c)" style={dotStyle(color)} />
+    : null;
+  if (reserve === 'icon') return <span aria-hidden={mark ? undefined : true} className="grid shrink-0 place-items-center" style={{ width: size }}>{mark}</span>;
+  if (reserve === 'dot') return mark ?? <span aria-hidden="true" className="size-2 shrink-0" />;
+  return mark;
 }
 
 function FieldMark({ field, size }: { field: FilterField; size?: number }) {
@@ -325,6 +330,8 @@ const {
 function OptionEditor({ field, value, onChange, onBack }: { field: FilterField; value: string[]; onChange: (value: string[], options: FilterChangeOptions) => void; onBack?: () => void }) {
   const options = field.options ?? [];
   const name = field.label.toLowerCase();
+  // When some options have a mark, the others keep its room, so the labels line up.
+  const reserve = options.some((o) => o.icon) ? 'icon' : options.some((o) => o.color) ? 'dot' : undefined;
   return (
     <OptionSearch
       value={value}
@@ -344,7 +351,7 @@ function OptionEditor({ field, value, onChange, onBack }: { field: FilterField; 
             <span aria-hidden="true" className={cn(checkboxVariants({ shape: 'square' }), 'size-4.5 group-data-selected:border-primary group-data-selected:bg-primary')}>
               <Icon name="check" size={12} sw={3.2} className="opacity-0 group-data-selected:opacity-100" />
             </span>
-            <Mark icon={o.icon} color={o.color} />
+            <Mark icon={o.icon} color={o.color} reserve={reserve} />
             <span className="min-w-0 flex-1 truncate">{o.label}</span>
             {o.count !== undefined ? <span className="shrink-0 text-caption text-foreground/70 tabular-nums">{o.count}</span> : null}
           </OptionSearchOption>

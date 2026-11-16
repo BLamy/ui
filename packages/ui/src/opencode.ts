@@ -1,7 +1,7 @@
 'use client';
 
-export { OpenCode, openCodeVariants } from './components/open-code';
-export type { OpenCodeProps, OpenCodeState } from './components/open-code';
+/* OpenCode's runtime, on an entry of its own because it is large: the loaders, the almost-node and agent-wasm hosts,
+   the preview URL and the vault-backed stores. The component is `@brett_lamy/ui/open-code` (and the root). */
 export { DEFAULT_OPENCODE_PREVIEW_URL } from './lib/open-code-preview';
 export {
   createAlmostNodeOpenCodeHost,

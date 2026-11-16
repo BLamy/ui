@@ -8,27 +8,28 @@ Use something else when: a plain multi-line field is enough ([Textarea](https://
 {% tab title="shadcn CLI" %}
 {% command %}npx shadcn@latest add https://blamy.github.io/ui/r/composer.json{% endcommand %}
 
-Copies the source into your project's `components/ui/` (with the parts it is built from) and adds BL UI's tokens to your CSS — no runtime package. It is yours to edit. Import from your alias:
+Copies the source into your project's `components/ui/` (with the parts it is built from), adds BL UI's tokens to your CSS and installs `@brett_lamy/ui` for Docstream, which it imports by the package's name. The copied source is yours to edit. Import from your alias:
 
 ```tsx
 import {
   Composer, ComposerCard, ComposerInput, ComposerFooter,
   ComposerSend,
-} from '@/components/ui/composer/composer'
+} from '@/components/ui/composer'
 ```
 {% endtab %}
 {% tab title="npm" %}
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 
-Import the stylesheet once at your app's entry, then the parts from their module:
+Import the stylesheets once at your app's entry (the kit's, then docstream's, which this part renders with), then the parts from their module:
 
 ```tsx
 import '@brett_lamy/ui/styles.css'
+import '@brett_lamy/ui/docstream/styles.css'
 
 import {
   Composer, ComposerCard, ComposerInput, ComposerFooter,
   ComposerSend,
-} from '@brett_lamy/ui/composer/composer'
+} from '@brett_lamy/ui/composer'
 ```
 {% endtab %}
 {% endtabs %}
@@ -40,7 +41,7 @@ import {
   Composer, ComposerCard, ComposerAttachments, ComposerInput, ComposerExpand,
   ComposerFooter, ComposerOptions, ComposerSelect, ComposerSeparator, ComposerSpacer,
   ComposerAdd, ComposerSend,
-} from '@/components/ui/composer/composer'
+} from '@/components/ui/composer'
 
 <Composer onSubmit={(markdown, attachments) => send(markdown, attachments)} streaming={busy} onStop={stop}>
   <ComposerCard>
@@ -167,7 +168,7 @@ Any other button in a composer is the kit's [Button](https://blamy.github.io/ui/
 For anything more (groups, a search field, a popover), compose the parts yourself with `ComposerPill` as the trigger. `ComposerPill` is the quiet Button at the footer's density with `icon`, the label (a changed label morphs by its shared letters) and a chevron:
 
 ```tsx
-import { ComposerPill } from '@/components/ui/composer/composer'
+import { ComposerPill } from '@/components/ui/composer'
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuGroup, DropdownMenuGroupLabel,
   DropdownMenuRadioGroup, DropdownMenuRadioItem } from '@/components/ui/dropdown-menu'
 
@@ -252,7 +253,7 @@ Files come in three ways, all through one door (`attachFiles`): `ComposerAdd`, a
 Pressing an image (its thumbnail or its chip in the text) opens the [ImageAnnotator](https://blamy.github.io/ui/#/pencilkit): the image flies out of what you pressed, a PencilKit surface lies over it, and Save flattens the strokes into it and replaces the attachment (reason `annotate`). `annotator` swaps the engine for one composer; an `ImageAnnotatorProvider` swaps it for a subtree; `null` makes it a plain preview.
 
 ```tsx
-import { ImageAnnotatorProvider } from '@/components/ui/pencilkit/image-annotator'
+import { ImageAnnotatorProvider } from '@/components/ui/pencilkit'
 
 <ImageAnnotatorProvider engine={StampEngine}>
   <App />
@@ -275,7 +276,7 @@ import { ImageAnnotatorProvider } from '@/components/ui/pencilkit/image-annotato
 {% demo src="composer/morph-cards" %}
 
 ```tsx
-import { ComposerCards, ComposerMorphCard } from '@/components/ui/composer/composer-cards'
+import { ComposerCards, ComposerMorphCard } from '@/components/ui/composer'
 
 <Composer>
   <ComposerCards side="top">
@@ -303,7 +304,7 @@ A card grows out of the surface on its inner side: the composer's card, or the o
 {% demo src="composer/queue" %}
 
 ```tsx
-import { ComposerQueue } from '@/components/ui/composer/composer-cards'
+import { ComposerQueue } from '@/components/ui/composer'
 
 <Composer streaming={busy} onSubmit={send} onStop={stop}>
   <ComposerQueue />

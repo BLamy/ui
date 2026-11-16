@@ -1,7 +1,7 @@
 'use client';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createFilter, type DateValue, type Filter, type FilterField, type FilterOperator, type FilterOption, type RelativeUnit } from '@/lib/filter-model';
-import { loadModel, parseWith, type Clause, type Field, type Schema, type Weights } from '@/lib/gpu-query';
+import { loadModel, parseWith, type Clause, type GpuQueryField, type Schema, type Weights } from '@/lib/gpu-query';
 import { stem, withinOneEdit } from '@/lib/gpu-query/schema';
 
 /* ══ Natural-language filters ══
@@ -70,7 +70,7 @@ export function buildQuerySchema(fields: readonly FilterField[]): QuerySchema {
   const uses = new Map<string, number>();
   for (const { own } of raw) for (const a of own) uses.set(a, (uses.get(a) ?? 0) + 1);
   const taken = new Set(raw.map((r) => r.name.toLowerCase()));
-  const schema: Schema = raw.map(({ field, name, own }): Field => ({
+  const schema: Schema = raw.map(({ field, name, own }): GpuQueryField => ({
     name,
     kind: GPU_KIND[field.kind],
     aliases: [...own].filter((a) => uses.get(a) === 1 && !taken.has(a)),

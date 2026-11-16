@@ -23,7 +23,7 @@ import {
 import { createDialogController, DialogTrigger } from "@ui-sdk/react/dialog"
 import { createDrawerController, Drawer, DrawerBackdrop, DrawerClose, DrawerContent, DrawerTrigger } from "@ui-sdk/react/drawer"
 import { useShortcut, useShortcutHint } from "@ui-sdk/react/shortcuts"
-import { ArrowLeft, ArrowRight, ChevronRight, Menu, Moon, PencilLine, Search, Sun, X } from "lucide-react"
+import { Glyph } from "../ui/glyph"
 
 import { AssetResolverContext, AssetResolverProvider, type AssetResolver } from "../asset-resolver"
 import { envNamesFromProperties } from "../doc-env"
@@ -37,7 +37,7 @@ import { SiteSearch } from "./SiteSearch"
 import { buildDocsTree, findLinkedAsset, findLinkedPage, readFrontmatter, type BuildDocsTreeOptions, type DocsFileContent, type DocsFiles, type DocsNavItem, type DocsPage, type DocsTree } from "./tree"
 
 export type DocsSiteRouting = "hash" | "history" | "memory"
-export type DocsSiteTheme = "light" | "dark"
+export type DocsSiteAppearance = "light" | "dark"
 
 export interface DocsSiteLink {
   label: string
@@ -109,21 +109,23 @@ export interface DocsSiteProps extends Omit<DocRenderOptions, "pageActions"> {
   initialPath?: string
   /** Called after every navigation. */
   onNavigate?: (page: DocsPage, hash: string) => void
-  /** Controlled theme. */
-  theme?: DocsSiteTheme
-  /** Uncontrolled starting theme (default `"system"`). */
-  defaultTheme?: DocsSiteTheme | "system"
-  onThemeChange?: (theme: DocsSiteTheme) => void
+  /** Light or dark, controlled. Pair it with `onAppearanceChange`. */
+  appearance?: DocsSiteAppearance
+  /** The starting appearance when uncontrolled: `"auto"` (the default) follows the system setting until the reader
+   *  picks one. */
+  defaultAppearance?: DocsSiteAppearance | "auto"
+  /** Runs when the reader switches between light and dark. */
+  onAppearanceChange?: (appearance: DocsSiteAppearance) => void
   /** Show the light / dark switch (default true). */
-  themeToggle?: boolean
-  /** localStorage key for the reader's theme choice; `false` to not persist (default `"docstream-site-theme"`). */
-  themeStorageKey?: string | false
+  appearanceToggle?: boolean
+  /** localStorage key for the reader's choice; `false` to not persist (default `"docstream-site-theme"`). */
+  appearanceStorageKey?: string | false
   /** Where `data-theme` goes: the whole document (default, unless memory routing) or just the site. */
-  applyThemeTo?: "document" | "site"
+  applyAppearanceTo?: "document" | "site"
   /** Use docstream's built-in light / dark colors (default true). Turn off when your app defines shadcn-style tokens. */
   palette?: boolean
-  /** Brand color for links, active items and focus rings. */
-  accentColor?: string
+  /** Brand color (a CSS color) for links, current items and focus rings. */
+  tint?: string
   /** ⌘K full-text search (default true). */
   search?: boolean
   /** The "On this page" outline (default true). */
@@ -237,10 +239,10 @@ function useDocsRouter(tree: DocsTree, routing: DocsSiteRouting, basePath: strin
 
 const prefersDark = () => typeof window !== "undefined" && !!window.matchMedia?.("(prefers-color-scheme: dark)").matches
 
-function useSiteTheme(props: Pick<DocsSiteProps, "theme" | "defaultTheme" | "onThemeChange" | "themeStorageKey">, urlParam: boolean) {
-  const storageKey = props.themeStorageKey === undefined ? "docstream-site-theme" : props.themeStorageKey
-  const [choice, setChoice] = useState<DocsSiteTheme | "system">(() => {
-    if (typeof window === "undefined") return props.defaultTheme ?? "system"
+function useSiteAppearance(props: Pick<DocsSiteProps, "appearance" | "defaultAppearance" | "onAppearanceChange" | "appearanceStorageKey">, urlParam: boolean) {
+  const storageKey = props.appearanceStorageKey === undefined ? "docstream-site-theme" : props.appearanceStorageKey
+  const [choice, setChoice] = useState<DocsSiteAppearance | "auto">(() => {
+    if (typeof window === "undefined") return props.defaultAppearance ?? "auto"
     if (urlParam) {
       const q = new URLSearchParams(window.location.search).get("theme")
       if (q === "light" || q === "dark") return q
@@ -253,7 +255,7 @@ function useSiteTheme(props: Pick<DocsSiteProps, "theme" | "defaultTheme" | "onT
         // storage blocked
       }
     }
-    return props.defaultTheme ?? "system"
+    return props.defaultAppearance ?? "auto"
   })
   const [systemDark, setSystemDark] = useState(prefersDark)
   useEffect(() => {
@@ -263,10 +265,10 @@ function useSiteTheme(props: Pick<DocsSiteProps, "theme" | "defaultTheme" | "onT
     mq.addEventListener?.("change", on)
     return () => mq.removeEventListener?.("change", on)
   }, [])
-  const resolved: DocsSiteTheme = props.theme ?? (choice === "system" ? (systemDark ? "dark" : "light") : choice)
+  const resolved: DocsSiteAppearance = props.appearance ?? (choice === "auto" ? (systemDark ? "dark" : "light") : choice)
   const toggle = () => {
-    const next: DocsSiteTheme = resolved === "dark" ? "light" : "dark"
-    if (props.theme === undefined) setChoice(next)
+    const next: DocsSiteAppearance = resolved === "dark" ? "light" : "dark"
+    if (props.appearance === undefined) setChoice(next)
     if (storageKey) {
       try {
         window.localStorage.setItem(storageKey, next)
@@ -274,7 +276,7 @@ function useSiteTheme(props: Pick<DocsSiteProps, "theme" | "defaultTheme" | "onT
         // storage blocked
       }
     }
-    props.onThemeChange?.(next)
+    props.onAppearanceChange?.(next)
   }
   return [resolved, toggle] as const
 }
@@ -433,9 +435,9 @@ export function DocsSite(props: DocsSiteProps) {
     basePath = "",
     initialPath,
     onNavigate,
-    themeToggle = true,
+    appearanceToggle = true,
     palette = true,
-    accentColor,
+    tint,
     search = true,
     toc = true,
     pageActions = true,
@@ -454,15 +456,15 @@ export function DocsSite(props: DocsSiteProps) {
     onTaskStateChange,
     documentProperties,
     tui,
-    isStreaming,
+    streaming,
     envHost,
     className,
     style,
   } = props
   const tree = useMemo(() => props.tree ?? buildDocsTree(files ?? {}, treeOptions), [props.tree, files, treeOptions])
   const { location, href, navigate } = useDocsRouter(tree, routing, basePath, initialPath)
-  const [theme, toggleTheme] = useSiteTheme(props, routing !== "memory")
-  const applyThemeTo = props.applyThemeTo ?? (routing === "memory" ? "site" : "document")
+  const [theme, toggleTheme] = useSiteAppearance(props, routing !== "memory")
+  const applyThemeTo = props.applyAppearanceTo ?? (routing === "memory" ? "site" : "document")
   useEffect(() => {
     if (applyThemeTo === "document") document.documentElement.dataset.theme = theme
   }, [applyThemeTo, theme])
@@ -615,7 +617,7 @@ export function DocsSite(props: DocsSiteProps) {
         onTaskStateChange={onTaskStateChange}
         documentProperties={documentProperties}
         tui={tui}
-        isStreaming={isStreaming}
+        streaming={streaming}
         envHost={envHost}
         env={envNamesFromProperties(shown.frontmatter)}
       />
@@ -625,7 +627,7 @@ export function DocsSite(props: DocsSiteProps) {
   const rootStyle = {
     ...style,
     "--ds-site-height": cssLength(height, "100dvh"),
-    ...(accentColor ? { "--primary": accentColor, "--ds-site-accent": accentColor } : {}),
+    ...(tint ? { "--primary": tint, "--ds-site-accent": tint } : {}),
   } as CSSProperties
 
   const brand = (
@@ -676,14 +678,14 @@ export function DocsSite(props: DocsSiteProps) {
     >
       <header className="ds-site-header">
         <DrawerTrigger controller={navDrawer} className="ds-site-icon-btn ds-site-menu" aria-label="Open navigation">
-          <Menu size={18} aria-hidden="true" />
+          <Glyph name="menu" size={18} />
         </DrawerTrigger>
         {brand}
         {tabBar("header")}
         <div className="ds-site-header-spacer" />
         {search ? (
           <DialogTrigger controller={searchDialog} className="ds-site-search-btn" aria-label="Search documentation" aria-keyshortcuts={searchHint.ariaKeyshortcuts}>
-            <Search size={15} aria-hidden="true" />
+            <Glyph name="magnifyingglass" size={15} />
             <span className="ds-site-search-btn-label">Search…</span>
             <kbd>{searchHint.text}</kbd>
           </DialogTrigger>
@@ -698,9 +700,9 @@ export function DocsSite(props: DocsSiteProps) {
             ))}
           </nav>
         ) : null}
-        {themeToggle ? (
+        {appearanceToggle ? (
           <button type="button" className="ds-site-icon-btn" onClick={toggleTheme} aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} theme`}>
-            {theme === "dark" ? <Sun size={16} aria-hidden="true" /> : <Moon size={16} aria-hidden="true" />}
+            {theme === "dark" ? <Glyph name="sun" size={16} /> : <Glyph name="moon" size={16} />}
           </button>
         ) : null}
       </header>
@@ -723,7 +725,7 @@ export function DocsSite(props: DocsSiteProps) {
                         <nav className="ds-site-crumbs" aria-label="Breadcrumb">
                           {shown.breadcrumbs.map((c, i) => (
                             <span key={i}>
-                              {i ? <ChevronRight size={12} aria-hidden="true" /> : null}
+                              {i ? <Glyph name="chevron-right" size={12} /> : null}
                               {c}
                             </span>
                           ))}
@@ -747,7 +749,7 @@ export function DocsSite(props: DocsSiteProps) {
                   <footer className="ds-site-pagefoot">
                     {editUrl?.(shown) ? (
                       <a className="ds-site-edit" href={editUrl(shown)} target="_blank" rel="noreferrer">
-                        <PencilLine size={14} aria-hidden="true" />
+                        <Glyph name="pencil" size={14} />
                         Edit this page
                       </a>
                     ) : null}
@@ -764,7 +766,7 @@ export function DocsSite(props: DocsSiteProps) {
                           }}
                         >
                           <small>
-                            <ArrowLeft size={12} aria-hidden="true" /> Previous
+                            <Glyph name="arrow-left" size={12} /> Previous
                           </small>
                           <strong>{prev.title}</strong>
                         </a>
@@ -783,7 +785,7 @@ export function DocsSite(props: DocsSiteProps) {
                           }}
                         >
                           <small>
-                            Next <ArrowRight size={12} aria-hidden="true" />
+                            Next <Glyph name="arrow-right" size={12} />
                           </small>
                           <strong>{next.title}</strong>
                         </a>
@@ -849,7 +851,7 @@ export function DocsSite(props: DocsSiteProps) {
           <div className="ds-site-drawer-head">
             {brand}
             <DrawerClose className="ds-site-icon-btn" aria-label="Close navigation">
-              <X size={18} aria-hidden="true" />
+              <Glyph name="xmark" size={18} />
             </DrawerClose>
           </div>
           {tabBar("drawer")}

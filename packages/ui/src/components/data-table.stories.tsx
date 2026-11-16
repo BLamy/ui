@@ -159,7 +159,7 @@ export const LoadingPhone: Story = {
 };
 
 /** `navigation="row"`: the arrow keys move whole rows (← → scroll sideways), for a list of things more than a table of values. */
-export const RowFocus: Story = {
+export const RowNavigation: Story = {
   render: () => <Desktop><DataTable aria-label="Orders" rows={ORDERS} columns={COLUMNS} navigation="row" className="min-h-0 flex-1" /></Desktop>,
 };
 

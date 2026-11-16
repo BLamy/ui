@@ -9,14 +9,14 @@
   "exports": [
     "RequestTable",
     "RequestTableLink",
-    "REQUEST_COLUMNS"
+    "REQUEST_TABLE_COLUMNS"
   ],
   "imports": [
     "RequestTable",
     "RequestTableLink"
   ],
   "types": [
-    "RequestColumnId",
+    "RequestTableColumnId",
     "RequestTableLinkProps",
     "RequestTableProps"
   ]

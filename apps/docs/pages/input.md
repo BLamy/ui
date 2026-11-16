@@ -66,6 +66,31 @@ const [message] = useState(createInputController)
 <Button onClick={() => message.focus()}>Focus</Button>
 ```
 
+### Committing when you're done
+
+`onValueCommit(value, details)` is for a field that changes something once you're done with it, not on every key: a name in an inspector, a binding, a title. What you type is a draft until **Enter** or **leaving the field** commits it (`details.reason` is `enter-key` or `blur`), and only if it changed. **Escape** puts `value` back, and goes no further while there was something to put back, so a panel or a popover it's in stays open. If you refuse the value (`value` doesn't change), the field shows what it was; a new `value` from outside replaces the draft. In a `Field`, say why in its `FieldError` and set `invalid`, so the input has its invalid edge and is described by the reason. The kit's Slider and ColorPicker spell the same moment `onValueCommit`.
+
+{% demo src="input/commit" %}
+
+```tsx
+const [name, setName] = useState('Uploads')
+const [refused, setRefused] = useState<string | null>(null)
+
+<Field invalid={!!refused}>
+  <FieldLabel>On env, as</FieldLabel>
+  <Input
+    size="sm"
+    value={name}
+    onValueCommit={(next) => {
+      if (!/^[A-Z_][A-Z0-9_]*$/.test(next)) return setRefused(`“${next}” can’t be a name on env.`)
+      setRefused(null)
+      setName(next)
+    }}
+  />
+  <FieldError>{refused}</FieldError>
+</Field>
+```
+
 ## Input or Field
 
 | | `Input` alone | `Input` in a `Field` |
@@ -104,6 +129,7 @@ An input needs a name. Inside a `Field`, the `FieldLabel` provides it; on its ow
 | `size` | `default` | `sm` 32px · `default` 44px · `lg` 50px. |
 | `value` / `defaultValue` | — | Controlled or starting text. A form reset returns to `defaultValue`. |
 | `onValueChange` | — | `(value, details)`; `details` has `reason`, `source`, `event` and `cancel()`. |
+| `onValueCommit` | — | `(value, details)`, once the text has changed and you're done: Enter or leaving it (`details.reason`: `enter-key`, `blur`; `details.event`). Until then it's a draft, and Escape puts `value` back. |
 | `controller` | — | From `createInputController()`: `getValue()`, `setValue(value)`, `clear()`, `focus()`. |
 | `disabled` / `readOnly` / `required` | `false` | The native attributes; they also set `data-disabled`, `data-readonly` and `data-required`. |
 | `className` | — | Merged last; may be a function of the input's state (`filled`, `disabled`, `readOnly`, `required`). |

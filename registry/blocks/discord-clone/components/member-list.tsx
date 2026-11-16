@@ -73,13 +73,13 @@ export interface MemberItemProps extends Omit<ComponentProps<'button'>, 'childre
   /** presence dot on the avatar; `offline` also dims the row */
   status?: ChatPresence;
   /** a tag after the name; bots default to "APP" (pass null for none) */
-  badge?: ReactNode;
+  trailing?: ReactNode;
   /** replaces the name */
   children?: ReactNode;
 }
 
-export function MemberItem({ user, status, badge, className, style, children, ...props }: MemberItemProps) {
-  const tag = badge === undefined ? (user.bot ? 'APP' : null) : badge;
+export function MemberItem({ user, status, trailing, className, style, children, ...props }: MemberItemProps) {
+  const tag = trailing === undefined ? (user.bot ? 'APP' : null) : trailing;
   const shared = useContext(MemberCardsContext);
   const [own] = useState(() => createHoverCardController<ChatUser>());
   const cards = shared ?? own;

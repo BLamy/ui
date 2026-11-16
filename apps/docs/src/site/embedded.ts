@@ -11,10 +11,10 @@ export interface EmbeddedDocsProps {
 export const UNDER_HEADER = 'calc(100dvh - 3.5rem)';
 
 export const embeddedSiteProps = ({ appearance }: EmbeddedDocsProps): Partial<DocsSiteProps> => ({
-  theme: appearance,
-  themeToggle: false,
-  themeStorageKey: false,
-  applyThemeTo: 'site',
+  appearance,
+  appearanceToggle: false,
+  appearanceStorageKey: false,
+  applyAppearanceTo: 'site',
   height: UNDER_HEADER,
-  accentColor: 'var(--dk-accent)',
+  tint: 'var(--dk-accent)',
 });

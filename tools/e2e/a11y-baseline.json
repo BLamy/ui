@@ -50,7 +50,6 @@
  "checkbox/select-all|light|color-contrast": 1,
  "checkbox/states|dark|color-contrast": 1,
  "checkbox/states|light|color-contrast": 2,
- "cloudflare-diagram/workerd|light|color-contrast": 3,
  "code-editor/composed-parts|light|color-contrast": 1,
  "code-editor/controlled|light|color-contrast": 1,
  "code-editor/debugger|dark|color-contrast": 7,

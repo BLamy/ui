@@ -10,7 +10,7 @@ Use a sibling for a different job: [VideoPreview](https://blamy.github.io/ui/#/v
 {% tab title="shadcn CLI" %}
 {% command %}npx shadcn@latest add https://blamy.github.io/ui/r/replay-preview.json{% endcommand %}
 
-Copies the source into your project's `components/ui/` (with the parts it is built from) and adds BL UI's tokens to your CSS — no runtime package. It is yours to edit. Import from your alias:
+Adds one module to your project's `components/ui/` and installs `@brett_lamy/ui`, whose Docstream it imports by the package's name. The module only re-exports the widget, so there is nothing in it to edit; it gives the widget your alias. Import from your alias:
 
 ```tsx
 import { ReplayPreview } from '@/components/ui/replay-preview'
@@ -19,21 +19,18 @@ import { ReplayPreview } from '@/components/ui/replay-preview'
 {% tab title="npm" %}
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 
-Import the stylesheet once at your app's entry, then the parts from their module:
+Import the stylesheets once at your app's entry (the kit's, then docstream's, which this part renders with), then the parts from their module:
 
 ```tsx
 import '@brett_lamy/ui/styles.css'
+import '@brett_lamy/ui/docstream/styles.css'
 
 import { ReplayPreview } from '@brett_lamy/ui/replay-preview'
 ```
 {% endtab %}
 {% endtabs %}
 
-Import docstream's stylesheet once. The player is plain CSS in `@layer docstream.replay` under zero-specificity selectors, so your utilities and rules override it, and it reads your shadcn tokens (`--card`, `--border`, `--primary`, `--muted-foreground`, `--destructive`, `--success`, `--warning`, `--tertiary-foreground`, `--ring`) with neutral fallbacks:
-
-```tsx
-import '@brett_lamy/ui/docstream/styles.css'
-```
+Docstream's stylesheet (in the npm imports above) styles the player. It is plain CSS in `@layer docstream.replay` under zero-specificity selectors, so your utilities and rules override it, and it reads your shadcn tokens (`--card`, `--border`, `--primary`, `--muted-foreground`, `--destructive`, `--success`, `--warning`, `--tertiary-foreground`, `--ring`) with neutral fallbacks.
 
 Importing it from docstream's entry is the same component: `import { ReplayPreview } from '@brett_lamy/ui/docstream/replay'`.
 
@@ -48,11 +45,11 @@ The seek bar is plain by default. With `markers` (this demo has it), a rail abov
 <ReplayPreview events={events} initialTime={6400} markers />
 ```
 
-Keys work anywhere inside the player: **Space** / **K** play and pause, **←** **→** seek 5 s, **J** / **L** 10 s, **<** **>** change speed, **F** full screen, **Home** / **End** jump to the ends. rrweb and its stylesheet load the first time a player mounts, and with `lazy` (the default) that happens only once the frame nears the viewport.
+Keys work anywhere inside the player: **Space** / **K** play and pause, **←** **→** seek 5 s, **J** / **L** 10 s, **<** **>** change speed, **F** full screen, **Home** / **End** jump to the ends. rrweb and its stylesheet load the first time a player mounts, and with `mounted="visible"` (the default) that happens only once the frame nears the viewport.
 
 ## DevTools
 
-The top bar's Console and Network buttons show what had happened by the playhead. Network shows the requests sent so far, with the failed ones counted in red. Console shows errors in red and warnings in amber. Press one to open a DevTools panel over the page, docked at the bottom like Chrome's. **Console** lists what had been logged, on tinted rows for warnings and errors, with expandable stack traces. **Network** lists the requests with status, method, type, time and a waterfall. A request still in flight shows as pending, and selecting a row shows its headers, payload and response. Scrub backwards and both lists shrink to what DevTools showed then. Press a time to jump there, or Esc to close.
+The top bar's Console and Network buttons show what had happened by the playhead. Network shows the requests sent so far, with the failed ones counted in red after a ✕. Console shows errors in red after a ✕ and warnings in amber after a ⚠, so the two counts differ by shape as well as color. Press one to open a DevTools panel over the page, docked at the bottom like Chrome's. **Console** lists what had been logged, on tinted rows for warnings and errors, with expandable stack traces. **Network** lists the requests with status, method, type, time and a waterfall. A request still in flight shows as pending, and selecting a row shows its headers, payload and response. Scrub backwards and both lists shrink to what DevTools showed then. Press a time to jump there, or Esc to close.
 
 {% demo src="replay-preview/devtools" %}
 
@@ -60,11 +57,11 @@ The top bar's Console and Network buttons show what had happened by the playhead
 <ReplayPreview events={events} initialTime={8000} defaultDevtoolsTab="network" />
 ```
 
-The panel reads rrweb's console and network plugins (`rrweb/console@1`, `rrweb/network@1`) and custom events: `network` with `{ method, url, status, … }`, `error` with `{ label, message, stack? }`, and `console` with `{ level, message }`. The buttons show only when the recording has messages, requests or inspections, and `disableDevtools` removes them. `getReplayDevtools(events)` and `replayDevtoolsAt(tools, ms)` (from `@brett_lamy/ui/docstream/replay`) give you the same lists and counts for your own UI.
+The panel reads rrweb's console and network plugins (`rrweb/console@1`, `rrweb/network@1`) and custom events: `network` with `{ method, url, status, … }`, `error` with `{ label, message, stack? }`, and `console` with `{ level, message }`. The buttons show only when the recording has messages, requests or inspections, and `devtools={false}` removes them. The panel, its tab strip, filter row and column header are opaque, on the card color, in light and dark. `getReplayDevtools(events)` and `replayDevtoolsAt(tools, ms)` (from `@brett_lamy/ui/docstream/replay`) give you the same lists and counts for your own UI.
 
 ## Inspections
 
-An inspection is a moment where someone (you, a debugging agent) looked at a request or a console message. Inspect is the player's default mode: as the playhead reaches an inspection, DevTools opens on its tab with that request or message selected and marked, and playback carries on. With `markers`, each one is also a checkpoint on the rail, labelled with what was found. Scrubbing works both ways, and a panel you close stays closed until the next inspection. `playerRef.current.inspect(id)` jumps to one.
+An inspection is a moment where someone (you, a debugging agent) looked at a request or a console message. Inspect is the player's default mode: as the playhead reaches an inspection, DevTools opens on its tab with that request or message selected and marked, and playback carries on. With `markers`, each one is also a checkpoint on the rail, labelled with what was found. Scrubbing works both ways, and a panel you close stays closed until the next inspection. `ref.current.inspect(id)` jumps to one.
 
 {% demo src="replay-preview/inspections" %}
 
@@ -115,7 +112,7 @@ A `.rrweb` embed in markdown takes its window from the URL, as a media fragment 
 
 ## Driving it from outside
 
-`playerRef` hands you `play`, `pause`, `seek`, `toggle` and `getCurrentTime`; `onTimeUpdate` reports the playhead every frame while playing, and after each seek. Here the recording's own markers (`getReplayMarkers`) become a chronology that seeks the player and dims the steps still ahead.
+`ref` is the player's handle (as on [CodeEditor](https://blamy.github.io/ui/#/code-editor) and [Terminal](https://blamy.github.io/ui/#/terminal)): `play`, `pause`, `seek`, `toggle`, `getCurrentTime` and `inspect`; `onTimeUpdate` reports the playhead every frame while playing, and after each seek. Here the recording's own markers (`getReplayMarkers`) become a chronology that seeks the player and dims the steps still ahead.
 
 {% demo src="replay-preview/chronology" %}
 
@@ -123,7 +120,7 @@ A `.rrweb` embed in markdown takes its window from the URL, as a media fragment 
 const player = useRef<ReplayPreviewHandle>(null)
 const steps = getReplayMarkers(events).filter((m) => m.kind !== 'click')
 
-<ReplayPreview events={events} playerRef={player} onTimeUpdate={setTime} />
+<ReplayPreview events={events} ref={player} onTimeUpdate={setTime} />
 {steps.map((m) => <Button onClick={() => player.current?.seek(m.time)}>{m.label}</Button>)}
 ```
 
@@ -145,7 +142,7 @@ Pass `markers` to put your own moments on the rail (an agent's findings, a test'
 
 ```tsx
 <ReplayPreview events={events} markers={findings} url="https://shop.example/checkout" trafficLights={false}
-  onMarkerPress={(m) => console.log(m.label)} />
+  onMarkerAction={(m, details) => console.log(m.label, details.reason)} />
 ```
 
 ## Recordings
@@ -188,7 +185,6 @@ The [Replay Canvas](https://blamy.github.io/ui/#/blocks/replay-canvas) block lay
 | --- | --- | --- |
 | `events` | — | The rrweb recording (`ReplayEvent[]`). Give `events` or `source`. |
 | `source` | — | The embed form: a Loop QA URL, `{ kind: 'events-url', url }`, or an event array. |
-| `active` | `true` | Keep a placeholder frame until true, e.g. until an editor block is visible. |
 | `chrome` | `browser` | `browser` (window, URL bar), `minimal` (a card), `none` (no frame). |
 | `trafficLights` | `true` | The window buttons in the browser chrome. |
 | `url` | the recording's | Address in the URL bar. |
@@ -201,17 +197,27 @@ The [Replay Canvas](https://blamy.github.io/ui/#/blocks/replay-canvas) block lay
 | `markers` | `false` | A marker rail above the seek bar: `true` reads them from the recording, or pass `ReplayMarker[]`. Off by default since docstream 1.26. |
 | `markerKinds` | all | Which recorded kinds to show. |
 | `cursor` | `true` | Draw the recorded pointer and click ripples. |
-| `disableDevtools` | `false` | Remove the Console and Network buttons, their DevTools panel and the inspections. (`devtools={false}` does the same.) |
+| `devtools` | `true` | `false` removes the Console and Network buttons, their DevTools panel and the inspections. A `ReplayDevtools` object is what DevTools shows, in place of what's read from the events. |
 | `defaultDevtoolsTab` | — | `console` or `network`: open the panel on that tab at mount. |
 | `evidence` | — | A debugger's source excerpts, logpoints and screenshots (object or JSON): the Sources tab and screenshot captures. |
 | `har` · `consoleLog` | — | A HAR (object or JSON) and a console log recorded alongside; their requests and messages join DevTools. |
 | `inspections` | — | `ReplayInspection[]`: requests and messages to open DevTools on as playback reaches them. |
 | `fit` | `width` | `width`: the page sets the frame's height. `contain`: fill a sized frame and letterbox the page. |
 | `poster` | page skeleton | Shown until the player is ready. |
-| `lazy` | `true` | Mount the player once the frame nears the viewport. |
-| `playerRef` | — | `{ play, pause, seek, toggle, getCurrentTime, inspect }`. |
-| `onTimeUpdate` · `onPlayingChange` · `onMarkerPress` | — | Playhead (ms), play state, a pressed marker. |
+| `mounted` | `'visible'` | When the replayed page mounts (and rrweb loads): `'visible'` once the frame nears the viewport, `true` at once, `false` not until it turns true, e.g. until an editor block is on screen. Meanwhile the frame, its chrome and the poster are drawn as they will be. |
+| `ref` | — | The player's handle: `{ play, pause, seek, toggle, getCurrentTime, inspect }`. |
+| `onTimeUpdate` · `onPlayingChange` | — | The playhead (ms); the play state. |
+| `onMarkerAction` | — | `(marker, details)` when a marker on the rail is pressed, after the player seeks to it. `details` is UI SDK's `ChangeDetails` (`reason: 'item-press'`). |
+| `className`, `style`, `id`, `data-*`, `aria-*`, handlers | — | On the root (`role="group"`, named by `title`); `aria-describedby` ties a still frame to its caption. |
 
 ## Styling
 
-The root is `data-slot="replay-preview"` with `data-state` (`loading` · `paused` · `playing`) and `data-chrome`. Its parts are `replay-preview-bar`, `-stage`, `-poster`, `-pointer`, `-controls`, `-scrubber` and `-markers`, plus `-url`, `-center`, `-play`, `-time`, `-speed` and `-fullscreen`. Style them with `[data-slot=…]` selectors or utilities on `className`. Parts that are UI SDK parts keep their own `data-slot` and carry these names in `data-part` instead: the captions toggle (`[data-part=replay-preview-captions]`) and the DevTools panel's pane, tab list, sections, buttons, chips, nodes, code and detail body (`[data-part=replay-devtools-pane]` …). The scrubber is a UI SDK Slider inside `replay-preview-scrubber` (its fill reads `--replay-progress` on the track), marker tooltips are `title` attributes, the icons are lucide, and the old `replayPreviewVariants` and `replayMarkerVariants` recipes are gone; the look is plain CSS on the tokens above. The big play disc follows the appearance (a light disc with a dark icon on a light page, a dark scrim on a dark one); `--replay-play-background`, `--replay-play-foreground` and `--replay-play-ring` restyle it. On touch screens the control bar's buttons are 44px.
+The root is `data-slot="replay-preview"` with `data-state` (`loading` · `paused` · `playing`) and `data-chrome`. Its parts are `replay-preview-bar`, `-stage`, `-poster`, `-pointer`, `-controls`, `-scrubber` and `-markers`, plus `-url`, `-center`, `-play`, `-time`, `-speed` and `-fullscreen`. Style them with `[data-slot=…]` selectors or utilities on `className`. Parts that are UI SDK parts keep their own `data-slot` and carry these names in `data-part` instead: the captions toggle (`[data-part=replay-preview-captions]`) and the DevTools panel's pane, tab list, sections, buttons, chips, nodes, code and detail body (`[data-part=replay-devtools-pane]` …). The scrubber is a UI SDK Slider inside `replay-preview-scrubber` (its fill reads `--replay-progress` on the track), marker tooltips are `title` attributes, the icons are the kit's [Icon](https://blamy.github.io/ui/#/icons) set, and the old `replayPreviewVariants` and `replayMarkerVariants` recipes are gone; the look is plain CSS on the tokens above. The big play disc follows the appearance (a light disc with a dark icon on a light page, a dark scrim on a dark one); `--replay-play-background`, `--replay-play-foreground` and `--replay-play-ring` restyle it. On touch screens the control bar's buttons are 44px.
+
+## Accessibility
+
+- The root is a `role="group"` named by `title` ("Session replay"); `aria-busy` is set until the player is ready. A click anywhere in it makes its keys live without drawing a focus ring.
+- Play, speed, full screen, captions and each marker are buttons with names ("Pause", "Playback speed 2×", "Error at 0:08"); the scrubber is UI SDK's slider ("Playback position", its value read as "0:06 of 0:12").
+- The DevTools buttons are a toggle group named "DevTools", and each says its counts in words ("Console: 1 error, 1 warning"); the ✕ and ⚠ glyphs repeat them by shape for sighted readers. The panel's tabs are a tab list, its resize handle a separator you can move with the arrow keys, Esc closes it and gives focus back to the player.
+- An inspection that opens the panel leaves focus where it was; a panel you open takes focus.
+- Captions are a polite live region over the page.

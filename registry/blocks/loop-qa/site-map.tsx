@@ -80,7 +80,7 @@ function Node({ node: n, depth, max }: { node: SiteNode; depth: number; max: num
           <span className="w-6 text-right text-[11.5px] text-muted-foreground tabular-nums">{n.visits}</span>
         </span>
         <span className="flex w-[92px] shrink-0 justify-end">
-          {n.bugs ? <Pill tone="danger" className="cursor-pointer">{n.bugs} {n.bugs === 1 ? 'bug' : 'bugs'}<Icon name="chevron-right" size={10} sw={2.6} /></Pill>
+          {n.bugs ? <Pill tone="destructive" className="cursor-pointer">{n.bugs} {n.bugs === 1 ? 'bug' : 'bugs'}<Icon name="chevron-right" size={10} sw={2.6} /></Pill>
             : n.status === 'unvisited' ? <Pill tone="outline">Not reached</Pill> : null}
         </span>
       </TreeItemLabel>

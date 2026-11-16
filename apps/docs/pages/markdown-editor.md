@@ -8,7 +8,7 @@ Use a sibling when the job differs: [MarkdownView](https://blamy.github.io/ui/#/
 {% tab title="shadcn CLI" %}
 {% command %}npx shadcn@latest add https://blamy.github.io/ui/r/markdown-editor.json{% endcommand %}
 
-Copies the source into your project's `components/ui/` (with the parts it is built from) and adds BL UI's tokens to your CSS — no runtime package. It is yours to edit. Import from your alias:
+Copies the source into your project's `components/ui/` (with the parts it is built from), adds BL UI's tokens to your CSS and installs `@brett_lamy/ui` for Docstream, which it imports by the package's name. The copied source is yours to edit. Import from your alias:
 
 ```tsx
 import { MarkdownEditor } from '@/components/ui/markdown-editor'
@@ -17,10 +17,11 @@ import { MarkdownEditor } from '@/components/ui/markdown-editor'
 {% tab title="npm" %}
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 
-Import the stylesheet once at your app's entry, then the parts from their module:
+Import the stylesheets once at your app's entry (the kit's, then docstream's, which this part renders with), then the parts from their module:
 
 ```tsx
 import '@brett_lamy/ui/styles.css'
+import '@brett_lamy/ui/docstream/styles.css'
 
 import { MarkdownEditor } from '@brett_lamy/ui/markdown-editor'
 ```
@@ -123,10 +124,14 @@ Fences labelled `xstate` or `tscircuit` use the same source-and-preview cards as
 | `variant` | `'default' \| 'plain' \| 'card'` | `'default'` | The kit's filled field box (Input's and Textarea's), no chrome, or a card with a hairline. |
 | `size` | `'sm' \| 'default' \| 'lg'` | `'default'` | Type size, padding and default minimum height. |
 | `minHeight` / `maxHeight` | `number \| string` | size-based / none | Writing-area bounds; content scrolls past `maxHeight`. |
-| `toolbar` | `boolean \| ReactNode` | `false` | `true`: bold, italic, strike, code and link buttons. A node: your own toolbar in the same place (a `Toolbar` of `MarkdownEditorToolbarButton`s). Hidden while read-only or disabled. |
+| `toolbar` | `boolean \| ReactNode` | `false` | `true`: the kit's `Toolbar` of `MarkdownEditorToolbarButton`s (bold, italic, strikethrough, inline code, link) with a "Type / for blocks" tip where there's room. A node: your own toolbar in the same place, made of the same parts. Hidden while read-only or disabled. |
 | `slashMenu` | `boolean \| { items }` | `true` | The `/` block menu, or a custom item list. |
 | `references` | `boolean \| ReferenceSources` | `false` | `@` / `#` / `$` pickers that insert reference chips. |
-| `demoResolver` | `DemoResolver` | — | Resolves live demo blocks to components, source files, and metadata. |
+| `demo` | `MarkdownEditorDemo` | — | Live demo blocks (`{% demo %}`), the same option as MarkdownView's: `resolver` (to components, source files and metadata), `runtime` (runs demos that carry their files inline, e.g. `createAlmostNodeDemoRuntime()`), `vfs` (demo files held in memory, `createDemoVFS()`), `dependencies` (extra npm packages inline demos may import). |
+| `documentProperties` | `boolean \| { defaultOpen? }` | `true` | Show the frontmatter as an editable property sheet above the document. |
+| `resolveAsset` | `(url) => string \| Promise<string>` | — | Turns an asset URL as written (`./models/part.stl`) into a loadable one, e.g. a `blob:` URL of a file next to the document. |
+| `pickFile` | `({ kind, current }) => Promise<string \| null \| undefined>` | — | Adds "Choose file…" to embed blocks (and "Choose image…" to images); resolve with the URL to write. |
+| `onDropEmbeds` | `(data: DataTransfer) => string[] \| Promise<string[]> \| null` | — | Claim a drop: return the URLs to embed at the drop point, or `null` for the default handling. |
 | `pasteMarkdown` | `boolean` | `true` | Parse pasted plain text that looks like Markdown into structure. |
 | `imagePaste` | `'inline' \| 'chip'` | `'inline'` | Pasted or dropped images become image blocks or attachment chips. |
 | `attachments` | `MarkdownEditorAttachment[]` | — | Chip mode: the host's store (`{ id, name, src?, size?, type? }`). |
@@ -145,15 +150,24 @@ Fences labelled `xstate` or `tscircuit` use the same source-and-preview cards as
 
 `id`, `aria-label`, `aria-labelledby` and `aria-describedby` go on the writing area; every other `div` prop (`className`, `style`, `data-*`, …) goes on the root. `markdownEditorVariants` is the cva recipe; `looksLikeMarkdown` and `insertMarkdown(editor, markdown)` are the paste helpers, exported for editors of your own.
 
+## Accessibility
+
+- The writing area (the `contenteditable`) is the field's control, named by the `Field`'s label, or by `aria-label` / `aria-labelledby`, and described by its `FieldDescription` and `FieldError`. `aria-invalid`, `aria-readonly` and `aria-disabled` follow the Field and the props.
+- Tab and Shift+Tab move focus out of the editor, so it is never a keyboard trap; in a list item they indent and outdent it, and move focus on once the item can't move further. ⌘/Ctrl+Enter submits.
+- The "/" menu is UI SDK's trigger menu, a listbox at the caret: ↑ ↓ move, Enter picks, Escape closes it. Its groups have labels, and a search with no match says "No matching blocks".
+- The toolbar is the kit's `Toolbar` named "Formatting": one Tab stop, arrow keys between buttons, each button named ("Bold", "Inline code", "Link") and a toggle (`aria-pressed`) while the selection is in that mark. The link button opens a popover with a named URL field.
+- A checklist row's checkbox is a `button` with `role="checkbox"`, named after its item ("Snap detents: Verified" style names come from the item's text and state).
+- Read-only stays focusable and selectable (and in the tab order), so its text can be read and copied; disabled leaves the tab order.
+
 ## Theming
 
 The editor follows the surrounding `--bl-*` tokens, so it matches light and dark wherever `BLProvider` or the docs' `AppearanceProvider` put it. It maps them onto the shadcn names the Docstream stylesheet reads (`--card`, `--muted`, `--border`, `--accent`, `--primary`…), the same way `MarkdownView` does. The slash menu, the link popover and the chip hover card render in place in the browser's top layer, so they inherit the editor's tokens; inside a `BLProvider` they stay within its frame (its layer host).
 
-The wrapper has `data-slot="markdown-editor"` and `data-variant`, plus `data-readonly`, `data-disabled` and `data-invalid` for state styling. The editor inside keeps Docstream's `gb`, `gb-toolbar` and `gb-content` classes for overrides.
+The wrapper has `data-slot="markdown-editor"` and `data-variant`, plus `data-readonly`, `data-disabled` and `data-invalid` for state styling. The editor inside keeps Docstream's `gb` and `gb-content` classes for overrides; the toolbar is `data-slot="markdown-editor-toolbar"`.
 
 ## Styling the document
 
-The Docstream editor's stylesheet ships inside `@brett_lamy/ui/styles.css` in a cascade layer (`components.bl-editor`), with the kit's own editor rules in the layer above it (`components.bl-mde`) — both under Tailwind's `utilities`. So ordinary classes restyle the editor without `!important`.
+The Docstream editor's stylesheet ships inside `@brett_lamy/ui/styles.css` in a cascade layer (`components.bl-editor`), with the kit's own editor rules in the layer above it (`components.bl-mde`) — both under Tailwind's `utilities`. So ordinary classes restyle the editor without `!important`. With the registry, the item adds the same `@import` to your CSS, in the same layer. Docstream's own sheet (`@brett_lamy/ui/docstream/styles.css`, imported beside the kit's) styles the read-only blocks the editor shows inside a document: demos, command boxes, diagrams, task icons. The component imports no CSS itself, so it loads in plain Node.
 
 `classNames` puts classes on parts of the live document and keeps them there as you type: the first block (`title`), headings, checklists and their checkboxes, tables and their cells, quotes, code blocks, links, the toolbar. The Notes block dresses its editor this way — a big bold title line, round checklist circles that fill with the tint, hairline tables:
 

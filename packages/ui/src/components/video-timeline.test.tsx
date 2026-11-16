@@ -177,22 +177,33 @@ describe('VideoTimeline', () => {
     render(<Editor onValueChange={onValueChange} readOnly />);
     focus(clip('Song'));
     key(clip('Song'), 'ArrowRight');
-    act(() => { fireEvent.click(screen.getAllByRole('button', { name: 'Mute track' })[0]); });
+    act(() => { fireEvent.click(screen.getByRole('button', { name: 'Mute Titles' })); });
     expect(onValueChange).not.toHaveBeenCalled();
   });
 
   it('reports a track header toggle as a press on that track', () => {
     const onValueChange = vi.fn();
     render(<Editor onValueChange={onValueChange} />);
-    act(() => { fireEvent.click(screen.getAllByRole('button', { name: 'Lock track' })[2]); });
+    act(() => { fireEvent.click(screen.getByRole('button', { name: 'Lock Music' })); });
     const [value, details] = onValueChange.mock.lastCall!;
     expect(value.tracks[2].locked).toBe(true);
     expect(details).toMatchObject({ reason: 'press', id: 'music', action: 'track' });
   });
 
+  it('names each header toggle after its track, and passes a div\'s props and ref to the root', () => {
+    let root: HTMLDivElement | null = null;
+    const clock = createPlayback({ duration: 10 });
+    render(<VideoTimeline defaultValue={START} playback={clock} media={MEDIA} id="tl" data-testid="timeline" ref={(el) => { root = el; }} />);
+    for (const name of ['Hide Titles', 'Mute Titles', 'Lock Titles', 'Hide Main', 'Mute Music', 'Lock Music']) {
+      expect(screen.getByRole('button', { name })).toBeTruthy();
+    }
+    expect(root).toBe(document.getElementById('tl'));
+    expect((root as unknown as HTMLElement).dataset.testid).toBe('timeline');
+  });
+
   it('draws the slashed glyph while a track is muted', () => {
     render(<Editor />);
-    const mute = screen.getAllByRole('button', { name: 'Mute track' })[2];
+    const mute = screen.getByRole('button', { name: 'Mute Music' });
     const before = mute.innerHTML;
     act(() => { fireEvent.click(mute); });
     expect(mute.getAttribute('aria-pressed')).toBe('true');

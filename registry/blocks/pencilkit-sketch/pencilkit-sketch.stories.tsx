@@ -18,13 +18,13 @@ export default meta;
 
 type Story = StoryObj<typeof PencilKitDemo>;
 
-export const Light: Story = { args: { dark: false } };
-export const Dark: Story = { args: { dark: true } };
-export const TintedPink: Story = { args: { dark: false, tint: '#FF375F' } };
+export const Light: Story = { args: { appearance: 'light' } };
+export const Dark: Story = { args: { appearance: 'dark' } };
+export const TintedPink: Story = { args: { appearance: 'light', tint: '#FF375F' } };
 
 /** Pre-seeded strokes so tools, eraser, undo/redo and clear are demonstrable immediately. */
 export const Seeded: Story = {
-  args: { dark: false, defaultStrokes: demoStrokes() },
+  args: { appearance: 'light', defaultStrokes: demoStrokes() },
   parameters: {
     docs: {
       description: {

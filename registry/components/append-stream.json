@@ -1,0 +1,15 @@
+{
+  "name": "append-stream",
+  "title": "Append-only streams",
+  "description": "Named, append-only lists of JSON records in localStorage: each write is a new chunk key (gzip when the browser can), so nothing stored is ever rewritten; a full store asks an evict callback for room. LocalStreams is the store the session recorder and Freeform write to.",
+  "exports": [
+    "LocalStreams",
+    "StreamFullError"
+  ],
+  "imports": [
+    "LocalStreams"
+  ],
+  "types": [
+    "LocalStreamsOptions"
+  ]
+}

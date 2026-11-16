@@ -95,7 +95,7 @@ Flattens inlines to text: runs keep their text, images contribute their `alt`, m
 function trimPartialInlineToken(md: string): string
 ```
 
-What `GitbookStreamdown` applies to the buffer while `isStreaming` is set. It strips a trailing half-arrived token so it never flashes as plain text: a block tag still being typed (`{% demo src="butt`), a one-line `{% command %}…` without its end tag yet, a lone backtick or two (or `~`) that may be the start of a fence, `[^1`, `@bre`, a lone `#`, a trailing `\`. Inside an unterminated code fence it does nothing.
+What `GitbookStreamdown` applies to the buffer while `streaming` is set. It strips a trailing half-arrived token so it never flashes as plain text: a block tag still being typed (`{% demo src="butt`), a one-line `{% command %}…` without its end tag yet, a lone backtick or two (or `~`) that may be the start of a fence, `[^1`, `@bre`, a lone `#`, a trailing `\`. Inside an unterminated code fence it does nothing.
 
 ```ts
 trimPartialInlineToken("Hello [^1")           // "Hello "

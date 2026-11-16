@@ -53,7 +53,7 @@ import { StlViewer } from "@brett_lamy/ui/docstream"
 // or: import { StlViewer } from "@brett_lamy/ui/docstream/stl"
 
 export function PartPreview({ url }: { url: string }) {
-  return <StlViewer src={url} title="Bracket v3" color="oklch(0.7 0.15 250)" autoRotate={false} />
+  return <StlViewer src={url} title="Bracket v3" tint="oklch(0.7 0.15 250)" autoRotate={false} />
 }
 ```
 
@@ -61,7 +61,7 @@ export function PartPreview({ url }: { url: string }) {
 | --- | --- | --- | --- |
 | `src` | `string` | required | URL of a binary or ASCII `.stl`. Used as given; the component doesn't call the asset resolver (the embed does). |
 | `title` | `string` | the file name | Caption and accessible label. |
-| `color` | `string` | the element's `color` | Any CSS color (`oklch()`, `var()`, named…). |
+| `tint` | `string` | the element's `color` | Any CSS color (`oklch()`, `var()`, named…). |
 | `autoRotate` | `boolean` | `true` | Turn until the reader interacts. Read once, on mount. |
 | `className` | `string` | none | Added to the `figure.docstream-stl` root. |
 | `style` | `CSSProperties` | none | Inline styles on the root, e.g. a `maxWidth` or `--gb-*` tokens. Since 2.0.1. |

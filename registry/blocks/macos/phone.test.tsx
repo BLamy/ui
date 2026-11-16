@@ -23,7 +23,7 @@ afterEach(async () => {
 async function mount() {
   const onHome = vi.fn();
   const onSwitcher = vi.fn();
-  await act(async () => { root.render(<HomeBar dark={false} inApp onHome={onHome} onSwitcher={onSwitcher} />); });
+  await act(async () => { root.render(<HomeBar appearance="light" inApp onHome={onHome} onSwitcher={onSwitcher} />); });
   const bar = element.querySelector<HTMLButtonElement>('button[aria-label=Home]')!;
   vi.useFakeTimers();
   return { bar, onHome, onSwitcher };

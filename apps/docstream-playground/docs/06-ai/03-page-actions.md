@@ -28,7 +28,7 @@ The button at the top right of this page is one. Copy the page and paste it into
 />
 ```
 
-On `GitbookStreamdown`, page actions stay hidden while `isStreaming` is set — a half-received answer is never copied — and appear when it ends.
+On `GitbookStreamdown`, page actions stay hidden while `streaming` is set — a half-received answer is never copied — and appear when it ends.
 
 ## Live: what gets copied
 

@@ -24,7 +24,7 @@ export function IssueList({ ui, nav, labelFilter }: { ui: Layout; nav: Nav; labe
       <ListToolbar ui={ui} nav={nav} q={q} setQ={setQ} placeholder={`is:issue state:${state}`} newLabel="New issue" />
       {labelFilter.length ? (
         <div className="mb-3 flex flex-wrap items-center gap-1.5 text-muted-foreground">
-          Filtered by {labelFilter.map((l) => <LabelChip key={l} label={labels.find((x) => x.name === l) ?? labelOf(l)} dark={ui.dark} />)}
+          Filtered by {labelFilter.map((l) => <LabelChip key={l} label={labels.find((x) => x.name === l) ?? labelOf(l)} appearance={ui.appearance} />)}
         </div>
       ) : null}
       <Box header={
@@ -79,7 +79,7 @@ export function IssueView({ ui, number, nav }: { ui: Layout; number: number; nav
             <div className="mt-3 mb-2 flex flex-wrap items-center gap-x-2 gap-y-2 border-b border-border pb-4 text-muted-foreground">
               <StatePill state={i.state === 'open' ? 'open' : 'closed'} />
               <span className="leading-6"><UserName user={i.author} /> opened this issue {i.when} · {i.comments} comment{i.comments === 1 ? '' : 's'}</span>
-              {i.labels.map((l) => <LabelChip key={l.name} label={l} dark={ui.dark} />)}
+              {i.labels.map((l) => <LabelChip key={l.name} label={l} appearance={ui.appearance} />)}
             </div>
             <Thread ui={ui} number={i.number} authorLogin={i.author.login}
               closeLabel={i.state === 'open' ? <><Oct name="issueClosed" className="text-[var(--gh-done)]" />Close issue</> : null} />

@@ -130,6 +130,16 @@ describe('Spinner loaders', () => {
     expect(el.dataset.test).toBe('x');
   });
 
+  it('keeps a stable ref across renders: the caller\'s callback ref is not detached and re-attached', () => {
+    const calls: (HTMLSpanElement | null)[] = [];
+    const ref = (n: HTMLSpanElement | null) => { calls.push(n); };
+    const { rerender } = render(<Spinner ref={ref} speed={1} />);
+    rerender(<Spinner ref={ref} speed={2} />);
+    rerender(<Spinner ref={ref} speed={3} />);
+    expect(calls.filter((n) => n === null)).toHaveLength(0);
+    expect(calls).toHaveLength(1);
+  });
+
   it('merges className and style onto the root', () => {
     const el = root(render(<Spinner animation="orbit" className="text-primary" style={{ margin: 3 }} />).container);
     expect(el.className).toContain('bl-ld');

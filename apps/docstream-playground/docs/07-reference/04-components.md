@@ -22,14 +22,14 @@ Three components render documents. All of them parse with `parseMarkdown` (or ta
 import { GitbookStreamdown } from "@brett_lamy/ui/docstream" // also /streamdown
 ```
 
-Parses `markdown ?? children` on each change (memoized on the content and `isStreaming`). While streaming, it first trims a half-arrived trailing token (`trimPartialInlineToken`) so chips and tags never flash as text, and it hides page actions.
+Parses `markdown ?? children` on each change (memoized on the content and `streaming`). While streaming, it first trims a half-arrived trailing token (`trimPartialInlineToken`) so chips and tags never flash as text, and it hides page actions.
 
 | Prop | Type | Default | Purpose |
 | --- | --- | --- | --- |
 | `markdown` | `string` | — | The Markdown so far. Wins over `children`. |
 | `children` | `string` | — | Alternative way to pass the source. |
-| `isStreaming` | `boolean` | `false` | Sets `data-streaming` on the wrapper, trims partial tokens, hides page actions. |
-| `isAnimating` | `boolean` | follows `isStreaming` | Overrides `aria-busy` — for typewriter effects that outlast the stream. |
+| `streaming` | `boolean` | `false` | Sets `data-streaming` on the wrapper, trims partial tokens, hides page actions. |
+| `animating` | `boolean` | follows `streaming` | Overrides `aria-busy` — for typewriter effects that outlast the stream. |
 | `className` | `string` | — | Class on the wrapper div. |
 | `liveRenderer` | `LivePreviewRenderer` | — | Runs `live="true"` jsx/tsx/react fences. Without it they render as code. |
 | `sourceRenderer` | `SourceReferenceRenderer` | — | Renders `{% source-ref %}` blocks. Without it they render as a labeled placeholder. |
@@ -285,7 +285,7 @@ Documented with their features:
 | Component | Page |
 | --- | --- |
 | `VideoEmbed` | [Embeds and video](../05-media/01-embeds-and-video.md) |
-| `ReplayPreview` / `ReplayEmbed`, `ReplayFile`, `ReplayStage` | [Replays](../05-media/02-replays.md) |
+| `ReplayPreview`, `ReplayFile`, `ReplayStage` | [Replays](../05-media/02-replays.md) |
 | `StlViewer` | [3D models](../05-media/03-3d-models.md) |
 | `StrudelPlayer`, `StrudelRack` | [Music](../05-media/04-music.md) |
 | `OpenApiOperation` (`specUrl`, `path`, `method`) | [OpenAPI](../05-media/05-openapi.md) |

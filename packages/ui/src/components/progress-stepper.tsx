@@ -182,7 +182,7 @@ export function ProgressStepperItemIcon({ className, children, ...props }: Compo
 /** The current segment's shimmer sweeps a gradient; under reduced motion it is a still, partial bar. */
 function fillClass(state: ProgressStepperItemState, animated: boolean) {
   if (state === 'current' && animated) {
-    return 'left-[-100%] w-full bg-[linear-gradient(90deg,transparent,var(--stepper-accent)_40%,var(--stepper-accent)_60%,transparent)] [transform:none] animate-[bl-stepper-sweep_1.6s_ease-in-out_infinite] motion-reduce:left-0 motion-reduce:animate-none motion-reduce:bg-(color:--stepper-accent) motion-reduce:bg-none motion-reduce:[transform:scaleX(.45)]';
+    return 'start-[-100%] w-full bg-[linear-gradient(90deg,transparent,var(--stepper-accent)_40%,var(--stepper-accent)_60%,transparent)] [transform:none] animate-[bl-stepper-sweep_1.6s_ease-in-out_infinite] motion-reduce:start-0 motion-reduce:animate-none motion-reduce:bg-(color:--stepper-accent) motion-reduce:bg-none motion-reduce:[transform:scaleX(.45)]';
   }
   return cn(
     'bg-(color:--stepper-accent)',
@@ -204,7 +204,8 @@ export function ProgressStepperItemTrack({ className, ...props }: ComponentProps
       <span
         data-slot="progress-stepper-item-fill"
         className={cn(
-          'absolute inset-0 origin-[left_center] rounded-[inherit] [transition:transform_var(--duration-spring-smooth)_var(--ease-spring-smooth),background-color_var(--duration-spring-smooth)_var(--ease-spring-smooth)] motion-reduce:transition-none',
+          // Fills from the inline start, and the sweep travels toward the inline end (`--bl-stepper-dir` is -1 in RTL).
+          'absolute inset-0 origin-[left_center] rtl:origin-[right_center] rtl:[--bl-stepper-dir:-1] rounded-[inherit] [transition:transform_var(--duration-spring-smooth)_var(--ease-spring-smooth),background-color_var(--duration-spring-smooth)_var(--ease-spring-smooth)] motion-reduce:transition-none',
           fillClass(state, animated),
         )}
       />

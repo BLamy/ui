@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MotionGlobalConfig } from 'framer-motion';
 import { DialogTrigger } from '@/components/ui/dialog';
-import { VaultEnrollDialog, VaultGate, VaultUnlock } from '@/components/ui/vault-gate';
+import { VaultEnrollDialog, VaultGate, VaultRecoveryKey, VaultUnlock } from '@/components/ui/vault-gate';
 import { BLProvider } from '@/lib/theme';
 import { SizeClassProvider } from '@/lib/container';
 import type { Vault, VaultState } from '@/lib/vault';
@@ -309,5 +309,50 @@ describe('VaultUnlock', () => {
     await settle(400);
     expect(reset).toHaveBeenCalledTimes(1);
     expect(screen.queryByRole('alertdialog')).toBeNull();
+  });
+});
+
+describe('VaultUnlock errors', () => {
+  it('shows a wrong recovery key as the field\'s FieldError, which describes the input', async () => {
+    const locked = { status: 'locked', passkeys: [{ id: 'a', label: 'Passkey', createdAt: 0 }], hasRecoveryKey: true, recoveryConfirmed: true } as const;
+    const failing = stubVault(locked, { unlockWithRecoveryKey: async () => { throw new Error('That recovery key doesn\'t open the vault.'); } });
+    render(<VaultUnlock vault={failing.vault} autoFocus={false} />);
+    await settle();
+    fireEvent.click(screen.getByRole('button', { name: 'Use recovery key instead' }));
+    await settle();
+    const input = screen.getByRole('textbox', { name: 'Recovery key' });
+    fireEvent.input(input, { target: { value: 'AAAA-BBBB' } });
+    await settle();
+    fireEvent.submit(input.closest('form')!);
+    await settle(400);
+    const alert = screen.getByRole('alert');
+    expect(alert.closest('[data-slot=field]')).toBe(input.closest('[data-slot=field]'));
+    expect(input.getAttribute('aria-invalid')).toBe('true');
+    expect((input.getAttribute('aria-describedby') ?? '').split(' ')).toContain(alert.id);
+  });
+});
+
+describe('VaultEnrollDialog close', () => {
+  it('has a × in the intro bar, and none on the recovery-key step', async () => {
+    render(<Enroll vault={stubVault().vault} />);
+    await settle();
+    expect(screen.getByRole('button', { name: 'Close' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Create passkey' }));
+    await settle();
+    expect(screen.getByRole('dialog', { name: 'Save your recovery key' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Close' })).toBeNull();
+  });
+});
+
+describe('VaultRecoveryKey', () => {
+  it('is one named group, read letter by letter, in two columns or (variant="row") four', () => {
+    const { rerender } = render(<VaultRecoveryKey value={KEY} />);
+    const group = screen.getByRole('group', { name: 'Recovery key' });
+    expect(group.getAttribute('data-variant')).toBe('grid');
+    expect(group.className).toContain('grid-cols-[repeat(2,max-content)]');
+    expect(group.textContent).toContain('7 Q X 2, M 9 K D');
+    rerender(<VaultRecoveryKey value={KEY} variant="row" />);
+    expect(group.getAttribute('data-variant')).toBe('row');
+    expect(group.className).toContain('grid-cols-[repeat(4,max-content)]');
   });
 });

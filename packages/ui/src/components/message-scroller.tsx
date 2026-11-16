@@ -125,7 +125,12 @@ export function MessageScroller({
         <parts.Viewport
           aria-label={ariaLabelledBy ? undefined : ariaLabel}
           aria-labelledby={ariaLabelledBy}
-          className="wb-scroll absolute inset-0 flex flex-col overflow-y-auto overscroll-contain outline-none"
+          className={cn(
+            'wb-scroll absolute inset-0 flex flex-col overflow-y-auto overscroll-contain outline-none',
+            // Scrolled away from the top, the previous turn fades under the top edge instead of being cut mid-line,
+            // as iOS scroll views do. Resting in a peek host, the host's own fade applies instead.
+            'data-scrolled:not-data-resting:[mask-image:linear-gradient(to_bottom,transparent,black_24px)]',
+          )}
         >
           <parts.Content
             ref={log}

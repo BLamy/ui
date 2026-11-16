@@ -104,7 +104,7 @@ describe('AlertDialog is agent-ready (confirm flow)', () => {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogClose variant="cancel">Cancel</AlertDialogClose>
-            <AlertDialogClose variant="destructive" value="delete" data-agent-confirm="Deletes the project and all its files">Delete forever</AlertDialogClose>
+            <AlertDialogClose tone="destructive" value="delete" data-agent-confirm="Deletes the project and all its files">Delete forever</AlertDialogClose>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

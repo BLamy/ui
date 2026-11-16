@@ -14,12 +14,15 @@
    the ripples and the URL too. */
 import {
   memo, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState,
-  type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type ReactNode, type Ref,
+  type ComponentProps, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent as ReactMouseEvent,
+  type PointerEvent as ReactPointerEvent, type ReactNode, type Ref,
 } from 'react'
+import type { ChangeDetails } from '@ui-sdk/core'
+import { changeDetails } from '../ui/change-details'
 import { useReducedMotion } from 'framer-motion'
 import { Slider, SliderControl, SliderIndicator, SliderThumb, SliderTrack } from '@ui-sdk/react/slider'
 import { Toggle } from '@ui-sdk/react/toggle'
-import { Captions, CaptionsOff, Lock, Maximize, Minimize, Pause, Play, RotateCcw } from 'lucide-react'
+import { Glyph } from "../ui/glyph"
 import { ReplayStage } from './ReplayStage'
 import { DevtoolsButtons, DevtoolsPanel, type ElementsProps, type ReplayDevtoolsTab, type SourcesProps } from './ReplayDevtools'
 import { getReplayDevtools, replayDevtoolsAt, replayDevtoolsCountsAt, replayDevtoolsCutAt, type ReplayDevtools } from './devtools'
@@ -49,8 +52,11 @@ export interface ReplayPreviewHandle {
   inspect(id: string): void
 }
 
-/** Options shared by every `ReplayPreview` (an `events` player or a `source` embed). */
-export interface ReplayPlayerOptions {
+/** Why `onMarkerAction` ran: a marker on the rail was pressed (by pointer or keyboard). */
+export type ReplayMarkerActionReason = 'item-press'
+
+/** The player's own options, shared by every `ReplayPreview` (an `events` player, a `source` embed or a `stage`). */
+export interface ReplayPlayerOwnOptions {
   /** Address shown in the URL bar (default: the recording's own URL, following its navigations). */
   url?: string
   /** Accessible name of the player (default "Session replay"). */
@@ -80,12 +86,11 @@ export interface ReplayPlayerOptions {
   /** Which recorded marker kinds to show (default all). */
   markerKinds?: ReplayMarkerKind[]
   /** Console and Network buttons (in the top bar, or beside the controls without the browser chrome) that open a
-   *  DevTools panel cut at the playhead, shown when the recording has console messages, requests or inspections.
-   *  `disableDevtools` removes them, the panel and the inspections. */
-  disableDevtools?: boolean
-  /** What DevTools shows, as data: the messages and requests in `ReplayDevtools`' shape, in time order, with times in ms
-   *  from the start of the recording. It's used as it is, in place of what `getReplayDevtools` would read from the
-   *  events, and a new object can come at any time. `false` is the same as `disableDevtools`. */
+   *  DevTools panel cut at the playhead, shown when the recording has console messages, requests or inspections
+   *  (default true). `false` removes them, the panel and the inspections. Or what DevTools shows, as data: the
+   *  messages and requests in `ReplayDevtools`' shape, in time order, with times in ms from the start of the
+   *  recording. It's used as it is, in place of what `getReplayDevtools` would read from the events, and a new object
+   *  can come at any time. */
   devtools?: boolean | ReplayDevtools
   /** Where the Elements tab reads from. Default: the stage's document, as rrweb's stage has one. A stage with none has
    *  no Elements tab unless this gives it one. `false` takes the tab away. */
@@ -122,15 +127,39 @@ export interface ReplayPlayerOptions {
   fit?: 'width' | 'contain'
   /** Shown until the player is ready (default: a page-shaped skeleton). */
   poster?: ReactNode
-  /** Mount the player only once the frame nears the viewport (default true). */
-  lazy?: boolean
-  /** Imperative control (play, pause, seek). */
-  playerRef?: Ref<ReplayPreviewHandle | null>
+  /** When the replayed page mounts (and rrweb loads). `'visible'` (default): once the frame nears the viewport.
+   *  `true`: at once. `false`: not yet, e.g. until an editor block is on screen; the frame, its chrome and the poster
+   *  are drawn the same, and it mounts when this turns true. */
+  mounted?: boolean | 'visible'
+  /** The player's handle: play, pause, seek, toggle, getCurrentTime, inspect. */
+  ref?: Ref<ReplayPreviewHandle | null>
   onTimeUpdate?: (ms: number) => void
   onPlayingChange?: (playing: boolean) => void
-  onMarkerPress?: (marker: ReplayMarker) => void
-  className?: string
-  style?: CSSProperties
+  /** A marker on the rail was pressed: the player seeks to it, then calls this. */
+  onMarkerAction?: (marker: ReplayMarker, details: ChangeDetails<ReplayMarkerActionReason>) => void
+}
+
+/** The root is a `<div role="group">`: its props (`id`, `className`, `style`, `data-*`, `aria-*`, handlers) go on it.
+ *  `ref` is the player's handle, not the element. */
+export interface ReplayPlayerOptions
+  extends ReplayPlayerOwnOptions, Omit<ComponentProps<'div'>, 'children' | 'title' | 'ref' | 'onTimeUpdate'> {}
+
+/** Every key of `ReplayPlayerOwnOptions`, to tell the player's options from the root element's props. */
+const OWN_OPTION_KEYS = [
+  'url', 'title', 'chrome', 'trafficLights', 'controls', 'autoplay', 'loop', 'initialTime', 'timeWindow', 'speeds',
+  'markers', 'markerKinds', 'devtools', 'elements', 'defaultDevtoolsTab', 'inspections', 'har', 'consoleLog',
+  'autoCloseDevtools', 'inspectionDwell', 'evidence', 'captions', 'cursor', 'fit', 'poster', 'mounted', 'ref',
+  'onTimeUpdate', 'onPlayingChange', 'onMarkerAction',
+] as const satisfies readonly (keyof ReplayPlayerOwnOptions)[]
+// Fails to compile when an option is added above without its key here.
+const ALL_OWN_KEYS: Exclude<keyof ReplayPlayerOwnOptions, (typeof OWN_OPTION_KEYS)[number]> extends never ? true : never = true
+void ALL_OWN_KEYS
+
+/** The root element's props among a player's options (`id`, `data-*`, `aria-*`, handlers): what's not an option. */
+export function replayRootProps(options: ReplayPlayerOptions): Omit<ComponentProps<'div'>, 'children' | 'title' | 'ref' | 'onTimeUpdate'> {
+  const out: Record<string, unknown> = { ...options }
+  for (const key of OWN_OPTION_KEYS) delete out[key]
+  return out
 }
 
 /** The debugger's screenshots as macOS takes them: as playback reaches one, the stage flashes and the shot shrinks
@@ -217,8 +246,8 @@ const MARKER_NOUN: Record<ReplayMarkerKind, string> = {
 export function ReplayPlayer({
   events: recordingEvents, stage: customStage, har, consoleLog, evidence, captions, url, title = 'Session replay', chrome = 'browser', trafficLights = true, controls = true,
   autoplay = false, loop = false, initialTime: initialTimeProp, timeWindow, speeds = DEFAULT_PLAYER_SPEEDS, markers, markerKinds,
-  cursor = true, disableDevtools = false, devtools = true, elements: elementsSource, defaultDevtoolsTab, inspections, autoCloseDevtools = 5000, inspectionDwell = 2500, fit = 'width', poster, lazy = true, playerRef, onTimeUpdate, onPlayingChange, onMarkerPress,
-  className, style,
+  cursor = true, devtools = true, elements: elementsSource, defaultDevtoolsTab, inspections, autoCloseDevtools = 5000, inspectionDwell = 2500, fit = 'width', poster, mounted = 'visible', ref, onTimeUpdate, onPlayingChange, onMarkerAction,
+  className, style, onKeyDown: onRootKeyDown, onPointerDown: onRootPointerDown, ...rest
 }: ReplayPlayerOptions & { events: ReplayEvent[]; stage?: ReplayCustomStage }) {
   // The recording plus whatever was recorded beside it (a HAR, a console log), as one event list for DevTools,
   // inspections and markers. The stage, the clock and the pointer read the recording alone, so a HAR or a log that
@@ -243,7 +272,7 @@ export function ReplayPlayer({
     return toolsData ? [...read, ...getReplayDevtoolsMarkers(toolsData)].sort((a, b) => a.time - b.time) : read
   }, [events, toolsData])
 
-  const toolsOn = devtools !== false && !disableDevtools
+  const toolsOn = devtools !== false
   const tools = useMemo(() => toolsData ?? getReplayDevtools(events), [toolsData, events])
   const proof = useMemo(() => resolveReplayEvidence(evidence, meta.start, meta.duration), [evidence, meta.start, meta.duration])
   const cues = useMemo(() => (captions ? parseWebVTT(captions) : []), [captions])
@@ -278,7 +307,8 @@ export function ReplayPlayer({
   }, [timeWindow, meta.duration])
   const initialTime = initialTimeProp ?? span?.start ?? 0
 
-  const [visible, setVisible] = useState(!lazy)
+  const [near, setNear] = useState(false)
+  const visible = mounted === true || (mounted === 'visible' && near)
   const [ready, setReady] = useState(false)
   const [posterGone, setPosterGone] = useState(false)
   const [time, setTime] = useState(initialTime)
@@ -292,15 +322,15 @@ export function ReplayPlayer({
   const speedList = speeds.length ? speeds : DEFAULT_PLAYER_SPEEDS
   const speed = speedList[speedIndex % speedList.length] ?? 1
 
-  // Lazy mount: start the player (and fetch rrweb) once the frame is near the viewport.
+  // `mounted="visible"`: start the player (and fetch rrweb) once the frame is near the viewport.
   useEffect(() => {
-    if (visible) return
+    if (mounted !== 'visible' || near) return
     const el = rootRef.current
-    if (!el || typeof IntersectionObserver === 'undefined') return setVisible(true)
-    const io = new IntersectionObserver((entries) => entries.some((e) => e.isIntersecting) && setVisible(true), { rootMargin: '240px' })
+    if (!el || typeof IntersectionObserver === 'undefined') return setNear(true)
+    const io = new IntersectionObserver((entries) => entries.some((e) => e.isIntersecting) && setNear(true), { rootMargin: '240px' })
     io.observe(el)
     return () => io.disconnect()
-  }, [visible])
+  }, [mounted, near])
 
   useEffect(() => {
     const on = () => setFullscreen(document.fullscreenElement === rootRef.current)
@@ -362,7 +392,7 @@ export function ReplayPlayer({
       },
     }
   }, [])
-  useImperativeHandle(playerRef, () => handle, [handle])
+  useImperativeHandle(ref, () => handle, [handle])
 
   const onTime = useCallback((ms: number) => {
     timeRef.current = ms
@@ -396,12 +426,13 @@ export function ReplayPlayer({
     if (document.fullscreenElement) void document.exitFullscreen?.().catch(() => {})
     else void el.requestFullscreen?.().catch(() => {})
   }
-  const jumpTo = (m: ReplayMarker) => {
+  const jumpTo = (m: ReplayMarker, event?: Event) => {
     handle.seek(Math.max(0, m.time - 250))
-    onMarkerPress?.(m)
+    onMarkerAction?.(m, changeDetails('item-press', event))
   }
 
-  const onKeyDown = (e: ReactKeyboardEvent) => {
+  const onKeyDown = (e: ReactKeyboardEvent<HTMLDivElement>) => {
+    onRootKeyDown?.(e)
     const target = e.target as HTMLElement
     // A key a control inside has already used (the arrows of the DevTools buttons, the scrubber's own) is that control's.
     if (e.defaultPrevented) return
@@ -531,9 +562,11 @@ export function ReplayPlayer({
       aria-label={title}
       aria-busy={!ready || undefined}
       tabIndex={-1}
+      {...rest}
       onKeyDown={onKeyDown}
       // A click anywhere in the player (the page, the frame) makes its keys live, without a focus ring.
-      onPointerDown={() => {
+      onPointerDown={(e: ReactPointerEvent<HTMLDivElement>) => {
+        onRootPointerDown?.(e)
         const root = rootRef.current
         if (root && !root.contains(document.activeElement)) root.focus({ preventScroll: true })
       }}
@@ -600,7 +633,7 @@ export function ReplayPlayer({
               // The overlay leaves as playback starts; keep focus (and the keys) in the player.
               onClick={() => { rootRef.current?.focus({ preventScroll: true }); toggle() }}
             >
-              {finished || windowDone ? <RotateCcw size={22} strokeWidth={2.4} /> : <Play size={22} strokeWidth={2.4} fill="currentColor" />}
+              {finished || windowDone ? <Glyph name="arrow-counterclockwise" size={22} sw={2.4} /> : <Glyph name="play" size={22} sw={2.4} />}
             </button>
           </div>
         ) : null}
@@ -609,7 +642,7 @@ export function ReplayPlayer({
       {controls ? (
         <div data-slot="replay-preview-controls">
           <button type="button" data-slot="replay-preview-play" aria-label={playing ? 'Pause' : 'Play'} onClick={toggle} disabled={!ready}>
-            {playing ? <Pause size={15} fill="currentColor" /> : <Play size={15} fill="currentColor" />}
+            {playing ? <Glyph name="pause" size={15} /> : <Glyph name="play" size={15} />}
           </button>
           <span data-slot="replay-preview-time">
             <span>{formatReplayTime(time)}</span> / {formatReplayTime(duration)}
@@ -626,14 +659,14 @@ export function ReplayPlayer({
           {chrome !== 'browser' ? toolButtons : null}
           {cues.length ? (
             <Toggle data-part="replay-preview-captions" aria-label="Captions" pressed={captionsOn} onPressedChange={setCaptionsOn}>
-              {captionsOn ? <Captions size={16} aria-hidden="true" /> : <CaptionsOff size={16} aria-hidden="true" />}
+              {captionsOn ? <Glyph name="captions" size={16} /> : <Glyph name="captions-slash" size={16} />}
             </Toggle>
           ) : null}
           <button type="button" data-slot="replay-preview-speed" aria-label={`Playback speed ${speed}×`} onClick={() => cycleSpeed(1)}>
             {`${speed}×`}
           </button>
           <button type="button" data-slot="replay-preview-fullscreen" aria-label={fullscreen ? 'Exit full screen' : 'Full screen'} onClick={toggleFullscreen}>
-            {fullscreen ? <Minimize size={15} /> : <Maximize size={15} />}
+            {fullscreen ? <Glyph name="arrows-collapse" size={15} /> : <Glyph name="arrows-expand" size={15} />}
           </button>
         </div>
       ) : null}
@@ -664,7 +697,7 @@ export function BrowserBar({ href, trafficLights, loading, actions }: { href: st
       ) : null}
       <div data-slot="replay-preview-address">
         <span data-slot="replay-preview-lock" aria-hidden="true">
-          {loading ? <span data-slot="replay-preview-spinner" /> : <Lock size={10} strokeWidth={2.5} />}
+          {loading ? <span data-slot="replay-preview-spinner" /> : <Glyph name="lock" size={10} sw={2.5} />}
         </span>
         <span data-slot="replay-preview-url" data-primary={primary} title={href}>
           <span data-part="host">{host}</span>
@@ -713,7 +746,7 @@ const PointerOverlay = memo(function PointerOverlay({ track, time, reduced }: { 
 
 function Scrubber({ time, duration, span, markers, disabled, onSeek, onMarker }: {
   time: number; duration: number; span: { start: number; end: number } | null; markers: ReplayMarker[]; disabled: boolean
-  onSeek: (ms: number) => void; onMarker: (m: ReplayMarker) => void
+  onSeek: (ms: number) => void; onMarker: (m: ReplayMarker, event: Event) => void
 }) {
   const max = Math.max(1, duration)
   const value = Math.min(time, max)
@@ -754,7 +787,7 @@ function Scrubber({ time, duration, span, markers, disabled, onSeek, onMarker }:
               aria-label={`${m.label} at ${formatReplayTime(m.time)}`}
               title={`${formatReplayTime(m.time)} · ${MARKER_NOUN[m.kind]}\n${m.detail ? `${m.label} — ${m.detail}` : m.label}`}
               style={{ left: `calc(${(m.time / max) * 100}% + ${(nudges.get(m.id) ?? 0) * 10}px)` }}
-              onClick={() => onMarker(m)}
+              onClick={(e: ReactMouseEvent) => onMarker(m, e.nativeEvent)}
               disabled={disabled}
             />
           ))}

@@ -1,5 +1,5 @@
 'use client';
-import type { ComponentProps } from 'react';
+import { useState, type ComponentProps } from 'react';
 import { Input as SdkInput } from '@ui-sdk/react/input';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { selectableText } from '@/lib/primitives';
@@ -8,7 +8,11 @@ import { cx } from '@/lib/utils';
 /* ══ Input — UI SDK's Input as the iOS filled text field ══
    A native <input>: `value` / `defaultValue` / `onValueChange(value, details)` (`details.cancel()` rejects a
    change), a `controller` (`createInputController()`) to write it from outside, and every native attribute.
-   Inside a <Field> it takes the field's label, description, error, name and disabled state. */
+   Inside a <Field> it takes the field's label, description, error, name and disabled state.
+
+   `onValueCommit(value, details)` is for a field that changes something once you're done with it, not on every key
+   (a name in an inspector): the text you type is a draft until Enter or leaving the field commits it, if it changed;
+   Escape puts `value` back. A commit that's refused (`value` doesn't change) puts it back too. */
 
 /** The field's focus line: a 1.5px inset primary ring while anything inside has focus. Shared with the controls that
  *  keep a fill of their own (SearchInput's pill). */
@@ -45,10 +49,64 @@ export const inputVariants = cva([surface, 'block w-full placeholder:text-tertia
   defaultVariants: { size: 'default' },
 });
 
-export type InputProps = Omit<ComponentProps<typeof SdkInput>, 'size'> & VariantProps<typeof inputVariants>;
+/** Why `onValueCommit` ran: Enter, or focus leaving the field. */
+export interface InputValueCommitDetails {
+  reason: 'enter-key' | 'blur';
+  event: Event;
+}
 
-export function Input({ className, size, ...props }: InputProps) {
+export type InputProps = Omit<ComponentProps<typeof SdkInput>, 'size'> & VariantProps<typeof inputVariants> & {
+  /** The text, once it's changed and you're done with it: Enter, or leaving the field. Until then it's a draft, and
+   *  Escape puts `value` back (and goes no further, so a panel it's in stays open). */
+  onValueCommit?: (value: string, details: InputValueCommitDetails) => void;
+};
+
+export function Input({ className, size, onValueCommit, ...props }: InputProps) {
+  if (onValueCommit) return <CommitInput className={className} size={size} onValueCommit={onValueCommit} {...props} />;
   return <SdkInput className={cx(inputVariants({ size }), className)} {...props} />;
+}
+
+/** An Input that holds a draft until it's committed. */
+function CommitInput({ className, size, onValueCommit, value: valueProp, defaultValue, onValueChange, onKeyDown, onBlur, ...props }: InputProps & { onValueCommit: NonNullable<InputProps['onValueCommit']> }) {
+  const [own, setOwn] = useState(() => String(defaultValue ?? ''));
+  const value = valueProp === undefined ? own : String(valueProp);
+  // What's typed and not committed; null shows `value`. A new `value` from outside drops the draft.
+  const [draft, setDraft] = useState<string | null>(null);
+  const [was, setWas] = useState(value);
+  if (was !== value) {
+    setWas(value);
+    setDraft(null);
+  }
+  const commit = (event: Event, reason: InputValueCommitDetails['reason']) => {
+    if (draft === null || draft === value) { setDraft(null); return; }
+    if (valueProp === undefined) setOwn(draft);
+    setDraft(null);
+    onValueCommit(draft, { reason, event });
+  };
+  return (
+    <SdkInput
+      className={cx(inputVariants({ size }), className)}
+      value={draft ?? value}
+      onValueChange={(next, details) => {
+        onValueChange?.(next, details);
+        if (!details.canceled) setDraft(next);
+      }}
+      onKeyDown={(e) => {
+        onKeyDown?.(e);
+        if (e.defaultPrevented || e.nativeEvent.isComposing) return;
+        if (e.key === 'Enter') commit(e.nativeEvent, 'enter-key');
+        else if (e.key === 'Escape' && draft !== null && draft !== value) {
+          setDraft(null);
+          e.stopPropagation();
+        }
+      }}
+      onBlur={(e) => {
+        onBlur?.(e);
+        commit(e.nativeEvent, 'blur');
+      }}
+      {...props}
+    />
+  );
 }
 
 export { createInputController, type InputController } from '@ui-sdk/react/input';

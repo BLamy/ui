@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, type ReactNode } from "react"
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@ui-sdk/react/hover-card"
-import { ArrowUpRight, AtSign, FolderGit2, Globe, Hash } from "lucide-react"
+import { Glyph } from "../ui/glyph"
 
 import type { CitationDef, ReferenceNode } from "../gitbook/ast"
 
@@ -73,14 +73,14 @@ function CitationHoverCard({ node }: { node: ReferenceNode }) {
           ) : null}
           <span className="docs-cite-card-body">
             <span className="docs-cite-card-source">
-              {favicon ? <img className="docs-cite-card-favicon" src={favicon} alt="" /> : <Globe className="docs-cite-card-favicon" />}
+              {favicon ? <img className="docs-cite-card-favicon" src={favicon} alt="" /> : <Glyph name="globe" className="docs-cite-card-favicon" size={24} />}
               <span>{siteName}</span>
             </span>
             <span className="docs-cite-card-title">{title}</span>
             {preview?.description ? <span className="docs-cite-card-description">{preview.description}</span> : null}
             <span className="docs-cite-card-url">
               {node.url}
-              <ArrowUpRight aria-hidden="true" />
+              <Glyph name="arrow-up-right" size={24} />
             </span>
           </span>
         </HoverCardContent>
@@ -107,14 +107,14 @@ export function InlineReference({ node }: { node: ReferenceNode }) {
     )
   }
 
-  const Icon = node.kind === "mention" ? AtSign : node.kind === "codebase" ? FolderGit2 : Hash
+  const icon = node.kind === "mention" ? "at" : node.kind === "codebase" ? "folder-git" : "number"
   return (
     <button
       type="button"
       className={`docs-ref docs-ref-${node.kind}`}
       onClick={() => onReferenceClick?.(node)}
     >
-      <Icon className="docs-ref-icon" />
+      <Glyph name={icon} className="docs-ref-icon" size={24} />
       {node.id}
     </button>
   )
@@ -141,7 +141,7 @@ function SourceChip({ def }: { def: CitationDef }) {
           onError={() => setFaviconFailed(true)}
         />
       ) : (
-        <Globe className="docs-source-favicon" />
+        <Glyph name="globe" className="docs-source-favicon" size={24} />
       )}
       {host ?? def.url}
     </a>

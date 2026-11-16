@@ -10,7 +10,8 @@
     "AdaptivePaneClose",
     "AdaptivePaneTrigger",
     "createAdaptivePaneController",
-    "adaptivePanePageClass"
+    "adaptivePanePageClass",
+    "resolveAdaptivePanePresentation"
   ],
   "imports": [
     "AdaptivePane",

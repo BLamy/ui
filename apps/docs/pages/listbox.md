@@ -151,4 +151,4 @@ bl-btn group/item relative box-border flex cursor-pointer items-center gap-2.5 t
 | Value | Adds |
 | --- | --- |
 | `inset` (default) | `[ 'min-h-11 px-4 py-[11px] text-body leading-[22px]', // The hairline starts under the text: past the icon when the row has one ('--listbox…` |
-| `popup` | `[ 'min-h-9 rounded-lg py-[7px] pr-3 pl-2 text-subhead leading-5', 'data-highlighted:bg-accent active:not-data-disabled:bg-secondary-strong …` |
+| `popup` | `[ 'min-h-9 rounded-lg py-[7px] pr-3 pl-2 text-subhead leading-5', // In a popup presented as a sheet (a touch layout), rows reach the 44px …` |

@@ -120,7 +120,7 @@ describe('Conversation', () => {
 
   it('ConversationWorkLog and ConversationToolCall pass element props and ref to their root', () => {
     const log = React.createRef<HTMLDivElement>();
-    const tool = React.createRef<HTMLDivElement>();
+    const tool = React.createRef<HTMLLIElement>();
     render(
       <ConversationWorkLog ref={log} data-testid="log" summary="Worked" defaultOpen>
         <ConversationToolCall ref={tool} data-testid="tool" id="t1" title="Read file" />
@@ -128,7 +128,7 @@ describe('Conversation', () => {
     );
     expect(log.current).toBe(screen.getByTestId('log'));
     expect(tool.current?.id).toBe('t1');
-    expect(tool.current?.dataset.slot).toBe('tool-call');
+    expect(tool.current?.dataset.slot).toBe('conversation-tool-call');
   });
 
   it('ConversationSuggestion takes onClick', () => {

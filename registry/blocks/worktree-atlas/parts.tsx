@@ -69,32 +69,39 @@ const MERGED_PURPLE = { light: '#8250df', dark: '#a371f7' } as const;
 
 const CHIP = 'inline-flex h-[18px] shrink-0 items-center rounded-[5px] px-1.5 text-caption2 font-semibold tracking-[.1px]';
 
-export function Chip({ children, tone = 'muted', className }: { children: ReactNode; tone?: 'muted' | 'primary' | 'success' | 'warning' | 'destructive' | 'merged'; className?: string }) {
-  const dark = useAppearance() === 'dark';
+/** A small label. `tone` is the kit's semantic color (`default` is the accent, `muted` the quiet fill); `tint`, a CSS
+    color of the caller's, wins over it (a merged pull request's purple). */
+export function Chip({ children, tone = 'muted', tint, className }: {
+  children: ReactNode; tone?: 'default' | 'muted' | 'success' | 'warning' | 'destructive'; tint?: string; className?: string;
+}) {
   return (
-    <span style={tone === 'merged' ? { '--atlas-merged': MERGED_PURPLE[dark ? 'dark' : 'light'] } as CSSProperties : undefined} className={cn(CHIP, {
+    <span style={tint ? { '--atlas-chip': tint } as CSSProperties : undefined} className={cn(CHIP, tint ? 'bg-(--atlas-chip)/14 text-(--atlas-chip)' : {
+      default: 'bg-primary/12 text-primary',
       muted: 'bg-secondary text-muted-foreground',
-      primary: 'bg-primary/12 text-primary',
       success: 'bg-success/14 text-success',
       warning: 'bg-warning/16 text-warning',
       destructive: 'bg-destructive/12 text-destructive',
-      merged: 'bg-(--atlas-merged)/14 text-(--atlas-merged)',
     }[tone], className)}>{children}</span>
   );
 }
 
-const PR_TONE = { open: 'success', merged: 'merged', closed: 'destructive' } as const;
+const PR_TONE = { open: 'success', merged: 'default', closed: 'destructive' } as const;
 
 export function PullRequestChip({ pr }: { pr: PullRequest }) {
-  return <Chip tone={PR_TONE[pr.state]}>#{pr.number} {pr.state[0].toUpperCase() + pr.state.slice(1)}</Chip>;
+  const dark = useAppearance() === 'dark';
+  return (
+    <Chip tone={PR_TONE[pr.state]} tint={pr.state === 'merged' ? MERGED_PURPLE[dark ? 'dark' : 'light'] : undefined}>
+      #{pr.number} {pr.state[0].toUpperCase() + pr.state.slice(1)}
+    </Chip>
+  );
 }
 
 /** The chips that say what a worktree is before you open it. */
 export function WorktreeChips({ w }: { w: Worktree }) {
   return (
     <>
-      {w.primary ? <Chip tone="primary">Primary</Chip> : null}
-      {w.clone ? <Chip tone="primary">Clone</Chip> : null}
+      {w.primary ? <Chip tone="default">Primary</Chip> : null}
+      {w.clone ? <Chip tone="default">Clone</Chip> : null}
       {w.pullRequest ? <PullRequestChip pr={w.pullRequest} /> : null}
       {w.locked ? <Chip tone="warning">Locked</Chip> : null}
       {w.missing ? <Chip tone="destructive">Missing</Chip> : null}

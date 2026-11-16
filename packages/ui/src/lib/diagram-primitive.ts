@@ -1,4 +1,5 @@
 import { createChange, createController, definePrimitive, type ChangeDetails, type ChangeOptions } from '@ui-sdk/core';
+import type { DiagramHistory } from '@/lib/diagram-history';
 import {
   NOTHING_SELECTED, addConnection, checkConnection, deleteItems, indexDiagram, moveEdgeEnd, moveNodes,
   type DiagramConnection, type DiagramEdge, type DiagramNode, type DiagramSelection,
@@ -50,6 +51,8 @@ export interface DiagramOptions<N = unknown, E = unknown> {
   editable?: boolean;
   /** Whether the diagram keeps its own history: undo and redo. */
   undoable?: boolean;
+  /** Someone else's history (`useDiagramHistory`): undo and redo drive it, and the diagram keeps none of its own. */
+  history?: DiagramHistory;
   /** Whether a connection is allowed: true, or the reason it isn't. Default `checkConnection`. */
   isValidConnection?: (connection: DiagramConnection) => boolean | string;
   /** Makes the edge for a new connection. */
@@ -102,7 +105,7 @@ export const diagram = definePrimitive({
   options: {
     data: 'value', defaultData: 'value', onDataChange: 'callback',
     selection: 'value', defaultSelection: 'value', onSelectionChange: 'callback',
-    selectable: 'boolean', editable: 'boolean', undoable: 'boolean',
+    selectable: 'boolean', editable: 'boolean', undoable: 'boolean', history: 'value',
     isValidConnection: 'action', createEdge: 'action', controller: 'value',
   },
   controlled: ['data', 'selection'],
@@ -128,6 +131,8 @@ export const diagram = definePrimitive({
     let pending: { before: DiagramData<any, any>; mode: 'edit' | 'undo' | 'redo' } | null = null;
     /** The owner's data as it last arrived. Not `store.get()`, which already reads the props being handed over. */
     let delivered: DiagramData<any, any> = store.get().data;
+    /** Whether undo and redo are the diagram's own, rather than a history it was handed or none. */
+    const ownHistory = () => !context.options().history && context.options().undoable !== false;
     const counts = () => store.set({ past: history.past.length, future: history.future.length });
     const settle = (before: DiagramData<any, any>, mode: 'edit' | 'undo' | 'redo') => {
       if (mode === 'edit') {
@@ -152,7 +157,7 @@ export const diagram = definePrimitive({
       pending = null;
       // What comes back after a change is that change, even as copies of the arrays it was handed (an owner that
       // spreads them into its state) or with something of the owner's own added.
-      if (asked) settle(asked.before, asked.mode);
+      if (asked) { if (ownHistory()) settle(asked.before, asked.mode); }
       else if (history.past.length || history.future.length) {
         history.past = [];
         history.future = [];
@@ -172,7 +177,7 @@ export const diagram = definePrimitive({
         pending = null;
         return false;
       }
-      if (!controlled && context.options().undoable !== false) settle(before, mode);
+      if (!controlled && ownHistory()) settle(before, mode);
       return true;
     }
 
@@ -226,15 +231,27 @@ export const diagram = definePrimitive({
         return taken ? true : 'The change was refused.';
       },
       undo: (event?: Event) => {
+        const given = context.options().history;
+        if (given) {
+          if (!given.canUndo) return false;
+          given.undo(event);
+          return true;
+        }
         const to = history.past[history.past.length - 1];
-        return !!to && context.options().undoable !== false && commit(to, 'undo', event);
+        return !!to && ownHistory() && commit(to, 'undo', event);
       },
       redo: (event?: Event) => {
+        const given = context.options().history;
+        if (given) {
+          if (!given.canRedo) return false;
+          given.redo(event);
+          return true;
+        }
         const to = history.future[history.future.length - 1];
-        return !!to && context.options().undoable !== false && commit(to, 'redo', event);
+        return !!to && ownHistory() && commit(to, 'redo', event);
       },
-      canUndo: () => context.options().undoable !== false && history.past.length > 0,
-      canRedo: () => context.options().undoable !== false && history.future.length > 0,
+      canUndo: () => context.options().history?.canUndo ?? (ownHistory() && history.past.length > 0),
+      canRedo: () => context.options().history?.canRedo ?? (ownHistory() && history.future.length > 0),
       /** What the component needs: data a gesture or a key made, with its reason and event. */
       internal: { commit, check, remove },
     };

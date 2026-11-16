@@ -5,7 +5,7 @@ import {
   useState,
   type RefObject,
 } from 'react'
-import { Composer, ComposerAdd, ComposerAttachments, ComposerBump, ComposerBumpContent, ComposerBumpHandle, ComposerCard, ComposerExpand, ComposerFooter, ComposerInput, ComposerOptions, ComposerOptionsOutlet, ComposerSelect, ComposerSend, ComposerSeparator, ComposerSpacer, ComposerStop, ComposerText } from '@/components/ui/composer/composer'
+import { Composer, ComposerAdd, ComposerAttachments, ComposerBump, ComposerBumpContent, ComposerBumpHandle, ComposerCard, ComposerExpand, ComposerFooter, ComposerInput, ComposerOptions, ComposerOptionsOutlet, ComposerSelect, ComposerSend, ComposerSeparator, ComposerSpacer, ComposerStop, ComposerText } from '@/components/ui/composer'
 import { ThemeScope } from '@/lib/theme'
 import { ModelPicker } from '@/components/blocks/t3-clone/components/workbench/model-picker'
 import { WORKBENCH_MODELS, WORKBENCH_PROVIDERS } from '@/components/blocks/t3-clone/components/workbench/models'

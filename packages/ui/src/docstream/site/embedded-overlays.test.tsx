@@ -27,7 +27,7 @@ afterEach(async () => {
 })
 
 const open = async (routing: DocsSiteRouting) => {
-  site = await mount(<DocsSite files={FILES} routing={routing} title="Acme" themeStorageKey={false} documentTitle={false} applyThemeTo="site" />)
+  site = await mount(<DocsSite files={FILES} routing={routing} title="Acme" appearanceStorageKey={false} documentTitle={false} applyAppearanceTo="site" />)
   return site.host.querySelector<HTMLElement>(".ds-site")!
 }
 const locked = () => document.documentElement.style.overflow === "hidden" || document.body.style.overflow === "hidden"

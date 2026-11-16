@@ -72,3 +72,12 @@ const states = (
 
 export const States: Story = { render: () => states };
 export const Dark: Story = { parameters: { dark: true }, render: () => <div className="flex flex-col gap-5"><Demo initial /><Demo />{states}</div> };
+
+/** In right-to-left text the switch mirrors, as on iOS: off sits at the right, and on slides the knob to the left. */
+export const RightToLeft: Story = {
+  render: () => (
+    <div dir="rtl" className="flex items-center gap-4">
+      <Demo initial /><Demo /><Demo initial size="sm" /><Demo size="sm" />
+    </div>
+  ),
+};

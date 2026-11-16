@@ -73,10 +73,10 @@ export const channelItemVariants = cva(
   'flex w-full cursor-pointer items-center gap-[7px] rounded-lg border-0 px-[8px] py-[5px] text-left font-sans text-[13.5px] [transition:background-color_var(--duration-spring-snappy)_var(--ease-spring-snappy)] motion-reduce:transition-none',
   {
     variants: {
-      active: { true: 'bg-secondary-strong', false: 'bg-transparent hover:bg-accent' },
+      current: { true: 'bg-secondary-strong', false: 'bg-transparent hover:bg-accent' },
       emphasized: { true: 'font-[650] text-foreground', false: 'font-normal text-muted-foreground' },
     },
-    defaultVariants: { active: false, emphasized: false },
+    defaultVariants: { current: false, emphasized: false },
   },
 );
 
@@ -85,9 +85,9 @@ export const channelThreadItemVariants = cva(
   'flex w-full cursor-pointer items-center gap-[6px] rounded-[7px] border-0 py-[3px] pr-[8px] pl-[24px] text-left font-sans text-caption',
   {
     variants: {
-      active: { true: 'bg-secondary font-semibold text-foreground', false: 'bg-transparent text-tertiary-foreground hover:text-muted-foreground' },
+      current: { true: 'bg-secondary font-semibold text-foreground', false: 'bg-transparent text-tertiary-foreground hover:text-muted-foreground' },
     },
-    defaultVariants: { active: false },
+    defaultVariants: { current: false },
   },
 );
 
@@ -102,13 +102,13 @@ export interface ChannelItemProps extends Omit<ComponentProps<typeof SdkButton>,
   /** mention count: a red pill (replaces the dot) */
   mentions?: number;
   /** overrides the list's value: whether this row is the current one */
-  active?: boolean;
+  current?: boolean;
 }
 
-export function ChannelItem({ value, icon, unread, mentions, active, className, children, onClick, ...props }: ChannelItemProps) {
+export function ChannelItem({ value, icon, unread, mentions, current, className, children, onClick, ...props }: ChannelItemProps) {
   const list = useContext(ChannelListContext);
   const shell = useOptionalChatShell();
-  const on = active ?? list.value === value;
+  const on = current ?? list.value === value;
   return (
     <SdkButton
       data-unread={unread || undefined}
@@ -119,7 +119,7 @@ export function ChannelItem({ value, icon, unread, mentions, active, className, 
         list.onValueChange?.(value);
         shell?.setNavOpen(false);
       }}
-      className={cx(channelItemVariants({ active: on, emphasized: on || !!unread }), className)}
+      className={cx(channelItemVariants({ current: on, emphasized: on || !!unread }), className)}
       {...props}
     >
       <span className="grid text-tertiary-foreground">{icon ?? <Icon name="number" size={13} sw={2} />}</span>
@@ -132,20 +132,20 @@ export function ChannelItem({ value, icon, unread, mentions, active, className, 
 export interface ChannelThreadItemProps extends Omit<ComponentProps<typeof SdkButton>, 'children'> {
   children?: ReactNode;
   /** the thread is open (full view) */
-  active?: boolean;
+  current?: boolean;
 }
 
 /** An indented thread row under its channel, with an elbow connector. */
-export function ChannelThreadItem({ active, className, children, onClick, ...props }: ChannelThreadItemProps) {
+export function ChannelThreadItem({ current, className, children, onClick, ...props }: ChannelThreadItemProps) {
   const shell = useOptionalChatShell();
   return (
     <SdkButton
-      aria-current={active ? 'page' : undefined}
+      aria-current={current ? 'page' : undefined}
       onClick={(e, details) => {
         onClick?.(e, details);
         if (!e.defaultPrevented) shell?.setNavOpen(false);
       }}
-      className={cx(channelThreadItemVariants({ active: !!active }), className)}
+      className={cx(channelThreadItemVariants({ current: !!current }), className)}
       {...props}
     >
       <span className="-mt-[6px] size-[8px] shrink-0 rounded-[0_0_0_4px] border-b-[1.5px] border-l-[1.5px] border-border" />

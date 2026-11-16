@@ -85,11 +85,17 @@ describe('Sidebar', () => {
   it('measures again when its breakpoint changes', () => {
     width = 700;
     const onOpenChange = vi.fn();
-    const { rerender } = render(<SidebarProvider breakpoint={560} onOpenChange={onOpenChange}><Sidebar>x</Sidebar><State /></SidebarProvider>);
+    const { rerender } = render(<SidebarProvider breakpoints={{ medium: 560 }} onOpenChange={onOpenChange}><Sidebar>x</Sidebar><State /></SidebarProvider>);
     expect(screen.getByRole('status', { name: 'state' }).textContent).toBe('open medium');
-    rerender(<SidebarProvider breakpoint={800} onOpenChange={onOpenChange}><Sidebar>x</Sidebar><State /></SidebarProvider>);
+    rerender(<SidebarProvider breakpoints={{ medium: 800 }} onOpenChange={onOpenChange}><Sidebar>x</Sidebar><State /></SidebarProvider>);
     expect(screen.getByRole('status', { name: 'state' }).textContent).toBe('closed compact');
     expect(onOpenChange).toHaveBeenLastCalledWith(false, expect.objectContaining({ reason: 'content-resize' }));
+  });
+
+  it('is compact below 640px by default, as SplitView and every size-class scope', () => {
+    width = 600;
+    render(<SidebarProvider><Sidebar>x</Sidebar><State /></SidebarProvider>);
+    expect(screen.getByRole('status', { name: 'state' }).textContent).toMatch(/compact$/);
   });
 
   it("passes an item's click event through, marks the current row, and badges a number", () => {

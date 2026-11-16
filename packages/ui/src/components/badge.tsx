@@ -14,7 +14,8 @@ export const badgeVariants = cva(
       variant: {
         default: 'bg-primary text-primary-foreground',
         secondary: 'bg-secondary text-secondary-foreground',
-        tinted: 'bg-primary/15 text-primary',
+        // In light, the blue is inked 22% darker (as the vault's links are): plain blue on its own 15% tint is 2.8:1.
+        tinted: 'bg-primary/15 text-[color-mix(in_oklab,var(--primary)_78%,black)] dark:text-primary',
         outline: 'text-foreground shadow-hairline',
         destructive: 'bg-destructive text-white',
         // Black on the light iOS green and yellow (about 9:1); white would be 2.2:1.

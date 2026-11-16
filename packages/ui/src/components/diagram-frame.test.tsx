@@ -1,13 +1,13 @@
 // @vitest-environment happy-dom
 import { useState } from 'react';
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
-import { DiagramFrame, DiagramFrameBar, DiagramFrameBoard, DiagramFrameCover, DiagramFrameInput, DiagramFramePanel, DiagramFrameSection } from '@/components/ui/diagram-frame';
+import { DiagramFrame, DiagramFrameBar, DiagramFrameBoard, DiagramFrameCover, DiagramFrameCoverHeader, DiagramFramePanel, DiagramFrameSection } from '@/components/ui/diagram-frame';
 import { settle } from '../../test/agent-harness';
 
 /* DiagramFrame: the panel is an AdaptivePane (a column, a drawer or a pushed page), the bar's trigger opens it and focus
-   goes in and comes back, a cover makes everything under it inert, and DiagramFrameInput commits on Enter or blur and
-   puts the text back on Escape. Strict: UI SDK's warnings fail it. */
+   goes in and comes back, a cover makes everything under it inert and its header goes back, a closed pushed page doesn't
+   keep a column closed, and the panel passes its props on. Strict: UI SDK's warnings fail it. */
 
 beforeAll(() => { globalThis.__UI_SDK_STRICT__ = true; });
 afterEach(cleanup);
@@ -76,42 +76,73 @@ describe('DiagramFrame', () => {
   });
 });
 
-describe('DiagramFrameInput', () => {
-  function Rename({ onCommit, refuse = false }: { onCommit: (v: string) => void; refuse?: boolean }) {
-    const [name, setName] = useState('idle');
-    return <DiagramFrameInput label="Name" value={name} onValueCommit={(v) => { onCommit(v); if (!refuse) setName(v); }} />;
+describe('DiagramFrameCoverHeader', () => {
+  function Covered() {
+    const [open, setOpen] = useState(true);
+    return (
+      <div style={{ position: 'relative', width: 800, height: 500 }}>
+        <DiagramFrame presentation="column">
+          <DiagramFrameBoard><button type="button">On the board</button></DiagramFrameBoard>
+          <DiagramFramePanel title="Services">Body</DiagramFramePanel>
+          {open ? (
+            <DiagramFrameCover>
+              <DiagramFrameCoverHeader title="Uploads’ machine" backLabel="Services" onBack={() => setOpen(false)} />
+            </DiagramFrameCover>
+          ) : null}
+        </DiagramFrame>
+      </div>
+    );
   }
 
-  it('commits on Enter, not on each key', () => {
-    const onCommit = vi.fn();
-    render(<Rename onCommit={onCommit} />);
-    const input = screen.getByRole('textbox', { name: 'Name' }) as HTMLInputElement;
-    fireEvent.input(input, { target: { value: 'waiting' } });
-    expect(onCommit).not.toHaveBeenCalled();
-    fireEvent.keyDown(input, { key: 'Enter' });
-    expect(onCommit).toHaveBeenCalledWith('waiting');
-    expect(input.value).toBe('waiting');
+  it('goes back with the bar’s back button, which has focus when the cover opens, and says what it goes back to', async () => {
+    render(<Covered />);
+    await settle();
+    const back = screen.getByRole('button', { name: 'Back to Services' });
+    expect(document.activeElement).toBe(back);
+    expect(screen.getByRole('heading', { name: 'Uploads’ machine' })).toBeTruthy();
+    fireEvent.click(back);
+    await settle();
+    expect(screen.queryByRole('heading', { name: 'Uploads’ machine' })).toBeNull();
+    expect(document.querySelector('[data-slot=diagram-frame]')?.hasAttribute('data-covered')).toBe(false);
+  });
+});
+
+describe('DiagramFrame panel', () => {
+  it('takes a title that isn’t text, and passes its other props to the pane', async () => {
+    render(
+      <div style={{ position: 'relative', width: 800, height: 500 }}>
+        <DiagramFrame presentation="column">
+          <DiagramFrameBoard />
+          <DiagramFramePanel title={<span>Edit <b>2</b></span>} aria-label="Edit" data-testid="pane">Body</DiagramFramePanel>
+        </DiagramFrame>
+      </div>,
+    );
+    await settle();
+    expect(screen.getByTestId('pane')).toBeTruthy();
+    expect(document.querySelector('[data-slot=diagram-frame]')?.getAttribute('data-size-class')).toBeTruthy();
   });
 
-  it('commits on leaving, and puts back what the owner refuses', () => {
-    const onCommit = vi.fn();
-    render(<Rename onCommit={onCommit} refuse />);
-    const input = screen.getByRole('textbox', { name: 'Name' }) as HTMLInputElement;
-    fireEvent.input(input, { target: { value: 'nope' } });
-    act(() => { fireEvent.blur(input); });
-    expect(onCommit).toHaveBeenCalledWith('nope');
-    expect(input.value).toBe('idle');
-  });
-
-  it('puts the text back on Escape, and keeps Escape to itself', () => {
-    const onCommit = vi.fn();
-    const outside = vi.fn();
-    render(<div onKeyDown={outside}><Rename onCommit={onCommit} /></div>);
-    const input = screen.getByRole('textbox', { name: 'Name' }) as HTMLInputElement;
-    fireEvent.input(input, { target: { value: 'oops' } });
-    fireEvent.keyDown(input, { key: 'Escape' });
-    expect(input.value).toBe('idle');
-    expect(outside).not.toHaveBeenCalled();
-    expect(onCommit).not.toHaveBeenCalled();
+  it('shows a column again when it widens, after a phone’s pushed page was closed', async () => {
+    function Resizable() {
+      const [presentation, setPresentation] = useState<'push' | 'column'>('push');
+      return (
+        <div style={{ position: 'relative', width: 800, height: 500 }}>
+          <button type="button" onClick={() => setPresentation('column')}>Widen</button>
+          <DiagramFrame presentation={presentation} defaultOpen>
+            <DiagramFrameBoard><DiagramFrameBar>Status</DiagramFrameBar></DiagramFrameBoard>
+            <DiagramFramePanel title="Simulation">Body</DiagramFramePanel>
+          </DiagramFrame>
+        </div>
+      );
+    }
+    render(<Resizable />);
+    await settle();
+    // Back to the board, on the phone.
+    fireEvent.click(screen.getByRole('button', { name: 'Back to Board' }));
+    await settle();
+    expect(document.querySelector('[data-slot=diagram-frame]')?.hasAttribute('data-open')).toBe(false);
+    fireEvent.click(screen.getByRole('button', { name: 'Widen' }));
+    await settle();
+    expect(document.querySelector('[data-slot=diagram-frame]')?.hasAttribute('data-open')).toBe(true);
   });
 });

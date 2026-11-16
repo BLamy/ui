@@ -19,7 +19,7 @@ Nothing to install. The behaviors come from `@ui-sdk/core`, and the React adapte
 | [Popups and layers](https://blamy.github.io/ui/#/behaviors-popups) | `createPopup` and the popup slots, `position`, `bindLayer`, `bindPersistentLayer`, `isDismissal` | A floating panel the kit has no component for; something placed beside an anchor; a layer that closes on Escape and outside presses. |
 | [Motion and gestures](https://blamy.github.io/ui/#/behaviors-motion) | `bindPanel`, `animateIn`, `animateOut`, `hiddenAttrs`, `@ui-sdk/core/gesture` | A panel animates its height; an element should stay mounted until its exit animation ends; a gesture needs velocity, a spring or rubber-banding. |
 | [Mobile](https://blamy.github.io/ui/#/behaviors-mobile) | `bindViewport`, `bindAvoidKeyboard`, `createPointerKind`, `pointerKindOf`, `inputHints` | A bar must stay above the on-screen keyboard; content depends on whether a finger or a mouse is in use. |
-| [The kit's behaviors](https://blamy.github.io/ui/#/behaviors-kit) | `bindSizeClass`, `sizeClassOf`, `SizeClassProvider`, `usePresentation`, `createStack`, `bindEdgeSwipe`, `bindBack`, `bindPullToRefresh`, `usePresence` (from `@/lib/*`, not `@ui-sdk/core`) | A layout adapts to its own box, not the viewport; pages push and pop with a swipe and the platform's back; a list reloads when pulled; an element stays mounted through its exit. UI SDK has none of these, so BL UI builds them on UI SDK's public API. |
+| [The kit's behaviors](https://blamy.github.io/ui/#/behaviors-kit) | `bindSizeClass`, `sizeClassOf`, `SizeClassProvider`, `usePresentation`, `createPageStack`, `bindEdgeSwipe`, `bindBack`, `bindPullToRefresh`, `usePresence` (from `@/lib/*`, not `@ui-sdk/core`) | A layout adapts to its own box, not the viewport; pages push and pop with a swipe and the platform's back; a list reloads when pulled; an element stays mounted through its exit. UI SDK has none of these, so BL UI builds them on UI SDK's public API. |
 | [Layer hosts](https://blamy.github.io/ui/#/behaviors-layer-hosts) | `data-layer-host`, `bindLayer`'s `when` | Popups stay inside an app's frame, modal only to it. The one behavior our fork adds to UI SDK. |
 
 The complete list, with the helpers these pages don't cover (trees, lists and virtualizing, canvas, preferences and storage, numbers, dates and colors, agents and history), is UI SDK's [All Behaviors](https://ui-sdk.dev/docs/core/behaviors).
@@ -36,7 +36,7 @@ Reach for a behavior when a component would be the wrong shape, not before.
 | A right-click menu | `DropdownMenu` with a `DropdownMenuContextTrigger` | a `contextmenu` handler and `bindLayer` |
 | A popover, dialog, menu or sheet | `Popover`, `Dialog`, `DropdownMenu`, `Sheet` | `createPopup` by hand |
 | Panes that resize | `SplitView` | `createResize` by hand |
-| Pages that push and pop | `NavigationStack` | `createStack` by hand |
+| Pages that push and pop | `NavigationStack` | `createPageStack` by hand |
 
 ## What became of the react-aria hooks
 

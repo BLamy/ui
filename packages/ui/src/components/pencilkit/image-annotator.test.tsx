@@ -20,6 +20,12 @@ describe('ImageAnnotator', () => {
     expect(swatch('White')).toBe('#FFFFFF');
   });
 
+  it('names the image and the lightbox from `alt`', async () => {
+    render(<ImageAnnotator src={SRC} alt="checkout.png" defaultOpen />);
+    const dialog = await screen.findByRole('dialog', { name: 'Annotate: checkout.png' });
+    expect(within(dialog).getByRole('img', { name: 'checkout.png' })).toBeTruthy();
+  });
+
   it('draws the surface in the image\'s appearance, not the lightbox\'s', async () => {
     const Engine: ImageAnnotatorEngine = ({ children }) => children({ canvas: <svg data-testid="surface" /> });
     render(<ImageAnnotator src={SRC} defaultOpen engine={Engine} appearance="light" />);

@@ -139,8 +139,12 @@ const editorClass = 'absolute inset-y-0 start-0 z-30 m-0 box-border w-full min-w
 // Keyed, like the cells, so the grid's own name names the component for agents.
 const SpreadsheetEditor = ({ label, className }: { label: string; className?: string }) =>
   usePart(spreadsheet, 'editor', { id: 'editor' }, { 'aria-label': label, className: cn(editorClass, className) }, 'input');
+// Its words are for screen readers moving along the titles; sighted users see the row numbers under it.
 const SpreadsheetCorner = () =>
-  usePart(spreadsheet, 'corner', { id: 'corner' }, { className: cn('sticky left-0 z-10 h-full w-(--gutter) bg-secondary', lines) }, 'div');
+  usePart(spreadsheet, 'corner', { id: 'corner' }, {
+    className: cn('sticky left-0 z-10 h-full w-(--gutter) bg-secondary', lines),
+    children: <span className="sr-only">Row number</span>,
+  }, 'div');
 
 const SpreadsheetCell = memo(function SpreadsheetCell({ row, col, text, left, width, numeric, label }: {
   row: number; col: number; text: string; left: number; width: number; numeric: boolean; label: string;
@@ -260,20 +264,26 @@ export function Spreadsheet({
     ...props,
     className: cx(spreadsheetVariants({ density }), className),
     style,
-    children: (state: SpreadsheetView) => (
+    children: (state: SpreadsheetView) => {
+      const empty = !api.internal.modelOf(state).body;
+      return (
       <>
         <parts.Grid
           aria-label={ariaLabel}
-          className="bl-scroll relative min-h-0 flex-1 overflow-auto overscroll-contain text-footnote outline-none select-none has-[[data-slot=spreadsheet-cell]:focus-visible]:ring-2 has-[[data-slot=spreadsheet-cell]:focus-visible]:ring-primary has-[[data-slot=spreadsheet-cell]:focus-visible]:ring-inset"
+          className={cn(
+            'bl-scroll relative min-h-0 overflow-auto overscroll-contain text-footnote outline-none select-none has-[[data-slot=spreadsheet-cell]:focus-visible]:ring-2 has-[[data-slot=spreadsheet-cell]:focus-visible]:ring-primary has-[[data-slot=spreadsheet-cell]:focus-visible]:ring-inset',
+            empty ? 'shrink-0' : 'flex-1',
+          )}
         >
           <SpreadsheetCells handle={handle} state={state} />
-          {/* Over the body at the scroller's own width, not inside the columns' (two narrow columns would wrap it). */}
-          {!api.internal.modelOf(state).body ? (
-            <div data-slot="spreadsheet-empty" className="absolute inset-x-0 top-(--head)">
-              {renderEmptyState(emptyState, { title: 'No rows', description: state.readOnly ? undefined : 'Paste cells or add a row.' })}
-            </div>
-          ) : null}
         </parts.Grid>
+        {/* The grid's sibling, at the box's own width: a grid owns only rows (WAI-ARIA grid), and two narrow columns would
+            wrap it. The grid shrinks to its titles. */}
+        {empty ? (
+          <div data-slot="spreadsheet-empty" className="bl-scroll min-h-0 flex-1 overflow-auto">
+            {renderEmptyState(emptyState, { title: 'No rows', description: state.readOnly ? undefined : 'Paste cells or add a row.' })}
+          </div>
+        ) : null}
         {statusBar ? (
           <parts.Footer className="flex min-h-9 shrink-0 flex-wrap items-center gap-x-3 gap-y-1 px-3 py-1 text-caption text-foreground/70 shadow-hairline-t">
             {(status) => (
@@ -299,7 +309,8 @@ export function Spreadsheet({
           </parts.Footer>
         ) : null}
       </>
-    ),
+      );
+    },
   }, 'div');
 }
 

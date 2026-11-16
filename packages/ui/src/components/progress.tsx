@@ -5,7 +5,7 @@ import {
   ProgressTrack as SdkProgressTrack, ProgressValue as SdkProgressValue,
 } from '@ui-sdk/react/progress';
 import { cva, type VariantProps } from 'class-variance-authority';
-import { cn, cx } from '@/lib/utils';
+import { cx } from '@/lib/utils';
 import { NumberMorph } from '@/components/ui/number-morph';
 
 /* ══ Progress — UI SDK's Progress (role=progressbar, aria-valuenow / valuetext), iOS progress view look ══
@@ -36,12 +36,11 @@ export const progressVariants = cva('relative w-full overflow-hidden rounded-ful
   defaultVariants: { size: 'default' },
 });
 
+// The fill grows from the inline start, and the indeterminate bar travels toward the inline end (`--bl-progress-dir`
+// is -1 in right-to-left text). Under reduced motion the indeterminate bar is a dim full fill. One string, so the
+// docs' recipe table reads as a class list.
 export const progressIndicatorVariants = cva(
-  cn(
-    'absolute inset-y-0 left-0 rounded-full transition-[width] duration-spring-smooth ease-spring-smooth motion-reduce:transition-none',
-    'data-indeterminate:w-2/5 data-indeterminate:animate-bl-progress data-indeterminate:transition-none',
-    'motion-reduce:data-indeterminate:w-full motion-reduce:data-indeterminate:animate-none motion-reduce:data-indeterminate:opacity-35',
-  ),
+  'absolute inset-y-0 start-0 rounded-full transition-[width] duration-spring-smooth ease-spring-smooth motion-reduce:transition-none rtl:[--bl-progress-dir:-1] data-indeterminate:w-2/5 data-indeterminate:animate-bl-progress data-indeterminate:transition-none motion-reduce:data-indeterminate:w-full motion-reduce:data-indeterminate:animate-none motion-reduce:data-indeterminate:opacity-35',
   {
     variants: {
       tone: {

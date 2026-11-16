@@ -23,6 +23,6 @@
     "LogListExpandedChangeReason",
     "LogListFollowingChangeReason",
     "LogListRowContentProps",
-    "LogRowState"
+    "LogListRowState"
   ]
 }

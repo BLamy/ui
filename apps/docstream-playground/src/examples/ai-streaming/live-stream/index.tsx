@@ -38,7 +38,7 @@ export default function LiveStream({ variant = "answer" }: { variant?: string })
           Show raw buffer
         </label>
         <span className="ls-stat" aria-live="off">
-          {stream.text.length}/{source.length} chars · {streaming ? "isStreaming" : "done"}
+          {stream.text.length}/{source.length} chars · {streaming ? "streaming" : "done"}
           {held ? <> · holding back <code>{JSON.stringify(held)}</code></> : null}
         </span>
       </div>
@@ -50,7 +50,7 @@ export default function LiveStream({ variant = "answer" }: { variant?: string })
           </pre>
         ) : null}
         <div className="ls-output">
-          <GitbookStreamdown markdown={stream.text} isStreaming={streaming} isAnimating={streaming} />
+          <GitbookStreamdown markdown={stream.text} streaming={streaming} animating={streaming} />
         </div>
       </div>
     </div>

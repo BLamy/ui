@@ -12,7 +12,6 @@ import {
   PencilActions,
   PencilInkPicker,
   PencilToolbar,
-  PencilToolbarPinned,
   PencilToolPicker,
   PencilWidthPicker,
 } from '@/components/ui/pencilkit/pencil-toolbar';
@@ -39,16 +38,12 @@ function Full({ tool: t0 = 'pen', ink: i0 = pencilInks[0].value, width: w0 = 1, 
   const [ink, setInk] = useState(i0);
   const [width, setWidth] = useState(w0);
   return (
-    <PencilToolbar>
+    <PencilToolbar trailing={<><ToolbarSeparator /><PencilActions canUndo={canUndo} canRedo={canRedo} /></>}>
       <PencilToolPicker value={tool} onValueChange={setTool} />
       <ToolbarSeparator />
       <PencilInkPicker value={ink} onValueChange={setInk} />
       <ToolbarSeparator />
       <PencilWidthPicker value={width} onValueChange={setWidth} />
-      <PencilToolbarPinned>
-        <ToolbarSeparator />
-        <PencilActions canUndo={canUndo} canRedo={canRedo} />
-      </PencilToolbarPinned>
     </PencilToolbar>
   );
 }
@@ -95,19 +90,23 @@ export const Phone: Story = {
     return (
       <PhoneFrame h={844}>
         <div className="absolute inset-0 bg-background">
-          <PencilCanvas tool={tool} ink={ink} width={width} strokes={history.strokes} onStrokesChange={history.onStrokesChange}
+          <PencilCanvas tool={tool} ink={ink} widthScale={width} strokes={history.strokes} onStrokesChange={history.onStrokesChange}
             emptyState={<EmptyState title="Draw anywhere" description="Pick an ink and a width from the round button." />} />
-          <PencilToolbar className="absolute inset-x-2.5 bottom-6 mx-auto">
+          <PencilToolbar
+            className="absolute inset-x-2.5 bottom-6 mx-auto"
+            trailing={
+              <>
+                <ToolbarSeparator />
+                <PencilActions onUndo={history.undo} onRedo={history.redo} onClear={history.clear}
+                  canUndo={history.canUndo} canRedo={history.canRedo} canClear={history.canClear} />
+              </>
+            }
+          >
             <PencilToolPicker value={tool} onValueChange={setTool} />
             <ToolbarSeparator />
             <PencilInkPicker value={ink} onValueChange={setInk} />
             <ToolbarSeparator />
             <PencilWidthPicker value={width} onValueChange={setWidth} />
-            <PencilToolbarPinned>
-              <ToolbarSeparator />
-              <PencilActions onUndo={history.undo} onRedo={history.redo} onClear={history.clear}
-                canUndo={history.canUndo} canRedo={history.canRedo} canClear={history.canClear} />
-            </PencilToolbarPinned>
           </PencilToolbar>
         </div>
       </PhoneFrame>

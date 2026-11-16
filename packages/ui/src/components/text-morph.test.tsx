@@ -89,7 +89,7 @@ describe('TextMorph', () => {
     expect(root(container).style.width).toBe('');
   });
 
-  it('releases the width when a morph is interrupted by another one', async () => {
+  it('carries an interrupted morph on into the next one, and releases the width once that settles', async () => {
     const { container, rerender } = render(<TextMorph>Continue</TextMorph>);
     rerender(<TextMorph>Confirm</TextMorph>);
     await act(() => new Promise((r) => setTimeout(r, 200)));

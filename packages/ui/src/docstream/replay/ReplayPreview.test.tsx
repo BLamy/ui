@@ -134,7 +134,7 @@ describe("player behaviour", () => {
   it("goes from loading to paused once the stage is ready, and the handle drives the stage", async () => {
     const ref: { current: ReplayPreviewHandle | null } = { current: null }
     const times: number[] = []
-    const el = await mount(<ReplayPreview events={replayDemoEvents} lazy={false} playerRef={ref} onTimeUpdate={(t) => times.push(t)} />)
+    const el = await mount(<ReplayPreview events={replayDemoEvents} mounted ref={ref} onTimeUpdate={(t) => times.push(t)} />)
     expect(el.dataset.state).toBe("paused")
     expect(times).toContain(2000)
     ref.current!.seek(4000)
@@ -147,7 +147,7 @@ describe("player behaviour", () => {
 
   it("shows Console and Network buttons with what had happened by the playhead, and opens DevTools over the page", async () => {
     stage.time = 8000
-    const el = await mount(<ReplayPreview events={replayDemoEvents} lazy={false} />)
+    const el = await mount(<ReplayPreview events={replayDemoEvents} mounted />)
     const bar = el.querySelector('[data-slot="replay-preview-bar"]')!
     const network = bar.querySelector<HTMLButtonElement>('[data-tab="network"]')!
     const consoleButton = bar.querySelector<HTMLButtonElement>('[data-tab="console"]')!
@@ -187,7 +187,7 @@ describe("player behaviour", () => {
 
   it("cuts DevTools at the playhead and can be turned off", async () => {
     stage.time = 2000
-    const el = await mount(<ReplayPreview events={replayDemoEvents} lazy={false} defaultDevtoolsTab="network" />)
+    const el = await mount(<ReplayPreview events={replayDemoEvents} mounted defaultDevtoolsTab="network" />)
     expect(el.querySelector('[data-tab="network"]')!.getAttribute("aria-label")).toBe("Network: 5 requests, 0 failed")
     // No status bar under the list (the button carries the count).
     expect(el.querySelector('[data-slot="replay-devtools-status"]')).toBeNull()
@@ -204,7 +204,7 @@ describe("player behaviour", () => {
       { time: 7600, request: "/api/checkout", label: "Checkout answered 500" },
       { id: "warn", time: 7000, message: "is deprecated", label: "The promo call uses a deprecated field" },
     ]
-    const el = await mount(<ReplayPreview events={replayDemoEvents} lazy={false} inspections={inspections} playerRef={ref} markers />)
+    const el = await mount(<ReplayPreview events={replayDemoEvents} mounted inspections={inspections} ref={ref} markers />)
     const playTo = (ms: number) => act(async () => (stage.props as ReplayStageProps).onTimeUpdate?.(ms))
     const panel = () => el.querySelector<HTMLElement>('[data-slot="replay-devtools"]')
     expect(panel()).toBeNull()
@@ -248,7 +248,7 @@ describe("player behaviour", () => {
     const inspections = [{ time: 7600, request: "/api/checkout", label: "Checkout answered 500" }]
     // The demo recording's activity stops at 7.9 s (its last console error); it runs to ~8.6 s, so stretch the
     // playhead past the end of the events the way a longer recording would.
-    const el = await mount(<ReplayPreview events={replayDemoEvents} lazy={false} inspections={inspections} />)
+    const el = await mount(<ReplayPreview events={replayDemoEvents} mounted inspections={inspections} />)
     const props = () => stage.props as ReplayStageProps
     const playTo = (ms: number) => act(async () => props().onTimeUpdate?.(ms))
     const playing = (p: boolean) => act(async () => props().onPlayingChange?.(p))
@@ -277,7 +277,7 @@ describe("player behaviour", () => {
 
   it("autoCloseDevtools={false} keeps an auto-opened panel open", async () => {
     stage.time = 7000
-    const el = await mount(<ReplayPreview events={replayDemoEvents} lazy={false} inspections={[{ time: 7600, request: "/api/checkout" }]} autoCloseDevtools={false} />)
+    const el = await mount(<ReplayPreview events={replayDemoEvents} mounted inspections={[{ time: 7600, request: "/api/checkout" }]} autoCloseDevtools={false} />)
     const props = () => stage.props as ReplayStageProps
     await act(async () => props().onPlayingChange?.(true))
     await act(async () => props().onTimeUpdate?.(7650))
@@ -287,7 +287,7 @@ describe("player behaviour", () => {
 
   it("an element inspection doesn't open a closed DevTools", async () => {
     stage.time = 1000
-    const el = await mount(<ReplayPreview events={replayDemoEvents} lazy={false} inspections={[{ time: 1500, element: "main" }]} />)
+    const el = await mount(<ReplayPreview events={replayDemoEvents} mounted inspections={[{ time: 1500, element: "main" }]} />)
     await act(async () => (stage.props as ReplayStageProps).onTimeUpdate?.(1600))
     expect(el.querySelector('[data-slot="replay-devtools"]')).toBeNull()
   })
@@ -301,7 +301,7 @@ describe("player behaviour", () => {
     input.getBoundingClientRect = () => ({ left: 40, top: 60, width: 220, height: 32, right: 260, bottom: 92, x: 40, y: 60, toJSON: () => ({}) }) as DOMRect
     stage.doc = doc
     stage.time = 1000
-    const el = await mount(<ReplayPreview events={replayDemoEvents} lazy={false} inspections={[{ time: 1500, element: 'input[placeholder="Search tasks"]', label: "The search box" }]} />)
+    const el = await mount(<ReplayPreview events={replayDemoEvents} mounted inspections={[{ time: 1500, element: 'input[placeholder="Search tasks"]', label: "The search box" }]} />)
     await act(async () => el.querySelector<HTMLElement>('[data-part="replay-devtools-buttons"] button')!.click())
     await act(async () => (stage.props as ReplayStageProps).onTimeUpdate?.(1600))
     const panel = el.querySelector<HTMLElement>('[data-slot="replay-devtools"]')!
@@ -336,7 +336,7 @@ describe("player behaviour", () => {
       screenshots: [{ at: 2500, src: "/shots/pay.jpg", label: "Pay" }],
     }
     stage.time = 1000
-    const el = await mount(<ReplayPreview events={replayDemoEvents} lazy={false} evidence={evidence} />)
+    const el = await mount(<ReplayPreview events={replayDemoEvents} mounted evidence={evidence} />)
     const props = () => stage.props as ReplayStageProps
     const playTo = (ms: number) => act(async () => props().onTimeUpdate?.(ms))
     await act(async () => props().onPlayingChange?.(true))
@@ -365,7 +365,7 @@ describe("player behaviour", () => {
 
   it("plays slower between inspections close together, then picks the chosen speed back up", async () => {
     stage.time = 0
-    await mount(<ReplayPreview events={replayDemoEvents} lazy={false} inspections={[{ time: 2000, request: "/api/checkout" }, { time: 2500, request: "/api/checkout" }]} />)
+    await mount(<ReplayPreview events={replayDemoEvents} mounted inspections={[{ time: 2000, request: "/api/checkout" }, { time: 2500, request: "/api/checkout" }]} />)
     const props = () => stage.props as ReplayStageProps
     expect(props().speed).toBe(1)
     await act(async () => props().onTimeUpdate?.(2100))
@@ -378,7 +378,7 @@ describe("player behaviour", () => {
     const evidence = {
       sources: [{ path: "src/checkout.ts", lines: [{ line: 87, text: "const total = res.total" }, { line: 88, text: "applyPromo(total)" }] }],
     }
-    const el = await mount(<ReplayPreview events={replayDemoEvents} lazy={false} evidence={evidence} defaultDevtoolsTab="sources" />)
+    const el = await mount(<ReplayPreview events={replayDemoEvents} mounted evidence={evidence} defaultDevtoolsTab="sources" />)
     await act(async () => {})
     const tokens = (line: number) =>
       [...el.querySelectorAll(`[data-slot="replay-devtools-code-line"][data-line="${line}"] .docs-tok`)].map((t) => `${t.className}:${t.textContent}`)
@@ -389,16 +389,16 @@ describe("player behaviour", () => {
 
   it("a seek past a screenshot doesn't take it", async () => {
     stage.time = 1000
-    const el = await mount(<ReplayPreview events={replayDemoEvents} lazy={false} evidence={{ screenshots: [{ at: 2500, src: "/s.jpg" }] }} />)
+    const el = await mount(<ReplayPreview events={replayDemoEvents} mounted evidence={{ screenshots: [{ at: 2500, src: "/s.jpg" }] }} />)
     const props = () => stage.props as ReplayStageProps
     await act(async () => props().onPlayingChange?.(true))
     await act(async () => props().onTimeUpdate?.(6000))
     expect(el.querySelector('[data-slot="replay-preview-capture"]')).toBeNull()
   })
 
-  it("disableDevtools removes the buttons, the panel and the inspections", async () => {
+  it("devtools={false} removes the buttons, the panel and the inspections", async () => {
     stage.time = 8000
-    const el = await mount(<ReplayPreview events={replayDemoEvents} lazy={false} disableDevtools inspections={[{ time: 7600, request: "/api/checkout", label: "Checkout answered 500" }]} />)
+    const el = await mount(<ReplayPreview events={replayDemoEvents} mounted devtools={false} inspections={[{ time: 7600, request: "/api/checkout", label: "Checkout answered 500" }]} />)
     expect(el.querySelector('[data-part="replay-devtools-buttons"]')).toBeNull()
     expect(el.querySelector('[data-slot="replay-devtools"]')).toBeNull()
     expect(el.innerHTML).not.toContain("Checkout answered 500")
@@ -406,7 +406,7 @@ describe("player behaviour", () => {
 
   it("a time window opens at its start, highlights it, and plays just it until you scrub outside", async () => {
     stage.time = 3000
-    const el = await mount(<ReplayPreview events={replayDemoEvents} lazy={false} timeWindow={[3000, 5000]} />)
+    const el = await mount(<ReplayPreview events={replayDemoEvents} mounted timeWindow={[3000, 5000]} />)
     const props = () => stage.props as ReplayStageProps
     const tick = (ms: number) => act(async () => { stage.time = ms; props().onTimeUpdate?.(ms) })
     const playing = (p: boolean) => act(async () => props().onPlayingChange?.(p))
@@ -450,7 +450,7 @@ describe("player behaviour", () => {
     await tick(5100)
     expect(stage.calls.filter((c) => c === "pause:5000")).toHaveLength(1)
     const ref: { current: ReplayPreviewHandle | null } = { current: null }
-    await mount(<ReplayPreview events={replayDemoEvents} lazy={false} timeWindow={[3000, 5000]} playerRef={ref} />)
+    await mount(<ReplayPreview events={replayDemoEvents} mounted timeWindow={[3000, 5000]} ref={ref} />)
     act(() => ref.current!.seek(3500))
     await playing(true)
     await tick(5000)
@@ -459,7 +459,7 @@ describe("player behaviour", () => {
 
   it("with loop, a time window goes round again from its start", async () => {
     stage.time = 3000
-    await mount(<ReplayPreview events={replayDemoEvents} lazy={false} timeWindow={[3000, 5000]} loop />)
+    await mount(<ReplayPreview events={replayDemoEvents} mounted timeWindow={[3000, 5000]} loop />)
     const props = () => stage.props as ReplayStageProps
     await act(async () => props().onPlayingChange?.(true))
     await act(async () => props().onTimeUpdate?.(5010))
@@ -467,7 +467,7 @@ describe("player behaviour", () => {
   })
 
   it("maps keys: space/k toggle, arrows and j/l seek, Home/End jump, < > cycle speed", async () => {
-    const el = await mount(<ReplayPreview events={replayDemoEvents} lazy={false} />)
+    const el = await mount(<ReplayPreview events={replayDemoEvents} mounted />)
     const last = () => stage.calls[stage.calls.length - 1]
     press(el, " ")
     expect(last()).toBe("toggle")
@@ -494,7 +494,7 @@ describe("player behaviour", () => {
   })
 
   it("leaves the arrow keys to the scrubber, which steps by its own step, and ignores keys with modifiers", async () => {
-    const el = await mount(<ReplayPreview events={replayDemoEvents} lazy={false} />)
+    const el = await mount(<ReplayPreview events={replayDemoEvents} mounted />)
     const range = el.querySelector("input[type=range]")!
     const before = stage.calls.length
     // The slider's own keys: a 10 ms step, 5 s with Shift, the ends with Home and End. Never the player's ±5 s.
@@ -513,18 +513,18 @@ describe("player behaviour", () => {
     expect(stage.calls.at(-1)).toBe("toggle")
   })
 
-  it("a marker button seeks a beat before its moment and reports the press", async () => {
+  it("a marker button seeks a beat before its moment and reports the action with its details", async () => {
     const pressed: string[] = []
-    const el = await mount(<ReplayPreview events={replayDemoEvents} lazy={false} onMarkerPress={(m) => pressed.push(m.kind)} markers />)
+    const el = await mount(<ReplayPreview events={replayDemoEvents} mounted onMarkerAction={(m, details) => pressed.push(`${m.kind}:${details.reason}:${details.event?.type}`)} markers />)
     const error = el.querySelector<HTMLElement>('[data-slot="replay-preview-markers"] [data-kind="error"]')!
     await act(async () => error.click())
     const seek = stage.calls.find((c) => c.startsWith("seek:"))!
     expect(Number(seek.slice(5))).toBeGreaterThan(0)
-    expect(pressed).toEqual(["error"])
+    expect(pressed).toEqual(["error:item-press:click"])
   })
 
   it("the scrubber seeks from the range input", async () => {
-    const el = await mount(<ReplayPreview events={replayDemoEvents} lazy={false} />)
+    const el = await mount(<ReplayPreview events={replayDemoEvents} mounted />)
     const range = el.querySelector<HTMLInputElement>("input[type=range]")!
     expect(range.disabled).toBe(false)
     const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!
@@ -533,6 +533,15 @@ describe("player behaviour", () => {
       range.dispatchEvent(new Event("input", { bubbles: true }))
     })
     expect(stage.calls).toContain("seek:3500")
+  })
+
+  it("puts root props on the root and the handle on ref", async () => {
+    const ref = { current: null as ReplayPreviewHandle | null }
+    const el = await mount(<ReplayPreview events={replayDemoEvents} mounted ref={ref} id="evidence" data-testid="player" aria-describedby="caption" />)
+    expect(el.id).toBe("evidence")
+    expect(el.dataset.testid).toBe("player")
+    expect(el.getAttribute("aria-describedby")).toBe("caption")
+    expect(typeof ref.current?.seek).toBe("function")
   })
 })
 
@@ -563,11 +572,16 @@ describe("source mode (the embed API)", () => {
     }
   })
 
-  it("active={false} renders an inert placeholder and neither iframe nor player", () => {
-    const html = renderToString(<ReplayPreview source="https://loop-qa.replay.io/projects/p1/journeys/j1" active={false} />)
-    expect(html).toContain('data-replay-preview="paused"')
+  it("mounted={false} draws the same frame without the iframe or the player's page", () => {
+    const html = renderToString(<ReplayPreview source="https://loop-qa.replay.io/projects/p1/journeys/j1" mounted={false} />)
+    expect(html).toContain('data-replay-preview="iframe"')
+    expect(html).toContain('data-chrome="minimal"')
     expect(html).not.toContain("<iframe")
+    const player = renderToString(<ReplayPreview events={replayDemoEvents} mounted={false} />)
+    expect(player).toContain('data-chrome="browser"')
+    expect(player).toContain('data-slot="replay-preview-poster"')
   })
+
 
   describe("events-url", () => {
     let host: HTMLDivElement
@@ -592,7 +606,7 @@ describe("source mode (the embed API)", () => {
         return new Response(JSON.stringify({ events: replayDemoEvents }), { status: 200 })
       })
       vi.stubGlobal("fetch", fetchMock)
-      await act(async () => root.render(<ReplayPreview source={{ kind: "events-url", url: "https://x.test/events.json" }} lazy={false} />))
+      await act(async () => root.render(<ReplayPreview source={{ kind: "events-url", url: "https://x.test/events.json" }} mounted />))
       expect(host.textContent).toContain("Loading replay")
       expect(host.querySelector('[data-slot="replay-preview-scrubber"]')).toBeNull()
       release()

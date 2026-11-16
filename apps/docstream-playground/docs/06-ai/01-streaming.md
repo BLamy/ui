@@ -6,7 +6,7 @@ description: Render an AI answer while it is still arriving — every docstream 
 
 Responses can include interactive [terminal previews](../04-interactive/06-terminal-previews.md): use a `typescript tui` or `tsx tui` code fence. Run stays disabled until the response finishes and the fence closes, then the reader can run the code in an isolated OpenTUI browser terminal.
 
-`GitbookStreamdown` is built for AI answer panes. Hand it the Markdown received so far, set `isStreaming` while chunks arrive, and every block — hints, tabs, steppers, tables, code, math, citations, even live demos — renders from the partial buffer and grows in place.
+`GitbookStreamdown` is built for AI answer panes. Hand it the Markdown received so far, set `streaming` while chunks arrive, and every block — hints, tabs, steppers, tables, code, math, citations, even live demos — renders from the partial buffer and grows in place.
 
 ```tsx title="Answer.tsx"
 const [md, setMd] = useState("")
@@ -15,7 +15,7 @@ const [done, setDone] = useState(false)
 for await (const chunk of stream) setMd((m) => m + chunk)
 setDone(true)
 
-<GitbookStreamdown markdown={md} isStreaming={!done} />
+<GitbookStreamdown markdown={md} streaming={!done} />
 ```
 
 ## Watch it stream
@@ -26,7 +26,7 @@ The buffer below arrives one to eight characters at a time — the shape of a re
 
 ## In a chat UI
 
-An answer pane on the same component: pick a prompt and the reply streams in. **Stop** freezes it mid-block — the unfinished block simply stays rendered as it was. Each finished answer gets its own **Copy page** (page actions are hidden while `isStreaming`), and clicking any chip or citation badge reaches `onReferenceClick`.
+An answer pane on the same component: pick a prompt and the reply streams in. **Stop** freezes it mid-block — the unfinished block simply stays rendered as it was. Each finished answer gets its own **Copy page** (page actions are hidden while `streaming`), and clicking any chip or citation badge reaches `onReferenceClick`.
 
 {% demo src="ai-streaming/chat-pane" %}
 
@@ -42,7 +42,7 @@ There is no separate streaming parser. The whole partial document is re-parsed o
 
 ### trimPartialInlineToken
 
-Some tokens would flash as the wrong thing for a chunk or two. While `isStreaming` is set, `GitbookStreamdown` runs the buffer through `trimPartialInlineToken` before parsing, which holds back:
+Some tokens would flash as the wrong thing for a chunk or two. While `streaming` is set, `GitbookStreamdown` runs the buffer through `trimPartialInlineToken` before parsing, which holds back:
 
 | At the end of the buffer | Held back so it doesn't flash as |
 | --- | --- |
@@ -68,8 +68,8 @@ trimPartialInlineToken("{% hint style=")  // ""
 | Prop | Type | Default | Purpose |
 | --- | --- | --- | --- |
 | `markdown` (or `children`) | `string` | `""` | The Markdown so far. |
-| `isStreaming` | `boolean` | `false` | Trims partial tokens before parsing, hides page actions, and sets `data-streaming` on the wrapper. |
-| `isAnimating` | `boolean` | follows `isStreaming` | Controls the wrapper's `aria-busy`. Set it when your typewriter animation outlasts the network stream. |
+| `streaming` | `boolean` | `false` | Trims partial tokens before parsing, hides page actions, and sets `data-streaming` on the wrapper. |
+| `animating` | `boolean` | follows `streaming` | Controls the wrapper's `aria-busy`. Set it when your typewriter animation outlasts the network stream. |
 | `className` | `string` | — | On the wrapper `div[data-docstream]`. |
 | `demoResolver`, `demoRuntime`, `demoDependencies`, `demoVFS` | | — | Demos in answers — see [Folder demos](../04-interactive/01-demos.md) and [Inline demos](../04-interactive/02-inline-demos.md). |
 | `liveRenderer`, `sourceRenderer` | | — | Live fences and source refs — see [Live code](../04-interactive/03-live-code.md). |
@@ -77,7 +77,7 @@ trimPartialInlineToken("{% hint style=")  // ""
 | `documentProperties` | `boolean \| { defaultOpen? }` | `true` | Frontmatter property sheet. |
 | `onTaskStateChange` | `TaskStateChangeHandler` | — | Interactive task checkboxes. |
 
-`isStreaming` does not change how blocks are parsed — the parser is always tolerant. `data-streaming` is a styling hook for cursors, shimmer or fade-ins; the live stream demo above uses it for its caret:
+`streaming` does not change how blocks are parsed — the parser is always tolerant. `data-streaming` is a styling hook for cursors, shimmer or fade-ins; the live stream demo above uses it for its caret:
 
 ```css title="answer.css"
 [data-streaming] .docs-article > p:last-child::after {

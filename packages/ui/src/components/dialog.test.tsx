@@ -70,7 +70,7 @@ function Delete(props: Parameters<typeof AlertDialog>[0] & { onDelete?: () => vo
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogClose variant="cancel">Cancel</AlertDialogClose>
-          <AlertDialogClose variant="destructive" value="confirm" action={onDelete}>Delete</AlertDialogClose>
+          <AlertDialogClose tone="destructive" value="confirm" action={onDelete}>Delete</AlertDialogClose>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
@@ -228,7 +228,7 @@ describe('AlertDialog', () => {
               <AlertDialogHeader><AlertDialogTitle>Delete {state.payload}?</AlertDialogTitle></AlertDialogHeader>
               <AlertDialogFooter orientation="vertical">
                 <AlertDialogClose variant="cancel">Keep</AlertDialogClose>
-                <AlertDialogClose variant="destructive" value="confirm">Delete</AlertDialogClose>
+                <AlertDialogClose tone="destructive" value="confirm">Delete</AlertDialogClose>
               </AlertDialogFooter>
             </>
           )}

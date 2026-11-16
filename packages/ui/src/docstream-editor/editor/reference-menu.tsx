@@ -1,5 +1,5 @@
 import { Extension, type Editor } from "@tiptap/core"
-import { AtSign, FolderGit2, Hash, type LucideIcon } from "lucide-react"
+import type { IconName } from "@brett_lamy/ui/lib/icon"
 import type { TriggerMenuData, TriggerMenuDataItem } from "@ui-sdk/react/trigger-menu"
 
 import { editorTriggerPlugin, matchesQuery, type EditorTrigger, type TriggerMenuEntry } from "./trigger-menu"
@@ -38,7 +38,7 @@ const KIND: Record<ReferenceTrigger, "mention" | "tag" | "codebase"> = {
   "#": "tag",
   $: "codebase",
 }
-const ICON: Record<ReferenceTrigger, LucideIcon> = { "@": AtSign, "#": Hash, $: FolderGit2 }
+const ICON: Record<ReferenceTrigger, IconName> = { "@": "at", "#": "number", $: "folder-git" }
 const EMPTY: Record<ReferenceTrigger, string> = {
   "@": "Type a name to mention",
   "#": "Type a channel or tag",

@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { Avatar } from '@/components/ui/avatar'
-import { Composer, ComposerCard, ComposerFooter, ComposerInput, ComposerSend, ComposerSpacer } from '@/components/ui/composer/composer'
+import { Composer, ComposerCard, ComposerFooter, ComposerInput, ComposerSend, ComposerSpacer } from '@/components/ui/composer'
 import { SidebarContent, SidebarHeader, SidebarItem, SidebarSection } from '@/components/ui/sidebar'
 import { SplitView, SplitViewDetail, SplitViewSidebar, useSplitView } from '@/components/ui/split-view'
 import { ChatShell, ChatShellBack, ChatShellFooter, ChatShellHeader, ChatShellHeaderIcon, ChatShellMain, ChatShellSidebar, ChatShellTitle } from '@/components/blocks/discord-clone/components/chat-shell'

@@ -11,6 +11,12 @@ afterEach(() => { cleanup(); vi.useRealTimers(); });
 const arc = (root: Element) => root.querySelector('[data-slot="progress-ring-arc"]') as SVGCircleElement;
 
 describe('ProgressRing', () => {
+  it('carries its own slot, not the bar\'s', () => {
+    render(<ProgressRing value={40} aria-label="Upload" />);
+    expect(screen.getByRole('progressbar').getAttribute('data-slot')).toBe('progress-ring');
+    expect(document.querySelector('[data-slot="progress"]')).toBeNull();
+  });
+
   it('is a named progressbar whose arc is as long as its value', () => {
     render(<ProgressRing aria-label="Coverage" value={25} size="lg" />);
     const ring = screen.getByRole('progressbar', { name: 'Coverage' });

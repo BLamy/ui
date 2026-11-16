@@ -3,10 +3,23 @@ import * as React from 'react';
 import { GitbookStreamdown, type GitbookStreamdownProps, type CodeBlockRenderDetails } from '@brett_lamy/ui/docstream/streamdown';
 import { DocstreamRefContext, type DocstreamRefContextValue } from '@brett_lamy/ui/docstream/reference';
 import type { CodeBlockNode, ReferenceNode } from '@brett_lamy/ui/docstream/gitbook';
-import '@brett_lamy/ui/docstream/styles.css';
 import { cn } from '@/lib/utils';
+// Docstream's stylesheet (`@brett_lamy/ui/docstream/styles.css`) is imported by the app, never from here: a JS entry
+// that imports CSS can't load in plain Node (SSR, a host's Vitest). The registry item adds it to the app's CSS.
 
 export type { CodeBlockNode, CodeBlockRenderDetails, ReferenceNode };
+
+/** How live demo blocks (`{% demo %}`) resolve and run: MarkdownEditor's `demo` takes the same four fields. */
+export interface MarkdownViewDemo {
+  /** Resolves a block's `src` to its component, source files and metadata. */
+  resolver?: GitbookStreamdownProps['demoResolver'];
+  /** Runs demos that carry their files inline and have no resolver behind them (`createAlmostNodeDemoRuntime()`). */
+  runtime?: GitbookStreamdownProps['demoRuntime'];
+  /** Demo files held in memory by `src` (`createDemoVFS`). */
+  vfs?: GitbookStreamdownProps['demoVFS'];
+  /** Extra npm dependencies inline demos may import. */
+  dependencies?: GitbookStreamdownProps['demoDependencies'];
+}
 
 /* ══ MarkdownView — Docstream-rendered GitBook-flavored Markdown, read-only ══
    Headings, lists, tables, hints, tabs, highlighted code fences, live demos and @mention / #tag / citation chips,
@@ -18,8 +31,8 @@ export interface MarkdownViewProps extends Omit<React.ComponentProps<'div'>, 'ch
   markdown?: string;
   /** The text is still arriving (an AI reply): Docstream keeps an unfinished block open and marks the region busy. */
   streaming?: boolean;
-  /** Resolve live demo blocks (`{% demo %}`) and their source files. */
-  demoResolver?: GitbookStreamdownProps['demoResolver'];
+  /** Live demo blocks (`{% demo %}`): how they resolve and run. */
+  demo?: MarkdownViewDemo;
   /** Render mounted component or Storybook source references. */
   sourceRenderer?: GitbookStreamdownProps['sourceRenderer'];
   /** Configure the sandboxed WASM terminal used by `tui` code fences, or `false` to render them as plain code. */
@@ -38,7 +51,7 @@ export interface MarkdownViewProps extends Omit<React.ComponentProps<'div'>, 'ch
 export function MarkdownView({
   markdown,
   streaming,
-  demoResolver,
+  demo,
   sourceRenderer,
   tui,
   onReferenceClick,
@@ -56,7 +69,7 @@ export function MarkdownView({
   );
   const view = (
     <div data-slot="markdown-view" data-renderer="docstream" data-streaming={streaming ? '' : undefined} {...props} className={cn('wb-md', className)}>
-      <GitbookStreamdown markdown={markdown ?? ''} isStreaming={streaming} demoResolver={demoResolver} sourceRenderer={sourceRenderer} tui={tui} renderCode={renderCode} />
+      <GitbookStreamdown markdown={markdown ?? ''} streaming={streaming} demoResolver={demo?.resolver} demoRuntime={demo?.runtime} demoVFS={demo?.vfs} demoDependencies={demo?.dependencies} sourceRenderer={sourceRenderer} tui={tui} renderCode={renderCode} />
     </div>
   );
   if (!onReferenceClick && !renderReference) return view;

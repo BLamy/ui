@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { StrudelRack } from '@brett_lamy/ui/docstream/strudel'
+import { StrudelRack } from '@brett_lamy/ui/docstream/strudel/rack'
 import { playStrudel, stopStrudel, updateStrudel } from '@/components/ui/strudel-player'
 import { Button } from '@/components/ui/button'
 
@@ -37,7 +37,7 @@ export default function Grid() {
   return (
     <div style={{ width: '100%', display: 'grid', gap: 12 }}>
       <Button variant="secondary" onClick={toggle} style={{ justifySelf: 'start' }}>{playing ? 'Stop' : 'Play'}</Button>
-      <StrudelRack value={code} onValueChange={setCode} onPlayableChange={setPlayable} layout="grid" />
+      <StrudelRack value={code} onValueChange={setCode} onPlayableChange={setPlayable} defaultVariant="grid" />
       <pre style={{ margin: 0, fontSize: 12, whiteSpace: 'pre-wrap' }}>{code}</pre>
     </div>
   )

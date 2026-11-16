@@ -19,7 +19,7 @@ import {
   ComposerInput,
   ComposerSend,
   ComposerSpacer,
-} from '@/components/ui/composer/composer'
+} from '@/components/ui/composer'
 import { ThemeScope } from '@/lib/theme'
 import { Button } from '@/components/ui/button'
 

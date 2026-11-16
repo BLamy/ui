@@ -32,10 +32,10 @@ import { Waveform } from '@/components/ui/waveform'
 import { useMediaPeaks } from '@/lib/ffmpeg/react'
 
 const peaks = useMediaPeaks(file)
-{peaks.data ? <Waveform peaks={peaks.data.peaks} rate={peaks.data.rate} from={clip.in} to={clip.out} gain={clip.volume} /> : null}
+<Waveform peaks={peaks.data?.peaks ?? []} rate={peaks.data?.rate ?? 50} loading={peaks.loading} from={clip.in} to={clip.out} gain={clip.volume} />
 ```
 
-`gain` scales the bars, so a clip's volume shows. Like Filmstrip it fills its box, and it's decorative (`aria-hidden`): label what it sits in.
+`gain` scales the bars, so a clip's volume shows. While the peaks are still coming (`loading`, which defaults to "`peaks` is empty"), a flat shimmering band stands where the bars will be (`data-loading` on the canvas; still under reduced motion), as [Filmstrip](https://blamy.github.io/ui/#/filmstrip) shimmers its cells, so an audio clip keeps its look beside a loading video clip. Pass the extraction's own state, `loading={useMediaPeaks(file).loading}`, so a silent file (or an FFmpeg error) settles on an empty strip instead of shimmering forever. Like Filmstrip it fills its box, and it's decorative (`aria-hidden`): label what it sits in.
 
 | Prop | Default | Effect |
 | --- | --- | --- |
@@ -43,6 +43,7 @@ const peaks = useMediaPeaks(file)
 | `rate` | required | Slices per second. |
 | `from` / `to` | 0 / the end of the peaks | The media time at the left and right edges. |
 | `gain` | `1` | Scales the bars (a clip's volume). |
+| `loading` | `peaks` is empty | The loading band instead of bars. `false` with no peaks: empty. |
 | `variant` | `mirror` | `mirror` grows from the middle; `bottom` rises from the floor. |
 | `tone` | `default` | `default` (the text colour at 70 %), `muted`, or the semantic `success`, `warning` and `destructive`. Any `text-…` class tints it instead (`className="text-primary"`): the bars are drawn in the element's `color`, read again when the appearance changes. |
 | `className` / `style` / `ref` | — | On the `<canvas>`. |

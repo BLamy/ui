@@ -173,7 +173,7 @@ The root is UI SDK's `Calendar`; every prop passes through, with `className` (a 
 | `CalendarMonthSelect` / `CalendarYearSelect` | Native selects that jump to a month or a year. |
 | `CalendarMonths` | The grids on show, one per month, wrapping in a narrow container. `months` defaults to the Calendar's or DatePicker's. With more than one month, each grid gets its `CalendarGridHeading`, shown while the months stack. |
 | `CalendarGrid` | One month: the weekday row and its days. `offset={1}` shows the following month (what `CalendarMonths` does for you). |
-| `CalendarGridHeading` | A month's caption over its grid ("October 2026"), a `<caption>` hidden from screen readers (the grid is already named). `CalendarMonths` adds one per grid when it shows several months; it is visible only while they stack (a compact scope), where the shared header can't say which grid is which. |
+| `CalendarGridHeading` | A month's caption over its grid ("October 2026"), a `<caption>` hidden from screen readers (the grid is already named). `CalendarMonths` adds one per grid when it shows several months; it is visible only while they stack (`CalendarMonths` sets `data-stacked` when the grids wrap onto rows, at any size class: a narrow sidebar on a wide page too), where the shared header can't say which grid is which. |
 | `CalendarWeekdays` / `CalendarWeekday` | The header row and one column header. `CalendarWeekdays` takes a function of the column's index as children. |
 | `CalendarWeeks` / `CalendarDay` | The week rows and one day, given its date as `value`. `CalendarWeeks` takes a function of the cell as children; a day's children replace its number and can be a function of its state. |
 

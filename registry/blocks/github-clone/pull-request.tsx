@@ -7,7 +7,7 @@ import { useState, type ReactNode } from 'react';
 import { Avatar } from '@/components/ui/avatar';
 import { AvatarGroup } from '@/components/ui/avatar-group';
 import { Button } from '@/components/ui/button';
-import { Composer, ComposerCard, ComposerFooter, ComposerInput, ComposerSend, ComposerSpacer, ComposerText } from '@/components/ui/composer/composer';
+import { Composer, ComposerCard, ComposerFooter, ComposerInput, ComposerSend, ComposerSpacer, ComposerText } from '@/components/ui/composer';
 import { MarkdownView } from '@/components/ui/markdown-view';
 import { Button as SdkButton } from '@ui-sdk/react/button';
 import { Progress } from '@/components/ui/progress';
@@ -115,7 +115,7 @@ export function Conversation({ ui, pr, checks }: { ui: Layout; pr: PullDetail; c
           </div>
           <div className={side}>
             <div className={sideTitle}>Labels<Oct name="gear" size={14} /></div>
-            {pr.labels.length ? <div className="flex flex-wrap gap-1">{pr.labels.map((l) => <LabelChip key={l.name} label={l} dark={ui.dark} />)}</div> : <span className="text-muted-foreground">None yet</span>}
+            {pr.labels.length ? <div className="flex flex-wrap gap-1">{pr.labels.map((l) => <LabelChip key={l.name} label={l} appearance={ui.appearance} />)}</div> : <span className="text-muted-foreground">None yet</span>}
           </div>
           <div className={side}>
             <div className={sideTitle}>Milestone<Oct name="gear" size={14} /></div>
@@ -252,10 +252,10 @@ export function CommentCard({ ui, author, when, body, role, verb = 'commented', 
   );
 }
 
-export function TimelineEvent({ ui, icon, badge, children }: { ui: Layout; icon: OctName; badge?: string; children: ReactNode }) {
+export function TimelineEvent({ ui, icon, iconClassName, children }: { ui: Layout; icon: OctName; iconClassName?: string; children: ReactNode }) {
   return (
     <div className={cn('relative flex items-start gap-2 py-3', ui.phone ? 'pl-0' : 'pl-14')}>
-      <span className={cn('z-1 grid size-8 shrink-0 place-items-center rounded-full border-2 border-background', badge ?? 'bg-muted text-muted-foreground')}>
+      <span className={cn('z-1 grid size-8 shrink-0 place-items-center rounded-full border-2 border-background', iconClassName ?? 'bg-muted text-muted-foreground')}>
         <Oct name={icon} size={16} />
       </span>
       <div className="min-w-0 flex-1 pt-1.5 text-muted-foreground">{children}</div>
@@ -263,11 +263,11 @@ export function TimelineEvent({ ui, icon, badge, children }: { ui: Layout; icon:
   );
 }
 
-/** closed / reopened / merged / … : icon, badge, and what the actor did. */
-const EVENTS: Record<string, { icon: OctName; badge?: string; text: (detail?: string) => ReactNode }> = {
-  closed: { icon: 'issueClosed', badge: 'bg-(--gh-done) text-white', text: () => 'closed this' },
-  reopened: { icon: 'issue', badge: 'bg-(--gh-merge) text-white', text: () => 'reopened this' },
-  merged: { icon: 'merged', badge: 'bg-(--gh-done) text-white', text: () => 'merged this' },
+/** closed / reopened / merged / … : icon, the icon disc's classes, and what the actor did. */
+const EVENTS: Record<string, { icon: OctName; iconClassName?: string; text: (detail?: string) => ReactNode }> = {
+  closed: { icon: 'issueClosed', iconClassName: 'bg-(--gh-done) text-white', text: () => 'closed this' },
+  reopened: { icon: 'issue', iconClassName: 'bg-(--gh-merge) text-white', text: () => 'reopened this' },
+  merged: { icon: 'merged', iconClassName: 'bg-(--gh-done) text-white', text: () => 'merged this' },
   head_ref_deleted: { icon: 'branch', text: () => 'deleted the head branch' },
   ready_for_review: { icon: 'eye', text: () => 'marked this pull request as ready for review' },
   convert_to_draft: { icon: 'prDraft', text: () => 'marked this pull request as draft' },
@@ -301,7 +301,7 @@ export function TimelineEntry({ ui, item, authorLogin }: { ui: Layout; item: Tim
     case 'labeled':
       return (
         <TimelineEvent ui={ui} icon="tag">
-          {who(item.author)} added {item.labels.map((l) => <LabelChip key={l.name} label={l} dark={ui.dark} className="mx-0.5 align-[1px]" />)} label{item.labels.length === 1 ? '' : 's'} {item.when}
+          {who(item.author)} added {item.labels.map((l) => <LabelChip key={l.name} label={l} appearance={ui.appearance} className="mx-0.5 align-[1px]" />)} label{item.labels.length === 1 ? '' : 's'} {item.when}
         </TimelineEvent>
       );
     case 'requested':
@@ -310,7 +310,7 @@ export function TimelineEntry({ ui, item, authorLogin }: { ui: Layout; item: Tim
       return (
         <>
           <TimelineEvent ui={ui} icon={item.state === 'approved' ? 'check' : item.state === 'changes' ? 'x' : 'eye'}
-            badge={item.state === 'approved' ? 'bg-(--gh-merge) text-white' : item.state === 'changes' ? 'bg-(--gh-closed) text-white' : undefined}>
+            iconClassName={item.state === 'approved' ? 'bg-(--gh-merge) text-white' : item.state === 'changes' ? 'bg-(--gh-closed) text-white' : undefined}>
             {who(item.author)} {item.state === 'approved' ? 'approved these changes' : item.state === 'changes' ? 'requested changes' : 'reviewed'} {item.when}
           </TimelineEvent>
           {item.body ? <CommentCard ui={ui} author={item.author} when={item.when} body={item.body} verb="left a comment" role="Member" /> : null}
@@ -319,7 +319,7 @@ export function TimelineEntry({ ui, item, authorLogin }: { ui: Layout; item: Tim
     case 'event': {
       const e = EVENTS[item.event];
       if (!e) return null;
-      return <TimelineEvent ui={ui} icon={e.icon} badge={e.badge}>{who(item.author)} {e.text(item.text)} {item.when}</TimelineEvent>;
+      return <TimelineEvent ui={ui} icon={e.icon} iconClassName={e.iconClassName}>{who(item.author)} {e.text(item.text)} {item.when}</TimelineEvent>;
     }
   }
 }

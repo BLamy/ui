@@ -172,10 +172,12 @@ export async function measureTextGently(runs: readonly TextRun[], host?: Element
   if (runs.length <= GENTLE_CHUNK) return measureText(runs, host, maxWidth);
   await nextFrame();
   let size = 100;
-  for (let i = 0; i + size < runs.length; i += size) {
+  // Every share in a frame of its own, the last one too, so the call at the end only reads what's been measured.
+  for (let i = 0; i < runs.length;) {
     // What this remembers is what the last call finds waiting for it.
     const started = performance.now();
     measureText(runs.slice(i, i + size), host, maxWidth);
+    i += size;
     const took = performance.now() - started;
     size = Math.max(25, Math.min(1000, Math.round((size * GENTLE_BUDGET) / Math.max(took, 0.5))));
     await nextFrame();

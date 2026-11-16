@@ -23,10 +23,10 @@ import { listboxItemVariants, listboxVariants } from '@/components/ui/listbox';
 import { Icon } from '@/lib/icon';
 import {
   ListDataItems, OptionRow, OptionRowSizeContext, PickerFieldSizeContext, optionGroupClass, optionGroupLabelClass, optionLabel, optionRowSizes,
-  optionSeparatorClass, optionSheetClass, useOptionDescription, useOptionRowSize, usePickerFieldSize, useReportFieldSize,
+  optionSeparatorClass, useOptionDescription, useOptionRowSize, usePickerFieldSize, useReportFieldSize,
   type ListDataParts, type OptionRowProps, type OptionRowSize,
 } from '@/lib/option-row';
-import { popoverMotion, popoverSurface } from '@/lib/primitives';
+import { popoverMotion, popoverSheet, popoverSurface } from '@/lib/primitives';
 import { scopeStyle, useLayerHost, useThemeScopeProps } from '@/lib/theme';
 import { useTriggerPalette, type PopupPalette } from '@/lib/trigger-palette';
 import { usePresentation } from '@/lib/container';
@@ -142,12 +142,12 @@ export function SelectContent({ className, style, sideOffset = 8, size: sizeProp
       <SdkSelectContent
         ref={trigger.ref}
         data-theme-scope={colors['data-theme-scope']}
-        data-size={size}
+        data-size={size === 'field-sm' ? 'sm' : size}
         sideOffset={sideOffset}
         className={cx(
           [
             popoverSurface, popoverMotion, listboxVariants({ variant: 'popup' }), 'min-w-[max(var(--anchor-width),200px)]',
-            optionSheetClass, colors.className,
+            popoverSheet, colors.className,
           ],
           className,
         )}
@@ -198,4 +198,4 @@ export function SelectSeparator({ className, ...props }: ComponentProps<typeof S
 const selectParts: ListDataParts = { Item: SelectItem, Group: SelectGroup, GroupLabel: SelectGroupLabel, Separator: SelectSeparator };
 
 export { createSelectController } from '@ui-sdk/react/select';
-export type { ListData, SelectController } from '@ui-sdk/react/select';
+export type { SelectController } from '@ui-sdk/react/select';

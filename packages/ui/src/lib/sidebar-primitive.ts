@@ -5,10 +5,10 @@ import {
   type ChangeDetails,
   type ChangeOptions,
 } from '@ui-sdk/core';
-import { bindSizeClass, type SizeClass } from '@/lib/size-class';
+import { bindSizeClass, type SizeClass, type SizeClassBreakpoints } from '@/lib/size-class';
 
 /* ══ Sidebar — open state and the room its provider has ══
-   The provider's root measures its own width with `bindSizeClass` (never the viewport): below `breakpoint` it is
+   The provider's root measures its own width with `bindSizeClass` (never the viewport): below `breakpoints.medium` it is
    `compact`, and a Sidebar with `presentation="auto"` shows as a drawer. Crossing the breakpoint resets `open`
    (closed when compact, `defaultOpen` when not), reported as `content-resize`. The trigger toggles whichever
    presentation is mounted; Escape, an outside press, a swipe and a press on one of its rows close the drawer
@@ -46,32 +46,36 @@ export function createSidebarController() {
 export type SidebarOptions = {
   /** Whether it is open, to control it. */
   open?: boolean;
-  /** Whether it starts open when uncontrolled, and where it returns when the provider grows past `breakpoint`.
+  /** Whether it starts open when uncontrolled, and where it returns when the provider grows out of `compact`.
    *  Default true. */
   defaultOpen?: boolean;
   /** Runs when it wants to open or close; `details.reason` says why and `details.cancel()` stops it. */
   onOpenChange?: (open: boolean, details: SidebarOpenChangeDetails) => void;
-  /** The provider's own width below which it is `compact` (a Sidebar with `presentation="auto"` is a drawer).
-   *  Default 560. */
-  breakpoint?: number;
+  /** Where the provider's own width changes size class, as SplitView's and every size-class scope's: below
+   *  `medium` (default 640) it is `compact` (a Sidebar with `presentation="auto"` is a drawer); `regular` defaults to
+   *  1024. */
+  breakpoints?: SizeClassBreakpoints;
   controller?: SidebarController;
 };
 
-type SidebarState = { open: boolean; defaultOpen: boolean; sizeClass: SizeClass; breakpoint: number };
+type SidebarState = { open: boolean; defaultOpen: boolean; sizeClass: SizeClass; breakpoints: string };
+
+/** The breakpoints as a key, so a new object with the same numbers doesn't measure again. */
+const breakpointsKey = (b: SizeClassBreakpoints | undefined) => `${b?.medium ?? 640}/${b?.regular ?? 1024}`;
 
 export const sidebar = definePrimitive({
   name: 'sidebar',
-  options: { open: 'boolean', defaultOpen: 'boolean', onOpenChange: 'callback', breakpoint: 'number', controller: 'value' },
+  options: { open: 'boolean', defaultOpen: 'boolean', onOpenChange: 'callback', breakpoints: 'value', controller: 'value' },
   controlled: ['open'],
   state: (options: SidebarOptions): SidebarState => ({
     open: options.open ?? options.defaultOpen ?? true,
     defaultOpen: options.defaultOpen ?? true,
     sizeClass: 'regular',
-    breakpoint: options.breakpoint ?? 560,
+    breakpoints: breakpointsKey(options.breakpoints),
   }),
   sync: (options) => ({
     defaultOpen: options.defaultOpen ?? true,
-    breakpoint: options.breakpoint ?? 560,
+    breakpoints: breakpointsKey(options.breakpoints),
     ...(options.open === undefined ? {} : { open: options.open }),
   }),
   api: (context) => {
@@ -113,17 +117,18 @@ export const sidebar = definePrimitive({
         'data-open': state.open ? '' : undefined,
         'data-closed': state.open ? undefined : '',
       }),
-      // Measured against `breakpoint`, and measured again when it changes.
+      // Measured against `breakpoints`, and measured again when they change.
       bind: (el, { api, store }) => {
-        let bound: number | undefined;
+        let bound: string | undefined;
         let stop: (() => void) | undefined;
         const bindSize = () => {
-          const { breakpoint } = store.get();
-          if (breakpoint === bound) return;
+          const { breakpoints } = store.get();
+          if (breakpoints === bound) return;
           stop?.();
-          bound = breakpoint;
+          bound = breakpoints;
+          const [medium, regular] = breakpoints.split('/').map(Number);
           stop = bindSizeClass(el, {
-            breakpoints: { medium: breakpoint, regular: Math.max(breakpoint, 1024) },
+            breakpoints: { medium, regular: Math.max(medium, regular) },
             onChange: (sizeClass) => api.internal.resized(sizeClass),
           });
         };

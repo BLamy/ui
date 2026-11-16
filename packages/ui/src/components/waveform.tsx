@@ -1,6 +1,7 @@
 'use client';
 import { useCallback, useLayoutEffect, useRef, type CSSProperties, type Ref } from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';
+import { skeletonVariants } from '@/components/ui/skeleton';
 import { useAppearance } from '@/lib/theme';
 import { cn } from '@/lib/utils';
 
@@ -9,7 +10,10 @@ import { cn } from '@/lib/utils';
    range it stands for (`from`…`to`, a clip's in and out points). It draws one bar per device pixel on a canvas, in the
    text colour, mirrored around the middle or rising from the bottom, scaled by `gain` (a clip's volume). `tone` picks a
    semantic colour; any `text-…` class tints it instead (`text-primary`), and the colour is read again when the
-   appearance changes. Decorative: it is hidden from assistive tech; the clip it sits in carries the label. ══ */
+   appearance changes. While the peaks are loading (`loading`, by default while `peaks` is empty) it shows a flat
+   shimmering band where the bars will be (`data-loading`), as Filmstrip shimmers its cells, so a clip keeps its look;
+   with `loading={false}` and no peaks (silence, an FFmpeg error) it is empty. Decorative: it is hidden from assistive
+   tech; the clip it sits in carries the label. ══ */
 
 export const waveformVariants = cva('relative block h-full w-full', {
   variants: {
@@ -40,13 +44,23 @@ export interface WaveformProps extends VariantProps<typeof waveformVariants> {
   to?: number;
   /** Scales the bars (a clip's volume). Default 1. */
   gain?: number;
+  /** Show the loading band instead of bars. Default: while `peaks` is empty. Pass the extraction's own state
+   *  (`useMediaPeaks(…).loading`) so a failed or silent one stops shimmering. */
+  loading?: boolean;
   className?: string;
   style?: CSSProperties;
   ref?: Ref<HTMLCanvasElement>;
 }
 
-export function Waveform({ peaks, rate, from = 0, to, gain = 1, variant: variantProp, tone, className, style, ref: refProp }: WaveformProps) {
+/** The loading band: the bars' middle third (mirror) or bottom third (bottom), as a skeleton. */
+const loadingBand = {
+  mirror: '[mask-image:linear-gradient(to_bottom,transparent_36%,black_36%,black_64%,transparent_64%)]',
+  bottom: '[mask-image:linear-gradient(to_top,black_28%,transparent_28%)]',
+} as const;
+
+export function Waveform({ peaks, rate, from = 0, to, gain = 1, loading: loadingProp, variant: variantProp, tone, className, style, ref: refProp }: WaveformProps) {
   const variant = variantProp ?? 'mirror';
+  const loading = loadingProp ?? peaks.length === 0;
   const ref = useRef<HTMLCanvasElement | null>(null);
   const setRef = useCallback((el: HTMLCanvasElement | null) => {
     ref.current = el;
@@ -71,7 +85,7 @@ export function Waveform({ peaks, rate, from = 0, to, gain = 1, variant: variant
       g.clearRect(0, 0, w, h);
       g.fillStyle = getComputedStyle(canvas).color;
       const span = end - from;
-      if (!(span > 0) || !peaks.length) return;
+      if (!(span > 0) || !peaks.length || loading) return;
       for (let x = 0; x < w; x++) {
         // The slices this pixel column covers; at least one, so a zoomed-in strip stays continuous.
         const a = Math.floor((from + (x / w) * span) * rate);
@@ -92,6 +106,16 @@ export function Waveform({ peaks, rate, from = 0, to, gain = 1, variant: variant
       ro?.disconnect();
       watcher?.disconnect();
     };
-  }, [peaks, rate, from, end, gain, variant, tone, className, appearance]);
-  return <canvas ref={setRef} data-slot="waveform" data-variant={variant} aria-hidden className={cn(waveformVariants({ variant, tone }), className)} style={style} />;
+  }, [peaks, rate, from, end, gain, variant, tone, className, appearance, loading]);
+  return (
+    <canvas
+      ref={setRef}
+      data-slot="waveform"
+      data-variant={variant}
+      data-loading={loading ? '' : undefined}
+      aria-hidden
+      className={cn(waveformVariants({ variant, tone }), loading && [skeletonVariants({ shape: 'default' }), 'rounded-none', loadingBand[variant]], className)}
+      style={style}
+    />
+  );
 }

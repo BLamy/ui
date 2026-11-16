@@ -28,7 +28,6 @@
     "SelectTriggerProps",
     "SelectContentProps",
     "SelectItemProps",
-    "SelectController",
-    "ListData"
+    "SelectController"
   ]
 }

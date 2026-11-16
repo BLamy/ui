@@ -1,5 +1,5 @@
 'use client';
-import { createContext, useContext, type ComponentProps, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type ComponentProps, type ReactNode, type Ref } from 'react';
 import {
   Calendar as SdkCalendar,
   CalendarDay as SdkCalendarDay,
@@ -194,14 +194,15 @@ const compactGrid = 'border-separate border-spacing-0 in-data-[size-class=compac
 const CalendarGridHeadingContext = createContext(false);
 
 /** A month's caption over its grid, like "October 2026". CalendarMonths draws one over each grid when it shows more
-    than one month, visible while the months stack (a compact scope), so every stacked month is labelled on screen.
+    than one month, visible while the months stack (it sets `data-stacked` when they wrap onto rows, whatever the size
+    class), so every stacked month is labelled on screen.
     Hidden from screen readers: the grid is already named by its month. */
 export function CalendarGridHeading({ className, ...props }: ComponentProps<'caption'>) {
   return (
     <caption
       data-slot="calendar-grid-heading"
       aria-hidden="true"
-      className={cn('hidden px-2 pt-1 pb-1.5 text-start text-subhead font-semibold in-data-[size-class=compact]:table-caption', className)}
+      className={cn('hidden px-2 pt-1 pb-1.5 text-start text-subhead font-semibold in-data-stacked:table-caption', className)}
       {...props}
     />
   );
@@ -233,16 +234,45 @@ export interface CalendarMonthsProps extends ComponentProps<'div'> {
 /** The month grids on show, one CalendarGrid per month, side by side while they fit and wrapping onto rows,
     centred under the header, in a narrow container (a phone, a sidebar) rather than running past its edge. Stacked
     months each carry their own caption (CalendarGridHeading). */
-export function CalendarMonths({ months, className, ...props }: CalendarMonthsProps) {
+export function CalendarMonths({ months, className, ref, ...props }: CalendarMonthsProps) {
   const fromCalendar = useContext(CalendarMonthsContext);
   const shown = Math.max(1, Math.floor(months ?? fromCalendar));
+  const [box, stacked] = useStacked(shown > 1, ref);
   return (
     <CalendarGridHeadingContext.Provider value={shown > 1}>
-      <div data-slot="calendar-months" className={cn('flex flex-wrap justify-center gap-x-6 gap-y-3', className)} {...props}>
+      <div ref={box} data-slot="calendar-months" data-stacked={stacked ? '' : undefined} className={cn('flex flex-wrap justify-center gap-x-6 gap-y-3', className)} {...props}>
         {Array.from({ length: shown }, (_, offset) => <CalendarGrid key={offset} offset={offset} />)}
       </div>
     </CalendarGridHeadingContext.Provider>
   );
+}
+
+/** Whether the grids have wrapped onto more than one row: a grid starts lower than the first. Measured from the layout
+    (a narrow sidebar on a wide page stacks too), again whenever the box resizes. */
+function useStacked(watch: boolean, ref: Ref<HTMLDivElement> | undefined): [(el: HTMLDivElement | null) => void, boolean] {
+  const [el, setEl] = useState<HTMLDivElement | null>(null);
+  const [stacked, setStacked] = useState(false);
+  const outer = useRef(ref);
+  outer.current = ref;
+  const box = useCallback((node: HTMLDivElement | null) => {
+    setEl(node);
+    const r = outer.current;
+    if (typeof r === 'function') r(node);
+    else if (r) r.current = node;
+  }, []);
+  useEffect(() => {
+    if (!el || !watch) return setStacked(false);
+    const measure = () => {
+      const grids = [...el.children].filter((c): c is HTMLElement => c instanceof HTMLElement);
+      setStacked(grids.some((g) => g.offsetTop > grids[0].offsetTop));
+    };
+    measure();
+    if (typeof ResizeObserver === 'undefined') return undefined;
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [el, watch]);
+  return [box, stacked];
 }
 
 type SdkCalendarProps = ComponentProps<typeof SdkCalendar>;

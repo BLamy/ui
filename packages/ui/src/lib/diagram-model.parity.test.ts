@@ -8,13 +8,13 @@ import { ARROW_BROAD, ARROW_SLIM, anchorPoint, arrowHead, connectorPath, dirOf, 
    (registry/blocks/replay-canvas/layout.ts), and the arrowheads from items.tsx, storyboard.tsx and board.tsx.
    Delete a block from this list only when that block's picture is meant to change. */
 
-const NORMAL: Record<DiagramSide, Pt> = { t: { x: 0, y: -1 }, r: { x: 1, y: 0 }, b: { x: 0, y: 1 }, l: { x: -1, y: 0 } };
+const NORMAL: Record<DiagramSide, Pt> = { top: { x: 0, y: -1 }, right: { x: 1, y: 0 }, bottom: { x: 0, y: 1 }, left: { x: -1, y: 0 } };
 type Box = Rect & { rot: number; id: string };
 
 function oldAnchorPoint(item: Box, side: DiagramSide): Pt {
-  const local: Pt = side === 't' ? { x: item.x + item.w / 2, y: item.y }
-    : side === 'b' ? { x: item.x + item.w / 2, y: item.y + item.h }
-    : side === 'l' ? { x: item.x, y: item.y + item.h / 2 }
+  const local: Pt = side === 'top' ? { x: item.x + item.w / 2, y: item.y }
+    : side === 'bottom' ? { x: item.x + item.w / 2, y: item.y + item.h }
+    : side === 'left' ? { x: item.x, y: item.y + item.h / 2 }
     : { x: item.x + item.w, y: item.y + item.h / 2 };
   return item.rot ? rotatePt(local, centerOf(item), item.rot) : local;
 }
@@ -72,7 +72,7 @@ function oldNearestAnchor(p: Pt, items: Box[], tol: number, exclude?: string) {
     const it = items[i];
     if (it.id === exclude || !inFrame(p, it, tol)) continue;
     let best: { side: DiagramSide; point: Pt; d: number } | null = null;
-    for (const side of ['t', 'r', 'b', 'l'] as DiagramSide[]) {
+    for (const side of ['top', 'right', 'bottom', 'left'] as DiagramSide[]) {
       const point = oldAnchorPoint(it, side);
       const d = dist(point, p);
       if (!best || d < best.d) best = { side, point, d };
@@ -158,7 +158,7 @@ function random(seed: number) {
     rect: (): Rect => ({ x: Math.round((r() - 0.5) * 4000), y: Math.round((r() - 0.5) * 4000), w: 20 + Math.round(r() * 900), h: 20 + Math.round(r() * 900) }),
   };
 }
-const SIDES: DiagramSide[] = ['t', 'r', 'b', 'l'];
+const SIDES: DiagramSide[] = ['top', 'right', 'bottom', 'left'];
 const numbers = (d: string) => (d.match(/-?\d+(\.\d+)?(e[-+]?\d+)?/g) ?? []).map(Number);
 
 describe('the geometry the three blocks had', () => {

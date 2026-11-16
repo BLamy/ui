@@ -28,7 +28,8 @@ import { Dialog, DialogClose, DialogContent, DialogTitle, DialogTrigger } from "
 import { createResizableController, Resizable, ResizableHandle, ResizablePanel } from "@ui-sdk/react/resizable"
 import { Tabs, TabsList, TabsPanel, TabsTab } from "@ui-sdk/react/tabs"
 import { Toggle, ToggleGroup } from "@ui-sdk/react/toggle"
-import { ExternalLink, FileCode2, Folder, Maximize2, Monitor, Smartphone, Tablet, X } from "lucide-react"
+import { Glyph } from "../ui/glyph"
+import { type IconName } from "@brett_lamy/ui/lib/icon"
 
 import type { DemoLayout, DemoNode, DemoViewport } from "../gitbook/ast"
 import { parseInline } from "../gitbook/inline"
@@ -340,10 +341,10 @@ function DemoCanvas({ src, preview, variant, bleed, look }: {
   )
 }
 
-const VIEWPORTS: { id: DemoViewport; label: string; width: number | null; Icon: typeof Monitor }[] = [
-  { id: "desktop", label: "Desktop", width: null, Icon: Monitor },
-  { id: "tablet", label: "Tablet", width: 768, Icon: Tablet },
-  { id: "phone", label: "Phone", width: 390, Icon: Smartphone },
+const VIEWPORTS: { id: DemoViewport; label: string; width: number | null; icon: IconName }[] = [
+  { id: "desktop", label: "Desktop", width: null, icon: "display" },
+  { id: "tablet", label: "Tablet", width: 768, icon: "ipad" },
+  { id: "phone", label: "Phone", width: 390, icon: "iphone" },
 ]
 const MIN_WIDTH = 280
 const VIEW_TABS: { id: ViewTab; label: string }[] = [{ id: "preview", label: "Preview" }, { id: "code", label: "Code" }]
@@ -477,7 +478,7 @@ function CodeView({ src, files, height }: { src: string; files: DemoFile[]; heig
             {rows.map((row) =>
               row.kind === "dir" ? (
                 <div key={`d:${row.path}`} className="docs-demo-dir" style={{ "--depth": row.depth } as CSSProperties} aria-hidden="true">
-                  <Folder width={13} height={13} aria-hidden="true" />
+                  <Glyph name="folder" size={13} />
                   {row.name}
                 </div>
               ) : (
@@ -488,7 +489,7 @@ function CodeView({ src, files, height }: { src: string; files: DemoFile[]; heig
                   className="docs-demo-file"
                   style={{ "--depth": row.depth } as CSSProperties}
                 >
-                  <FileCode2 width={13} height={13} aria-hidden="true" />
+                  <Glyph name="doc-code" size={13} />
                   <span>{row.name}</span>
                 </TabsTab>
               ),
@@ -525,7 +526,7 @@ function CodeView({ src, files, height }: { src: string; files: DemoFile[]; heig
 function FullscreenButton({ title }: { title: string }) {
   return (
     <DialogTrigger className="docs-demo-icon-btn" aria-label={`Open ${title} fullscreen`} title="Fullscreen">
-      <Maximize2 width={15} height={15} aria-hidden="true" />
+      <Glyph name="arrows-expand" size={15} />
     </DialogTrigger>
   )
 }
@@ -534,7 +535,7 @@ function NewTabLink({ href, title }: { href: string | undefined; title: string }
   if (!href) return null
   return (
     <a className="docs-demo-icon-btn" href={href} target="_blank" rel="noreferrer" aria-label={`Open ${title} in a new tab`} title="Open in new tab">
-      <ExternalLink width={15} height={15} aria-hidden="true" />
+      <Glyph name="arrow-up-right-square" size={15} />
     </a>
   )
 }
@@ -587,7 +588,7 @@ function FullscreenDialog({ title, src, variants, variant, onVariant, preview, b
           <VariantSwitch variants={variants} value={variant} onChange={onVariant} title={title} width={variantsWidth} />
           <NewTabLink href={href} title={title} />
           <DialogClose className="docs-demo-icon-btn docs-demo-dialog-close" aria-label="Close fullscreen" title="Close (Esc)">
-            <X width={16} height={16} aria-hidden="true" />
+            <Glyph name="xmark" size={16} />
           </DialogClose>
         </div>
         <div className="docs-demo-dialog-stage">
@@ -681,7 +682,7 @@ export function DemoViewer(props: DemoViewerProps) {
   if (mode === "none") {
     return (
       <div className="docs-source-ref" data-docstream-demo="" data-demo-src={src}>
-        <FileCode2 width={16} height={16} aria-hidden="true" />
+        <Glyph name="doc-code" size={16} />
         <span>{title}</span>
         <code>demo:{src}</code>
       </div>
@@ -873,9 +874,9 @@ function MultiFileViewer({ rootRef, className, baseId, mode, src, title, descrip
                 if (chosen) setWidth(chosen.width)
               }}
             >
-              {VIEWPORTS.map(({ id, label, width: w, Icon }) => (
+              {VIEWPORTS.map(({ id, label, width: w, icon }) => (
                 <Toggle key={id} value={id} className="docs-demo-vp" aria-label={w ? `${label} (${w}px)` : label} title={w ? `${label} · ${w}px` : label}>
-                  <Icon width={15} height={15} aria-hidden="true" />
+                  <Glyph name={icon} size={15} />
                 </Toggle>
               ))}
             </ToggleGroup>

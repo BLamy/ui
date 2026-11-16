@@ -410,23 +410,37 @@ function TableInner<T extends DataTableRow>({
   }
 
   const drawn = overlay?.({ columns, stacked });
+  // With no rows, the empty state is the grid's sibling, not its child: a grid owns only rows and row groups (WAI-ARIA
+  // grid), as UI SDK keeps a collection's Empty beside its list. The grid shrinks to its header and the state fills the
+  // rest; the footer follows it.
+  const empty = !rows.length && !loading;
+  const footerEl = footer != null ? <parts.Footer className="px-3 py-2 text-center text-caption text-muted-foreground">{footer}</parts.Footer> : null;
   return (
-    <parts.Grid
-      aria-label={ariaLabel}
-      aria-busy={loading || undefined}
-      aria-colcount={stacked ? undefined : columns.length}
-      className="group/grid bl-scroll relative min-h-0 flex-1 overflow-auto overscroll-contain outline-none [overflow-anchor:none]"
-    >
-      <div className={cn('min-h-full w-full', !stacked && 'min-w-(--data-table-min-width)')}>
-        {drawn != null ? <parts.Overlay className="pointer-events-none sticky top-0 z-3 h-0">{drawn}</parts.Overlay> : null}
-        <parts.Head className="sticky top-0 z-2 bg-card">{header}</parts.Head>
-        <parts.Rows className="relative w-full">{rowEls}</parts.Rows>
-        {loading && !rows.length
-          ? <LoadingRows ends={columns.map((column) => column.align === 'end')} stacked={stacked} />
-          : <parts.Empty>{renderEmptyState(emptyState, { title: 'No rows' })}</parts.Empty>}
-        {footer != null ? <parts.Footer className="px-3 py-2 text-center text-caption text-muted-foreground">{footer}</parts.Footer> : null}
-      </div>
-    </parts.Grid>
+    <>
+      <parts.Grid
+        aria-label={ariaLabel}
+        aria-busy={loading || undefined}
+        aria-colcount={stacked ? undefined : columns.length}
+        className={cn(
+          'group/grid bl-scroll relative min-h-0 overflow-auto overscroll-contain outline-none [overflow-anchor:none]',
+          empty ? 'shrink-0' : 'flex-1',
+        )}
+      >
+        <div className={cn('w-full', !empty && 'min-h-full', !stacked && 'min-w-(--data-table-min-width)')}>
+          {drawn != null ? <parts.Overlay className="pointer-events-none sticky top-0 z-3 h-0">{drawn}</parts.Overlay> : null}
+          <parts.Head className="sticky top-0 z-2 bg-card">{header}</parts.Head>
+          <parts.Rows className="relative w-full">{rowEls}</parts.Rows>
+          {loading && !rows.length ? <LoadingRows ends={columns.map((column) => column.align === 'end')} stacked={stacked} /> : null}
+          {empty ? null : footerEl}
+        </div>
+      </parts.Grid>
+      {empty ? (
+        <>
+          <parts.Empty className="bl-scroll min-h-0 flex-1 overflow-auto">{renderEmptyState(emptyState, { title: 'No rows' })}</parts.Empty>
+          {footerEl}
+        </>
+      ) : null}
+    </>
   );
 }
 

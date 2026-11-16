@@ -29,7 +29,7 @@ export default function CollapsibleRail() {
   return (
     <ThemeScope scope="workbench" className="p-4">
       <div className="mx-auto h-[360px] overflow-hidden rounded-card shadow-hairline">
-        <SidebarProvider defaultOpen={false} breakpoint={420}>
+        <SidebarProvider defaultOpen={false} breakpoints={{ medium: 420 }}>
           <Sidebar variant="rail" width={220} railWidth={52}>
             <SidebarHeader>
               <SidebarAccount title="bl-ui" description="main · 3 changes" />

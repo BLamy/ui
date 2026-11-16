@@ -2,7 +2,7 @@
    Copy and View give renderable docstream Markdown: each {% demo %} keeps its tag and carries its
    real files inline, so pasting the page into docstream renders the same page (demos included). */
 import type { ReactNode } from "react"
-import { ArrowUpRight, ChevronDown, FileText } from "lucide-react"
+import { Glyph } from "../ui/glyph"
 import { Menu, MenuContent, MenuItem, MenuTrigger } from "@ui-sdk/react/menu"
 
 import { useDemoResolver } from "../demo/context"
@@ -92,8 +92,8 @@ export function DocPageActions(props: DocPageActionsProps) {
   const all: MenuItem[] = [
     { id: "copy", icon: <CopyIcon copied={false} />, label: "Copy as Markdown", hint: "Copy this page, demos included", run: () => void copyPage() },
     props.markdownUrl
-      ? { id: "view", icon: <FileText width={15} height={15} aria-hidden="true" />, label: "View as Markdown", hint: "Open the page as plain text", href: props.markdownUrl }
-      : { id: "view", icon: <FileText width={15} height={15} aria-hidden="true" />, label: "View as Markdown", hint: "Open the page as plain text", run: () => void viewMarkdown() },
+      ? { id: "view", icon: <Glyph name="doc-text" size={15} />, label: "View as Markdown", hint: "Open the page as plain text", href: props.markdownUrl }
+      : { id: "view", icon: <Glyph name="doc-text" size={15} />, label: "View as Markdown", hint: "Open the page as plain text", run: () => void viewMarkdown() },
     { id: "chatgpt", icon: <OpenAIGlyph />, label: "Open in ChatGPT", hint: "Ask questions about this page", href: `https://chatgpt.com/?hints=search&q=${encodeURIComponent(ask)}` },
     { id: "claude", icon: <AnthropicGlyph />, label: "Open in Claude", hint: "Ask questions about this page", href: `https://claude.ai/new?q=${encodeURIComponent(ask)}` },
   ]
@@ -108,7 +108,7 @@ export function DocPageActions(props: DocPageActionsProps) {
       </button>
       <Menu>
         <MenuTrigger className="docs-page-actions-more" aria-label="More page actions">
-          <ChevronDown width={13} height={13} strokeWidth={2.4} aria-hidden="true" className="docs-page-actions-caret" />
+          <Glyph name="chevron-down" size={13} sw={2.4} className="docs-page-actions-caret" />
         </MenuTrigger>
         <MenuContent aria-label="Page actions" className="docs-page-actions-menu" side="bottom" align="end" sideOffset={6}>
           {items.map((item) => {
@@ -118,7 +118,7 @@ export function DocPageActions(props: DocPageActionsProps) {
                 <span className="docs-page-actions-text">
                   <span className="docs-page-actions-label">
                     {item.label}
-                    {item.href ? <ArrowUpRight width={12} height={12} aria-hidden="true" /> : null}
+                    {item.href ? <Glyph name="arrow-up-right" size={12} /> : null}
                   </span>
                   <span className="docs-page-actions-hint">{item.hint}</span>
                 </span>

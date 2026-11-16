@@ -76,7 +76,7 @@ function App() {
           { label: 'GitHub', href: GITHUB },
           { label: 'npm', href: 'https://www.npmjs.com/package/@brett_lamy/ui/docstream' },
         ]}
-        themeStorageKey="docstream-demo-theme"
+        appearanceStorageKey="docstream-demo-theme"
         liveRenderer={liveRenderer}
         sourceRenderer={sourceRenderer}
         demoResolver={demoResolver}

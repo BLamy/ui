@@ -7,8 +7,8 @@ import { Icon } from '@/lib/icon';
    button that names what it goes back to, a centered title that fades in once the content scrolls, and a large title
    at the top of the content. Both render these classes and this back label, so the two bars can't drift apart.
 
-   The back label follows UIKit: the previous title when it fits beside the centered title, "Back" when only a
-   sliver is left, else the chevron alone. Its accessible name is always "Back to <title>" (or "Back"), whatever
+   The back label follows UIKit: the previous title when all of it fits beside the centered title (never cut with an
+   ellipsis), else "Back", else the chevron alone. Its accessible name is always "Back to <title>" (or "Back"), whatever
    the label shows. ══ */
 
 /** A bar button that goes back: the chevron hugs the leading edge, the label follows. */
@@ -70,7 +70,7 @@ export function useBackFit(
       const t = find.current();
       const avail = measure.current(r.clientWidth, t ? t.offsetWidth : 0);
       const fw = f.offsetWidth, bw = b.offsetWidth;
-      const mode: BackMode = fw > 0 && (avail >= fw || avail >= bw + 14) ? 'title' : avail >= bw && bw > 0 ? 'back' : 'none';
+      const mode: BackMode = fw > 0 && avail >= fw ? 'title' : avail >= bw && bw > 0 ? 'back' : 'none';
       setFit((o) => (o.mode === mode && o.width === avail ? o : { mode, width: Math.max(0, avail) }));
     };
     m();

@@ -429,9 +429,6 @@ importers:
       katex:
         specifier: ^0.18.5
         version: 0.18.7
-      lucide-react:
-        specifier: ^1.17.0
-        version: 1.37.0(react@19.2.3)
       pele:
         specifier: 1.6.0
         version: 1.6.0
@@ -6849,11 +6846,6 @@ packages:
 
   lru_map@0.4.1:
     resolution: {integrity: sha512-I+lBvqMMFfqaV8CJCISjI3wbjmwVu/VyOoU7+qtu9d7ioW5klMgsTTiUOUp+DJvfTTzKXoPbyC6YfgkNcyPSOg==}
-
-  lucide-react@1.37.0:
-    resolution: {integrity: sha512-LPsB4rD1TD6wZu1djKOf9vUnS1jTNaHbolXebXDgiTdb6jeA1agIJhJsIybCmjKmQClcOaal1o1OaiYahEftyQ==}
-    peerDependencies:
-      react: 19.2.3
 
   lz-string@1.5.0:
     resolution: {integrity: sha512-h5bgJWpxJNswbU7qCrV0tIKQCaS3blPDrqKWx+QxzuzL1zGUzij9XCWLrSLsJPu5t+eWA/ycetzYAO5IOMcWAQ==}
@@ -16628,10 +16620,6 @@ snapshots:
       yallist: 3.1.1
 
   lru_map@0.4.1: {}
-
-  lucide-react@1.37.0(react@19.2.3):
-    dependencies:
-      react: 19.2.3
 
   lz-string@1.5.0: {}
 

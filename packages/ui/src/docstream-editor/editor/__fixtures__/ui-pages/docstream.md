@@ -47,10 +47,10 @@ The `MarkdownView` wrapper keeps BL UI's `wb-md` styling and sets `data-renderer
 
 ## Streaming updates
 
-Pass the latest accumulated markdown as chunks arrive. `streaming` is forwarded to Docstream as `isStreaming`, which exposes accessible busy state and a streaming data attribute while content is arriving.
+Pass the latest accumulated markdown as chunks arrive. `streaming` is forwarded to Docstream as `streaming`, which exposes accessible busy state and a streaming data attribute while content is arriving.
 
 ```tsx
-<MarkdownView markdown={partialAnswer} streaming={isStreaming} />
+<MarkdownView markdown={partialAnswer} streaming={streaming} />
 ```
 
 ## Styling

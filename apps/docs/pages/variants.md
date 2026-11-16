@@ -96,7 +96,7 @@ box-border inline-flex shrink-0 items-center justify-center gap-1 rounded-full l
 | --- | --- |
 | `default` (default) | `bg-primary text-primary-foreground` |
 | `secondary` | `bg-secondary text-secondary-foreground` |
-| `tinted` | `bg-primary/15 text-primary` |
+| `tinted` | `bg-primary/15 text-[color-mix(in_oklab,var(--primary)_78%,black)] dark:text-primary` |
 | `outline` | `text-foreground shadow-hairline` |
 | `destructive` | `bg-destructive text-white` |
 | `success` | `bg-success text-black` |
@@ -466,12 +466,18 @@ relative size-full
 | Value | Adds |
 | --- | --- |
 | `node` (default) | `flex flex-col items-center justify-center rounded-ctl border border-border bg-card px-3 py-2 text-card-foreground shadow-hairline` |
-| `final` | `flex flex-col items-center justify-center rounded-ctl border-2 border-foreground bg-card px-3 py-2 text-card-foreground outline-1 -outline-offset-4 outline-for…` |
-| `initial` | `rounded-full bg-foreground` |
-| `compound` | `rounded-card border border-border bg-secondary` |
-| `parallel` | `rounded-card border border-dashed border-border bg-secondary` |
+| `group` | `rounded-card border border-border bg-secondary` |
 | `region` | `rounded-card` |
 | `root` | `rounded-card border border-border` |
+| `marker` | `rounded-full bg-foreground` |
+
+**`variant`** — default `default`
+
+| Value | Adds |
+| --- | --- |
+| `default` (default) | — |
+| `dashed` | `border-dashed` |
+| `double` | `border-2 border-foreground outline-1 -outline-offset-4 outline-foreground` |
 
 ### `diagramEdgeVariants`
 
@@ -481,17 +487,23 @@ Defined in `@/components/ui/diagram`. Base classes:
 fill-none ${LINE}
 ```
 
-**`kind`** — default `event`
+**`variant`** — default `default`
 
 | Value | Adds |
 | --- | --- |
-| `event` (default) | `stroke-muted-foreground` |
-| `done` | `stroke-muted-foreground` |
-| `invoke` | `stroke-muted-foreground` |
-| `always` | `stroke-muted-foreground [stroke-dasharray:calc(5px/var(--diagram-z))_calc(3px/var(--diagram-z))]` |
-| `after` | `stroke-muted-foreground [stroke-dasharray:calc(1.5px/var(--diagram-z))_calc(3px/var(--diagram-z))] [stroke-linecap:round]` |
-| `initial` | `stroke-foreground` |
-| `problem` | `stroke-destructive [stroke-dasharray:calc(6px/var(--diagram-z))_calc(3px/var(--diagram-z))]` |
+| `default` (default) | `stroke-muted-foreground` |
+| `dashed` | `stroke-muted-foreground [stroke-dasharray:calc(5px/var(--diagram-z))_calc(3px/var(--diagram-z))]` |
+| `dotted` | `stroke-muted-foreground [stroke-dasharray:calc(1.5px/var(--diagram-z))_calc(3px/var(--diagram-z))] [stroke-linecap:round]` |
+| `strong` | `stroke-foreground` |
+
+**`tone`** — default `default`
+
+| Value | Adds |
+| --- | --- |
+| `default` (default) | — |
+| `destructive` | `stroke-destructive` |
+
+1 compound variant — see the source.
 
 ## Dialog
 
@@ -534,7 +546,13 @@ cn( 'bl-btn box-border flex h-11 cursor-pointer items-center justify-center bord
 | --- | --- |
 | `default` (default) | `font-normal` |
 | `cancel` | `font-semibold` |
-| `destructive` | `font-normal text-destructive` |
+
+**`tone`** — default `default`
+
+| Value | Adds |
+| --- | --- |
+| `default` (default) | — |
+| `destructive` | `text-destructive` |
 
 ## Disclosure
 
@@ -897,7 +915,7 @@ bl-btn group/item relative box-border flex cursor-pointer items-center gap-2.5 t
 | Value | Adds |
 | --- | --- |
 | `inset` (default) | `[ 'min-h-11 px-4 py-[11px] text-body leading-[22px]', // The hairline starts under the text: past the icon when the row has one ('--listbox…` |
-| `popup` | `[ 'min-h-9 rounded-lg py-[7px] pr-3 pl-2 text-subhead leading-5', 'data-highlighted:bg-accent active:not-data-disabled:bg-secondary-strong …` |
+| `popup` | `[ 'min-h-9 rounded-lg py-[7px] pr-3 pl-2 text-subhead leading-5', // In a popup presented as a sheet (a touch layout), rows reach the 44px …` |
 
 ## LogList
 
@@ -1035,7 +1053,7 @@ relative w-full overflow-hidden rounded-full bg-secondary-strong
 Defined in `@/components/ui/progress`. Base classes:
 
 ```text
-cn( 'absolute inset-y-0 left-0 rounded-full transition-[width] duration-spring-smooth ease-spring-smooth motion-reduce:transition-none', 'data-indeterminate:w-2/5 data-indeterminate:animate-bl-progress data-indeterminate:transition-none', 'motion-reduce:data-indeterminate:w-full motion-reduce:data-indeterminate:animate-none motion-reduce:data-indeterminate:opacity-35', )
+absolute inset-y-0 start-0 rounded-full transition-[width] duration-spring-smooth ease-spring-smooth motion-reduce:transition-none rtl:[--bl-progress-dir:-1] data-indeterminate:w-2/5 data-indeterminate:animate-bl-progress data-indeterminate:transition-none motion-reduce:data-indeterminate:w-full motion-reduce:data-indeterminate:animate-none motion-reduce:data-indeterminate:opacity-35
 ```
 
 **`tone`** — default `default`
@@ -1286,11 +1304,12 @@ Defined in `@/components/ui/sheet`. Base classes:
 pointer-events-auto relative box-border flex flex-col shadow-[0_0_40px_black] shadow-black/22 outline-none after:absolute after:bg-inherit after:content-[''] data-dragging:select-none
 ```
 
-**`variant`** — default `card`
+**`variant`** — default `default`
 
 | Value | Adds |
 | --- | --- |
-| `card` (default) | `bg-card text-card-foreground` |
+| `default` (default) | `bg-card text-card-foreground` |
+| `tray` | `rounded-sheet bg-card text-card-foreground after:hidden` |
 | `panel` | `bg-background text-foreground` |
 
 **`side`** — default `bottom`
@@ -1302,7 +1321,7 @@ pointer-events-auto relative box-border flex flex-col shadow-[0_0_40px_black] sh
 | `left` | `mr-auto h-full w-[85%] max-w-[360px] after:inset-y-0 after:right-full after:w-24` |
 | `right` | `ml-auto h-full w-[85%] max-w-[360px] after:inset-y-0 after:left-full after:w-24` |
 
-8 compound variants — see the source.
+12 compound variants — see the source.
 
 ## Sidebar
 
@@ -1714,7 +1733,7 @@ inline-flex flex-wrap items-center gap-x-2 gap-y-1 text-footnote
 Defined in `@/components/ui/terminal`. Base classes:
 
 ```text
-[ 'bl-scroll size-full min-h-0 min-w-0 rounded-none px-3 py-2.5 font-mono shadow-none', '[--term-bg:var(--background)] [--term-fg:var(--foreground)] [--term-cursor:var(--primary)]', '[--term-selection-bg:color-mix(in_oklab,var(--primary)_30%,transparent)] selection:bg-primary/30', '[--term-search-match:color-mix(in_oklab,var(--term-yellow)_30%,transparent)] [--term-search-active:color-mix(in_oklab,var(--term-yellow)_55%,transparent)] [--term-search-border:var(--term-yellow)]', '[--term-red:var(--destructive)] [--term-green:var(--success)] [--term-yellow:var(--warning)] [--term-blue:var(--link,var(--primary))]', '[--term-magenta:color-mix(in_oklch,var(--term-red),var(--term-blue))] [--term-cyan:color-mix(in_oklch,var(--term-blue),var(--term-green))]', '[--term-color-0:var(--foreground)] [--term-color-7:color-mix(in_oklab,var(--foreground)_55%,var(--background))] [--term-color-8:color-mix(in_oklab,var(--foreground)_55%,var(--background))] [--term-color-15:color-mix(in_oklab,var(--foreground)_70%,var(--background))]', '[--term-color-1:color-mix(in_oklab,var(--term-red)_85%,black)] [--term-color-2:color-mix(in_oklab,var(--term-green)_65%,black)] [--term-color-3:color-mix(in_oklab,var(--term-yellow)_55%,black)]', '[--term-color-4:color-mix(in_oklab,var(--term-blue)_85%,black)] [--term-color-5:color-mix(in_oklab,var(--term-magenta)_80%,black)] [--term-color-6:color-mix(in_oklab,var(--term-cyan)_65%,black)]', '[--term-color-9:var(--term-red)] [--term-color-10:color-mix(in_oklab,var(--term-green)_80%,black)] [--term-color-11:color-mix(in_oklab,var(--term-yellow)_70%,black)]', '[--term-color-12:var(--term-blue)] [--term-color-13:var(--term-magenta)] [--term-color-14:color-mix(in_oklab,var(--term-cyan)_80%,black)]', 'dark:[--term-color-0:color-mix(in_oklab,var(--foreground)_18%,var(--background))] dark:[--term-color-7:color-mix(in_oklab,var(--foreground)_80%,var(--background))] dark:[--term-color-15:var(--foreground)]', 'dark:[--term-color-1:var(--term-red)] dark:[--term-color-2:var(--term-green)] dark:[--term-color-3:var(--term-yellow)] dark:[--term-color-4:var(--term-blue)] dark:[--term-color-5:var(--term-magenta)] dark:[--term-color-6:var(--term-cyan)]', 'dark:[--term-color-9:color-mix(in_oklab,var(--term-red)_75%,white)] dark:[--term-color-10:color-mix(in_oklab,var(--term-green)_75%,white)] dark:[--term-color-11:color-mix(in_oklab,var(--term-yellow)_75%,white)]', 'dark:[--term-color-12:color-mix(in_oklab,var(--term-blue)_75%,white)] dark:[--term-color-13:color-mix(in_oklab,var(--term-magenta)_75%,white)] dark:[--term-color-14:color-mix(in_oklab,var(--term-cyan)_75%,white)]', ]
+[ 'bl-scroll size-full min-h-0 min-w-0 rounded-none px-3 py-2.5 font-mono shadow-none', 'has-[textarea:focus]:ring-2 has-[textarea:focus]:ring-ring has-[textarea:focus]:ring-inset', '[--term-bg:var(--background)] [--term-fg:var(--foreground)] [--term-cursor:var(--primary)]', '[--term-selection-bg:color-mix(in_oklab,var(--primary)_30%,transparent)] selection:bg-primary/30', '[--term-search-match:color-mix(in_oklab,var(--term-yellow)_30%,transparent)] [--term-search-active:color-mix(in_oklab,var(--term-yellow)_55%,transparent)] [--term-search-border:var(--term-yellow)]', '[--term-red:var(--destructive)] [--term-green:var(--success)] [--term-yellow:var(--warning)] [--term-blue:var(--link,var(--primary))]', '[--term-magenta:color-mix(in_oklch,var(--term-red),var(--term-blue))] [--term-cyan:color-mix(in_oklch,var(--term-blue),var(--term-green))]', '[--term-color-0:var(--foreground)] [--term-color-7:color-mix(in_oklab,var(--foreground)_55%,var(--background))] [--term-color-8:color-mix(in_oklab,var(--foreground)_55%,var(--background))] [--term-color-15:color-mix(in_oklab,var(--foreground)_70%,var(--background))]', '[--term-color-1:color-mix(in_oklab,var(--term-red)_85%,black)] [--term-color-2:color-mix(in_oklab,var(--term-green)_65%,black)] [--term-color-3:color-mix(in_oklab,var(--term-yellow)_55%,black)]', '[--term-color-4:color-mix(in_oklab,var(--term-blue)_85%,black)] [--term-color-5:color-mix(in_oklab,var(--term-magenta)_80%,black)] [--term-color-6:color-mix(in_oklab,var(--term-cyan)_65%,black)]', '[--term-color-9:var(--term-red)] [--term-color-10:color-mix(in_oklab,var(--term-green)_80%,black)] [--term-color-11:color-mix(in_oklab,var(--term-yellow)_70%,black)]', '[--term-color-12:var(--term-blue)] [--term-color-13:var(--term-magenta)] [--term-color-14:color-mix(in_oklab,var(--term-cyan)_80%,black)]', 'dark:not-[.light]:[--term-color-0:color-mix(in_oklab,var(--foreground)_18%,var(--background))] dark:not-[.light]:[--term-color-7:color-mix(in_oklab,var(--foreground)_80%,var(--background))] dark:not-[.light]:[--term-color-15:var(--foreground)]', 'dark:not-[.light]:[--term-color-1:var(--term-red)] dark:not-[.light]:[--term-color-2:var(--term-green)] dark:not-[.light]:[--term-color-3:var(--term-yellow)] dark:not-[.light]:[--term-color-4:var(--term-blue)] dark:not-[.light]:[--term-color-5:var(--term-magenta)] dark:not-[.light]:[--term-color-6:var(--term-cyan)]', 'dark:not-[.light]:[--term-color-9:color-mix(in_oklab,var(--term-red)_75%,white)] dark:not-[.light]:[--term-color-10:color-mix(in_oklab,var(--term-green)_75%,white)] dark:not-[.light]:[--term-color-11:color-mix(in_oklab,var(--term-yellow)_75%,white)]', 'dark:not-[.light]:[--term-color-12:color-mix(in_oklab,var(--term-blue)_75%,white)] dark:not-[.light]:[--term-color-13:color-mix(in_oklab,var(--term-magenta)_75%,white)] dark:not-[.light]:[--term-color-14:color-mix(in_oklab,var(--term-cyan)_75%,white)]', ]
 ```
 
 **`size`** — default `default`
@@ -1933,7 +1952,7 @@ Defined in `@/components/ui/vault-gate`. Base classes:
 grid justify-center gap-x-6 gap-y-1 rounded-ctl bg-secondary px-3 py-3 font-mono text-callout font-semibold tracking-wide text-foreground tabular-nums select-text [-webkit-user-select:text]
 ```
 
-**`layout`** — default `grid`
+**`variant`** — default `grid`
 
 | Value | Adds |
 | --- | --- |

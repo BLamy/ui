@@ -31,7 +31,7 @@ import { OpenCode } from '@brett_lamy/ui/open-code'
 
 ## Setting up a host
 
-The registry item includes the component and the host bridge. Install `@agent-wasm/core` for the runtime used in this example. The `@brett_lamy/ui/opencode` package export is also available from the current source build; it requires a package release containing this component.
+The registry item includes the component and the host bridge. Install `@agent-wasm/core` for the runtime used in this example. With the npm package, the component is `@brett_lamy/ui/open-code` and the runtime (the hosts, `loadOpenCodeRuntime`, the vault stores) is `@brett_lamy/ui/opencode`, an entry of its own because it is large.
 
 ```tsx
 import { OpenCode } from '@/components/ui/open-code';
@@ -63,11 +63,11 @@ Give it a host (or a factory that makes one on Start) and a size. Everything els
 
 ## States
 
-The header says where it is, and `data-state` on the root carries the same value (`idle`, `starting`, `running`, `error`, `stopped`); `onStateChange` reports it. While it isn't running (`autoStart={false}`, stopped, or after an error) the terminal is an [EmptyState](https://blamy.github.io/ui/#/empty-state) that says what OpenCode is for, with **Start OpenCode** as its action; while it runs, **Stop OpenCode** sits at the end of the header. While the runtime loads, the terminal says so. An error (a runtime that cannot load, or one missing a capability a store needs) stops the session and shows the message in a destructive callout above the terminal; Start tries again. Each open port adds a toggle in the preview toolbar.
+The header says where it is, and `data-state` on the root carries the same value (`idle`, `starting`, `running`, `error`, `stopped`); `onStateChange` reports it. While it isn't running (`autoStart={false}`, stopped, or after an error) the terminal is an [EmptyState](https://blamy.github.io/ui/#/empty-state) that says what OpenCode is for, with **Start OpenCode** as its action; while it runs, **Stop OpenCode** sits at the end of the header. While the runtime loads, the terminal says so. An error (a runtime that cannot load, or one missing a capability a store needs) stops the session and shows the message in a destructive callout above the terminal; the empty terminal then says "Check the runtime and try again." over a **Try again** button. Each open port adds a toggle in the preview toolbar.
 
 ## Appearance and size
 
-`appearance` picks the terminal's color scheme. Without it the component follows the nearest [ThemeScope](https://blamy.github.io/ui/#/theming), else the ambient appearance (`<html class="dark">` counts), else dark. Changing it restarts the session, because the runtime reads it once at mount.
+`appearance` picks the terminal's color scheme. Without it the component follows the nearest [ThemeScope](https://blamy.github.io/ui/#/theming), else the ambient appearance (`<html class="dark">` counts), else the system setting (`prefers-color-scheme`), as CodeEditor's `auto` does. Changing it restarts the session, because the runtime reads it once at mount.
 
 The component has no height of its own beyond a 320px floor: size it with `className` (`h-[620px]`, `flex-1`, `h-full`). Below the compact width of its own box (`data-size-class`), the preview stacks under the terminal instead of beside it.
 
@@ -93,7 +93,7 @@ A runtime advertising `capabilities.credentialStore = 1` and `capabilities.conne
 | `runtimeUrl` / `loadRuntime` | hosted module | Hosted browser module or custom runtime loader. |
 | `previewRuntimeUrl` | the hosted preview host | Separate-origin AlmostNode worker/bootstrap host. |
 | `title` | `OpenCode` | Visible title; also names the region, its terminal and its preview frames. |
-| `appearance` | scope, ambient, else `dark` | `light` or `dark`. Changing it restarts the session. |
+| `appearance` | `'auto'`: scope, ambient, else the system setting | `light` or `dark` holds one. Changing it restarts the session. |
 | `variant` | `card` | `card`: bordered and rounded. `plain`: no border or radius, for a pane that draws its own. |
 | `autoStart` | `true` | Start on mount and restore after keychain unlock; `false` waits for Start. |
 | `browserTools` | `true` | Attach the iframe browser MCP tools. |

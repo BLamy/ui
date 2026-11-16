@@ -71,7 +71,7 @@ Rows are as tall as they need to be. They're measured as they mount, and what's 
 `renderRow` draws a row's content yourself. `LogListRowContent` is the usual content, to add to or to leave out. Keep the function stable with `useCallback`, as a new one renders every mounted row again.
 
 ```tsx
-const renderRow = useCallback((row: LogRow, state: LogRowState) => (
+const renderRow = useCallback((row: LogRow, state: LogListRowState) => (
   <>
     <LogListRowContent row={row} expanded={state.expanded} cut={state.cut} disclosure={state.disclosure} formatTime={state.formatTime} />
     <Button variant="quiet" size="sm" onClick={() => inspect(row)}>Inspect</Button>
@@ -86,6 +86,10 @@ A row has `data-future` and `data-current` while it is those, so custom content 
 Filtering is the host's: LogList shows the rows it's given and holds its place on the row at the top of the view, or the next one that survived. `countLogLevels` counts a list by level for your buttons or a [FilterBar](https://blamy.github.io/ui/#/filter) field's options, and [FilterInput](https://blamy.github.io/ui/#/filter) can fill the bar in from a sentence.
 
 {% demo src="log-list/filters" %}
+
+With no rows, or none left after a filter, the list shows `emptyState`: a `status` region beside the grid (a grid owns only rows), followed by the footer.
+
+{% demo src="log-list/empty" %}
 
 ## Narrow windows
 
@@ -175,7 +179,7 @@ A press on a row is the row's own click, so touch, mouse and a screen reader's c
 
 ## Styling
 
-The root is `data-slot="log-list"`, inside it `log-list-grid`, `log-list-rows`, `log-list-marker`, `log-list-marker-label`, `log-list-jump`, `log-list-empty` and `log-list-footer`. A row is `log-list-row`, with `data-level` and, while they hold, `data-selected`, `data-active`, `data-expanded`, `data-future` and `data-current`, and has `log-list-toggle`, `log-list-icon`, `log-list-message`, `log-list-count`, `log-list-meta`, `log-list-source`, `log-list-time`, `log-list-detail` and `log-list-actions`. It takes its colors from the theme, on the surface RequestTable and Spreadsheet use, and its rows share their hover, selection, hairline and focus layers with RequestTable's (`dataRowLayers`).
+The root is `data-slot="log-list"`, inside it `log-list-grid`, `log-list-rows`, `log-list-marker`, `log-list-marker-label`, `log-list-jump` and `log-list-footer`; with no rows, `log-list-empty` follows the grid. A row is `log-list-row`, with `data-level` and, while they hold, `data-selected`, `data-active`, `data-expanded`, `data-future` and `data-current`, and has `log-list-toggle`, `log-list-icon`, `log-list-message`, `log-list-count`, `log-list-meta`, `log-list-source`, `log-list-time`, `log-list-detail` and `log-list-actions`. It takes its colors from the theme, on the surface RequestTable and Spreadsheet use, and its rows share their hover, selection, hairline and focus layers with RequestTable's (`dataRowLayers`).
 
 ## cva recipes
 

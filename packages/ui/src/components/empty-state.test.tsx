@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
+import { renderToStaticMarkup } from 'react-dom/server';
 import { EmptyState, renderEmptyState } from '@/components/ui/empty-state';
 
 declare global { var __UI_SDK_STRICT__: boolean | undefined }
@@ -94,5 +95,19 @@ describe('renderEmptyState', () => {
     cleanup();
     show(<p>Nothing yet</p>);
     expect(screen.getByRole('status').textContent).toBe('Nothing yet');
+  });
+
+  it('mounts its status region empty and fills it on the next render, so every screen reader announces it', () => {
+    // Before effects run (the first render), the region is in the page with no words in it.
+    for (const value of [undefined, 'No matches', <EmptyState key="e" title="No matches" />, <p key="p">No matches</p>]) {
+      const first = renderToStaticMarkup(<>{renderEmptyState(value, { title: 'No matches' })}</>);
+      expect(first).toContain('role="status"');
+      expect(first).not.toContain('No matches');
+      cleanup();
+      render(<>{renderEmptyState(value, { title: 'No matches' })}</>);
+      expect(screen.getByRole('status').textContent).toBe('No matches');
+    }
+    // Not a live region: drawn at once.
+    expect(renderToStaticMarkup(<EmptyState title="No rows" />)).toContain('No rows');
   });
 });

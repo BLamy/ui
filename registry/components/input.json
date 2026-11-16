@@ -1,7 +1,7 @@
 {
   "name": "input",
   "title": "Input",
-  "description": "iOS filled text input on UI SDK's Input: three sizes, a primary focus ring, red invalid and dimmed disabled states, onValueChange with a reason and cancel, and a controller; inside a Field it is wired to its label, description and error.",
+  "description": "iOS filled text input on UI SDK's Input: three sizes, a primary focus ring, red invalid and dimmed disabled states, onValueChange with a reason and cancel, onValueCommit for a field that changes something once you're done (Enter or blur commits, Escape reverts), and a controller; inside a Field it is wired to its label, description and error.",
   "page": "input",
   "exports": [
     "Input",
@@ -16,6 +16,7 @@
   ],
   "types": [
     "InputProps",
-    "InputController"
+    "InputController",
+    "InputValueCommitDetails"
   ]
 }

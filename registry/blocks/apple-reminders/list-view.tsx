@@ -139,7 +139,7 @@ export function ListView() {
                 </h2> : null}
                 {g.items.map((r) => (
                   <ReminderRow key={r.id} r={r} leaving={view.leaving(r)} phone={s.collapsed}
-                    color={api.lists.find((l) => l.id === r.list)?.color ?? view.color} />
+                    tint={api.lists.find((l) => l.id === r.list)?.color ?? view.color} />
                 ))}
                 {adding && gi === view.groups.length - 1 ? <Composer color={view.color} onAdd={add} onClose={() => setAdding(false)} /> : null}
               </section>

@@ -51,7 +51,7 @@ function SidebarDemo({ compact }: { compact?: boolean }) {
   const settled = match.filter((t) => t.settled);
   const shown = showAll ? settled : settled.slice(0, 7);
   const item = (t: (typeof threads)[number]) => (
-    <ThreadItem key={t.id} active={cur === t.id} meta={t.age} onClick={() => setCur(t.id)}>
+    <ThreadItem key={t.id} current={cur === t.id} meta={t.age} onClick={() => setCur(t.id)}>
       {t.title}
     </ThreadItem>
   );
@@ -109,7 +109,7 @@ export const Statuses: Story = {
       <ThreadList>
         <ThreadGroup label="Today">
           {STATUSES.map(([title, status, age], i) => (
-            <ThreadItem key={title} status={status} meta={age} active={i === 1}>
+            <ThreadItem key={title} status={status} meta={age} current={i === 1}>
               {title}
             </ThreadItem>
           ))}

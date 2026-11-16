@@ -225,8 +225,13 @@ describe('DataTable', () => {
   });
 
   it('shows an EmptyState by default, or the one it is given, and a toolbar and footer', () => {
-    const { rerender } = render(<DataTable rows={[]} columns={COLUMNS} />);
+    const { rerender } = render(<DataTable rows={[]} columns={COLUMNS} footer="End" />);
     expect(document.querySelector('[data-slot=data-table-empty] [data-slot=empty-state]')?.textContent).toBe('No rows');
+    // A grid owns only rows: the status region is the grid's sibling, and the footer follows it.
+    const empty = document.querySelector('[data-slot=data-table-empty]') as HTMLElement;
+    expect(grid().contains(empty)).toBe(false);
+    expect(empty.querySelector('[role=status]')).toBeTruthy();
+    expect(empty.nextElementSibling?.getAttribute('data-slot')).toBe('data-table-footer');
     rerender(<DataTable rows={[]} columns={COLUMNS} emptyState="Nothing here" />);
     expect(screen.getByText('Nothing here')).toBeTruthy();
     rerender(<DataTable rows={books} columns={COLUMNS} toolbar={<span>3 books</span>} footer="That's all" />);

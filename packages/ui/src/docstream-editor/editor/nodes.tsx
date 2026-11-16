@@ -9,23 +9,8 @@ import { Field, FieldLabel } from "@ui-sdk/react/field"
 import { Input } from "@ui-sdk/react/input"
 import { Tabs, TabsList, TabsPanel, TabsTab } from "@ui-sdk/react/tabs"
 import { Textarea } from "@ui-sdk/react/textarea"
-import {
-  AlertTriangle,
-  AppWindow,
-  AtSign,
-  CheckCircle2,
-  ChevronDown,
-  FolderGit2,
-  Hash,
-  Heading,
-  Info,
-  Link2,
-  FileCode2,
-  GripVertical,
-  Plus,
-  X,
-  XCircle,
-} from "lucide-react"
+import { Glyph } from "./glyph"
+import { type IconName } from "@brett_lamy/ui/lib/icon"
 
 // The root entry (unlike `/replay`) keeps rrweb behind a dynamic import. The editor never
 // imports `/playground`: live previews run only through a host-supplied `liveRenderer`.
@@ -59,22 +44,22 @@ function useDebouncedValue<T>(value: T, delay = 350): T {
 
 // ---------- Hint ----------
 
-const HINT_META: Record<HintStyle, { icon: typeof Info; cls: string }> = {
-  info: { icon: Info, cls: "gb-hint-info" },
-  success: { icon: CheckCircle2, cls: "gb-hint-success" },
-  warning: { icon: AlertTriangle, cls: "gb-hint-warning" },
-  danger: { icon: XCircle, cls: "gb-hint-danger" },
+const HINT_META: Record<HintStyle, { icon: IconName; cls: string }> = {
+  info: { icon: "info", cls: "gb-hint-info" },
+  success: { icon: "check-circle", cls: "gb-hint-success" },
+  warning: { icon: "warning", cls: "gb-hint-warning" },
+  danger: { icon: "xmark-circle", cls: "gb-hint-danger" },
 }
 
 const HINT_OPTIONS = (Object.keys(HINT_META) as HintStyle[]).map((style) => ({ value: style, label: style }))
 
 function HintView({ node, updateAttributes, editor }: NodeViewProps) {
   const style = (node.attrs.style as HintStyle) ?? "info"
-  const { icon: Icon, cls } = HINT_META[style] ?? HINT_META.info
+  const { icon, cls } = HINT_META[style] ?? HINT_META.info
   return (
     <NodeViewWrapper className={`gb-hint ${cls}`}>
       <div className="gb-hint-gutter" contentEditable={false}>
-        <Icon className="size-4" aria-hidden="true" />
+        <Glyph name={icon} className="size-4" size={16} />
         {editor.isEditable && (
           <ChoiceSelect
             className="gb-hint-style"
@@ -214,12 +199,12 @@ function TabsView({ node, editor, getPos, updateAttributes }: NodeViewProps) {
             title="Remove tab"
             onClick={() => removeTab(idx)}
           >
-            <X className="size-3" aria-hidden="true" />
+            <Glyph name="xmark" className="size-3" size={24} />
           </Button>
         ))}
       {editable && (
         <Button className="gb-icon-btn" aria-label="Add tab" title="Add tab" onClick={addTab}>
-          <Plus className="size-3.5" aria-hidden="true" />
+          <Glyph name="plus" className="size-3.5" size={24} />
         </Button>
       )}
       {editable && !section && (
@@ -229,7 +214,7 @@ function TabsView({ node, editor, getPos, updateAttributes }: NodeViewProps) {
           title="Add a section title (renders the tabs as a titled section)"
           onClick={() => updateAttributes({ titled: true })}
         >
-          <Heading className="size-3.5" aria-hidden="true" />
+          <Glyph name="heading" className="size-3.5" size={24} />
         </Button>
       )}
     </>
@@ -378,7 +363,7 @@ function ExpandableView({ node, updateAttributes, editor }: NodeViewProps) {
   return (
     <NodeViewWrapper className="gb-expandable">
       <div className="gb-expandable-summary" contentEditable={false}>
-        <ChevronDown className="size-4" aria-hidden="true" />
+        <Glyph name="chevron-down" className="size-4" size={24} />
         {editor.isEditable ? (
           <Input
             className="gb-inline-input"
@@ -565,7 +550,7 @@ function EmbedView({ node, updateAttributes, editor }: NodeViewProps) {
         />
       ) : (
         <a className="gb-embed-link" href={url} target="_blank" rel="noreferrer">
-          <Link2 className="size-4" aria-hidden="true" /> {url || "Embed URL…"}
+          <Glyph name="link" className="size-4" size={24} /> {url || "Embed URL…"}
         </a>
       )}
       {editor.isEditable && (
@@ -621,7 +606,7 @@ export const GbEmbed = Node.create({
 function ContentRefView({ node, updateAttributes, editor }: NodeViewProps) {
   return (
     <NodeViewWrapper className="gb-content-ref" contentEditable={false}>
-      <Link2 className="size-4 shrink-0" aria-hidden="true" />
+      <Glyph name="link" className="size-4 shrink-0" size={24} />
       {editor.isEditable ? (
         <>
           <Input
@@ -694,7 +679,7 @@ function SourceRefView({ node, updateAttributes, editor }: NodeViewProps) {
   return (
     <NodeViewWrapper className={sourceClient && reference.path ? "gb-source-ref-block gb-source-ref-block-editing" : "gb-source-ref-block"} contentEditable={false}>
       <div className="gb-source-ref">
-        <FileCode2 className="size-4 shrink-0" aria-hidden="true" />
+        <Glyph name="doc-code" className="size-4 shrink-0" size={24} />
         {editable ? (
           <>
             <Input className="gb-inline-input gb-source-ref-mount" aria-label="Source mount" value={node.attrs.mount} placeholder="mount" onValueChange={(mount) => updateAttributes({ mount })} />
@@ -818,11 +803,11 @@ function DemoFilesEditor({ files, entry, onChange }: {
             title={`Remove ${f.path || "file"}`}
             onClick={() => remove(i)}
           >
-            <X className="size-3" aria-hidden="true" />
+            <Glyph name="xmark" className="size-3" size={24} />
           </Button>
         ))}
         <Button className="gb-icon-btn" aria-label="Add file" title="Add file" onClick={add}>
-          <Plus className="size-3.5" aria-hidden="true" />
+          <Glyph name="plus" className="size-3.5" size={24} />
         </Button>
       </div>
       {files.map((f, i) => (
@@ -937,9 +922,9 @@ function DemoView({ node, updateAttributes, editor, getPos }: NodeViewProps) {
           onDragStart={onDragStart}
           onDragEnd={() => window.setTimeout(() => setActiveDemoDrag(null), 0)}
         >
-          <GripVertical className="size-3.5" />
+          <Glyph name="grip-dots" className="size-3.5" size={24} />
         </span>
-        <AppWindow className="size-4 shrink-0" aria-hidden="true" />
+        <Glyph name="macwindow" className="size-4 shrink-0" size={24} />
         {editable ? (
           <>
             <Input className="gb-inline-input gb-demo-src" aria-label="Demo source" value={node.attrs.src} placeholder="page/example" onValueChange={(next) => updateAttributes({ src: next })} />
@@ -948,7 +933,7 @@ function DemoView({ node, updateAttributes, editor, getPos }: NodeViewProps) {
               className={(state) => (state.open ? "gb-demo-files-toggle gb-demo-files-toggle-active" : "gb-demo-files-toggle")}
               title="Edit the files carried inline by this demo"
             >
-              <FileCode2 className="size-3.5" aria-hidden="true" />
+              <Glyph name="doc-code" className="size-3.5" size={24} />
               {hasFiles ? `${demo.files!.length} file${demo.files!.length === 1 ? "" : "s"}` : "Files"}
             </CollapsibleTrigger>
           </>
@@ -1475,11 +1460,11 @@ function ReferenceView({ node }: NodeViewProps) {
       ) : (
         <span className={`gb-ref gb-ref-${kind}`}>
           {kind === "mention" ? (
-            <AtSign className="gb-ref-icon" />
+            <Glyph name="at" className="gb-ref-icon" size={24} />
           ) : kind === "codebase" ? (
-            <FolderGit2 className="gb-ref-icon" />
+            <Glyph name="folder-git" className="gb-ref-icon" size={24} />
           ) : (
-            <Hash className="gb-ref-icon" />
+            <Glyph name="number" className="gb-ref-icon" size={24} />
           )}
           {id}
         </span>

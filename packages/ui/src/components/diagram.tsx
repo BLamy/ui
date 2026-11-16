@@ -1,6 +1,6 @@
 'use client';
 import {
-  createContext, memo, useCallback, useContext, useId, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore,
+  createContext, memo, useCallback, useContext, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore,
   type CSSProperties, type FocusEvent as ReactFocusEvent, type KeyboardEvent as ReactKeyboardEvent, type ReactNode, type Ref, type RefObject,
 } from 'react';
 import { usePart, usePrimitive } from '@ui-sdk/react/primitive';
@@ -13,20 +13,25 @@ import { Tooltip, TooltipContent, TooltipShortcut, TooltipTrigger } from '@/comp
 import { centerOf, intersects, rectOf, toBoard, type Guide, type Pt, type Rect } from '@/lib/canvas-math';
 import { useContainerSize } from '@/lib/container';
 import { connectionOf, connectionTargetAt, hitTestDiagram, movableNodes, offerConnection, stepDiagramGesture, type DiagramConnectionEnd, type DiagramGesture, type DiagramGestureEvent, type DiagramHit } from '@/lib/diagram-gesture';
+import { DiagramChromeProvider, useDiagramChrome, useDiagramChromeInset, useDiagramChromeScope, type DiagramInsets } from '@/lib/diagram-chrome';
+import type { DiagramHistory } from '@/lib/diagram-history';
 import { describeEdge, describeNode, edgesByNode, fitViewport, nearestNode, stepFocus, viewportToShow, type DiagramItem, type DiagramStep } from '@/lib/diagram-keyboard';
 import {
-  DIAGRAM_SIDES, NOTHING_SELECTED, anchorNormal, anchorPoint, connectorPath, diagramBounds, diagramTextRuns, edgeGeometries, edgeGeometry, indexDiagram, labelBox, moveNodes, nearestSide, portPoint, regionDividers, renderWindow, sizeNodesToText,
-  type ConnectorEnd, type ConnectorGeometry, type DiagramConnection, type DiagramDivider, type DiagramEdge, type DiagramIndex, type DiagramNode, type DiagramPort, type DiagramSelection, type DiagramSide,
+  DIAGRAM_SIDES, NOTHING_SELECTED, anchorNormal, anchorPoint, connectorPath, diagramBounds, diagramTextRuns, edgeGeometries, edgeGeometry, holdsNodes, indexDiagram, labelBoxAvoiding, moveNodes, nearestSide, portPoint, rectIndex, regionDividers, renderWindow, sizeNodesToText,
+  type ConnectorEnd, type ConnectorGeometry, type DiagramConnection, type DiagramDivider, type DiagramEdge, type DiagramEdgeTone, type DiagramEdgeVariant, type DiagramIndex, type DiagramNode, type DiagramNodeKind, type DiagramNodeVariant, type DiagramPort, type DiagramSelection, type DiagramSide,
 } from '@/lib/diagram-model';
 import {
   diagram, type DiagramController, type DiagramData, type DiagramDataChangeDetails, type DiagramDataChangeReason, type DiagramOptions, type DiagramSelectionChangeDetails, type DiagramSelectionChangeReason,
 } from '@/lib/diagram-primitive';
 import { DIAGRAM_TEXT_CLASS, estimateText, measureText, type TextMeasurer } from '@/lib/diagram-text';
 import { Icon } from '@/lib/icon';
+import { formatShortcutText } from '@/lib/shortcut-text';
 import { useFontVersion, useShownVersion } from '@/lib/use-font-version';
 import { cn } from '@/lib/utils';
 
 export { createDiagramController } from '@/lib/diagram-primitive';
+export { useDiagramHistory } from '@/lib/diagram-history';
+export type { DiagramHistory, DiagramHistoryChangeDetails, DiagramHistoryOptions, UseDiagramHistory } from '@/lib/diagram-history';
 export type { DiagramController, DiagramData, DiagramDataChangeDetails, DiagramDataChangeReason, DiagramSelectionChangeDetails, DiagramSelectionChangeReason } from '@/lib/diagram-primitive';
 export type { DiagramItem } from '@/lib/diagram-keyboard';
 
@@ -55,42 +60,51 @@ export type { DiagramItem } from '@/lib/diagram-keyboard';
 /** A line's thickness on screen, whatever the zoom: `--diagram-z` is the view's zoom, in steps. */
 const LINE = '[stroke-width:calc(1.25px/var(--diagram-z))] [stroke-linejoin:round]';
 
+/** A node's look: its `kind` (what it is: a node, a group, a region, the root, a marker) and its `variant` (its border).
+ *  Nothing here knows what the diagram's about: a statechart's final state is a node with a `double` border, and its
+ *  parallel state a group with a `dashed` one, which StateDiagram sets. */
 export const diagramNodeVariants = cva('relative size-full', {
   variants: {
     kind: {
       node: 'flex flex-col items-center justify-center rounded-ctl border border-border bg-card px-3 py-2 text-card-foreground shadow-hairline',
-      final: 'flex flex-col items-center justify-center rounded-ctl border-2 border-foreground bg-card px-3 py-2 text-card-foreground outline-1 -outline-offset-4 outline-foreground',
-      initial: 'rounded-full bg-foreground',
-      compound: 'rounded-card border border-border bg-secondary',
-      parallel: 'rounded-card border border-dashed border-border bg-secondary',
+      group: 'rounded-card border border-border bg-secondary',
       region: 'rounded-card',
       root: 'rounded-card border border-border',
+      marker: 'rounded-full bg-foreground',
+    },
+    variant: {
+      default: '',
+      dashed: 'border-dashed',
+      double: 'border-2 border-foreground outline-1 -outline-offset-4 outline-foreground',
     },
   },
-  defaultVariants: { kind: 'node' },
+  defaultVariants: { kind: 'node', variant: 'default' },
 });
 
+/** An edge's look: its line (`variant`) and its color (`tone`). A `destructive` edge is dashed as well, as a color isn't
+ *  enough on its own. */
 export const diagramEdgeVariants = cva(`fill-none ${LINE}`, {
   variants: {
-    kind: {
-      event: 'stroke-muted-foreground',
-      done: 'stroke-muted-foreground',
-      invoke: 'stroke-muted-foreground',
-      /** Taken as soon as it can be, with no event: dashes. */
-      always: 'stroke-muted-foreground [stroke-dasharray:calc(5px/var(--diagram-z))_calc(3px/var(--diagram-z))]',
-      /** Taken when time runs out: dots. */
-      after: 'stroke-muted-foreground [stroke-dasharray:calc(1.5px/var(--diagram-z))_calc(3px/var(--diagram-z))] [stroke-linecap:round]',
-      initial: 'stroke-foreground',
-      /** Something's wrong with it: dashes as well as the color, as a color isn't enough on its own. */
-      problem: 'stroke-destructive [stroke-dasharray:calc(6px/var(--diagram-z))_calc(3px/var(--diagram-z))]',
+    variant: {
+      default: 'stroke-muted-foreground',
+      dashed: 'stroke-muted-foreground [stroke-dasharray:calc(5px/var(--diagram-z))_calc(3px/var(--diagram-z))]',
+      dotted: 'stroke-muted-foreground [stroke-dasharray:calc(1.5px/var(--diagram-z))_calc(3px/var(--diagram-z))] [stroke-linecap:round]',
+      strong: 'stroke-foreground',
+    },
+    tone: {
+      default: '',
+      destructive: 'stroke-destructive',
     },
   },
-  defaultVariants: { kind: 'event' },
+  compoundVariants: [
+    { variant: ['default', 'strong'], tone: 'destructive', className: '[stroke-dasharray:calc(6px/var(--diagram-z))_calc(3px/var(--diagram-z))]' },
+  ],
+  defaultVariants: { variant: 'default', tone: 'default' },
 });
 
-type EdgeLook = NonNullable<Parameters<typeof diagramEdgeVariants>[0]>['kind'];
-const EDGE_LOOKS: readonly string[] = ['event', 'done', 'invoke', 'always', 'after', 'initial', 'problem'];
-const edgeLook = (kind: string | undefined): EdgeLook => (kind && EDGE_LOOKS.includes(kind) ? (kind as EdgeLook) : 'event');
+const EDGE_VARIANTS: readonly string[] = ['default', 'dashed', 'dotted', 'strong'];
+const edgeVariant = (v: string | undefined): DiagramEdgeVariant => (v && EDGE_VARIANTS.includes(v) ? (v as DiagramEdgeVariant) : 'default');
+const edgeTone = (t: string | undefined): DiagramEdgeTone => (t === 'destructive' ? 'destructive' : 'default');
 
 /** A diagram can draw thousands of nodes and edges, with only a few looks between them, so each is only worked out once. */
 const once = <A extends string>(make: (key: A) => string) => {
@@ -102,51 +116,68 @@ const once = <A extends string>(make: (key: A) => string) => {
   };
 };
 const edgeClass = once((key: string) => {
-  const [look, selected, current] = key.split(':');
-  return cn(diagramEdgeVariants({ kind: look as EdgeLook }), selected && 'stroke-primary', current && 'stroke-primary [stroke-width:calc(2.5px/var(--diagram-z))]', 'outline-none focus-visible:stroke-ring focus-visible:[stroke-width:calc(3px/var(--diagram-z))]');
+  const [variant, tone, selected, current] = key.split(':');
+  return cn(
+    diagramEdgeVariants({ variant: variant as DiagramEdgeVariant, tone: tone as DiagramEdgeTone }),
+    selected && 'stroke-primary [stroke-width:calc(2px/var(--diagram-z))]',
+    current && 'stroke-primary [stroke-width:calc(2.5px/var(--diagram-z))]',
+    'outline-none',
+  );
 });
-const nodeBodyClass = once((kind: NonNullable<DiagramNode['kind']>) => diagramNodeVariants({ kind }));
+const nodeBodyClass = once((key: string) => {
+  const [kind, variant] = key.split(':');
+  return diagramNodeVariants({ kind: kind as DiagramNodeKind, variant: variant as DiagramNodeVariant });
+});
 
-const isContainer = (n: DiagramNode<unknown>) => n.kind === 'compound' || n.kind === 'parallel' || n.kind === 'region' || n.kind === 'root';
+const isContainer = holdsNodes;
 
 /** The zoom below which each kind of text hides: under about 3 px for a node's, and 4.4 px for an edge label's. */
 const NODE_TEXT_ZOOM = 0.25;
 const EDGE_LABEL_ZOOM = 0.4;
+/** The strip along a group's top that its title takes, which an edge label keeps off. */
+const GROUP_TITLE_ROOM = 28;
 
 const TITLE_CLASS = cn('absolute top-1.5 left-3 whitespace-nowrap text-foreground/70 group-data-[zoom=far]/diagram:hidden', DIAGRAM_TEXT_CLASS.title);
 const LABEL_CLASS = cn('max-w-full text-center [overflow-wrap:anywhere] group-data-[zoom=far]/diagram:hidden', DIAGRAM_TEXT_CLASS.label);
 const DETAIL_CLASS = cn('max-w-full text-center text-foreground/70 [overflow-wrap:anywhere] group-data-[zoom=far]/diagram:hidden', DIAGRAM_TEXT_CLASS.detail);
-const EDGE_LABEL_CLASS = cn('absolute whitespace-nowrap text-foreground/70 group-data-[zoom=far]/diagram:hidden group-data-[zoom=mid]/diagram:hidden', DIAGRAM_TEXT_CLASS.edge);
+const EDGE_LABEL_CLASS = cn('absolute rounded-xs bg-background/85 whitespace-nowrap text-foreground/70 group-data-[zoom=far]/diagram:hidden group-data-[zoom=mid]/diagram:hidden', DIAGRAM_TEXT_CLASS.edge);
 const nodeWrapClass = once((radius: string) => cn('absolute outline-none', radius));
 
 /* ── A node ── */
 
 export interface DiagramNodeBodyProps {
+  /** The node it draws: its kind, variant, label and detail. */
   node: DiagramNode<unknown>;
+  /** More inside the body, after its words: a badge, a port's name. */
+  children?: ReactNode;
   className?: string;
   style?: CSSProperties;
 }
 
-/** How a node looks, by its kind. Use it in `renderNode` to add to what's drawn rather than replacing it. */
-export function DiagramNodeBody({ node, className, style }: DiagramNodeBodyProps) {
+/** How a node looks, by its kind and variant. Use it in `renderNode` to add to what's drawn rather than replacing it. */
+export function DiagramNodeBody({ node, children, className, style }: DiagramNodeBodyProps) {
   const kind = node.kind ?? 'node';
-  if (kind === 'initial') return <div data-slot="diagram-node-body" className={className ? cn(nodeBodyClass(kind), className) : nodeBodyClass(kind)} style={style} />;
+  const look = nodeBodyClass(`${kind}:${node.variant ?? 'default'}`);
+  const classes = className ? cn(look, className) : look;
+  if (kind === 'marker') return <div data-slot="diagram-node-body" className={classes} style={style}>{children}</div>;
   if (isContainer(node)) {
     return (
-      <div data-slot="diagram-node-body" className={className ? cn(nodeBodyClass(kind), className) : nodeBodyClass(kind)} style={style}>
+      <div data-slot="diagram-node-body" className={classes} style={style}>
         {node.label ? (
           <div data-slot="diagram-node-label" className={TITLE_CLASS}>
             {node.label}
             {node.detail ? <span data-slot="diagram-node-detail" className="font-normal"> ({node.detail})</span> : null}
           </div>
         ) : null}
+        {children}
       </div>
     );
   }
   return (
-    <div data-slot="diagram-node-body" className={className ? cn(nodeBodyClass(kind), className) : nodeBodyClass(kind)} style={style}>
+    <div data-slot="diagram-node-body" className={classes} style={style}>
       <div data-slot="diagram-node-label" className={LABEL_CLASS}>{node.label}</div>
       {node.detail ? <div data-slot="diagram-node-detail" className={DETAIL_CLASS}>{node.detail}</div> : null}
+      {children}
     </div>
   );
 }
@@ -161,21 +192,32 @@ interface NodeViewProps {
   renderNode?: (node: DiagramNode<any>) => ReactNode;
 }
 
-/** A ring around what's selected or has focus, the same thickness on screen at any zoom. A box-shadow, as Chrome rounds a
- *  border or an outline under 1 px up to 1 px, before the board's scale makes it thicker. These sit in a layer of their own,
- *  and it's only that layer and the lines that get `--diagram-z`, in steps: a custom property that changes restyles
- *  everything under it. */
-const RING_SELECTED = '[box-shadow:0_0_0_calc(2px/var(--diagram-z))_var(--background),0_0_0_calc(3.6px/var(--diagram-z))_var(--primary)]';
-const RING_FOCUSED = '[box-shadow:0_0_0_calc(2px/var(--diagram-z))_var(--background),0_0_0_calc(4px/var(--diagram-z))_var(--ring)]';
-/** What's current: a tint over it and a line around it, or only a thinner line for something that holds others. */
-const CURRENT_LEAF = 'bg-primary/15 [box-shadow:0_0_0_calc(2px/var(--diagram-z))_var(--primary)]';
-const CURRENT_CONTAINER = '[box-shadow:0_0_0_calc(1.5px/var(--diagram-z))_var(--primary)]';
-const nodeRadius = (n: DiagramNode<any>) => (isContainer(n) ? 'rounded-card' : n.kind === 'initial' ? 'rounded-full' : 'rounded-ctl');
+/** What's selected, what has focus, and what's current, each drawn its own way, so they don't rely on color (the kit's
+ *  `--ring` and `--primary` are one blue), and the same thickness on screen at any zoom. The kit's rows are the model:
+ *  selected is a fill and a line on its edge, with no gap; focus is a ring outside it, past a gap; both is both. Current
+ *  is a bar along its start side. Box-shadows, as Chrome rounds a border or an outline under 1 px up to 1 px before the
+ *  board's scale makes it thicker. These sit in a layer of their own, and it's only that layer and the lines that get
+ *  `--diagram-z`, in steps: a custom property that changes restyles everything under it. Written out whole, so
+ *  Tailwind sees each class. */
+const RING_SELECTED = 'bg-primary/12 [box-shadow:0_0_0_calc(1.5px/var(--diagram-z))_var(--primary)]';
+/** Something that holds others is selected by its line alone: a fill would wash over what's inside it. */
+const RING_SELECTED_CONTAINER = '[box-shadow:0_0_0_calc(2px/var(--diagram-z))_var(--primary)]';
+const RING_FOCUSED = '[box-shadow:0_0_0_calc(2px/var(--diagram-z))_var(--background),0_0_0_calc(4.5px/var(--diagram-z))_var(--ring)]';
+const RING_FOCUSED_SELECTED = 'bg-primary/12 [box-shadow:0_0_0_calc(1.5px/var(--diagram-z))_var(--primary),0_0_0_calc(3.5px/var(--diagram-z))_var(--background),0_0_0_calc(6px/var(--diagram-z))_var(--ring)]';
+const RING_FOCUSED_SELECTED_CONTAINER = '[box-shadow:0_0_0_calc(2px/var(--diagram-z))_var(--primary),0_0_0_calc(4px/var(--diagram-z))_var(--background),0_0_0_calc(6.5px/var(--diagram-z))_var(--ring)]';
+const CURRENT_LEAF = '[box-shadow:inset_calc(4px/var(--diagram-z))_0_0_0_var(--primary),0_0_0_calc(1px/var(--diagram-z))_var(--primary)]';
+const CURRENT_CONTAINER = '[box-shadow:inset_calc(4px/var(--diagram-z))_0_0_0_var(--primary)]';
+const ringClass = (container: boolean, selected: boolean, focused: boolean) => (
+  focused && selected ? (container ? RING_FOCUSED_SELECTED_CONTAINER : RING_FOCUSED_SELECTED)
+    : focused ? RING_FOCUSED
+      : container ? RING_SELECTED_CONTAINER : RING_SELECTED
+);
+const nodeRadius = (n: DiagramNode<any>) => (isContainer(n) ? 'rounded-card' : n.kind === 'marker' ? 'rounded-full' : 'rounded-ctl');
 
 /** The same node drawn the same, though it's a new object: new data from a layout or an owner's state is mostly what was
  *  there, and redrawing thousands of nodes for it would take a frame of its own. */
 const sameNode = (a: DiagramNode<unknown>, b: DiagramNode<unknown>) => a === b || (
-  a.id === b.id && a.x === b.x && a.y === b.y && a.w === b.w && a.h === b.h && a.kind === b.kind && a.label === b.label
+  a.id === b.id && a.x === b.x && a.y === b.y && a.w === b.w && a.h === b.h && a.kind === b.kind && a.variant === b.variant && a.label === b.label
   && a.detail === b.detail && a.parent === b.parent && a.data === b.data && a.ports === b.ports
 );
 const sameNodeView = (a: NodeViewProps, b: NodeViewProps) =>
@@ -187,6 +229,7 @@ const NodeView = memo(function NodeView({ node, selected, selectable, current, l
       data-slot="diagram-node"
       data-node={node.id}
       data-kind={node.kind ?? 'node'}
+      data-variant={node.variant}
       data-selected={selected ? '' : undefined}
       data-current={current ? '' : undefined}
       // One tab stop, which is the board: the keys move focus from there, and a press never lands here.
@@ -210,15 +253,16 @@ interface EdgeViewProps { edge: DiagramEdge<unknown>; d: string; arrow: string; 
 /** An edge is drawn from its route, its kind and its name, which are all that's compared. */
 const sameEdgeView = (a: EdgeViewProps, b: EdgeViewProps) =>
   a.d === b.d && a.arrow === b.arrow && a.selected === b.selected && a.selectable === b.selectable && a.current === b.current && a.label === b.label
-  && a.edge.id === b.edge.id && a.edge.kind === b.edge.kind;
+  && a.edge.id === b.edge.id && a.edge.variant === b.edge.variant && a.edge.tone === b.edge.tone;
 
 const EdgeView = memo(function EdgeView({ edge, d, arrow, selected, selectable, current, label }: EdgeViewProps) {
-  const look = edgeLook(edge.kind);
+  const variant = edgeVariant(edge.variant), tone = edgeTone(edge.tone);
   return (
     <path
       data-slot="diagram-edge"
       data-edge={edge.id}
-      data-kind={edge.kind ?? 'event'}
+      data-variant={edge.variant}
+      data-tone={edge.tone}
       data-selected={selected ? '' : undefined}
       data-current={current ? '' : undefined}
       role="button"
@@ -227,8 +271,8 @@ const EdgeView = memo(function EdgeView({ edge, d, arrow, selected, selectable, 
       aria-pressed={selectable ? !!selected : undefined}
       aria-current={current || undefined}
       d={d}
-      markerEnd={`url(#${arrow}${selected || current ? '-selected' : look === 'initial' ? '-strong' : look === 'problem' ? '-problem' : ''})`}
-      className={edgeClass(`${look}:${selected ? '1' : ''}:${current ? '1' : ''}`)}
+      markerEnd={`url(#${arrow}${selected || current ? '-selected' : tone === 'destructive' ? '-problem' : variant === 'strong' ? '-strong' : ''})`}
+      className={edgeClass(`${variant}:${tone}:${selected ? '1' : ''}:${current ? '1' : ''}`)}
     />
   );
 }, sameEdgeView);
@@ -265,7 +309,12 @@ function ArrowMarker({ id, className }: { id: string; className: string }) {
 
 const DOT = 'pointer-events-none absolute rounded-full [transform:translate(-50%,-50%)]';
 
-/** A place to connect: the same size on screen at any zoom. It sits over every node, so one underneath can still be reached. */
+/** A port's dot: the same size on screen down to a zoom where it would crowd its node (a phone's fitted view of a big
+ *  system), and from there no bigger than a few board units, so it shrinks with the board. */
+const PORT_DOT = 'size-[min(calc(6px/var(--diagram-z)),7px)] [box-shadow:inset_0_0_0_min(calc(1.2px/var(--diagram-z)),1.4px)_var(--muted-foreground)]';
+const PORT_DOT_ACTIVE = 'size-[min(calc(10px/var(--diagram-z)),11px)] [box-shadow:inset_0_0_0_min(calc(1.6px/var(--diagram-z)),1.8px)_var(--primary)]';
+
+/** A place to connect. It sits over every node, so one underneath can still be reached. */
 const PortDot = memo(function PortDot({ at, node, port, side, active }: { at: Pt; node: string; port?: string; side?: DiagramSide; active: boolean }) {
   return (
     <span
@@ -274,7 +323,7 @@ const PortDot = memo(function PortDot({ at, node, port, side, active }: { at: Pt
       data-port={port}
       data-side={side}
       aria-hidden="true"
-      className={cn(DOT, 'bg-background', active ? 'size-[calc(10px/var(--diagram-z))] [box-shadow:inset_0_0_0_calc(1.6px/var(--diagram-z))_var(--primary)]' : 'size-[calc(6px/var(--diagram-z))] [box-shadow:inset_0_0_0_calc(1.2px/var(--diagram-z))_var(--muted-foreground)]')}
+      className={cn(DOT, 'bg-background', active ? PORT_DOT_ACTIVE : PORT_DOT)}
       style={{ left: at.x, top: at.y }}
     />
   );
@@ -316,20 +365,33 @@ function layOut<N, E>(nodes: readonly DiagramNode<N>[], edges: readonly DiagramE
   const geometries = edgeGeometries(edges, index);
   const drawn: Laid<N, E>['edges'] = [];
   const labels: Laid<N, E>['labels'] = [];
-  // Two edges between the same two ports are one line, so their labels would be one on top of the other.
-  const onRoute = new Map<string, number>();
-  const placeLabel = (edge: DiagramEdge<E>, geometry: ConnectorGeometry) => {
-    if (edge.labelBox) return edge.labelBox;
-    const box = labelBox(geometry.pts, text(edge.label!, 'edge'));
-    const before = onRoute.get(geometry.d) ?? 0;
-    onRoute.set(geometry.d, before + 1);
-    return before ? { ...box, y: box.y - before * box.h } : box;
-  };
+  // A label keeps off the nodes (a card's own words, its ports' names) and off the labels already placed (two edges on
+  // one route) and off the other routes, so it isn't read as theirs: where a layout put it if that's clear, or else the
+  // first clear place along its route, or else where it covers least. A group is only in the way along its title.
   for (const edge of edges) {
     const geometry = geometries.get(edge.id);
-    if (!geometry) continue;
-    drawn.push({ edge, geometry, box: rectOf(geometry.pts) });
-    if (edge.label) labels.push({ edge, box: placeLabel(edge, geometry) });
+    if (geometry) drawn.push({ edge, geometry, box: rectOf(geometry.pts) });
+  }
+  if (drawn.some((d) => d.edge.label)) {
+    const room = rectIndex(nodes.flatMap((n) => (n.kind === 'root' || n.kind === 'region' || n.kind === 'marker' ? [] : holdsNodes(n) ? [{ x: n.x, y: n.y, w: n.w, h: GROUP_TITLE_ROOM }] : [n])));
+    const routes = new Map<string, Set<Rect>>();
+    for (const { edge, geometry } of drawn) {
+      const own = new Set<Rect>();
+      for (let i = 1; i < geometry.pts.length; i++) {
+        const a = geometry.pts[i - 1], b = geometry.pts[i];
+        const r = { x: Math.min(a.x, b.x) - 1, y: Math.min(a.y, b.y) - 1, w: Math.abs(b.x - a.x) + 2, h: Math.abs(b.y - a.y) + 2 };
+        own.add(r);
+        room.add(r);
+      }
+      routes.set(edge.id, own);
+    }
+    for (const { edge, geometry } of drawn) {
+      if (!edge.label) continue;
+      const own = routes.get(edge.id)!;
+      const box = labelBoxAvoiding(geometry.pts, edge.labelBox ?? text(edge.label, 'edge'), (b) => room.overlap(b, (r) => own.has(r)), edge.labelBox);
+      room.add(box);
+      labels.push({ edge, box });
+    }
   }
   // Outer containers first, so what's inside draws over them, however the nodes were listed.
   const depth = (n: DiagramNode<N>) => index.depth.get(n.id) ?? 0;
@@ -363,13 +425,12 @@ function within<N, E>(laid: Laid<N, E>, win: Rect, keep: DiagramItem | null): La
 /* ── Context, for parts in a diagram's `overlay` ── */
 
 export interface DiagramContextValue {
-  /** The diagram's own methods: select, delete, connect, undo… (the controller's). */
+  /** The diagram's own methods: select, delete, connect, undo… (the controller's, and only those). */
   diagram: DiagramController<any, any>;
   /** The board's view: zoom, fit, pan. */
   canvas: CanvasController;
-  canUndo: boolean;
-  canRedo: boolean;
-  undoable: boolean;
+  /** What undo and redo drive here: the `history` it was given, its own when it's `editable`, or null for none. */
+  history: DiagramHistory | null;
   zoom: number;
 }
 
@@ -394,15 +455,17 @@ export interface DiagramProps<N = unknown, E = unknown> extends Pick<CanvasProps
   /** Every change to the data, undo and redo included, with why (`details.reason`). `details.cancel()` refuses it: the
    *  node goes back where it was, and history stays where it was. */
   onDataChange?: (data: DiagramData<N, E>, details: DiagramDataChangeDetails) => void;
-  /** Let the pointer select nodes and edges, one at a time, with shift or ⌘, or with a marquee. On when `editable` is. */
+  /** Let the pointer and the keys select nodes and edges: one at a time, more with Shift or ⌘, or with a marquee. On by
+   *  default, read-only too: a diagram without `editable` is a picture you can select in and read. */
   selectable?: boolean;
-  /** Let the pointer and the keys move and delete things, with undo. */
+  /** Let the pointer and the keys move, connect and delete things, with undo. */
   editable?: boolean;
   /** Whether dragging and ⇧ with an arrow move things, for when where they are isn't up to you. On when `editable` is. */
   movable?: boolean;
-  /** Whether ⌘Z and ⇧⌘Z undo and redo here. On when `editable` is; off for a diagram drawn from data that keeps its own
-   *  history (a StateDiagram's config). */
-  undoable?: boolean;
+  /** A history to drive instead of the diagram's own (`useDiagramHistory`), for a diagram drawn from something that keeps
+   *  its own (a StateDiagram's config, a CloudflareDiagram's system). ⌘Z, ⇧⌘Z and ⌘Y, DiagramToolbar's Undo and Redo, a
+   *  controller and an agent all undo and redo it, and the diagram keeps none of its own. */
+  history?: DiagramHistory;
   selection?: DiagramSelection;
   defaultSelection?: DiagramSelection;
   onSelectionChange?: (selection: DiagramSelection, details: DiagramSelectionChangeDetails) => void;
@@ -429,8 +492,9 @@ export interface DiagramProps<N = unknown, E = unknown> extends Pick<CanvasProps
   viewport?: Viewport;
   defaultViewport?: Viewport;
   onViewportChange?: (viewport: Viewport, details: CanvasViewportChangeDetails) => void;
-  /** How much air to leave around the content when fitting it, in px (default 24). */
-  fitPadding?: number;
+  /** How much air to leave around the content when fitting it, in px (default 24), on every side or on each. The chrome
+   *  over the board (a DiagramToolbar, the minimap, a DiagramFrameBar) is added to it. */
+  fitPadding?: number | Partial<DiagramInsets>;
   /** Size each node to its words, measured in the real font, around its center. A node that holds others keeps its size. */
   autoSize?: boolean;
   /** Draw only what's near the view. By default that's on above 200 nodes and edges. */
@@ -443,11 +507,13 @@ export interface DiagramProps<N = unknown, E = unknown> extends Pick<CanvasProps
   emptyState?: ReactNode;
   /** The data isn't here yet (a layout is running): a spinner, and no empty state. */
   loading?: boolean;
+  /** Why the diagram can't be drawn: an alert over the board, under the toolbar's row, in place of the empty state. */
+  error?: ReactNode;
   /** Drives it from outside: `createDiagramController()`. */
   controller?: DiagramController<N, E>;
   /** Its name, for people and agents (default `Diagram`). The board inside is named `<name> board`. */
   'aria-label'?: string;
-  /** Drawn over the diagram in screen space: a `DiagramToolbar`, a status, an error. `useDiagram` works here. */
+  /** Drawn over the diagram in screen space: a `DiagramToolbar`, a status. `useDiagram` works here. */
   overlay?: ReactNode;
   /** More of the board layer, over the diagram. `useCanvas` works here. */
   children?: ReactNode;
@@ -476,15 +542,15 @@ function useDiagramText(host: RefObject<HTMLElement | null>, nodes: readonly Dia
 
 /** A diagram on a `Canvas`. Sits in its host like any BL UI container: it fills the nearest positioned box. */
 export function Diagram<N = unknown, E = unknown>({
-  nodes: givenNodes, edges: givenEdges, defaultNodes = EMPTY, defaultEdges = EMPTY, onDataChange, selectable: selectableProp, editable = false, movable: movableProp, undoable: undoableProp, portsOnly = false, connectable: connectableProp,
+  nodes: givenNodes, edges: givenEdges, defaultNodes = EMPTY, defaultEdges = EMPTY, onDataChange, selectable = true, editable = false, movable: movableProp, history: givenHistory, portsOnly = false, connectable: connectableProp,
   isValidConnection, createEdge, selection: selectionProp, defaultSelection = NOTHING_SELECTED, current = NOTHING_SELECTED, onSelectionChange, onAction, noun, describeNode: nodeLabel, describeEdge: edgeLabel,
-  viewport: controlled, defaultViewport, onViewportChange, fitPadding = 24, autoSize, cull, minimap, renderNode, emptyState, loading = false, controller,
+  viewport: controlled, defaultViewport, onViewportChange, fitPadding = 24, autoSize, cull, minimap, renderNode, emptyState, loading = false, error, controller,
   background, panning, autoFocus, 'aria-label': ariaLabel = 'Diagram', overlay, children, className, style, ref: refProp,
 }: DiagramProps<N, E>) {
-  const selectable = selectableProp ?? editable;
   const connectable = connectableProp ?? editable;
   const movable = movableProp ?? editable;
-  const undoable = undoableProp ?? editable;
+  // Its own history when it's editable and wasn't handed one.
+  const ownHistory = editable && !givenHistory;
   const [ref, size] = useContainerSize<HTMLDivElement>({ width: 1000, height: 700 });
   const rootRef = useCallback((el: HTMLDivElement | null) => {
     ref.current = el;
@@ -503,7 +569,7 @@ export function Diagram<N = unknown, E = unknown>({
   const [defaultData] = useState<DiagramData<N, E>>(() => ({ nodes: defaultNodes, edges: defaultEdges }));
   const handle = usePrimitive(diagram, {
     data: givenData, defaultData: givenData ? undefined : defaultData, onDataChange, selection: selectionProp, defaultSelection: selectionProp ? undefined : defaultSelection, onSelectionChange,
-    selectable, editable: editable || movable || connectable, undoable, isValidConnection, createEdge, controller,
+    selectable, editable: editable || movable || connectable, undoable: ownHistory, history: givenHistory, isValidConnection, createEdge, controller,
   } as DiagramOptions<any, any>);
   const { instance, api } = handle;
   const subscribe = useCallback((listener: () => void) => instance.subscribe(listener), [instance]);
@@ -511,8 +577,11 @@ export function Diagram<N = unknown, E = unknown>({
   const state = useSyncExternalStore(subscribe, read, read);
   const data = (givenData ?? state.data) as DiagramData<N, E>;
   const selection = selectionProp ?? state.selection;
-  const canUndo = undoable && state.past > 0;
-  const canRedo = undoable && state.future > 0;
+  const canUndo = ownHistory && state.past > 0;
+  const canRedo = ownHistory && state.future > 0;
+  const history = useMemo<DiagramHistory | null>(() => givenHistory ?? (ownHistory ? {
+    canUndo, canRedo, undo: (event?: Event) => { api.undo(event); }, redo: (event?: Event) => { api.redo(event); },
+  } : null), [givenHistory, ownHistory, canUndo, canRedo, api]);
 
   /* ── What a drag shows before it's committed ── */
   const [draft, setDraft] = useState<DiagramData<N, E> | null>(null);
@@ -526,7 +595,24 @@ export function Diagram<N = unknown, E = unknown>({
   const nodes = useMemo(() => (autoSize ? sizeNodesToText(shown.nodes, text) : shown.nodes), [autoSize, shown.nodes, text]);
   const laid = useMemo(() => layOut(nodes, shown.edges, text), [nodes, shown.edges, text]);
 
-  const viewport = controlled ?? own ?? fitViewport(laid.bounds, size, fitPadding);
+  /* ── The chrome over the board (its toolbar, its minimap, a frame's bar) and the room a fit leaves for it ── */
+  // A frame's board around it is a scope too (its bar), and in one, the board's foot is the bar's.
+  const around = useDiagramChrome();
+  const chrome = useDiagramChromeScope(ref, { frame: !!around?.frame });
+  const miniInset = minimap ? (typeof minimap === 'object' ? minimap.height ?? 120 : 120) + 12 : 0;
+  const miniSide = typeof minimap === 'object' && minimap.side === 'top' ? 'top' : 'bottom';
+  const pad = typeof fitPadding === 'number' ? { top: fitPadding, right: fitPadding, bottom: fitPadding, left: fitPadding } : { top: 24, right: 24, bottom: 24, left: 24, ...fitPadding };
+  const inset = (side: keyof DiagramInsets) => {
+    const over = Math.max(chrome.insets[side], around?.insets[side] ?? 0, side === miniSide ? miniInset : 0);
+    // Past the chrome, a little air: less than the padding asked for, as the chrome already has its own margin.
+    return over ? Math.max(pad[side], over + 12) : pad[side];
+  };
+  const fitInsets: DiagramInsets = { top: inset('top'), right: inset('right'), bottom: inset('bottom'), left: inset('left') };
+  const fitKey = `${fitInsets.top},${fitInsets.right},${fitInsets.bottom},${fitInsets.left}`;
+  // `fitKey` stands for `fitInsets`, a new object each render.
+  const fitPad = useMemo(() => fitInsets, [fitKey]);
+
+  const viewport = controlled ?? own ?? fitViewport(laid.bounds, size, fitPad);
   const viewportRef = useRef(viewport);
   viewportRef.current = viewport;
   /** Every move of the view comes through the canvas, ours included (the keys following focus go through its
@@ -809,8 +895,6 @@ export function Diagram<N = unknown, E = unknown>({
     }
     if (key === 'c' && !mod && connectable && g.k === 'idle') { e.preventDefault(); startKeyboardConnection(e.shiftKey); return; }
     if (mod && key === 'a' && selectable) { e.preventDefault(); api.selectAll(); return; }
-    if (undoable && mod && key === 'z') { e.preventDefault(); cancel(); if (e.shiftKey) api.redo(e); else api.undo(e); return; }
-    if (undoable && mod && key === 'y') { e.preventDefault(); cancel(); api.redo(e); return; }
     if (!editable) return;
     if (key === 'delete' || key === 'backspace') {
       e.preventDefault();
@@ -873,19 +957,22 @@ export function Diagram<N = unknown, E = unknown>({
         style={{ left: n.x, top: n.y, width: n.w, height: n.h }}
       />
     ));
-    const ringed = all.filter((n) => selectedSets.nodes.has(n.id) || (ringOn?.kind === 'node' && ringOn.id === n.id));
+    const focusedOn = (n: DiagramNode<N>) => ringOn?.kind === 'node' && ringOn.id === n.id;
+    const ringed = all.filter((n) => selectedSets.nodes.has(n.id) || focusedOn(n));
     return currentUp.concat(ringed.map((n) => (
       <span
         key={n.id}
         data-slot="diagram-ring"
         data-ring-of={n.id}
-        data-focused={ringOn?.kind === 'node' && ringOn.id === n.id ? '' : undefined}
+        data-focused={focusedOn(n) ? '' : undefined}
+        data-selected={selectedSets.nodes.has(n.id) ? '' : undefined}
         aria-hidden="true"
-        className={cn('absolute', nodeRadius(n), ringOn?.kind === 'node' && ringOn.id === n.id ? RING_FOCUSED : RING_SELECTED)}
+        className={cn('absolute', nodeRadius(n), ringClass(isContainer(n), selectedSets.nodes.has(n.id), focusedOn(n)))}
         style={{ left: n.x, top: n.y, width: n.w, height: n.h }}
       />
     )));
   }, [drawn.containers, drawn.leaves, selectedSets.nodes, currentSets.nodes, ringOn]);
+  const focusedEdge = ringOn?.kind === 'edge' ? laid.geometries.get(ringOn.id)?.d ?? null : null;
   const marks = useMemo<CanvasMiniMapItem[]>(() => (minimap ? nodes.filter((n) => n.kind !== 'root').map((n) => ({ id: n.id, x: n.x, y: n.y, w: n.w, h: n.h })) : []), [minimap, nodes]);
   const zoom = viewport.zoom < NODE_TEXT_ZOOM ? 'far' : viewport.zoom < EDGE_LABEL_ZOOM ? 'mid' : 'near';
   // Changing this restyles every line drawn, so it moves in steps of about 9%, a few frames apart, which keeps a line of
@@ -929,15 +1016,23 @@ export function Diagram<N = unknown, E = unknown>({
     );
   }, [connecting, laid, viewport.zoom]);
 
-  const context = useMemo<DiagramContextValue>(() => ({ diagram: api as unknown as DiagramController, canvas, canUndo, canRedo, undoable, zoom: viewport.zoom }), [api, canvas, canUndo, canRedo, undoable, viewport.zoom]);
-  const empty = !loading && !laid.index.nodes.length;
+  // Only the controller's methods: what the gestures commit with stays inside.
+  const methods = useMemo<DiagramController<any, any>>(() => ({
+    getData: api.getData, getSelection: api.getSelection, select: api.select, selectAll: api.selectAll, clearSelection: api.clearSelection,
+    deleteSelection: api.deleteSelection, moveNodes: api.moveNodes, connect: api.connect, undo: api.undo, redo: api.redo, canUndo: api.canUndo, canRedo: api.canRedo,
+  }), [api]);
+  const context = useMemo<DiagramContextValue>(() => ({ diagram: methods, canvas, history, zoom: viewport.zoom }), [methods, canvas, history, viewport.zoom]);
+  const empty = !loading && !error && !laid.index.nodes.length;
+  // The shortcuts are spelled for the platform (⌘ on Apple's, Ctrl elsewhere), once it's known: a server can't tell.
+  const [platform, setPlatform] = useState<boolean | undefined>(false);
+  useEffect(() => { setPlatform(undefined); }, []);
   const keys = [
     'Arrows move between nodes and along edges; [ and ] step through a node’s edges; Page Up and Page Down go through everything; Enter selects and opens',
     connectable ? '; C connects from what has focus, Shift+C moves an edge’s start' : '',
     movable ? '; Shift and an arrow moves it' : '',
     editable ? '; Delete deletes' : '',
-    undoable ? '; Command+Z undoes' : '',
-    '. Plus and minus zoom, Command+0 fits.',
+    history ? `; ${formatShortcutText('mod+z', platform)} undoes and ${formatShortcutText('mod+shift+z', platform)} redoes` : '',
+    `. Plus and minus zoom, ${formatShortcutText('mod+0', platform)} fits.`,
   ].join('');
 
   const onBoard = (el: EventTarget | null) => {
@@ -951,12 +1046,24 @@ export function Diagram<N = unknown, E = unknown>({
     style,
     // Holding Space to pan drops a drag in progress, the same as a pinch does. It's the canvas's key, so it isn't handed on.
     onKeyDownCapture: (e: ReactKeyboardEvent) => { if (e.key === ' ') cancel(); },
+    // Undo and redo, from anywhere in the diagram (the board, its toolbar), but not from a field: one place for the keys.
+    onKeyDown: (e: ReactKeyboardEvent) => {
+      if (!history || e.defaultPrevented || !(e.metaKey || e.ctrlKey) || e.altKey) return;
+      if ((e.target as Element | null)?.closest?.('input, textarea, select, [contenteditable]:not([contenteditable="false"])')) return;
+      const key = e.key.toLowerCase();
+      if (key !== 'z' && key !== 'y') return;
+      e.preventDefault();
+      cancel();
+      if (key === 'y' || e.shiftKey) history.redo(e.nativeEvent);
+      else history.undo(e.nativeEvent);
+    },
     onLostPointerCapture: cancel,
     // What the keys go to is the board's: focus on the toolbar or a field in the overlay has left it, ring and all.
     onFocus: (e: ReactFocusEvent) => { focusWithin.current = onBoard(e.target); },
     onBlur: (e: ReactFocusEvent) => { if (!onBoard(e.relatedTarget)) { focusWithin.current = false; setRingOn(null); } },
     children: (
       <DiagramContext.Provider value={context}>
+        <DiagramChromeProvider value={chrome}>
         <Canvas
           viewport={viewport}
           onViewportChange={(next, details) => {
@@ -966,7 +1073,7 @@ export function Diagram<N = unknown, E = unknown>({
           }}
           controller={canvas}
           fit={laid.bounds}
-          fitPadding={fitPadding}
+          fitPadding={fitPad}
           // A zoom that changes every frame would restyle every node under it: the parts that use it get it in steps.
           zoomVariable={false}
           background={background}
@@ -981,6 +1088,11 @@ export function Diagram<N = unknown, E = unknown>({
         >
           <div data-slot="diagram-layer" data-zoom={zoom} className="group/diagram pointer-events-none absolute top-0 left-0">
             {containers}
+            {focusedEdge ? (
+              <svg data-slot="diagram-edge-focus" aria-hidden="true" className="absolute top-0 left-0 overflow-visible" width={1} height={1} style={{ '--diagram-z': lineZoom } as CSSProperties}>
+                <path d={focusedEdge} className="fill-none stroke-ring/35 [stroke-width:calc(9px/var(--diagram-z))] [stroke-linecap:round] [stroke-linejoin:round]" />
+              </svg>
+            ) : null}
             <svg data-slot="diagram-edges" role="group" aria-label="Edges" className="absolute top-0 left-0 overflow-visible" width={1} height={1} style={{ '--diagram-z': lineZoom } as CSSProperties}>
               {lines}
             </svg>
@@ -1004,6 +1116,11 @@ export function Diagram<N = unknown, E = unknown>({
               Laying out…
             </div>
           ) : null}
+          {error ? (
+            <div data-slot="diagram-error" role="alert" className="pointer-events-auto absolute inset-x-3 rounded-ctl bg-popover p-3 text-footnote text-destructive shadow-raised" style={{ top: Math.max(12, chrome.insets.top + 8) }}>
+              {error}
+            </div>
+          ) : null}
           {empty ? <div data-slot="diagram-empty" className="absolute inset-0 grid place-items-center p-6 *:pointer-events-auto">{renderEmptyState(emptyState, { icon: <Icon name="grid-fill" size={28} />, title: 'Nothing here yet', description: editable ? 'Add a node to start.' : undefined })}</div> : null}
           {overlay}
         </div>
@@ -1015,6 +1132,7 @@ export function Diagram<N = unknown, E = unknown>({
         >
           {status}
         </div>
+        </DiagramChromeProvider>
       </DiagramContext.Provider>
     ),
   }, 'div');
@@ -1024,17 +1142,17 @@ export function Diagram<N = unknown, E = unknown>({
 /* ── DiagramToolbar: zoom, fit, undo, redo ── */
 
 export type DiagramToolbarProps = Omit<ToolbarProps, 'children'> & {
-  /** Where it floats over the board (default `bottom`, `start`). */
+  /** Where it floats over the board: default `top` in a DiagramFrame (whose bar is at the foot), `bottom` elsewhere. */
   side?: 'top' | 'bottom';
   align?: 'start' | 'end';
   /** More tools after the diagram's own: ToolbarButtons, ToolbarSeparators. */
   children?: ReactNode;
 };
 
-function Tool({ label, shortcut, icon, disabled, onClick }: { label: string; shortcut: string; icon: Parameters<typeof Icon>[0]['name']; disabled?: boolean; onClick: () => void }) {
+function Tool({ label, shortcut, icon, disabled, onClick }: { label: string; shortcut: string; icon: Parameters<typeof Icon>[0]['name']; disabled?: boolean; onClick: (event: Event) => void }) {
   return (
     <Tooltip type="label" shortcut={shortcut}>
-      <TooltipTrigger render={<ToolbarButton data-action={label.toLowerCase().replace(/ /g, '-')} aria-label={label} size="icon-sm" disabled={disabled} onClick={onClick} />}>
+      <TooltipTrigger render={<ToolbarButton data-action={label.toLowerCase().replace(/ /g, '-')} aria-label={label} size="icon-sm" disabled={disabled} onClick={(e) => onClick(e.nativeEvent)} />}>
         <Icon name={icon} size={16} />
       </TooltipTrigger>
       <TooltipContent>
@@ -1045,12 +1163,24 @@ function Tool({ label, shortcut, icon, disabled, onClick }: { label: string; sho
   );
 }
 
-/** A floating Toolbar for a Diagram's `overlay`: zoom out, zoom in and fit, and undo and redo when the diagram keeps its
- *  history. One tab stop, arrows between the tools; each names its shortcut in its tooltip. */
-export function DiagramToolbar({ side = 'bottom', align = 'start', variant = 'floating', size = 'sm', className, children, 'aria-label': label = 'Diagram tools', ...props }: DiagramToolbarProps) {
-  const { diagram: d, canvas, canUndo, canRedo, undoable } = useDiagram();
+/** A floating Toolbar for a Diagram's `overlay`: zoom out, zoom in and fit, and undo and redo when the diagram has a
+ *  history (its own, or the one it was handed). One tab stop, arrows between the tools; each names its shortcut in its
+ *  tooltip. A fit leaves room for it. */
+export function DiagramToolbar({ side: sideProp, align = 'start', variant = 'floating', size = 'sm', className, children, 'aria-label': label = 'Diagram tools', ref: refProp, ...props }: DiagramToolbarProps) {
+  const { canvas, history } = useDiagram();
+  const scope = useDiagramChrome();
+  // In a frame, the board's foot is the frame's bar.
+  const side = sideProp ?? (scope?.frame ? 'top' : 'bottom');
+  const own = useRef<HTMLDivElement | null>(null);
+  useDiagramChromeInset(own, side);
+  const ref = useCallback((el: HTMLDivElement | null) => {
+    own.current = el;
+    if (typeof refProp === 'function') refProp(el);
+    else if (refProp) refProp.current = el;
+  }, [refProp]);
   return (
     <Toolbar
+      ref={ref}
       aria-label={label}
       variant={variant}
       size={size}
@@ -1062,11 +1192,11 @@ export function DiagramToolbar({ side = 'bottom', align = 'start', variant = 'fl
       <Tool label="Zoom out" shortcut="mod+-" icon="minus" onClick={() => canvas.zoomBy(0.8)} />
       <Tool label="Zoom in" shortcut="mod+=" icon="plus" onClick={() => canvas.zoomBy(1.25)} />
       <Tool label="Fit" shortcut="mod+0" icon="arrows-expand" onClick={() => canvas.fit()} />
-      {undoable ? (
+      {history ? (
         <>
           <ToolbarSeparator />
-          <Tool label="Undo" shortcut="mod+z" icon="arrow-uturn-backward" disabled={!canUndo} onClick={() => d.undo()} />
-          <Tool label="Redo" shortcut="mod+shift+z" icon="arrow-uturn-forward" disabled={!canRedo} onClick={() => d.redo()} />
+          <Tool label="Undo" shortcut="mod+z" icon="arrow-uturn-backward" disabled={!history.canUndo} onClick={(e) => history.undo(e)} />
+          <Tool label="Redo" shortcut="mod+shift+z" icon="arrow-uturn-forward" disabled={!history.canRedo} onClick={(e) => history.redo(e)} />
         </>
       ) : null}
       {children}

@@ -17,16 +17,18 @@ import {
   extendSelection, hostProducer, identityRowMap, isCollapsed, lexerProducer, lineSet, markersInRange, movePosition, nextCellWindow, nextRowWindow,
   orderedSelection, originOf, physicalSize, revealScroll, selectionCells, selectionText, toPhysicalScroll, toVirtualScroll,
   visibleCells, visibleRows, wordAt, wrapRowMap, wrappedSpan,
-  type CodeHighlight, type CodeLineRange, type CodePosition, type CodeSelection, type CodeToken, type CodeEditorAlign, type DisplayPiece, type LineMetrics,
+  type CodeHighlight, type CodeLineRange, type CodePosition, type CodeSelection, type CodeEditorAlign, type DisplayPiece, type LineMetrics,
   type LineSource, type RowMap, type SelectionGranularity, type SelectionKey, type Span,
 } from '@/lib/code-editor-model';
+import type { CodeToken } from '@/lib/syntax';
 import {
   caretAt, deleteBackwardCommand, deleteForwardCommand, detectIndent, editBetween, editorKeyAction, indentCommand, insertCommand, lineEditOf, mapSelection, moveCaret,
   newlineCommand, redoEdit, rowOfPosition, rowsOfCells, tabCommand, undoEdit,
   type AppliedEdit, type CaretMove, type CodeDocument, type CodeEditOrigin, type CodeHistory, type DeleteUnit, type EditCommand, type MoveContext,
 } from '@/lib/code-document';
 import { createGpuCodeHighlight } from '@/lib/code-editor-gpu';
-import { PLAIN_LANGUAGES, codeTokenClass, type SyntaxEngine } from '@/lib/syntax';
+import { codeTokenClass, type SyntaxEngine } from '@/lib/syntax';
+import { PLAIN_LANGUAGES } from '@/lib/syntax-lexer';
 import { cn } from '@/lib/utils';
 
 /* ══ CodeEditor's windowed renderer — source of any shape, read-only or editable ══

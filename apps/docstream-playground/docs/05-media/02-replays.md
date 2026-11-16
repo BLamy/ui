@@ -42,7 +42,7 @@ The panel reads two kinds of event:
 | Custom event `error` (also `exception`, `console.error`, `uncaught`) | An uncaught error in the console: `{ label, message, stack? }`. |
 | Custom event `console` (also `log`, `warn`, `info`, `debug`) | A message: `{ level, message }` or `{ level, args }`. |
 
-A request counts as failed when its status is 0 or 400 and up, when it has an `error`, or when its tag says so. The buttons appear only when the recording has messages, requests or inspections. `disableDevtools` removes them, the panel and the inspections; `defaultDevtoolsTab="network"` opens the panel at mount.
+A request counts as failed when its status is 0 or 400 and up, when it has an `error`, or when its tag says so. The buttons appear only when the recording has messages, requests or inspections. `devtools={false}` removes them, the panel and the inspections; `defaultDevtoolsTab="network"` opens the panel at mount.
 
 ## Inspections
 
@@ -50,7 +50,7 @@ An inspection is a moment where someone looked at a request or a console message
 
 {% demo src="media-replay/inspect" %}
 
-The current inspection is the latest one at or before the playhead. Seeking never closes the panel: going to another request, earlier or later, leaves it open. A panel an inspection opened leaves keyboard focus where it was, and closes by itself after 5 s of playback with no new request, console message or inspection (`autoCloseDevtools`, in ms, or `false`); paused, it stays. Close it yourself and it stays closed until the next inspection; click or scroll in it and it's yours, so it never closes by itself. Inspections close together slow playback down, so each stays up at least 2.5 s before the next replaces it (`inspectionDwell`, in ms, or `false`); the chosen speed comes back once they spread out. `playerRef.current.inspect(id)` jumps to an inspection and opens it, for a chronology beside the player.
+The current inspection is the latest one at or before the playhead. Seeking never closes the panel: going to another request, earlier or later, leaves it open. A panel an inspection opened leaves keyboard focus where it was, and closes by itself after 5 s of playback with no new request, console message or inspection (`autoCloseDevtools`, in ms, or `false`); paused, it stays. Close it yourself and it stays closed until the next inspection; click or scroll in it and it's yours, so it never closes by itself. Inspections close together slow playback down, so each stays up at least 2.5 s before the next replaces it (`inspectionDwell`, in ms, or `false`); the chosen speed comes back once they spread out. `ref.current.inspect(id)` jumps to an inspection and opens it, for a chronology beside the player.
 
 ```tsx
 <ReplayPreview
@@ -206,7 +206,7 @@ import { ReplayPreview, ReplayFile } from "@brett_lamy/ui/docstream"
 
 ## ReplayPreview
 
-`ReplayPreview` is the full player. `ReplayEmbed` is the same component under a name that reads better in document renderers. The buttons and readout below are this demo's own code, driving the player through `playerRef`, `onTimeUpdate` and `onMarkerPress`. Switch variants to compare the three `chrome` styles.
+`ReplayPreview` is the full player. The buttons and readout below are this demo's own code, driving the player through `ref`, `onTimeUpdate` and `onMarkerAction`. Switch variants to compare the three `chrome` styles.
 
 {% demo src="media-replay/player" %}
 
@@ -237,8 +237,7 @@ Pass **either** `events` (the player API) **or** `source` (the embed API). They 
 | `markers` | `boolean \| ReplayMarker[]` | `false` | A marker rail above the seek bar: `true` reads them from the recording, or pass your own. Off by default since 1.26. |
 | `markerKinds` | `ReplayMarkerKind[]` | all | Which recorded kinds to show: `click`, `error`, `network`, `navigation`, `custom`. |
 | `cursor` | `boolean` | `true` | Draw the recorded pointer and click ripples. |
-| `disableDevtools` | `boolean` | `false` | Remove the Console and Network buttons, their panel and the inspections. (`devtools={false}` does the same.) |
-| `devtools` | `boolean \| ReplayDevtools` | what the events say | What DevTools shows, as data, in place of what's read from the events. |
+| `devtools` | `boolean \| ReplayDevtools` | `true`: what the events say | `false` removes the Console and Network buttons, their panel and the inspections. An object is what DevTools shows, as data, in place of what's read from the events. |
 | `elements` | `ReplayElementsSource \| false` | the stage's document | Where the Elements tab reads from: `{ getDocument, getElementRect }`. |
 | `defaultDevtoolsTab` | `"console" \| "network"` | none | Open the DevTools panel on this tab at mount. |
 | `evidence` | `ReplayEvidence \| string` | none | A debugger's source excerpts, logpoints and screenshots: the Sources tab and screenshot captures. |
@@ -249,13 +248,12 @@ Pass **either** `events` (the player API) **or** `source` (the embed API). They 
 | `inspections` | `ReplayInspection[]` | none | Requests and messages to open DevTools on as playback reaches them, added to the recording's own `inspect` events. |
 | `fit` | `"width" \| "contain"` | `"width"` | `width`: the page scales to the frame's width and sets its height. `contain`: fill a frame you gave a height, letterboxed. |
 | `poster` | `ReactNode` | a page-shaped skeleton | Shown until the player is ready, at the frame's final size, so nothing jumps. |
-| `lazy` | `boolean` | `true` | Mount the player only when the frame nears the viewport. |
-| `active` | `boolean` | `true` | `false` renders an empty placeholder frame and mounts nothing. |
-| `playerRef` | `Ref<ReplayPreviewHandle>` | none | `play(offset?)`, `pause(offset?)`, `seek(ms)`, `toggle()`, `getCurrentTime()`, `inspect(id)`. |
+| `mounted` | `boolean \| "visible"` | `"visible"` | When the replayed page mounts (and rrweb loads): `"visible"` once the frame nears the viewport, `true` at once, `false` not until it turns true (the frame, its chrome and the poster are drawn the same meanwhile). |
+| `ref` | `Ref<ReplayPreviewHandle>` | none | `play(offset?)`, `pause(offset?)`, `seek(ms)`, `toggle()`, `getCurrentTime()`, `inspect(id)`. |
 | `onTimeUpdate` | `(ms) => void` | none | The playhead. |
 | `onPlayingChange` | `(playing) => void` | none | The play state. |
-| `onMarkerPress` | `(marker) => void` | none | A pressed rail mark. |
-| `className` / `style` | | none | On the root (`.replay-preview`). |
+| `onMarkerAction` | `(marker, details) => void` | none | A pressed rail mark, after the player seeks to it; `details` is UI SDK's `ChangeDetails` (`reason: "item-press"`). |
+| `className`, `style`, `id`, `data-*`, `aria-*`, handlers | | none | On the root (`.replay-preview`, a `role="group"`). |
 
 `formatReplayTime(ms)` formats a time the way the player does (`m:ss`).
 

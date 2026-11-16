@@ -79,6 +79,8 @@ export interface TailscaleLoginButtonLabels {
   retryName: string;
   /** Added to the accessible name while busy, because a press then cancels. */
   cancelHint: string;
+  /** The visible label while busy and hovered or focused from the keyboard: what a press does then. */
+  cancel: string;
 }
 
 const LOGIN_LABELS: TailscaleLoginButtonLabels = {
@@ -90,6 +92,7 @@ const LOGIN_LABELS: TailscaleLoginButtonLabels = {
   retry: 'Try again',
   retryName: 'Try again to sign in to Tailscale',
   cancelHint: 'Press to cancel.',
+  cancel: 'Cancel',
 };
 
 export interface TailscaleLoginButtonProps extends Omit<ButtonProps, 'children' | 'onClick'> {
@@ -128,9 +131,8 @@ export function TailscaleLoginButton({ tailscale, status: statusProp, onSignIn, 
   return (
     <Button
       data-status={status}
-      // Busy is drawn like UI SDK's pending state, but it is not that state: a pending button ignores presses, and a
-      // press here cancels.
-      data-pending={phase === 'busy' ? '' : undefined}
+      // Busy is not UI SDK's pending state (a pending button ignores presses and is dimmed; a press here cancels), so it
+      // keeps its full colour and pointer: the spinner shows the wait, and hovering or focusing it says "Cancel".
       aria-busy={phase === 'busy' || undefined}
       aria-label={phase === 'busy' ? `${label} ${labels.cancelHint}` : phase === 'error' ? labels.retryName : undefined}
       variant={variant}
@@ -138,7 +140,13 @@ export function TailscaleLoginButton({ tailscale, status: statusProp, onSignIn, 
       {...props}
     >
       {phase === 'busy' ? <Spinner size={16} /> : phase === 'error' ? <Icon name="exclamation-circle" size={16} sw={2} className="text-destructive" /> : <TailscaleMark />}
-      <span>{label}</span>
+      {phase === 'busy' ? (
+        // Both labels share one cell, so the button keeps the wider one's width when they swap.
+        <span className="grid *:[grid-area:1/1]">
+          <span className="[button:focus-visible_&]:invisible [button:hover_&]:invisible">{label}</span>
+          <span aria-hidden className="invisible [button:focus-visible_&]:visible [button:hover_&]:visible">{labels.cancel}</span>
+        </span>
+      ) : <span>{label}</span>}
     </Button>
   );
 }
@@ -176,20 +184,20 @@ export interface TailscaleStatusBadgeProps extends Omit<ComponentProps<'div'>, '
   status?: TailscaleStatus;
   tailnet?: string | null;
   loginUrl?: string | null;
-  /** The failure to show when `status` is `error` (default: the controller's error, in words). */
-  error?: ReactNode;
+  /** The words beside the pill when `status` is `error`: what failed (default: the controller's error, in words). */
+  description?: ReactNode;
 }
 
 /** The connection state as a pill with an icon and a word; with the details, the tailnet when connected, the error
     when failed, and a link to the sign-in page when no popup could open. A polite live region. */
-export function TailscaleStatusBadge({ tailscale, status: statusProp, tailnet: tailnetProp, loginUrl: loginProp, error: errorProp, variant, className, ...props }: TailscaleStatusBadgeProps) {
+export function TailscaleStatusBadge({ tailscale, status: statusProp, tailnet: tailnetProp, loginUrl: loginProp, description, variant, className, ...props }: TailscaleStatusBadgeProps) {
   const t = useOptionalTailscale(tailscale);
   const snap = useSnapshot(t);
   const status = statusProp ?? snap?.status ?? 'idle';
   const s = BADGE[status];
   const tailnet = tailnetProp !== undefined ? tailnetProp : snap?.tailnet ?? null;
   const loginUrl = loginProp !== undefined ? loginProp : snap?.loginUrl ?? null;
-  const error = errorProp ?? (snap?.error ? tailscaleErrorMessage(snap.error) : null);
+  const error = description ?? (snap?.error ? tailscaleErrorMessage(snap.error) : null);
   const details = variant !== 'pill';
   return (
     <div data-slot="tailscale-status-badge" data-status={status} role="status" className={cn(tailscaleStatusBadgeVariants({ variant }), className)} {...props}>

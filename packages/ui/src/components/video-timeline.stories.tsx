@@ -1,7 +1,7 @@
 import { useEffect, useState, type CSSProperties, type ReactNode } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Filmstrip, type FilmstripFrame } from '@/components/ui/filmstrip';
-import { VideoTimeline, type TimelineMediaInfo } from '@/components/ui/video-timeline';
+import { VideoTimeline, type TimelineMedia } from '@/components/ui/video-timeline';
 import { Waveform } from '@/components/ui/waveform';
 import { usePlaybackClock } from '@/lib/playback';
 import { BLProvider } from '@/lib/theme';
@@ -31,7 +31,7 @@ const peaksOf = (seconds: number, beat: number): number[] => Array.from({ length
   return Math.min(1, swell * pulse * (0.8 + 0.2 * Math.abs(Math.sin(i * 12.9898))));
 });
 
-const MEDIA: Record<string, TimelineMediaInfo> = {
+const MEDIA: Record<string, TimelineMedia> = {
   [TITLE]: { duration: Infinity, kind: 'image', name: 'Title' },
   harbour: { duration: 8, kind: 'video', name: 'Harbour.mov' },
   market: { duration: 8, kind: 'video', name: 'Market.mov' },

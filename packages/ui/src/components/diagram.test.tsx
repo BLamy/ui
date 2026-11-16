@@ -12,12 +12,13 @@ describe('Diagram', () => {
 
   it('draws everything in the 33-state machine', () => {
     expect(count(html, /data-slot="diagram-node"/g)).toBe(40);
-    expect(count(html, /data-kind="initial"/g)).toBe(14); // 7 markers, and the 7 edges from them
+    expect(count(html, /data-kind="marker"/g)).toBe(7);
+    expect(count(html, /data-variant="strong"/g)).toBe(7); // the edges from the markers
     expect(count(html, /data-slot="diagram-edge"/g)).toBe(43);
     expect(count(html, /data-slot="diagram-edge-label"/g)).toBe(36);
     expect(count(html, /data-slot="diagram-divider"/g)).toBe(2);
-    expect(UPLOAD_NODES.filter((n) => n.kind !== 'initial')).toHaveLength(33);
-    expect(UPLOAD_EDGES.filter((e) => e.kind !== 'initial')).toHaveLength(36);
+    expect(UPLOAD_NODES.filter((n) => n.kind !== 'marker')).toHaveLength(33);
+    expect(UPLOAD_EDGES.filter((e) => e.variant !== 'strong')).toHaveLength(36);
   });
 
   it('puts an arrowhead on every edge, from a marker that exists', () => {
@@ -33,7 +34,7 @@ describe('Diagram', () => {
     expect(html.indexOf('data-node="upload.worker.streaming"')).toBeGreaterThan(edges);
     expect(html.indexOf('data-slot="diagram-edge-label"')).toBeGreaterThan(html.indexOf('data-node="upload.worker.streaming"'));
     // An outer container draws first, whatever order they were listed in.
-    const shuffled = renderToString(<Diagram nodes={[{ id: 'inner', parent: 'outer', kind: 'compound', x: 0, y: 0, w: 1, h: 1 }, { id: 'outer', kind: 'compound', x: 0, y: 0, w: 1, h: 1 }]} />);
+    const shuffled = renderToString(<Diagram nodes={[{ id: 'inner', parent: 'outer', kind: 'group', x: 0, y: 0, w: 1, h: 1 }, { id: 'outer', kind: 'group', x: 0, y: 0, w: 1, h: 1 }]} />);
     expect(shuffled.indexOf('data-node="outer"')).toBeLessThan(shuffled.indexOf('data-node="inner"'));
   });
 
@@ -66,8 +67,11 @@ describe('Diagram', () => {
 
   it('places a label it was given, and works one out when it wasn’t', () => {
     const nodes: DiagramNode[] = [{ id: 'a', x: 0, y: 0, w: 100, h: 40 }, { id: 'b', x: 300, y: 0, w: 100, h: 40 }];
-    const given: DiagramEdge = { id: 'e', from: 'a', to: 'b', label: 'SUBMIT', labelBox: { x: 7, y: 9, w: 40, h: 11 } };
-    expect(renderToString(<Diagram nodes={nodes} edges={[given]} />)).toMatch(/left:7px;top:9px/);
+    const given: DiagramEdge = { id: 'e', from: 'a', to: 'b', label: 'SUBMIT', labelBox: { x: 170, y: 7, w: 40, h: 11 } };
+    expect(renderToString(<Diagram nodes={nodes} edges={[given]} />)).toMatch(/left:170px;top:7px/);
+    // A place given on top of a node isn't kept: the label goes where it can be read.
+    const onNode = renderToString(<Diagram nodes={nodes} edges={[{ ...given, labelBox: { x: 7, y: 9, w: 40, h: 11 } }]} />);
+    expect(onNode).not.toMatch(/left:7px;top:9px/);
     const found = renderToString(<Diagram nodes={nodes} edges={[{ id: 'e', from: 'a', to: 'b', label: 'SUBMIT' }]} />);
     const m = /data-slot="diagram-edge-label"[^>]*style="left:([\d.]+)px;top:([\d.]+)px"/.exec(found)!;
     // Above the middle of the line, which runs along y = 20.
@@ -109,7 +113,7 @@ describe('Diagram', () => {
     expect(lines(0.5)).toBe(lines(0.51));
     expect(lines(0.5)).not.toBe(lines(0.55));
     for (const z of [0.02, 0.1, 0.33, 0.7, 1, 1.7, 2.9, 4]) expect(Math.abs(lines(z) / z - 1)).toBeLessThan(0.05);
-    expect(diagramEdgeVariants({ kind: 'event' })).toContain('calc(1.25px/var(--diagram-z))');
+    expect(diagramEdgeVariants({})).toContain('calc(1.25px/var(--diagram-z))');
   });
 
   it('gives the zoom only to what needs it, so a zoom doesn’t restyle every node', () => {
@@ -191,12 +195,12 @@ describe('Diagram', () => {
     });
 
     it('draws what holds something in view, even with its walls out of view', () => {
-      const out = renderToString(<Diagram nodes={[{ id: 'box', kind: 'compound', x: -5000, y: -5000, w: 10000, h: 10000 }, far('here', 100)]} cull defaultViewport={at} />);
+      const out = renderToString(<Diagram nodes={[{ id: 'box', kind: 'group', x: -5000, y: -5000, w: 10000, h: 10000 }, far('here', 100)]} cull defaultViewport={at} />);
       expect(out).toContain('data-node="box"');
     });
 
     it('leaves out ports that are far away', () => {
-      const ported = nodes.map((n) => ({ ...n, ports: [{ id: 'p', side: 'r' as const }] }));
+      const ported = nodes.map((n) => ({ ...n, ports: [{ id: 'p', side: 'right' as const }] }));
       const out = renderToString(<Diagram nodes={ported} cull defaultViewport={at} />);
       expect(out).toContain('data-port-of="here"');
       expect(out).not.toContain('data-port-of="left"');

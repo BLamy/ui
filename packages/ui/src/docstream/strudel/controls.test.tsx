@@ -16,14 +16,14 @@ globalThis.__UI_SDK_STRICT__ = true
 
 const doubleClick = (el: Element) => act(async () => void el.dispatchEvent(new MouseEvent("dblclick", { bubbles: true })))
 
-function Controlled({ as: Control, initial, seen, ...props }: Omit<ControlProps, "value" | "onChange"> & { as: typeof Knob; initial: number; seen: number[] }) {
+function Controlled({ as: Control, initial, seen, ...props }: Omit<ControlProps, "value" | "onValueChange"> & { as: typeof Knob; initial: number; seen: number[] }) {
   const [value, setValue] = useState(initial)
-  return <Control {...props} value={value} onChange={(next) => { seen.push(next); setValue(next) }} />
+  return <Control {...props} value={value} onValueChange={(next) => { seen.push(next); setValue(next) }} />
 }
 
 describe("Knob", () => {
   it("is a slider named by its label, with the formatted value as its text", async () => {
-    const view = await mount(<Knob label="Cutoff" value={1200} min={40} max={16000} log format={(v) => `${Math.round(v)} Hz`} onChange={() => {}} size="lg" />)
+    const view = await mount(<Knob label="Cutoff" value={1200} min={40} max={16000} log format={(v) => `${Math.round(v)} Hz`} onValueChange={() => {}} size="lg" />)
     const dial = view.host.querySelector<HTMLElement>('[role="slider"]')!
     expect(dial.getAttribute("aria-label")).toBe("Cutoff")
     expect(dial.getAttribute("aria-valuemin")).toBe("40")
@@ -78,7 +78,7 @@ describe("Knob", () => {
   })
 
   it("renders on the server with its LEDs lit up to the value", () => {
-    const html = renderToStaticMarkup(<Knob label="Pan" value={0.5} min={0} max={1} onChange={() => {}} />)
+    const html = renderToStaticMarkup(<Knob label="Pan" value={0.5} min={0} max={1} onValueChange={() => {}} />)
     expect(html).toContain('role="slider"')
     expect(html).toContain('aria-label="Pan"')
     // A bipolar knob at its centre lights only the middle LED.
@@ -88,7 +88,7 @@ describe("Knob", () => {
 
 describe("Fader", () => {
   it("is UI SDK's slider, standing up: a range input named by the label, with the formatted value", async () => {
-    const view = await mount(<Fader label="Gain" value={0.75} min={0} max={1.5} format={(v) => `${Math.round(v * 100)}`} onChange={() => {}} />)
+    const view = await mount(<Fader label="Gain" value={0.75} min={0} max={1.5} format={(v) => `${Math.round(v * 100)}`} onValueChange={() => {}} />)
     const root = view.host.querySelector<HTMLElement>(".strudel-fader")!
     expect(root.getAttribute("data-slot")).toBe("slider")
     expect(root.getAttribute("data-orientation")).toBe("vertical")
@@ -143,7 +143,7 @@ describe("Fader", () => {
 })
 
 describe("Knob and Fader change details", () => {
-  function Reporting({ as: Control, log, legacy }: { as: typeof Knob; log: [number, ControlValueChangeDetails][]; legacy?: [number, ControlValueChangeDetails][] }) {
+  function Reporting({ as: Control, log }: { as: typeof Knob; log: [number, ControlValueChangeDetails][] }) {
     const [value, setValue] = useState(0.4)
     return (
       <Control
@@ -153,15 +153,13 @@ describe("Knob and Fader change details", () => {
         max={1}
         defaultValue={0.25}
         onValueChange={(next, details) => { log.push([next, details]); setValue(next) }}
-        {...(legacy ? { onChange: (next: number, details: ControlValueChangeDetails) => void legacy.push([next, details]) } : {})}
       />
     )
   }
 
-  it.each([["Knob", Knob], ["Fader", Fader]] as const)("%s: onValueChange says why, with the event; the deprecated onChange gets the same", async (_name, Control) => {
+  it.each([["Knob", Knob], ["Fader", Fader]] as const)("%s: onValueChange says why, with the event", async (_name, Control) => {
     const log: [number, ControlValueChangeDetails][] = []
-    const legacy: [number, ControlValueChangeDetails][] = []
-    const view = await mount(<Reporting as={Control} log={log} legacy={legacy} />)
+    const view = await mount(<Reporting as={Control} log={log} />)
     const slider = view.host.querySelector<HTMLElement>('[role="slider"]')!
     await focus(slider)
     await press("ArrowUp")
@@ -173,7 +171,6 @@ describe("Knob and Fader change details", () => {
     expect(log.at(-1)![0]).toBe(0.25)
     expect(log.at(-1)![1].reason).toBe("reset-press")
     expect(log.at(-1)![1].event?.type).toBe("dblclick")
-    expect(legacy).toEqual(log)
     await view.unmount()
   })
 })

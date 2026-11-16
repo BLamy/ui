@@ -24,5 +24,8 @@
     "ConversationComposer",
     "ConversationUserMessage",
     "ConversationAssistantMessage"
-  ]
+  ],
+  "css": {
+    "@import \"@brett_lamy/ui/docstream/styles.css\"": {}
+  }
 }

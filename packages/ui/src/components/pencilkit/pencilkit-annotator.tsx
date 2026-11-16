@@ -3,7 +3,7 @@ import { useState } from 'react';
 import type { ImageAnnotatorEngineProps } from '@/components/ui/pencilkit/image-annotator';
 import { pencilInks, type PencilInk, type PencilTool } from '@/components/ui/pencilkit/constants';
 import { PencilCanvas } from '@/components/ui/pencilkit/pencil-canvas';
-import { PencilActions, PencilInkPicker, PencilToolbar, PencilToolbarPinned, PencilToolPicker } from '@/components/ui/pencilkit/pencil-toolbar';
+import { PencilActions, PencilInkPicker, PencilToolbar, PencilToolPicker } from '@/components/ui/pencilkit/pencil-toolbar';
 import { ToolbarSeparator } from '@/components/ui/toolbar';
 import { usePencilHistory } from '@/components/ui/pencilkit/use-pencil-history';
 
@@ -29,21 +29,26 @@ export function PencilKitAnnotator({ children }: ImageAnnotatorEngineProps) {
   return children({
     canvas: <PencilCanvas tool={tool} ink={ink} strokes={history.strokes} onStrokesChange={history.onStrokesChange} />,
     toolbar: (
-      <PencilToolbar variant="plain" className="mx-auto">
+      <PencilToolbar
+        variant="plain"
+        className="mx-auto"
+        trailing={
+          <>
+            <ToolbarSeparator />
+            <PencilActions
+              onUndo={history.undo}
+              onRedo={history.redo}
+              onClear={history.clear}
+              canUndo={history.canUndo}
+              canRedo={history.canRedo}
+              canClear={history.canClear}
+            />
+          </>
+        }
+      >
         <PencilToolPicker value={tool} onValueChange={setTool} />
         <ToolbarSeparator />
         <PencilInkPicker inks={imageInks} value={ink} onValueChange={setInk} />
-        <PencilToolbarPinned>
-          <ToolbarSeparator />
-          <PencilActions
-            onUndo={history.undo}
-            onRedo={history.redo}
-            onClear={history.clear}
-            canUndo={history.canUndo}
-            canRedo={history.canRedo}
-            canClear={history.canClear}
-          />
-        </PencilToolbarPinned>
       </PencilToolbar>
     ),
   });

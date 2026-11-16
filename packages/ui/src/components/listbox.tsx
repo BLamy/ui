@@ -52,6 +52,8 @@ export const listboxItemVariants = cva(
         ],
         popup: [
           'min-h-9 rounded-lg py-[7px] pr-3 pl-2 text-subhead leading-5',
+          // In a popup presented as a sheet (a touch layout), rows reach the 44px touch target in body text, like a menu's.
+          'in-data-[presentation=sheet]:min-h-11 in-data-[presentation=sheet]:py-[11px] in-data-[presentation=sheet]:pr-4 in-data-[presentation=sheet]:pl-3 in-data-[presentation=sheet]:text-body in-data-[presentation=sheet]:leading-[22px]',
           'data-highlighted:bg-accent active:not-data-disabled:bg-secondary-strong data-highlighted:active:bg-secondary-strong',
         ],
       },

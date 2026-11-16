@@ -1,6 +1,7 @@
 import { renderToString } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
-import { CloudflareDiagram } from './cloudflare-diagram';
+import { Diagram } from './diagram';
+import { CloudflareDiagram, cloudflareBoardProps } from './cloudflare-diagram';
 
 const placed = [{ id: 'w', kind: 'workers', at: { x: 0, y: 0 } }, { id: 'r', kind: 'r2', label: 'Files', at: { x: 300, y: 0 } }];
 const edges = [{ id: 'e', from: 'w', to: 'r', via: 'r2_buckets', binding: 'FILES', operations: ['get', 'put', 'list', 'head'] }];
@@ -10,7 +11,7 @@ describe('CloudflareDiagram, on a server', () => {
     const machine = { initial: 'a', states: { a: { on: { HELLO: 'a' } } } };
     const html = renderToString(<CloudflareDiagram services={[placed[0]!, { ...placed[1]!, machine }, { id: 'gone-to', kind: 'not-in-the-catalog', at: { x: 0, y: 300 } }]} edges={[{ id: 'bad', from: 'r', to: 'w', via: 'r2_buckets' }, { id: 'dangling', from: 'w', to: 'nowhere', via: 'r2_buckets', binding: 'X' }]} />);
     expect(html.match(/data-part="machine"/g)).toHaveLength(1);
-    expect(html).toContain('data-slot="diagram-edge" data-edge="bad" data-kind="problem"');
+    expect(html).toMatch(/data-slot="diagram-edge" data-edge="bad"[^>]*data-tone="destructive"/);
     // It has nowhere to go, so it isn't drawn, and it's said.
     expect(html).not.toContain('data-slot="diagram-edge" data-edge="dangling"');
     expect(html).toContain('data-slot="cloudflare-issue" data-severity="error" data-code="edge-end" data-edge="dangling"');
@@ -77,5 +78,18 @@ describe('CloudflareDiagram, on a server', () => {
 
   it('credits the docs its words come from', () => {
     expect(renderToString(<CloudflareDiagram services={placed} defaultPanelOpen />)).toContain('CC-BY-4.0');
+  });
+
+  it('draws a system on a plain Diagram with cloudflareBoardProps: services in layers, labels, the catalog’s rule and what’s wrong', () => {
+    const system = { services: [{ id: 'w', kind: 'workers', label: 'API' }, { id: 'r', kind: 'r2', label: 'Files' }, { id: 'q', kind: 'queues' }], edges: [{ id: 'e', from: 'w', to: 'r', via: 'r2_buckets', binding: 'FILES', operations: ['get'] }, { id: 'bad', from: 'r', to: 'q', via: 'r2_buckets' }] };
+    const board = cloudflareBoardProps(system);
+    // None said where it is, so each is given a place, in layers by what reaches what.
+    expect(board.nodes.map((n) => [n.id, n.x > 0])).toEqual([['w', false], ['r', true], ['q', true]]);
+    expect(board.isValidConnection({ from: 'r', fromPort: undefined, to: 'w', toPort: 'env' } as never)).toEqual(expect.any(String));
+    const html = renderToString(<Diagram {...board} aria-label="A system" />);
+    expect(html.match(/data-slot="cloudflare-service"/g)).toHaveLength(3);
+    expect(html).toContain('FILES: get');
+    expect(html).toMatch(/data-slot="diagram-edge" data-edge="bad"[^>]*data-tone="destructive"/);
+    expect(html).toContain('API, service');
   });
 });

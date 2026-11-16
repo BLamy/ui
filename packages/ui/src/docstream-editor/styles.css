@@ -3,6 +3,7 @@
    this file inside a layer of its own must declare `@layer ui-sdk;` itself, first (see the README). */
 @layer ui-sdk;
 
+@import "../docstream/tokens.css";
 @import "../docstream/docs/properties.css";
 @import "../docstream/docs/tasks.css";
 
@@ -30,29 +31,14 @@
   --gb-panel: var(--card, #ffffff);
   --gb-muted: var(--muted, #f4f4f5);
   --gb-muted-foreground: var(--muted-foreground, #6b7280);
-  --gb-border: var(--border, #e5e7eb);
   --gb-accent: var(--accent, #f4f4f5);
   --gb-accent-foreground: var(--accent-foreground, #18181b);
-  --gb-primary: var(--primary, #2563eb);
   --gb-text: var(--foreground, #111827);
   --gb-bg: var(--background, #ffffff);
   --gb-code-bg: rgba(128, 128, 128, 0.13);
   --gb-code-fg: var(--foreground, #111827);
-  --gb-radius: 12px;
 
-  /* Semantic hint palette — solid color plus precomputed tints. */
-  --gb-info: #3b82f6;
-  --gb-info-border: rgba(59, 130, 246, 0.45);
-  --gb-info-bg: rgba(59, 130, 246, 0.1);
-  --gb-success: #22c55e;
-  --gb-success-border: rgba(34, 197, 94, 0.45);
-  --gb-success-bg: rgba(34, 197, 94, 0.1);
-  --gb-warning: #f59e0b;
-  --gb-warning-border: rgba(245, 158, 11, 0.5);
-  --gb-warning-bg: rgba(245, 158, 11, 0.12);
-  --gb-danger: #ef4444;
-  --gb-danger-border: rgba(239, 68, 68, 0.45);
-  --gb-danger-bg: rgba(239, 68, 68, 0.1);
+  /* The semantic palette, --gb-primary, --gb-border and --gb-radius: ../docstream/tokens.css, shared with the renderer. */
 
   max-width: 860px;
   margin: 0 auto;
@@ -296,7 +282,7 @@
   white-space: pre-wrap;
 }
 
-/* lucide icon sizing (the node views use size-* utility classes) */
+/* Icon sizing (the node views size their glyphs with size-* classes) */
 .gb .size-3 { width: 12px; height: 12px; }
 .gb .size-3\.5 { width: 14px; height: 14px; }
 .gb .size-4 { width: 16px; height: 16px; }
@@ -1040,6 +1026,8 @@
 /* What the typed text matched. */
 .slash-item mark { background: transparent; color: inherit; font-weight: 600; }
 .slash-empty { padding: 8px 10px; font-size: 13px; color: var(--muted-foreground, #6b7280); }
+/* The empty note's box stays mounted while there are matches: with nothing in it, it takes no room above the first item. */
+.slash-empty:empty { display: none; }
 .slash-group {
   padding: 8px 10px 3px;
   font-size: 11px;
@@ -1224,9 +1212,9 @@
 }
 
 .gb-ref-mention {
-  border: 1px solid rgba(59, 130, 246, 0.45);
-  background: rgba(59, 130, 246, 0.1);
-  color: var(--gb-info, #3b82f6);
+  border: 1px solid var(--gb-info-border);
+  background: var(--gb-info-bg);
+  color: var(--gb-info);
 }
 
 .gb-ref-tag {
@@ -1236,8 +1224,8 @@
 }
 
 .gb-ref-codebase {
-  border: 1px solid rgba(34, 197, 94, 0.45);
-  background: rgba(34, 197, 94, 0.1);
+  border: 1px solid var(--gb-success-border);
+  background: var(--gb-success-bg);
   color: rgb(22, 163, 74);
 }
 
@@ -1245,8 +1233,8 @@
   display: inline-block;
   padding: 1px 5px;
   border-radius: 5px;
-  background: rgba(59, 130, 246, 0.14);
-  color: var(--gb-info, #3b82f6);
+  background: color-mix(in srgb, var(--gb-info) 14%, transparent);
+  color: var(--gb-info);
   font-size: 10px;
   font-weight: 700;
   line-height: 1.4;

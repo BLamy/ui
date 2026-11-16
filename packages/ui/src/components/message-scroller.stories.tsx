@@ -122,6 +122,24 @@ export const OpensAtLastAnchor: Story = {
   ),
 };
 
+/** The jump pill's streaming look on first paint: the thread opens at its last turn, away from the live edge of a
+    reply that is still arriving, so the pill widens to "● Streaming ⌄". The previous reply fades under the top edge. */
+export const JumpPillStreaming: Story = {
+  render: () => (
+    <Frame>
+      <MessageScroller threadKey="anchored-streaming" streaming>{THREAD.map(message)}</MessageScroller>
+    </Frame>
+  ),
+};
+
+export const JumpPillStreamingDark: Story = {
+  render: () => (
+    <Frame appearance="dark">
+      <MessageScroller threadKey="anchored-streaming-dark" streaming>{THREAD.map(message)}</MessageScroller>
+    </Frame>
+  ),
+};
+
 /** Any block can be an item: here plain notes, one of them an anchor. */
 export const PlainItems: Story = {
   render: () => (

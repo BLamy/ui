@@ -483,3 +483,22 @@ it('presentation="tabs" shows every tab in one strip at the bottom, keeps state,
   // The counter kept its state across the switch.
   expect(screen.getByRole('button', { name: 'Count 1' })).toBeTruthy();
 });
+
+it('presentation="tabs" closes a tab with its button (a finger) or Delete, and keeps a protected tab', async () => {
+  const onLayoutChange = vi.fn();
+  render(<Workspace aria-label="Editor" presentation="tabs" defaultLayout={layout} renderTabContent={content} onLayoutChange={onLayoutChange} />);
+  await settle();
+  const names = () => screen.getAllByRole('tab').map((t) => t.textContent);
+  expect(closeButton('Notes')).toBeNull();
+  fireEvent.click(closeButton('Log')!);
+  await settle();
+  expect(names()).toEqual(['Counter', 'Notes']);
+  expect(onLayoutChange).toHaveBeenLastCalledWith(expect.anything(), expect.objectContaining({ action: 'close', reason: 'remove-press', tab: 'log' }));
+  screen.getByRole('tab', { name: 'Counter' }).focus();
+  fireEvent.keyDown(document.activeElement!, { key: 'Delete' });
+  await settle();
+  expect(names()).toEqual(['Notes']);
+  screen.getByRole('tab', { name: 'Notes' }).focus();
+  fireEvent.keyDown(document.activeElement!, { key: 'Delete' });
+  expect(names()).toEqual(['Notes']);
+});

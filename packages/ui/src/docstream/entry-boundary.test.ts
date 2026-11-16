@@ -66,7 +66,22 @@ function resolveFolded(from: string, spec: string): string | null {
   return resolve(root, file)
 }
 
-function graph(entry: string, { dynamic = true } = {}): { files: string[]; bare: Set<string> } {
+/** For the kit's entries: a `@/components/ui/<x>` or `@/lib/<x>` import (source), or a `@brett_lamy/ui/<entry>` import of
+    any of the package's entries (the root, a component, a lib module, docstream), as the file it loads. */
+function resolveKit(from: string, spec: string): string | null {
+  const alias = /^@\/(components\/ui|lib)\/(.+)$/.exec(spec)
+  if (alias) return resolveFile(join(root, "src", alias[1] === "lib" ? "lib" : "components", "x"), `./${alias[2]}`)
+  if (spec !== "@brett_lamy/ui" && !spec.startsWith("@brett_lamy/ui/")) return null
+  const target = pkg.exports[`.${spec.slice("@brett_lamy/ui".length)}`]
+  if (!target) return null
+  if (isScript(target)) return resolveFolded(from, spec)
+  const kit = target as unknown as Record<string, string>
+  const inSource = relative(root, from).startsWith("src/")
+  const file = inSource ? kit["@org/source"] : from.endsWith(".d.ts") ? kit.types : kit.import ?? kit.default
+  return file ? resolve(root, file) : null
+}
+
+function graph(entry: string, { dynamic = true, kit = false } = {}): { files: string[]; bare: Set<string> } {
   const seen = new Set<string>()
   const bare = new Set<string>()
   const queue = [resolve(root, entry)]
@@ -78,6 +93,8 @@ function graph(entry: string, { dynamic = true } = {}): { files: string[]; bare:
     const source = readFileSync(file, "utf8")
     for (const match of source.matchAll(file.endsWith(".css") ? CSS_IMPORT : IMPORT)) {
       if (!dynamic && match[2]) continue
+      // The kit's entries are held to what they load at run time: a type-only import loads nothing.
+      if (kit && /^(?:import|export)\s+type\s/.test(match[0])) continue
       const spec = match[1] ?? match[2] ?? match[3]
       // A root-relative path is no package: it's text that reads like an import (a workerd config's
       // `import "/workerd/workerd.capnp"`, in the editor's starter).
@@ -87,8 +104,8 @@ function graph(entry: string, { dynamic = true } = {}): { files: string[]; bare:
         if (next) queue.push(next)
         continue
       }
-      bare.add(spec)
-      const next = resolveFolded(file, spec)
+      if (!spec.startsWith("@/")) bare.add(spec)
+      const next = kit ? resolveKit(file, spec) : resolveFolded(file, spec)
       if (next) queue.push(next)
     }
   }
@@ -129,9 +146,9 @@ describe("entry boundaries", () => {
     }
   })
 
-  it("exports parseXState from its entry, in the published build", () => {
-    const code = 'import("./dist/docstream/xstate/machine.js").then((m) => console.log(typeof m.parseXState, typeof m.xstateToMermaid, Object.keys(m.parseXState("{ initial: \'a\', states: { a: {} } }")).join()))'
-    expect(execFileSync(process.execPath, ["--input-type=module", "-e", code], { cwd: root, encoding: "utf8" }).trim()).toBe("function function initial,states")
+  it("draws an xstate fence's machine from its entry, in the published build, with the library's parseXState and machineToDraft", () => {
+    const code = 'import("./dist/docstream/xstate/machine.js").then((m) => console.log(typeof m.xstateToMermaid, m.xstateToMermaid("{ initial: \'a\', states: { a: { on: { GO: \'b\' } }, b: {} } }").split("\\n").at(-1).trim()))'
+    expect(execFileSync(process.execPath, ["--input-type=module", "-e", code], { cwd: root, encoding: "utf8" }).trim()).toBe("function s1 --> s2: GO")
   })
 
   it("imports only declared dependencies (or optional peers from their own entry)", () => {
@@ -179,8 +196,8 @@ describe("entry boundaries", () => {
     expect([...graph(target, { dynamic: false }).bare].filter((spec) => spec === "rrweb" || spec.startsWith("rrweb/"))).toEqual([])
   })
 
-  // The Strudel rack's parser (acorn) loads only when a reader opens the rack.
-  it.each(entries.filter(([name]) => name !== "./docstream/strudel"))("%s (%s) loads acorn only through a dynamic import", (_name, target) => {
+  // The Strudel rack's parser (acorn) loads only when a reader opens the rack; `./docstream/strudel/rack` is its own entry.
+  it.each(entries.filter(([name]) => name !== "./docstream/strudel/rack"))("%s (%s) loads acorn only through a dynamic import", (_name, target) => {
     expect([...graph(target, { dynamic: false }).bare].filter((spec) => spec === "acorn")).toEqual([])
   })
 
@@ -194,5 +211,35 @@ describe("entry boundaries", () => {
   it("keeps almost-node an optional peer", () => {
     expect(pkg.peerDependenciesMeta["@agent-wasm/core"]?.optional).toBe(true)
     expect(pkg.dependencies["@agent-wasm/core"]).toBeUndefined()
+  })
+})
+
+/* The kit's entries that reach docstream: the root, MarkdownView, MarkdownEditor, the Composer and the four widget
+   modules. They are what a consumer imports first, so they are held to the same rules: no stylesheet on any path a
+   JavaScript entry loads (the app imports `@brett_lamy/ui/styles.css` and `@brett_lamy/ui/docstream/styles.css`), and
+   none of docstream's lazy sub-systems on their static graph. */
+const KIT_ENTRIES = [".", "./markdown-view", "./markdown-editor", "./composer", "./replay-preview", "./tui-preview", "./stl-viewer", "./strudel-player"]
+const kitTargets = KIT_ENTRIES.flatMap((name): [string, string][] => {
+  const target = pkg.exports[name] as unknown as Record<string, string>
+  return [[name, target["@org/source"]!], [name, target.import ?? target.default!]]
+})
+/** Loaded only when a page needs them: Babel, XState, acorn, rrweb, ELK, Strudel's engine, KaTeX, Pele, the Cloudflare
+    diagram and catalog, and the optional peers' sub-systems. */
+const LAZY = /^(?:@babel\/parser|xstate|acorn|rrweb|elkjs|@strudel\/web|katex|pele|@agent-wasm\/core|@brett_lamy\/viz-engine|@brett_lamy\/ui\/(?:cloudflare|cloudflare-diagram|lib\/cloudflare-|lib\/diagram-layout))(?:\/|$)/
+
+describe("the kit's entries that reach docstream", () => {
+  it.each(kitTargets.filter(([, target]) => target.startsWith("./dist/")))("%s (%s) imports no stylesheet from JavaScript", (_name, target) => {
+    const { files, bare } = graph(target, { dynamic: false, kit: true })
+    expect([...files.filter((f) => f.endsWith(".css")), ...[...bare].filter((spec) => /\.css(?:$|\?)/.test(spec))]).toEqual([])
+  })
+
+  it.each(kitTargets)("%s (%s) loads docstream's lazy sub-systems only through a dynamic import", (_name, target) => {
+    expect([...graph(target, { dynamic: false, kit: true }).bare].filter((spec) => LAZY.test(spec))).toEqual([])
+  })
+
+  // Plain Node: SSR without a bundler, or a host's Vitest without CSS handling, imports the published build.
+  it("loads each of them in plain Node", () => {
+    const script = `for (const s of ${JSON.stringify(KIT_ENTRIES.map((name) => `@brett_lamy/ui${name.slice(1)}`))}) await import(s)`
+    expect(() => execFileSync(process.execPath, ["--input-type=module", "-e", script], { cwd: root, stdio: "pipe" })).not.toThrow()
   })
 })

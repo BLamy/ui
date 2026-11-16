@@ -182,14 +182,33 @@ describe('ArtifactChatContainer', () => {
       </BLProvider>,
     );
     expect(api?.presentation).toBe('floating');
-    act(() => api!.setOpen(true));
+    let done: boolean | undefined;
+    act(() => { done = api!.setOpen(true); });
+    expect(done).toBe(false);
     expect(onOpenChange).toHaveBeenCalledTimes(1);
     expect(onOpenChange.mock.calls[0][0]).toBe(true);
     expect(onOpenChange.mock.calls[0][1]).toMatchObject({ reason: 'imperative', source: 'programmatic', canceled: true });
     expect(api?.open).toBe(false);
     onOpenChange.mockImplementation(() => undefined);
-    act(() => api!.setOpen(true));
+    act(() => { done = api!.setOpen(true); });
+    expect(done).toBe(true);
     expect(api?.open).toBe(true);
     await settle();
+  });
+
+  it('floating on a wide container, the chat keeps the chat\'s width on its side instead of spanning the content', async () => {
+    width = 1280;
+    render(<App presentation="floating" chatSide="end" chatWidth={380} />);
+    await settle();
+    const surface = document.querySelector<HTMLElement>('[data-slot=floating-sheet-surface]')!;
+    expect(surface.dataset.align).toBe('end');
+    expect(surface.style.getPropertyValue('--fs-max-w')).toBe('380px');
+    cleanup();
+    width = 390;
+    render(<App presentation="floating" chatSide="end" chatWidth={380} />);
+    await settle();
+    const phone = document.querySelector<HTMLElement>('[data-slot=floating-sheet-surface]')!;
+    expect(phone.dataset.align).toBe('center');
+    expect(phone.style.getPropertyValue('--fs-max-w')).toBe('');
   });
 });

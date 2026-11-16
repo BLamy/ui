@@ -1,11 +1,13 @@
 'use client';
 
-/* The Cloudflare parts, with the catalog, on an entry of their own: it's about 150 KB, and an app that doesn't draw Cloudflare's
-   services shouldn't get it. */
-export { CloudflareDiagram, CloudflareServiceNode, CloudflareServiceSearch, cloudflareServiceVariants, serviceNode } from './components/cloudflare-diagram';
+/* The Cloudflare parts, with the catalog, on an entry of their own, which is their one import path: it's about 150 KB, and an
+   app that doesn't draw Cloudflare's services shouldn't get it. */
+export {
+  CloudflareDiagram, CloudflareServiceNode, CloudflareServiceSearch, cloudflareBoardProps, cloudflareServiceNode, cloudflareServiceVariants,
+} from './components/cloudflare-diagram';
 export type {
-  CloudflareDiagramChangeDetails, CloudflareDiagramChangeReason, CloudflareDiagramProps, CloudflareMachineChangeReason, CloudflareServiceNodeData, CloudflareServiceNodeProps,
-  CloudflareServiceSearchProps,
+  CloudflareBoardOptions, CloudflareBoardProps, CloudflareDiagramChangeDetails, CloudflareDiagramChangeReason, CloudflareDiagramProps, CloudflareMachineChangeReason,
+  CloudflareServiceEdgeData, CloudflareServiceNodeData, CloudflareServiceNodeProps, CloudflareServiceSearchProps,
 } from './components/cloudflare-diagram';
 export { CLOUDFLARE_CATALOG } from './lib/cloudflare-catalog.generated';
 export type {

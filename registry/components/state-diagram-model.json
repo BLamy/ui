@@ -1,0 +1,45 @@
+{
+  "name": "state-diagram-model",
+  "title": "StateDiagram logic",
+  "description": "StateDiagram's logic as plain functions: an XState machine's source read without running it (parseXState), a machine as Diagram nodes and edges (machineToDraft), a simulation with stand-ins for everything it names, and edits to a machine's config that XState checks. Babel reads the source; XState is handed in, never imported.",
+  "page": "state-diagram",
+  "files": [
+    "lib/state-diagram-model.ts",
+    "lib/state-diagram-source.ts",
+    "lib/state-diagram-edit.ts",
+    "lib/state-diagram-simulation.ts"
+  ],
+  "exports": [
+    "parseXState",
+    "machineToDraft",
+    "STATE_NODE_LOOK",
+    "STATE_EDGE_LOOK",
+    "machineEdgeIds",
+    "machineEdgePlaces",
+    "machineStatePaths",
+    "createSimulation",
+    "standInConfig",
+    "tryEdit",
+    "addState",
+    "renameState",
+    "removeState",
+    "setInitial",
+    "addTransition",
+    "removeTransition",
+    "removeItems",
+    "missingImplementations",
+    "inlineCodeIn",
+    "StateEditRefused"
+  ],
+  "types": [
+    "StateMachineLike",
+    "StateMachineConfig",
+    "StateMachineImplementations",
+    "StateNodeData",
+    "StateEdgeData",
+    "StateTransitionKind",
+    "TransitionPlace",
+    "Simulation",
+    "SimulationStandIns"
+  ]
+}

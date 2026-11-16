@@ -116,11 +116,6 @@
       "types": "./dist/components/checkbox.d.ts",
       "default": "./dist/components/checkbox.js"
     },
-    "./cloudflare-diagram": {
-      "@org/source": "./src/components/cloudflare-diagram.tsx",
-      "types": "./dist/components/cloudflare-diagram.d.ts",
-      "default": "./dist/components/cloudflare-diagram.js"
-    },
     "./code-editor": {
       "@org/source": "./src/components/code-editor.tsx",
       "types": "./dist/components/code-editor.d.ts",
@@ -141,15 +136,10 @@
       "types": "./dist/components/command-menu.d.ts",
       "default": "./dist/components/command-menu.js"
     },
-    "./composer/composer": {
-      "@org/source": "./src/components/composer/composer.tsx",
-      "types": "./dist/components/composer/composer.d.ts",
-      "default": "./dist/components/composer/composer.js"
-    },
-    "./composer/composer-cards": {
-      "@org/source": "./src/components/composer/composer-cards.tsx",
-      "types": "./dist/components/composer/composer-cards.d.ts",
-      "default": "./dist/components/composer/composer-cards.js"
+    "./composer": {
+      "@org/source": "./src/components/composer/index.ts",
+      "types": "./dist/components/composer/index.d.ts",
+      "default": "./dist/components/composer/index.js"
     },
     "./conversation": {
       "@org/source": "./src/components/conversation.tsx",
@@ -271,6 +261,11 @@
       "types": "./dist/components/label.d.ts",
       "default": "./dist/components/label.js"
     },
+    "./lib/append-stream": {
+      "@org/source": "./src/lib/append-stream.ts",
+      "types": "./dist/lib/append-stream.d.ts",
+      "default": "./dist/lib/append-stream.js"
+    },
     "./lib/call-stack-model": {
       "@org/source": "./src/lib/call-stack-model.ts",
       "types": "./dist/lib/call-stack-model.d.ts",
@@ -296,6 +291,11 @@
       "types": "./dist/lib/code-editor-model.d.ts",
       "default": "./dist/lib/code-editor-model.js"
     },
+    "./lib/cron": {
+      "@org/source": "./src/lib/cron.ts",
+      "types": "./dist/lib/cron.d.ts",
+      "default": "./dist/lib/cron.js"
+    },
     "./lib/csv": {
       "@org/source": "./src/lib/csv.ts",
       "types": "./dist/lib/csv.d.ts",
@@ -315,6 +315,16 @@
       "@org/source": "./src/lib/diagram-layout/react.ts",
       "types": "./dist/lib/diagram-layout/react.d.ts",
       "default": "./dist/lib/diagram-layout/react.js"
+    },
+    "./lib/diagram-model": {
+      "@org/source": "./src/lib/diagram-model.ts",
+      "types": "./dist/lib/diagram-model.d.ts",
+      "default": "./dist/lib/diagram-model.js"
+    },
+    "./lib/durable-streams": {
+      "@org/source": "./src/lib/durable-streams.ts",
+      "types": "./dist/lib/durable-streams.d.ts",
+      "default": "./dist/lib/durable-streams.js"
     },
     "./lib/ffmpeg": {
       "@org/source": "./src/lib/ffmpeg/index.ts",
@@ -336,6 +346,11 @@
       "types": "./dist/lib/file-icons.d.ts",
       "default": "./dist/lib/file-icons.js"
     },
+    "./lib/file-size": {
+      "@org/source": "./src/lib/file-size.ts",
+      "types": "./dist/lib/file-size.d.ts",
+      "default": "./dist/lib/file-size.js"
+    },
     "./lib/file-upload-model": {
       "@org/source": "./src/lib/file-upload-model.ts",
       "types": "./dist/lib/file-upload-model.d.ts",
@@ -356,40 +371,25 @@
       "types": "./dist/lib/filter-query.d.ts",
       "default": "./dist/lib/filter-query.js"
     },
+    "./lib/google-fonts": {
+      "@org/source": "./src/lib/google-fonts.ts",
+      "types": "./dist/lib/google-fonts.d.ts",
+      "default": "./dist/lib/google-fonts.js"
+    },
+    "./lib/gpu-cron": {
+      "@org/source": "./src/lib/gpu-cron.ts",
+      "types": "./dist/lib/gpu-cron.d.ts",
+      "default": "./dist/lib/gpu-cron.js"
+    },
     "./lib/gpu-query": {
       "@org/source": "./src/lib/gpu-query/index.ts",
       "types": "./dist/lib/gpu-query/index.d.ts",
       "default": "./dist/lib/gpu-query/index.js"
     },
-    "./lib/gpu-query/featurize": {
-      "@org/source": "./src/lib/gpu-query/featurize.ts",
-      "types": "./dist/lib/gpu-query/featurize.d.ts",
-      "default": "./dist/lib/gpu-query/featurize.js"
-    },
-    "./lib/gpu-query/kernel.wgsl": {
-      "@org/source": "./src/lib/gpu-query/kernel.wgsl.ts",
-      "types": "./dist/lib/gpu-query/kernel.wgsl.d.ts",
-      "default": "./dist/lib/gpu-query/kernel.wgsl.js"
-    },
-    "./lib/gpu-query/model": {
-      "@org/source": "./src/lib/gpu-query/model.ts",
-      "types": "./dist/lib/gpu-query/model.d.ts",
-      "default": "./dist/lib/gpu-query/model.js"
-    },
-    "./lib/gpu-query/schema": {
-      "@org/source": "./src/lib/gpu-query/schema.ts",
-      "types": "./dist/lib/gpu-query/schema.d.ts",
-      "default": "./dist/lib/gpu-query/schema.js"
-    },
-    "./lib/gpu-query/webgpu": {
-      "@org/source": "./src/lib/gpu-query/webgpu.ts",
-      "types": "./dist/lib/gpu-query/webgpu.d.ts",
-      "default": "./dist/lib/gpu-query/webgpu.js"
-    },
-    "./lib/gpu-query/weights": {
-      "@org/source": "./src/lib/gpu-query/weights.ts",
-      "types": "./dist/lib/gpu-query/weights.d.ts",
-      "default": "./dist/lib/gpu-query/weights.js"
+    "./lib/gpu-time": {
+      "@org/source": "./src/lib/gpu-time.ts",
+      "types": "./dist/lib/gpu-time.d.ts",
+      "default": "./dist/lib/gpu-time.js"
     },
     "./lib/icon": {
       "@org/source": "./src/lib/icon.tsx",
@@ -400,6 +400,11 @@
       "@org/source": "./src/lib/icon-shapes/chat.ts",
       "types": "./dist/lib/icon-shapes/chat.d.ts",
       "default": "./dist/lib/icon-shapes/chat.js"
+    },
+    "./lib/icon-shapes/docs": {
+      "@org/source": "./src/lib/icon-shapes/docs.ts",
+      "types": "./dist/lib/icon-shapes/docs.d.ts",
+      "default": "./dist/lib/icon-shapes/docs.js"
     },
     "./lib/icon-shapes/pencilkit": {
       "@org/source": "./src/lib/icon-shapes/pencilkit.ts",
@@ -431,10 +436,20 @@
       "types": "./dist/lib/object-tree-model.d.ts",
       "default": "./dist/lib/object-tree-model.js"
     },
+    "./lib/object-tree-value": {
+      "@org/source": "./src/lib/object-tree-value.ts",
+      "types": "./dist/lib/object-tree-value.d.ts",
+      "default": "./dist/lib/object-tree-value.js"
+    },
     "./lib/passkey": {
       "@org/source": "./src/lib/passkey.ts",
       "types": "./dist/lib/passkey.d.ts",
       "default": "./dist/lib/passkey.js"
+    },
+    "./lib/persistent-state": {
+      "@org/source": "./src/lib/persistent-state.ts",
+      "types": "./dist/lib/persistent-state.d.ts",
+      "default": "./dist/lib/persistent-state.js"
     },
     "./lib/pglite": {
       "@org/source": "./src/lib/pglite.tsx",
@@ -471,10 +486,20 @@
       "types": "./dist/lib/playback.d.ts",
       "default": "./dist/lib/playback.js"
     },
+    "./lib/qr": {
+      "@org/source": "./src/lib/qr.ts",
+      "types": "./dist/lib/qr.d.ts",
+      "default": "./dist/lib/qr.js"
+    },
     "./lib/request-table-model": {
       "@org/source": "./src/lib/request-table-model.ts",
       "types": "./dist/lib/request-table-model.d.ts",
       "default": "./dist/lib/request-table-model.js"
+    },
+    "./lib/session-recorder": {
+      "@org/source": "./src/lib/session-recorder.ts",
+      "types": "./dist/lib/session-recorder.d.ts",
+      "default": "./dist/lib/session-recorder.js"
     },
     "./lib/spreadsheet-gpu": {
       "@org/source": "./src/lib/spreadsheet-gpu.ts",
@@ -486,10 +511,40 @@
       "types": "./dist/lib/spreadsheet-model.d.ts",
       "default": "./dist/lib/spreadsheet-model.js"
     },
+    "./lib/state-diagram-edit": {
+      "@org/source": "./src/lib/state-diagram-edit.ts",
+      "types": "./dist/lib/state-diagram-edit.d.ts",
+      "default": "./dist/lib/state-diagram-edit.js"
+    },
+    "./lib/state-diagram-model": {
+      "@org/source": "./src/lib/state-diagram-model.ts",
+      "types": "./dist/lib/state-diagram-model.d.ts",
+      "default": "./dist/lib/state-diagram-model.js"
+    },
+    "./lib/state-diagram-simulation": {
+      "@org/source": "./src/lib/state-diagram-simulation.ts",
+      "types": "./dist/lib/state-diagram-simulation.d.ts",
+      "default": "./dist/lib/state-diagram-simulation.js"
+    },
+    "./lib/state-diagram-source": {
+      "@org/source": "./src/lib/state-diagram-source.ts",
+      "types": "./dist/lib/state-diagram-source.d.ts",
+      "default": "./dist/lib/state-diagram-source.js"
+    },
     "./lib/surface": {
       "@org/source": "./src/lib/surface.ts",
       "types": "./dist/lib/surface.d.ts",
       "default": "./dist/lib/surface.js"
+    },
+    "./lib/syntax": {
+      "@org/source": "./src/lib/syntax.ts",
+      "types": "./dist/lib/syntax.d.ts",
+      "default": "./dist/lib/syntax.js"
+    },
+    "./lib/syntax-lexer": {
+      "@org/source": "./src/lib/syntax-lexer.ts",
+      "types": "./dist/lib/syntax-lexer.d.ts",
+      "default": "./dist/lib/syntax-lexer.js"
     },
     "./lib/tab-lock": {
       "@org/source": "./src/lib/tab-lock.tsx",
@@ -676,40 +731,10 @@
       "types": "./dist/components/open-code.d.ts",
       "default": "./dist/components/open-code.js"
     },
-    "./pencilkit/constants": {
-      "@org/source": "./src/components/pencilkit/constants.ts",
-      "types": "./dist/components/pencilkit/constants.d.ts",
-      "default": "./dist/components/pencilkit/constants.js"
-    },
-    "./pencilkit/image-annotator": {
-      "@org/source": "./src/components/pencilkit/image-annotator.tsx",
-      "types": "./dist/components/pencilkit/image-annotator.d.ts",
-      "default": "./dist/components/pencilkit/image-annotator.js"
-    },
-    "./pencilkit/pencil-canvas": {
-      "@org/source": "./src/components/pencilkit/pencil-canvas.tsx",
-      "types": "./dist/components/pencilkit/pencil-canvas.d.ts",
-      "default": "./dist/components/pencilkit/pencil-canvas.js"
-    },
-    "./pencilkit/pencil-toolbar": {
-      "@org/source": "./src/components/pencilkit/pencil-toolbar.tsx",
-      "types": "./dist/components/pencilkit/pencil-toolbar.d.ts",
-      "default": "./dist/components/pencilkit/pencil-toolbar.js"
-    },
-    "./pencilkit/pencilkit-annotator": {
-      "@org/source": "./src/components/pencilkit/pencilkit-annotator.tsx",
-      "types": "./dist/components/pencilkit/pencilkit-annotator.d.ts",
-      "default": "./dist/components/pencilkit/pencilkit-annotator.js"
-    },
-    "./pencilkit/stroke-path": {
-      "@org/source": "./src/components/pencilkit/stroke-path.tsx",
-      "types": "./dist/components/pencilkit/stroke-path.d.ts",
-      "default": "./dist/components/pencilkit/stroke-path.js"
-    },
-    "./pencilkit/use-pencil-history": {
-      "@org/source": "./src/components/pencilkit/use-pencil-history.ts",
-      "types": "./dist/components/pencilkit/use-pencil-history.d.ts",
-      "default": "./dist/components/pencilkit/use-pencil-history.js"
+    "./pencilkit": {
+      "@org/source": "./src/components/pencilkit/index.ts",
+      "types": "./dist/components/pencilkit/index.d.ts",
+      "default": "./dist/components/pencilkit/index.js"
     },
     "./popover": {
       "@org/source": "./src/components/popover.tsx",
@@ -1025,6 +1050,13 @@
       "import": "./dist/docstream/strudel/index.js",
       "default": "./dist/docstream/strudel/index.js"
     },
+    "./docstream/strudel/rack": {
+      "@org/source": "./src/docstream/strudel/rack.ts",
+      "source": "./src/docstream/strudel/rack.ts",
+      "types": "./dist/docstream/strudel/rack.d.ts",
+      "import": "./dist/docstream/strudel/rack.js",
+      "default": "./dist/docstream/strudel/rack.js"
+    },
     "./docstream/tui": {
       "@org/source": "./src/docstream/tui/index.ts",
       "source": "./src/docstream/tui/index.ts",
@@ -1164,7 +1196,6 @@
     "gpu-time": "0.5.0",
     "jsonc-parser": "3.3.1",
     "katex": "^0.18.5",
-    "lucide-react": "^1.17.0",
     "pele": "1.6.0",
     "perfect-freehand": "^1.2.2",
     "rrweb": "2.0.0-alpha.20",

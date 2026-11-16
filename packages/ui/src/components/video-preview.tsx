@@ -4,7 +4,7 @@ import { Toolbar, ToolbarButton, type ToolbarProps } from '@/components/ui/toolb
 import { Icon } from '@/lib/icon';
 import { usePlaybackState, type Playback } from '@/lib/playback';
 import { cn } from '@/lib/utils';
-import { clipDuration, clipEnd, formatTimecode, lookCss, type Timeline, type TimelineClip, type TimelineFormat, type TimelineTrack } from '@/lib/video-timeline-model';
+import { clipDuration, clipEnd, formatTimecode, lookCss, type Timeline, type TimelineClip, type TimelineFormat, type TimelineMedia, type TimelineTrack } from '@/lib/video-timeline-model';
 
 /* ══ VideoPreview — a timeline played live in the page ══
    Nothing is rendered ahead of time: every clip near the playhead is a <video>, <audio> or <img> of its media, laid out
@@ -20,16 +20,10 @@ import { clipDuration, clipEnd, formatTimecode, lookCss, type Timeline, type Tim
      <VideoPreview timeline={timeline} media={media} playback={playback} format={format} aria-label="Program" />
      <VideoPreviewControls playback={playback} fps={30} /> ══ */
 
-export interface PreviewMedia {
-  /** An object URL or any playable URL. */
-  url: string;
-  kind: 'video' | 'audio' | 'image';
-}
-
 export interface VideoPreviewProps extends Omit<ComponentProps<'div'>, 'children'> {
   timeline: Timeline;
-  /** The media clips play, by the ids clips use. */
-  media: Record<string, PreviewMedia | undefined>;
+  /** The media clips play, by the ids clips use: the same map VideoTimeline takes (it reads `kind` and `url`). */
+  media: Record<string, TimelineMedia | undefined>;
   /** The shared playback clock (`usePlaybackClock`) the picture follows. */
   playback: Playback;
   /** The output's size (only its aspect matters here). */
@@ -152,7 +146,7 @@ export function VideoPreview({
           } as CSSProperties;
           const fit = c.fit === 'cover' ? 'object-cover' : 'object-contain';
           if (custom !== undefined) return <div key={c.id} ref={setEl(c.id)} aria-hidden className={box} style={vars}>{custom}</div>;
-          if (!m) return null;
+          if (!m?.url) return null;
           if (m.kind === 'image') return <img key={c.id} ref={setEl(c.id)} src={m.url} alt="" aria-hidden className={cn(box, fit, '[filter:var(--look)]')} style={vars} />;
           if (m.kind === 'audio' || l.track.kind === 'audio') {
             return <audio key={c.id} ref={setEl(c.id)} src={m.url} preload="auto" aria-hidden className="hidden" style={vars} />;

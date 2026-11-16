@@ -220,9 +220,9 @@ export function CronEditor({
             <div
               key={f.name}
               data-field={f.name}
-              data-active={caretField === i ? '' : undefined}
+              data-highlighted={caretField === i ? '' : undefined}
               data-invalid={bad ? '' : undefined}
-              className="flex min-w-0 flex-col-reverse items-center justify-end gap-0.5 rounded-ctl px-1 py-1.5 text-center shadow-hairline ring-primary data-active:ring-2 data-invalid:ring-2 data-invalid:ring-destructive"
+              className="flex min-w-0 flex-col-reverse items-center justify-end gap-0.5 rounded-ctl px-1 py-1.5 text-center shadow-hairline ring-primary data-highlighted:ring-2 data-invalid:ring-2 data-invalid:ring-destructive"
             >
               <dt className={cn('text-caption2 leading-tight', previewSubtle)}>{f.label}</dt>
               <dd className={cn('m-0 max-w-full truncate font-mono text-subhead leading-tight text-foreground', part === undefined && previewSubtle)}>

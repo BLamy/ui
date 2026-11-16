@@ -16,7 +16,7 @@ import type { TaskState } from './markdown-tasks';
 import { useReminders } from './store';
 
 /** A list's icon: a colored circle with a white glyph. */
-export function ListIcon({ glyph, color, size = 30, className }: { glyph: IconName; color: string; size?: number; className?: string }) {
+export function ListIcon({ glyph, tint: color, size = 30, className }: { glyph: IconName; tint: string; size?: number; className?: string }) {
   return (
     <span aria-hidden="true" className={cn('grid shrink-0 place-items-center rounded-full bg-(--list-color) text-white', className)}
       style={{ width: size, height: size, '--list-color': color } as CSSProperties}>
@@ -32,7 +32,7 @@ export function ListPreview({ list: l, items }: { list: RList; items: Reminder[]
   const done = mine.length - open.length;
   return (
     <>
-      <HoverCardHeader icon={<ListIcon glyph={l.glyph} color={l.color} size={36} />} title={<span style={{ color: l.color }}>{l.name}</span>}
+      <HoverCardHeader icon={<ListIcon glyph={l.glyph} tint={l.color} size={36} />} title={<span style={{ color: l.color }}>{l.name}</span>}
         description={open.length ? `${open.length} remaining${done ? ` · ${done} completed` : ''}` : done ? `All done · ${done} completed` : 'No reminders'} />
       {open.length ? (
         <ul className="m-0 mt-3 flex list-none flex-col gap-1.5 p-0">
@@ -54,12 +54,11 @@ export function ListPreview({ list: l, items }: { list: RList; items: Reminder[]
 /** The circle: UI SDK's Checkbox drawn as a ring that fills with the list color on the bouncy spring when completed.
     The other docstream task states (in progress, blocked, parked, …) are its mixed state and show their icon in the
     list color. With `onState`, right-click (or long-press, or the menu key) opens every state. */
-export function CheckCircle({ done, state = done ? 'verified' : 'pending', color, label, size = 24, onToggle, onState }: {
-  done: boolean; state?: TaskState; color: string; label: string; size?: number; onToggle: () => void; onState?: (state: TaskState) => void;
+export function CheckCircle({ done, state = done ? 'verified' : 'pending', tint: color, label, size = 24, onToggle, onState }: {
+  done: boolean; state?: TaskState; tint: string; label: string; size?: number; onToggle: () => void; onState?: (state: TaskState) => void;
 }) {
   const meta = TASK_STATES.find((s) => s.id === state) ?? TASK_STATES[0]!;
   const marked = state !== 'pending' && state !== 'verified';
-  const StateIcon = TASK_STATE_ICONS[state];
   const circle = (
     <Checkbox checked={marked ? 'indeterminate' : done} onCheckedChange={() => onToggle()} aria-label={`${label} (${meta.label})`}
       aria-haspopup={onState ? 'menu' : undefined} title={onState ? `${meta.label} — right-click for every state` : undefined}
@@ -68,7 +67,7 @@ export function CheckCircle({ done, state = done ? 'verified' : 'pending', color
       style={{ width: size, height: size, '--list-color': color } as CSSProperties}>
       <span aria-hidden="true" className={cn('rounded-full bg-(--list-color) transition-[scale,opacity] duration-spring-bouncy ease-spring-bouncy motion-reduce:transition-none', done ? 'scale-100 opacity-100' : 'scale-0 opacity-0')}
         style={{ width: size - 9, height: size - 9 }} />
-      {marked ? <StateIcon aria-hidden="true" data-state-icon={state} className="absolute text-(--list-color)" size={size - 2} strokeWidth={2} /> : null}
+      {marked ? <Icon name={TASK_STATE_ICONS[state]} data-state-icon={state} className="absolute text-(--list-color)" size={size - 2} sw={2} /> : null}
     </Checkbox>
   );
   if (!onState) return circle;
@@ -78,8 +77,7 @@ export function CheckCircle({ done, state = done ? 'verified' : 'pending', color
       <DropdownMenuContent aria-label="Task state">
         <DropdownMenuRadioGroup value={state} onValueChange={(value) => onState(value as TaskState)}>
           {TASK_STATES.map((s) => {
-            const ItemIcon = TASK_STATE_ICONS[s.id];
-            return <DropdownMenuRadioItem key={s.id} closeOnSelect value={s.id} label={s.label} icon={<ItemIcon aria-hidden="true" size={19} strokeWidth={1.8} />}>{s.label}</DropdownMenuRadioItem>;
+            return <DropdownMenuRadioItem key={s.id} closeOnSelect value={s.id} label={s.label} icon={<Icon name={TASK_STATE_ICONS[s.id]} size={19} sw={1.8} />}>{s.label}</DropdownMenuRadioItem>;
           })}
         </DropdownMenuRadioGroup>
       </DropdownMenuContent>
@@ -87,7 +85,7 @@ export function CheckCircle({ done, state = done ? 'verified' : 'pending', color
   );
 }
 
-export function ReminderRow({ r, color, leaving, phone }: { r: Reminder; color: string; leaving?: boolean; phone?: boolean }) {
+export function ReminderRow({ r, tint: color, leaving, phone }: { r: Reminder; tint: string; leaving?: boolean; phone?: boolean }) {
   const api = useReminders();
   const [open, setOpen] = useState(false);
   const subs = r.subtasks ?? [];
@@ -100,7 +98,7 @@ export function ReminderRow({ r, color, leaving, phone }: { r: Reminder; color: 
       <div className="min-h-0 overflow-hidden">
         <div className="group/row flex items-start gap-3 pl-4">
           <div className="pt-[11px]">
-            <CheckCircle done={!!r.done} state={stateOf(r)} color={color} label={r.done ? `Mark “${r.title}” incomplete` : `Complete “${r.title}”`}
+            <CheckCircle done={!!r.done} state={stateOf(r)} tint={color} label={r.done ? `Mark “${r.title}” incomplete` : `Complete “${r.title}”`}
               onToggle={() => api.toggle(r.id)} onState={(state) => api.setState(r.id, state)} />
           </div>
           <div className="min-w-0 flex-1 py-[11px] pr-3 shadow-hairline-b" onDoubleClick={() => api.openDetails(r.id)}>
@@ -142,7 +140,7 @@ export function ReminderRow({ r, color, leaving, phone }: { r: Reminder; color: 
                   <div className="flex flex-col gap-2.5 pt-2.5">
                     {subs.map((s) => (
                       <div key={s.id} className="flex items-center gap-2.5">
-                        <CheckCircle size={20} done={!!s.done} state={stateOf(s)} color={color} label={`Subtask “${s.title}”`}
+                        <CheckCircle size={20} done={!!s.done} state={stateOf(s)} tint={color} label={`Subtask “${s.title}”`}
                           onToggle={() => api.toggleSubtask(r.id, s.id)} onState={(state) => api.setState(s.id, state)} />
                         <span className={cn('text-callout', s.done && 'text-muted-foreground')}>{s.title}</span>
                       </div>

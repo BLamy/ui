@@ -33,7 +33,7 @@ import { usePlaybackClock } from '@brett_lamy/ui/lib/playback'
 
 ## A composition
 
-`media` maps each media id the clips use to a URL and a kind (`video`, `audio` or `image`): object URLs of the user's files, typically. `renderClip` draws a clip that isn't a file, such as a title or a shape, and returns undefined for the rest. `format` gives the output's width and height; the picture keeps that aspect and is as large as its box allows. `children` go over the picture: guides, a big play button.
+`media` maps each media id the clips use to a `TimelineMedia`, `{ kind, url?, duration?, name? }`: the preview reads the `kind` (`video`, `audio` or `image`) and the `url` (object URLs of the user's files, typically). It is the same map a [VideoTimeline](https://blamy.github.io/ui/#/video-timeline) on the same clock takes, which reads `duration` and `name`, so build it once. `renderClip` draws a clip that isn't a file, such as a title or a shape, and returns undefined for the rest. `format` gives the output's width and height; the picture keeps that aspect and is as large as its box allows. `children` go over the picture: guides, a big play button.
 
 {% demo src="video-preview/composition" %}
 
@@ -67,7 +67,7 @@ useEffect(() => playback.setDuration(timelineDuration(timeline)), [playback, tim
 | Prop | Default | Effect |
 | --- | --- | --- |
 | `timeline` | required | The `Timeline` to play. |
-| `media` | required | Each media id's `url` and `kind` (`video`, `audio`, `image`). |
+| `media` | required | `Record<id, TimelineMedia>`: each media id's `kind` (`video`, `audio`, `image`) and `url` (a clip whose media has no `url` is not drawn). |
 | `playback` | required | The shared clock (`usePlaybackClock`) the picture follows. |
 | `format` | required | The output's `width` and `height`; only the aspect matters here. |
 | `renderClip(clip, track)` | — | Draws a clip that isn't a file (a title); return undefined for the rest. |

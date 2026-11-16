@@ -46,7 +46,7 @@ function App() {
         { label: 'npm', href: 'https://www.npmjs.com/package/@brett_lamy/ui/docstream-editor' },
         { label: 'docstream', href: 'https://blamy.github.io/docstream/' },
       ]}
-      themeStorageKey="docstream-editor-demo-theme"
+      appearanceStorageKey="docstream-editor-demo-theme"
       liveRenderer={liveRenderer}
       demoResolver={demoResolver}
       envHost={github.host}

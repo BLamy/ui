@@ -26,7 +26,8 @@ import { dirname, join, relative, resolve } from 'node:path';
 import postcss from 'postcss';
 import ts from 'typescript';
 import { ROOT, SRC, buildGraph, importsOf, isDocstreamSpecifier, resolveModule, npmVersion, moduleExports } from './graph.mjs';
-import { packageModules, withPackageExports } from './package-exports.mjs';
+import { HAND_ENTRY, packageModules, withPackageExports } from './package-exports.mjs';
+import { onePathErrors } from './one-path.mjs';
 
 const args = process.argv.slice(2);
 const flag = (name) => args.includes(name);
@@ -204,7 +205,7 @@ for (const mod of graph.modules) {
   const ex = moduleExports(`${SRC}/${mod}`);
   for (const v of [...ex.values, ...ex.types]) {
     definedAnywhere.add(v);
-    if (subpathModules.has(mod)) onSubpath.add(v);
+    if (subpathModules.has(mod) || HAND_ENTRY[mod]) onSubpath.add(v);
   }
 }
 // shadcn's CLI goes by a file's last path part when it installs, so it turns `@/lib/x` into `@/components/ui/x` if
@@ -302,6 +303,15 @@ const registry = {
 };
 const registryJson = JSON.stringify(registry, null, 2) + '\n';
 
+// One import path per name (one-path.mjs): `--check` fails on a name two entries export; a plain run says so and
+// still writes, so the entries can be brought up to date while it is being fixed.
+const packageJson = withPackageExports(readJson('packages/ui/package.json'), graph);
+{
+  const paths = onePathErrors(packageJson.exports);
+  if (CHECK) errors.push(...paths);
+  else for (const p of paths) console.warn('! ' + p);
+}
+
 if (errors.length) {
   console.error(errors.map((e) => '✗ ' + e).join('\n'));
   process.exit(1);
@@ -309,7 +319,7 @@ if (errors.length) {
 
 let registryFile = 'registry.json';
 // The package's per-module entry points (package-exports.mjs), from the same graph.
-emit('packages/ui/package.json', JSON.stringify(withPackageExports(readJson('packages/ui/package.json'), graph), null, 2) + '\n');
+emit('packages/ui/package.json', JSON.stringify(packageJson, null, 2) + '\n');
 if (URL_BASE === PROD_URL) emit('registry.json', registryJson);
 else {
   // Another host: build from a temporary registry.json, leaving the committed one alone.

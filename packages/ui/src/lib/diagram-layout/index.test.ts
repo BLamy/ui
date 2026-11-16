@@ -36,7 +36,7 @@ describe('what isn’t connected', () => {
 
 describe('toElkGraph', () => {
   it('asks for layered layout, with hierarchy, and takes your options over its own', () => {
-    const g = toElkGraph({ nodes: [{ id: 'box', kind: 'compound' }, { id: 'in', parent: 'box' }] });
+    const g = toElkGraph({ nodes: [{ id: 'box', kind: 'group' }, { id: 'in', parent: 'box' }] });
     expect(g.layoutOptions!['elk.algorithm']).toBe('layered');
     expect(g.layoutOptions!['elk.hierarchyHandling']).toBe('INCLUDE_CHILDREN');
     // With nothing inside anything, what isn't connected can be packed.
@@ -50,7 +50,7 @@ describe('toElkGraph', () => {
 
   it('nests nodes under their parents, however they were listed, with every edge on the root', () => {
     const g = toElkGraph({
-      nodes: [{ id: 'kid', parent: 'box', label: 'abc' }, { id: 'box', kind: 'compound', label: 'hello' }, { id: 'free', label: 'x' }],
+      nodes: [{ id: 'kid', parent: 'box', label: 'abc' }, { id: 'box', kind: 'group', label: 'hello' }, { id: 'free', label: 'x' }],
       edges: [{ id: 'e', from: 'kid', to: 'free', label: 'GO' }],
     }, { text });
     expect(g.children!.map((c) => c.id)).toEqual(['box', 'free']);
@@ -64,7 +64,7 @@ describe('toElkGraph', () => {
   });
 
   it('sizes leaves to their words, and keeps a size it was given', () => {
-    const g = toElkGraph({ nodes: [{ id: 'a', label: 'x'.repeat(20) }, { id: 'b', label: 'x'.repeat(20), w: 50, h: 60 }, { id: 'i', kind: 'initial' }] }, { text });
+    const g = toElkGraph({ nodes: [{ id: 'a', label: 'x'.repeat(20) }, { id: 'b', label: 'x'.repeat(20), w: 50, h: 60 }, { id: 'i', kind: 'marker' }] }, { text });
     expect(g.children![0]).toMatchObject({ width: 226, height: 34 });
     expect(g.children![1]).toMatchObject({ width: 50, height: 60 });
     expect(g.children![2]).toMatchObject({ width: 12, height: 12 });
@@ -81,12 +81,12 @@ describe('toElkGraph', () => {
 
   it('puts a node’s ports where they’re drawn, and leaves those of what holds others for ELK to place', () => {
     const fixed = toElkGraph({ nodes: [{ id: 'a', w: 100, h: 50, ports: [
-      { id: 'l', side: 'l', at: 0.2 }, { id: 'r', side: 'r', at: 0.8 }, { id: 't', side: 't', at: 0.25 }, { id: 'b', side: 'b' },
+      { id: 'l', side: 'left', at: 0.2 }, { id: 'r', side: 'right', at: 0.8 }, { id: 't', side: 'top', at: 0.25 }, { id: 'b', side: 'bottom' },
     ] }] });
     const node = fixed.children![0];
     expect(node.layoutOptions!['elk.portConstraints']).toBe('FIXED_POS');
     expect(node.ports!.map((p) => [p.x, p.y])).toEqual([[0, 10], [100, 40], [25, 0], [50, 50]]);
-    const holding = toElkGraph({ nodes: [{ id: 'c', kind: 'compound', ports: [{ id: 'in', side: 'l' }] }, { id: 'kid', parent: 'c' }] });
+    const holding = toElkGraph({ nodes: [{ id: 'c', kind: 'group', ports: [{ id: 'in', side: 'left' }] }, { id: 'kid', parent: 'c' }] });
     const compound = holding.children![0];
     expect(compound.layoutOptions!['elk.portConstraints']).toBe('FIXED_SIDE');
     expect(compound.ports![0].x).toBeUndefined();
@@ -94,7 +94,7 @@ describe('toElkGraph', () => {
 
   it('reads back where ELK put a port it was left to place, and leaves one that had a place alone', () => {
     const draft = { nodes: [
-      { id: 'c', kind: 'compound' as const, ports: [{ id: 'in', side: 'l' as const }, { id: 'out', side: 'r' as const, at: 0.25 }] },
+      { id: 'c', kind: 'group' as const, ports: [{ id: 'in', side: 'left' as const }, { id: 'out', side: 'right' as const, at: 0.25 }] },
       { id: 'kid', parent: 'c' },
     ] };
     const graph = toElkGraph(draft);
@@ -102,12 +102,12 @@ describe('toElkGraph', () => {
     out.children[0] = { ...out.children[0], x: 0, y: 0, width: 200, height: 100, children: [{ ...out.children[0].children[0], x: 10, y: 10, width: 50, height: 20 }] };
     out.children[0].ports[0] = { ...out.children[0].ports[0], x: 0, y: 40 };
     const { nodes } = fromElkGraph(draft, out);
-    expect(nodes.find((n) => n.id === 'c')!.ports).toEqual([{ id: 'in', side: 'l', at: 0.4 }, { id: 'out', side: 'r', at: 0.25 }]);
+    expect(nodes.find((n) => n.id === 'c')!.ports).toEqual([{ id: 'in', side: 'left', at: 0.4 }, { id: 'out', side: 'right', at: 0.25 }]);
   });
 
   it('passes ports on, by side', () => {
     const g = toElkGraph({
-      nodes: [{ id: 'a', ports: [{ id: 'out', side: 'r' }, { id: 'up', side: 't' }] }, { id: 'b', ports: [{ id: 'in', side: 'l' }] }],
+      nodes: [{ id: 'a', ports: [{ id: 'out', side: 'right' }, { id: 'up', side: 'top' }] }, { id: 'b', ports: [{ id: 'in', side: 'left' }] }],
       edges: [{ id: 'e', from: 'a', fromPort: 'out', to: 'b', toPort: 'in' }, { id: 'f', from: 'a', fromPort: 'nope', to: 'b' }],
     });
     const a = g.children![0];
@@ -121,8 +121,8 @@ describe('toElkGraph', () => {
 
 describe('fromElkGraph', () => {
   const draft: DiagramDraft = {
-    nodes: [{ id: 'kid', parent: 'box', label: 'k', data: { keep: true } }, { id: 'box', kind: 'compound', label: 'b' }],
-    edges: [{ id: 'e', from: 'box', to: 'kid', label: 'GO', labelBox: { x: 1, y: 2, w: 3, h: 4 }, kind: 'event' }, { id: 'lost', from: 'box', to: 'gone' }],
+    nodes: [{ id: 'kid', parent: 'box', label: 'k', data: { keep: true } }, { id: 'box', kind: 'group', label: 'b' }],
+    edges: [{ id: 'e', from: 'box', to: 'kid', label: 'GO', variant: 'dotted', labelBox: { x: 1, y: 2, w: 3, h: 4 } }, { id: 'lost', from: 'box', to: 'gone' }],
   };
   const out: ElkGraph = {
     id: '__root',
@@ -136,7 +136,7 @@ describe('fromElkGraph', () => {
     expect(nodes[0]).toMatchObject({ x: 110, y: 70, w: 80, h: 34, label: 'k', data: { keep: true }, parent: 'box' });
     expect(nodes[1]).toMatchObject({ x: 100, y: 50, w: 300, h: 200 });
     expect(edges.map((e) => e.id)).toEqual(['e']);
-    expect(edges[0].kind).toBe('event');
+    expect(edges[0].variant).toBe('dotted');
     // In the frame of its container, which here is the box.
     expect(edges[0].points).toEqual([{ x: 100, y: 80 }, { x: 105, y: 80 }, { x: 110, y: 80 }]);
     expect(edges[0].labelBox).toEqual({ x: 105, y: 56, w: 30, h: 11 });
@@ -149,7 +149,7 @@ describe('fromElkGraph', () => {
   });
 
   it('stretches regions to their parallel state, so titles and dividers line up', () => {
-    const d: DiagramDraft = { nodes: [{ id: 'p', kind: 'parallel' }, { id: 'a', kind: 'region', parent: 'p' }, { id: 'b', kind: 'region', parent: 'p' }] };
+    const d: DiagramDraft = { nodes: [{ id: 'p', kind: 'group', variant: 'dashed' }, { id: 'a', kind: 'region', parent: 'p' }, { id: 'b', kind: 'region', parent: 'p' }] };
     const elk: ElkGraph = { id: '__root', children: [{ id: 'p', x: 0, y: 0, width: 400, height: 300, children: [{ id: 'a', x: 40, y: 30, width: 200, height: 100 }, { id: 'b', x: 80, y: 150, width: 100, height: 100 }] }] };
     const { nodes } = fromElkGraph(d, elk);
     expect(nodes[1]).toMatchObject({ x: 8, w: 384, y: 30, h: 100 });
@@ -160,23 +160,23 @@ describe('fromElkGraph', () => {
 const MACHINE: DiagramDraft = {
   nodes: [
     { id: 'root', kind: 'root', label: 'upload' },
-    { id: 'i0', kind: 'initial', parent: 'root' },
-    { id: 'worker', kind: 'compound', parent: 'root', label: 'worker' },
-    { id: 'i1', kind: 'initial', parent: 'worker' },
+    { id: 'i0', kind: 'marker', parent: 'root' },
+    { id: 'worker', kind: 'group', parent: 'root', label: 'worker' },
+    { id: 'i1', kind: 'marker', parent: 'worker' },
     { id: 'auth', parent: 'worker', label: 'authenticating', detail: 'invoke verifyToken' },
     { id: 'stream', parent: 'worker', label: 'streaming' },
-    { id: 'p', kind: 'parallel', parent: 'root', label: 'processing', detail: 'parallel' },
+    { id: 'p', kind: 'group', variant: 'dashed', parent: 'root', label: 'processing', detail: 'parallel' },
     { id: 'r1', kind: 'region', parent: 'p', label: 'scan' },
     { id: 'r2', kind: 'region', parent: 'p', label: 'thumbnails' },
     { id: 'scanning', parent: 'r1', label: 'scanning' },
-    { id: 'clean', kind: 'final', parent: 'r1', label: 'clean' },
+    { id: 'clean', variant: 'double', parent: 'r1', label: 'clean' },
     { id: 'resizing', parent: 'r2', label: 'resizing' },
-    { id: 'stored', kind: 'final', parent: 'r2', label: 'stored' },
-    { id: 'done', kind: 'final', parent: 'root', label: 'done' },
+    { id: 'stored', variant: 'double', parent: 'r2', label: 'stored' },
+    { id: 'done', variant: 'double', parent: 'root', label: 'done' },
   ],
   edges: [
-    { id: 'e0', from: 'i0', to: 'worker', kind: 'initial' },
-    { id: 'e1', from: 'i1', to: 'auth', kind: 'initial' },
+    { id: 'e0', from: 'i0', to: 'worker', variant: 'strong' },
+    { id: 'e1', from: 'i1', to: 'auth', variant: 'strong' },
     { id: 'e2', from: 'auth', to: 'stream', label: 'done' },
     { id: 'self', from: 'stream', to: 'stream', label: 'CHUNK' },
     { id: 'e3', from: 'stream', to: 'p', label: 'EOF' },
@@ -221,7 +221,7 @@ describe('layoutDiagram, with real ELK, on a server', () => {
 
   it('copes with a cycle through a compound, and a compound with an edge to its own child', async () => {
     const out = await layoutDiagram({
-      nodes: [{ id: 'a', label: 'a' }, { id: 'box', kind: 'compound', label: 'box' }, { id: 'kid', parent: 'box', label: 'kid' }, { id: 'kid2', parent: 'box', label: 'kid2' }],
+      nodes: [{ id: 'a', label: 'a' }, { id: 'box', kind: 'group', label: 'box' }, { id: 'kid', parent: 'box', label: 'kid' }, { id: 'kid2', parent: 'box', label: 'kid2' }],
       edges: [{ id: '1', from: 'a', to: 'kid' }, { id: '2', from: 'kid', to: 'kid2' }, { id: '3', from: 'kid2', to: 'a' }, { id: '4', from: 'box', to: 'kid' }, { id: '5', from: 'kid2', to: 'box' }, { id: '6', from: 'a', to: 'box' }, { id: '7', from: 'box', to: 'a' }],
     }, { text });
     expect(out.edges.every((e) => (e.points?.length ?? 0) >= 2)).toBe(true);

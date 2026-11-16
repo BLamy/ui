@@ -16,7 +16,7 @@ const SNIPPET = `import { GitbookStreamdown } from "@brett_lamy/ui/docstream"
 
 export function Answer({ text, done }: { text: string; done: boolean }) {
   // Re-parsed on every chunk; unterminated blocks render as they grow.
-  return <GitbookStreamdown markdown={text} isStreaming={!done} />
+  return <GitbookStreamdown markdown={text} streaming={!done} />
 }`
 
 const SQL = "SELECT plan, count(*) FROM signups GROUP BY plan"

@@ -6,12 +6,12 @@ All three are public.
 
 ```tsx
 // npm
-import { useComposer, useComposerBump } from '@brett_lamy/ui/composer/composer'
-import { usePencilHistory } from '@brett_lamy/ui/pencilkit/use-pencil-history'
+import { useComposer, useComposerBump } from '@brett_lamy/ui/composer'
+import { usePencilHistory } from '@brett_lamy/ui/pencilkit'
 
 // shadcn registry (aliases)
-import { useComposer, useComposerBump } from '@/components/ui/composer/composer'              // …/r/composer.json
-import { usePencilHistory } from '@/components/ui/pencilkit/use-pencil-history'               // …/r/pencilkit.json
+import { useComposer, useComposerBump } from '@/components/ui/composer'              // …/r/composer.json
+import { usePencilHistory } from '@/components/ui/pencilkit'               // …/r/pencilkit.json
 ```
 
 ## `useComposer`
@@ -40,7 +40,6 @@ function useComposer(): ComposerContextValue
 | `annotate(id)`, `canAnnotate` | Opens the ImageAnnotator for an image attachment (a plain preview when the annotator is opted out), and whether an engine is in effect. |
 | `disabled` | The Composer's `disabled`: a part of your own should not act while it is set. |
 | `editor` | The editor instance, or `null` until it is ready. |
-| `rootRef` | The Composer's root element; bumps measure against it. |
 | `collapsed`, `setCollapsed(collapsed, given?)` | How far the Composer is collapsed: `'none'` (the full card), `'compact'` (one row, options in the bottom bump) or `'fab'` (a floating button). |
 
 `given` is an optional `{ reason, event }` for the change's details (reason `imperative` when left out).
@@ -105,7 +104,7 @@ The gesture is UI SDK's `bindDrag` (with `createVelocityTracker` and `rubberBand
 
 Undo, redo and clear for a `PencilCanvas`'s strokes. It keeps the strokes in state, with a snapshot of them before each change.
 
-- **Export:** public. Registry item `pencilkit` (`@/components/ui/pencilkit/use-pencil-history`).
+- **Export:** public. Registry item `pencilkit` (`@/components/ui/pencilkit`).
 - **Needs:** nothing.
 
 ```ts

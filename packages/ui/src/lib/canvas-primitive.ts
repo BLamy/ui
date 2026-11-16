@@ -38,9 +38,12 @@ export interface CanvasPointerInfo {
   viewport: Viewport;
 }
 
+/** Screen pixels on each side of a canvas: room a fit leaves for what floats over the board. */
+export type CanvasInsets = { top?: number; right?: number; bottom?: number; left?: number };
+
 export type CanvasFitOptions = {
-  /** Screen pixels of air around the box. Default the canvas's `fitPadding`, or 72. */
-  padding?: number;
+  /** Screen pixels of air around the box, on every side or on each. Default the canvas's `fitPadding`, or 72. */
+  padding?: number | CanvasInsets;
   /** How far in a fit may zoom. Default 1. */
   maxZoom?: number;
 };
@@ -83,8 +86,9 @@ export type CanvasOptions = {
   panning?: boolean;
   /** What ⌘0 and `fit()` show (the bounds of your content); none centers the origin. */
   fit?: Rect | null;
-  /** How much air ⌘0 and `fit()` leave around `fit`, in screen px (default 72). */
-  fitPadding?: number;
+  /** How much air ⌘0 and `fit()` leave around `fit`, in screen px (default 72): on every side, or on each (a side left
+   *  out gets 72), for a toolbar or a bar floating over one edge. */
+  fitPadding?: number | CanvasInsets;
   /** Default 0.02: far enough out for a map of a hundred screens. */
   minZoom?: number;
   /** Default 4. */
@@ -154,7 +158,7 @@ const editable = (target: EventTarget | null) =>
 export const canvas = definePrimitive({
   name: 'canvas',
   options: {
-    viewport: 'value', defaultViewport: 'value', onViewportChange: 'callback', panning: 'boolean', fit: 'value', fitPadding: 'number',
+    viewport: 'value', defaultViewport: 'value', onViewportChange: 'callback', panning: 'boolean', fit: 'value', fitPadding: 'value',
     minZoom: 'number', maxZoom: 'number', message: 'callback', autoFocus: 'boolean', zoomVariable: 'value',
     onCanvasPointerDown: 'callback', onCanvasPointerMove: 'callback', onCanvasPointerUp: 'callback',
     onCanvasDoubleClick: 'callback', onNavigationStart: 'callback', onCanvasKeyDown: 'callback', controller: 'value',
@@ -230,7 +234,14 @@ export const canvas = definePrimitive({
           const frame = root()?.getBoundingClientRect();
           return viewport.setViewport({ x: (frame?.width ?? 0) / 2, y: (frame?.height ?? 0) / 2, zoom: 1 }, details);
         }
-        return viewport.fit(toCanvasRect(box), { padding, maxZoom }, details);
+        if (typeof padding === 'number') return viewport.fit(toCanvasRect(box), { padding, maxZoom }, details);
+        // A side each: centered in the room the insets leave.
+        const frame = root()?.getBoundingClientRect();
+        const pad = { top: 72, right: 72, bottom: 72, left: 72, ...padding };
+        const w = Math.max(1, (frame?.width ?? 0) - pad.left - pad.right), h = Math.max(1, (frame?.height ?? 0) - pad.top - pad.bottom);
+        const min = context.options().minZoom ?? 0.02, max = Math.min(maxZoom, context.options().maxZoom ?? 4);
+        const zoom = Math.max(min, Math.min(max, w / box.w, h / box.h));
+        return viewport.setViewport({ zoom, x: pad.left + w / 2 - (box.x + box.w / 2) * zoom, y: pad.top + h / 2 - (box.y + box.h / 2) * zoom }, details);
       },
       reveal: (rect: Rect, revealOptions?: { padding?: number }, { reason = 'focus-in', event }: ChangeOptions<CanvasViewportReason> = {}) =>
         viewport.reveal(toCanvasRect(rect), revealOptions, { reason: reason as ViewportReason, event }),
@@ -252,7 +263,8 @@ export const canvas = definePrimitive({
         pointerdown(event: PointerEvent) {
           const el = root();
           if (!el || inMiniMap(event)) return;
-          el.focus({ preventScroll: true });
+          // Focus for the keys, not for the ring: a pointer press never shows the keyboard focus ring.
+          el.focus({ preventScroll: true, focusVisible: false });
           const point = { x: event.clientX, y: event.clientY };
           if (navigating.size) {
             // Another finger joins a pinch or a pan.

@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useRef, useState } from "react"
-import { FileCode2, Save } from "lucide-react"
+import { Glyph } from "./glyph"
 import { Button } from "@ui-sdk/react/button"
 import { Textarea } from "@ui-sdk/react/textarea"
 import { SourcePreview, type SourceFileSnapshot, type SourceReferenceClient } from "@brett_lamy/ui/docstream/source"
@@ -95,12 +95,12 @@ export function SourceFileEditor({ reference, client, className, preview = true,
   return (
     <section className={wrapper} data-docstream-source-file-editor="">
       <header className="gb-source-file-editor-header">
-        <FileCode2 className="size-4" aria-hidden="true" />
+        <Glyph name="doc-code" className="size-4" size={24} />
         <code>{reference.mount}:{reference.path}#{reference.exportName}</code>
         {autoSaveDelay !== null ? <span className="gb-source-file-editor-status">{status === "saving" ? "Saving…" : content === savedContent ? "Saved" : "Unsaved"}</span> : null}
         {/* The button keeps its name while it saves: it shows `data-pending`, and screen readers hear "Saving". */}
         <Button disabled={status === "loading" || status === "saving" || content === savedContent} focusableWhenDisabled pendingAnnouncement="Saving" onClick={save}>
-          <Save className="size-3.5" aria-hidden="true" /> {autoSaveDelay === null ? "Save file" : "Save now"}
+          <Glyph name="download" className="size-3.5" size={24} /> {autoSaveDelay === null ? "Save file" : "Save now"}
         </Button>
       </header>
       {error ? <pre className="gb-source-file-editor-error">{error}</pre> : null}

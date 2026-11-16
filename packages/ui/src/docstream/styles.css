@@ -3,6 +3,7 @@
    in Tailwind's) puts the same `@layer ui-sdk;` line at the top of its global stylesheet instead. */
 @layer ui-sdk;
 
+@import "./tokens.css";
 @import "./docs/properties.css";
 @import "./docs/tasks.css";
 @import "./site/site.css";
@@ -14,24 +15,24 @@
   }
 }
 
+/* The StlViewer and StrudelPlayer roots carry the same tokens when they stand outside an article (the kit's StlViewer and
+   StrudelPlayer), so they read the host's primary, border and muted text instead of falling back to literals. */
 [data-docstream],
-.docs-article {
+.docs-article,
+:is(.docstream-stl, .docstream-strudel):not(:is([data-docstream], .docs-article) *) {
   --gb-panel: var(--card, #ffffff);
   --gb-panel-foreground: var(--card-foreground, #18181b);
   --gb-muted: var(--muted, #f4f4f5);
   /* Secondary text (labels, captions, notes, statuses) is small, so it must read at 4.5:1: the host's muted color,
      pulled a quarter of the way toward the panel's text color (an iOS-style translucent muted is about 3.5:1). */
   --gb-muted-foreground: color-mix(in srgb, var(--muted-foreground, #71717a) 75%, var(--gb-panel-foreground));
-  --gb-border: var(--border, #e4e4e7);
   --gb-accent: var(--accent, #f4f4f5);
   --gb-accent-foreground: var(--accent-foreground, #18181b);
-  --gb-primary: var(--primary, #4f46e5);
   --gb-primary-foreground: var(--primary-foreground, #fafafa);
   /* Plain rgba/hex values (no color-mix()/oklch()) so the theme renders
      correctly in older Chromium forks; hosts can override any token. */
   --gb-code-bg: rgba(128, 128, 128, 0.13);
   --gb-code-fg: var(--foreground, #18181b);
-  --gb-radius: 12px;
   /* Demo viewer + pill controls. Translucent so they sit on light and dark hosts alike. */
   --gb-stage: rgba(128, 128, 128, 0.09);
   --gb-stage-dot: rgba(128, 128, 128, 0.28);
@@ -44,21 +45,8 @@
      that sets panel colors to currentColor still gets a visible glyph. */
   --gb-term-bg: rgba(128, 128, 128, 0.2);
   --gb-term-fg: var(--gb-muted-foreground);
-
-  /* Semantic hint palette — solid color plus precomputed tints. Matches the
-     editor palette in @brett_lamy/ui/docstream-editor/styles.css. */
-  --gb-info: #3b82f6;
-  --gb-info-border: rgba(59, 130, 246, 0.45);
-  --gb-info-bg: rgba(59, 130, 246, 0.1);
-  --gb-success: #22c55e;
-  --gb-success-border: rgba(34, 197, 94, 0.45);
-  --gb-success-bg: rgba(34, 197, 94, 0.1);
-  --gb-warning: #f59e0b;
-  --gb-warning-border: rgba(245, 158, 11, 0.5);
-  --gb-warning-bg: rgba(245, 158, 11, 0.12);
-  --gb-danger: #ef4444;
-  --gb-danger-border: rgba(239, 68, 68, 0.45);
-  --gb-danger-bg: rgba(239, 68, 68, 0.1);
+  /* The semantic palette (info, success, warning, danger and their tints), --gb-primary, --gb-border and
+     --gb-radius come from ./tokens.css, shared with the editor. */
 }
 
 .docs-source-ref,
@@ -194,6 +182,24 @@
 :is([data-docstream], .docs-article) ol {
   list-style: decimal;
   padding-left: 1.5em;
+}
+
+/* List items keep a list's rhythm, not a paragraph's: an item's paragraph and a nested list sit close (a second
+   paragraph in the same item keeps a small gap). */
+:is([data-docstream], .docs-article) li {
+  margin-block: 0.25em;
+}
+
+:is([data-docstream], .docs-article) li > .docs-blocks-inline > p {
+  margin-block: 0;
+}
+
+:is([data-docstream], .docs-article) li > .docs-blocks-inline > p + p {
+  margin-block-start: 0.5em;
+}
+
+:is([data-docstream], .docs-article) li > .docs-blocks-inline > :is(ul, ol) {
+  margin-block: 0.25em 0;
 }
 
 .docs-tasklist {
@@ -742,6 +748,7 @@ summary:is(.docs-expandable-trigger, .oas-response-trigger)::-webkit-details-mar
 }
 
 .docstream-strudel__toggle {
+  position: relative;
   flex: none;
   display: grid;
   place-items: center;
@@ -752,6 +759,15 @@ summary:is(.docs-expandable-trigger, .oas-response-trigger)::-webkit-details-mar
   background: transparent;
   color: var(--gb-muted-foreground);
   cursor: pointer;
+}
+
+/* On touch layouts the toggles hit at 44px, as the kit's icon buttons do (`coarseHitArea`). */
+@media (pointer: coarse) {
+  .docstream-strudel__toggle::after {
+    content: "";
+    position: absolute;
+    inset: -6px;
+  }
 }
 
 .docstream-strudel__toggle[data-open],
@@ -2697,8 +2713,8 @@ details[open] > .oas-response-trigger .oas-response-caret {
   --docs-react-demo-accent: var(--gb-accent, var(--accent, #f4f4f5));
   --docs-react-demo-primary: var(--gb-primary, var(--primary, #4f46e5));
   --docs-react-demo-code-bg: var(--gb-code-bg, rgba(128, 128, 128, 0.13));
-  --docs-react-demo-success: var(--gb-success, #22c55e);
-  --docs-react-demo-danger: var(--gb-danger, #ef4444);
+  --docs-react-demo-success: var(--gb-success, var(--success, #22c55e));
+  --docs-react-demo-danger: var(--gb-danger, var(--destructive, #ef4444));
   overflow: hidden;
   border: 1px solid var(--docs-react-demo-border);
   border-radius: 12px;
@@ -2880,13 +2896,13 @@ details[open] > .oas-response-trigger .oas-response-caret {
 }
 
 .docs-ref-mention {
-  border: 1px solid rgba(59, 130, 246, 0.45);
-  background: rgba(59, 130, 246, 0.1);
+  border: 1px solid var(--gb-info-border);
+  background: var(--gb-info-bg);
   color: var(--gb-info);
 }
 
 .docs-ref-mention:hover {
-  background: rgba(59, 130, 246, 0.18);
+  background: color-mix(in srgb, var(--gb-info) 18%, transparent);
 }
 
 .docs-ref-tag {
@@ -2901,13 +2917,13 @@ details[open] > .oas-response-trigger .oas-response-caret {
 }
 
 .docs-ref-codebase {
-  border: 1px solid rgba(34, 197, 94, 0.45);
-  background: rgba(34, 197, 94, 0.1);
+  border: 1px solid var(--gb-success-border);
+  background: var(--gb-success-bg);
   color: rgb(74, 222, 128);
 }
 
 .docs-ref-codebase:hover {
-  background: rgba(34, 197, 94, 0.18);
+  background: color-mix(in srgb, var(--gb-success) 18%, transparent);
 }
 
 .docs-cite-wrap {
@@ -2920,7 +2936,7 @@ details[open] > .oas-response-trigger .oas-response-caret {
   display: inline-block;
   padding: 1px 5px;
   border-radius: 5px;
-  background: rgba(59, 130, 246, 0.14);
+  background: color-mix(in srgb, var(--gb-info) 14%, transparent);
   color: var(--gb-info) !important;
   font-size: 10px;
   font-weight: 700;
@@ -2931,7 +2947,7 @@ details[open] > .oas-response-trigger .oas-response-caret {
 }
 
 .docs-cite:hover {
-  background: rgba(59, 130, 246, 0.22);
+  background: color-mix(in srgb, var(--gb-info) 22%, transparent);
 }
 
 .docs-cite:focus-visible {
@@ -5241,8 +5257,8 @@ details[open] > .oas-response-trigger .oas-response-caret {
      foreground (a theme's own --muted-foreground or --destructive is often tuned for larger text). */
   :where([data-slot="replay-preview"]) {
     --replay-devtools-dim: color-mix(in srgb, var(--foreground, #18181b) 68%, var(--card, #ffffff));
-    /* The panel: the card, see-through enough to show the replayed pointer under it. */
-    --replay-devtools-bg: color-mix(in srgb, var(--card, #ffffff) 84%, transparent);
+    /* The panel: the card, opaque as Chrome's DevTools is, so no page text shows under its bars and rows. */
+    --replay-devtools-bg: var(--card, #ffffff);
     --replay-devtools-red: color-mix(in srgb, var(--destructive, #dc2626) 74%, var(--foreground, #18181b));
     --replay-devtools-amber: color-mix(in srgb, var(--warning, #b45309) 56%, var(--foreground, #18181b));
   }
@@ -5305,6 +5321,13 @@ details[open] > .oas-response-trigger .oas-response-caret {
     font-weight: 600;
   }
 
+  /* A count's glyph (✕ error or failed, ⚠ warning) sits tight against its number. */
+  :where([data-slot="replay-preview"] :is([data-part="failed"], [data-part="warn"]):has(> svg)) {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+  }
+
   /* The panel: docked to the bottom of the page, like DevTools docked to the bottom of a window. */
   :where([data-slot="replay-devtools"]) {
     position: absolute;
@@ -5319,7 +5342,6 @@ details[open] > .oas-response-trigger .oas-response-caret {
     overflow: hidden;
     outline: none;
     color: var(--foreground, #18181b);
-    /* See-through, so the replayed pointer stays visible under the panel. */
     background: var(--replay-devtools-bg);
     border-top: 1px solid var(--border, #e4e4e7);
     box-shadow: 0 -12px 32px -16px rgba(0, 0, 0, 0.3);
@@ -5352,8 +5374,8 @@ details[open] > .oas-response-trigger .oas-response-caret {
     height: 30px;
     padding-inline: 4px;
     border-bottom: 1px solid var(--border, #e4e4e7);
-    /* Only a tint over the panel's own see-through background, so the bar shows the page under it too. */
-    background: color-mix(in srgb, var(--foreground, #18181b) 4%, transparent);
+    /* The bar's own opaque surface: the card with a tint of the foreground. */
+    background: color-mix(in srgb, var(--foreground, #18181b) 4%, var(--replay-devtools-bg));
   }
 
   :where([data-slot="replay-devtools-tabs"] > button, [data-slot="replay-devtools-detail-tabs"] > button) {
@@ -5710,8 +5732,21 @@ details[open] > .oas-response-trigger .oas-response-caret {
     white-space: nowrap;
   }
 
+  /* Name takes what the short columns leave, so Type reads in full before Name truncates. */
   :where([data-slot="replay-devtools-table"] th:first-child) {
-    width: 38%;
+    width: 30%;
+  }
+
+  :where([data-slot="replay-devtools-table"] th:is([data-col="status"], [data-col="method"])) {
+    width: 11%;
+  }
+
+  :where([data-slot="replay-devtools-table"] th[data-col="type"]) {
+    width: 14%;
+  }
+
+  :where([data-slot="replay-devtools-table"] th[data-col="time"]) {
+    width: 12%;
   }
 
   :where([data-part="replay-devtools-pane"][data-detail] [data-slot="replay-devtools-table"] th:first-child) {
@@ -5719,7 +5754,7 @@ details[open] > .oas-response-trigger .oas-response-caret {
   }
 
   :where([data-slot="replay-devtools-table"] th[data-col="waterfall"]) {
-    width: 24%;
+    width: 22%;
   }
 
   :where([data-slot="replay-devtools-table"] td) {

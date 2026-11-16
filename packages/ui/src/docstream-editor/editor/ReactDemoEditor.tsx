@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { FileCode2, Play } from "lucide-react"
+import { Glyph } from "./glyph"
 import { Button } from "@ui-sdk/react/button"
 import { Tabs, TabsList, TabsPanel, TabsTab } from "@ui-sdk/react/tabs"
 import { Textarea } from "@ui-sdk/react/textarea"
@@ -89,7 +89,7 @@ export function ReactDemoEditor({
               setPreviewRevision((value) => value + 1)
             }}
           >
-            <Play className="size-3.5" aria-hidden="true" /> Run demo
+            <Glyph name="play" className="size-3.5" size={24} /> Run demo
           </Button>
         )}
       </div>
@@ -126,7 +126,7 @@ export function ReactDemoEditor({
         <div className="gb-react-demo-files">
           <div className="gb-react-demo-files-header">
             <span>Files</span>
-            <FileCode2 className="size-4" aria-hidden="true" />
+            <Glyph name="doc-code" className="size-4" size={24} />
           </div>
           <TabsList className="gb-react-demo-file-list" aria-label="Demo files">
             {paths.map((path) => (

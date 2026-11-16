@@ -6,7 +6,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import { pencilInks } from '@/components/ui/pencilkit/constants';
 import { Button as SdkButton } from '@ui-sdk/react/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { useContainerSize } from '@/lib/container';
+import { useContainerSize, useSizeClassScope } from '@/lib/container';
 import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
 import { createCanvasController } from '@/components/ui/canvas';
@@ -20,7 +20,9 @@ import { SHAPE_FILLS } from './palette';
 import { useFreeform } from './store';
 import { DrawBar, InsertBar, SelectionBar, ToolButton, ZoomCluster, type Inserts } from './toolbar';
 
-export function BoardEditor({ compact, onBack }: { compact: boolean; onBack: () => void }) {
+export function BoardEditor({ onBack }: { onBack: () => void }) {
+  // BLProvider's root measures the block's box: compact is its size class.
+  const compact = useSizeClassScope() === 'compact';
   const f = useFreeform();
   const { board, items, byId } = f;
   const [vref, size] = useContainerSize<HTMLDivElement>({ width: 900, height: 600 });

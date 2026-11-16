@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render } from '@testing-library/react';
-import { IndexBar, alphabetItems } from './index-bar';
+import { IndexBar, indexBarAlphabetItems } from './index-bar';
 
 beforeAll(() => {
   (globalThis as { __UI_SDK_STRICT__?: boolean }).__UI_SDK_STRICT__ = true;
@@ -50,9 +50,9 @@ describe('IndexBar', () => {
     expect(rail.getAttribute('aria-activedescendant')).toBeNull();
   });
 
-  it('alphabetItems: the A–Z rail, letters not in use disabled but still reachable', () => {
+  it('indexBarAlphabetItems: the A–Z rail, letters not in use disabled but still reachable', () => {
     const onJump = vi.fn();
-    const { getByRole, getAllByRole } = render(<IndexBar items={alphabetItems(['a', 'C'])} onJump={onJump} />);
+    const { getByRole, getAllByRole } = render(<IndexBar items={indexBarAlphabetItems(['a', 'C'])} onJump={onJump} />);
     const options = getAllByRole('option');
     expect(options).toHaveLength(26);
     expect(options.filter((o) => o.getAttribute('aria-disabled') === 'true').map((o) => o.getAttribute('aria-label')).join('')).toBe('BDEFGHIJKLMNOPQRSTUVWXYZ');
@@ -60,7 +60,7 @@ describe('IndexBar', () => {
     act(() => rail.focus());
     fireEvent.keyDown(rail, { key: 'End' });
     expect(onJump).toHaveBeenLastCalledWith('Z', expect.objectContaining({ index: 25, reason: 'list-navigation', item: expect.objectContaining({ disabled: true }) }));
-    expect(alphabetItems().every((i) => !i.disabled)).toBe(true);
+    expect(indexBarAlphabetItems().every((i) => !i.disabled)).toBe(true);
   });
 
   it('marks the current stop and sits on the start or end side', () => {

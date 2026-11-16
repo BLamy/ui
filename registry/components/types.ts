@@ -14,6 +14,10 @@ export interface ComponentEntry {
   imports?: string[];
   /** Extra type exports. Types whose name starts with one of `exports` (`ComposerProps`…) are added automatically. */
   types?: string[];
+  /** CSS the item adds to the app's stylesheet (shadcn's `css` object), e.g. `{ '@import "@brett_lamy/ui/docstream/styles.css"': {} }`
+   *  for a part that renders docstream. The npm tab of the page imports the same `@brett_lamy/ui/…` sheets, but for
+   *  the ones `@brett_lamy/ui/styles.css` already carries. */
+  css?: Record<string, Record<string, never>>;
   /** Package the parts come from (default '@brett_lamy/ui'). */
   from?: string;
 }

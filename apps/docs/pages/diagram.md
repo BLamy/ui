@@ -33,6 +33,17 @@ import { Diagram, DiagramToolbar } from '@brett_lamy/ui/diagram'
 
 {% demo src="diagram/machine" %}
 
+{% hint style="info" %}
+**One contract for the family** (Diagram, [DiagramFrame](#/diagram-frame), [StateDiagram](#/state-diagram), [CloudflareDiagram](#/cloudflare-diagram)):
+
+- **Read-only means select and read.** Without `editable`, a diagram is a picture you can select in and read: nothing moves, connects or is deleted. `selectable={false}` makes it a picture with no selection.
+- **One selection:** `selection` / `defaultSelection` / `onSelectionChange(selection, details)`, whatever the diagram is of.
+- **One history:** the diagram's own, or one you hand it as `history` ([below](#one-history)); `DiagramToolbar`'s Undo and Redo and ⌘Z / ⇧⌘Z drive whichever it is.
+- **One toolbar:** `DiagramToolbar`, and a fit that leaves room for it, the minimap and a frame's bar.
+- **One error:** `error`, an alert under the toolbar's row.
+- **One way back** from a cover: `DiagramFrameCoverHeader`. **One field** in a panel: [Field](#/field) and [Input](#/input) with `onValueCommit`.
+{% endhint %}
+
 ## The idea
 
 A node is a box in board units, and an edge joins two of them. Everything in a diagram is plain data, so it can be saved, sent and diffed:
@@ -40,7 +51,7 @@ A node is a box in board units, and an edge joins two of them. Everything in a d
 ```tsx
 const nodes = [
   { id: 'inbox', label: 'Inbox', x: 0, y: 0, w: 110, h: 36 },
-  { id: 'review', kind: 'compound', label: 'Review', x: 200, y: -40, w: 280, h: 140 },
+  { id: 'review', kind: 'group', label: 'Review', x: 200, y: -40, w: 280, h: 140 },
   { id: 'read', parent: 'review', label: 'Read', x: 240, y: 0, w: 110, h: 36 },
 ]
 const edges = [{ id: 'open', from: 'inbox', to: 'read', label: 'open' }]
@@ -56,7 +67,8 @@ Like the library's other containers, it fills the nearest positioned box. With n
 
 | Field | What |
 | --- | --- |
-| `kind` | `node`, `final`, `initial`, or something that holds others: `compound`, `parallel`, `region` and `root`. A `root` is background, and can't be selected. |
+| `kind` | What it is: a `node` (the default), a `group` that holds others, a `region` (a lane of a group, with a line between it and the next), the `root` that holds everything (background: it can't be selected), or a small round `marker`. |
+| `variant` | Its border: `default`, `dashed` or `double`. A statechart's final state is a `double` node and its parallel state a `dashed` group: [StateDiagram](#/state-diagram) sets those. |
 | `parent` | The node it sits in. Positions are absolute, not relative to it, and it moves with its parent. |
 | `label`, `detail` | Its name, and a quieter second line. |
 | `ports` | Named places on its sides, for edges to join. See [Ports](#ports-and-connecting). |
@@ -70,9 +82,16 @@ Like the library's other containers, it fills the nearest positioned box. With n
 | `route` | `elbow`, `straight` or `curve`, when it has no `points`. |
 | `points` | A route already worked out, from start to tip. |
 | `label`, `labelBox` | Its label, and where a layout put it. Without `labelBox` it finds a place beside the line. |
-| `kind` | How it looks: `event`, `done`, `invoke`, `always` (dashes), `after` (dots), `initial`, `problem` (dashes in red, for something that's wrong). Anything else looks like `event`. |
+| `variant` | Its line: `default`, `dashed`, `dotted` or `strong`. |
+| `tone` | `destructive` for something that's wrong with it: the destructive color, and dashed as well, as a color isn't enough on its own. |
 
-An edge with no `points` works out its route from where its ends are. Edges that leave the same side of a node share it out, a node's self-loops nest, and an edge between a compound and its own child runs from the nearest wall.
+The looks say nothing about what a diagram is of. StateDiagram draws an `always` transition `dashed`, an `after` one `dotted` and where a state starts `strong`; CloudflareDiagram draws a connection that can't work `destructive`.
+
+An edge with no `points` works out its route from where its ends are. Edges that leave the same side of a node share it out, a node's self-loops nest, and an edge between a group and its own child runs from the nearest wall. When the ends face away from each other (a port on a card's right to a port on the left of a card to its left), the route goes around the two cards, through the gap between them or past both, never behind them.
+
+A label keeps off the nodes, the words on them and the other labels: where a layout put it if that's clear, or else the first clear place along its route, either side of the line.
+
+{% demo src="diagram/labels" %}
 
 Lines and arrowheads keep their thickness on screen at any zoom. Text that would be too small to read hides: an edge's label below 40%, and a node's below 25%. It's the same `Canvas` underneath, so scrolling pans, a pinch or ⌘-scroll zooms, and ⌘0 fits.
 
@@ -122,7 +141,7 @@ Give it `editable`, and the pointer selects, moves and deletes, with undo. It's 
 
 {% demo src="diagram/editing" %}
 
-Shift or ⌘ adds to the selection, and a drag from nothing draws a marquee, which takes a leaf it touches and a compound only if all of it's inside. Moving lines up with what's nearby, unless you hold ⌘. Edges keep their shape and stay square as they follow, a compound's children go with it, and a compound grows when a child's dragged to its wall.
+Shift or ⌘ adds to the selection, and a drag from nothing draws a marquee, which takes a leaf it touches and a group only if all of it's inside. Moving lines up with what's nearby, unless you hold ⌘. Edges keep their shape and stay square as they follow, a group's children go with it, and a group grows when a child's dragged to its wall.
 
 Two edges between the same two ports are one line. A press there selects one, and pressing again goes to the next, and round, as their labels each select their own. A double press opens whichever it's left selected. `edgesAtPoint` gives every edge on the line at a point, and `edgeAt` the last of them.
 
@@ -145,7 +164,25 @@ Nothing's committed until the pointer comes up. `onDataChange(data, details)` ha
 
 `details.cancel()` refuses a change: the node goes back where it was, and there's nothing to undo. Data that changes for reasons of its own clears undo, as going back would lose whatever changed it. To leave the data to the diagram instead, use `defaultNodes` and `defaultEdges`.
 
-`DiagramToolbar` is a floating [Toolbar](#/toolbar) for `overlay`: zoom out, zoom in and fit, and undo and redo when the diagram keeps its history. Each tool's tooltip names its shortcut, and the toolbar is one tab stop after the board. Put your own `ToolbarButton`s in it as children.
+`DiagramToolbar` is a floating [Toolbar](#/toolbar) for `overlay`: zoom out, zoom in and fit, and undo and redo when the diagram has a history. Each tool's tooltip names its shortcut, and the toolbar is one tab stop after the board. Put your own `ToolbarButton`s in it as children. It floats at the foot of the board, or at the top in a DiagramFrame (whose foot is the frame's bar), and a fit leaves room for it.
+
+### One history
+
+An `editable` diagram keeps a history of its own data. A diagram drawn from something bigger keeps the history of *that* instead: StateDiagram's machine config, CloudflareDiagram's system, where an edit in a panel is undone by the same ⌘Z as a drag on the board. Hand it to the diagram as `history`, and the diagram keeps none of its own: ⌘Z, ⇧⌘Z and ⌘Y (from the board or its toolbar, not from a field), `DiagramToolbar`'s Undo and Redo, a controller's `undo()` and an agent all drive it.
+
+```tsx
+const [config, setConfig] = useState(machine)
+const history = useDiagramHistory(config, (to) => setConfig(to))
+
+const rename = (next) => {
+  history.record(config, next) // before, after
+  setConfig(next)
+}
+
+<Diagram nodes={…} edges={…} editable history={history} overlay={<DiagramToolbar />} />
+```
+
+`useDiagramHistory(value, onChange, { limit, isEqual })` is a snapshot history of `value`: `record(before, after)` after an edit you made, and undo and redo call `onChange(value, { reason, event })` with the step to show, which can refuse it by returning `false`. A `value` that arrives from outside (neither an edit recorded there nor a step undone to) starts it over. Any object with `canUndo`, `canRedo`, `undo()` and `redo()` will do as a `history`.
 
 ### From outside, and for agents
 
@@ -158,11 +195,15 @@ const [diagram] = useState(createDiagramController)
 <Diagram controller={diagram} editable … />
 ```
 
-`select(selection)`, `selectAll()`, `clearSelection()`, `deleteSelection()`, `moveNodes(ids, dx, dy)`, `connect({ from, to, fromPort?, toPort? })` (it returns the reason when `isValidConnection` refuses), `undo()`, `redo()`, `canUndo()`, `canRedo()`, `getData()` and `getSelection()`. Each goes through `onDataChange` or `onSelectionChange`, which can refuse it. Inside the diagram's `overlay`, `useDiagram()` gives the same methods and the board's view controller.
+`select(selection)`, `selectAll()`, `clearSelection()`, `deleteSelection()`, `moveNodes(ids, dx, dy)`, `connect({ from, to, fromPort?, toPort? })` (it returns the reason when `isValidConnection` refuses), `undo()`, `redo()`, `canUndo()`, `canRedo()`, `getData()` and `getSelection()`. Each goes through `onDataChange` or `onSelectionChange`, which can refuse it. Inside the diagram's `overlay`, `useDiagram()` gives `{ diagram, canvas, history, zoom }`: the same methods, the board's view controller, the history that's in charge (or null) and the zoom.
 
 ## The keyboard
 
-The diagram is one tab stop, the board, and the keys go from there. The board's description says which keys do what (`aria-describedby`), every node and edge can be reached, and each says what it is and what it connects to, such as "Triage, node. 2 going out: done to Archive, open to Read. 1 coming in: sort from Inbox." `describeNode` and `describeEdge` replace those. The view follows the focus, moving as little as it can, and what has focus gets a ring in the focus color, the same thickness on screen at any zoom.
+The diagram is one tab stop, the board, and the keys go from there. The board's description says which keys do what (`aria-describedby`), every node and edge can be reached, and each says what it is and what it connects to, such as "Triage, node. 2 going out: done to Archive, open to Read. 1 coming in: sort from Inbox." `describeNode` and `describeEdge` replace those. The view follows the focus, moving as little as it can.
+
+What has focus, what's selected and what's current are drawn three ways, none of them by color alone (the theme's focus and selection colors are one blue), each the same thickness on screen at any zoom. As in the kit's rows, a selected node has a tint and a line on its edge (a group only the line), and focus is a ring outside it past a gap, so a node that's both has both. A focused edge has a wide band under it; a selected one is drawn thicker in the selection color. What's current has a bar along its start side.
+
+{% demo src="diagram/focus" %}
 
 | Key | Does |
 | --- | --- |
@@ -177,12 +218,12 @@ The diagram is one tab stop, the board, and the keys go from there. The board's 
 | ⌘ + arrow | Moves the view. ⌘ + − 0 1 zoom, as on `Canvas`. |
 | Shift + arrow | Nudges what's selected, or what's focused, by 8. By 1 with Alt. |
 | Delete | Deletes what's selected, or what's focused. |
-| ⌘Z, ⇧⌘Z | Undo and redo. |
+| ⌘Z, ⇧⌘Z (⌘Y) | Undo and redo, of the diagram's history or the one it was handed. |
 | ⌘A | Selects everything. |
 | C | Starts a connection. See below. |
 | Escape | Drops what's going on, then the selection, then goes back to the diagram. |
 
-Those that edit need `editable`, and those that select need `selectable`, which `editable` turns on. A plain `Diagram` can still be read this way.
+Those that edit need `editable`. Those that select need `selectable`, which is on unless you turn it off, read-only too. On Windows and Linux, ⌘ is Ctrl, and the board's description says so.
 
 ## Ports and connecting
 
@@ -193,13 +234,15 @@ A port is a named place on a node's side, and an edge can join two of them. With
 ```tsx
 const nodes = [{
   id: 'worker', label: 'Worker', x: 0, y: 0, w: 130, h: 80,
-  ports: [{ id: 'db', side: 'r', at: 0.25, kind: 'sql', label: 'DB', direction: 'out' }],
+  ports: [{ id: 'db', side: 'right', at: 0.25, kind: 'sql', label: 'DB', direction: 'out' }],
 }]
 
 <Diagram editable nodes={nodes} edges={edges} onDataChange={save} isValidConnection={(c) => c.to !== 'locked' || 'That one is locked.'} />
 ```
 
 `isValidConnection` returns true, false, or the reason in words. While dragging, an invalid target turns the line and the target the destructive color, dashed (so it's never color alone), and says why, and it refuses on release. Without one, `checkConnection` keeps to the ordinary rules: a port can't connect to itself, nothing's connected twice, a connection goes the way its ports' `direction` goes, and ports of a `kind` only join that kind. A self-loop's fine. `createEdge` makes the edge for a new connection, and the default has only its ends and an id.
+
+A port's `side` is `top`, `right`, `bottom` or `left`: physical words, not `start` and `end`, as a board doesn't mirror in a right-to-left language. Its dot is the same size on screen until the board's fitted so far out that dots would crowd their node (a phone's view of a big system); from there it shrinks with the board.
 
 By keyboard, C starts from what's focused, or moves the end of a focused edge, with Shift for its start. The arrows choose, P changes port, Enter connects, Escape cancels, and a screen reader's told each step.
 
@@ -224,7 +267,7 @@ Zooming restyles as little as it can. The board doesn't carry the zoom as a CSS 
 
 ## A panel beside it
 
-[DiagramFrame](#/diagram-frame) puts a panel beside a board: a column when there's the room, a drawer that doesn't dim the board at medium sizes, and a page pushed over it on a phone, with a bar on the board to open it. It's what `StateDiagram` and `CloudflareDiagram` are made of.
+[DiagramFrame](#/diagram-frame) puts a panel beside a board: a column when there's the room, a drawer that doesn't dim the board at medium sizes, and a page pushed over it on a phone, with a bar on the board to open it. It's what `StateDiagram` and `CloudflareDiagram` are made of. In a frame, the toolbar goes to the top by itself, and the first fit (and ⌘0) leaves room for it and for the bar.
 
 ```tsx
 <DiagramFrame>
@@ -236,9 +279,9 @@ Zooming restyles as little as it can. The board doesn't carry the zoom as a CSS 
 </DiagramFrame>
 ```
 
-## Empty and loading
+## Empty, loading and errors
 
-With no nodes, the shared [EmptyState](#/empty-state) shows over the board ("Nothing here yet"); `emptyState` replaces it (a string is its title, an `<EmptyState>` with an `action` adds a way out, `null` shows nothing). While `loading` (a layout's running), a status says so instead, and there's no empty state.
+With no nodes, the shared [EmptyState](#/empty-state) shows over the board ("Nothing here yet"); `emptyState` replaces it (a string is its title, an `<EmptyState>` with an `action` adds a way out, `null` shows nothing). While `loading` (a layout's running), a status says so instead, and there's no empty state. `error` says why it can't be drawn: an alert over the board, under the toolbar's row, in place of the empty state.
 
 ## Accessibility
 
@@ -247,6 +290,7 @@ With no nodes, the shared [EmptyState](#/empty-state) shows over the board ("Not
 - Each step of connecting by keyboard, a refusal and its reason, and a delete are announced in a polite status. A refused connection is drawn dashed as well as in the destructive color.
 - Focus never falls out: when what has focus is deleted, it goes to what's nearest. Escape drops a gesture, then the selection, then goes back to the board.
 - Nothing animates: the view moves when you move it, so there's nothing for reduced motion to turn off.
+- Focus, selection and what's current are told apart by shape (a ring past a gap, a tint and a line, a bar), not only by color.
 - Dark mode is the theme's tokens: lines are `muted-foreground`, selection `primary`, focus `ring`, problems `destructive`. Node details and edge labels are the foreground at 70%, which passes AA on a card in both appearances.
 
 ## Server rendering
@@ -261,11 +305,11 @@ With no nodes, the shared [EmptyState](#/empty-state) shows over the board ("Not
 | --- | --- | --- |
 | `nodes`, `edges`, `onDataChange(data, details)` | — | Controlled data. `details.reason`: `move`, `delete`, `connect`, `reconnect`, `undo`, `redo`; `details.cancel()` refuses it. |
 | `defaultNodes`, `defaultEdges` | — | Data left to the diagram. |
-| `editable` | `false` | The pointer and the keys move and delete, with undo. |
+| `editable` | `false` | The pointer and the keys move, connect and delete, with undo. |
 | `movable` | `editable` | Whether dragging and ⇧ with an arrow move things, for when where they are isn't up to you. |
-| `selectable` | `editable` | Selecting, one at a time or with a marquee. |
+| `selectable` | `true` | Selecting, one at a time or with a marquee, read-only too. `false` for a picture with no selection. |
 | `connectable` | `editable` | Drawing connections, and moving an edge's ends. |
-| `undoable` | `editable` | ⌘Z and ⇧⌘Z, and the toolbar's undo and redo, as the diagram's own history. Off for data with a history of its own. |
+| `history` | its own, when `editable` | A history to drive instead of its own (`useDiagramHistory`): ⌘Z, ⇧⌘Z, ⌘Y, the toolbar, the controller and agents undo and redo it. |
 | `portsOnly` | `false` | Connect only from named ports: no places to connect on a node without any, and no moving an edge's ends. |
 | `isValidConnection` | `checkConnection` | True, false or the reason. |
 | `createEdge` | an id and its ends | The edge for a new connection. |
@@ -275,6 +319,7 @@ With no nodes, the shared [EmptyState](#/empty-state) shows over the board ("Not
 | `controller` | — | From `createDiagramController()`: select, delete, connect, move, undo and redo from outside. |
 | `emptyState` | `<EmptyState>` | What shows with no nodes. |
 | `loading` | `false` | The data isn't here yet: a status, and no empty state. |
+| `error` | — | Why it can't be drawn: an alert under the toolbar's row, in place of the empty state. |
 | `autoSize` | `false` | Size each node to its words, around its center. |
 | `cull` | above 200 | Draw only what's near the view. |
 | `minimap` | `false` | `CanvasMiniMap` in a corner, or its props (`side`, `align`). |
@@ -282,7 +327,7 @@ With no nodes, the shared [EmptyState](#/empty-state) shows over the board ("Not
 | `describeNode`, `describeEdge` | what it connects to | What a screen reader says. |
 | `noun` | `node` | What a node is called, in what's said: a state, a service. |
 | `viewport`, `defaultViewport`, `onViewportChange(viewport, details)` | fits | As on `Canvas`. |
-| `fitPadding` | `24` | Air around what's fitted, in px, for the first fit and ⌘0. |
+| `fitPadding` | `24` | Air around what's fitted, in px, for the first fit and ⌘0: one number, or `{ top, right, bottom, left }`. The toolbar, the minimap and a frame's bar are added to it. |
 | `background`, `panning`, `autoFocus` | as on `Canvas` | Passed to it. A resting cursor is a class: `className="cursor-crosshair"`. |
 | `overlay` | — | Over the board in screen space, outside its keys: a `DiagramToolbar`, a status. `useDiagram()` works here. |
 | `children` | — | More of the board layer. `useCanvas` works here, and `--canvas-zoom` is set (in steps) for Canvas overlay parts. |
@@ -293,14 +338,41 @@ With no nodes, the shared [EmptyState](#/empty-state) shows over the board ("Not
 
 | Prop | Default | Effect |
 | --- | --- | --- |
-| `side`, `align` | `bottom`, `start` | Where it floats over the board. |
+| `side`, `align` | `bottom` (`top` in a DiagramFrame), `start` | Where it floats over the board. A fit leaves room for it. |
 | `variant`, `size` | `floating`, `sm` | As on `Toolbar`. |
 | `children` | — | More tools after its own. |
 | `aria-label` | "Diagram tools" | Its name. |
 
+### `<DiagramNodeBody>`
+
+How a node looks by its `kind` and `variant`: what `renderNode` draws by default. Use it in your own `renderNode` to add to the node rather than replace it.
+
+| Prop | Default | Effect |
+| --- | --- | --- |
+| `node` | — | The node it draws: its kind, variant, label and detail. |
+| `children` | — | More inside the body, after its words: a badge, a port's name. |
+| `className`, `style` | — | Merged onto the body. |
+
+```tsx
+const renderNode = (node) => (
+  <DiagramNodeBody node={node}>
+    {node.data?.failing ? <Badge tone="destructive" size="sm">failing</Badge> : null}
+  </DiagramNodeBody>
+)
+```
+
+### `useDiagramHistory(value, onChange, options)`
+
+| | |
+| --- | --- |
+| `value` | What the history is of: what's shown now. |
+| `onChange(value, details)` | Show the step undone or redone to. `details.reason` is `undo` or `redo`; return `false` to refuse it. |
+| `options` | `limit` (100 steps), `isEqual` (`Object.is`: how it tells its own changes from one from outside). |
+| returns | `{ canUndo, canRedo, undo(event?), redo(event?), record(before, after), reset() }`, for `<Diagram history>`. |
+
 ### Data attributes
 
-The root is `data-slot="diagram"` with `data-editable`, `data-selectable` and `data-empty`. Under it: `diagram-layer` (with `data-zoom`: `near`, `mid`, `far`), `diagram-node` (`data-node`, `data-kind`, `data-selected`, `data-current`), `diagram-node-body`, `diagram-node-label`, `diagram-node-detail`, `diagram-edges`, `diagram-edge` (`data-edge`, `data-kind`, `data-selected`, `data-current`), `diagram-edge-label`, `diagram-divider`, `diagram-port`, `diagram-edge-end`, `diagram-ring` (`data-focused` for the keyboard's), `diagram-current`, `diagram-connection` (`data-invalid`), `diagram-connection-target`, `diagram-overlay`, `diagram-empty`, `diagram-loading`, `diagram-keys` and `diagram-status`.
+The root is `data-slot="diagram"` with `data-editable`, `data-selectable` and `data-empty`. Under it: `diagram-layer` (with `data-zoom`: `near`, `mid`, `far`), `diagram-node` (`data-node`, `data-kind`, `data-variant`, `data-selected`, `data-current`), `diagram-node-body`, `diagram-node-label`, `diagram-node-detail`, `diagram-edges`, `diagram-edge` (`data-edge`, `data-variant`, `data-tone`, `data-selected`, `data-current`), `diagram-edge-focus`, `diagram-edge-label`, `diagram-divider`, `diagram-port`, `diagram-edge-end`, `diagram-ring` (`data-focused` for the keyboard's, `data-selected`), `diagram-current`, `diagram-connection` (`data-invalid`), `diagram-connection-target`, `diagram-overlay`, `diagram-empty`, `diagram-loading`, `diagram-error`, `diagram-keys` and `diagram-status`.
 
 ### `useDiagramLayout(draft, options)`
 
@@ -316,7 +388,7 @@ It returns `nodes`, `edges`, `bounds`, `status`, `error`, and `engine` and `ms`,
 
 ### The model
 
-`@/lib/diagram-model` is plain functions on plain data, with nothing to render: `edgeGeometry`, `edgeGeometries`, `connectorPath`, `nodeAt`, `edgeAt`, `edgesAtPoint`, `moveNodes`, `deleteItems`, `checkConnection`, `addConnection`, `moveEdgeEnd`, `indexDiagram`, `labelBox`, `regionDividers` and more; the package root exports the ones an app needs (`moveNodes`, `deleteItems`, `checkConnection`, `addConnection`, `moveEdgeEnd`, `indexDiagram`, `diagramBounds`, `NOTHING_SELECTED`). `@/lib/diagram-keyboard` has `stepFocus`, `viewportToShow`, `describeNode` and `describeEdge`, `@/lib/diagram-gesture` has `stepDiagramGesture` and `hitTestDiagram`, and `@/lib/diagram-primitive` the primitive. Freeform's connectors, Interface Builder's segues and Replay Canvas's segues are drawn by the same model.
+`@/lib/diagram-model` is plain functions on plain data, with nothing to render: `edgeGeometry`, `edgeGeometries`, `connectorPath`, `nodeAt`, `edgeAt`, `edgesAtPoint`, `moveNodes`, `deleteItems`, `checkConnection`, `addConnection`, `moveEdgeEnd`, `indexDiagram`, `labelBox`, `regionDividers` and more; on npm it is `@brett_lamy/ui/lib/diagram-model` (the package root has only the data types Diagram's props take: `DiagramNode`, `DiagramEdge`, `DiagramSelection`…). `@/lib/diagram-keyboard` has `stepFocus`, `viewportToShow`, `describeNode` and `describeEdge`, `@/lib/diagram-gesture` has `stepDiagramGesture` and `hitTestDiagram`, and `@/lib/diagram-primitive` the primitive. Freeform's connectors, Interface Builder's segues and Replay Canvas's segues are drawn by the same model.
 
 ## cva recipes
 
@@ -335,12 +407,18 @@ relative size-full
 | Value | Adds |
 | --- | --- |
 | `node` (default) | `flex flex-col items-center justify-center rounded-ctl border border-border bg-card px-3 py-2 text-card-foreground shadow-hairline` |
-| `final` | `flex flex-col items-center justify-center rounded-ctl border-2 border-foreground bg-card px-3 py-2 text-card-foreground outline-1 -outline-offset-4 outline-for…` |
-| `initial` | `rounded-full bg-foreground` |
-| `compound` | `rounded-card border border-border bg-secondary` |
-| `parallel` | `rounded-card border border-dashed border-border bg-secondary` |
+| `group` | `rounded-card border border-border bg-secondary` |
 | `region` | `rounded-card` |
 | `root` | `rounded-card border border-border` |
+| `marker` | `rounded-full bg-foreground` |
+
+**`variant`** — default `default`
+
+| Value | Adds |
+| --- | --- |
+| `default` (default) | — |
+| `dashed` | `border-dashed` |
+| `double` | `border-2 border-foreground outline-1 -outline-offset-4 outline-foreground` |
 
 ### `diagramEdgeVariants`
 
@@ -350,14 +428,20 @@ Defined in `@/components/ui/diagram`. Base classes:
 fill-none ${LINE}
 ```
 
-**`kind`** — default `event`
+**`variant`** — default `default`
 
 | Value | Adds |
 | --- | --- |
-| `event` (default) | `stroke-muted-foreground` |
-| `done` | `stroke-muted-foreground` |
-| `invoke` | `stroke-muted-foreground` |
-| `always` | `stroke-muted-foreground [stroke-dasharray:calc(5px/var(--diagram-z))_calc(3px/var(--diagram-z))]` |
-| `after` | `stroke-muted-foreground [stroke-dasharray:calc(1.5px/var(--diagram-z))_calc(3px/var(--diagram-z))] [stroke-linecap:round]` |
-| `initial` | `stroke-foreground` |
-| `problem` | `stroke-destructive [stroke-dasharray:calc(6px/var(--diagram-z))_calc(3px/var(--diagram-z))]` |
+| `default` (default) | `stroke-muted-foreground` |
+| `dashed` | `stroke-muted-foreground [stroke-dasharray:calc(5px/var(--diagram-z))_calc(3px/var(--diagram-z))]` |
+| `dotted` | `stroke-muted-foreground [stroke-dasharray:calc(1.5px/var(--diagram-z))_calc(3px/var(--diagram-z))] [stroke-linecap:round]` |
+| `strong` | `stroke-foreground` |
+
+**`tone`** — default `default`
+
+| Value | Adds |
+| --- | --- |
+| `default` (default) | — |
+| `destructive` | `stroke-destructive` |
+
+1 compound variant — see the source.

@@ -10,7 +10,7 @@ export type { IndexBarJumpReason };
 
 /* ══ IndexBar — a jump rail for a long scroller ══
    The UIKit A–Z index, custom stops with previews, or a Dock-style `wave` of dashes:
-     <IndexBar items={alphabetItems(lettersInUse)} onJump={(letter) => scrollTo(letter)} />
+     <IndexBar items={indexBarAlphabetItems(lettersInUse)} onJump={(letter) => scrollTo(letter)} />
      <IndexBar variant="wave" side="start" current={turn} items={turns} onJump={(id) => scrollToTurn(id)} />
    Hover peeks the stop under the cursor (no jump); a press or drag jumps. The rail is a listbox that keeps focus (the
    arrows, PageUp/PageDown, Home and End move through the stops and jump), built on lib/index-bar-primitive.
@@ -45,7 +45,7 @@ export interface IndexBarItem<K extends IndexBarValue = IndexBarValue> {
 const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
 
 /** The UIKit A–Z rail's items: every letter, with the ones not in `available` disabled (all enabled when omitted). */
-export function alphabetItems(available?: Iterable<string>): IndexBarItem<string>[] {
+export function indexBarAlphabetItems(available?: Iterable<string>): IndexBarItem<string>[] {
   const set = available ? new Set(Array.from(available, (l) => l.toUpperCase())) : null;
   return ALPHABET.map((letter) => ({ value: letter, label: letter, disabled: set ? !set.has(letter) : false }));
 }
@@ -87,7 +87,7 @@ export interface IndexBarJumpDetails<K extends IndexBarValue = string> {
 }
 
 export type IndexBarProps<K extends IndexBarValue = string> = Omit<ComponentProps<'div'>, 'children'> & {
-  /** The stops, top to bottom: items, or bare values (a letter, an id). For the A–Z rail, `alphabetItems(…)`. */
+  /** The stops, top to bottom: items, or bare values (a letter, an id). For the A–Z rail, `indexBarAlphabetItems(…)`. */
   items: ReadonlyArray<IndexBarItem<K> | K>;
   /** Each time the rail lands on another stop. */
   onJump?: (value: K, details: IndexBarJumpDetails<K>) => void;

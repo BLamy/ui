@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 import { WORKBENCH_SHAPES } from '@/lib/icon-shapes/workbench';
 import { CHAT_SHAPES } from '@/lib/icon-shapes/chat';
 import { PENCILKIT_SHAPES } from '@/lib/icon-shapes/pencilkit';
+import { DOCS_SHAPES } from '@/lib/icon-shapes/docs';
 
 /**
  * One piece of an icon, drawn on a 24px grid in `currentColor`.
@@ -444,10 +445,11 @@ const SHAPES = {
   'heart-fill': [{ d: HEART, f: 2 }],
   pulse: [{ c: [12, 12, 3], f: 1 }, { c: [12, 12, 8] }],
   drop: [{ d: 'M12 3.5c3.2 3.9 6 7 6 10.2a6 6 0 1 1-12 0C6 10.5 8.8 7.4 12 3.5z' }],
-  // Merged in from the Workbench, chat and PencilKit icon sets (lib/icon-shapes/*).
+  // Merged in from the Workbench, chat and PencilKit icon sets (lib/icon-shapes/*), and the documents set (docstream).
   ...WORKBENCH_SHAPES,
   ...CHAT_SHAPES,
   ...PENCILKIT_SHAPES,
+  ...DOCS_SHAPES,
 } as const satisfies Record<string, readonly IconShape[]>;
 
 /** Legacy keys whose geometry differs from the canonical icon; kept so existing usages render unchanged. */
@@ -579,6 +581,8 @@ export interface IconProps {
   /** Accessible name: renders `role="img"` with a `<title>`. Without it (or `aria-label`) the icon is hidden from AT. */
   title?: string;
   'aria-label'?: string;
+  /** `data-*` attributes land on the `<svg>` (`data-part`, a state for CSS or a test). */
+  [dataAttribute: `data-${string}`]: string | number | boolean | undefined;
 }
 
 function shapeEl(e: IconShape, i: number, sw: number, mask: boolean) {
@@ -592,7 +596,7 @@ function shapeEl(e: IconShape, i: number, sw: number, mask: boolean) {
   return <path key={i} d={e.d} {...common} />;
 }
 
-export function Icon({ name, shapes, size, weight, sw, className, style, title, 'aria-label': ariaLabel }: IconProps) {
+export function Icon({ name, shapes, size, weight, sw, className, style, title, 'aria-label': ariaLabel, ...data }: IconProps) {
   const rawId = useId();
   size = size || 22;
   sw = sw || (weight && ICON_WEIGHTS[weight]) || 1.8;
@@ -617,7 +621,7 @@ export function Icon({ name, shapes, size, weight, sw, className, style, title, 
     body = els.map((e, i) => shapeEl(e, i, sw, false));
   }
   return (
-    <svg data-slot="icon" className={cn('block shrink-0', className)} width={size} height={size} viewBox="0 0 24 24"
+    <svg {...data} data-slot="icon" className={cn('block shrink-0', className)} width={size} height={size} viewBox="0 0 24 24"
       style={style} {...a11y}>
       {label ? <title>{title ?? label}</title> : null}
       {body}

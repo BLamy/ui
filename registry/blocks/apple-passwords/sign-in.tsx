@@ -53,7 +53,7 @@ export function ServiceButtons({ onOpen }: { onOpen: (id: ServiceId) => void }) 
                 'shadow-[0_.5px_1.5px_black] shadow-black/8 transition-[background-color,scale] duration-spring-snappy ease-spring-snappy active:scale-[.97]',
                 'hover:bg-[color-mix(in_oklab,var(--card)_92%,var(--foreground))] focus-visible:ring-2 focus-visible:ring-ring',
               )}>
-              <SiteTile title={s.name} color={s.color} size={28} />
+              <SiteTile title={s.name} tint={s.color} size={28} />
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-detail font-semibold">{s.name}</span>
                 <span className={cn('flex items-center gap-1 truncate text-caption', status ? status.className : 'text-primary')}>
@@ -210,7 +210,7 @@ export function SignInDialog({ service: id, auth, live, onClose, onSaved, onSave
           {step.view === 'done' ? (
             <div className="flex flex-col items-center gap-2 px-2 pt-2 text-center">
               <span className="relative">
-                <SiteTile title={service.name} color={service.color} size={56} />
+                <SiteTile title={service.name} tint={service.color} size={56} />
                 <Icon name="check-circle-fill" size={22} className="absolute -right-1.5 -bottom-1.5 rounded-full bg-card text-success" />
               </span>
               <div className="mt-1 text-callout font-semibold">{step.grant.account}</div>

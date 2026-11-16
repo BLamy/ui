@@ -30,20 +30,20 @@ export const StrokePath = React.memo(function StrokePath({ stroke, variant = 'fr
   if (variant === 'freehand') {
     const pts = getStroke(stroke.points, {
       ...tool.options,
-      size: tool.options.size * stroke.width,
+      size: tool.options.size * stroke.widthScale,
       simulatePressure: !stroke.pressure,
       last: stroke.complete,
     });
-    return <path d={outlinePath(pts)} fill={stroke.color} fillOpacity={tool.opacity} />;
+    return <path d={outlinePath(pts)} fill={stroke.ink} fillOpacity={tool.opacity} />;
   }
   const d = stroke.points.map((p, i) => (i ? 'L' : 'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join('');
   return (
     <path
       d={d}
       fill="none"
-      stroke={stroke.color}
+      stroke={stroke.ink}
       strokeOpacity={tool.opacity}
-      strokeWidth={tool.options.size * stroke.width}
+      strokeWidth={tool.options.size * stroke.widthScale}
       strokeLinecap="round"
       strokeLinejoin="round"
     />

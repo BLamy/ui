@@ -1,6 +1,6 @@
 # Canvas
 
-An infinite, pannable, zoomable surface, built on UI SDK's `createViewport`. `Canvas` owns navigation: scroll pans, pinch or ⌘-scroll zooms, holding Space (or the middle button) drags the view, + / − / 0 and ⌘ + / − / 0 / 1 zoom in, out, fit and 100%, arrow keys you don't use pan, focus brings a board item into view, find in page pans to its match, and a dotted or ruled background follows the view. Everything else is yours. The canvas hands you the pointer with its position already in board coordinates, so selecting, dragging, drawing and connecting can be one state machine that never thinks about the view. Use it for whiteboards, diagrams and storyboards; [Freeform](https://blamy.github.io/ui/#/blocks) is built on it. For freehand ink use [PencilCanvas](https://blamy.github.io/ui/#/pencilkit): on its own it is a drawing surface, and inside a `Canvas` it becomes the board's drawing layer. To show one image or document that zooms, a plain scroll view is enough.
+An infinite, pannable, zoomable surface, built on UI SDK's `createViewport`. `Canvas` owns navigation: scroll pans, pinch or ⌘-scroll zooms, holding Space (or the middle button) drags the view, + / − / 0 and ⌘ + / − / 0 / 1 zoom in, out, fit and 100%, arrow keys you don't use pan, focus brings a board item into view, find in page pans to its match, and a dotted or ruled background follows the view. Everything else is yours. The canvas hands you the pointer with its position already in board coordinates, so selecting, dragging, drawing and connecting can be one state machine that never thinks about the view. Use it for whiteboards, diagrams and storyboards; [Freeform](https://blamy.github.io/ui/#/blocks) is built on it. For freehand ink use [PencilCanvas](https://blamy.github.io/ui/#/pencilkit): on its own it is a drawing surface, and inside a `Canvas` it becomes the board's drawing layer. For boxes joined by edges (flowcharts, state machines, architecture maps) use [Diagram](https://blamy.github.io/ui/#/diagram), which is drawn on a Canvas. To show one image or document that zooms, a plain scroll view is enough.
 
 {% tabs title="Installation" sync="install" %}
 {% tab title="shadcn CLI" %}
@@ -61,7 +61,7 @@ const [canvas] = useState(() => createCanvasController())
 
 | Method | Does |
 | --- | --- |
-| `fit(rect?, { padding = 72, maxZoom = 1 }?, options?)` | Shows a board rect whole and centered (default the `fit` prop); `null` centers the origin at 100%. |
+| `fit(rect?, { padding, maxZoom = 1 }?, options?)` | Shows a board rect whole and centered (default the `fit` prop); `null` centers the origin at 100%. `padding` defaults to the `fitPadding` prop, else 72. |
 | `zoomBy(factor, at?, options?)` / `zoomTo(zoom, at?, options?)` | Zooms about a client point (default the canvas's center). |
 | `panBy(dx, dy, options?)` | Pans by screen pixels. |
 | `reveal(rect, { padding = 24 }?, options?)` | Pans the least that brings a board rect into view. |
@@ -157,14 +157,17 @@ A frame never resizes below 24 (`MIN_SIZE`).
 | `background` | `dots` | `dots`, `grid` or `none`; the pattern follows the view. |
 | `panning` | `false` | Drag the view with the primary button (a hand tool). |
 | `fit` | — | The rectangle ⌘0 and `fit()` show (your content's bounds). |
+| `fitPadding` | `72` | Screen pixels of air ⌘0 and `fit()` leave around that rectangle. |
 | `minZoom` / `maxZoom` | 0.02 / 4 | How far out and in it zooms. |
 | `message` | "Zoom 150%" | What a screen reader hears after a zoom key: `(zoom) => string`. |
 | `autoFocus` | `false` | Focus the canvas on mount. |
 | `zoomVariable` | `true` | Whether the board writes its zoom as `--canvas-zoom`, which the overlay parts divide by. A change to it restyles everything on the board, every frame of a zoom: a board of thousands of items turns it off and sets `--canvas-zoom` itself around the parts that use it, in steps (as `Diagram` does). |
 | `overlay` | — | Drawn over the canvas in screen space. |
 | `aria-label` | "Canvas" | The region's name. |
+| `aria-describedby` | — | What the canvas's keys do, read after its name: a component that adds its own keys points it at their description (as `Diagram` does). |
 | `className` / `style` | — | Merged onto the canvas element. The resting cursor is yours (`cursor-crosshair`, or `style={{ cursor }}` for one that changes); the open and closed hand win while the view is dragged. |
 | `ref` | — | The canvas element. |
+| a `div`'s other props | — | `id`, `data-*`, `title`, event handlers and the rest reach the canvas element. |
 
 The canvas carries `data-slot="canvas"` (with `data-panning` while Space is held and `data-grabbing` while the view is dragged), the scrolling pane find in page uses `canvas-pane`, the board layer `data-slot="canvas-board"` (with the zoom as `--canvas-zoom`, unless `zoomVariable` is off), and the overlay parts `canvas-frame`, `canvas-handle`, `canvas-marquee`, `canvas-guide` and `canvas-minimap` (its view outline `canvas-minimap-view`).
 

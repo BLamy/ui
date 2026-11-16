@@ -292,7 +292,7 @@ It returns `{ files, add, remove, retry, clear, uploadAll, busy, counts, rules, 
 
 ### Helpers
 
-`describeAccept(accept)`, `describeRules(rules)`, `fileKind(file)`, `rejectionMessage(reason, context, messages)`, `useFilePreview(file)`, and `formatFileSize(bytes, locale?)` from `@/lib/file-size` (on npm, the package root). UI SDK's `relativePath(file)` comes from `@ui-sdk/react/file-input`.
+`describeAccept(accept)`, `describeRules(rules)`, `fileKind(file)`, `rejectionMessage(reason, context, messages)`, `useFilePreview(file)`, and `formatFileSize(bytes, locale?)` from `@/lib/file-size` (on npm, `@brett_lamy/ui/lib/file-size`). UI SDK's `relativePath(file)` comes from `@ui-sdk/react/file-input`.
 
 ## Limits
 

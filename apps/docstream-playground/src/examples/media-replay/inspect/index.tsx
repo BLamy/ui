@@ -21,7 +21,7 @@ export default function InspectDemo() {
         events={replayDemoEvents}
         initialTime={6000}
         inspections={chronology}
-        playerRef={player}
+        ref={player}
         onTimeUpdate={setTime}
         title="Northwind checkout, with what was inspected"
       />

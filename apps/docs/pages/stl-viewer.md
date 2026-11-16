@@ -1,12 +1,12 @@
 # StlViewer
 
-A 3D preview of an `.stl` model, the format 3D printers and CAD tools export. Use it wherever a file list or a note shows a model, so the reader can turn it before printing. Binary and ASCII files both work. It draws with WebGL, with no 3D library: drag to orbit, pinch or ⌘-scroll to zoom (or `+` / `−`), arrow keys to turn, double-click or `0` to reset. The triangle count and the model's size sit under it. The model takes the theme's primary color (any CSS `color` on it or above it), and turns slowly until someone touches it, unless the reader prefers reduced motion.
+A 3D preview of an `.stl` model, the format 3D printers and CAD tools export. Use it wherever a file list or a note shows a model, so the reader can turn it before printing. Binary and ASCII files both work. It draws with WebGL, with no 3D library: drag to orbit, pinch or ⌘-scroll to zoom (or `+` / `−`), arrow keys to turn, double-click or `0` to reset. The triangle count and the model's size sit under it. The model takes the theme's primary color (any CSS `color` on it or above it), or the CSS color you pass as `tint`, and turns slowly until someone touches it, unless the reader prefers reduced motion.
 
 {% tabs title="Installation" sync="install" %}
 {% tab title="shadcn CLI" %}
 {% command %}npx shadcn@latest add https://blamy.github.io/ui/r/stl-viewer.json{% endcommand %}
 
-Copies the source into your project's `components/ui/` (with the parts it is built from) and adds BL UI's tokens to your CSS — no runtime package. It is yours to edit. Import from your alias:
+Adds one module to your project's `components/ui/` and installs `@brett_lamy/ui`, whose Docstream it imports by the package's name. The module only re-exports the widget, so there is nothing in it to edit; it gives the widget your alias. Import from your alias:
 
 ```tsx
 import { StlViewer } from '@/components/ui/stl-viewer'
@@ -15,10 +15,11 @@ import { StlViewer } from '@/components/ui/stl-viewer'
 {% tab title="npm" %}
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 
-Import the stylesheet once at your app's entry, then the parts from their module:
+Import the stylesheets once at your app's entry (the kit's, then docstream's, which this part renders with), then the parts from their module:
 
 ```tsx
 import '@brett_lamy/ui/styles.css'
+import '@brett_lamy/ui/docstream/styles.css'
 
 import { StlViewer } from '@brett_lamy/ui/stl-viewer'
 ```
@@ -84,7 +85,7 @@ mesh.min, mesh.max    // bounds, in the file's units
 | --- | --- | --- |
 | `src` | — | URL of a binary or ASCII `.stl` file (`blob:` URLs too). |
 | `title` | — | A caption above the size line, and the canvas's label. |
-| `color` | the inherited `color` | The model's color; any CSS color. |
+| `tint` | the inherited `color` | The model's color: any CSS color. |
 | `autoRotate` | `true` | Turn slowly until the reader interacts. Off under reduced motion. |
 | `className` · `style` · `ref` | — | On the outer `<figure>`. |
 | `aria-label` | `title` | Names the figure and its canvas, when the title isn't the name you want. |

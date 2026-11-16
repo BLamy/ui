@@ -130,14 +130,14 @@ describe('CronEditor (raw expression)', () => {
       fireEvent.select(input);
     };
     select(0);
-    expect(cell('minute').hasAttribute('data-active')).toBe(true);
+    expect(cell('minute').hasAttribute('data-highlighted')).toBe(true);
     select(3);
-    expect(cell('hour').hasAttribute('data-active')).toBe(true);
-    expect(cell('minute').hasAttribute('data-active')).toBe(false);
+    expect(cell('hour').hasAttribute('data-highlighted')).toBe(true);
+    expect(cell('minute').hasAttribute('data-highlighted')).toBe(false);
     select(11);
-    expect(cell('dayOfWeek').hasAttribute('data-active')).toBe(true);
+    expect(cell('dayOfWeek').hasAttribute('data-highlighted')).toBe(true);
     fireEvent.blur(input);
-    expect(document.querySelector('[data-active]')).toBeNull();
+    expect(document.querySelector('[data-highlighted]')).toBeNull();
   });
 
   it('works controlled and calls onValueChange for each edit', () => {

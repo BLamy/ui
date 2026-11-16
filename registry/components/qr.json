@@ -1,0 +1,17 @@
+{
+  "name": "qr",
+  "title": "QR encoder",
+  "description": "A QR Code encoder (byte mode, the four error-correction levels), ported from Project Nayuki's library: encodeQR(text) returns the module matrix QRCode draws, or null when the text is too long for a code.",
+  "page": "qr-code",
+  "exports": [
+    "encodeQR"
+  ],
+  "imports": [
+    "encodeQR"
+  ],
+  "types": [
+    "QRMatrix",
+    "QRLevel",
+    "QROptions"
+  ]
+}

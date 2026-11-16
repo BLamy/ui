@@ -21,11 +21,11 @@ export default function ReplayPlayerDemo({ variant = "browser" }: { variant?: st
       <ReplayPreview
         events={replayDemoEvents}
         chrome={chrome}
-        playerRef={player}
+        ref={player}
         onTimeUpdate={setTime}
         onPlayingChange={setPlaying}
         markers
-        onMarkerPress={(m) => setPressed(`${m.kind}: ${m.label}`)}
+        onMarkerAction={(m) => setPressed(`${m.kind}: ${m.label}`)}
         title="Northwind checkout recording"
       />
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8, fontSize: 13 }}>
@@ -44,7 +44,7 @@ export default function ReplayPlayerDemo({ variant = "browser" }: { variant?: st
             </button>
           ))}
       </div>
-      {pressed && <div style={{ fontSize: 13, opacity: 0.75 }}>onMarkerPress → {pressed}</div>}
+      {pressed && <div style={{ fontSize: 13, opacity: 0.75 }}>onMarkerAction → {pressed}</div>}
     </div>
   )
 }

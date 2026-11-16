@@ -329,7 +329,7 @@ describe('Composer', () => {
       </Composer>,
     );
     await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Preview shot.png' })); });
-    const dialog = await screen.findByRole('dialog', { name: 'Preview image' });
+    const dialog = await screen.findByRole('dialog', { name: 'Preview: shot.png' });
     expect(dialog).toBeTruthy();
     await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Close' })); });
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull(), { timeout: 3000 });
@@ -771,7 +771,7 @@ describe('ImageAnnotator', () => {
       </Composer>,
     );
     await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Annotate shot.png' })); });
-    await screen.findByRole('dialog', { name: 'Annotate image' });
+    await screen.findByRole('dialog', { name: 'Annotate: shot.png' });
     await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Save annotation' })); });
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull(), { timeout: 3000 });
     await waitFor(() => expect(onAttachmentsChange.mock.lastCall?.[0]?.[0]).toEqual(expect.objectContaining({ id: 'img', src: 'data:image/png;base64,SAVED', type: 'image/png' })));

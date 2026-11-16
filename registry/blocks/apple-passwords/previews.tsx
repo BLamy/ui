@@ -19,7 +19,7 @@ export function AccountPreview({ account: a }: { account: Account }) {
   const group = GROUPS.find((g) => g.id === a.group);
   return (
     <>
-      <HoverCardHeader icon={<SiteTile title={a.title} color={a.color} size={40} className={cn(a.deleted && 'opacity-60 grayscale')} />}
+      <HoverCardHeader icon={<SiteTile title={a.title} tint={a.color} size={40} className={cn(a.deleted && 'opacity-60 grayscale')} />}
         title={a.title} description={a.username} />
       <div className="mt-3 flex flex-col gap-0.5 text-footnote">
         {a.websites.map((w) => <span key={w} className="flex items-center gap-1.5 truncate text-foreground"><Icon name="globe" size={13} className="shrink-0 text-muted-foreground" />{w}</span>)}

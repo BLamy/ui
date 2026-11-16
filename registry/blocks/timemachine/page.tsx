@@ -146,7 +146,7 @@ function Sidebar({ sessions }: { sessions: SessionInfo[] }) {
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                   <AlertDialogClose variant="cancel">Cancel</AlertDialogClose>
-                  <AlertDialogClose variant="destructive" value="confirm" action={() => clearSessions()}>Delete All</AlertDialogClose>
+                  <AlertDialogClose tone="destructive" value="confirm" action={() => clearSessions()}>Delete All</AlertDialogClose>
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>

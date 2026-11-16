@@ -5,7 +5,7 @@ BL UI's containers are iOS-style: they adapt to their **own** box (a phone frame
 ```ts
 import { bindSizeClass, sizeClassOf, type SizeClass, type SizeClassBreakpoints } from '@/lib/size-class'
 import { SizeClassProvider, useSizeClass, useSizeClassScope, usePresentation } from '@/lib/container'
-import { createStack, type StackExit, type StackReason } from '@/lib/stack'
+import { createPageStack, type PageStackExit, type PageStackReason } from '@/lib/stack'
 import { bindEdgeSwipe } from '@/lib/edge-swipe'
 import { bindBack } from '@/lib/back'
 import { bindPullToRefresh } from '@/lib/pull-to-refresh'
@@ -20,7 +20,7 @@ With the npm package they are all exported from `@brett_lamy/ui`; with the regis
 | --- | --- |
 | `bindSizeClass` + `SizeClassProvider` | `BLProvider`'s root, `SplitView` (which columns exist), `NavigationStack`, `SidebarProvider` (inline or a drawer), `ArtifactChatContainer` (split or stacked). Each one measures its own box and is the size-class scope of what it renders. |
 | `usePresentation` | `Dialog` (`"auto"` by default), `Popover`, `DropdownMenu`, `Select`, `Combobox`, `DatePicker`: `presentation="auto"` is a sheet in a compact scope. |
-| `createStack`, `bindEdgeSwipe`, `bindBack` | [NavigationStack](https://blamy.github.io/ui/#/navigation-stack), [SplitView](https://blamy.github.io/ui/#/split-view) (a stack only while compact), [AdaptivePane](https://blamy.github.io/ui/#/adaptive-pane)'s push. `bindEdgeSwipe` alone: AdaptivePane's `swipeToOpen`. |
+| `createPageStack`, `bindEdgeSwipe`, `bindBack` | [NavigationStack](https://blamy.github.io/ui/#/navigation-stack), [SplitView](https://blamy.github.io/ui/#/split-view) (a stack only while compact), [AdaptivePane](https://blamy.github.io/ui/#/adaptive-pane)'s push. `bindEdgeSwipe` alone: AdaptivePane's `swipeToOpen`. |
 | `bindPullToRefresh` | `NavigationStackContent onRefresh`. |
 | `usePresence`, `usePresenceList`, `useEnterExit` | The Composer's stop button, strip, tiles and cards, `Swap`, `ListSection animate`. |
 
@@ -79,11 +79,11 @@ The frame is a layer host too (`data-layer-host` with `contain: layout`), so the
 
 ## Page stacks
 
-`createStack(context, options)` is the behavior of a navigation stack: pages that cover each other, pushed and popped with focus, Escape, the platform back and a swipe. It doesn't own state: it reads `state[key]` (the page keys, bottom to top) and `state[exiting]` (pages animating out) from your primitive's store, and every change it asks for goes through your `set`, so `on<Key>Change` hears it with a reason (`trigger-press`, `escape-key`, `back`, `swipe`, `imperative`) and can cancel it. Controlled pages work too: a page the owner popped stays rendered, and plays its exit, in the render before the stack hears of the change.
+`createPageStack(context, options)` is the behavior of a navigation stack: pages that cover each other, pushed and popped with focus, Escape, the platform back and a swipe. It doesn't own state: it reads `state[key]` (the page keys, bottom to top) and `state[exiting]` (pages animating out) from your primitive's store, and every change it asks for goes through your `set`, so `on<Key>Change` hears it with a reason (`trigger-press`, `escape-key`, `back`, `swipe`, `imperative`) and can cancel it. Controlled pages work too: a page the owner popped stays rendered, and plays its exit, in the render before the stack hears of the change.
 
 | Option | What it does |
 | --- | --- |
-| `key`, `exiting` | The state keys of the pages (`string[]`) and of the pages leaving (`StackExit[]`, start `[]`). |
+| `key`, `exiting` | The state keys of the pages (`string[]`) and of the pages leaving (`PageStackExit[]`, start `[]`). |
 | `set(value, details)` | Writes the pages; pass `createChange`'s. Return `false` to refuse. |
 | `back` | Pass `bindBack` for the platform back (it is passed in, so a stack without it doesn't bundle it). |
 | `active` | Whether it is a stack right now (default always). While it returns `false` the pages stay rendered, nothing pops, the swipe is refused, a change of pages plays no exit and moves no focus, and nothing is covered: a split view's columns are a stack only while compact. Read on every store change. |
@@ -96,7 +96,7 @@ The frame is a layer host too (`data-layer-host` with `contain: layout`), so the
 | `popTo(key, details?)` | Takes off every page above `key`; only the old top animates out. |
 | `replace(key, details?)` | Swaps the top page; the old one leaves `covered`. |
 | `present(state, key)` | The page slot's `present`: in the stack, or still animating out. |
-| `exitOf(state, key)` | The page's `StackExit` while it leaves (`{ key, covered }`), else `undefined`. |
+| `exitOf(state, key)` | The page's `PageStackExit` while it leaves (`{ key, covered }`), else `undefined`. |
 | `pageAttrs(state, key)` | The page slot's `attrs`: `tabindex="-1"`, and `inert` with `data-covered` on covered pages. |
 | `bindPage(el, key, { initialFocus? })` | The page slot's `bind`: presence and focus. |
 | `pops()` | Whether a pop would do anything now (active, and more than one page). |
@@ -111,7 +111,7 @@ Focus moves into a pushed page (to `initialFocus()`, else its first tabbable ele
 ```ts
 api: (context) => {
   const change = createChange(context)
-  const stack = createStack<SettingsState, SettingsReason>(context, {
+  const stack = createPageStack<SettingsState, SettingsReason>(context, {
     key: 'pages',
     exiting: 'exiting',
     set: (value, details) => change('pages', value, details),

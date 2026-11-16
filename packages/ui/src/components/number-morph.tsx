@@ -54,9 +54,11 @@ function Digit({ value, trend }: { value: string; trend: number }) {
     animate(pos, target.current, springs.smooth as never);
   }, [d, trend, reduced, pos]);
   return (
-    // Clipped to its own box (the line plus the .12em soft edge) as well as masked: the mask alone does not hold the reel's
-    // neighbouring digits in every engine while a parent is transformed.
-    <span className="relative inline-block [clip-path:inset(0)] [mask-image:linear-gradient(to_bottom,transparent,#000_.3em,#000_calc(100%_-_.3em),transparent)] py-[.12em] -my-[.12em]">
+    // One reel step is 1em (`leading-none`), so the neighbouring digits sit wholly outside the box, in no leading band of
+    // the line's own; they show only as they cross its edge, through the .2em fade. Clipped to its box (1em plus the
+    // .12em soft edges) as well as masked: the mask alone does not hold the reel in every engine while a parent is
+    // transformed.
+    <span className="relative inline-block py-[.12em] -my-[.12em] leading-none [clip-path:inset(0)] [mask-image:linear-gradient(to_bottom,transparent,#000_.2em,#000_calc(100%_-_.2em),transparent)]">
       <span className="invisible">{value}</span>
       <motion.span aria-hidden="true" className="absolute inset-x-0 top-[.12em] flex flex-col items-center" style={{ y }}>
         {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0].map((n, i) => <span key={i}>{n}</span>)}
@@ -88,7 +90,9 @@ export function NumberMorph({ value, format, locale, className, ...props }: Numb
       <span className="sr-only">{fmt.format(value)}</span>
       {/* The rolling layer, clipped to the line box (plus the reels' soft edge) so nothing mid-roll draws above or below the
           text: a clip-path, which also holds the parts popLayout lifts out of the flow while they leave, unlike overflow. */}
-      <span aria-hidden="true" className="relative -my-[.12em] inline-flex items-baseline py-[.12em] [clip-path:inset(0_-1em)]">
+      {/* Left to right whatever the text around it: the parts are flex items, which a right-to-left line would reverse
+          ("83%" drawn "%38"); the formatter already put them in the locale's order. */}
+      <span aria-hidden="true" dir="ltr" className="relative -my-[.12em] inline-flex items-baseline py-[.12em] [clip-path:inset(0_-1em)]">
       <AnimatePresence initial={false} mode="popLayout">
         {parts.map((p) => (
           <motion.span

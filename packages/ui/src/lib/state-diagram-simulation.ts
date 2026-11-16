@@ -5,7 +5,7 @@
 
    A machine can loop through `always` for ever, which would hang the page. Each `always` here goes through a guard that counts,
    and past a limit it stops the machine and says so. */
-import { describeEvent, machineEdgeIds, type MachineLike, type MachineStateNode, type MachineTransition } from '@/lib/state-diagram-model';
+import { describeEvent, machineEdgeIds, type StateMachineLike, type StateMachineNode, type StateMachineTransition } from '@/lib/state-diagram-model';
 
 /* ── The clock ── */
 
@@ -146,9 +146,9 @@ export function standInConfig(config: unknown): { config: Record<string, unknown
 /* ── Where a machine is ── */
 
 /** The ids of the states a `snapshot.value` says it's in, from the outside in. */
-export function activeStateIds(root: MachineStateNode, value: unknown): string[] {
+export function activeStateIds(root: StateMachineNode, value: unknown): string[] {
   const out: string[] = [root.id];
-  const visit = (n: MachineStateNode, v: unknown) => {
+  const visit = (n: StateMachineNode, v: unknown) => {
     if (typeof v === 'string') {
       const k = n.states?.[v];
       if (k) out.push(k.id);
@@ -167,10 +167,10 @@ export function activeStateIds(root: MachineStateNode, value: unknown): string[]
 }
 
 /** The states that aren't holding any others, by name: what a person would say it's in. */
-export function activeLeaves(root: MachineStateNode, ids: readonly string[]): string[] {
+export function activeLeaves(root: StateMachineNode, ids: readonly string[]): string[] {
   const set = new Set(ids);
   const out: string[] = [];
-  const visit = (n: MachineStateNode) => {
+  const visit = (n: StateMachineNode) => {
     const kids = Object.values(n.states ?? {}).filter((k) => set.has(k.id));
     if (!kids.length) { out.push(n.key); return; }
     kids.forEach(visit);
@@ -258,7 +258,7 @@ interface InspectedEvent {
   type: string;
   actorRef?: unknown;
   event?: { type: string };
-  _transitions?: readonly MachineTransition[];
+  _transitions?: readonly StateMachineTransition[];
 }
 
 const sameList = (a: readonly string[], b: readonly string[]) => a.length === b.length && a.every((x, i) => x === b[i]);
@@ -291,7 +291,7 @@ export function createSimulation(xstate: XState, config: unknown, standIns: Simu
     actions: { ...Object.fromEntries(names.actions.map((a) => [a, () => undefined])), [INLINE_ACTION]: () => undefined },
     actors: { ...Object.fromEntries(names.actors.map((a) => [a, wait])), [INLINE_ACTOR]: wait, ...standIns.actors },
     delays: Object.fromEntries(names.delays.map((d) => [d, delayOf(d)])),
-  } as never) as unknown as MachineLike & { events: string[] };
+  } as never) as unknown as StateMachineLike & { events: string[] };
   const edgeIds = machineEdgeIds(machine);
   const events = machine.events.filter((e) => e !== '*' && !e.startsWith('xstate.'));
 
@@ -309,7 +309,7 @@ export function createSimulation(xstate: XState, config: unknown, standIns: Simu
   type Can = { can: (e: { type: string }) => boolean };
   const finishesOf = (active: readonly string[], snapshot: Can) => {
     const out: SimulationFinish[] = [];
-    const walk = (n: MachineStateNode) => {
+    const walk = (n: StateMachineNode) => {
       if (!active.includes(n.id)) return;
       for (const event of n.transitions.keys()) {
         const done = event.startsWith('xstate.done.actor.');
@@ -325,7 +325,7 @@ export function createSimulation(xstate: XState, config: unknown, standIns: Simu
   const labelFor = (event: string): string => {
     const finished = /^xstate\.(done|error)\.actor\.(.*)$/.exec(event);
     if (finished) {
-      const find = (n: MachineStateNode): string | null => {
+      const find = (n: StateMachineNode): string | null => {
         const inv = n.invoke?.find((i) => i.id === finished[2]);
         if (inv) return inv.src === INLINE_ACTOR || typeof inv.src !== 'string' ? n.key : inv.src;
         for (const k of Object.values(n.states ?? {})) {

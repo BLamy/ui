@@ -1,0 +1,28 @@
+{
+  "name": "session-recorder",
+  "title": "Session recorder",
+  "description": "Records the page with rrweb, one session per page load, into append-only streams in localStorage (an index stream and one stream of events per session), optionally mirrored to a Durable Streams server. useSessionRecording, useSessions and useSessionCloud are the React side; the functions read, delete and measure what is stored.",
+  "exports": [
+    "useSessionRecording",
+    "useSessions",
+    "useSessionCloud",
+    "startSessionRecording",
+    "sessionCloud",
+    "readSession",
+    "deleteSession",
+    "clearSessions",
+    "currentSessionId",
+    "storageUsage"
+  ],
+  "imports": [
+    "useSessionRecording",
+    "useSessions",
+    "readSession"
+  ],
+  "types": [
+    "SessionInfo",
+    "SessionRecordingOptions",
+    "RecordedEvent",
+    "IndexRecord"
+  ]
+}

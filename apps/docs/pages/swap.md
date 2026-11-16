@@ -49,7 +49,7 @@ Wrap the content and give `value` something that changes when it does. Whatever 
 
 ## Slide: views
 
-`effect="slide"` with a `direction`: `1` (forward) brings the new view in from the right and sends the old one left, `-1` the reverse; `0` cross-fades in place with a small scale (loading → loaded). `distance` is the travel in px (default 36). The leaving view is lifted out of the flow while it exits, so the swap never adds height: wrap it in `AnimatedHeight` and the container springs to the new size at once. `useDirection(index)` from `@/lib/motion` turns a changing index into -1, 0 or 1.
+`effect="slide"` with a `direction`: `1` (forward) brings the new view in from the right and sends the old one left, `-1` the reverse (in right-to-left text both mirror, so forward still follows the reading order); `0` cross-fades in place with a small scale (loading → loaded). `distance` is the travel in px (default 36). The leaving view is lifted out of the flow while it exits, so the swap never adds height: wrap it in `AnimatedHeight` and the container springs to the new size at once. `useDirection(index)` from `@/lib/motion` turns a changing index into -1, 0 or 1.
 
 {% demo src="swap/slide" %}
 

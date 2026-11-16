@@ -70,7 +70,7 @@ function ShellDemo({ width, height, defaultNavOpen }: FrameArgs) {
                 </TabsTab>
                 <TabsTab value="creamery" aria-label="Creamery">
                   <TabsPill />
-                  <WorkspaceTile color="#BF5AF2">C</WorkspaceTile>
+                  <WorkspaceTile tint="#BF5AF2">C</WorkspaceTile>
                 </TabsTab>
               </TabsList>
               <TabsFooter>

@@ -4,6 +4,7 @@
    up to quit. The apps are the desktop's own windows and the phone never moves or minimizes them, so they keep running
    (and keep their desktop places) when the width crosses over. */
 import { useCallback, useEffect, useRef, useState, type MouseEvent, type PointerEvent as ReactPointerEvent } from 'react';
+import type { Appearance } from '@/lib/theme';
 import { useContainerSize } from '@/lib/container';
 import { bindDrag, bindHold } from '@ui-sdk/core';
 import { Icon } from '@/lib/icon';
@@ -24,7 +25,8 @@ const DOCK_APPS = DOCK.flatMap((id) => APPS.filter((a) => a.id === id));
 const PAGE_APPS = APPS.filter((a) => !DOCK.includes(a.id));
 
 /** The clock is fixed, like the Mac's. `inApp` gives the bar the app's own surface. */
-export function StatusBar({ dark, inApp }: { dark: boolean; inApp: boolean }) {
+export function StatusBar({ appearance, inApp }: { appearance: Appearance; inApp: boolean }) {
+  const dark = appearance === 'dark';
   return (
     <div
       data-slot="macos-statusbar"
@@ -58,7 +60,8 @@ const HARD_PRESS = 0.75;
 
 /** The home bar: tap it to leave the open app (or the switcher) for the springboard; double-tap, long-press or
     press hard on it for the switcher. */
-export function HomeBar({ dark, inApp, onHome, onSwitcher }: { dark: boolean; inApp: boolean; onHome: () => void; onSwitcher: () => void }) {
+export function HomeBar({ appearance, inApp, onHome, onSwitcher }: { appearance: Appearance; inApp: boolean; onHome: () => void; onSwitcher: () => void }) {
+  const dark = appearance === 'dark';
   const button = useRef<HTMLButtonElement>(null);
   const last = useRef(0);
   // A hard press already opened the switcher, so neither the hold nor the click that ends this press does again.
@@ -120,7 +123,7 @@ export function HomeBar({ dark, inApp, onHome, onSwitcher }: { dark: boolean; in
 export interface Point { x: number; y: number }
 
 interface SpringboardProps {
-  dark: boolean;
+  appearance: Appearance;
   /** An app is up: the springboard recedes behind it. */
   away: boolean;
   /** `from` is the icon's center in the springboard's box, where the app zooms from. */
@@ -128,7 +131,8 @@ interface SpringboardProps {
   onSearch: () => void;
 }
 
-export function Springboard({ dark, away, onLaunch, onSearch }: SpringboardProps) {
+export function Springboard({ appearance, away, onLaunch, onSearch }: SpringboardProps) {
+  const dark = appearance === 'dark';
   const root = useRef<HTMLDivElement>(null);
   const [page, setPage] = useState(0);
   // The pages' room decides the icon size and how many rows fit before the next page.
@@ -250,10 +254,11 @@ export type Switcher = ReturnType<typeof useSwitcher>;
 
 /** The switcher's touch layer over the apps (which the windows lay out as cards): scroll between them, tap one to
     open it, flick one up to quit it, tap the empty space to go back. */
-export function AppSwitcher({ apps, layer, switcher, dark, onPick, onQuit, onBack }: {
-  apps: DesktopApp[]; layer: Area; switcher: Switcher; dark: boolean;
+export function AppSwitcher({ apps, layer, switcher, appearance, onPick, onQuit, onBack }: {
+  apps: DesktopApp[]; layer: Area; switcher: Switcher; appearance: Appearance;
   onPick: (id: string) => void; onQuit: (id: string) => void; onBack: () => void;
 }) {
+  const dark = appearance === 'dark';
   const { scale, cardW } = switcher;
   const cardH = scale * layer.height;
   const cardTop = layer.height / 2 + CARD_DROP - cardH / 2;

@@ -31,7 +31,7 @@ The rail fills the height of the nearest positioned ancestor (`top-0 bottom-0`) 
 
 ## A–Z
 
-`alphabetItems(letters)` is the UIKit alphabet: all 26 letters, with the ones not in `letters` disabled (dimmed but still reachable, so the stops never drift from the letters; pass nothing and every letter is enabled). `onJump` fires as the pointer crosses each letter. Hover peeks a magnified letter without jumping; press and drag to scrub and jump.
+`indexBarAlphabetItems(letters)` is the UIKit alphabet: all 26 letters, with the ones not in `letters` disabled (dimmed but still reachable, so the stops never drift from the letters; pass nothing and every letter is enabled). `onJump` fires as the pointer crosses each letter. Hover peeks a magnified letter without jumping; press and drag to scrub and jump.
 
 {% demo src="index-bar/alphabet" %}
 
@@ -39,7 +39,7 @@ The rail fills the height of the nearest positioned ancestor (`top-0 bottom-0`) 
 <div className="relative h-full">
   <Scroller ref={scroller}>…</Scroller>
   <IndexBar
-    items={alphabetItems(letters)}
+    items={indexBarAlphabetItems(letters)}
     className="top-2 bottom-2"
     onJump={(letter) => scrollToSection(letter)}
   />
@@ -94,7 +94,7 @@ Every `div` prop (`id`, `aria-label`, `className`, `style`, `ref`, `data-*`…) 
 
 | Prop | Default | Effect |
 | --- | --- | --- |
-| `items` | — | Stops: `K` (string or number) or `{ value?, label?, caption?, preview?, disabled?, level?, trailing? }`. `alphabetItems(available?)` builds the A–Z rail. |
+| `items` | — | Stops: `K` (string or number) or `{ value?, label?, caption?, preview?, disabled?, level?, trailing? }`. `indexBarAlphabetItems(available?)` builds the A–Z rail. |
 | `onJump` | — | `(value, { index, item, reason, event })` each time the rail lands on another stop. `reason` is `drag` (press or scrub), `list-navigation` (keys), `item-press` (a `panel` row, or a stop clicked by assistive tech) or `imperative` (the agent bridge). |
 | `variant` | `default` | `default` letters and dots with a bubble; `wave` dashes. |
 | `side` | `end` | `start` or `end`: the edge the rail sits on; previews open on the inner side. |

@@ -1,33 +1,5 @@
 import { Extension, type Editor } from "@tiptap/core"
-import {
-  AppWindow,
-  Columns2,
-  FileCode2,
-  Heading1,
-  Heading2,
-  Heading3,
-  Image,
-  Lightbulb,
-  Link2,
-  List,
-  ListChecks,
-  ListOrdered,
-  ListTodo,
-  Megaphone,
-  Minus,
-  Music,
-  MonitorPlay,
-  PanelTop,
-  Quote,
-  Sigma,
-  SquareChevronDown,
-  Superscript,
-  Table as TableIcon,
-  Terminal,
-  Webhook,
-  Workflow,
-  type LucideIcon,
-} from "lucide-react"
+import type { IconName } from "@brett_lamy/ui/lib/icon"
 
 import type { PMNode } from "./convert"
 import { editorTriggerPlugin, type EditorTrigger } from "./trigger-menu"
@@ -38,7 +10,7 @@ const para = (text = ""): PMNode =>
 interface SlashItem {
   title: string
   keywords: string
-  icon: LucideIcon
+  icon: IconName
   run: (editor: Editor) => void
 }
 
@@ -74,25 +46,25 @@ const main :Workerd.Worker = (
 );`
 
 export const SLASH_ITEMS: SlashItem[] = [
-  { title: "Heading 1", keywords: "h1 title", icon: Heading1, run: (e) => e.chain().focus().setHeading({ level: 1 }).run() },
-  { title: "Heading 2", keywords: "h2 section", icon: Heading2, run: (e) => e.chain().focus().setHeading({ level: 2 }).run() },
-  { title: "Heading 3", keywords: "h3 subsection", icon: Heading3, run: (e) => e.chain().focus().setHeading({ level: 3 }).run() },
-  { title: "Bullet list", keywords: "ul unordered", icon: List, run: (e) => e.chain().focus().toggleBulletList().run() },
-  { title: "Numbered list", keywords: "ol ordered", icon: ListOrdered, run: (e) => e.chain().focus().toggleOrderedList().run() },
-  { title: "Task list", keywords: "todo checkbox", icon: ListTodo, run: (e) => e.chain().focus().toggleList("taskList", "taskItem").run() },
-  { title: "Quote", keywords: "blockquote", icon: Quote, run: (e) => e.chain().focus().toggleBlockquote().run() },
-  { title: "Divider", keywords: "hr rule separator", icon: Minus, run: (e) => e.chain().focus().setHorizontalRule().run() },
-  { title: "Code block", keywords: "snippet pre", icon: FileCode2, run: (e) => e.chain().focus().toggleCodeBlock().run() },
+  { title: "Heading 1", keywords: "h1 title", icon: "heading-1", run: (e) => e.chain().focus().setHeading({ level: 1 }).run() },
+  { title: "Heading 2", keywords: "h2 section", icon: "heading-2", run: (e) => e.chain().focus().setHeading({ level: 2 }).run() },
+  { title: "Heading 3", keywords: "h3 subsection", icon: "heading-3", run: (e) => e.chain().focus().setHeading({ level: 3 }).run() },
+  { title: "Bullet list", keywords: "ul unordered", icon: "list", run: (e) => e.chain().focus().toggleBulletList().run() },
+  { title: "Numbered list", keywords: "ol ordered", icon: "list-number", run: (e) => e.chain().focus().toggleOrderedList().run() },
+  { title: "Task list", keywords: "todo checkbox", icon: "checklist", run: (e) => e.chain().focus().toggleList("taskList", "taskItem").run() },
+  { title: "Quote", keywords: "blockquote", icon: "quote", run: (e) => e.chain().focus().toggleBlockquote().run() },
+  { title: "Divider", keywords: "hr rule separator", icon: "minus", run: (e) => e.chain().focus().setHorizontalRule().run() },
+  { title: "Code block", keywords: "snippet pre", icon: "doc-code", run: (e) => e.chain().focus().toggleCodeBlock().run() },
   {
     title: "Hint",
     keywords: "callout info warning danger success admonition",
-    icon: Lightbulb,
+    icon: "lightbulb",
     run: insertBlock({ type: "gbHint", attrs: { style: "info" }, content: [para()] }),
   },
   {
     title: "Tabs",
     keywords: "tabbed switcher",
-    icon: PanelTop,
+    icon: "rectangle-top",
     run: insertBlock({
       type: "gbTabs",
       content: [
@@ -104,19 +76,19 @@ export const SLASH_ITEMS: SlashItem[] = [
   {
     title: "Install command",
     keywords: "command npm pnpm yarn bun npx package manager install terminal shell",
-    icon: Terminal,
+    icon: "terminal",
     run: insertBlock({ type: "gbCommand", attrs: { command: "", overrides: null, sync: null } }),
   },
   {
     title: "Expandable",
     keywords: "details accordion collapse",
-    icon: SquareChevronDown,
+    icon: "chevron-down-square",
     run: insertBlock({ type: "gbExpandable", attrs: { summary: "Click to expand" }, content: [para()] }),
   },
   {
     title: "Stepper",
     keywords: "steps guide step-by-step",
-    icon: ListChecks,
+    icon: "checklist",
     run: insertBlock({
       type: "gbStepper",
       content: [
@@ -128,25 +100,25 @@ export const SLASH_ITEMS: SlashItem[] = [
   {
     title: "Embed",
     keywords: "youtube video iframe url",
-    icon: MonitorPlay,
+    icon: "play-rectangle",
     run: insertBlock({ type: "gbEmbed", attrs: { url: "" } }),
   },
   {
     title: "Page link",
     keywords: "content-ref reference",
-    icon: Link2,
+    icon: "link",
     run: insertBlock({ type: "gbContentRef", attrs: { url: "", label: "Page link" } }),
   },
   {
     title: "Demo",
     keywords: "example live preview component playground",
-    icon: AppWindow,
+    icon: "macwindow",
     run: insertBlock({ type: "gbDemo", attrs: { src: "", title: "" } }),
   },
   {
     title: "Columns",
     keywords: "two column layout",
-    icon: Columns2,
+    icon: "rectangle-split",
     run: insertBlock({
       type: "gbColumns",
       content: [
@@ -158,25 +130,25 @@ export const SLASH_ITEMS: SlashItem[] = [
   {
     title: "Image",
     keywords: "figure picture photo",
-    icon: Image,
+    icon: "photo",
     run: insertBlock({ type: "gbFigure", attrs: { src: "", alt: "", caption: "" } }),
   },
   {
     title: "Math",
     keywords: "tex latex formula equation",
-    icon: Sigma,
+    icon: "sum",
     run: insertBlock({ type: "gbMath", attrs: { formula: "e = mc^2" } }),
   },
   {
     title: "Table",
     keywords: "grid cells",
-    icon: TableIcon,
+    icon: "table",
     run: (e) => e.chain().focus().insertTable({ rows: 2, cols: 2, withHeaderRow: true }).run(),
   },
   {
     title: "Updates",
     keywords: "changelog release notes",
-    icon: Megaphone,
+    icon: "megaphone",
     run: insertBlock({
       type: "gbUpdates",
       attrs: { format: "full" },
@@ -195,7 +167,7 @@ export const SLASH_ITEMS: SlashItem[] = [
   {
     title: "OpenAPI operation",
     keywords: "api swagger endpoint rest",
-    icon: Webhook,
+    icon: "webhook",
     run: insertBlock({
       type: "gbOpenapi",
       attrs: { spec: "", path: "/", method: "get", specUrl: "", label: "" },
@@ -204,7 +176,7 @@ export const SLASH_ITEMS: SlashItem[] = [
   {
     title: "Mermaid diagram",
     keywords: "chart graph flowchart",
-    icon: Workflow,
+    icon: "flowchart",
     run: insertBlock({
       type: "codeBlock",
       attrs: { language: "mermaid", title: null, lineNumbers: false },
@@ -214,7 +186,7 @@ export const SLASH_ITEMS: SlashItem[] = [
   {
     title: "XState diagram",
     keywords: "state machine statechart graph transitions",
-    icon: Workflow,
+    icon: "flowchart",
     run: insertBlock({
       type: "codeBlock",
       attrs: { language: "xstate", title: null, lineNumbers: false },
@@ -224,7 +196,7 @@ export const SLASH_ITEMS: SlashItem[] = [
   {
     title: "workerd config",
     keywords: "capnp cloudflare worker durable object services diagram",
-    icon: Workflow,
+    icon: "flowchart",
     run: insertBlock({
       type: "codeBlock",
       attrs: { language: "capnp", title: null, lineNumbers: false },
@@ -234,7 +206,7 @@ export const SLASH_ITEMS: SlashItem[] = [
   {
     title: "tscircuit example",
     keywords: "circuit pcb schematic electronics tsx",
-    icon: Workflow,
+    icon: "flowchart",
     run: insertBlock({
       type: "codeBlock",
       attrs: { language: "tscircuit", title: null, lineNumbers: false },
@@ -244,7 +216,7 @@ export const SLASH_ITEMS: SlashItem[] = [
   {
     title: "Strudel music",
     keywords: "audio song beat pattern live code tidal",
-    icon: Music,
+    icon: "music-note",
     run: insertBlock({
       type: "codeBlock",
       attrs: { language: "strudel", title: null, lineNumbers: false },
@@ -254,7 +226,7 @@ export const SLASH_ITEMS: SlashItem[] = [
   {
     title: "Citation",
     keywords: "cite footnote source reference superscript",
-    icon: Superscript,
+    icon: "superscript",
     run: (e) => {
       // Next free numeric citation id in the document.
       let max = 0

@@ -7,7 +7,7 @@ import { ReplayPreview, type ReplayPreviewHandle } from '@/components/ui/replay-
 import { Icon } from '@/lib/icon'
 
 // The recording's own moments (minus clicks) as a chronology beside the player:
-// `playerRef` seeks it, `onTimeUpdate` marks the steps already played.
+// `ref` seeks it, `onTimeUpdate` marks the steps already played.
 const steps = getReplayMarkers(replayDemoEvents).filter(
   (m) => m.kind !== 'click',
 )
@@ -30,7 +30,7 @@ export default function Chronology() {
         events={replayDemoEvents}
         initialTime={2300}
         chrome="minimal"
-        playerRef={player}
+        ref={player}
         onTimeUpdate={setTime}
       />
       <ol style={{ margin: 0, padding: 0, listStyle: 'none', display: 'grid', gap: 4 }}>

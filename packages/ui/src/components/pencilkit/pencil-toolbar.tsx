@@ -24,28 +24,32 @@ import {
 
 /* ══ PencilToolbar — the tool palette of a drawing, on the kit's Toolbar ══
    One tab stop, arrow keys across every picker and button (toggle groups join the toolbar's navigation). Groups
-   are separated with the kit's `ToolbarSeparator`; the actions you want always in view go in `PencilToolbarPinned`.
+   are separated with the kit's `ToolbarSeparator`; the actions you want always in view go in `trailing`.
 
-     <PencilToolbar>
+     <PencilToolbar
+       trailing={<><ToolbarSeparator /><PencilActions onUndo={undo} onRedo={redo} onClear={clear} canUndo={canUndo} canRedo={canRedo} canClear={canClear} /></>}
+     >
        <PencilToolPicker value={tool} onValueChange={setTool} />
        <ToolbarSeparator />
        <PencilInkPicker value={ink} onValueChange={setInk} />
        <ToolbarSeparator />
        <PencilWidthPicker value={width} onValueChange={setWidth} />
-       <PencilToolbarPinned>
-         <ToolbarSeparator />
-         <PencilActions onUndo={undo} onRedo={redo} onClear={clear} canUndo={canUndo} canRedo={canRedo} canClear={canClear} />
-       </PencilToolbarPinned>
      </PencilToolbar>
 
    The toolbar sits in the flow: position it where it goes (`absolute inset-x-0 bottom-3 mx-auto` over a canvas). When
    its groups don't fit (a phone, a narrow pane), the ink and width pickers fold into one button each that opens their
    row in a popover; if that still isn't enough, the groups scroll sideways under a fade on each edge that has more
-   past it, while the pinned part stays at the trailing end. */
+   past it, while `trailing` stays in view at the end. */
 
 /* --------------------------------- container --------------------------------- */
 
-export type PencilToolbarProps = Omit<ToolbarProps, 'children'> & { children?: React.ReactNode };
+export type PencilToolbarProps = Omit<ToolbarProps, 'children'> & {
+  /** The tools: they scroll sideways when they don't fit. */
+  children?: React.ReactNode;
+  /** What stays in view at the toolbar's trailing end while the tools scroll (undo, redo, clear; usually after a
+   *  `ToolbarSeparator`). */
+  trailing?: React.ReactNode;
+};
 
 /** What a PencilToolbar tells the pickers inside it. `compact`: its groups ran out of room. When compact, a folded
  *  ink picker offers a spot in its popover (`inkSlot`) where a folded width picker puts its row, so the two share one
@@ -59,11 +63,6 @@ interface PencilToolbarContextValue {
   join: (kind: 'inks' | 'widths') => () => void;
 }
 const PencilToolbarContext = React.createContext<PencilToolbarContextValue | null>(null);
-
-/** The pinned part, found among the toolbar's direct children. */
-function isPinned(node: React.ReactNode): boolean {
-  return React.isValidElement(node) && node.type === PencilToolbarPinned;
-}
 
 /** Whether the toolbar is compact: its groups overflowed the room it has. It collapses when they overflow and
  *  expands again only once the box it sits in grows past the width it had then (so it never flips back and forth). */
@@ -96,10 +95,7 @@ function useCompact(viewport: React.RefObject<HTMLDivElement | null>): boolean {
 /** A Toolbar (default `variant="floating"`, named "Drawing tools"). When its groups don't fit, the ink and width
  *  pickers fold into one button that opens them in a popover; whatever still doesn't fit scrolls sideways under an
  *  edge fade. */
-export function PencilToolbar({ variant = 'floating', className, children, onPointerDown, ...rest }: PencilToolbarProps) {
-  const all = React.Children.toArray(children);
-  const pinned = all.filter(isPinned);
-  const scrolled = all.filter((c) => !isPinned(c));
+export function PencilToolbar({ variant = 'floating', className, children, trailing, onPointerDown, ...rest }: PencilToolbarProps) {
   const viewport = React.useRef<HTMLDivElement>(null);
   const compact = useCompact(viewport);
   const [inkSlot, setInkSlot] = React.useState<HTMLElement | null>(null);
@@ -137,21 +133,17 @@ export function PencilToolbar({ variant = 'floating', className, children, onPoi
               'data-overflow-x:not-data-at-x-start:[--fade-start:--spacing(6)] data-overflow-x:not-data-at-x-end:[--fade-end:--spacing(6)]',
             )}
           >
-            {scrolled}
+            {children}
           </ScrollAreaViewport>
         </ScrollArea>
-        {pinned}
+        {trailing != null ? (
+          <div data-part="trailing" className="flex shrink-0 items-center gap-1 pe-1">
+            {trailing}
+          </div>
+        ) : null}
       </Toolbar>
     </PencilToolbarContext.Provider>
   );
-}
-
-export type PencilToolbarPinnedProps = React.ComponentProps<'div'>;
-
-/** What stays at the trailing end of a PencilToolbar while the rest scrolls (undo, redo, clear). A direct child of
- *  PencilToolbar. */
-export function PencilToolbarPinned({ className, ...props }: PencilToolbarPinnedProps) {
-  return <div data-slot="pencil-toolbar-pinned" className={cn('flex shrink-0 items-center gap-1 pe-1', className)} {...props} />;
 }
 
 /* ---------------------------------- pickers ---------------------------------- */

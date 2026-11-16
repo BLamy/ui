@@ -9,6 +9,10 @@
   "types": [
     "ReferenceNode",
     "CodeBlockNode",
-    "CodeBlockRenderDetails"
-  ]
+    "CodeBlockRenderDetails",
+    "MarkdownViewDemo"
+  ],
+  "css": {
+    "@import \"@brett_lamy/ui/docstream/styles.css\"": {}
+  }
 }

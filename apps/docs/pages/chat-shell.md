@@ -34,7 +34,7 @@ import {
 } from '@/components/ui/sidebar'
 import {
   Composer, ComposerCard, ComposerInput, ComposerFooter, ComposerSpacer, ComposerSend,
-} from '@/components/ui/composer/composer'
+} from '@/components/ui/composer'
 
 export function Chat() {
   const [channel, setChannel] = useState('general')

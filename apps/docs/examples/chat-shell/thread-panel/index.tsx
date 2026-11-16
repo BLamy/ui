@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react'
 import { Avatar } from '@/components/ui/avatar'
-import { Composer, ComposerCard, ComposerFooter, ComposerInput, ComposerSend, ComposerSpacer } from '@/components/ui/composer/composer'
+import { Composer, ComposerCard, ComposerFooter, ComposerInput, ComposerSend, ComposerSpacer } from '@/components/ui/composer'
 import { Button as SdkButton } from '@ui-sdk/react/button';
 import { Icon } from '@/lib/icon'
 import { ChatShell, ChatShellDescription, ChatShellFooter, ChatShellHeader, ChatShellHeaderIcon, ChatShellMain, ChatShellPanel, ChatShellTitle } from '@/components/blocks/discord-clone/components/chat-shell'

@@ -36,7 +36,7 @@ import {
 ```tsx
 import { MessageScroller, MessageScrollerItem } from '@/components/ui/message-scroller'
 
-<MessageScroller threadKey={thread.id} streaming={isStreaming}>
+<MessageScroller threadKey={thread.id} streaming={streaming}>
   {messages.map((m) => (
     <MessageScrollerItem key={m.id} value={m.id} anchor={m.role === 'user'}>
       <Message message={m} />
@@ -88,7 +88,7 @@ The column is `--message-column-width` (780px) wide and centred, with `--message
 <MessageScroller style={{ '--message-gutter': '12px', '--message-column-width': '100%' } as React.CSSProperties}>…</MessageScroller>
 ```
 
-The parts have `data-slot`s: `message-scroller`, `message-scroller-viewport` (with `data-resting` inside a resting peek host), `message-scroller-content`, `message-scroller-item` (with `data-anchor`), `message-scroller-jump` (`data-open` / `data-closed`) and `message-scroller-jump-button` (`data-streaming`).
+The parts have `data-slot`s: `message-scroller`, `message-scroller-viewport` (with `data-resting` inside a resting peek host, and `data-scrolled` while it is scrolled away from its top, when the content fades under its top edge instead of being cut mid-line), `message-scroller-content`, `message-scroller-item` (with `data-anchor`), `message-scroller-jump` (`data-open` / `data-closed`) and `message-scroller-jump-button` (`data-streaming`).
 
 ## Accessibility
 

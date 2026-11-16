@@ -24,7 +24,7 @@ import { fieldSurfaceVariants } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTitle, PopoverTrigger, type PopoverProps } from '@/components/ui/popover';
 import { Icon } from '@/lib/icon';
-import { selectableText } from '@/lib/primitives';
+import { coarseHitArea, selectableText } from '@/lib/primitives';
 import { cn, cx } from '@/lib/utils';
 
 /* ══ ColorPicker / ColorInput — UI SDK's ColorPicker, drawn as iOS ══
@@ -238,6 +238,8 @@ export function ColorPickerSwatchItem({ className, ...props }: ComponentProps<ty
         [
           'box-border size-7 cursor-pointer appearance-none rounded-full border-0 bg-(--color-picker-color) p-0 shadow-hairline outline-none forced-color-adjust-none transition-transform duration-spring-snappy ease-spring-snappy hover:not-data-disabled:scale-110 motion-reduce:transition-none data-disabled:cursor-default',
           'data-selected:ring-2 data-selected:ring-ring data-selected:ring-offset-2 data-selected:ring-offset-popover focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-popover',
+          // 28px to the eye, 44px to a finger.
+          'relative', coarseHitArea,
         ],
         className,
       )}

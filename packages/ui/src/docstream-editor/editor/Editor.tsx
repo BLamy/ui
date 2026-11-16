@@ -3,14 +3,7 @@
 import { useEffect, useId, useMemo, useRef, useState } from "react"
 import { EditorContent, useEditor, useEditorState, type Editor as TiptapEditor } from "@tiptap/react"
 import type { AnyExtension } from "@tiptap/core"
-import {
-  Bold,
-  Code as CodeIcon,
-  Italic,
-  Link2,
-  SlashSquare,
-  Strikethrough,
-} from "lucide-react"
+import { Glyph } from "./glyph"
 
 import { Button } from "@ui-sdk/react/button"
 import { Input } from "@ui-sdk/react/input"
@@ -255,7 +248,7 @@ function LinkTool({ editor, active }: { editor: TiptapEditor; active: boolean })
         // Bold and the others say they're on with aria-pressed; a popup trigger can't, so it says so in its description.
         aria-describedby={active ? linkedId : undefined}
       >
-        <Link2 className="size-4" aria-hidden="true" />
+        <Glyph name="link" className="size-4" size={24} />
         <span id={linkedId} hidden>
           In a link
         </span>
@@ -309,20 +302,20 @@ function FormattingToolbar({ editor }: { editor: TiptapEditor }) {
   return (
     <Toolbar className="gb-toolbar" aria-label="Formatting" disabled={!active.editable}>
       <MarkToggle label="Bold" pressed={active.bold} onToggle={() => chain().toggleBold().run()}>
-        <Bold className="size-4" />
+        <Glyph name="bold" className="size-4" size={24} />
       </MarkToggle>
       <MarkToggle label="Italic" pressed={active.italic} onToggle={() => chain().toggleItalic().run()}>
-        <Italic className="size-4" />
+        <Glyph name="italic" className="size-4" size={24} />
       </MarkToggle>
       <MarkToggle label="Strike" pressed={active.strike} onToggle={() => chain().toggleStrike().run()}>
-        <Strikethrough className="size-4" />
+        <Glyph name="strikethrough" className="size-4" size={24} />
       </MarkToggle>
       <MarkToggle label="Inline code" pressed={active.code} onToggle={() => chain().toggleCode().run()}>
-        <CodeIcon className="size-4" />
+        <Glyph name="code" className="size-4" size={24} />
       </MarkToggle>
       <LinkTool editor={editor} active={active.link} />
       <span className="gb-toolbar-hint">
-        <SlashSquare className="size-3.5" aria-hidden="true" /> Type <kbd>/</kbd> for blocks
+        <Glyph name="slash-square" className="size-3.5" size={24} /> Type <kbd>/</kbd> for blocks
       </span>
     </Toolbar>
   )

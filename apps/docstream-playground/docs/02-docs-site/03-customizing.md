@@ -15,11 +15,11 @@ description: Branding, theme and colors, page actions, edit links, footers, per-
     { label: "GitHub", href: "https://github.com/acme/acme" },
     { label: "Discord", href: "https://discord.gg/acme" },
   ]}
-  accentColor="#e8590c"
+  tint="#e8590c"
 />
 ```
 
-`title` shows in the header and the browser tab (`"Install — Acme"`). `accentColor` recolors links, the active sidebar item, the breadcrumb, the outline marker and focus rings. Header links open in a new tab; with an `icon`, narrow layouts show the icon alone.
+`title` shows in the header and the browser tab (`"Install — Acme"`). `tint` (a CSS color) recolors links, the current sidebar item, the breadcrumb, the outline marker and focus rings. Header links open in a new tab; with an `icon`, narrow layouts show the icon alone.
 
 ## Sections in the header
 
@@ -43,11 +43,11 @@ The built-in palette has a light and a dark set. The header's switch flips them 
 
 | Prop | Default | Effect |
 | --- | --- | --- |
-| `defaultTheme` | `"system"` | Starting theme when the reader hasn't chosen: `light`, `dark`, or the OS setting. |
-| `theme` / `onThemeChange` | — | Control it yourself. |
-| `themeToggle` | `true` | Show the switch. |
-| `themeStorageKey` | `"docstream-site-theme"` | Where the choice is kept; `false` to not persist. |
-| `applyThemeTo` | `"document"` | Also set `data-theme` on `<html>`, so the rest of your page follows. `"site"` keeps it on the site element (the default for `routing="memory"`). |
+| `defaultAppearance` | `"auto"` | The starting appearance when the reader hasn't chosen: `light`, `dark`, or `auto` (the OS setting). |
+| `appearance` / `onAppearanceChange` | — | Control it yourself. |
+| `appearanceToggle` | `true` | Show the switch. |
+| `appearanceStorageKey` | `"docstream-site-theme"` | Where the choice is kept; `false` to not persist. |
+| `applyAppearanceTo` | `"document"` | Also set `data-theme` on `<html>`, so the rest of your page follows. `"site"` keeps it on the site element (the default for `routing="memory"`). |
 | `palette` | `true` | Use docstream's colors. Set `false` when your app defines shadcn-style tokens. |
 
 With `palette={false}` the site reads the same tokens docstream's content does — `--background`, `--foreground`, `--card`, `--muted`, `--muted-foreground`, `--border`, `--accent`, `--primary` — from wherever your app defines them. A Tailwind / shadcn app is themed with no extra CSS. See [Theming](../07-reference/01-theming.md) for the full token list.
@@ -131,7 +131,7 @@ const files = import.meta.glob("../docs/**/*.md", { query: "?raw", import: "defa
     title="docstream"
     logo={<Logo />}
     links={[{ label: "GitHub", href: GITHUB }, { label: "npm", href: NPM }]}
-    themeStorageKey="docstream-demo-theme"
+    appearanceStorageKey="docstream-demo-theme"
     liveRenderer={liveRenderer}
     sourceRenderer={sourceRenderer}
     demoResolver={demoResolver}

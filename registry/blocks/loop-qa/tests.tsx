@@ -17,7 +17,7 @@ import { useLoopQA } from './state';
 
 const STATE: Record<PlaywrightTest['status'], { tone: PillTone; label: string; icon: string }> = {
   passing: { tone: 'success', label: 'Passing', icon: 'check' },
-  failing: { tone: 'danger', label: 'Failing', icon: 'xmark' },
+  failing: { tone: 'destructive', label: 'Failing', icon: 'xmark' },
   flaky: { tone: 'warning', label: 'Flaky', icon: 'exclamation-circle' },
 };
 

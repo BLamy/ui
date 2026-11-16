@@ -1,5 +1,5 @@
 'use client';
-import { createContext, useCallback, useContext, useMemo, useRef, useSyncExternalStore, type CSSProperties, type ReactNode, type Ref } from 'react';
+import { createContext, useCallback, useContext, useMemo, useRef, useSyncExternalStore, type ComponentProps, type CSSProperties, type ReactNode, type Ref } from 'react';
 import type { Viewport } from '@ui-sdk/core';
 import { usePart, usePrimitive } from '@ui-sdk/react/primitive';
 import { useContainerSize } from '@/lib/container';
@@ -8,7 +8,7 @@ import { canvas, miniMapLayout, type CanvasController, type CanvasOptions, type 
 import { cn } from '@/lib/utils';
 
 export { createCanvasController } from '@/lib/canvas-primitive';
-export type { CanvasController, CanvasFitOptions, CanvasPointerInfo, CanvasViewportChangeDetails, CanvasViewportReason } from '@/lib/canvas-primitive';
+export type { CanvasController, CanvasFitOptions, CanvasInsets, CanvasPointerInfo, CanvasViewportChangeDetails, CanvasViewportReason } from '@/lib/canvas-primitive';
 export type { Viewport };
 
 /* ══ Canvas — an infinite, pannable, zoomable surface ══
@@ -34,7 +34,8 @@ export type { Viewport };
    cursor is the caller's (`className="cursor-crosshair"`, or `style` for one that changes); grab and grabbing win while
    the view is dragged. */
 
-export interface CanvasProps extends CanvasOptions {
+/** The root is a `div`: `id`, `data-*`, `title`, its events and the rest of a div's props reach it. */
+export interface CanvasProps extends CanvasOptions, Omit<ComponentProps<'div'>, keyof CanvasOptions | 'children' | 'ref' | 'style' | 'className'> {
   /** The pattern behind the board (default `dots`). */
   background?: 'dots' | 'grid' | 'none';
   'aria-label'?: string;
@@ -92,6 +93,7 @@ export function Canvas({
   viewport, defaultViewport, onViewportChange, panning, fit, fitPadding, minZoom, maxZoom, message, autoFocus, zoomVariable,
   onCanvasPointerDown, onCanvasPointerMove, onCanvasPointerUp, onCanvasDoubleClick, onNavigationStart, onCanvasKeyDown, controller,
   background = 'dots', 'aria-label': ariaLabel = 'Canvas', 'aria-describedby': describedBy, overlay, children, className, style, ref: refProp,
+  ...rest
 }: CanvasProps) {
   // Pointer layers ask for a press before the host; a press one takes stays with it until the pointer lifts.
   const layers = useRef<CanvasPointerLayer[]>([]);
@@ -171,6 +173,7 @@ export function Canvas({
   const board = usePart(handle, 'board', {}, { className: 'pointer-events-auto absolute top-0 left-0 text-foreground', children }, 'div');
   const pane = usePart(handle, 'pane', {}, { className: 'pointer-events-none absolute inset-0 touch-none overflow-scroll [scrollbar-width:none]', children: board }, 'div');
   const root = usePart(handle, 'root', {}, {
+    ...rest,
     ref: rootRef,
     'aria-label': ariaLabel,
     'aria-describedby': describedBy,

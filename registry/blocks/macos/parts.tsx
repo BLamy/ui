@@ -1,6 +1,7 @@
 /* The desktop's pieces that aren't the launcher's menu: app tiles and file glyphs, the hat, the desktop (wallpaper,
    menu bar, dock) and the power overlays (lock screen, sleep, restart, shut down). */
 import { useEffect, useRef, useState, type CSSProperties, type MouseEvent as ReactMouseEvent, type ReactNode } from 'react';
+import type { Appearance } from '@/lib/theme';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuContextTrigger, createDropdownMenuController } from '@/components/ui/dropdown-menu';
 import { HoverCard, HoverCardContent, HoverCardHeader, HoverCardTrigger } from '@/components/ui/hover-card';
 import { Swap } from '@/components/ui/swap';
@@ -151,7 +152,8 @@ const WALL = {
 };
 const AT = ['12% 18%', '88% 12%', '78% 92%', '18% 88%'];
 
-export function Wallpaper({ dark, children, className }: { dark: boolean; children?: ReactNode; className?: string }) {
+export function Wallpaper({ appearance, children, className }: { appearance: Appearance; children?: ReactNode; className?: string }) {
+  const dark = appearance === 'dark';
   const w = dark ? WALL.dark : WALL.light;
   const style: CSSProperties = {
     backgroundColor: w.base,
@@ -182,7 +184,8 @@ function useCountdown(timer: RunningTimer | null) {
 
 /** The menu bar: the frontmost app's name and menus, and the status items. The clock is fixed (9:41). Tailscale and Wi-Fi are
     working items (status-items.tsx); `initialMenu` opens one of them on load. */
-export function MenuBar({ dark, onAlfred, initialMenu }: { dark: boolean; onAlfred: () => void; initialMenu?: StatusMenu }) {
+export function MenuBar({ appearance, onAlfred, initialMenu }: { appearance: Appearance; onAlfred: () => void; initialMenu?: StatusMenu }) {
+  const dark = appearance === 'dark';
   const { timer } = useAlfred();
   const { front } = useDesktop();
   const app = APPS.find((a) => a.id === front);
@@ -230,7 +233,8 @@ export interface DockPrefs { magnify: boolean; hide: boolean }
 /** The Dock: every app, a dot under the ones that are open, then Alfred and the Trash. Click an app to open it (or
     bring it forward); right-click for Magnification and Hiding. `tile` is the icon size; the dock sizes it to fit the
     desktop's width. */
-export function Dock({ dark, tile, onAlfred, prefs, onPrefs }: { dark: boolean; tile: number; onAlfred: () => void; prefs: DockPrefs; onPrefs: (p: DockPrefs) => void }) {
+export function Dock({ appearance, tile, onAlfred, prefs, onPrefs }: { appearance: Appearance; tile: number; onAlfred: () => void; prefs: DockPrefs; onPrefs: (p: DockPrefs) => void }) {
+  const dark = appearance === 'dark';
   const { trash } = useAlfred();
   const d = useDesktop();
   const { magnify, hide } = prefs;
@@ -411,7 +415,8 @@ function BootBar() {
 
 /* ── Power: lock screen, sleep, restart, shut down ── */
 
-export function PowerOverlay({ state, onWake, dark }: { state: PowerState; onWake: () => void; dark: boolean }) {
+export function PowerOverlay({ state, onWake, appearance }: { state: PowerState; onWake: () => void; appearance: Appearance }) {
+  const dark = appearance === 'dark';
   // Any key wakes (not the press that put it to sleep — this listens from the next commit on).
   useEffect(() => {
     if (!state || state === 'restart') return;

@@ -1,0 +1,25 @@
+{
+  "name": "syntax",
+  "title": "Syntax highlighting",
+  "description": "Syntax lexing for code: gpu-lexer (a small WebGPU model that labels spans in any language) behind one shared device, queue and cache, with the kit's synchronous lexer (lib/syntax-lexer) as the fallback when WebGPU is missing or software-only. lexSyntax labels a source; tokenizeLines splits the spans into CodeEditor's per-line tokens; languageFromPath picks a language from a file name.",
+  "page": "code-editor",
+  "exports": [
+    "lexSyntax",
+    "tokenizeLines",
+    "languageFromPath",
+    "webgpuSupported",
+    "peekSyntax",
+    "codeTokenClass"
+  ],
+  "imports": [
+    "lexSyntax",
+    "tokenizeLines",
+    "languageFromPath"
+  ],
+  "types": [
+    "CodeToken",
+    "SyntaxHighlighter",
+    "SyntaxResult",
+    "SyntaxEngine"
+  ]
+}

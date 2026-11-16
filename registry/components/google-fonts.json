@@ -1,0 +1,27 @@
+{
+  "name": "google-fonts",
+  "title": "Google Fonts",
+  "description": "The most popular Google Fonts families (GOOGLE_FONTS, with category, weights and italics), loading one from the Google Fonts CDN once and only the glyphs a sample needs, and fontStack(family) for a CSS font-family with the right fallback. useGoogleFont and useGoogleFontStatus load a family from a component.",
+  "page": "font-picker",
+  "exports": [
+    "GOOGLE_FONTS",
+    "FONT_CATEGORIES",
+    "findGoogleFont",
+    "fontStack",
+    "googleFontsUrl",
+    "loadGoogleFont",
+    "useGoogleFont",
+    "useGoogleFontStatus"
+  ],
+  "imports": [
+    "GOOGLE_FONTS",
+    "fontStack",
+    "loadGoogleFont"
+  ],
+  "types": [
+    "GoogleFont",
+    "FontCategory",
+    "GoogleFontOptions",
+    "GoogleFontStatus"
+  ]
+}

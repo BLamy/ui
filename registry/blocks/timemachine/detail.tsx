@@ -94,7 +94,7 @@ export function SessionDetail({ session, onDeleted }: { session: SessionInfo; on
       </header>
       <div className="min-h-0 flex-1 overflow-y-auto p-5">
         {events && events.length > 1 ? (
-          <ReplayPreview key={`${session.id}:${version}`} events={events} title={`Session from ${fullLabel(session.startedAt)}`} autoplay={false} lazy={false} />
+          <ReplayPreview key={`${session.id}:${version}`} events={events} title={`Session from ${fullLabel(session.startedAt)}`} autoplay={false} mounted />
         ) : load && 'error' in load ? (
           <p className="m-0 py-16 text-center text-detail text-muted-foreground">{load.error}</p>
         ) : events ? (

@@ -104,11 +104,6 @@ export const optionGroupClass = 'not-first:mt-1.5 not-first:pt-1.5 not-first:sha
 /** A group's name: the kit's menu section label. */
 export const optionGroupLabelClass = cn(sectionLabelVariants({ variant: 'menu' }), 'px-2 pt-1 pb-1');
 export const optionSeparatorClass = 'my-1.5 h-px bg-border';
-/** A list's popup presented as a sheet, shaped like the kit's bottom Sheet: the full width of its host, square at the
-    bottom edge. It sets the sheet's `--sheet-backdrop`, which only dims the page when the popup is in the top layer: in
-    a layer host (BLProvider is one) the sheet has no scrim behind it. */
-export const optionSheetClass =
-  'data-[presentation=sheet]:max-h-[calc(100%-48px)] data-[presentation=sheet]:w-full data-[presentation=sheet]:min-w-0 data-[presentation=sheet]:rounded-t-card data-[presentation=sheet]:rounded-b-none data-[presentation=sheet]:pb-[max(16px,env(safe-area-inset-bottom))] data-[presentation=sheet]:[--sheet-backdrop:var(--overlay,color-mix(in_oklab,black_40%,transparent))]';
 
 /* ── Row density in a popup list (Select, Combobox) ──
    A picker's field and its popup's rows share one size: the box part (SelectTrigger, ComboboxInputGroup) reports
@@ -116,9 +111,18 @@ export const optionSheetClass =
    `size` on the content still wins. */
 
 export type OptionRowSize = 'sm' | 'default';
-export const optionRowSizes = { sm: 'min-h-8 py-1.5 text-footnote leading-[18px]', default: '' } as const;
-/** The rows' size, provided by the popup content and read by each item. */
-export const OptionRowSizeContext = createContext<OptionRowSize>('default');
+/** The rows' density as the content resolved it: `sm` asked for on the content (dense in a sheet too), `field-sm`
+ *  (dense under a small field in a popup; a sheet keeps its 44px touch rows) or `default`. */
+export type OptionRowDensity = OptionRowSize | 'field-sm';
+const SHEET = 'in-data-[presentation=sheet]:';
+const dense = ['min-h-8', 'py-1.5', 'text-footnote', 'leading-[18px]'];
+export const optionRowSizes: Record<OptionRowDensity, string> = {
+  sm: [...dense, ...dense.map((c) => SHEET + c), `${SHEET}pr-3 ${SHEET}pl-2`].join(' '),
+  'field-sm': dense.map((c) => `not-${SHEET}${c}`).join(' '),
+  default: '',
+};
+/** The rows' density, provided by the popup content and read by each item. */
+export const OptionRowSizeContext = createContext<OptionRowDensity>('default');
 
 type FieldSize = 'sm' | 'default' | 'lg';
 /** The field's size, held by a picker's root. */
@@ -136,8 +140,8 @@ export function useReportFieldSize(size: FieldSize | null | undefined) {
   useLayoutEffect(() => { set?.(shown); }, [set, shown]);
 }
 
-/** The popup's row size: its own `size`, else dense under a small field. */
-export function useOptionRowSize(size: OptionRowSize | undefined): OptionRowSize {
+/** The popup's row density: its own `size`, else dense under a small field (but not in a sheet). */
+export function useOptionRowSize(size: OptionRowSize | undefined): OptionRowDensity {
   const field = useContext(PickerFieldSizeContext)?.[0];
-  return size ?? (field === 'sm' ? 'sm' : 'default');
+  return size ?? (field === 'sm' ? 'field-sm' : 'default');
 }

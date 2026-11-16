@@ -48,7 +48,7 @@ import type { Weights } from "./weights";
 import type { Index, Match, Schema } from "./schema";
 
 export { LABELS };
-export type { Field, Kind, Schema } from "./schema";
+export type { Field as GpuQueryField, Kind, Schema } from "./schema";
 export type { Weights } from "./weights";
 
 export interface Clause {

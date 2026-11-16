@@ -1,6 +1,6 @@
 {
   "title": "ReplayPreview with replayDemoEvents",
-  "description": "A real rrweb recording, played in the page. The buttons drive it through `playerRef`; the readout comes from `onTimeUpdate`.",
+  "description": "A real rrweb recording, played in the page. The buttons drive it through `ref`; the readout comes from `onTimeUpdate`.",
   "status": "Live",
   "variants": [
     { "id": "browser", "label": "browser" },

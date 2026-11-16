@@ -14,6 +14,15 @@ globalThis.__UI_SDK_STRICT__ = true;
 
 afterEach(cleanup);
 
+/* A sheet that unmounts while open cancels its dim animation. On cancel() the Web Animations spec marks the
+   animation's `finished` promise as handled, and browsers do; happy-dom rejects it unhandled. Do as the spec says. */
+const animate = Element.prototype.animate;
+Element.prototype.animate = function (this: Element, ...args: Parameters<Element['animate']>) {
+  const animation = animate.apply(this, args);
+  animation.finished.catch(() => undefined);
+  return animation;
+};
+
 const settle = () => act(async () => { await new Promise((resolve) => setTimeout(resolve, 20)); });
 const key = async (name: string) => { fireEvent.keyDown(document.activeElement!, { key: name }); await settle(); };
 const press = async (el: Element) => { fireEvent.click(el); await settle(); };
@@ -240,5 +249,35 @@ describe('Select row size', () => {
     );
     await settle();
     expect(screen.getByRole('option', { name: 'A' }).className).not.toContain('min-h-8');
+  });
+
+  it('as a sheet: 44px rows in body text (also under a small field; only an explicit sm stays dense), and the grabber', async () => {
+    const rowClasses = async (content: 'sm' | undefined) => {
+      const view = render(
+        <Select aria-label="Size" defaultOpen presentation="sheet">
+          <SelectTrigger size="sm" />
+          <SelectContent size={content}>
+            <SelectItem value="a">A</SelectItem>
+          </SelectContent>
+        </Select>,
+      );
+      await settle();
+      const sheet = document.querySelector('[data-presentation=sheet]')!.className;
+      const classes = document.querySelector('[data-presentation=sheet] [data-slot=select-item]')!.className.split(' ');
+      view.unmount();
+      return { classes, sheet };
+    };
+    const field = await rowClasses(undefined);
+    expect(field.classes).toContain('in-data-[presentation=sheet]:min-h-11');
+    expect(field.classes).toContain('in-data-[presentation=sheet]:text-body');
+    // Dense under the small field only outside a sheet.
+    expect(field.classes).toContain('not-in-data-[presentation=sheet]:min-h-8');
+    expect(field.classes).not.toContain('min-h-8');
+    // The kit's sheet: top padding and the grabber.
+    expect(field.sheet).toContain('data-[presentation=sheet]:pt-4');
+    expect(field.sheet).toContain('data-[presentation=sheet]:before:w-9');
+    const explicit = await rowClasses('sm');
+    expect(explicit.classes).toContain('in-data-[presentation=sheet]:min-h-8');
+    expect(explicit.classes).not.toContain('in-data-[presentation=sheet]:min-h-11');
   });
 });

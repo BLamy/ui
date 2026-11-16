@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { DIAGRAM_TEXT_MAX_WIDTH, estimateText, measureText, onFontsLoaded } from './diagram-text';
-import { INITIAL_SIZE, NODE_MIN_SIZE, NODE_PADDING, diagramTextRuns, nodeTextSize, sizeNodesToText, type DiagramNode } from './diagram-model';
+import { MARKER_SIZE, NODE_MIN_SIZE, NODE_PADDING, diagramTextRuns, nodeTextSize, sizeNodesToText, type DiagramNode } from './diagram-model';
 
 describe('estimating, as on a server', () => {
   it('grows with the text, and goes by which letters', () => {
@@ -48,7 +48,7 @@ describe('sizes from text', () => {
   });
 
   it('allows for a final state’s heavier border', () => {
-    expect(nodeTextSize({ label: 'x'.repeat(20), kind: 'final' }, text).w).toBe(200 + NODE_PADDING.x * 2 + 4);
+    expect(nodeTextSize({ label: 'x'.repeat(20), variant: 'double' }, text).w).toBe(200 + NODE_PADDING.x * 2 + 4);
   });
 
   it('keeps to a least size', () => {
@@ -56,19 +56,19 @@ describe('sizes from text', () => {
     expect(nodeTextSize({}, text)).toEqual(NODE_MIN_SIZE);
   });
 
-  it('draws an initial marker the same size whatever it says', () => {
-    expect(nodeTextSize({ kind: 'initial', label: 'ignored' }, text)).toEqual({ w: INITIAL_SIZE, h: INITIAL_SIZE });
+  it('draws a marker the same size whatever it says', () => {
+    expect(nodeTextSize({ kind: 'marker', label: 'ignored' }, text)).toEqual({ w: MARKER_SIZE, h: MARKER_SIZE });
   });
 
   it('gives what holds others the room for its title', () => {
-    expect(nodeTextSize({ kind: 'compound', label: 'x'.repeat(10) }, text)).toEqual({ w: 100 + 24, h: 15 + 16 });
-    expect(nodeTextSize({ kind: 'parallel', label: 'x'.repeat(10), detail: 'parallel' }, text).w).toBe(100 + ' (parallel)'.length * 10 + 24);
+    expect(nodeTextSize({ kind: 'group', label: 'x'.repeat(10) }, text)).toEqual({ w: 100 + 24, h: 15 + 16 });
+    expect(nodeTextSize({ kind: 'group', variant: 'dashed', label: 'x'.repeat(10), detail: 'parallel' }, text).w).toBe(100 + ' (parallel)'.length * 10 + 24);
   });
 
   it('resizes around the center, and leaves alone what didn’t change or what holds others', () => {
     const same: DiagramNode = { id: 'a', label: 'x'.repeat(20), x: 0, y: 0, w: 226, h: 34 };
     const grows: DiagramNode = { id: 'b', label: 'x'.repeat(20), x: 100, y: 100, w: 100, h: 20 };
-    const holds: DiagramNode = { id: 'c', kind: 'compound', label: 'x', x: 0, y: 0, w: 5, h: 5 };
+    const holds: DiagramNode = { id: 'c', kind: 'group', label: 'x', x: 0, y: 0, w: 5, h: 5 };
     const [a, b, c] = sizeNodesToText([same, grows, holds], text);
     expect(a).toBe(same);
     expect(c).toBe(holds);
@@ -78,7 +78,7 @@ describe('sizes from text', () => {
   });
 
   it('collects what there is to measure', () => {
-    expect(diagramTextRuns([{ id: 'a', label: 'L', detail: 'D', x: 0, y: 0, w: 1, h: 1 }, { id: 'c', kind: 'compound', label: 'T', x: 0, y: 0, w: 1, h: 1 }, { id: 'i', kind: 'initial', x: 0, y: 0, w: 1, h: 1 }], [{ id: 'e', from: 'a', to: 'c', label: 'E' }, { id: 'f', from: 'a', to: 'c' }])).toEqual([
+    expect(diagramTextRuns([{ id: 'a', label: 'L', detail: 'D', x: 0, y: 0, w: 1, h: 1 }, { id: 'c', kind: 'group', label: 'T', x: 0, y: 0, w: 1, h: 1 }, { id: 'i', kind: 'marker', label: 'not drawn', x: 0, y: 0, w: 1, h: 1 }], [{ id: 'e', from: 'a', to: 'c', label: 'E' }, { id: 'f', from: 'a', to: 'c' }])).toEqual([
       { text: 'L', kind: 'label' }, { text: 'D', kind: 'detail' }, { text: 'T', kind: 'title' }, { text: 'E', kind: 'edge' },
     ]);
   });

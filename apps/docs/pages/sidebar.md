@@ -94,7 +94,7 @@ A CRM: the team (`SidebarAccount`) in the header, a search with its `/` shortcut
 
 ## Narrow containers: the drawer
 
-`presentation="auto"` (the default) is a column while the provider is wider than its `breakpoint` and a drawer while it is narrower (its size class is `compact`). The drawer is [AdaptivePane](https://blamy.github.io/ui/#/adaptive-pane)'s, a [Sheet](https://blamy.github.io/ui/#/sheet) contained in the provider: it comes from the start (the right under `dir="rtl"`), keeps focus inside while open, and Escape, a press on the scrim, a swipe toward its edge and a press on one of its rows close it. Rows grow to 44px for touch. The width is measured on the provider, never the viewport, so the same happens inside a 380px pane on a wide screen. The children are rendered once and only move between the column and the drawer: a filter field keeps what was typed.
+`presentation="auto"` (the default) is a column while the provider is at least `breakpoints.medium` wide (640px by default, the same size classes as SplitView and every other scope) and a drawer while it is narrower (its size class is `compact`). That is AdaptivePane's `auto` rule (`resolveAdaptivePanePresentation`) with one difference, on purpose: in a medium scope a navigation sidebar stays a column, as an iPad's split view keeps its sidebar beside the content, where a pane of tools becomes a drawer. The drawer is [AdaptivePane](https://blamy.github.io/ui/#/adaptive-pane)'s, a [Sheet](https://blamy.github.io/ui/#/sheet) contained in the provider: it comes from the start (the right under `dir="rtl"`), keeps focus inside while open, and Escape, a press on the scrim, a swipe toward its edge and a press on one of its rows close it. Rows grow to 44px for touch. The width is measured on the provider, never the viewport, so the same happens inside a 380px pane on a wide screen. The children are rendered once and only move between the column and the drawer: a filter field keeps what was typed.
 
 `presentation="column"` keeps a column at every width; `presentation="drawer"` is always a drawer (an overlay sidebar over a full-width page).
 
@@ -121,7 +121,7 @@ What closed means depends on the look: a `docked` or `float` column slides away 
 | Prop | Default | Effect |
 | --- | --- | --- |
 | `open` / `defaultOpen` / `onOpenChange` | `true` (closed when it mounts compact) | Open state; `onOpenChange(open, details)`. |
-| `breakpoint` | `560` | The provider's own width, px, below which it is `compact`. |
+| `breakpoints` | `{ medium: 640, regular: 1024 }` | Where the provider's own width changes size class, the same spelling and defaults as SplitView's: below `medium` it is `compact`. |
 | `controller` | — | `createSidebarController()`: `isOpen`, `setOpen`, `toggle` from anywhere. |
 | `className` / `style` / DOM props | — | The provider's box (`relative flex h-full`, `data-size-class`). |
 

@@ -148,7 +148,7 @@ sequenceDiagram
   Docstream-->>App: rendered blocks
   Note over App,Docstream: unterminated blocks render progressively
   LLM->>App: final chunk
-  App->>Docstream: isStreaming = false
+  App->>Docstream: streaming = false
 ```
 {% endtab %}
 {% tab title="State" %}
@@ -342,7 +342,7 @@ export const request = createMachine({
 
 A state's `invoke` shows on a second line, with its `onDone` and `onError` as `done` and `error` edges. An actor written inline, like `fromPromise(...)`, is only called `actor`, and neither it nor its `input` runs. `after`, `always`, guards, parallel regions and history states are all drawn too, the same as a [`StateDiagram`](https://blamy.github.io/ui/#/state-diagram).
 
-Import `XStateDiagram` or the result-only `XStatePreview` from `@brett_lamy/ui/docstream/xstate` to use them directly. The parser and XState load only when a statechart is displayed. To read a config yourself, `parseXState` and `xstateToMermaid` are in `@brett_lamy/ui/docstream/xstate/machine`, which loads them straight away.
+Import `XStateDiagram` or the result-only `XStatePreview` from `@brett_lamy/ui/docstream/xstate` to use them directly. The parser and XState load only when a statechart is displayed. To read a config yourself, `parseXState` is on `@brett_lamy/ui/lib/state-diagram-source`, and `xstateToMermaid` on `@brett_lamy/ui/docstream/xstate/machine`, which loads Babel and XState straight away. A [StateDiagram](https://blamy.github.io/ui/#/state-diagram) takes the same source as `source`, to run and edit it.
 
 ## Workerd configs
 

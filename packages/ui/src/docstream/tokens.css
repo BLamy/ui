@@ -1,0 +1,33 @@
+/* Docstream's semantic colors, hairline and radius, in one place for the renderer (`[data-docstream]`, `.docs-article`),
+   the editor (`.gb`) and the StlViewer and StrudelPlayer roots that stand outside an article: both sheets import this
+   file. Each reads the host's shadcn / BL UI token first (`--primary`, `--success`, `--warning`, `--destructive`,
+   `--border`, `--radius`), so a themed app themes its documents, and falls back to a neutral value so a page with no
+   theme still reads. The tints are mixed from the solid color, so overriding `--gb-success` (or `--success`) recolors
+   the hint's border and fill too. */
+[data-docstream],
+.docs-article,
+.gb,
+:is(.docstream-stl, .docstream-strudel):not(:is([data-docstream], .docs-article) *) {
+  --gb-primary: var(--primary, #4f46e5);
+  --gb-border: var(--border, #e4e4e7);
+  /* 12px with the default --radius (0.625rem): the kit's panel radius. */
+  --gb-radius: calc(var(--radius, 0.625rem) * 1.2);
+
+  --gb-info: var(--primary, #3b82f6);
+  --gb-info-border: color-mix(in srgb, var(--gb-info) 45%, transparent);
+  --gb-info-bg: color-mix(in srgb, var(--gb-info) 10%, transparent);
+  --gb-success: var(--success, #22c55e);
+  --gb-success-border: color-mix(in srgb, var(--gb-success) 45%, transparent);
+  --gb-success-bg: color-mix(in srgb, var(--gb-success) 10%, transparent);
+  --gb-warning: var(--warning, #f59e0b);
+  --gb-warning-border: color-mix(in srgb, var(--gb-warning) 50%, transparent);
+  --gb-warning-bg: color-mix(in srgb, var(--gb-warning) 12%, transparent);
+  --gb-danger: var(--destructive, #ef4444);
+  --gb-danger-border: color-mix(in srgb, var(--gb-danger) 45%, transparent);
+  --gb-danger-bg: color-mix(in srgb, var(--gb-danger) 10%, transparent);
+}
+
+/* Docstream's glyphs are the kit's Icon, drawn at 1.15× in the same box (ui/glyph.tsx). */
+[data-docstream-glyph] {
+  scale: 1.15;
+}

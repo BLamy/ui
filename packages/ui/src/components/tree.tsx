@@ -788,7 +788,7 @@ function DataTree({
 
   return (
     <div data-slot="tree-view" aria-busy={loading || undefined} className={cn(treeVariants({ density }), 'flex min-h-0 flex-col', className)} style={style} {...(rootProps as RootProps)}>
-      {search ? <SearchInput aria-label={`Search ${name}`} placeholder="Search" className="mb-1.5 shrink-0" value={query} onValueChange={(next) => setQuery(next)} /> : null}
+      {search ? <SearchInput aria-label={`Search ${name}`} placeholder="Search" className="mx-4 mb-1.5 shrink-0" value={query} onValueChange={(next) => setQuery(next)} /> : null}
       {contextMenu ? (
         <DropdownMenu
           onOpenChange={(isOpen, details) => {

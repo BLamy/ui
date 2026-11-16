@@ -76,7 +76,7 @@
   min-height: 320px;
 }
 
-/* `isStreaming` sets `data-streaming` on the wrapper: a styling hook, here a typing caret. */
+/* `streaming` sets `data-streaming` on the wrapper: a styling hook, here a typing caret. */
 .ls-output [data-streaming] .docs-article > p:last-child::after {
   content: "";
   display: inline-block;

@@ -1,4 +1,4 @@
-import { Composer, ComposerAdd, ComposerAttachments, ComposerCard, ComposerExpand, ComposerFooter, ComposerInput, ComposerSend, ComposerSpacer } from '@/components/ui/composer/composer'
+import { Composer, ComposerAdd, ComposerAttachments, ComposerCard, ComposerExpand, ComposerFooter, ComposerInput, ComposerSend, ComposerSpacer } from '@/components/ui/composer'
 import { ThemeScope } from '@/lib/theme'
 import { type ComposerAttachment } from '@/components/blocks/t3-clone/components/workbench/workbench-composer'
 

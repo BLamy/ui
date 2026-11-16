@@ -54,7 +54,9 @@
   --color-secondary-strong: var(--secondary-strong, var(--accent));
   /* The edge of an unchecked checkbox or radio: 3:1 against the surface in both schemes (WCAG 1.4.11). */
   --color-control-border: var(--control-border, var(--muted-foreground));
-  /* The selected thumb of a segmented control, tabs or toggle group: the card in light, a raised gray in dark. */
+  /* The selected thumb of a segmented control, tabs or toggle group: the card in light, a raised gray in dark. bl-theme
+     sets `--segment` in every scope, light ones included, so a light subtree on a dark page resets it; a theme without
+     it gets the card. */
   --color-segment: var(--segment, var(--card));
   --color-overlay: var(--overlay, color-mix(in oklab, black 40%, transparent));
   --color-bar: var(--bar, color-mix(in oklab, var(--background) 85%, transparent));

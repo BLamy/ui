@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Fader, Knob, parseMini, StepGrid } from '@brett_lamy/ui/docstream/strudel'
+import { Fader, Knob, parseMini, StepGrid } from '@brett_lamy/ui/docstream/strudel/rack'
 
 // The rack's hardware on its own. Wrap it in .strudel-rack for the
 // brushed-steel panel and its colours. Drag (Shift for fine), arrow keys,

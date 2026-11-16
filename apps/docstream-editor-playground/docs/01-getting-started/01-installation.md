@@ -30,7 +30,7 @@ The install runs no build or postinstall scripts, so `pnpm add` finishes without
 | `@tiptap/extension-placeholder` | The empty-document placeholder. |
 | docstream (`@brett_lamy/ui/docstream`) | The parser, the serializer, and every read-only piece the editor reuses: demo viewer, command box, Mermaid, KaTeX, OpenAPI, replays, 3D models, property sheet, task icons. |
 | `gpu-lexer` | Code-block highlighting, language-agnostic, on WebGPU. Without WebGPU, blocks stay plain text. |
-| `lucide-react` | Toolbar, menu and block icons. |
+| the kit's icons (`@brett_lamy/ui/lib/icon`) | Toolbar, menu and block icons, the same set as the rest of the library. |
 
 The editor converts docstream's AST node by node, so it is only correct against the docstream it was built with. They are one package now, so they can't drift apart: an app that imports both gets the pair that was tested together. See [With docstream](03-with-docstream.md).
 

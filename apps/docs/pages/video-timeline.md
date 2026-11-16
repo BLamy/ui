@@ -119,7 +119,7 @@ The timeline renders to a file with FFmpeg in the browser: see [Rendering a time
 | --- | --- | --- |
 | `value` / `defaultValue` / `onValueChange(value, details)` | — | The edit; `details` has `reason`, `id`, `action` and `cancel()`. Once per gesture or key. |
 | `playback` | required | The shared clock (`usePlaybackClock`) the playhead and the ruler follow. |
-| `media` | `{}` | Each media id's `duration`, `kind` and `name`. |
+| `media` | `{}` | `Record<id, TimelineMedia>`: each media id's `kind`, `duration` and `name` (the same map VideoPreview takes, which reads its `url`). |
 | `fps` | `30` | Frames per second: edits land on frames. |
 | `selectedClips` / `defaultSelectedClips` / `onSelectedClipsChange` | `[]` | The selection. |
 | `zoom` / `defaultZoom` / `onZoomChange` | `60` | Pixels per second. |
@@ -127,10 +127,11 @@ The timeline renders to a file with FFmpeg in the browser: see [Rendering a time
 | `renderClip(clip, track, { width, selected })` | the clip's name | A clip's content: a `Filmstrip`, a `Waveform`, a title. |
 | `clipClassName(clip, track)` | primary for video, success for audio | A clip's tint classes. |
 | `trackHeight(track)` | 64 magnetic video, 44 video, 40 audio | Lane height in px. |
-| `headerWidth` | 132, or 56 in a compact container | Track header width in px. In a compact container the header is the track's short name on a button whose menu holds Hide, Mute and Lock. |
+| `headerWidth` | 132, or 56 in a compact container | Track header width in px. In a compact container the header is the track's short code (`V1`, `V2`, `A1`, `Main` for the magnetic track) on a button named "{track} options" with the full name in its tooltip, whose menu holds Hide, Mute and Lock. In the full header the toggles are named after their track ("Hide Titles", "Mute Music", "Lock Music"). |
 | `onDropMedia(id, details)` | — | Media dragged in with `timelineMediaType`. |
 | `aria-label` | "Timeline" | Names the timeline. |
 | `className` / `style` | — | On the root. |
+| `ref` and a `div`'s other props | — | `id`, `data-*`, event handlers and the rest reach the root. |
 
 The playhead and its handle are `bg-playhead`, the destructive red unless a theme sets `--playhead`.
 

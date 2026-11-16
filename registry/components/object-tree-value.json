@@ -1,0 +1,25 @@
+{
+  "name": "object-tree-value",
+  "title": "Value previews",
+  "description": "Values described as data, and the one-line previews a debugger shows for them (DevTools-style tokens, clipped strings, lengths of large collections): what ObjectValue draws and ObjectTree's rows use. No React and nothing about trees, so a console row can use it alone.",
+  "page": "object-tree",
+  "exports": [
+    "previewFromValue",
+    "previewText",
+    "previewTokens",
+    "copyTextOf"
+  ],
+  "imports": [
+    "previewFromValue",
+    "previewText"
+  ],
+  "types": [
+    "ValuePreview",
+    "ValuePreviewOptions",
+    "ValueProperty",
+    "ValueMapEntry",
+    "ValueType",
+    "ValueTokenType",
+    "ValueToken"
+  ]
+}

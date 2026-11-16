@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { fallbackSpans, normalizeSpans, type SyntaxSpan } from '@/lib/syntax';
+import { normalizeSpans } from '@/lib/syntax';
+import { fallbackSpans, type SyntaxSpan } from '@/lib/syntax-lexer';
 
 /** Label every span of `code` as [text, type] for readable assertions. */
 const labels = (code: string, spans: SyntaxSpan[]) => spans.map((s) => [code.slice(s.start, s.end), s.type]);
@@ -106,9 +107,10 @@ describe('fallback lexer', () => {
     expect(labels(code, out).some(([s]) => s === '.' || s === '(' || s === ')')).toBe(false);
   });
 
-  it('labels :: and ... but not a lone colon', () => {
+  // The shared lexer labels punctuation as docstream colors it; CodeEditor's normalizeSpans leaves it plain.
+  it('labels :: and ... but not a lone colon or punctuation, once normalized', () => {
     const code = 'std::vec x = { ...rest, key: 1 }';
-    const ops = labels(code, fallbackSpans(code)).filter(([, t]) => t === 'operator').map(([s]) => s);
+    const ops = labels(code, normalizeSpans(code, fallbackSpans(code))).filter(([, t]) => t === 'operator').map(([s]) => s);
     expect(ops).toEqual(['::', '=', '...']);
   });
 });
@@ -172,5 +174,11 @@ describe('probeWebGPU', () => {
     answer({ info: { vendor: 'nvidia', architecture: 'ampere' } });
     await vi.advanceTimersByTimeAsync(0);
     expect(m.webgpuSupported()).toBe(true);
+  });
+
+  it("reads the language when it has rules for it, as docstream's fences do", () => {
+    const sql = 'SELECT name FROM users';
+    expect(labels(sql, fallbackSpans(sql, 'sql'))).toEqual([['SELECT', 'keyword'], ['FROM', 'keyword'], ['users', 'type']]);
+    expect(fallbackSpans('anything', 'text')).toEqual([]);
   });
 });

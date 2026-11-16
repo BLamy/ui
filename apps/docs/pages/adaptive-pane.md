@@ -69,6 +69,8 @@ const [pane] = useState(createAdaptivePaneController)
 
 `side` is the host's edge the pane belongs to: `start` (the default) or `end`, which follow the reading direction (under `dir="rtl"` a `start` drawer comes from the right, and its separator and swipe strip move with it).
 
+The rule is written once, as `resolveAdaptivePanePresentation(presentation, side, sizeClass, { medium })`: a component built on the pane that needs the resolved presentation before it renders (DiagramFrame, for its default `open`; Sidebar) calls it instead of copying it. `medium` changes the one size class where a pane's job decides: Sidebar passes `'column'`, since a navigation sidebar stays beside the content on a tablet, as an iPad's split view keeps it.
+
 A shell with its own thresholds can still pass a presentation by hand (`presentation={wide ? 'column' : 'drawer'}`); with `auto`, make the host a size-class scope instead (`useSizeClass` and `SizeClassProvider` from `@/lib/container`, as the demo above does), so a dialog opened from inside the pane follows the same scope.
 
 {% demo src="adaptive-pane/pane-modes" %}
@@ -138,6 +140,7 @@ The presentation doesn't have to come from the width. Here the reader chooses: d
 | Prop | Default | Effect |
 | --- | --- | --- |
 | `presentation` | `auto` | `auto` · `column` · `drawer` · `push` · `cover` · `hidden`. |
+| `ref` and a `div`'s other props | — | `id`, `data-*`, `inert`, event handlers and the rest reach the pane's root in every presentation (the column, or the box the drawer, push or cover sits in). |
 | `open` / `defaultOpen` / `onOpenChange(open, details)` | closed | Whether it shows. `details.reason`: `close-press`, `escape-key`, `outside-press`, `swipe`, `back`, `imperative`…; `details.cancel()` keeps it. |
 | `side` | `start` | `start` · `end` (logical: they follow the reading direction). |
 | `columnWidth` | the track's | The column's width (number = px, or any CSS length). |

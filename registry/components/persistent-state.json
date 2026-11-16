@@ -1,0 +1,13 @@
+{
+  "name": "persistent-state",
+  "title": "Persistent state",
+  "description": "State that survives a reload: usePersistentState is useState backed by localStorage as JSON (a missing, unparseable or invalid value falls back to the initial one; storage that throws is ignored), and loadJSON / saveJSON are the reads and writes underneath.",
+  "exports": [
+    "usePersistentState",
+    "loadJSON",
+    "saveJSON"
+  ],
+  "imports": [
+    "usePersistentState"
+  ]
+}

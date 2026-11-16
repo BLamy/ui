@@ -41,7 +41,6 @@ function StatusRow({ r }: { r: Reminder }) {
   const api = useReminders();
   const state = stateOf(r);
   const meta = TASK_STATES.find((s) => s.id === state)!;
-  const Current = TASK_STATE_ICONS[state];
   return (
     <ListSection>
       <ListRow icon={<Tile glyph="checklist" color={SYSTEM.green} />} title="Status" divider={false}
@@ -49,13 +48,12 @@ function StatusRow({ r }: { r: Reminder }) {
           <DropdownMenuTrigger render={<Button variant="ghost" size="sm" className="gap-1.5 text-primary" />}>
             {/* The menu is named by its trigger: "Status: Pending". */}
             <span className="sr-only">Status: </span>
-            <Current aria-hidden="true" size={17} strokeWidth={1.8} />{meta.label.split(' · ')[0]}
+            <Icon name={TASK_STATE_ICONS[state]} size={17} sw={1.8} />{meta.label.split(' · ')[0]}
           </DropdownMenuTrigger>
           <DropdownMenuContent side="bottom" align="end">
             <DropdownMenuRadioGroup value={state} onValueChange={(value) => api.setState(r.id, value as TaskState)}>
               {TASK_STATES.map((s) => {
-                const ItemIcon = TASK_STATE_ICONS[s.id];
-                return <DropdownMenuRadioItem key={s.id} closeOnSelect value={s.id} label={s.label} icon={<ItemIcon aria-hidden="true" size={19} strokeWidth={1.8} />}>{s.label}</DropdownMenuRadioItem>;
+                return <DropdownMenuRadioItem key={s.id} closeOnSelect value={s.id} label={s.label} icon={<Icon name={TASK_STATE_ICONS[s.id]} size={19} sw={1.8} />}>{s.label}</DropdownMenuRadioItem>;
               })}
             </DropdownMenuRadioGroup>
           </DropdownMenuContent>
@@ -80,7 +78,7 @@ function FileBody({ r }: { r: Reminder }) {
       </div>
       <StatusRow r={r} />
       <ListSection>
-        <ListRow icon={<ListIcon glyph={list?.glyph ?? 'checklist'} color={list?.color ?? SYSTEM.blue} size={29} />} title={list?.name ?? 'List'}
+        <ListRow icon={<ListIcon glyph={list?.glyph ?? 'checklist'} tint={list?.color ?? SYSTEM.blue} size={29} />} title={list?.name ?? 'List'}
           description={<span className="break-all">{r.source!.path} · line {r.source!.line + 1}</span>} divider={false} />
       </ListSection>
       {r.subtasks?.length ? (
@@ -88,7 +86,7 @@ function FileBody({ r }: { r: Reminder }) {
           <div className="flex flex-col bg-card">
             {r.subtasks.map((s) => (
               <div key={s.id} className="flex items-center gap-3 px-4 py-2.5 shadow-hairline-b last:shadow-none">
-                <CheckCircle size={22} done={!!s.done} state={stateOf(s)} color={list?.color ?? SYSTEM.blue} label={`Subtask “${s.title}”`}
+                <CheckCircle size={22} done={!!s.done} state={stateOf(s)} tint={list?.color ?? SYSTEM.blue} label={`Subtask “${s.title}”`}
                   onToggle={() => api.toggleSubtask(r.id, s.id)} onState={(state) => api.setState(s.id, state)} />
                 <span className={s.done ? 'text-body text-muted-foreground' : 'text-body'}>{s.title}</span>
               </div>
@@ -160,7 +158,7 @@ function LocalBody({ r }: { r: Reminder }) {
 
       {list ? (
         <ListSection>
-          <ListRow icon={<ListIcon glyph={list.glyph} color={list.color} size={29} />} title="List" trailing={<span className="text-muted-foreground">{list.name}</span>} divider={false} />
+          <ListRow icon={<ListIcon glyph={list.glyph} tint={list.color} size={29} />} title="List" trailing={<span className="text-muted-foreground">{list.name}</span>} divider={false} />
         </ListSection>
       ) : null}
 
@@ -168,7 +166,7 @@ function LocalBody({ r }: { r: Reminder }) {
         <div className="flex flex-col bg-card">
           {(r.subtasks ?? []).map((s) => (
             <div key={s.id} className="flex items-center gap-3 px-4 py-2.5 shadow-hairline-b">
-              <CheckCircle size={22} done={!!s.done} state={stateOf(s)} color={list?.color ?? SYSTEM.blue} label={`Subtask “${s.title}”`}
+              <CheckCircle size={22} done={!!s.done} state={stateOf(s)} tint={list?.color ?? SYSTEM.blue} label={`Subtask “${s.title}”`}
                 onToggle={() => api.toggleSubtask(r.id, s.id)} onState={(state) => api.setState(s.id, state)} />
               <span className={s.done ? 'text-body text-muted-foreground' : 'text-body'}>{s.title}</span>
             </div>

@@ -2,7 +2,8 @@
 import { createRef, useState } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { Input, createInputController } from '@/components/ui/input';
+import { Field, FieldError, FieldLabel } from '@/components/ui/field';
+import { Input, createInputController, type InputValueCommitDetails } from '@/components/ui/input';
 
 declare global { var __UI_SDK_STRICT__: boolean | undefined }
 globalThis.__UI_SDK_STRICT__ = true;
@@ -70,5 +71,87 @@ describe('Input', () => {
     render(<Input aria-label="Email" disabled defaultValue="x" />);
     expect(box().disabled).toBe(true);
     expect(box().hasAttribute('data-disabled')).toBe(true);
+  });
+});
+
+describe('Input onValueCommit', () => {
+  function Rename({ onCommit, refuse = false }: { onCommit: (v: string, d: InputValueCommitDetails) => void; refuse?: boolean }) {
+    const [name, setName] = useState('idle');
+    return <Input aria-label="Name" value={name} onValueCommit={(v, d) => { onCommit(v, d); if (!refuse) setName(v); }} />;
+  }
+
+  it('commits on Enter, not on each key, and says so', () => {
+    const onCommit = vi.fn();
+    render(<Rename onCommit={onCommit} />);
+    const input = box('Name');
+    type(input, 'waiting');
+    expect(onCommit).not.toHaveBeenCalled();
+    expect(input.value).toBe('waiting');
+    fireEvent.keyDown(input, { key: 'Enter' });
+    expect(onCommit).toHaveBeenCalledWith('waiting', expect.objectContaining({ reason: 'enter-key' }));
+    expect(input.value).toBe('waiting');
+  });
+
+  it('commits on leaving, and puts back what the owner refuses', () => {
+    const onCommit = vi.fn();
+    render(<Rename onCommit={onCommit} refuse />);
+    const input = box('Name');
+    type(input, 'nope');
+    act(() => { fireEvent.blur(input); });
+    expect(onCommit).toHaveBeenCalledWith('nope', expect.objectContaining({ reason: 'blur' }));
+    expect(input.value).toBe('idle');
+  });
+
+  it('doesn’t commit what didn’t change', () => {
+    const onCommit = vi.fn();
+    render(<Rename onCommit={onCommit} />);
+    fireEvent.keyDown(box('Name'), { key: 'Enter' });
+    act(() => { fireEvent.blur(box('Name')); });
+    expect(onCommit).not.toHaveBeenCalled();
+  });
+
+  it('puts the text back on Escape, and keeps that Escape to itself', () => {
+    const onCommit = vi.fn();
+    const outside = vi.fn();
+    render(<div onKeyDown={outside}><Rename onCommit={onCommit} /></div>);
+    const input = box('Name');
+    type(input, 'oops');
+    fireEvent.keyDown(input, { key: 'Escape' });
+    expect(input.value).toBe('idle');
+    expect(outside).not.toHaveBeenCalled();
+    expect(onCommit).not.toHaveBeenCalled();
+    // With nothing to put back, Escape goes on (a panel can close).
+    fireEvent.keyDown(input, { key: 'Escape' });
+    expect(outside).toHaveBeenCalledTimes(1);
+  });
+
+  it('follows a new value from outside, dropping the draft', () => {
+    function Outside() {
+      const [name, setName] = useState('idle');
+      return (
+        <>
+          <button type="button" onClick={() => setName('closed')}>Reset</button>
+          <Input aria-label="Name" value={name} onValueCommit={setName} />
+        </>
+      );
+    }
+    render(<Outside />);
+    type(box('Name'), 'half typed');
+    fireEvent.click(screen.getByRole('button', { name: 'Reset' }));
+    expect(box('Name').value).toBe('closed');
+  });
+
+  it('is invalid with its Field, and its error describes it', () => {
+    render(
+      <Field invalid>
+        <FieldLabel>Binding</FieldLabel>
+        <Input value="x y" onValueCommit={() => {}} />
+        <FieldError>“x y” can’t be a name on env.</FieldError>
+      </Field>,
+    );
+    const input = box('Binding');
+    expect(input.getAttribute('aria-invalid')).toBe('true');
+    const described = (input.getAttribute('aria-describedby') ?? '').split(' ').map((id) => document.getElementById(id)?.textContent);
+    expect(described).toContain('“x y” can’t be a name on env.');
   });
 });

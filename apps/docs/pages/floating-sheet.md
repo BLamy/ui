@@ -117,7 +117,21 @@ Changing `variant` or `appearance` changes the material of the same surface: bac
 
 ## Trays
 
-A flow in one sheet, after Family's trays, in the kit's one flow grammar: each step sets its own `peek`, so the sheet's height springs between steps; the title and the content travel with [Swap](https://blamy.github.io/ui/#/swap) in the direction of the flow; and the back chevron is `SheetBack` folding into a `bar` header (`surfaceHeaderVariants({ variant: 'bar' })`), the same way back as a Dialog or Sheet flow.
+A flow in one sheet, after Family's trays, written with the same parts as a [Sheet](https://blamy.github.io/ui/#/sheet) or [Dialog](https://blamy.github.io/ui/#/dialog) flow: `view` names the step (FloatingSheet hands it to the Sheet it is built on), and each step sets its own `peek`, so the sheet's height springs between steps. Inside, `SheetHeader variant="bar"` holds `SheetBack` (it folds in once there is a step to go back to) and `SheetTitle`, which travels with its step, and `SheetView` slides the content the way the flow moves: forward from the end, back from the start. Nothing tracks the direction by hand.
+
+```tsx
+<FloatingSheet view={tray.id} peek={tray.peek} variant="card" collapse="none" aria-label="Checkout">
+  <FloatingSheetBody>
+    <div>
+      <SheetHeader variant="bar">
+        <SheetBack hidden={step === 0} onClick={() => setStep(step - 1)} />
+        <SheetTitle>{tray.title}</SheetTitle>
+      </SheetHeader>
+      <SheetView className="px-5 pb-5">{tray.body}</SheetView>
+    </div>
+  </FloatingSheetBody>
+</FloatingSheet>
+```
 
 {% demo src="floating-sheet/trays" %}
 
@@ -134,9 +148,11 @@ A flow in one sheet, after Family's trays, in the kit's one flow grammar: each s
 
 | Prop | Type | Default | Effect |
 | --- | --- | --- | --- |
-| `variant` | `'glass' \| 'sheet'` | `'glass'` | Translucent blur over the host, or an opaque card. |
+| `variant` | `'glass' \| 'card'` | `'glass'` | Translucent blur over the host, or an opaque card. |
 | `appearance` | `'auto' \| 'light' \| 'dark'` | `'auto'` | Colour scheme of the surface: the page's, or the `sheet` scope in that appearance. |
 | `gutter` | `number` | `10` | Inset from the host edges while resting, px (Dialog's tray inset). `0` docks it edge to edge. |
+| `width` | `number \| string` | the host's width | The surface's largest inline size (px or a CSS length): on a wide host it keeps the card to a readable column, as a Maps card on an iPad. |
+| `align` | `'start' \| 'center' \| 'end'` | `'center'` | Where a surface narrower than the host sits: `gutter` in from that edge. |
 | `radius` | `number \| string` | `'var(--radius-sheet)'` | Corner radius while resting (px or a CSS length; the radius of every modal sheet); squares off as the sheet fills the host. |
 | `peek` | `number \| '${number}%'` | `0` | Body height visible above the footer while resting; `'52%'` sizes the whole resting sheet as a share of the host. Capped at three quarters of the host. |
 | `topGap` | `number \| '${number}%'` | `0` | Space left above the fully grown sheet; keeps the top corners round. |
@@ -147,6 +163,7 @@ A flow in one sheet, after Family's trays, in the kit's one flow grammar: each s
 | `minimized` / `defaultMinimized` / `onMinimizedChange(minimized, details)` | `boolean` | `false` | The fold into the FAB (`collapse="fab"`). `details.reason`: `swipe`, `trigger-press`, `imperative`. |
 | `visible` / `defaultVisible` / `onVisibleChange(visible, details)` | `boolean` | `true` | Whether a `collapse="hide"` sheet is on screen. |
 | `scrim` | `boolean` | `true` | Dim the host as the sheet grows. |
+| `view` | `string` | — | Key of the current step of a flow, as on Sheet and Dialog: `SheetHeader variant="bar"`, `SheetBack`, `SheetTitle` and `SheetView` inside travel with it (see Trays). |
 | `hideOnScroll` | `boolean` | `true` | Hide while resting on its cap and footer when the shared chrome or `scrollRef` scrolls down. |
 | `scrollRef` | `RefObject<HTMLElement>` | — | A scroller whose direction also hides and restores the resting sheet. |
 | `aria-label` | `string` | `'Sheet'` | Accessible name of the sheet. |

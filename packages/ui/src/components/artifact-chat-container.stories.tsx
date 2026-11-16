@@ -154,7 +154,7 @@ export const FloatingGrown: Story = { args: { frame: 'phone', defaultOpen: true 
 export const FloatingFolded: Story = { args: { frame: 'phone', defaultMinimized: true } };
 /** The agent is working: the composer is a tappable status until pressed. */
 export const Working: Story = { args: { frame: 'phone', working: true, peek: 120 } };
-/** The opaque `sheet` variant instead of glass. */
+/** The opaque `card` variant instead of glass. */
 export const FloatingSheetVariant: Story = { name: 'Floating (card variant)', args: { frame: 'phone', variant: 'card', peek: 180 } };
 /** `presentation="floating"` floats the chat even on a wide container (maps, canvases). */
 export const AlwaysFloating: Story = { args: { presentation: 'floating', peek: 180 } };

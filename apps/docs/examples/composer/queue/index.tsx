@@ -1,6 +1,14 @@
 import { useEffect, useRef, useState } from 'react'
-import { Composer, ComposerCard, ComposerFooter, ComposerInput, ComposerSend, ComposerSpacer, ComposerStop } from '@/components/ui/composer/composer'
-import { ComposerQueue } from '@/components/ui/composer/composer-cards'
+import {
+  Composer,
+  ComposerCard,
+  ComposerFooter,
+  ComposerInput,
+  ComposerSend,
+  ComposerSpacer,
+  ComposerStop,
+  ComposerQueue,
+} from '@/components/ui/composer'
 import { ThemeScope } from '@/lib/theme'
 
 interface Message {

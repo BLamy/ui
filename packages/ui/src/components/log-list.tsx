@@ -82,7 +82,8 @@ const ROW_CLASS = [
   dataRowLayers,
   'data-[level=warn]:bg-warning/10 data-[level=error]:bg-destructive/8 data-[level=debug]:text-muted-foreground',
   'data-current:before:bg-primary/10 data-selected:before:bg-primary/16',
-  'data-future:opacity-45',
+  // The future is dimmed; a debug row is muted already, so it dims less (two dims stacked would read 2.3:1 in dark).
+  'data-future:not-data-[level=debug]:opacity-45 data-future:data-[level=debug]:opacity-70',
 ].join(' ');
 
 const CELL_CLASS = 'flex min-w-0 flex-1 items-start';
@@ -136,7 +137,7 @@ export function LogListRowContent({ row, expanded = false, cut = false, disclosu
 }
 
 /** What a `renderRow` is told. */
-export interface LogRowState {
+export interface LogListRowState {
   index: number;
   selected: boolean;
   expanded: boolean;
@@ -188,7 +189,7 @@ export interface LogListProps<T extends LogRow = LogRow>
   onRowCopy?: (text: string, row: T) => void;
   /** Draws a row's content yourself, inside its row element. Must be stable (`useCallback`): a new function re-renders
    *  every mounted row. */
-  renderRow?: (row: T, state: LogRowState) => ReactNode;
+  renderRow?: (row: T, state: LogListRowState) => ReactNode;
   /** Must be stable too. Default `formatLogTime`. */
   formatTime?: (ms: number) => string;
   /** A row's height until it's measured. Default: one line at the list's density. */
@@ -252,7 +253,7 @@ interface RowContentProps {
   cut: boolean;
   disclosure: boolean;
   formatTime: (ms: number) => string;
-  renderRow: ((row: never, state: LogRowState) => ReactNode) | undefined;
+  renderRow: ((row: never, state: LogListRowState) => ReactNode) | undefined;
 }
 
 /** A row's content, on its own so that what only its row element shows (where it is, the Copy button) renders none of it. */
@@ -308,6 +309,7 @@ const LogListBody = memo(function LogListBody({
   const { virtual } = api.internal.rows;
   const items = useSyncExternalStore(virtual.subscribe, virtual.items, virtual.items);
   const disclosure = useMemo(() => cut || rows.some((row) => row.detail != null), [cut, rows]);
+  const footerEl = footer != null ? <parts.Footer className="px-3 py-2 text-center text-caption text-muted-foreground">{footer}</parts.Footer> : null;
 
   return usePart(handle, 'root', {}, {
     ...({ 'data-rows': rows.length } as object),
@@ -318,7 +320,10 @@ const LogListBody = memo(function LogListBody({
         <parts.Grid
           aria-label={ariaLabel}
           onKeyDown={onKeyDown}
-          className="group/grid bl-scroll relative min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain outline-none [overflow-anchor:none]"
+          className={cn(
+            'group/grid bl-scroll relative min-h-0 overflow-x-hidden overflow-y-auto overscroll-contain outline-none [overflow-anchor:none]',
+            rows.length ? 'flex-1' : 'shrink-0',
+          )}
         >
           <parts.Rows
             className={cn(
@@ -353,9 +358,11 @@ const LogListBody = memo(function LogListBody({
               ) : null}
             </parts.Marker>
           </parts.Rows>
-          <parts.Empty>{renderEmptyState(emptyState, { title: 'No messages' })}</parts.Empty>
-          {footer != null ? <parts.Footer className="px-3 py-2 text-center text-caption text-muted-foreground">{footer}</parts.Footer> : null}
+          {rows.length ? footerEl : null}
         </parts.Grid>
+        {/* With no rows the empty state is the grid's sibling: a grid owns only rows (WAI-ARIA grid). The footer follows it. */}
+        <parts.Empty className="bl-scroll min-h-0 flex-1 overflow-auto">{renderEmptyState(emptyState, { title: 'No messages' })}</parts.Empty>
+        {rows.length ? null : footerEl}
         <parts.Jump className="pointer-events-none absolute inset-x-0 z-4 flex justify-center data-[side=above]:top-2 data-[side=below]:bottom-2">
           {(state) => (
             <Button size="sm" onClick={(event) => api.followPosition(event.nativeEvent)} className="pointer-events-auto h-7 gap-1 rounded-full px-3 text-caption shadow-hairline">

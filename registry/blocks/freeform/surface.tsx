@@ -6,12 +6,11 @@
    pointer on a picture or a link (Select tool, no gesture) opens a hover card about it, found by the same hit test and
    anchored to a box laid over the item; any press, pan or zoom closes it. */
 import { useEffect, useMemo, useRef, useState } from 'react';
-import type { PencilPoint, PencilStroke, PencilTool } from '@/components/ui/pencilkit/constants';
-import { PencilCanvas } from '@/components/ui/pencilkit/pencil-canvas';
+import { type PencilPoint, type PencilStroke, type PencilTool, PencilCanvas } from '@/components/ui/pencilkit';
 import { Canvas, CanvasFrame, CanvasGuides, CanvasHandles, CanvasMarquee, CanvasMiniMap, type CanvasController, type CanvasPointerInfo, type CanvasViewportChangeDetails } from '@/components/ui/canvas';
 import { HoverCard, HoverCardContent, createHoverCardController } from '@/components/ui/hover-card';
 import { dist, handleCursor, intersects, rectOf, resizeFrame, rotateFrame, snapMove, toScreen, unionRect, type Guide, type Viewport, type HandleId, type Pt, type Rect } from '@/lib/canvas-math';
-import { anchorPoint, nearestAnchor } from '@/lib/diagram-model';
+import { DIAGRAM_SIDES, anchorPoint, nearestAnchor } from '@/lib/diagram-model';
 import { boundsOf, connectorGeometry, hitItem, strokeFrame } from './geometry';
 import { moveItem, scaleItem, selectionFrame } from './handles';
 import { Connector, ItemPreview, ItemView } from './items';
@@ -105,7 +104,7 @@ export function BoardSurface({ viewport, onViewportChange, controller, tool, set
     if (!st) return;
     const item: StrokeItem = {
       id: `s${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`, kind: 'stroke',
-      tool: st.tool, color: st.color, width: st.width, pen: st.pressure, points: st.points, rot: 0, ...strokeFrame(st.points, st.tool, st.width),
+      tool: st.tool, color: st.ink, width: st.widthScale, pen: st.pressure, points: st.points, rot: 0, ...strokeFrame(st.points, st.tool, st.widthScale),
     };
     f.commit((all) => [...all, item], []);
   };
@@ -406,7 +405,7 @@ export function BoardSurface({ viewport, onViewportChange, controller, tool, set
           disabled={tool !== 'draw' || draw.tool === 'eraser'}
           tool={draw.tool}
           ink={draw.ink}
-          width={draw.width}
+          widthScale={draw.width}
           strokes={NO_STROKES}
           onStrokesChange={(next) => addStroke(next[next.length - 1])}
         />
@@ -460,7 +459,7 @@ function ConnectorPath({ item, byId, width }: { item: ConnectorItem; byId: Map<s
 function Anchors({ id, side, byId, z }: { id: string; side: string; byId: Map<string, Item>; z: number }) {
   const it = byId.get(id);
   if (!it || !isBox(it)) return null;
-  const pts = (['t', 'r', 'b', 'l'] as const).map((s) => ({ s, p: anchorPoint(it, s) }));
+  const pts = DIAGRAM_SIDES.map((s) => ({ s, p: anchorPoint(it, s) }));
   return (
     <>
       {pts.map(({ s, p }) => {

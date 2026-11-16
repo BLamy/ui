@@ -68,7 +68,7 @@ export function AppSidebar({ state }: { state: ThreadsState }) {
   const item = (t: Thread) => (
     <ThreadItem
       key={t.id}
-      active={t.id === state.current?.id}
+      current={t.id === state.current?.id}
       status={t.messages.some((m) => m.live) ? 'running' : 'idle'}
       meta={t.age}
       preview={<ThreadCard thread={t} />}

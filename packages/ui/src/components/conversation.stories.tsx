@@ -55,12 +55,12 @@ function Box({ streaming }: { streaming?: boolean }) {
   );
 }
 
-function Thread({ empty, streaming, workLogOpen }: { empty?: boolean; streaming?: boolean; workLogOpen?: boolean }) {
+function Thread({ empty, streaming, workLogOpen, oneTurn }: { empty?: boolean; streaming?: boolean; workLogOpen?: boolean; oneTurn?: boolean }) {
   return (
     <Conversation empty={empty}>
       <ConversationEmpty title="What are we building?" description="Start a thread — ask anything about this workspace." />
       <ConversationMessages threadKey="t1" streaming={streaming}>
-        <ConversationUserMessage key="u1" attachments={[{ id: 'shot', name: 'checkout.png', src: SHOT, kind: 'image' }, { id: 'log', name: 'build.log', kind: 'text', size: 18400 }]}>
+        <ConversationUserMessage key="u1" attachments={[{ id: 'shot', name: 'checkout.png', src: SHOT, kind: 'image' }, { id: 'log', name: 'build.log', kind: 'text', size: 18400 }, { id: 'spec', name: 'checkout-spec.pdf', kind: 'pdf', size: 1_400_000 }]}>
           The checkout button is clipped on mobile, can you fix it?
         </ConversationUserMessage>
         <ConversationAssistantMessage key="a1">
@@ -72,8 +72,17 @@ function Thread({ empty, streaming, workLogOpen }: { empty?: boolean; streaming?
           </ConversationWorkLog>
           <ConversationMarkdown markdown="The button had a fixed **420px** width. It is now `w-full` with a max width, so it shrinks inside narrow screens." />
         </ConversationAssistantMessage>
-        <ConversationUserMessage key="u2">Thanks. Anything else?</ConversationUserMessage>
-        <ConversationAssistantMessage key="a2">{streaming ? <ConversationTyping /> : <ConversationWorkLog summary="Worked for 3s" />}</ConversationAssistantMessage>
+        {oneTurn ? null : <ConversationUserMessage key="u2">Thanks. Anything else?</ConversationUserMessage>}
+        {oneTurn ? null : (
+          <ConversationAssistantMessage key="a2">
+            {streaming ? <ConversationTyping /> : (
+              <>
+                <ConversationWorkLog summary="Worked for 3s" />
+                <ConversationMarkdown markdown="That was the only clipped control. The rest of the flow fits at 320px." />
+              </>
+            )}
+          </ConversationAssistantMessage>
+        )}
       </ConversationMessages>
       <ConversationComposer>
         <Box streaming={streaming} />
@@ -91,8 +100,13 @@ function Thread({ empty, streaming, workLogOpen }: { empty?: boolean; streaming?
 export const Empty: Story = { render: () => <Frame><Thread empty /></Frame> };
 export const EmptyDark: Story = { render: () => <Frame appearance="dark"><Thread empty /></Frame> };
 
-/** A thread: attachments on the user's turn, a work log (done, running, failed calls), the docked composer. */
+/** A thread of two turns, opened at the latest one as a transcript does: the second reply, under a static work log,
+    with the docked composer. Scroll up (or see Thread Top) for the first turn. */
 export const ThreadView: Story = { name: 'Thread', render: () => <Frame><Thread workLogOpen /></Frame> };
+
+/** One turn, all in view on first paint: an image, a text file and a PDF on the user's turn (each file in its kind's
+    face, as it was in the Composer), and the open work log with done, running and failed calls. */
+export const ThreadTop: Story = { render: () => <Frame><Thread workLogOpen oneTurn /></Frame> };
 export const ThreadDark: Story = { render: () => <Frame appearance="dark"><Thread workLogOpen /></Frame> };
 
 /** A reply is arriving: the typing dots, the log `aria-busy`, ComposerStop beside send. */

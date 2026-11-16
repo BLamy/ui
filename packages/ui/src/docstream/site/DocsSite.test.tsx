@@ -154,7 +154,7 @@ describe("DocsSite", () => {
   })
 
   it("toggles the theme on the site in memory mode", async () => {
-    await render(<DocsSite files={FILES} routing="memory" defaultTheme="light" themeStorageKey={false} />)
+    await render(<DocsSite files={FILES} routing="memory" defaultAppearance="light" appearanceStorageKey={false} />)
     const site = host.querySelector<HTMLElement>(".ds-site")!
     expect(site.dataset.theme).toBe("light")
     await click(host.querySelector('[aria-label="Switch to dark theme"]'))

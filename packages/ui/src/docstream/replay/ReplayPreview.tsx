@@ -1,12 +1,12 @@
 import { useEffect, useState, type CSSProperties, type ReactNode } from 'react';
-import { BrowserBar, ReplayPlayer } from './ReplayPlayer';
+import { BrowserBar, ReplayPlayer, replayRootProps } from './ReplayPlayer';
 import type { ReplayPlayerOptions } from './ReplayPlayer';
 import type { ReplayCustomStage } from './stage-types';
 import type { ReplayEvent } from './types';
 import { normalizeReplayEmbedUrl } from './url';
 
 export { formatReplayTime } from './ReplayPlayer';
-export type { ReplayChrome, ReplayPlayerOptions, ReplayPreviewHandle } from './ReplayPlayer';
+export type { ReplayChrome, ReplayMarkerActionReason, ReplayPlayerOptions, ReplayPreviewHandle } from './ReplayPlayer';
 
 export interface ReplayPageSource {
   kind: 'url';
@@ -32,10 +32,7 @@ export type ReplaySource =
   | ReplayEventsSource
   | ReplayEventsUrlSource;
 
-interface ReplayPreviewCommon extends ReplayPlayerOptions {
-  /** Keep the player unmounted (a placeholder frame) until true, e.g. until an editor block is visible. */
-  active?: boolean;
-}
+type ReplayPreviewCommon = ReplayPlayerOptions;
 
 /** Play an rrweb recording you already hold. */
 export interface ReplayPreviewEventsProps extends ReplayPreviewCommon {
@@ -81,29 +78,29 @@ function sourceEventsUrl(source: ReplaySource): ReplayEventsUrlSource | null {
   return source.kind === 'events-url' ? source : null;
 }
 
-/** The frame around a non-player body (an iframe, a loading or error note): same root, same chrome hooks. */
+/** The frame around a non-player body (an iframe, a loading or error note): same root, same chrome hooks, and the
+ *  root element's props from the options. */
 function Frame({
-  kind, chrome, className, title, href, trafficLights = true, ar, style, children,
+  kind, options, chrome, href, ar, children,
 }: {
   kind: string;
+  options: ReplayPlayerOptions;
   chrome: NonNullable<ReplayPlayerOptions['chrome']>;
-  className?: string;
-  title?: string;
   href?: string;
-  trafficLights?: boolean;
   ar?: string;
-  style?: CSSProperties;
   children: ReactNode;
 }) {
+  const { className, style, title, trafficLights = true } = options;
   return (
     <div
-      className={className ? `replay-preview ${className}` : 'replay-preview'}
       data-slot="replay-preview"
       data-replay-preview={kind}
       data-chrome={chrome}
       data-fit="width"
-      style={style}
       {...(title ? { role: 'group', 'aria-label': title } : null)}
+      {...replayRootProps(options)}
+      className={className ? `replay-preview ${className}` : 'replay-preview'}
+      style={style}
     >
       {chrome === 'browser' ? <BrowserBar href={href ?? ''} trafficLights={trafficLights} loading={false} /> : null}
       <div data-slot="replay-preview-stage" style={ar ? ({ '--replay-ar': ar } as CSSProperties) : undefined}>
@@ -113,13 +110,12 @@ function Frame({
   );
 }
 
-function ReplayFrame({
-  source, title, chrome = 'minimal', className, style, trafficLights,
-}: { source: ReplayPageSource } & Pick<ReplayPlayerOptions, 'title' | 'chrome' | 'className' | 'style' | 'trafficLights'>) {
+function ReplayFrame({ source, options }: { source: ReplayPageSource; options: ReplayPlayerOptions }) {
+  const { title, chrome = 'minimal', mounted = 'visible' } = options;
   const url = normalizeReplayEmbedUrl(source.url);
   return (
-    <Frame kind="iframe" chrome={chrome} className={className} style={style} href={url ?? source.url} trafficLights={trafficLights} ar="16 / 9">
-      {url ? (
+    <Frame kind="iframe" options={options} chrome={chrome} href={url ?? source.url} ar="16 / 9">
+      {mounted === false ? null : url ? (
         <iframe
           className="replay-preview__frame"
           src={url}
@@ -168,7 +164,7 @@ function RemoteReplay({ source, options }: { source: ReplayEventsUrlSource; opti
 
   if (events) return <ReplayPlayer {...options} events={events} />;
   return (
-    <Frame kind="rrweb" chrome={options.chrome ?? 'browser'} className={options.className} style={options.style} href={options.url} trafficLights={options.trafficLights} ar="16 / 9">
+    <Frame kind="rrweb" options={options} chrome={options.chrome ?? 'browser'} href={options.url} ar="16 / 9">
       {error ? (
         <div className="replay-preview__error" role="alert">{error}</div>
       ) : (
@@ -186,20 +182,7 @@ function RemoteReplay({ source, options }: { source: ReplayEventsUrlSource; opti
  * that stands in for rrweb's, which rrweb is then never loaded for.
  */
 export function ReplayPreview(props: ReplayPreviewProps) {
-  const { active = true, source, events, stage, ...options } = props;
-  const { chrome, className, style } = options;
-
-  if (!active) {
-    return (
-      <div
-        className={className ? `replay-preview ${className}` : 'replay-preview'}
-        data-slot="replay-preview"
-        data-replay-preview="paused"
-        data-chrome={chrome ?? 'minimal'}
-        style={style}
-      />
-    );
-  }
+  const { source, events, stage, ...options } = props;
 
   if (stage) return <ReplayPlayer {...options} events={NO_EVENTS} stage={stage} />;
   if (events) return <ReplayPlayer {...options} events={events} />;
@@ -207,7 +190,7 @@ export function ReplayPreview(props: ReplayPreviewProps) {
 
   const page = sourcePage(source);
   if (page) {
-    return <ReplayFrame source={page} title={options.title} chrome={chrome} className={className} style={style} trafficLights={options.trafficLights} />;
+    return <ReplayFrame source={page} options={options} />;
   }
   const list = sourceEvents(source);
   if (list) return <ReplayPlayer {...options} events={list.events} />;
@@ -215,6 +198,3 @@ export function ReplayPreview(props: ReplayPreviewProps) {
   if (remote) return <RemoteReplay source={remote} options={options} />;
   return null;
 }
-
-/** Semantic alias for markdown/document renderers. */
-export const ReplayEmbed = ReplayPreview;

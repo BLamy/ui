@@ -3,7 +3,8 @@ import { useState } from 'react';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { createAgent } from '@ui-sdk/react/agent';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
-import { Diagram, DiagramToolbar, createDiagramController, type DiagramData, type DiagramDataChangeDetails } from '@/components/ui/diagram';
+import { Diagram, DiagramToolbar, createDiagramController, useDiagram, useDiagramHistory, type DiagramData, type DiagramDataChangeDetails } from '@/components/ui/diagram';
+import { DiagramFrame, DiagramFrameBoard, DiagramFramePanel } from '@/components/ui/diagram-frame';
 import type { DiagramEdge, DiagramNode, DiagramSelection } from '@/lib/diagram-model';
 import { run, settle } from '../../test/agent-harness';
 
@@ -278,5 +279,172 @@ describe('Diagram, driven from outside', () => {
     expect(entry).toMatchObject({ component: 'diagram', actions: expect.arrayContaining(['select', 'deleteSelection', 'connect', 'undo', 'redo', 'moveNodes']) });
     await run(agent, [{ ref: 'Agent mail', action: 'moveNodes', args: [['inbox'], 10, 0] }]);
     expect(onChange.mock.lastCall![1]).toMatchObject({ reason: 'move', source: 'agent' });
+  });
+});
+
+describe('Diagram, one history', () => {
+  /** Something bigger than the diagram, with its own history: the diagram's undo is that history's. */
+  function Owner({ onStep }: { onStep?: (reason: string) => void }) {
+    const [names, setNames] = useState(['Inbox', 'Triage']);
+    const history = useDiagramHistory(names, (to, details) => { onStep?.(details.reason); setNames(to); });
+    const nodes = names.map((label, i) => ({ id: `n${i}`, label, x: i * 200, y: 0, w: 100, h: 40 }));
+    return (
+      <>
+        <button type="button" onClick={() => { const next = [...names, `Folder ${names.length + 1}`]; history.record(names, next); setNames(next); }}>Add</button>
+        <button type="button" onClick={() => setNames(['Replaced'])}>Replace</button>
+        <Diagram aria-label="Mail" nodes={nodes} edges={[]} editable history={history} overlay={<DiagramToolbar />} />
+      </>
+    );
+  }
+
+  it('drives a history it was handed, from its toolbar and from ⌘Z / ⇧⌘Z / ⌘Y, wherever focus is in it', () => {
+    const onStep = vi.fn();
+    render(<Owner onStep={onStep} />);
+    const undo = () => screen.getByRole('button', { name: 'Undo' });
+    expect(undo().hasAttribute('data-disabled')).toBe(true);
+    fireEvent.click(screen.getByRole('button', { name: 'Add' }));
+    expect(screen.getByRole('button', { name: /^Folder 3/ })).toBeTruthy();
+    expect(undo().hasAttribute('data-disabled')).toBe(false);
+    fireEvent.click(undo());
+    expect(onStep).toHaveBeenLastCalledWith('undo');
+    expect(screen.queryByRole('button', { name: /^Folder 3/ })).toBeNull();
+    // From the board,
+    board().focus();
+    key('z', { metaKey: true, shiftKey: true });
+    expect(onStep).toHaveBeenLastCalledWith('redo');
+    expect(screen.getByRole('button', { name: /^Folder 3/ })).toBeTruthy();
+    // and from the toolbar.
+    act(() => { screen.getByRole('button', { name: 'Zoom in' }).focus(); });
+    key('z', { ctrlKey: true });
+    expect(onStep).toHaveBeenLastCalledWith('undo');
+    key('y', { ctrlKey: true });
+    expect(onStep).toHaveBeenCalledTimes(4);
+    expect(screen.getByRole('button', { name: /^Folder 3/ })).toBeTruthy();
+  });
+
+  it('starts over when what it holds the history of changes from outside', () => {
+    render(<Owner />);
+    fireEvent.click(screen.getByRole('button', { name: 'Add' }));
+    expect(screen.getByRole('button', { name: 'Undo' }).hasAttribute('data-disabled')).toBe(false);
+    fireEvent.click(screen.getByRole('button', { name: 'Replace' }));
+    expect(screen.getByRole('button', { name: 'Undo' }).hasAttribute('data-disabled')).toBe(true);
+  });
+
+  it('keeps no history of its own while it has one handed to it, and its controller and agent reach that one', () => {
+    const controller = createDiagramController();
+    const onDataChange = vi.fn();
+    const undo = vi.fn();
+    render(<Diagram aria-label="Mail" defaultNodes={NODES} defaultEdges={EDGES} editable controller={controller} onDataChange={onDataChange} history={{ canUndo: true, canRedo: false, undo, redo: () => {} }} />);
+    act(() => { controller.select({ nodes: ['alone'], edges: [] }); });
+    act(() => { controller.deleteSelection(); });
+    expect(onDataChange.mock.lastCall![1].reason).toBe('delete');
+    expect(controller.canUndo()).toBe(true);
+    expect(controller.canRedo()).toBe(false);
+    act(() => { controller.undo(); });
+    expect(undo).toHaveBeenCalledTimes(1);
+    expect(onDataChange).toHaveBeenCalledTimes(1);
+    expect(controller.redo()).toBe(false);
+  });
+
+  it('leaves ⌘Z alone in a field, and has no undo when read-only', () => {
+    const undo = vi.fn();
+    render(<Diagram aria-label="Mail" nodes={NODES} edges={EDGES} history={{ canUndo: true, canRedo: true, undo, redo: undo }} overlay={<input aria-label="Find" />} />);
+    act(() => { screen.getByRole('textbox', { name: 'Find' }).focus(); });
+    key('z', { metaKey: true });
+    expect(undo).not.toHaveBeenCalled();
+    cleanup();
+    render(<Diagram aria-label="Mail" nodes={NODES} edges={EDGES} overlay={<DiagramToolbar />} />);
+    expect(screen.queryByRole('button', { name: 'Undo' })).toBeNull();
+    expect(document.getElementById(board().getAttribute('aria-describedby')!)?.textContent).not.toMatch(/undoes/);
+  });
+});
+
+describe('Diagram, read-only', () => {
+  it('selects and reads without `editable`: nothing moves, connects or is deleted', () => {
+    const onSelectionChange = vi.fn();
+    render(<Diagram aria-label="Mail" nodes={NODES} edges={EDGES} onSelectionChange={onSelectionChange} />);
+    board().focus();
+    key('Home');
+    key('Enter');
+    expect(onSelectionChange.mock.lastCall).toEqual([{ nodes: ['inbox'], edges: [] }, expect.objectContaining({ reason: 'keyboard' })]);
+    expect(screen.getByRole('button', { name: /^Inbox/ }).getAttribute('aria-pressed')).toBe('true');
+    key('Delete');
+    key('ArrowRight', { shiftKey: true });
+    expect(screen.getByRole('button', { name: /^Inbox/ })).toBeTruthy();
+    expect(document.getElementById(board().getAttribute('aria-describedby')!)?.textContent).not.toMatch(/Delete deletes/);
+  });
+
+  it('is a plain picture with selectable={false}', () => {
+    render(<Diagram aria-label="Mail" nodes={NODES} edges={EDGES} selectable={false} />);
+    expect(screen.getByRole('button', { name: /^Inbox/ }).hasAttribute('aria-pressed')).toBe(false);
+  });
+});
+
+describe('Diagram, what it shows', () => {
+  it('draws focus apart from selection: both together, and each alone', () => {
+    render(<Diagram aria-label="Mail" defaultNodes={NODES} defaultEdges={EDGES} defaultSelection={{ nodes: ['inbox', 'triage'], edges: [] }} />);
+    board().focus();
+    key('Home');
+    const ring = (id: string) => document.querySelector<HTMLElement>(`[data-slot=diagram-ring][data-ring-of=${id}]`)!;
+    // Focused and selected: the fill and line, and the ring past a gap.
+    expect(ring('inbox').hasAttribute('data-focused')).toBe(true);
+    expect(ring('inbox').hasAttribute('data-selected')).toBe(true);
+    expect(ring('inbox').className).toMatch(/bg-primary\/12/);
+    expect(ring('inbox').className).toMatch(/var\(--ring\)/);
+    // Selected only: the fill and line, no ring.
+    expect(ring('triage').className).toMatch(/bg-primary\/12/);
+    expect(ring('triage').className).not.toMatch(/var\(--ring\)/);
+    // Focused only: the ring, and no fill.
+    key('PageDown');
+    key('PageDown');
+    const only = document.querySelector<HTMLElement>('[data-slot=diagram-ring][data-focused]:not([data-selected])');
+    expect(only).not.toBeNull();
+    expect(only!.className).not.toMatch(/bg-primary/);
+  });
+
+  it('bands a focused edge, apart from the selected edge’s color', () => {
+    render(<Diagram aria-label="Mail" nodes={NODES} edges={EDGES} />);
+    board().focus();
+    key('Home');
+    key(']');
+    expect(document.querySelector('[data-slot=diagram-edge-focus] path')?.getAttribute('d')).toBe(document.activeElement?.getAttribute('d'));
+  });
+
+  it('shows an error in place of the empty state', () => {
+    render(<Diagram aria-label="Mail" nodes={[]} error="It can’t be drawn." />);
+    expect(screen.getByRole('alert').textContent).toBe('It can’t be drawn.');
+    expect(document.querySelector('[data-slot=diagram-empty]')).toBeNull();
+  });
+
+  it('hands overlay parts only the controller’s methods', () => {
+    let seen: Record<string, unknown> | null = null;
+    function Peek() { seen = useDiagram().diagram as unknown as Record<string, unknown>; return null; }
+    render(<Diagram aria-label="Mail" nodes={NODES} edges={EDGES} overlay={<Peek />} />);
+    expect(seen).not.toBeNull();
+    expect('internal' in seen!).toBe(false);
+    expect(Object.keys(seen!).sort()).toEqual(['canRedo', 'canUndo', 'clearSelection', 'connect', 'deleteSelection', 'getData', 'getSelection', 'moveNodes', 'redo', 'select', 'selectAll', 'undo']);
+  });
+
+  it('spells its shortcuts for the platform', () => {
+    render(<Diagram aria-label="Mail" defaultNodes={NODES} defaultEdges={EDGES} editable />);
+    const keys = document.getElementById(board().getAttribute('aria-describedby')!)!.textContent!;
+    expect(keys).not.toMatch(/Command\+/);
+    expect(keys).toMatch(/(⌘|Ctrl\+)Z undoes/);
+    expect(keys).toMatch(/(⌘|Ctrl\+)0 fits/);
+  });
+
+  it('puts its toolbar at the top in a frame, where the foot is the bar’s, and at the foot elsewhere', () => {
+    render(<Diagram aria-label="Mail" nodes={NODES} edges={EDGES} overlay={<DiagramToolbar />} />);
+    expect(screen.getByRole('toolbar', { name: 'Diagram tools' }).getAttribute('data-side')).toBe('bottom');
+    cleanup();
+    render(
+      <DiagramFrame presentation="column">
+        <DiagramFrameBoard>
+          <Diagram aria-label="Mail" nodes={NODES} edges={EDGES} overlay={<DiagramToolbar />} />
+        </DiagramFrameBoard>
+        <DiagramFramePanel title="Mail">Body</DiagramFramePanel>
+      </DiagramFrame>,
+    );
+    expect(screen.getByRole('toolbar', { name: 'Diagram tools' }).getAttribute('data-side')).toBe('top');
   });
 });

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 import { parse as parseYaml } from "yaml"
-import { ChevronRight } from "lucide-react"
+import { Glyph } from "../ui/glyph"
 import { DetailsCollapsible } from "../ui/details-collapsible"
 
 import { useAsset } from "../asset-resolver"
@@ -214,7 +214,7 @@ export function OpenApiOperation({
               triggerClassName="oas-response-trigger"
               panelClassName="oas-response-panel"
               summary={<>
-                <ChevronRight className="oas-response-caret" width={13} height={13} strokeWidth={2.4} aria-hidden="true" />
+                <Glyph name="chevron-right" className="oas-response-caret" size={13} sw={2.4} />
                 <span className={`oas-code oas-code-${code[0]}`}>{code}</span>
                 <span>{r.description}</span>
               </>}

@@ -1,0 +1,26 @@
+{
+  "name": "cron",
+  "title": "Cron",
+  "description": "Cron expressions, locally and without React: validate a 5-field expression field by field, list its next runs in any IANA time zone (POSIX day-of-month / day-of-week semantics, DST gaps and repeats handled), and describe it in English. Runs in server components.",
+  "page": "cron-editor",
+  "exports": [
+    "validateCron",
+    "cronProblems",
+    "nextCronRuns",
+    "describeCron",
+    "splitCron",
+    "CRON_FIELDS"
+  ],
+  "imports": [
+    "validateCron",
+    "nextCronRuns",
+    "describeCron"
+  ],
+  "types": [
+    "CronValidation",
+    "CronFieldName",
+    "CronFieldInfo",
+    "NextCronRunsOptions",
+    "DescribeCronOptions"
+  ]
+}

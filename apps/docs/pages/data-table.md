@@ -61,13 +61,15 @@ Pressing a header sorts: ascending, descending, then back to the rows' own order
 
 ## Narrow windows
 
-The table has a size class of its own, from its own width and not the viewport's, so a side panel gets it too. It's written on the root as `data-size-class`. Compact, under 480 px, the rows stack: the first column's cell on the first line, the others' after it on a second, and sorting moves into a menu. `renderStackedRow(row)` draws a stacked row of your own (in a `DataTableCell` with `col={0}`), and `countLabel(count)` is what the stacked header says ("12 rows"). Medium, under 760 px, leaves out the columns with `hideBelow: 'regular'`. `breakpoints={{ medium, regular }}` moves those widths, and `layout="table"` or `layout="stacked"` holds it to one layout.
+The table has a size class of its own, from its own width and not the viewport's, so a side panel gets it too. It's written on the root as `data-size-class`. Compact, under 480 px, the rows stack: the first column's cell on the first line, the others' after it on a second, and sorting moves into a menu. `renderStackedRow(row)` draws a stacked row of your own (in a `DataTableCell` with `col={0}`), and `countLabel(count)` is what the stacked header says ("12 rows"). Medium, under 760 px, leaves out the columns with `hideBelow: 'regular'`. `breakpoints={{ medium, regular }}` moves those widths, and `presentation="table"` or `presentation="stacked"` holds it to one presentation.
 
 {% demo src="data-table/narrow" %}
 
 ## Toolbar, footer, loading and empty state
 
-`toolbar` sits above the grid, outside the scroller: a summary, a filter, actions. `footer` sits after the last row. With no rows the table shows `emptyState`, by default `<EmptyState size="sm" title="No rows" />`; give it an [EmptyState](https://blamy.github.io/ui/#/empty-state) of your own to say why and what to do.
+`toolbar` sits above the grid, outside the scroller: a summary, a filter, actions. `footer` sits after the last row. With no rows the table shows `emptyState`, by default `<EmptyState size="sm" title="No rows" />`; give it an [EmptyState](https://blamy.github.io/ui/#/empty-state) of your own to say why and what to do. The empty state is a `status` region beside the grid, not inside it (a grid owns only rows): the grid shrinks to its header, the state fills the rest, and the footer follows it.
+
+{% demo src="data-table/empty" %}
 
 While a query or fetch is in flight, set `loading`: with no rows yet the table shows placeholder rows at its rows' height and its columns' widths instead of "No rows", and the grid is `aria-busy` for as long as `loading` is true (rows that have arrived show as usual).
 
@@ -162,7 +164,7 @@ It's an ARIA grid with one tab stop, built on [UI SDK](https://ui-sdk.dev)'s vir
 
 ## Styling
 
-The root is `data-slot="data-table"`, with `data-presentation` (`table` or `stacked`), `data-density` and `data-size-class`; inside it `data-table-toolbar`, then `data-table-grid` (with `data-current-time` while the current time is on the range, and `aria-busy` while loading), `data-table-loading`, `data-table-overlay`, `data-table-head` around `data-table-header`, `data-table-rows`, `data-table-empty` and `data-table-footer`. A header is `data-table-column`, with `data-active`, and `data-table-resizer` (`data-dragging` while it drags); the stacked header has `data-table-heading`s. A row is `data-table-row`, with `data-selected`, `data-active`, `data-future` and whatever `rowProps` adds, and its cells are `data-table-cell` with `data-column` (and `data-active` on the active one). Rows take the kit's data-row layers (`dataRowLayers`: hover, press, selection and the hairline under each row), the header cells `tableHeaderCellClass` and the edges `columnResizerClass`, which [Spreadsheet](https://blamy.github.io/ui/#/spreadsheet) shares.
+The root is `data-slot="data-table"`, with `data-presentation` (`table` or `stacked`), `data-density` and `data-size-class`; inside it `data-table-toolbar`, then `data-table-grid` (with `data-current-time` while the current time is on the range, and `aria-busy` while loading), `data-table-loading`, `data-table-overlay`, `data-table-head` around `data-table-header`, `data-table-rows` and `data-table-footer`; with no rows, `data-table-empty` follows the grid (and the footer follows it). A header is `data-table-column`, with `data-active`, and `data-table-resizer` (`data-dragging` while it drags); the stacked header has `data-table-heading`s. A row is `data-table-row`, with `data-selected`, `data-active`, `data-future` and whatever `rowProps` adds, and its cells are `data-table-cell` with `data-column` (and `data-active` on the active one). Rows take the kit's data-row layers (`dataRowLayers`: hover, press, selection and the hairline under each row), the header cells `tableHeaderCellClass` and the edges `columnResizerClass`, which [Spreadsheet](https://blamy.github.io/ui/#/spreadsheet) shares.
 
 ## cva recipes
 

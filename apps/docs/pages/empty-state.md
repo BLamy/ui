@@ -55,7 +55,7 @@ Render it in the collection's place when the collection is empty. The kit's data
 | `null` (or `false`, `''`) | nothing |
 | any other node | that node, as it is: `emptyState={<EmptyState size="sm" title="No files" description="Drop files here to add them." />}` |
 
-Whatever it is, it is a polite `status` region (an `EmptyState` gets `role="status"`, any other node is wrapped in one), so a filter that empties the list is announced.
+Whatever it is, it is a polite `status` region (an `EmptyState` gets `role="status"`, any other node is wrapped in one), so a filter that empties the list is announced. The region mounts empty and its words follow on the next render: a live region has to be in the page before its content for NVDA and JAWS to read it (VoiceOver also reads one inserted whole). An `EmptyState` you give `role="status"` (or `alert`, or `aria-live`) yourself does the same.
 
 {% demo src="empty-state/in-a-list" %}
 

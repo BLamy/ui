@@ -8,13 +8,19 @@ import { useState } from 'react';
 import { HoverCard, HoverCardContent, HoverCardHeader, createHoverCardController } from '@/components/ui/hover-card';
 import { EmptyState } from '@/components/ui/empty-state';
 import { pencilInks, pencilToolIcons, pencilWidths, type PencilDrawTool, type PencilPoint, type PencilStroke, type PencilTool } from '@/components/ui/pencilkit/constants';
-import { PencilCanvas } from '@/components/ui/pencilkit/pencil-canvas';
-import { PencilActions, PencilInkPicker, PencilToolbar, PencilToolbarPinned, PencilToolPicker, PencilWidthPicker } from '@/components/ui/pencilkit/pencil-toolbar';
-import { StrokePath } from '@/components/ui/pencilkit/stroke-path';
-import { usePencilHistory } from '@/components/ui/pencilkit/use-pencil-history';
+import {
+  PencilCanvas,
+  PencilActions,
+  PencilInkPicker,
+  PencilToolbar,
+  PencilToolPicker,
+  PencilWidthPicker,
+  StrokePath,
+  usePencilHistory,
+} from '@/components/ui/pencilkit';
 import { ToolbarSeparator } from '@/components/ui/toolbar';
 import { Icon } from '@/lib/icon';
-import { themeScopeProps, useAppearance, type Appearance } from '@/lib/theme';
+import { themeScopeProps, useAppearance, type AppearancePreference } from '@/lib/theme';
 import { cn } from '@/lib/utils';
 
 /** Dotted paper: the theme's muted surface with a 22px grid of muted-foreground dots. */
@@ -40,7 +46,7 @@ const SAMPLE: PencilPoint[] = Array.from({ length: 41 }, (_, i) => {
 function BrushSample({ tool, ink, w }: { tool: PencilDrawTool; ink: string; w: number }) {
   return (
     <svg aria-hidden="true" viewBox="0 0 240 64" className={cn('block h-16 w-full rounded-lg', pencilPaperClassName)}>
-      <StrokePath stroke={{ tool, color: ink, width: w, pressure: false, complete: true, points: SAMPLE }} />
+      <StrokePath stroke={{ tool, ink, widthScale: w, pressure: false, complete: true, points: SAMPLE }} />
     </svg>
   );
 }
@@ -61,19 +67,17 @@ function BrushCard({ tool, ink, scale, strokes }: { tool: PencilTool; ink: strin
 }
 
 export interface PencilKitDemoProps extends React.HTMLAttributes<HTMLDivElement> {
-  /** Dark paper. Wins over `appearance`. */
-  dark?: boolean | 'true';
-  /** Light or dark paper. Defaults to the ambient `AppearanceProvider` value, else light. */
-  appearance?: Appearance;
+  /** Light or dark paper. `auto` (the default) follows the ambient `AppearanceProvider` value, else light. */
+  appearance?: AppearancePreference;
   tint?: string;
   /** strokes to pre-seed the canvas with (e.g. the `demoStrokes()` fixture) */
   defaultStrokes?: PencilStroke[];
 }
 
 /** The full PencilKit prototype demo: dotted paper, canvas, and the floating toolbar. */
-export function PencilKitDemo({ dark: darkProp, appearance, tint, defaultStrokes, className, style, ...rest }: PencilKitDemoProps) {
+export function PencilKitDemo({ appearance = 'auto', tint, defaultStrokes, className, style, ...rest }: PencilKitDemoProps) {
   const ambient = useAppearance();
-  const dark = darkProp != null ? darkProp === true || darkProp === 'true' : (appearance ?? ambient) === 'dark';
+  const dark = (appearance === 'auto' ? ambient : appearance) === 'dark';
   const scope = themeScopeProps({ appearance: dark ? 'dark' : 'light', tint });
 
   const [tool, setTool] = useState<PencilTool>('pen');
@@ -102,29 +106,33 @@ export function PencilKitDemo({ dark: darkProp, appearance, tint, defaultStrokes
       <PencilCanvas
         tool={tool}
         ink={ink}
-        width={width}
+        widthScale={width}
         strokes={history.strokes}
         onStrokesChange={history.onStrokesChange}
         aria-label="Sketch"
         emptyState={<EmptyState title="Draw anywhere" description="Apple Pencil pressure is real; mouse and touch are simulated." />}
       >
-        <PencilToolbar className="absolute inset-x-2.5 bottom-3.5 mx-auto">
+        <PencilToolbar
+          className="absolute inset-x-2.5 bottom-3.5 mx-auto"
+          trailing={
+            <>
+              <ToolbarSeparator />
+              <PencilActions
+                onUndo={history.undo}
+                onRedo={history.redo}
+                onClear={history.clear}
+                canUndo={history.canUndo}
+                canRedo={history.canRedo}
+                canClear={history.canClear}
+              />
+            </>
+          }
+        >
           <PencilToolPicker value={tool} onValueChange={setTool} hoverCard={toolCard} />
           <ToolbarSeparator />
           <PencilInkPicker value={ink} onValueChange={setInk} />
           <ToolbarSeparator />
           <PencilWidthPicker value={width} onValueChange={setWidth} hoverCard={widthCard} />
-          <PencilToolbarPinned>
-            <ToolbarSeparator />
-            <PencilActions
-              onUndo={history.undo}
-              onRedo={history.redo}
-              onClear={history.clear}
-              canUndo={history.canUndo}
-              canRedo={history.canRedo}
-              canClear={history.canClear}
-            />
-          </PencilToolbarPinned>
         </PencilToolbar>
         <span className="pointer-events-none absolute top-2.5 right-3 font-mono text-caption2 text-tertiary-foreground">perfect-freehand@1.2.2</span>
       </PencilCanvas>

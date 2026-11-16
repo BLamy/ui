@@ -49,7 +49,7 @@ export const pencilInks: readonly PencilInk[] = [
   { value: '#FF375F', label: 'Pink' },
 ];
 
-/** A stroke width: `scale` multiplies the tool's nib, `dot` is the swatch's diameter in px. */
+/** A stroke width: `scale` multiplies the tool's nib (a stroke's `widthScale`), `dot` is the swatch's diameter in px. */
 export interface PencilWidth {
   scale: number;
   dot: number;
@@ -68,10 +68,11 @@ export type PencilPoint = [number, number, number];
 
 export interface PencilStroke {
   tool: PencilDrawTool;
-  /** Any CSS color. */
-  color: string;
-  /** Multiplies the tool's nib (a `pencilWidths` scale). */
-  width: number;
+  /** The stroke's ink: any CSS color (a `pencilInks` value, or your own). */
+  ink: string;
+  /** Multiplies the tool's nib (a `pencilWidths` scale), so it is not a width in px: the drawn width is
+   *  `pencilTools[tool].options.size * widthScale`. */
+  widthScale: number;
   /** The points carry real pressure (a stylus); otherwise perfect-freehand simulates it from speed. */
   pressure: boolean;
   points: PencilPoint[];

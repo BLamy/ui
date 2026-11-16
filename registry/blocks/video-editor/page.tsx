@@ -13,8 +13,8 @@ import { Button } from '@/components/ui/button';
 import { Filmstrip } from '@/components/ui/filmstrip';
 import { Slider } from '@/components/ui/slider';
 import { Toggle, toggleVariants } from '@/components/ui/toggle';
-import { VideoPreviewControls, VideoPreview, type PreviewMedia } from '@/components/ui/video-preview';
-import { fitTimelineZoom, timelineZoomRange, VideoTimeline, type TimelineMediaInfo } from '@/components/ui/video-timeline';
+import { VideoPreviewControls, VideoPreview } from '@/components/ui/video-preview';
+import { fitTimelineZoom, timelineZoomRange, VideoTimeline, type TimelineMedia } from '@/components/ui/video-timeline';
 import { Waveform } from '@/components/ui/waveform';
 import { SizeClassProvider, useSizeClass } from '@/lib/container';
 import { FfmpegProvider, releaseMedia, useFfmpeg, useFfmpegSupport, useMediaFrames, useMediaPeaks } from '@/lib/ffmpeg/react';
@@ -149,12 +149,10 @@ function Shell({ samples }: { samples: boolean }) {
 
   /* ── What the viewer and the timeline see ── */
   const ready = ed.order.map((id) => ed.media[id]).filter((m): m is MediaItem => !!m);
-  const preview: Record<string, PreviewMedia> = {};
-  const info: Record<string, TimelineMediaInfo> = { [TITLE_MEDIA]: { duration: Infinity, kind: 'image', name: 'Title' } };
+  const clipMedia: Record<string, TimelineMedia> = { [TITLE_MEDIA]: { duration: Infinity, kind: 'image', name: 'Title' } };
   for (const m of ready) {
     if (m.status !== 'ready') continue;
-    preview[m.id] = { url: m.url, kind: m.kind };
-    info[m.id] = { duration: m.duration, kind: m.kind, name: m.name };
+    clipMedia[m.id] = { url: m.url, duration: m.duration, kind: m.kind, name: m.name };
   }
 
   /* ── Keys ── */
@@ -241,7 +239,7 @@ function Shell({ samples }: { samples: boolean }) {
           {media}
         </AdaptivePane>
         <div className="flex min-w-0 flex-1 flex-col bg-muted">
-          <VideoPreview timeline={project.timeline} media={preview} playback={clock} format={project.format} className="min-h-0 flex-1 p-3"
+          <VideoPreview timeline={project.timeline} media={clipMedia} playback={clock} format={project.format} className="min-h-0 flex-1 p-3"
             renderClip={(clip) => (isTitle(clip) ? <TitleView clip={clip} format={project.format} /> : undefined)}>
             {duration <= 0 ? (
               <div className="absolute inset-0 grid place-items-center p-6 text-center text-footnote text-white/70">
@@ -277,7 +275,7 @@ function Shell({ samples }: { samples: boolean }) {
             value={Math.log(zoom)} onValueChange={(v) => setZoom(Math.exp(v))} />
           <Button variant="quiet" size="sm" className="h-7 px-2 text-caption" onClick={fit}>Fit</Button>
         </div>
-        <VideoTimeline className="min-h-0 flex-1" value={project.timeline} onValueChange={(t) => ed.edit(() => t)} media={info} playback={clock} fps={fps}
+        <VideoTimeline className="min-h-0 flex-1" value={project.timeline} onValueChange={(t) => ed.edit(() => t)} media={clipMedia} playback={clock} fps={fps}
           selectedClips={ed.selection} onSelectedClipsChange={ed.select} zoom={zoom} onZoomChange={setZoom} snap={snap}
           onDropMedia={(id, details) => act.addMedia(id, details)}
           clipClassName={(clip) => (isTitle(clip) ? 'border-chart-5/55 bg-chart-5/25' : ed.media[clip.media]?.kind === 'image' ? 'border-chart-3/50 bg-chart-3/20' : undefined)}
@@ -303,7 +301,7 @@ function ClipBody({ clip, track, width }: { clip: TimelineClip; track: TimelineT
   }
   if (!ready || width < 6) return null;
   const strip = track.kind === 'video' && ready.kind !== 'audio';
-  const wave = peaks.data ? <Waveform peaks={peaks.data.peaks} rate={peaks.data.rate} from={clip.in} to={clip.out} gain={clip.muted ? 0 : clip.volume ?? 1} tone={strip ? 'default' : 'success'} /> : null;
+  const wave = sound ? <Waveform peaks={peaks.data?.peaks ?? []} rate={peaks.data?.rate ?? 50} loading={peaks.loading} from={clip.in} to={clip.out} gain={clip.muted ? 0 : clip.volume ?? 1} tone={strip ? 'default' : 'success'} /> : null;
   if (!strip) return <div className="absolute inset-x-0 top-4 bottom-0.5">{wave}</div>;
   const images = ready.kind === 'image' ? [{ time: 0, src: ready.url }] : frames.data ?? [];
   return (

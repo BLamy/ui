@@ -1,17 +1,18 @@
 'use client';
 import {
   createContext, useCallback, useContext, useEffect, useId, useLayoutEffect, useMemo, useRef, useState,
-  type ComponentProps, type ReactNode, type Ref,
+  type ComponentProps, type MouseEvent, type ReactNode, type Ref,
 } from 'react';
 import {
   AdaptivePane, AdaptivePaneClose, AdaptivePaneHeader, AdaptivePaneTitle, AdaptivePaneTrigger, adaptivePanePageClass, createAdaptivePaneController,
   type AdaptivePaneController, type AdaptivePaneOpenChangeDetails, type AdaptivePanePresentation,
 } from '@/components/ui/adaptive-pane';
 import { buttonVariants } from '@/components/ui/button';
-import { Field, FieldLabel } from '@/components/ui/field';
-import { Input, type InputProps } from '@/components/ui/input';
 import { SizeClassProvider, useSizeClass, type SizeClass, type SizeClassBreakpoints } from '@/lib/container';
-import { sectionLabelVariants } from '@/lib/primitives';
+import { DiagramChromeProvider, useDiagramChromeInset, useDiagramChromeScope } from '@/lib/diagram-chrome';
+import { BackLabel, backName, barBackButton, barTitle, useBackFit } from '@/lib/nav-bar';
+import { barSurface, sectionLabelVariants } from '@/lib/primitives';
+import { surfaceBodyVariants } from '@/lib/surface';
 import { cn } from '@/lib/utils';
 
 /* ══ DiagramFrame — a board with a panel beside it ══
@@ -32,8 +33,9 @@ import { cn } from '@/lib/utils';
        </DiagramFramePanel>
      </DiagramFrame>
 
-   A `DiagramFrameCover` goes over all of it (what's inside what's selected), and the board and the panel are inert
-   under it. Why not SplitView: a split view is navigation between columns of lists; this is one board and its
+   A `DiagramFrameCover` goes over all of it (what's inside what's selected), with a `DiagramFrameCoverHeader` that goes
+   back, and the board and the panel are inert under it. The panel's fields are the kit's `Field` and `Input` (with
+   `onValueCommit` for a field that changes something once you're done with it). Why not SplitView: a split view is navigation between columns of lists; this is one board and its
    inspector, and AdaptivePane is the kit's inspector. */
 
 /** The size classes of a frame: a column needs the board to keep ~440 px beside it. */
@@ -53,8 +55,8 @@ interface DiagramFrameContextValue {
   controller: AdaptivePaneController;
   covered: boolean;
   /** The panel's title, for the trigger's default text. */
-  title: string;
-  setTitle: (title: string) => void;
+  title: ReactNode;
+  setTitle: (title: ReactNode) => void;
   setCovered: (covered: boolean) => void;
   /** Focus goes into the panel when the trigger opens it as a column, and back to the trigger when it closes. */
   moved: { current: boolean };
@@ -68,10 +70,11 @@ function useFrame(part: string): DiagramFrameContextValue {
   return value;
 }
 
-/** Whether the panel's open, how it shows, and the frame's size class: for a part of your own inside the frame. */
-export function useDiagramFrame(): Pick<DiagramFrameContextValue, 'open' | 'setOpen' | 'presentation' | 'sizeClass'> {
-  const { open, setOpen, presentation, sizeClass } = useFrame('useDiagramFrame');
-  return { open, setOpen, presentation, sizeClass };
+/** Whether the panel's open, how it shows, the frame's size class, and whether a cover is over it (the board and the
+ *  panel are inert while it is): for a part of your own inside the frame. */
+export function useDiagramFrame(): Pick<DiagramFrameContextValue, 'open' | 'setOpen' | 'presentation' | 'sizeClass' | 'covered'> {
+  const { open, setOpen, presentation, sizeClass, covered } = useFrame('useDiagramFrame');
+  return { open, setOpen, presentation, sizeClass, covered };
 }
 
 const resolve = (presentation: AdaptivePanePresentation, side: 'start' | 'end', sizeClass: SizeClass): Exclude<AdaptivePanePresentation, 'auto'> => {
@@ -108,8 +111,15 @@ export function DiagramFrame({ open: openProp, defaultOpen, onOpenChange, presen
   const [controller] = useState(createAdaptivePaneController);
   // `null` until it's chosen: until then it follows the presentation, open as a column and closed over the board.
   const [choice, setChoice] = useState<boolean | null>(defaultOpen ?? null);
+  // A choice is for the way the panel shows when it was made: closing a pushed page is going back to the board, not
+  // hiding the inspector, so when the frame widens into a column, the column shows again (as an iPad's split view does).
+  const [chosenFor, setChosenFor] = useState(shown);
+  if (chosenFor !== shown) {
+    setChosenFor(shown);
+    if (choice !== null) setChoice(null);
+  }
   const open = openProp ?? choice ?? shown === 'column';
-  const [title, setTitle] = useState('Details');
+  const [title, setTitle] = useState<ReactNode>('Details');
   const [covered, setCovered] = useState(false);
   const moved = useRef(false);
   const setOpen = useCallback<DiagramFrameContextValue['setOpen']>((next, options) => controller.setOpen(next, options), [controller]);
@@ -128,6 +138,7 @@ export function DiagramFrame({ open: openProp, defaultOpen, onOpenChange, presen
           ref={rootRef}
           data-slot="diagram-frame"
           data-presentation={shown}
+          data-size-class={sizeClass}
           data-open={open ? '' : undefined}
           data-covered={covered ? '' : undefined}
           className={cn('absolute inset-0 flex overflow-hidden bg-background', side === 'start' && 'flex-row-reverse', className)}
@@ -143,12 +154,20 @@ export function DiagramFrame({ open: openProp, defaultOpen, onOpenChange, presen
 export type DiagramFrameBoardProps = ComponentProps<'div'>;
 
 /** The board's box: put a `Diagram` (and a `DiagramFrameBar`) in it. It's the page a pushed panel slides over, and
- *  it's inert under a cover. Its `ref` is a good `host` to measure a layout's text in. */
-export function DiagramFrameBoard({ className, children, ...props }: DiagramFrameBoardProps) {
+ *  it's inert under a cover. Its `ref` is a good `host` to measure a layout's text in. A Diagram in it fits its content
+ *  clear of the bar, and puts its toolbar at the top. */
+export function DiagramFrameBoard({ className, children, ref: refProp, ...props }: DiagramFrameBoardProps) {
   const { covered } = useFrame('DiagramFrameBoard');
+  const own = useRef<HTMLDivElement | null>(null);
+  const ref = useCallback((el: HTMLDivElement | null) => {
+    own.current = el;
+    if (typeof refProp === 'function') refProp(el);
+    else if (refProp) refProp.current = el;
+  }, [refProp]);
+  const chrome = useDiagramChromeScope(own, { frame: true });
   return (
-    <div data-slot="diagram-frame-board" inert={covered || undefined} className={cn('relative min-h-0 min-w-0 flex-1', adaptivePanePageClass, className)} {...props}>
-      {children}
+    <div ref={ref} data-slot="diagram-frame-board" inert={covered || undefined} className={cn('relative min-h-0 min-w-0 flex-1', adaptivePanePageClass, className)} {...props}>
+      <DiagramChromeProvider value={chrome}>{children}</DiagramChromeProvider>
     </div>
   );
 }
@@ -185,6 +204,8 @@ export interface DiagramFrameBarProps extends ComponentProps<'div'> {
 export function DiagramFrameBar({ trigger, className, children, ...props }: DiagramFrameBarProps) {
   const { open, moved } = useFrame('DiagramFrameBar');
   const bar = useRef<HTMLDivElement>(null);
+  // A fit leaves room for it while it shows.
+  useDiagramChromeInset(bar, 'bottom', !open);
   // The panel closed from inside it (its × or back): focus comes back to the button that opens it.
   useEffect(() => {
     if (open || !moved.current) return;
@@ -205,9 +226,9 @@ export function DiagramFrameBar({ trigger, className, children, ...props }: Diag
   );
 }
 
-export interface DiagramFramePanelProps {
-  /** Names the panel and heads it; the trigger's text by default. */
-  title: string;
+export interface DiagramFramePanelProps extends Omit<ComponentProps<'div'>, 'title' | 'children'> {
+  /** Heads the panel and names it (give it an `aria-label` too when it isn't text); the trigger's text by default. */
+  title: ReactNode;
   /** What the back button says in a pushed panel (default `Board`). */
   backLabel?: string;
   /** Its width as a column (default 288). */
@@ -220,8 +241,10 @@ export interface DiagramFramePanelProps {
   children?: ReactNode;
 }
 
-/** The panel: an AdaptivePane with a header (its title, and × or ‹ back), and a body that scrolls. */
-export function DiagramFramePanel({ title, backLabel = 'Board', width = PANEL_WIDTH, modal = false, actions, className, children }: DiagramFramePanelProps) {
+/** The panel: an AdaptivePane with a header (its title, and × or ‹ back), and a body that scrolls. Its `ref`, `id` and
+ *  `data-*` go to the panel's element (`data-slot="diagram-frame-panel"`, around the pane), and `aria-label` names the
+ *  pane. */
+export function DiagramFramePanel({ title, backLabel = 'Board', width = PANEL_WIDTH, modal = false, actions, className, children, 'aria-label': ariaLabel, ...props }: DiagramFramePanelProps) {
   const { open, changed, presentation, side, controller, covered, setTitle, moved } = useFrame('DiagramFramePanel');
   useLayoutEffect(() => { setTitle(title); }, [title, setTitle]);
   const body = useRef<HTMLDivElement>(null);
@@ -233,7 +256,7 @@ export function DiagramFramePanel({ title, backLabel = 'Board', width = PANEL_WI
     body.current?.focus({ preventScroll: true });
   }, [open, presentation, moved]);
   return (
-    <div className="contents" inert={covered || undefined}>
+    <div data-slot="diagram-frame-panel" className="contents" inert={covered || undefined} {...props}>
       <AdaptivePane
         controller={controller}
         presentation={presentation}
@@ -243,6 +266,7 @@ export function DiagramFramePanel({ title, backLabel = 'Board', width = PANEL_WI
         columnWidth={width}
         drawerWidth={Math.max(width, 300)}
         modal={modal}
+        aria-label={ariaLabel}
         className={({ presentation: p }) => cn('bg-background', p === 'column' && (side === 'end' ? 'border-s border-border' : 'border-e border-border'), className)}
       >
         <AdaptivePaneHeader>
@@ -257,7 +281,8 @@ export function DiagramFramePanel({ title, backLabel = 'Board', width = PANEL_WI
           id={bodyId}
           data-slot="diagram-frame-panel-body"
           tabIndex={-1}
-          className="bl-scroll flex min-h-0 flex-1 touch-pan-y flex-col gap-3.5 overflow-y-auto px-3.5 pt-1 pb-3.5 outline-none"
+          // The body's edges line up with the header's title (the surface's inline padding).
+          className={cn(surfaceBodyVariants(), 'flex touch-pan-y flex-col gap-3.5 pt-1 pb-3.5 text-body outline-none')}
         >
           {children}
         </div>
@@ -271,7 +296,7 @@ export interface DiagramFrameCoverProps extends ComponentProps<'div'> {
 }
 
 /** Over the whole frame: something to see in place of the board, like what's inside what's selected. The board and the
- *  panel stay as they are underneath, inert. Render it while it shows, and give it a way back. */
+ *  panel stay as they are underneath, inert. Render it while it shows, with a `DiagramFrameCoverHeader` to go back. */
 export function DiagramFrameCover({ className, children, ...props }: DiagramFrameCoverProps) {
   const { setCovered } = useFrame('DiagramFrameCover');
   useLayoutEffect(() => {
@@ -281,6 +306,43 @@ export function DiagramFrameCover({ className, children, ...props }: DiagramFram
   return (
     <div data-slot="diagram-frame-cover" className={cn('absolute inset-0 z-40 flex flex-col bg-background', className)} {...props}>
       {children}
+    </div>
+  );
+}
+
+export interface DiagramFrameCoverHeaderProps extends Omit<ComponentProps<'div'>, 'title'> {
+  /** What the cover shows, centered in the bar. */
+  title: ReactNode;
+  /** What going back goes back to, beside the chevron while it fits (default `Back`). The button is named "Back to" it. */
+  backLabel?: string;
+  /** Goes back: unmount the cover. */
+  onBack: (event: MouseEvent<HTMLButtonElement>) => void;
+  /** Things to do, at the end of the bar. */
+  actions?: ReactNode;
+}
+
+/** A cover's bar: "‹ back" at the start and a centered title, the same bar as a pushed panel's. Its back button takes
+ *  focus when the cover opens, so the keys go on from there. */
+export function DiagramFrameCoverHeader({ title, backLabel = 'Back', onBack, actions, className, children, ...props }: DiagramFrameCoverHeaderProps) {
+  useFrame('DiagramFrameCoverHeader');
+  const row = useRef<HTMLDivElement>(null);
+  const back = useRef<HTMLButtonElement>(null);
+  const fit = useBackFit(row, backLabel, () => row.current?.querySelector<HTMLElement>('[data-slot=diagram-frame-cover-title]'));
+  useEffect(() => { back.current?.focus({ preventScroll: true }); }, []);
+  return (
+    <div data-slot="diagram-frame-cover-header" className={cn('relative box-border flex shrink-0 items-center px-1.5', className)} {...props}>
+      <div data-side="top" aria-hidden="true" className={cn(barSurface, 'absolute inset-0 h-auto')} />
+      <div ref={row} className="relative flex h-toolbar w-full items-center justify-between gap-2">
+        <div className="relative z-1 flex min-w-[44px] items-center">
+          <button ref={back} type="button" data-slot="diagram-frame-cover-back" aria-label={backName(backLabel)} className={barBackButton} onClick={onBack}>
+            <BackLabel fit={fit} label={backLabel} />
+          </button>
+          {fit.rulers}
+        </div>
+        <h2 data-slot="diagram-frame-cover-title" className={cn('m-0 leading-[22px]', barTitle)}>{title}</h2>
+        <div className="relative z-1 flex items-center gap-1">{actions}</div>
+        {children}
+      </div>
     </div>
   );
 }
@@ -297,48 +359,5 @@ export function DiagramFrameSection({ title, className, children, ...props }: Di
       <h3 id={id} className={sectionLabelVariants({ variant: 'grouped' })}>{title}</h3>
       {children}
     </section>
-  );
-}
-
-export interface DiagramFrameInputProps extends Omit<InputProps, 'value' | 'defaultValue' | 'onValueChange'> {
-  label: ReactNode;
-  /** What it says now. It follows this, and goes back to it when a commit's refused. */
-  value: string;
-  /** The text, when it's been changed and finished with: Enter, or leaving it. Escape puts it back instead. */
-  onValueCommit: (value: string) => void;
-}
-
-/** A labelled field for a panel that changes something once you're done with it, not on every key: Enter or leaving it
- *  commits, Escape puts it back. */
-export function DiagramFrameInput({ label, value, onValueCommit, size = 'sm', className, onBlur, onKeyDown, ...props }: DiagramFrameInputProps) {
-  const [draft, setDraft] = useState(value);
-  useEffect(() => { setDraft(value); }, [value]);
-  const commit = () => {
-    if (draft === value) return;
-    onValueCommit(draft);
-    // If it's refused, the value hasn't changed, so this is what puts it back.
-    setDraft(value);
-  };
-  return (
-    <Field>
-      <FieldLabel>{label}</FieldLabel>
-      <Input
-        size={size}
-        className={className}
-        value={draft}
-        onValueChange={(next) => setDraft(next)}
-        autoCapitalize="off"
-        autoCorrect="off"
-        spellCheck={false}
-        onBlur={(e) => { onBlur?.(e); commit(); }}
-        onKeyDown={(e) => {
-          onKeyDown?.(e);
-          if (e.key === 'Enter') commit();
-          // Escape puts it back, and goes no further: the panel stays open.
-          if (e.key === 'Escape') { setDraft(value); e.stopPropagation(); }
-        }}
-        {...props}
-      />
-    </Field>
   );
 }

@@ -1,0 +1,21 @@
+{
+  "name": "durable-streams",
+  "title": "Durable Streams sync",
+  "description": "The cloud end of append-only streams: a client for the Durable Streams HTTP protocol, and CloudSync, which mirrors this browser's LocalStreams to such a server with idempotent producer writes and reads other devices' streams back. Off until a server URL is saved; useCloud(cloud) is its status and settings in React.",
+  "exports": [
+    "DurableStreamsClient",
+    "CloudSync",
+    "useCloud",
+    "cloudDeviceId",
+    "loadCloudSettings"
+  ],
+  "imports": [
+    "CloudSync",
+    "useCloud"
+  ],
+  "types": [
+    "DurableStreamsConfig",
+    "CloudSettings",
+    "CloudStatus"
+  ]
+}

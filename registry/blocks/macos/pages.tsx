@@ -334,10 +334,10 @@ function SystemItems() {
   return (
     <>
       <CommandMenuItem
-        value="Toggle Dark Mode" keywords={['appearance', 'light mode', 'theme']} title={a.dark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+        value="Toggle Dark Mode" keywords={['appearance', 'light mode', 'theme']} title={(a.appearance === 'dark') ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
         description="Appearance"
-        icon={<Swap effect="pop" value={a.dark ? 'light' : 'dark'}>{a.dark ? <Tile tone="light" icon="sun-fill" size={28} /> : <Tile tone="dark" icon="moon-fill" size={28} />}</Swap>}
-        onSelect={() => { a.toggleDark(); a.hud(a.dark ? 'Light Mode' : 'Dark Mode', a.dark ? 'sun-fill' : 'moon-fill'); }}
+        icon={<Swap effect="pop" value={(a.appearance === 'dark') ? 'light' : 'dark'}>{(a.appearance === 'dark') ? <Tile tone="light" icon="sun-fill" size={28} /> : <Tile tone="dark" icon="moon-fill" size={28} />}</Swap>}
+        onSelect={() => { a.toggleAppearance(); a.hud(a.appearance === 'dark' ? 'Light Mode' : 'Dark Mode', a.appearance === 'dark' ? 'sun-fill' : 'moon-fill'); }}
       />
       <CommandMenuItem value="Lock Screen" keywords={['lock']} title="Lock Screen" icon={<Tile tone="lock" icon="lock-fill" size={28} />} trailing={<CommandMenuShortcut shortcut="ctrl+mod+q" />} onSelect={() => { a.close(); a.setPower('lock'); }} />
       <CommandMenuItem value="Sleep" keywords={['sleep', 'display']} title="Sleep" icon={<Tile tone="sleep" icon="moon-fill" size={28} />} onSelect={() => { a.close(); a.setPower('sleep'); }} />

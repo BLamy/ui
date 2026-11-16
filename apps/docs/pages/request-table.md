@@ -76,7 +76,7 @@ const renderLink = useCallback((row: Row) => (
 
 ## Columns
 
-`columns` is which columns, in order: a built-in's id, or a [DataTable column](https://blamy.github.io/ui/#/data-table) of your own. Built-ins are `name`, `url`, `method`, `status`, `type`, `size`, `duration` and `waterfall`; `REQUEST_COLUMNS` has their sizes and headers. A column with a built-in's `id` adjusts that one (and keeps its cell unless it brings a `cell`), and a list of ids can be written inline.
+`columns` is which columns, in order: a built-in's id, or a [DataTable column](https://blamy.github.io/ui/#/data-table) of your own. Built-ins are `name`, `url`, `method`, `status`, `type`, `size`, `duration` and `waterfall`; `REQUEST_TABLE_COLUMNS` has their sizes and headers. A column with a built-in's `id` adjusts that one (and keeps its cell unless it brings a `cell`), and a list of ids can be written inline.
 
 ```tsx
 const columns: DataTableColumn<Row>[] = [
@@ -94,6 +94,10 @@ Resizing (`columnWidths`), sorting (`sort`, by the built-ins' own values: the na
 The table has DataTable's size class of its own, from its own width and not the viewport's. Compact, under 480 px, it becomes two-line rows: the name, then status, method, duration and any links, with a small waterfall beside them (the current time's line crosses it), and sorting moves into a menu. Medium, under 760 px, leaves out `type` and `size`. `breakpoints` and `layout` work as on DataTable.
 
 {% demo src="request-table/narrow" %}
+
+With no rows the columns stay and `emptyState` ("No requests") is shown below them, as on DataTable.
+
+{% demo src="request-table/empty" %}
 
 ## Keyboard and accessibility
 
@@ -140,7 +144,7 @@ RequestTable takes DataTable's props (`value`, `onAction`, `sort`, `columnWidths
 
 ### Helpers
 
-`REQUEST_COLUMNS` has the built-in columns' sizes and headers. `requestName(url)`, `requestStatusText(row)`, `requestDurationText(row)`, `requestSizeText(row)` ("280 B", "1.7 kB"), `requestTimeRange(rows)` and `isRequestFailed(row)` are the logic behind them, for a host showing the same request elsewhere.
+`REQUEST_TABLE_COLUMNS` has the built-in columns' sizes and headers. `requestName(url)`, `requestStatusText(row)`, `requestDurationText(row)`, `requestSizeText(row)` ("280 B", "1.7 kB"), `requestTimeRange(rows)` and `isRequestFailed(row)` are the logic behind them, for a host showing the same request elsewhere.
 
 ## Styling
 

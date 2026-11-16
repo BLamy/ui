@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react"
 import { parse } from "gpu-lexer"
-import { fallbackSpans } from "./fallback-lexer"
+import { fallbackSpans } from "@brett_lamy/ui/lib/syntax-lexer"
 
 type Span = {
   type: "plain" | "comment" | "string" | "number" | "keyword" | "type" | "function" | "constant" | "operator"
@@ -11,7 +11,7 @@ type Span = {
 /* Token colors live in styles.css (`.docs-tok-*`) and follow the host's color-scheme, so code reads on
    light and dark backgrounds alike. Hosts can retheme via the --docs-tok-* custom properties.
 
-   Two lexers, one vocabulary. The synchronous fallback (fallback-lexer.ts) colors the code at once, on the
+   Two lexers, one vocabulary. The synchronous fallback (the kit's lib/syntax-lexer, which CodeEditor uses too) colors the code at once, on the
    server too, so a fence is never plain where WebGPU is missing (Safari, Firefox, headless browsers, insecure
    contexts) or gpu-lexer's parse() rejects. When gpu-lexer resolves with spans, they replace the fallback's.
    `data-highlighter` on the <code> says which drew it: "gpu", "fallback" or "none". */

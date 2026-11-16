@@ -32,7 +32,7 @@ Twenty-odd lines of composition: a `Tabs` bar, a `NavigationStack` inside the fi
 | Split view controller | `SplitView` — adaptive sidebar, master, and detail |
 | Tab bar controller | `Tabs` with `variant="bar"`: composable tab navigation |
 | Table view | `List`, `ListSection`, `ListRow` |
-| Section index titles | `IndexBar` — the A–Z rail (`alphabetItems`) or application-defined keyed stops |
+| Section index titles | `IndexBar` — the A–Z rail (`indexBarAlphabetItems`) or application-defined keyed stops |
 | Sheets and trays | `Dialog` (`variant="tray"`), `Sheet` |
 | Inspector column | `AdaptivePane` |
 | Sidebar | `Sidebar` — docked, rail or float, as a column or a drawer (`presentation`) |

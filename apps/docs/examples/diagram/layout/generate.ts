@@ -22,13 +22,13 @@ export function generateDraft(n: number, seed = 42): DiagramDraft {
       if (depth < 3 && left > 6 && r < 0.14) {
         const take = Math.min(left, 4 + int(Math.min(24, left)))
         left -= take
-        nodes.push({ id, parent, kind: 'compound', label: id })
+        nodes.push({ id, parent, kind: 'group', label: id })
         place(id, depth + 1, take)
       } else if (depth < 3 && left > 8 && r < 0.17) {
         const take = Math.min(left - 2, 6 + int(6))
         left -= take + 2
         const half = Math.floor(take / 2)
-        nodes.push({ id, parent, kind: 'parallel', label: id, detail: 'parallel' })
+        nodes.push({ id, parent, kind: 'group', variant: 'dashed', label: id, detail: 'parallel' })
         nodes.push({ id: `${id}a`, parent: id, kind: 'region', label: `${id}a` })
         nodes.push({ id: `${id}b`, parent: id, kind: 'region', label: `${id}b` })
         place(`${id}a`, depth + 2, half)
@@ -46,7 +46,7 @@ export function generateDraft(n: number, seed = 42): DiagramDraft {
     const a = int(ids.length)
     const near = rnd() < 0.8
     const b = rnd() < 0.05 ? a : near ? Math.max(0, Math.min(ids.length - 1, a + 1 + int(9) - 4)) : int(ids.length)
-    edges.push({ id: `e${e}`, from: ids[a], to: ids[b], label: `E${e}`, kind: 'event' })
+    edges.push({ id: `e${e}`, from: ids[a], to: ids[b], label: `E${e}` })
   }
   return { nodes, edges }
 }

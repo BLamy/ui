@@ -356,7 +356,8 @@ function WorkspaceView({
 /** The compact presentation: every tab of every tabset in one strip along the bottom, the active tabset's tab on show.
  *  Picking a tab selects it in its tabset and makes that tabset the active one; nothing can be dragged. */
 function TabsView({ tabsets, currentTabsetId }: { tabsets: AnyTabset[]; currentTabsetId: string | null }) {
-  const { api, keepMounted } = useWorkspaceContext('The tab strip');
+  const { api, keepMounted, disabled } = useWorkspaceContext('The tab strip');
+  const closable = (tab: AnyTab) => !disabled && !tab.disableClose;
   const active = tabsets.find((tabset) => tabset.id === currentTabsetId) ?? tabsets.find((tabset) => tabset.tabs.length);
   const tabs = tabsets.flatMap((tabset) => tabset.tabs.map((tab) => ({ tab, tabsetId: tabset.id })));
   return (
@@ -374,12 +375,35 @@ function TabsView({ tabsets, currentTabsetId }: { tabsets: AnyTabset[]; currentT
       }}
       className="size-full"
     >
-      <TabsBar className={cn(HEADER, PLACED.bottom.header)}>
+      {/* Along the bottom of a phone: clear of the home indicator. */}
+      <TabsBar className={cn(HEADER, PLACED.bottom.header, 'pb-[max(0px,env(safe-area-inset-bottom))]')}>
         <KitTabsList aria-label="Tabs" className={cn(TAB_LIST, PLACED.bottom.list)}>
           {tabs.map(({ tab }) => (
-            <KitTabsTab key={tab.id} value={tab.id} className={cn(TAB, PLACED.bottom.tab, 'touch-auto pointer-coarse:min-h-11 focus-visible:ring-2 focus-visible:ring-ring/45 focus-visible:ring-inset')}>
-              <span className="truncate">{tab.title ?? tab.id}</span>
-            </KitTabsTab>
+            // The close button sits over the tab's end, as in the docked strip: for the pointer (a finger here, with
+            // its 44px hit area), while Delete on the tab closes it from the keyboard.
+            <div key={tab.id} role="none" data-part="tab" className="group/tab relative flex shrink-0">
+              <KitTabsTab
+                value={tab.id}
+                aria-keyshortcuts={closable(tab) ? 'Delete' : undefined}
+                onKeyDown={(event) => {
+                  if ((event.key === 'Delete' || event.key === 'Backspace') && !event.metaKey && !event.ctrlKey && !event.altKey && closable(tab)) {
+                    event.preventDefault();
+                    api.closeTab(tab.id, { reason: 'remove-press', event: event.nativeEvent });
+                  }
+                }}
+                className={cn(
+                  TAB,
+                  PLACED.bottom.tab,
+                  'touch-auto group-last/tab:border-e-0 pointer-coarse:min-h-11 pointer-coarse:text-footnote focus-visible:ring-2 focus-visible:ring-ring/45 focus-visible:ring-inset',
+                  closable(tab) && 'pe-9',
+                )}
+              >
+                <span className="truncate">{tab.title ?? tab.id}</span>
+              </KitTabsTab>
+              <parts.TabClose value={tab.id} className={cn(TAB_CLOSE, 'absolute end-2.5 top-1/2 -translate-y-1/2')}>
+                <Icon name="xmark" size={12} />
+              </parts.TabClose>
+            </div>
           ))}
         </KitTabsList>
       </TabsBar>

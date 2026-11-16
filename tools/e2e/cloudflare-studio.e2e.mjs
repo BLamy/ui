@@ -102,7 +102,7 @@ test('the file upload, from nothing, by hand, kept through a reload, and exporte
   await press(page, 'durable-objects');
   await panel(page).locator('[data-action=add-machine]').click();
   await expect(page.locator('[data-state-diagram]')).toBeVisible();
-  await page.locator('[data-action=machine-back]').click();
+  await page.locator('[data-slot=diagram-frame-cover-back]').click();
   const toRoom = await page.locator('[data-slot=diagram-edge]').evaluateAll((els) => els.map((el) => el.getAttribute('data-edge')).find((id) => /^workers-2.*durable/.test(id)));
   const line = await page.locator(`[data-slot=diagram-edge][data-edge="${toRoom}"]`).evaluate((el) => { const p = el.getPointAtLength(el.getTotalLength() / 2), m = el.getScreenCTM(); return { x: m.a * p.x + m.e, y: m.d * p.y + m.f }; });
   await page.mouse.click(line.x, line.y);

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react"
-import { Check, Copy } from "lucide-react"
+import { Glyph } from "../ui/glyph"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@ui-sdk/react/tooltip"
 
 /** Copies text, falling back to a selection copy where the Clipboard API is unavailable. */
@@ -53,9 +53,9 @@ export function useCopied(ms = 1600) {
 
 export function CopyIcon({ copied, size = 14 }: { copied: boolean; size?: number }) {
   return copied ? (
-    <Check className="docs-copy-icon docs-copy-icon-done" width={size} height={size} strokeWidth={2.4} aria-hidden="true" />
+    <Glyph name="check" className="docs-copy-icon docs-copy-icon-done" size={size} sw={2.4} />
   ) : (
-    <Copy className="docs-copy-icon" width={size} height={size} strokeWidth={2} aria-hidden="true" />
+    <Glyph name="copy" className="docs-copy-icon" size={size} sw={2} />
   )
 }
 

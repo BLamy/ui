@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Composer, ComposerAdd, ComposerAttachments, ComposerCard, ComposerFooter, ComposerInput, ComposerSend, ComposerSpacer } from '@/components/ui/composer/composer'
+import { Composer, ComposerAdd, ComposerAttachments, ComposerCard, ComposerFooter, ComposerInput, ComposerSend, ComposerSpacer } from '@/components/ui/composer'
 import { ToastProvider, ToastRegion, createToaster } from '@/components/ui/toast'
 import { ThemeScope } from '@/lib/theme'
 import { type ComposerAttachment } from '@/components/blocks/t3-clone/components/workbench/workbench-composer'

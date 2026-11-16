@@ -34,6 +34,23 @@ const panel = () => document.querySelector<HTMLElement>('[data-slot=cloudflare-p
 const field = (name: string) => document.querySelector<HTMLInputElement>(`[data-field="${name}"]`)!;
 
 describe('CloudflareDiagram, read-only', () => {
+  it('can be selected in, as a picture you read, and says what’s selected in the panel', async () => {
+    const onSelectionChange = vi.fn();
+    shown({ services: SERVICES, edges: EDGES, onSelectionChange });
+    await settle();
+    const board = screen.getByRole('application', { name: 'Cloudflare services board' });
+    act(() => { board.focus(); });
+    fireEvent.keyDown(document.activeElement!, { key: 'Home' });
+    fireEvent.keyDown(document.activeElement!, { key: 'Enter' });
+    await settle();
+    expect(onSelectionChange.mock.calls.at(-1)?.[0]).toEqual({ nodes: ['api'], edges: [] });
+    // Nothing moves or is deleted.
+    fireEvent.keyDown(document.activeElement!, { key: 'Delete' });
+    await settle();
+    expect(document.querySelector('[data-node=api]')).toBeTruthy();
+    expect(panel().querySelector('[data-slot=cloudflare-description]')).toBeTruthy();
+  });
+
   it('is a picture with a panel that only reads: no search, no fields, nothing to delete or undo', async () => {
     shown({ services: SERVICES, edges: EDGES, defaultSelection: { nodes: [], edges: ['up'] } });
     await settle();
@@ -89,7 +106,9 @@ describe('CloudflareDiagram, editable', () => {
     await settle();
     await commit(field('binding-name'), '1 bad');
     expect(onDataChange).not.toHaveBeenCalled();
-    expect(screen.getByRole('alert').textContent).toContain('can’t be a name on env');
+    // The refusal is the field's error: under it, and the field is invalid.
+    expect(panel().querySelector('[data-part=refusal]')?.textContent).toContain('can’t be a name on env');
+    expect(field('binding-name').closest('[data-invalid]')).toBeTruthy();
     await commit(field('binding-name'), 'UPLOADS');
     expect(onDataChange.mock.calls[0]?.[0].edges[0].binding).toBe('UPLOADS');
   });
@@ -147,7 +166,7 @@ describe('CloudflareDiagram, editable', () => {
     await settle();
     expect(document.querySelector('[data-state-diagram]')).toBeTruthy();
     expect(panel().closest('[inert]')).toBeTruthy();
-    fireEvent.click(document.querySelector<HTMLElement>('[data-action=machine-back]')!);
+    fireEvent.click(document.querySelector<HTMLElement>('[data-slot=diagram-frame-cover-back]')!);
     await settle();
     await settle();
     expect(document.querySelector('[data-state-diagram]')).toBeNull();
@@ -161,7 +180,7 @@ describe('CloudflareDiagram, editable', () => {
     await settle();
     const issue = panel().querySelector('[data-slot=cloudflare-issue][data-edge=bad]')!;
     expect(issue.getAttribute('data-severity')).toBe('error');
-    expect(document.querySelector('[data-slot=diagram-edge][data-edge=bad]')?.getAttribute('data-kind')).toBe('problem');
+    expect(document.querySelector('[data-slot=diagram-edge][data-edge=bad]')?.getAttribute('data-tone')).toBe('destructive');
     fireEvent.click(within(issue as HTMLElement).getByRole('button', { name: 'Show it' }));
     await settle();
     expect(panel().querySelector('[data-slot=cloudflare-edge-problem]')?.textContent).toBeTruthy();

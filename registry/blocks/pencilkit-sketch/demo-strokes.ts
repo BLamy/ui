@@ -26,8 +26,8 @@ function loop(cx: number, cy: number, rx: number, ry: number, n = 56): PencilPoi
 /** Three strokes — one per drawing tool — sized for a ~640×420 canvas. */
 export function demoStrokes(): PencilStroke[] {
   return [
-    { tool: 'pen', color: ink('Blue'), width: 1, pressure: false, complete: true, points: wave(70, 110, 300, 34, 1.5) },
-    { tool: 'marker', color: ink('Yellow'), width: 1, pressure: false, complete: true, points: wave(90, 200, 320, 10, 0.5) },
-    { tool: 'pencil', color: ink('Pink'), width: 1.7, pressure: false, complete: true, points: loop(460, 150, 90, 55) },
+    { tool: 'pen', ink: ink('Blue'), widthScale: 1, pressure: false, complete: true, points: wave(70, 110, 300, 34, 1.5) },
+    { tool: 'marker', ink: ink('Yellow'), widthScale: 1, pressure: false, complete: true, points: wave(90, 200, 320, 10, 0.5) },
+    { tool: 'pencil', ink: ink('Pink'), widthScale: 1.7, pressure: false, complete: true, points: loop(460, 150, 90, 55) },
   ];
 }

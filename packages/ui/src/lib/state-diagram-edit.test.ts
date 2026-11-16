@@ -4,17 +4,17 @@ import { createActor, createMachine, type AnyStateMachine } from 'xstate';
 import { uploadMachine } from '../stories/upload-machine';
 import {
   StateEditRefused, addState, addTransition, eventNameProblem, inlineCodeIn, missingImplementations, removeItems, removeState, removeTransition, renameState, setInitial, setTransitionEvent,
-  setTransitionGuard, setTransitionSource, setTransitionTarget, stateAt, stateNameProblem, targetText, tryEdit, uniqueName, type MachineConfig,
+  setTransitionGuard, setTransitionSource, setTransitionTarget, stateAt, stateNameProblem, targetText, tryEdit, uniqueName, type StateMachineConfig,
 } from './state-diagram-edit';
-import { machineEdgePlaces, machineStatePaths, machineToDraft, type MachineLike, type TransitionPlace } from './state-diagram-model';
+import { machineEdgePlaces, machineStatePaths, machineToDraft, type StateMachineLike, type TransitionPlace } from './state-diagram-model';
 import { createSimulation } from './state-diagram-simulation';
 
-const uploadConfig = () => JSON.parse(JSON.stringify((uploadMachine as unknown as { config: object }).config)) as MachineConfig;
-const make = (config: MachineConfig) => createMachine(config as never) as unknown as MachineLike;
+const uploadConfig = () => JSON.parse(JSON.stringify((uploadMachine as unknown as { config: object }).config)) as StateMachineConfig;
+const make = (config: StateMachineConfig) => createMachine(config as never) as unknown as StateMachineLike;
 /** What's drawn, as `from -event-> to`. */
-const edges = (config: MachineConfig) => machineToDraft(make(config)).edges.filter((e) => e.kind !== 'initial').map((e) => `${e.from} -${e.data?.event ?? 'always'}-> ${e.to}`).sort();
-const states = (config: MachineConfig) => machineToDraft(make(config)).nodes.filter((n) => n.kind !== 'initial').map((n) => n.id);
-const place = (config: MachineConfig, edgeId: string): TransitionPlace => {
+const edges = (config: StateMachineConfig) => machineToDraft(make(config)).edges.filter((e) => e.data?.transition !== 'initial').map((e) => `${e.from} -${e.data?.event ?? 'always'}-> ${e.to}`).sort();
+const states = (config: StateMachineConfig) => machineToDraft(make(config)).nodes.filter((n) => n.data?.type !== 'initial').map((n) => n.id);
+const place = (config: StateMachineConfig, edgeId: string): TransitionPlace => {
   const found = machineEdgePlaces(make(config)).get(edgeId);
   if (!found) throw new Error(`no edge ${edgeId}: ${[...machineEdgePlaces(make(config)).keys()]}`);
   return found;
@@ -24,7 +24,7 @@ const refused = (fn: () => unknown, words: string | RegExp) => {
   expect(fn).toThrow(words);
 };
 
-const DOOR: MachineConfig = {
+const DOOR: StateMachineConfig = {
   id: 'door',
   initial: 'closed',
   states: {
@@ -36,7 +36,7 @@ const DOOR: MachineConfig = {
 };
 
 /** Every way of writing a target, all at one state. */
-const TARGETS: MachineConfig = {
+const TARGETS: StateMachineConfig = {
   id: 'm',
   initial: 'a',
   on: { ROOT_DOTTED: '.a.deep', ROOT_ID: '#m.a.deep', ROOT_LIST: { target: ['.a.deep', '.b'] } },
@@ -79,7 +79,7 @@ describe('renaming a state', () => {
 
   it('changes where its parent starts, in the form it was written', () => {
     expect(renameState(DOOR, ['closed'], 'shut').initial).toBe('shut');
-    expect((stateAt(renameState(TARGETS, ['b', 'inner'], 'z'), ['b']) as MachineConfig).initial).toEqual({ target: 'z' });
+    expect((stateAt(renameState(TARGETS, ['b', 'inner'], 'z'), ['b']) as StateMachineConfig).initial).toEqual({ target: 'z' });
     expect(stateAt(renameState(TARGETS, ['b', 'inner'], 'z'), ['b', 'h'])?.target).toBe('z');
   });
 
@@ -132,7 +132,7 @@ describe('renaming a state', () => {
   });
 
   it('copes with a key that has a dot, escaped in a target', () => {
-    const c: MachineConfig = { id: 'm', initial: 'a.b', states: { 'a.b': { on: { GO: 'c' } }, c: { on: { BACK: 'a\\.b', BACK2: '#m.a\\.b' } } } };
+    const c: StateMachineConfig = { id: 'm', initial: 'a.b', states: { 'a.b': { on: { GO: 'c' } }, c: { on: { BACK: 'a\\.b', BACK2: '#m.a\\.b' } } } };
     expect(edges(c)).toContain('m.c -BACK-> m.a.b');
     const next = renameState(c, ['c'], 'd');
     expect(edges(next)).toContain('m.a.b -GO-> m.d');
@@ -151,7 +151,7 @@ describe('deleting a state', () => {
     const next = removeState({ ...TARGETS, initial: 'a' }, ['b']);
     const on = stateAt(next, ['a'])?.on as Record<string, unknown>;
     expect(Object.keys(on)).toEqual(['OWN_CHILD', 'BY_ID']);
-    const a = stateAt(next, ['a']) as MachineConfig;
+    const a = stateAt(next, ['a']) as StateMachineConfig;
     expect(a.always).toBeUndefined();
     expect(a.after).toBeUndefined();
     expect(a.onDone).toBeUndefined();
@@ -161,7 +161,7 @@ describe('deleting a state', () => {
   });
 
   it('keeps the others in a list, and the other target of a transition with two', () => {
-    const c: MachineConfig = {
+    const c: StateMachineConfig = {
       id: 'm', type: 'parallel',
       states: {
         r1: { initial: 'a', states: { a: { on: { GO: { target: ['b', '#m.r2.d'] }, TWO: ['b', 'c'] } }, b: {}, c: {} } },
@@ -197,7 +197,7 @@ describe('deleting a state', () => {
   });
 
   it('turns the state into a plain one when its last one goes', () => {
-    const c: MachineConfig = { id: 'm', initial: 'a', states: { a: { initial: 'only', states: { only: {} } }, p: { type: 'parallel', states: { r: {} } } } };
+    const c: StateMachineConfig = { id: 'm', initial: 'a', states: { a: { initial: 'only', states: { only: {} } }, p: { type: 'parallel', states: { r: {} } } } };
     const next = removeState(c, ['a', 'only']);
     expect(stateAt(next, ['a'])).toEqual({});
     expect(stateAt(removeState(c, ['p', 'r']), ['p'])).toEqual({});
@@ -244,7 +244,7 @@ describe('where a state starts', () => {
   it('changes, in the form it was written', () => {
     expect(setInitial(DOOR, [], 'open').initial).toBe('open');
     expect(setInitial(TARGETS, ['b'], 'h').states).toBeDefined();
-    expect((stateAt(setInitial(TARGETS, ['b'], 'h'), ['b']) as MachineConfig).initial).toEqual({ target: 'h' });
+    expect((stateAt(setInitial(TARGETS, ['b'], 'h'), ['b']) as StateMachineConfig).initial).toEqual({ target: 'h' });
   });
 
   it('refuses what isn’t there, and a parallel state', () => {
@@ -269,7 +269,7 @@ describe('adding a transition', () => {
   });
 
   it('writes one for a machine with no id, or a key with a dot', () => {
-    const c: MachineConfig = { initial: 'a', states: { a: { initial: 'x', states: { x: {} } }, 'b.c': {} } };
+    const c: StateMachineConfig = { initial: 'a', states: { a: { initial: 'x', states: { x: {} } }, 'b.c': {} } };
     const next = addTransition(c, ['a', 'x'], 'NEW', ['b.c']);
     expect(edges(next).filter((e) => e.includes('NEW'))).toEqual(['(machine).a.x -NEW-> (machine).b.c']);
     expect(targetText(c, ['a'], ['b.c'])).toBe('b\\.c');
@@ -296,7 +296,7 @@ describe('a transition as it’s drawn, back to where it’s written', () => {
     const config = uploadConfig();
     const draft = machineToDraft(make(config));
     const places = machineEdgePlaces(make(config));
-    const real = draft.edges.filter((e) => e.kind !== 'initial');
+    const real = draft.edges.filter((e) => e.data?.transition !== 'initial');
     expect(real).toHaveLength(36);
     for (const e of real) {
       const at = places.get(e.id);
@@ -314,13 +314,13 @@ describe('a transition as it’s drawn, back to where it’s written', () => {
   });
 
   it('keeps others in a list where they were, and the shape of what’s left', () => {
-    const c: MachineConfig = { id: 'm', initial: 'a', states: { a: { on: { GO: [{ guard: 'g1', target: 'b' }, { guard: 'g2', target: 'b' }, 'c'] } }, b: {}, c: {} } };
+    const c: StateMachineConfig = { id: 'm', initial: 'a', states: { a: { on: { GO: [{ guard: 'g1', target: 'b' }, { guard: 'g2', target: 'b' }, 'c'] } }, b: {}, c: {} } };
     const next = removeTransition(c, place(c, 'm.a:GO->m.b#1'));
     expect(stateAt(next, ['a'])?.on).toEqual({ GO: [{ guard: 'g1', target: 'b' }, 'c'] });
   });
 
   it('takes only one target of a transition with two', () => {
-    const c: MachineConfig = { id: 'm', type: 'parallel', states: { r1: { initial: 'a', states: { a: { on: { GO: { target: ['b', '#m.r2.d'] } } }, b: {} } }, r2: { initial: 'x', states: { x: {}, d: {} } } } };
+    const c: StateMachineConfig = { id: 'm', type: 'parallel', states: { r1: { initial: 'a', states: { a: { on: { GO: { target: ['b', '#m.r2.d'] } } }, b: {} } }, r2: { initial: 'x', states: { x: {}, d: {} } } } };
     const next = removeTransition(c, place(c, 'm.r1.a:GO->m.r2.d'));
     expect(stateAt(next, ['r1', 'a'])?.on).toEqual({ GO: { target: ['b'] } });
     expect(stateAt(removeTransition(c, place(c, 'm.r1.a:GO->m.r1.b')), ['r1', 'a'])?.on).toEqual({ GO: { target: ['#m.r2.d'] } });
@@ -335,8 +335,8 @@ describe('a transition as it’s drawn, back to where it’s written', () => {
     expect(inv).toBeDefined();
     const done = machineEdgePlaces(make(DOOR));
     const key = [...done.keys()].find((k) => k.includes('xstate.done.actor'))!;
-    expect((stateAt(removeTransition(DOOR, done.get(key)!), ['locked'])?.invoke as MachineConfig).onDone).toBeUndefined();
-    expect((stateAt(removeTransition(DOOR, done.get(key)!), ['locked'])?.invoke as MachineConfig).src).toBe('alarm');
+    expect((stateAt(removeTransition(DOOR, done.get(key)!), ['locked'])?.invoke as StateMachineConfig).onDone).toBeUndefined();
+    expect((stateAt(removeTransition(DOOR, done.get(key)!), ['locked'])?.invoke as StateMachineConfig).src).toBe('alarm');
   });
 
   it('finds an invoke in a list, by its id or its place', () => {
@@ -345,10 +345,10 @@ describe('a transition as it’s drawn, back to where it’s written', () => {
     const one = [...places.keys()].find((k) => k.startsWith('named:xstate.done.actor.0.named'))!;
     const two = [...places.keys()].find((k) => k.startsWith('named:xstate.snapshot.two'))!;
     const err = [...places.keys()].find((k) => k.startsWith('named:xstate.error.actor.two'))!;
-    expect((stateAt(removeTransition(c, places.get(one)!), ['b'])?.invoke as MachineConfig[])[0].onDone).toBeUndefined();
-    expect((stateAt(removeTransition(c, places.get(two)!), ['b'])?.invoke as MachineConfig[])[1].onSnapshot).toBeUndefined();
-    expect((stateAt(removeTransition(c, places.get(err)!), ['b'])?.invoke as MachineConfig[])[1].onError).toBeUndefined();
-    expect((stateAt(removeTransition(c, places.get(err)!), ['b'])?.invoke as MachineConfig[])[1].onSnapshot).toBe('#m.a');
+    expect((stateAt(removeTransition(c, places.get(one)!), ['b'])?.invoke as StateMachineConfig[])[0].onDone).toBeUndefined();
+    expect((stateAt(removeTransition(c, places.get(two)!), ['b'])?.invoke as StateMachineConfig[])[1].onSnapshot).toBeUndefined();
+    expect((stateAt(removeTransition(c, places.get(err)!), ['b'])?.invoke as StateMachineConfig[])[1].onError).toBeUndefined();
+    expect((stateAt(removeTransition(c, places.get(err)!), ['b'])?.invoke as StateMachineConfig[])[1].onSnapshot).toBe('#m.a');
   });
 
   it('finds a state’s onDone, and always', () => {
@@ -384,14 +384,14 @@ describe('changing a transition', () => {
   it('moves it to an event that’s there already, and out of a list', () => {
     const next = setTransitionEvent(DOOR, place(DOOR, 'door.closed:OPEN->door.open'), 'LOCK');
     expect(stateAt(next, ['closed'])?.on).toEqual({ LOCK: [{ guard: 'hasKey', target: 'locked' }, 'open'] });
-    const c: MachineConfig = { id: 'm', initial: 'a', states: { a: { on: { GO: ['b', 'c'] } }, b: {}, c: {} } };
+    const c: StateMachineConfig = { id: 'm', initial: 'a', states: { a: { on: { GO: ['b', 'c'] } }, b: {}, c: {} } };
     expect(stateAt(setTransitionEvent(c, place(c, 'm.a:GO->m.c'), 'NEW'), ['a'])?.on).toEqual({ GO: ['b'], NEW: 'c' });
   });
 
   it('refuses a bad name, and one of XState’s own', () => {
     refused(() => setTransitionEvent(DOOR, close(), ''), /needs a name/);
     refused(() => setTransitionEvent(DOOR, place(DOOR, 'door.open:xstate.after.5000.door.open->door.closed'), 'X'), /Only an event of your own/);
-    const c: MachineConfig = { id: 'm', initial: 'a', states: { a: { always: 'b' }, b: {} } };
+    const c: StateMachineConfig = { id: 'm', initial: 'a', states: { a: { always: 'b' }, b: {} } };
     refused(() => setTransitionEvent(c, place(c, 'm.a:always->m.b'), 'X'), /Only an event of your own/);
     expect(setTransitionEvent(DOOR, close(), 'CLOSE')).toBe(DOOR);
   });
@@ -409,7 +409,7 @@ describe('changing a transition', () => {
   it('points it somewhere else', () => {
     const next = setTransitionTarget(DOOR, close(), ['jammed']);
     expect(edges(next)).toContain('door.open -CLOSE-> door.jammed');
-    const c: MachineConfig = { id: 'm', type: 'parallel', states: { r1: { initial: 'a', states: { a: { on: { GO: { target: ['b', '#m.r2.d'] } } }, b: {}, e: {} } }, r2: { initial: 'x', states: { x: {}, d: {} } } } };
+    const c: StateMachineConfig = { id: 'm', type: 'parallel', states: { r1: { initial: 'a', states: { a: { on: { GO: { target: ['b', '#m.r2.d'] } } }, b: {}, e: {} } }, r2: { initial: 'x', states: { x: {}, d: {} } } } };
     expect(stateAt(setTransitionTarget(c, place(c, 'm.r1.a:GO->m.r1.b'), ['r1', 'e']), ['r1', 'a'])?.on).toEqual({ GO: { target: ['e', '#m.r2.d'] } });
     refused(() => setTransitionTarget(DOOR, close(), ['nope']), /no state/);
   });
@@ -431,7 +431,7 @@ describe('changing a transition', () => {
 
 describe('several at once', () => {
   it('takes them all as one edit, from the end of each list', () => {
-    const c: MachineConfig = { id: 'm', initial: 'a', states: { a: { on: { GO: ['b', 'c', 'd'] } }, b: {}, c: {}, d: {} } };
+    const c: StateMachineConfig = { id: 'm', initial: 'a', states: { a: { on: { GO: ['b', 'c', 'd'] } }, b: {}, c: {}, d: {} } };
     const next = removeItems(c, { transitions: [place(c, 'm.a:GO->m.b'), place(c, 'm.a:GO->m.c')] });
     expect(stateAt(next, ['a'])?.on).toEqual({ GO: ['d'] });
   });
@@ -450,7 +450,7 @@ describe('asking XState', () => {
   it('passes one it’ll have, with the machine', () => {
     const outcome = tryEdit(xstate as never, DOOR, (c) => addState(c, [], 'x'));
     expect(outcome.ok).toBe(true);
-    expect((outcome as { machine: MachineLike }).machine.root.states?.x).toBeTruthy();
+    expect((outcome as { machine: StateMachineLike }).machine.root.states?.x).toBeTruthy();
   });
 
   it('refuses one it won’t, with what it said', () => {
@@ -469,7 +469,7 @@ describe('asking XState', () => {
   });
 
   it('refuses what it only finds once it’s running, with what it said', () => {
-    const c: MachineConfig = { id: 'm', initial: 'h', states: { h: { type: 'history', target: 'nope' }, a: {} } };
+    const c: StateMachineConfig = { id: 'm', initial: 'h', states: { h: { type: 'history', target: 'nope' }, a: {} } };
     expect(() => createMachine(c as never)).not.toThrow();
     const outcome = tryEdit(xstate as never, c, (x) => x);
     expect(outcome.ok).toBe(false);
@@ -522,10 +522,10 @@ describe('names, and code', () => {
 });
 
 describe('saved as JSON and loaded', () => {
-  const save = (config: MachineConfig) => JSON.parse(JSON.stringify(config)) as MachineConfig;
+  const save = (config: StateMachineConfig) => JSON.parse(JSON.stringify(config)) as StateMachineConfig;
 
   /** The spike's run: the same 14 snapshots, with its actors, from `.provide()`. */
-  async function run(config: MachineConfig) {
+  async function run(config: StateMachineConfig) {
     const { implementations } = uploadMachine as unknown as { implementations: object };
     const machine = (createMachine(config as never) as unknown as { provide: (i: object) => AnyStateMachine }).provide(implementations);
     const seen: string[] = [];
@@ -549,7 +549,7 @@ describe('saved as JSON and loaded', () => {
   }
 
   it('gives the same graph and the same run with nothing edited, as the spike found', async () => {
-    const config = (uploadMachine as unknown as { config: MachineConfig }).config;
+    const config = (uploadMachine as unknown as { config: StateMachineConfig }).config;
     const loaded = save(config);
     expect(machineToDraft(make(loaded))).toEqual(machineToDraft(make(config)));
     const [a, b] = await Promise.all([run(config), run(loaded)]);
@@ -572,14 +572,14 @@ describe('saved as JSON and loaded', () => {
     const [a, b] = await Promise.all([run(edited), run(loaded)]);
     expect(b).toEqual(a);
     // It's the same as the spike's run, but for the name. So the edit changed what it said and nothing else.
-    const original = await run((uploadMachine as unknown as { config: MachineConfig }).config);
+    const original = await run((uploadMachine as unknown as { config: StateMachineConfig }).config);
     expect(a.seen).toEqual(original.seen.map((s) => s.replaceAll('committing', 'saving')));
     expect(a.value).toEqual(original.value);
   });
 
   it('runs the same simulated, too', () => {
     const edited = renameState(addTransition(uploadConfig(), ['worker', 'streaming'], 'PAUSE', ['worker', 'streaming']), ['worker', 'streaming'], 'receiving');
-    const walk = (config: MachineConfig) => {
+    const walk = (config: StateMachineConfig) => {
       const s = createSimulation(xstate as never, config);
       const done = (label: string) => s.send(s.get().finishes.find((f) => f.label === label)!.event);
       done('verifyToken: done');

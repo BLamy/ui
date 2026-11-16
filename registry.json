@@ -277,10 +277,10 @@
         },
         "@keyframes bl-progress-indeterminate": {
           "from": {
-            "transform": "translateX(-100%)"
+            "transform": "translateX(calc(var(--bl-progress-dir,1)*-100%))"
           },
           "to": {
-            "transform": "translateX(250%)"
+            "transform": "translateX(calc(var(--bl-progress-dir,1)*250%))"
           }
         },
         "@layer components": {
@@ -2256,7 +2256,7 @@
             "transform": "translateX(0)"
           },
           "100%": {
-            "transform": "translateX(200%)"
+            "transform": "translateX(calc(var(--bl-stepper-dir,1)*200%))"
           }
         },
         "@keyframes wbPulse": {
@@ -2824,6 +2824,7 @@
           "background": "#fff",
           "foreground": "#0B0B0F",
           "card": "#fff",
+          "segment": "#fff",
           "card-foreground": "#0B0B0F",
           "popover": "#fff",
           "popover-foreground": "#0B0B0F",
@@ -2915,6 +2916,7 @@
           "--background": "#fff",
           "--foreground": "#0B0B0F",
           "--card": "#fff",
+          "--segment": "#fff",
           "--card-foreground": "#0B0B0F",
           "--popover": "#fff",
           "--popover-foreground": "#0B0B0F",
@@ -2960,6 +2962,7 @@
           "--background": "#FFFFFF",
           "--foreground": "#17171C",
           "--card": "#FFFFFF",
+          "--segment": "#FFFFFF",
           "--card-foreground": "#17171C",
           "--popover": "#F2F2F5",
           "--popover-foreground": "#17171C",
@@ -3053,6 +3056,7 @@
           "color-scheme": "light",
           "--foreground": "#1C1C1E",
           "--card": "#FFFFFF",
+          "--segment": "#FFFFFF",
           "--card-foreground": "#1C1C1E",
           "--popover": "#F2F2F7",
           "--popover-foreground": "#1C1C1E",
@@ -3071,6 +3075,7 @@
           "--foreground": "#EDEDF2",
           "--card": "rgba(31, 31, 39, .86)",
           "--card-foreground": "#EDEDF2",
+          "--segment": "#636366",
           "--popover": "#26262E",
           "--popover-foreground": "#EDEDF2",
           "--secondary": "rgba(255, 255, 255, .08)",
@@ -3094,6 +3099,7 @@
           "--background": "#FFFFFF",
           "--foreground": "#1C1C1E",
           "--card": "rgba(255, 255, 255, .86)",
+          "--segment": "#FFFFFF",
           "--card-foreground": "#1C1C1E",
           "--popover": "#F2F2F5",
           "--popover-foreground": "#1C1C1E",
@@ -3153,7 +3159,8 @@
           "AdaptivePaneClose",
           "AdaptivePaneTrigger",
           "createAdaptivePaneController",
-          "adaptivePanePageClass"
+          "adaptivePanePageClass",
+          "resolveAdaptivePanePresentation"
         ]
       }
     },
@@ -3183,6 +3190,23 @@
           "AnimatedHeight"
         ]
       }
+    },
+    {
+      "name": "append-stream",
+      "type": "registry:lib",
+      "title": "Append-only streams",
+      "description": "Named, append-only lists of JSON records in localStorage: each write is a new chunk key (gzip when the browser can), so nothing stored is ever rewritten; a full store asks an evict callback for room. LocalStreams is the store the session recorder and Freeform write to.",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/append-stream.ts",
+          "type": "registry:lib",
+          "target": "lib/append-stream.ts"
+        }
+      ]
     },
     {
       "name": "artifact-chat-container",
@@ -3668,7 +3692,7 @@
       "name": "cloudflare-diagram",
       "type": "registry:ui",
       "title": "CloudflareDiagram",
-      "description": "Cloudflare's services on a Diagram: each a node with what it can call and receive as ports, from a catalog generated from Cloudflare's docs, Wrangler's schema and the Workers types. A connection can only be one the catalog says there is, and it offers the real methods. What it's given is a system, which saves as JSON and reads from and writes to wrangler.jsonc, or is read from a workerd config.capnp: it says what's wrong with one, and with editable a search of the catalog adds a service and a service's machine opens in a StateDiagram. Read-only by default. No Cloudflare artwork. ELK and XState are optional peers.",
+      "description": "Cloudflare's services on a Diagram: each a node with what it can call and receive as ports, from a catalog generated from Cloudflare's docs, Wrangler's schema and the Workers types. A connection can only be one the catalog says there is, and it offers the real methods. What it's given is a system, which saves as JSON and reads from and writes to wrangler.jsonc, or is read from a workerd config.capnp: it says what's wrong with one, and with editable a search of the catalog adds a service and a service's machine opens in a StateDiagram. Read-only by default: a picture to select in and read. Its board is also a Diagram preset, cloudflareBoardProps(system). No Cloudflare artwork. ELK and XState are optional peers.",
       "dependencies": [
         "@ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1",
         "class-variance-authority@^0.7.1",
@@ -3687,15 +3711,16 @@
         "https://blamy.github.io/ui/r/controllable-state.json",
         "https://blamy.github.io/ui/r/diagram.json",
         "https://blamy.github.io/ui/r/diagram-frame.json",
+        "https://blamy.github.io/ui/r/diagram-history.json",
         "https://blamy.github.io/ui/r/diagram-layout.json",
         "https://blamy.github.io/ui/r/diagram-model.json",
         "https://blamy.github.io/ui/r/diagram-primitive.json",
         "https://blamy.github.io/ui/r/empty-state.json",
+        "https://blamy.github.io/ui/r/field.json",
         "https://blamy.github.io/ui/r/icon.json",
+        "https://blamy.github.io/ui/r/input.json",
         "https://blamy.github.io/ui/r/label.json",
         "https://blamy.github.io/ui/r/state-diagram.json",
-        "https://blamy.github.io/ui/r/toolbar.json",
-        "https://blamy.github.io/ui/r/tooltip.json",
         "https://blamy.github.io/ui/r/utils.json"
       ],
       "files": [
@@ -3712,7 +3737,8 @@
           "CloudflareServiceNode",
           "CloudflareServiceSearch",
           "cloudflareServiceVariants",
-          "serviceNode"
+          "cloudflareServiceNode",
+          "cloudflareBoardProps"
         ]
       }
     },
@@ -3743,7 +3769,8 @@
       "dependencies": [],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
-        "https://blamy.github.io/ui/r/syntax.json"
+        "https://blamy.github.io/ui/r/syntax.json",
+        "https://blamy.github.io/ui/r/syntax-lexer.json"
       ],
       "files": [
         {
@@ -3774,6 +3801,7 @@
         "https://blamy.github.io/ui/r/icon.json",
         "https://blamy.github.io/ui/r/reduced-motion.json",
         "https://blamy.github.io/ui/r/syntax.json",
+        "https://blamy.github.io/ui/r/syntax-lexer.json",
         "https://blamy.github.io/ui/r/theme.json",
         "https://blamy.github.io/ui/r/use-copy.json",
         "https://blamy.github.io/ui/r/utils.json"
@@ -3999,6 +4027,9 @@
         "https://blamy.github.io/ui/r/toast.json",
         "https://blamy.github.io/ui/r/utils.json"
       ],
+      "css": {
+        "@import \"@brett_lamy/ui/docstream/styles.css\"": {}
+      },
       "files": [
         {
           "path": "packages/ui/src/components/composer/composer-cards.tsx",
@@ -4019,6 +4050,11 @@
           "path": "packages/ui/src/components/composer/composer.tsx",
           "type": "registry:ui",
           "target": "components/ui/composer/composer.tsx"
+        },
+        {
+          "path": "packages/ui/src/components/composer/index.ts",
+          "type": "registry:ui",
+          "target": "components/ui/composer/index.ts"
         }
       ],
       "meta": {
@@ -4069,7 +4105,6 @@
         "https://blamy.github.io/ui/r/button.json",
         "https://blamy.github.io/ui/r/composer.json",
         "https://blamy.github.io/ui/r/empty-state.json",
-        "https://blamy.github.io/ui/r/file-size.json",
         "https://blamy.github.io/ui/r/icon.json",
         "https://blamy.github.io/ui/r/markdown-view.json",
         "https://blamy.github.io/ui/r/message-scroller.json",
@@ -4080,6 +4115,9 @@
         "https://blamy.github.io/ui/r/reduced-motion.json",
         "https://blamy.github.io/ui/r/utils.json"
       ],
+      "css": {
+        "@import \"@brett_lamy/ui/docstream/styles.css\"": {}
+      },
       "files": [
         {
           "path": "packages/ui/src/components/conversation.tsx",
@@ -4137,11 +4175,31 @@
         "page": "cron-editor",
         "exports": [
           "CronEditor",
-          "CRON_PRESETS",
-          "useCronParse",
-          "parseCronText",
-          "gpuCronAvailable",
-          "describeCronError",
+          "CRON_PRESETS"
+        ]
+      }
+    },
+    {
+      "name": "cron",
+      "type": "registry:lib",
+      "title": "Cron",
+      "description": "Cron expressions, locally and without React: validate a 5-field expression field by field, list its next runs in any IANA time zone (POSIX day-of-month / day-of-week semantics, DST gaps and repeats handled), and describe it in English. Runs in server components.",
+      "dependencies": [
+        "cronstrue@^3.27.0"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/cron.ts",
+          "type": "registry:lib",
+          "target": "lib/cron.ts"
+        }
+      ],
+      "meta": {
+        "page": "cron-editor",
+        "exports": [
           "validateCron",
           "cronProblems",
           "nextCronRuns",
@@ -4264,7 +4322,7 @@
       "name": "date-picker",
       "type": "registry:ui",
       "title": "DatePicker",
-      "description": "A date input with a calendar button that opens a Calendar in a popup, for one date or a range: UI SDK's Date Picker, composed from a field (the kit's field box, sized on the root), its input and trigger, and a content part that takes every Calendar part.",
+      "description": "A date input with a calendar button that opens a Calendar in a popup, for one date or a range: UI SDK's Date Picker, composed from a field box (the kit's filled field, sized with `size` on `DatePickerInputGroup`), its input and trigger, and a content part that takes every Calendar part.",
       "dependencies": [
         "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1",
         "class-variance-authority@^0.7.1"
@@ -4338,16 +4396,17 @@
       "name": "diagram-frame",
       "type": "registry:ui",
       "title": "DiagramFrame",
-      "description": "A board with a panel: flat parts on AdaptivePane, so the panel is a column beside the board when there's the room, a drawer over it that doesn't dim it at medium sizes, and a page pushed over it on a phone. A bar on the board opens it, a cover goes over everything, and sections and commit-on-Enter inputs fill it.",
+      "description": "A board with a panel: flat parts on AdaptivePane, so the panel is a column beside the board when there's the room, a drawer over it that doesn't dim it at medium sizes, and a page pushed over it on a phone. A bar on the board opens it (and a Diagram's fit leaves room for it), a cover with a back bar goes over everything, and titled sections fill the panel, with the kit's Field and Input (onValueCommit) for its fields.",
       "dependencies": [],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
         "https://blamy.github.io/ui/r/adaptive-pane.json",
         "https://blamy.github.io/ui/r/button.json",
         "https://blamy.github.io/ui/r/container.json",
-        "https://blamy.github.io/ui/r/field.json",
-        "https://blamy.github.io/ui/r/input.json",
+        "https://blamy.github.io/ui/r/diagram-chrome.json",
+        "https://blamy.github.io/ui/r/nav-bar.json",
         "https://blamy.github.io/ui/r/primitives.json",
+        "https://blamy.github.io/ui/r/surface.json",
         "https://blamy.github.io/ui/r/utils.json"
       ],
       "files": [
@@ -4366,8 +4425,8 @@
           "DiagramFrameBar",
           "DiagramFrameTrigger",
           "DiagramFrameCover",
+          "DiagramFrameCoverHeader",
           "DiagramFrameSection",
-          "DiagramFrameInput",
           "useDiagramFrame"
         ]
       }
@@ -4419,10 +4478,44 @@
       }
     },
     {
+      "name": "diagram-model",
+      "type": "registry:lib",
+      "title": "Diagram model",
+      "description": "Diagram's data as plain functions on plain nodes, ports and edges: index a diagram, measure its bounds, move nodes and edge ends, check and add a connection, delete a selection (with what it leaves dangling), and the geometry of every connector (routes, curves, arrowheads, hit tests). Nothing renders; Diagram, Freeform's connectors and Interface Builder's segues run on it.",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/canvas-math.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/diagram-model.ts",
+          "type": "registry:lib",
+          "target": "lib/diagram-model.ts"
+        }
+      ],
+      "meta": {
+        "page": "diagram",
+        "exports": [
+          "indexDiagram",
+          "diagramBounds",
+          "moveNodes",
+          "moveEdgeEnd",
+          "checkConnection",
+          "addConnection",
+          "deleteItems",
+          "NOTHING_SELECTED",
+          "edgeGeometry",
+          "nodeAt",
+          "edgeAt"
+        ]
+      }
+    },
+    {
       "name": "diagram",
       "type": "registry:ui",
       "title": "Diagram",
-      "description": "Nodes, edges, labels and regions on a Canvas, as plain data, on one primitive (data, selection, history) with a controller and agent actions. Lines keep their thickness at any zoom, text hides when it's too small to read, and above 200 items only what's near the view is drawn. With editable: selecting, dragging, deleting and undo as one gesture, named ports, and connecting with validation; every change goes through onDataChange(data, details) and can be refused. One tab stop: every node and edge is reached by keyboard and says what it connects to. DiagramToolbar adds zoom, fit, undo and redo.",
+      "description": "Nodes, edges, labels and regions on a Canvas, as plain data, on one primitive (data, selection, history) with a controller and agent actions. Generic looks (a node's kind and border, an edge's line and tone), lines that keep their thickness at any zoom, labels and routes that keep clear of the nodes, and above 200 items only what's near the view is drawn. Read-only, it selects and reads; with editable: dragging, deleting and undo as one gesture, named ports, and connecting with validation; every change goes through onDataChange(data, details) and can be refused. One history: its own, or one handed to it (useDiagramHistory), driven by ⌘Z and DiagramToolbar's zoom, fit, undo and redo, with a fit that leaves room for the toolbar. One tab stop: every node and edge is reached by keyboard and says what it connects to; focus, selection and what's current are drawn three ways.",
       "dependencies": [
         "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1",
         "class-variance-authority@^0.7.1"
@@ -4432,13 +4525,16 @@
         "https://blamy.github.io/ui/r/canvas.json",
         "https://blamy.github.io/ui/r/canvas-math.json",
         "https://blamy.github.io/ui/r/container.json",
+        "https://blamy.github.io/ui/r/diagram-chrome.json",
         "https://blamy.github.io/ui/r/diagram-gesture.json",
+        "https://blamy.github.io/ui/r/diagram-history.json",
         "https://blamy.github.io/ui/r/diagram-keyboard.json",
         "https://blamy.github.io/ui/r/diagram-model.json",
         "https://blamy.github.io/ui/r/diagram-primitive.json",
         "https://blamy.github.io/ui/r/diagram-text.json",
         "https://blamy.github.io/ui/r/empty-state.json",
         "https://blamy.github.io/ui/r/icon.json",
+        "https://blamy.github.io/ui/r/shortcut-text.json",
         "https://blamy.github.io/ui/r/spinner.json",
         "https://blamy.github.io/ui/r/toolbar.json",
         "https://blamy.github.io/ui/r/tooltip.json",
@@ -4459,6 +4555,7 @@
           "DiagramNodeBody",
           "DiagramToolbar",
           "useDiagram",
+          "useDiagramHistory",
           "createDiagramController",
           "diagramNodeVariants",
           "diagramEdgeVariants"
@@ -4624,6 +4721,24 @@
       }
     },
     {
+      "name": "durable-streams",
+      "type": "registry:lib",
+      "title": "Durable Streams sync",
+      "description": "The cloud end of append-only streams: a client for the Durable Streams HTTP protocol, and CloudSync, which mirrors this browser's LocalStreams to such a server with idempotent producer writes and reads other devices' streams back. Off until a server URL is saved; useCloud(cloud) is its status and settings in React.",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/append-stream.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/durable-streams.ts",
+          "type": "registry:lib",
+          "target": "lib/durable-streams.ts"
+        }
+      ]
+    },
+    {
       "name": "empty-state",
       "type": "registry:ui",
       "title": "EmptyState",
@@ -4764,6 +4879,31 @@
           "target": "lib/file-icons.tsx"
         }
       ]
+    },
+    {
+      "name": "file-size",
+      "type": "registry:lib",
+      "title": "File size",
+      "description": "A file size the way every part of the kit writes it: decimal units in the reader's locale (\"280 B\", \"627 kB\", \"1.3 MB\"), the steps of UI SDK's formatFileSize, empty when the size is unknown.",
+      "dependencies": [
+        "@ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/file-size.ts",
+          "type": "registry:lib",
+          "target": "lib/file-size.ts"
+        }
+      ],
+      "meta": {
+        "page": "file-upload",
+        "exports": [
+          "formatFileSize"
+        ]
+      }
     },
     {
       "name": "file-upload",
@@ -5045,6 +5185,69 @@
       }
     },
     {
+      "name": "google-fonts",
+      "type": "registry:lib",
+      "title": "Google Fonts",
+      "description": "The most popular Google Fonts families (GOOGLE_FONTS, with category, weights and italics), loading one from the Google Fonts CDN once and only the glyphs a sample needs, and fontStack(family) for a CSS font-family with the right fallback. useGoogleFont and useGoogleFontStatus load a family from a component.",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/google-fonts.generated.ts",
+          "type": "registry:lib",
+          "target": "lib/google-fonts.generated.ts"
+        },
+        {
+          "path": "packages/ui/src/lib/google-fonts.ts",
+          "type": "registry:lib",
+          "target": "lib/google-fonts.ts"
+        }
+      ],
+      "meta": {
+        "page": "font-picker",
+        "exports": [
+          "GOOGLE_FONTS",
+          "FONT_CATEGORIES",
+          "findGoogleFont",
+          "fontStack",
+          "googleFontsUrl",
+          "loadGoogleFont",
+          "useGoogleFont",
+          "useGoogleFontStatus"
+        ]
+      }
+    },
+    {
+      "name": "gpu-cron",
+      "type": "registry:lib",
+      "title": "Natural language to cron",
+      "description": "Plain English to a 5-field cron expression, by gpu-cron (an 89 KB WebGPU model, no CPU fallback): gpuCronAvailable asks first without downloading anything on a browser with no WebGPU, parseCronText proposes an expression, and useCronParse is the debounced React side CronEditor uses.",
+      "dependencies": [
+        "gpu-cron@0.1.1"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/gpu-cron.ts",
+          "type": "registry:lib",
+          "target": "lib/gpu-cron.ts"
+        }
+      ],
+      "meta": {
+        "page": "cron-editor",
+        "exports": [
+          "useCronParse",
+          "parseCronText",
+          "gpuCronAvailable",
+          "describeCronError"
+        ]
+      }
+    },
+    {
       "name": "gpu-query",
       "type": "registry:lib",
       "title": "gpu-query",
@@ -5107,6 +5310,37 @@
       ]
     },
     {
+      "name": "gpu-time",
+      "type": "registry:lib",
+      "title": "Natural-language times",
+      "description": "Dates, times and recurrences written in English, parsed by gpu-time (a ~50 KB model, CPU by default, loaded on first use): parseTime resolves occurrences, RRULEs and the recognised spans; formatOccurrence, describeRecurrence and timeTextSegments turn the result into text. useTimeParse is the debounced React side NaturalTimeInput uses.",
+      "dependencies": [
+        "gpu-time@0.5.0"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/gpu-time.ts",
+          "type": "registry:lib",
+          "target": "lib/gpu-time.ts"
+        }
+      ],
+      "meta": {
+        "page": "natural-time-input",
+        "exports": [
+          "useTimeParse",
+          "parseTime",
+          "loadGpuTime",
+          "formatOccurrence",
+          "timeTextSegments",
+          "describeRecurrence",
+          "rruleLine"
+        ]
+      }
+    },
+    {
       "name": "hover-card",
       "type": "registry:ui",
       "title": "Hover Card",
@@ -5158,6 +5392,11 @@
           "path": "packages/ui/src/lib/icon-shapes/chat.ts",
           "type": "registry:lib",
           "target": "lib/icon-shapes/chat.ts"
+        },
+        {
+          "path": "packages/ui/src/lib/icon-shapes/docs.ts",
+          "type": "registry:lib",
+          "target": "lib/icon-shapes/docs.ts"
         },
         {
           "path": "packages/ui/src/lib/icon-shapes/pencilkit.ts",
@@ -5215,7 +5454,7 @@
         "page": "index-bar",
         "exports": [
           "IndexBar",
-          "alphabetItems",
+          "indexBarAlphabetItems",
           "indexBarVariants"
         ]
       }
@@ -5224,7 +5463,7 @@
       "name": "input",
       "type": "registry:ui",
       "title": "Input",
-      "description": "iOS filled text input on UI SDK's Input: three sizes, a primary focus ring, red invalid and dimmed disabled states, onValueChange with a reason and cancel, and a controller; inside a Field it is wired to its label, description and error.",
+      "description": "iOS filled text input on UI SDK's Input: three sizes, a primary focus ring, red invalid and dimmed disabled states, onValueChange with a reason and cancel, onValueCommit for a field that changes something once you're done (Enter or blur commits, Escape reverts), and a controller; inside a Field it is wired to its label, description and error.",
       "dependencies": [
         "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1",
         "class-variance-authority@^0.7.1"
@@ -5473,11 +5712,18 @@
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/button.json",
         "https://blamy.github.io/ui/r/change-details.json",
+        "https://blamy.github.io/ui/r/icon.json",
         "https://blamy.github.io/ui/r/input.json",
+        "https://blamy.github.io/ui/r/popover.json",
         "https://blamy.github.io/ui/r/toolbar.json",
         "https://blamy.github.io/ui/r/utils.json"
       ],
+      "css": {
+        "@import \"@brett_lamy/ui/docstream/styles.css\"": {},
+        "@import \"@brett_lamy/ui/docstream-editor/styles.css\" layer(components.bl-editor)": {}
+      },
       "files": [
         {
           "path": "packages/ui/src/components/markdown-editor.tsx",
@@ -5508,6 +5754,9 @@
         "https://blamy.github.io/ui/r/bl-ui.json",
         "https://blamy.github.io/ui/r/utils.json"
       ],
+      "css": {
+        "@import \"@brett_lamy/ui/docstream/styles.css\"": {}
+      },
       "files": [
         {
           "path": "packages/ui/src/components/markdown-view.tsx",
@@ -5652,14 +5901,7 @@
       "meta": {
         "page": "natural-time-input",
         "exports": [
-          "NaturalTimeInput",
-          "useTimeParse",
-          "parseTime",
-          "loadGpuTime",
-          "formatOccurrence",
-          "timeTextSegments",
-          "describeRecurrence",
-          "rruleLine"
+          "NaturalTimeInput"
         ]
       }
     },
@@ -5783,6 +6025,32 @@
       ]
     },
     {
+      "name": "object-tree-value",
+      "type": "registry:lib",
+      "title": "Value previews",
+      "description": "Values described as data, and the one-line previews a debugger shows for them (DevTools-style tokens, clipped strings, lengths of large collections): what ObjectValue draws and ObjectTree's rows use. No React and nothing about trees, so a console row can use it alone.",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/object-tree-value.ts",
+          "type": "registry:lib",
+          "target": "lib/object-tree-value.ts"
+        }
+      ],
+      "meta": {
+        "page": "object-tree",
+        "exports": [
+          "previewFromValue",
+          "previewText",
+          "previewTokens",
+          "copyTextOf"
+        ]
+      }
+    },
+    {
       "name": "object-tree",
       "type": "registry:ui",
       "title": "ObjectTree",
@@ -5819,11 +6087,7 @@
           "ObjectTree",
           "ObjectValue",
           "nodeFromValue",
-          "childrenOfValue",
-          "previewFromValue",
-          "previewText",
-          "previewTokens",
-          "copyTextOf"
+          "childrenOfValue"
         ]
       }
     },
@@ -6002,6 +6266,11 @@
           "target": "components/ui/pencilkit/image-annotator.tsx"
         },
         {
+          "path": "packages/ui/src/components/pencilkit/index.ts",
+          "type": "registry:ui",
+          "target": "components/ui/pencilkit/index.ts"
+        },
+        {
           "path": "packages/ui/src/components/pencilkit/pencil-canvas.tsx",
           "type": "registry:ui",
           "target": "components/ui/pencilkit/pencil-canvas.tsx"
@@ -6032,7 +6301,6 @@
         "exports": [
           "PencilCanvas",
           "PencilToolbar",
-          "PencilToolbarPinned",
           "PencilToolPicker",
           "PencilInkPicker",
           "PencilWidthPicker",
@@ -6044,6 +6312,23 @@
           "ImageAnnotatorProvider"
         ]
       }
+    },
+    {
+      "name": "persistent-state",
+      "type": "registry:lib",
+      "title": "Persistent state",
+      "description": "State that survives a reload: usePersistentState is useState backed by localStorage as JSON (a missing, unparseable or invalid value falls back to the initial one; storage that throws is ignored), and loadJSON / saveJSON are the reads and writes underneath.",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/persistent-state.ts",
+          "type": "registry:lib",
+          "target": "lib/persistent-state.ts"
+        }
+      ]
     },
     {
       "name": "pglite",
@@ -6321,6 +6606,29 @@
       }
     },
     {
+      "name": "qr",
+      "type": "registry:lib",
+      "title": "QR encoder",
+      "description": "A QR Code encoder (byte mode, the four error-correction levels), ported from Project Nayuki's library: encodeQR(text) returns the module matrix QRCode draws, or null when the text is too long for a code.",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/qr.ts",
+          "type": "registry:lib",
+          "target": "lib/qr.ts"
+        }
+      ],
+      "meta": {
+        "page": "qr-code",
+        "exports": [
+          "encodeQR"
+        ]
+      }
+    },
+    {
       "name": "radio-group",
       "type": "registry:ui",
       "title": "RadioGroup",
@@ -6364,6 +6672,9 @@
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json"
       ],
+      "css": {
+        "@import \"@brett_lamy/ui/docstream/styles.css\"": {}
+      },
       "files": [
         {
           "path": "packages/ui/src/components/replay-preview.tsx",
@@ -6428,7 +6739,7 @@
         "exports": [
           "RequestTable",
           "RequestTableLink",
-          "REQUEST_COLUMNS"
+          "REQUEST_TABLE_COLUMNS"
         ]
       }
     },
@@ -6606,6 +6917,27 @@
           "separatorVariants"
         ]
       }
+    },
+    {
+      "name": "session-recorder",
+      "type": "registry:lib",
+      "title": "Session recorder",
+      "description": "Records the page with rrweb, one session per page load, into append-only streams in localStorage (an index stream and one stream of events per session), optionally mirrored to a Durable Streams server. useSessionRecording, useSessions and useSessionCloud are the React side; the functions read, delete and measure what is stored.",
+      "dependencies": [
+        "rrweb@2.0.0-alpha.20"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/append-stream.json",
+        "https://blamy.github.io/ui/r/durable-streams.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/session-recorder.ts",
+          "type": "registry:lib",
+          "target": "lib/session-recorder.ts"
+        }
+      ]
     },
     {
       "name": "sheet",
@@ -6963,23 +7295,92 @@
       }
     },
     {
+      "name": "state-diagram-model",
+      "type": "registry:lib",
+      "title": "StateDiagram logic",
+      "description": "StateDiagram's logic as plain functions: an XState machine's source read without running it (parseXState), a machine as Diagram nodes and edges (machineToDraft), a simulation with stand-ins for everything it names, and edits to a machine's config that XState checks. Babel reads the source; XState is handed in, never imported.",
+      "dependencies": [
+        "@babel/parser@7.29.12",
+        "xstate@^5.33.3"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/diagram-layout.json",
+        "https://blamy.github.io/ui/r/diagram-model.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/state-diagram-edit.ts",
+          "type": "registry:lib",
+          "target": "lib/state-diagram-edit.ts"
+        },
+        {
+          "path": "packages/ui/src/lib/state-diagram-model.ts",
+          "type": "registry:lib",
+          "target": "lib/state-diagram-model.ts"
+        },
+        {
+          "path": "packages/ui/src/lib/state-diagram-simulation.ts",
+          "type": "registry:lib",
+          "target": "lib/state-diagram-simulation.ts"
+        },
+        {
+          "path": "packages/ui/src/lib/state-diagram-source.ts",
+          "type": "registry:lib",
+          "target": "lib/state-diagram-source.ts"
+        }
+      ],
+      "meta": {
+        "page": "state-diagram",
+        "exports": [
+          "parseXState",
+          "machineToDraft",
+          "STATE_NODE_LOOK",
+          "STATE_EDGE_LOOK",
+          "machineEdgeIds",
+          "machineEdgePlaces",
+          "machineStatePaths",
+          "createSimulation",
+          "standInConfig",
+          "tryEdit",
+          "addState",
+          "renameState",
+          "removeState",
+          "setInitial",
+          "addTransition",
+          "removeTransition",
+          "removeItems",
+          "missingImplementations",
+          "inlineCodeIn",
+          "StateEditRefused"
+        ]
+      }
+    },
+    {
       "name": "state-diagram",
       "type": "registry:ui",
       "title": "StateDiagram",
       "description": "An XState machine on a Diagram, drawn from machine.root: compound and parallel states, initial markers, final states, and all of always, after, invoke and guards labelled. A machine or its JSON config, which can be run with stand-ins for all it names, and edited, writing to the config. XState and ELK are optional peers.",
       "dependencies": [
+        "@ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1",
         "xstate@^5.33.3"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
         "https://blamy.github.io/ui/r/button.json",
+        "https://blamy.github.io/ui/r/canvas.json",
+        "https://blamy.github.io/ui/r/change-details.json",
+        "https://blamy.github.io/ui/r/controllable-state.json",
         "https://blamy.github.io/ui/r/diagram.json",
         "https://blamy.github.io/ui/r/diagram-frame.json",
+        "https://blamy.github.io/ui/r/diagram-history.json",
         "https://blamy.github.io/ui/r/diagram-layout.json",
         "https://blamy.github.io/ui/r/diagram-model.json",
-        "https://blamy.github.io/ui/r/state-diagram-edit.json",
+        "https://blamy.github.io/ui/r/field.json",
+        "https://blamy.github.io/ui/r/icon.json",
+        "https://blamy.github.io/ui/r/input.json",
+        "https://blamy.github.io/ui/r/primitives.json",
         "https://blamy.github.io/ui/r/state-diagram-model.json",
-        "https://blamy.github.io/ui/r/state-diagram-simulation.json",
         "https://blamy.github.io/ui/r/switch.json",
         "https://blamy.github.io/ui/r/tabs.json",
         "https://blamy.github.io/ui/r/toolbar.json"
@@ -7009,6 +7410,9 @@
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json"
       ],
+      "css": {
+        "@import \"@brett_lamy/ui/docstream/styles.css\"": {}
+      },
       "files": [
         {
           "path": "packages/ui/src/components/stl-viewer.tsx",
@@ -7034,6 +7438,9 @@
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json"
       ],
+      "css": {
+        "@import \"@brett_lamy/ui/docstream/styles.css\"": {}
+      },
       "files": [
         {
           "path": "packages/ui/src/components/strudel-player.tsx",
@@ -7042,7 +7449,7 @@
         }
       ],
       "meta": {
-        "page": "strudel",
+        "page": "strudel-player",
         "exports": [
           "StrudelPlayer",
           "playStrudel",
@@ -7132,6 +7539,55 @@
       }
     },
     {
+      "name": "syntax-lexer",
+      "type": "registry:lib",
+      "title": "Syntax lexer",
+      "description": "The kit's synchronous, dependency-free syntax lexer: gpu-lexer's token classes for ts / js, json, css, html, bash, python, sql, markdown and yaml, and a C-family default for the rest. CodeEditor's fallback and docstream's code fences both color with it.",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/syntax-lexer.ts",
+          "type": "registry:lib",
+          "target": "lib/syntax-lexer.ts"
+        }
+      ]
+    },
+    {
+      "name": "syntax",
+      "type": "registry:lib",
+      "title": "Syntax highlighting",
+      "description": "Syntax lexing for code: gpu-lexer (a small WebGPU model that labels spans in any language) behind one shared device, queue and cache, with the kit's synchronous lexer (lib/syntax-lexer) as the fallback when WebGPU is missing or software-only. lexSyntax labels a source; tokenizeLines splits the spans into CodeEditor's per-line tokens; languageFromPath picks a language from a file name.",
+      "dependencies": [
+        "gpu-lexer@0.0.3"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/syntax-lexer.json",
+        "https://blamy.github.io/ui/r/webgpu.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/syntax.ts",
+          "type": "registry:lib",
+          "target": "lib/syntax.ts"
+        }
+      ],
+      "meta": {
+        "page": "code-editor",
+        "exports": [
+          "lexSyntax",
+          "tokenizeLines",
+          "languageFromPath",
+          "webgpuSupported",
+          "peekSyntax",
+          "codeTokenClass"
+        ]
+      }
+    },
+    {
       "name": "tabs",
       "type": "registry:ui",
       "title": "Tabs",
@@ -7148,6 +7604,7 @@
         "https://blamy.github.io/ui/r/primitives.json",
         "https://blamy.github.io/ui/r/segmented.json",
         "https://blamy.github.io/ui/r/separator.json",
+        "https://blamy.github.io/ui/r/stack-parent.json",
         "https://blamy.github.io/ui/r/theme.json",
         "https://blamy.github.io/ui/r/utils.json"
       ],
@@ -7782,6 +8239,9 @@
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json"
       ],
+      "css": {
+        "@import \"@brett_lamy/ui/docstream/styles.css\"": {}
+      },
       "files": [
         {
           "path": "packages/ui/src/components/tui-preview.tsx",
@@ -7985,6 +8445,7 @@
         "https://blamy.github.io/ui/r/icon.json",
         "https://blamy.github.io/ui/r/playback.json",
         "https://blamy.github.io/ui/r/toggle.json",
+        "https://blamy.github.io/ui/r/tooltip.json",
         "https://blamy.github.io/ui/r/utils.json",
         "https://blamy.github.io/ui/r/video-timeline-model.json",
         "https://blamy.github.io/ui/r/video-timeline-primitive.json"
@@ -8016,6 +8477,7 @@
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/skeleton.json",
         "https://blamy.github.io/ui/r/theme.json",
         "https://blamy.github.io/ui/r/utils.json"
       ],
@@ -8125,23 +8587,6 @@
           "path": "packages/ui/src/lib/adaptive-pane-primitive.ts",
           "type": "registry:lib",
           "target": "lib/adaptive-pane-primitive.ts"
-        }
-      ]
-    },
-    {
-      "name": "append-stream",
-      "type": "registry:lib",
-      "title": "Append Stream",
-      "description": "Append Stream — part of BL UI's library (lib/append-stream.ts).",
-      "dependencies": [],
-      "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json"
-      ],
-      "files": [
-        {
-          "path": "packages/ui/src/lib/append-stream.ts",
-          "type": "registry:lib",
-          "target": "lib/append-stream.ts"
         }
       ]
     },
@@ -8288,7 +8733,6 @@
         "https://blamy.github.io/ui/r/bl-ui.json",
         "https://blamy.github.io/ui/r/cloudflare-catalog.json",
         "https://blamy.github.io/ui/r/cloudflare-services.json",
-        "https://blamy.github.io/ui/r/state-diagram-edit.json",
         "https://blamy.github.io/ui/r/state-diagram-model.json"
       ],
       "files": [
@@ -8377,6 +8821,7 @@
         "https://blamy.github.io/ui/r/code-editor-primitive.json",
         "https://blamy.github.io/ui/r/reduced-motion.json",
         "https://blamy.github.io/ui/r/syntax.json",
+        "https://blamy.github.io/ui/r/syntax-lexer.json",
         "https://blamy.github.io/ui/r/utils.json"
       ],
       "files": [
@@ -8426,25 +8871,6 @@
       ]
     },
     {
-      "name": "cron",
-      "type": "registry:lib",
-      "title": "Cron",
-      "description": "Cron — part of BL UI's library (lib/cron.ts).",
-      "dependencies": [
-        "cronstrue@^3.27.0"
-      ],
-      "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json"
-      ],
-      "files": [
-        {
-          "path": "packages/ui/src/lib/cron.ts",
-          "type": "registry:lib",
-          "target": "lib/cron.ts"
-        }
-      ]
-    },
-    {
       "name": "data-table-primitive",
       "type": "registry:lib",
       "title": "Data Table Primitive",
@@ -8468,6 +8894,23 @@
       ]
     },
     {
+      "name": "diagram-chrome",
+      "type": "registry:lib",
+      "title": "Diagram Chrome",
+      "description": "Diagram Chrome — part of BL UI's library (lib/diagram-chrome.ts).",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/diagram-chrome.ts",
+          "type": "registry:lib",
+          "target": "lib/diagram-chrome.ts"
+        }
+      ]
+    },
+    {
       "name": "diagram-gesture",
       "type": "registry:lib",
       "title": "Diagram Gesture",
@@ -8483,6 +8926,23 @@
           "path": "packages/ui/src/lib/diagram-gesture.ts",
           "type": "registry:lib",
           "target": "lib/diagram-gesture.ts"
+        }
+      ]
+    },
+    {
+      "name": "diagram-history",
+      "type": "registry:lib",
+      "title": "Diagram History",
+      "description": "Diagram History — part of BL UI's library (lib/diagram-history.ts).",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/diagram-history.ts",
+          "type": "registry:lib",
+          "target": "lib/diagram-history.ts"
         }
       ]
     },
@@ -8506,24 +8966,6 @@
       ]
     },
     {
-      "name": "diagram-model",
-      "type": "registry:lib",
-      "title": "Diagram Model",
-      "description": "Diagram Model — part of BL UI's library (lib/diagram-model.ts).",
-      "dependencies": [],
-      "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json",
-        "https://blamy.github.io/ui/r/canvas-math.json"
-      ],
-      "files": [
-        {
-          "path": "packages/ui/src/lib/diagram-model.ts",
-          "type": "registry:lib",
-          "target": "lib/diagram-model.ts"
-        }
-      ]
-    },
-    {
       "name": "diagram-primitive",
       "type": "registry:lib",
       "title": "Diagram Primitive",
@@ -8533,6 +8975,7 @@
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/diagram-history.json",
         "https://blamy.github.io/ui/r/diagram-model.json"
       ],
       "files": [
@@ -8561,24 +9004,6 @@
       ]
     },
     {
-      "name": "durable-streams",
-      "type": "registry:lib",
-      "title": "Durable Streams",
-      "description": "Durable Streams — part of BL UI's library (lib/durable-streams.ts).",
-      "dependencies": [],
-      "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json",
-        "https://blamy.github.io/ui/r/append-stream.json"
-      ],
-      "files": [
-        {
-          "path": "packages/ui/src/lib/durable-streams.ts",
-          "type": "registry:lib",
-          "target": "lib/durable-streams.ts"
-        }
-      ]
-    },
-    {
       "name": "edge-swipe",
       "type": "registry:lib",
       "title": "Edge Swipe",
@@ -8598,25 +9023,6 @@
       ]
     },
     {
-      "name": "file-size",
-      "type": "registry:lib",
-      "title": "File Size",
-      "description": "File Size — part of BL UI's library (lib/file-size.ts).",
-      "dependencies": [
-        "@ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1"
-      ],
-      "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json"
-      ],
-      "files": [
-        {
-          "path": "packages/ui/src/lib/file-size.ts",
-          "type": "registry:lib",
-          "target": "lib/file-size.ts"
-        }
-      ]
-    },
-    {
       "name": "font-stack-primitive",
       "type": "registry:lib",
       "title": "Font Stack Primitive",
@@ -8632,66 +9038,6 @@
           "path": "packages/ui/src/lib/font-stack-primitive.ts",
           "type": "registry:lib",
           "target": "lib/font-stack-primitive.ts"
-        }
-      ]
-    },
-    {
-      "name": "google-fonts",
-      "type": "registry:lib",
-      "title": "Google Fonts",
-      "description": "Google Fonts — part of BL UI's library (lib/google-fonts.generated.ts, lib/google-fonts.ts).",
-      "dependencies": [],
-      "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json"
-      ],
-      "files": [
-        {
-          "path": "packages/ui/src/lib/google-fonts.generated.ts",
-          "type": "registry:lib",
-          "target": "lib/google-fonts.generated.ts"
-        },
-        {
-          "path": "packages/ui/src/lib/google-fonts.ts",
-          "type": "registry:lib",
-          "target": "lib/google-fonts.ts"
-        }
-      ]
-    },
-    {
-      "name": "gpu-cron",
-      "type": "registry:lib",
-      "title": "Gpu Cron",
-      "description": "Gpu Cron — part of BL UI's library (lib/gpu-cron.ts).",
-      "dependencies": [
-        "gpu-cron@0.1.1"
-      ],
-      "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json"
-      ],
-      "files": [
-        {
-          "path": "packages/ui/src/lib/gpu-cron.ts",
-          "type": "registry:lib",
-          "target": "lib/gpu-cron.ts"
-        }
-      ]
-    },
-    {
-      "name": "gpu-time",
-      "type": "registry:lib",
-      "title": "Gpu Time",
-      "description": "Gpu Time — part of BL UI's library (lib/gpu-time.ts).",
-      "dependencies": [
-        "gpu-time@0.5.0"
-      ],
-      "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json"
-      ],
-      "files": [
-        {
-          "path": "packages/ui/src/lib/gpu-time.ts",
-          "type": "registry:lib",
-          "target": "lib/gpu-time.ts"
         }
       ]
     },
@@ -8893,23 +9239,6 @@
       ]
     },
     {
-      "name": "object-tree-value",
-      "type": "registry:lib",
-      "title": "Object Tree Value",
-      "description": "Object Tree Value — part of BL UI's library (lib/object-tree-value.ts).",
-      "dependencies": [],
-      "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json"
-      ],
-      "files": [
-        {
-          "path": "packages/ui/src/lib/object-tree-value.ts",
-          "type": "registry:lib",
-          "target": "lib/object-tree-value.ts"
-        }
-      ]
-    },
-    {
       "name": "open-code-browser-agent",
       "type": "registry:lib",
       "title": "Open Code Browser Agent",
@@ -9042,23 +9371,6 @@
       ]
     },
     {
-      "name": "persistent-state",
-      "type": "registry:lib",
-      "title": "Persistent State",
-      "description": "Persistent State — part of BL UI's library (lib/persistent-state.ts).",
-      "dependencies": [],
-      "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json"
-      ],
-      "files": [
-        {
-          "path": "packages/ui/src/lib/persistent-state.ts",
-          "type": "registry:lib",
-          "target": "lib/persistent-state.ts"
-        }
-      ]
-    },
-    {
       "name": "presence",
       "type": "registry:lib",
       "title": "Presence",
@@ -9113,23 +9425,6 @@
           "path": "packages/ui/src/lib/pull-to-refresh.ts",
           "type": "registry:lib",
           "target": "lib/pull-to-refresh.ts"
-        }
-      ]
-    },
-    {
-      "name": "qr",
-      "type": "registry:lib",
-      "title": "Qr",
-      "description": "Qr — part of BL UI's library (lib/qr.ts).",
-      "dependencies": [],
-      "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json"
-      ],
-      "files": [
-        {
-          "path": "packages/ui/src/lib/qr.ts",
-          "type": "registry:lib",
-          "target": "lib/qr.ts"
         }
       ]
     },
@@ -9241,27 +9536,6 @@
           "path": "packages/ui/src/lib/selection-indicator-primitive.ts",
           "type": "registry:lib",
           "target": "lib/selection-indicator-primitive.ts"
-        }
-      ]
-    },
-    {
-      "name": "session-recorder",
-      "type": "registry:lib",
-      "title": "Session Recorder",
-      "description": "Session Recorder — part of BL UI's library (lib/session-recorder.ts).",
-      "dependencies": [
-        "rrweb@2.0.0-alpha.20"
-      ],
-      "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json",
-        "https://blamy.github.io/ui/r/append-stream.json",
-        "https://blamy.github.io/ui/r/durable-streams.json"
-      ],
-      "files": [
-        {
-          "path": "packages/ui/src/lib/session-recorder.ts",
-          "type": "registry:lib",
-          "target": "lib/session-recorder.ts"
         }
       ]
     },
@@ -9454,64 +9728,6 @@
       ]
     },
     {
-      "name": "state-diagram-edit",
-      "type": "registry:lib",
-      "title": "State Diagram Edit",
-      "description": "State Diagram Edit — part of BL UI's library (lib/state-diagram-edit.ts).",
-      "dependencies": [],
-      "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json",
-        "https://blamy.github.io/ui/r/state-diagram-model.json",
-        "https://blamy.github.io/ui/r/state-diagram-simulation.json"
-      ],
-      "files": [
-        {
-          "path": "packages/ui/src/lib/state-diagram-edit.ts",
-          "type": "registry:lib",
-          "target": "lib/state-diagram-edit.ts"
-        }
-      ]
-    },
-    {
-      "name": "state-diagram-model",
-      "type": "registry:lib",
-      "title": "State Diagram Model",
-      "description": "State Diagram Model — part of BL UI's library (lib/state-diagram-model.ts).",
-      "dependencies": [],
-      "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json",
-        "https://blamy.github.io/ui/r/diagram-layout.json",
-        "https://blamy.github.io/ui/r/diagram-model.json"
-      ],
-      "files": [
-        {
-          "path": "packages/ui/src/lib/state-diagram-model.ts",
-          "type": "registry:lib",
-          "target": "lib/state-diagram-model.ts"
-        }
-      ]
-    },
-    {
-      "name": "state-diagram-simulation",
-      "type": "registry:lib",
-      "title": "State Diagram Simulation",
-      "description": "State Diagram Simulation — part of BL UI's library (lib/state-diagram-simulation.ts).",
-      "dependencies": [
-        "xstate@^5.33.3"
-      ],
-      "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json",
-        "https://blamy.github.io/ui/r/state-diagram-model.json"
-      ],
-      "files": [
-        {
-          "path": "packages/ui/src/lib/state-diagram-simulation.ts",
-          "type": "registry:lib",
-          "target": "lib/state-diagram-simulation.ts"
-        }
-      ]
-    },
-    {
       "name": "surface-flow",
       "type": "registry:lib",
       "title": "Surface Flow",
@@ -9526,26 +9742,6 @@
           "path": "packages/ui/src/lib/surface-flow.tsx",
           "type": "registry:lib",
           "target": "lib/surface-flow.tsx"
-        }
-      ]
-    },
-    {
-      "name": "syntax",
-      "type": "registry:lib",
-      "title": "Syntax",
-      "description": "Syntax — part of BL UI's library (lib/syntax.ts).",
-      "dependencies": [
-        "gpu-lexer@0.0.3"
-      ],
-      "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json",
-        "https://blamy.github.io/ui/r/webgpu.json"
-      ],
-      "files": [
-        {
-          "path": "packages/ui/src/lib/syntax.ts",
-          "type": "registry:lib",
-          "target": "lib/syntax.ts"
         }
       ]
     },
@@ -11995,6 +12191,7 @@
         "https://blamy.github.io/ui/r/hover-card.json",
         "https://blamy.github.io/ui/r/icon.json",
         "https://blamy.github.io/ui/r/popover.json",
+        "https://blamy.github.io/ui/r/size-class.json",
         "https://blamy.github.io/ui/r/spinner.json",
         "https://blamy.github.io/ui/r/tailscale.json",
         "https://blamy.github.io/ui/r/tailscale-connect.json",

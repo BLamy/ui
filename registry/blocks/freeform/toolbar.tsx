@@ -3,7 +3,7 @@
    buttons are the kit Toolbar's icon tools (`toolbarButtonVariants`, `toggleVariants`). */
 import { useRef, useState, type ComponentProps, type ReactNode } from 'react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { PencilInkPicker, PencilToolbar, PencilToolPicker, PencilWidthPicker } from '@/components/ui/pencilkit/pencil-toolbar';
+import { PencilInkPicker, PencilToolbar, PencilToolPicker, PencilWidthPicker } from '@/components/ui/pencilkit';
 import { Separator } from '@/components/ui/separator';
 import { toggleVariants } from '@/components/ui/toggle';
 import { ToolbarSeparator, toolbarButtonVariants } from '@/components/ui/toolbar';
@@ -91,7 +91,7 @@ export function InsertBar({ tool, setTool, inserts }: { tool: Tool; setTool: (t:
           <div className="grid grid-cols-3 gap-2">
             {STICKY_COLORS.map((c, i) => (
               <PopoverClose key={c} aria-label={`Sticky note ${i + 1}`} onClick={() => inserts.sticky(c)} className="grid size-14 cursor-pointer place-items-center rounded-ctl border-0 bg-transparent hover:bg-secondary">
-                <StickyGlyph color={c} size={38} />
+                <StickyGlyph tint={c} size={38} />
               </PopoverClose>
             ))}
           </div>

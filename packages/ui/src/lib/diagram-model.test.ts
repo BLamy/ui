@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { distToPolyline, type Pt, type Rect } from '@/lib/canvas-math';
 import {
   ARROW_BROAD, ARROW_SLIM, anchorNormal, anchorPoint, ancestorsOf, arrowHead, closedD, connectorBounds, connectorPath, curvePath, descendantsOf, dirOf, distToConnector,
-  addConnection, checkConnection, deleteItems, diagramBounds, edgeAt, edgeGeometries, edgeGeometry, edgesAtPoint, facingCurve, facingSides, indexDiagram, isInside, labelBox, loopingCurve, moveEdgeEnd, moveNodes, nearestAnchor, nearestSide, nodeAt, pointAlong, polygonPoints,
+  addConnection, checkConnection, deleteItems, diagramBounds, elbowAround, labelBoxAvoiding, rectIndex, edgeAt, edgeGeometries, edgeGeometry, edgesAtPoint, facingCurve, facingSides, indexDiagram, isInside, labelBox, loopingCurve, moveEdgeEnd, moveNodes, nearestAnchor, nearestSide, nodeAt, pointAlong, polygonPoints,
   polylinePath, portPoint, regionDividers, renderWindow, rerouteLabel, rerouteOrthogonal, selfLoopPath, simplifyRoute, type ConnectorGeometry, type DiagramEdge, type DiagramNode,
 } from './diagram-model';
 
@@ -60,20 +60,20 @@ describe('anchors', () => {
   const box = { x: 100, y: 100, w: 100, h: 40 };
 
   it('finds the midpoint of each side, and places along it', () => {
-    expect(anchorPoint(box, 't')).toEqual({ x: 150, y: 100 });
-    expect(anchorPoint(box, 'r')).toEqual({ x: 200, y: 120 });
-    expect(anchorPoint(box, 'b')).toEqual({ x: 150, y: 140 });
-    expect(anchorPoint(box, 'l')).toEqual({ x: 100, y: 120 });
-    expect(anchorPoint(box, 't', 0)).toEqual({ x: 100, y: 100 });
-    expect(anchorPoint(box, 'r', 1)).toEqual({ x: 200, y: 140 });
+    expect(anchorPoint(box, 'top')).toEqual({ x: 150, y: 100 });
+    expect(anchorPoint(box, 'right')).toEqual({ x: 200, y: 120 });
+    expect(anchorPoint(box, 'bottom')).toEqual({ x: 150, y: 140 });
+    expect(anchorPoint(box, 'left')).toEqual({ x: 100, y: 120 });
+    expect(anchorPoint(box, 'top', 0)).toEqual({ x: 100, y: 100 });
+    expect(anchorPoint(box, 'right', 1)).toEqual({ x: 200, y: 140 });
   });
 
   it('turns with a rotated box', () => {
     const turned = { ...box, rot: 90 };
-    const r = anchorPoint(turned, 'r');
+    const r = anchorPoint(turned, 'right');
     expect(r.x).toBeCloseTo(150);
     expect(r.y).toBeCloseTo(170);
-    const n = anchorNormal(turned, 'r');
+    const n = anchorNormal(turned, 'right');
     expect(n.x).toBeCloseTo(0);
     expect(n.y).toBeCloseTo(1);
   });
@@ -81,11 +81,11 @@ describe('anchors', () => {
   it('finds the nearest side, topmost box first, and honors exclude and tol', () => {
     const boxes = [{ id: 'under', ...box }, { id: 'over', ...box }];
     expect(nearestAnchor({ x: 195, y: 120 }, boxes, 0)?.id).toBe('over');
-    expect(nearestAnchor({ x: 195, y: 120 }, boxes, 0)?.side).toBe('r');
+    expect(nearestAnchor({ x: 195, y: 120 }, boxes, 0)?.side).toBe('right');
     expect(nearestAnchor({ x: 195, y: 120 }, boxes, 0, 'over')?.id).toBe('under');
     expect(nearestAnchor({ x: 230, y: 120 }, boxes, 10)).toBeNull();
-    expect(nearestAnchor({ x: 230, y: 120 }, boxes, 40)?.side).toBe('r');
-    expect(nearestSide(box, { x: 150, y: 90 }).side).toBe('t');
+    expect(nearestAnchor({ x: 230, y: 120 }, boxes, 40)?.side).toBe('right');
+    expect(nearestSide(box, { x: 150, y: 90 }).side).toBe('top');
   });
 
   it('hit tests a rotated item in its own frame', () => {
@@ -96,7 +96,7 @@ describe('anchors', () => {
   });
 
   it('places a port on its side, facing out', () => {
-    const end = portPoint(box, { id: 'p', side: 'b', at: 0.25 });
+    const end = portPoint(box, { id: 'p', side: 'bottom', at: 0.25 });
     expect(end.p).toEqual({ x: 125, y: 140 });
     expect(end.n).toEqual({ x: 0, y: 1 });
   });
@@ -259,16 +259,16 @@ describe('edge routes', () => {
   const nodes = [
     node('a', 0, 0), node('b', 300, 0), node('below', 0, 300),
     node('box', 500, 500, 400, 300), node('kid', 540, 700, 100, 40, { parent: 'box' }),
-    node('ported', 0, 500, 100, 40, { ports: [{ id: 'out', side: 'r' }, { id: 'up', side: 't', at: 0.25 }, { id: 'in', side: 'l' }] }),
+    node('ported', 0, 500, 100, 40, { ports: [{ id: 'out', side: 'right' }, { id: 'up', side: 'top', at: 0.25 }, { id: 'in', side: 'left' }] }),
     node('same1', 900, 0), node('same2', 900, 0),
   ];
   const index = indexDiagram(nodes);
   const route = (e: Partial<DiagramEdge> & { from: string; to: string }) => edgeGeometry({ id: 'e', ...e }, index)!;
 
   it('takes the facing sides', () => {
-    expect(facingSides(nodes[0], nodes[1])).toEqual({ from: 'r', to: 'l' });
-    expect(facingSides(nodes[1], nodes[0])).toEqual({ from: 'l', to: 'r' });
-    expect(facingSides(nodes[0], nodes[2])).toEqual({ from: 'b', to: 't' });
+    expect(facingSides(nodes[0], nodes[1])).toEqual({ from: 'right', to: 'left' });
+    expect(facingSides(nodes[1], nodes[0])).toEqual({ from: 'left', to: 'right' });
+    expect(facingSides(nodes[0], nodes[2])).toEqual({ from: 'bottom', to: 'top' });
     const g = route({ from: 'a', to: 'b' });
     expect(g.start).toEqual({ x: 100, y: 20 });
     expect(g.end).toEqual({ x: 300, y: 20 });
@@ -279,7 +279,7 @@ describe('edge routes', () => {
     const box = (x: number, y: number) => ({ x, y, w: 130, h: 36 });
     // Their centers are further apart across, but they overlap across, so it has to be up and down.
     const sides = facingSides(box(0, 0), box(110, 90));
-    expect(sides).toEqual({ from: 'b', to: 't' });
+    expect(sides).toEqual({ from: 'bottom', to: 'top' });
     const nodes2 = indexDiagram([node('a', 0, 0, 130, 36), node('c', 110, 90, 130, 36)]);
     const g = edgeGeometry({ id: 'e', from: 'a', to: 'c' }, nodes2)!;
     square(g.pts);
@@ -287,15 +287,15 @@ describe('edge routes', () => {
     expect(g.end).toEqual({ x: 175, y: 90 });
     for (let i = 1; i < g.pts.length; i++) expect(g.pts[i].y).toBeGreaterThanOrEqual(g.pts[i - 1].y);
     // And the other way round.
-    expect(facingSides(box(0, 0), box(90, 300))).toEqual({ from: 'b', to: 't' });
-    expect(facingSides(box(0, 0), box(300, 10))).toEqual({ from: 'r', to: 'l' });
-    expect(facingSides(box(300, 10), box(0, 0))).toEqual({ from: 'l', to: 'r' });
+    expect(facingSides(box(0, 0), box(90, 300))).toEqual({ from: 'bottom', to: 'top' });
+    expect(facingSides(box(0, 0), box(300, 10))).toEqual({ from: 'right', to: 'left' });
+    expect(facingSides(box(300, 10), box(0, 0))).toEqual({ from: 'left', to: 'right' });
     // Apart both ways: the wider gap.
-    expect(facingSides(box(0, 0), box(400, 60))).toEqual({ from: 'r', to: 'l' });
-    expect(facingSides(box(0, 0), box(140, 300))).toEqual({ from: 'b', to: 't' });
+    expect(facingSides(box(0, 0), box(400, 60))).toEqual({ from: 'right', to: 'left' });
+    expect(facingSides(box(0, 0), box(140, 300))).toEqual({ from: 'bottom', to: 'top' });
     // Overlapping both ways: their centers.
-    expect(facingSides(box(0, 0), box(50, 5))).toEqual({ from: 'r', to: 'l' });
-    expect(facingSides(box(0, 0), box(5, 20))).toEqual({ from: 'b', to: 't' });
+    expect(facingSides(box(0, 0), box(50, 5))).toEqual({ from: 'right', to: 'left' });
+    expect(facingSides(box(0, 0), box(5, 20))).toEqual({ from: 'bottom', to: 'top' });
   });
 
   it('uses the points it was given, whatever the nodes say', () => {
@@ -347,7 +347,7 @@ describe('edge routes', () => {
     clear(route({ from: 'ported', fromPort: 'out', to: 'ported', toPort: 'up' })); // neighbours
     clear(route({ from: 'ported', fromPort: 'in', to: 'ported', toPort: 'out' })); // opposite, sideways
     clear(route({ from: 'ported', fromPort: 'up', to: 'ported', toPort: 'up' })); // the same one
-    const tb = selfLoopPath(box, portPoint(box, { id: 't', side: 't' }), portPoint(box, { id: 'b', side: 'b' }));
+    const tb = selfLoopPath(box, portPoint(box, { id: 't', side: 'top' }), portPoint(box, { id: 'b', side: 'bottom' }));
     clear(tb); // opposite, up and down
   });
 
@@ -467,7 +467,7 @@ describe('hit tests', () => {
 describe('what else gets drawn', () => {
   it('puts a line across each gap between stacked regions, wall to wall', () => {
     const i = indexDiagram([
-      node('p', 0, 0, 400, 300, { kind: 'parallel' }),
+      node('p', 0, 0, 400, 300, { kind: 'group', variant: 'dashed' }),
       node('b', 10, 110, 100, 90, { kind: 'region', parent: 'p' }),
       node('a', 50, 10, 300, 80, { kind: 'region', parent: 'p' }),
       node('c', 10, 220, 200, 70, { kind: 'region', parent: 'p' }),
@@ -479,14 +479,15 @@ describe('what else gets drawn', () => {
   });
 
   it('stands the line up between regions side by side', () => {
-    const i = indexDiagram([node('p', 0, 0, 400, 100, { kind: 'parallel' }), node('a', 10, 10, 100, 80, { kind: 'region', parent: 'p' }), node('b', 200, 10, 100, 80, { kind: 'region', parent: 'p' })]);
+    const i = indexDiagram([node('p', 0, 0, 400, 100, { kind: 'group', variant: 'dashed' }), node('a', 10, 10, 100, 80, { kind: 'region', parent: 'p' }), node('b', 200, 10, 100, 80, { kind: 'region', parent: 'p' })]);
     expect(regionDividers(i)).toEqual([{ id: 'p/1', x1: 155, x2: 155, y1: 0, y2: 100 }]);
   });
 
-  it('draws no line for one region, or for a parallel state that has none', () => {
-    expect(regionDividers(indexDiagram([node('p', 0, 0, 400, 100, { kind: 'parallel' }), node('a', 10, 10, 100, 80, { kind: 'region', parent: 'p' })]))).toEqual([]);
-    expect(regionDividers(indexDiagram([node('p', 0, 0, 400, 100, { kind: 'parallel' }), node('a', 10, 10, 100, 80, { parent: 'p' }), node('b', 10, 10, 100, 80, { parent: 'p' })]))).toEqual([]);
-    expect(regionDividers(indexDiagram([node('c', 0, 0, 400, 100, { kind: 'compound' }), node('a', 10, 10, 100, 80, { kind: 'region', parent: 'c' }), node('b', 200, 10, 100, 80, { kind: 'region', parent: 'c' })]))).toEqual([]);
+  it('draws no line for one region, or for a group that has none', () => {
+    expect(regionDividers(indexDiagram([node('p', 0, 0, 400, 100, { kind: 'group', variant: 'dashed' }), node('a', 10, 10, 100, 80, { kind: 'region', parent: 'p' })]))).toEqual([]);
+    expect(regionDividers(indexDiagram([node('p', 0, 0, 400, 100, { kind: 'group', variant: 'dashed' }), node('a', 10, 10, 100, 80, { parent: 'p' }), node('b', 10, 10, 100, 80, { parent: 'p' })]))).toEqual([]);
+    // Any group of two or more regions gets them: the line is the regions', not the look of what holds them.
+    expect(regionDividers(indexDiagram([node('c', 0, 0, 400, 100, { kind: 'group' }), node('a', 10, 10, 100, 80, { kind: 'region', parent: 'c' }), node('b', 200, 10, 100, 80, { kind: 'region', parent: 'c' })]))).toHaveLength(1);
   });
 
   it('takes in the nodes, the routes that stray past them and the labels', () => {
@@ -561,7 +562,7 @@ describe('routes that follow', () => {
 describe('moving nodes', () => {
   const nodes: DiagramNode[] = [
     node('a', 0, 0), node('b', 300, 0),
-    node('box', 500, 0, 300, 300, { kind: 'compound' }), node('kid', 550, 100, 100, 40, { parent: 'box' }), node('kid2', 660, 100, 100, 40, { parent: 'box' }),
+    node('box', 500, 0, 300, 300, { kind: 'group' }), node('kid', 550, 100, 100, 40, { parent: 'box' }), node('kid2', 660, 100, 100, 40, { parent: 'box' }),
     node('far', 0, 500),
   ];
   const edges: DiagramEdge[] = [
@@ -615,7 +616,7 @@ describe('moving nodes', () => {
   });
 
   it('grows up the chain, and carries an edge on a wall with that wall', () => {
-    const nested: DiagramNode[] = [node('outer', 0, 0, 400, 300, { kind: 'compound' }), node('inner', 20, 40, 200, 200, { kind: 'compound', parent: 'outer' }), node('kid', 40, 80, 100, 40, { parent: 'inner' }), node('o', 600, 100)];
+    const nested: DiagramNode[] = [node('outer', 0, 0, 400, 300, { kind: 'group' }), node('inner', 20, 40, 200, 200, { kind: 'group', parent: 'outer' }), node('kid', 40, 80, 100, 40, { parent: 'inner' }), node('o', 600, 100)];
     const wall: DiagramEdge[] = [{ id: 'w', from: 'outer', to: 'o', points: [{ x: 400, y: 120 }, { x: 600, y: 120 }] }];
     const out = moveNodes(nested, wall, ['kid'], 500, 0);
     expect(out.nodes[1].w).toBe(540 + 100 + 12 - 20);
@@ -637,7 +638,7 @@ describe('moving nodes', () => {
 });
 
 describe('deleting', () => {
-  const nodes: DiagramNode[] = [node('a', 0, 0), node('box', 500, 0, 300, 300, { kind: 'compound' }), node('kid', 550, 100, 100, 40, { parent: 'box' }), node('b', 0, 200)];
+  const nodes: DiagramNode[] = [node('a', 0, 0), node('box', 500, 0, 300, 300, { kind: 'group' }), node('kid', 550, 100, 100, 40, { parent: 'box' }), node('b', 0, 200)];
   const edges: DiagramEdge[] = [{ id: 'ak', from: 'a', to: 'kid' }, { id: 'ab', from: 'a', to: 'b' }, { id: 'bb', from: 'b', to: 'b' }];
 
   it('takes a node’s edges with it', () => {
@@ -665,8 +666,8 @@ describe('deleting', () => {
 
 describe('connections', () => {
   const nodes: DiagramNode[] = [
-    node('w', 0, 0, 100, 100, { ports: [{ id: 'sql', side: 'r', kind: 'sql', label: 'DB', direction: 'out' }, { id: 'files', side: 'r', at: 0.8, kind: 'files', direction: 'out' }, { id: 'in', side: 'l', direction: 'in' }, { id: 'both', side: 't' }] }),
-    node('d', 300, 0, 100, 40, { ports: [{ id: 'in', side: 'l', kind: 'sql', label: 'queries', direction: 'in' }, { id: 'out', side: 'r', direction: 'out' }] }),
+    node('w', 0, 0, 100, 100, { ports: [{ id: 'sql', side: 'right', kind: 'sql', label: 'DB', direction: 'out' }, { id: 'files', side: 'right', at: 0.8, kind: 'files', direction: 'out' }, { id: 'in', side: 'left', direction: 'in' }, { id: 'both', side: 'top' }] }),
+    node('d', 300, 0, 100, 40, { ports: [{ id: 'in', side: 'left', kind: 'sql', label: 'queries', direction: 'in' }, { id: 'out', side: 'right', direction: 'out' }] }),
     node('plain', 0, 300), node('plain2', 300, 300),
   ];
   const index = indexDiagram(nodes);
@@ -711,9 +712,9 @@ describe('connections', () => {
   });
 
   it('moves an edge’s ends: its old route and label place go, as they were for the old ends, and the rest stays', () => {
-    const before: DiagramEdge[] = [{ id: 'e', from: 'a', fromPort: 'p', to: 'b', toPort: 'q', label: 'x', kind: 'after', points: [{ x: 0, y: 0 }, { x: 1, y: 1 }], labelBox: { x: 0, y: 0, w: 1, h: 1 } }, { id: 'f', from: 'a', to: 'b' }];
+    const before: DiagramEdge[] = [{ id: 'e', from: 'a', fromPort: 'p', to: 'b', toPort: 'q', label: 'x', variant: 'dotted', points: [{ x: 0, y: 0 }, { x: 1, y: 1 }], labelBox: { x: 0, y: 0, w: 1, h: 1 } }, { id: 'f', from: 'a', to: 'b' }];
     const [e, f] = moveEdgeEnd(before, { edge: 'e', from: 'a', to: 'c' });
-    expect(e).toEqual({ id: 'e', from: 'a', to: 'c', label: 'x', kind: 'after' });
+    expect(e).toEqual({ id: 'e', from: 'a', to: 'c', label: 'x', variant: 'dotted' });
     expect(f).toBe(before[1]);
     expect(moveEdgeEnd(before, { edge: 'e', from: 'z', fromPort: 'r', to: 'c', toPort: 's' })[0]).toMatchObject({ from: 'z', fromPort: 'r', to: 'c', toPort: 's' });
   });
@@ -749,5 +750,71 @@ describe('the window that gets drawn', () => {
     expect(renderWindow(win, { x: 100, y: 100, w: 500, h: 250 })).toBe(win);
     const small = renderWindow(win, { x: 100, y: 100, w: 400, h: 200 });
     expect(small).toEqual({ x: -100, y: 0, w: 800, h: 400 });
+  });
+});
+
+describe('routes and labels that keep clear of the nodes', () => {
+  const hits = (pts: readonly Pt[], r: Rect) => {
+    // Does any segment cross the inside of r (its edges don't count)?
+    for (let i = 1; i < pts.length; i++) {
+      const a = pts[i - 1], b = pts[i];
+      for (let t = 0.05; t < 1; t += 0.05) {
+        const p = { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t };
+        if (p.x > r.x + 1 && p.x < r.x + r.w - 1 && p.y > r.y + 1 && p.y < r.y + r.h - 1) return true;
+      }
+    }
+    return false;
+  };
+
+  it('goes around two cards whose ports face away from each other, rather than behind them', () => {
+    // An R2's events port on its right, to a Queue's on its left, the Queue below and to the left: the plain elbow ran
+    // up behind both cards.
+    const files = node('files', 200, 0, 200, 90, { ports: [{ id: 'events', side: 'right', direction: 'out' }] });
+    const queue = node('queue', 0, 170, 200, 90, { ports: [{ id: 'events', side: 'left', at: 0.35, direction: 'in' }] });
+    const index = indexDiagram([files, queue]);
+    const g = edgeGeometry({ id: 'e', from: 'files', fromPort: 'events', to: 'queue', toPort: 'events' }, index)!;
+    square(g.pts);
+    expect(hits(g.pts, files)).toBe(false);
+    expect(hits(g.pts, queue)).toBe(false);
+    // Through the gap between them, which is across the way.
+    expect(g.pts.some((p) => p.y > 90 && p.y < 170)).toBe(true);
+  });
+
+  it('goes past both when there’s no gap between them, on the side nearer the ends', () => {
+    const a: Rect = { x: 300, y: 0, w: 100, h: 100 }, b: Rect = { x: 0, y: 20, w: 100, h: 100 };
+    const g = elbowAround({ p: { x: 400, y: 30 }, n: { x: 1, y: 0 } }, { p: { x: 0, y: 40 }, n: { x: -1, y: 0 } }, a, b)!;
+    expect(g).not.toBeNull();
+    expect(hits(g.pts, a)).toBe(false);
+    expect(hits(g.pts, b)).toBe(false);
+    expect(Math.min(...g.pts.map((p) => p.y))).toBeLessThan(0);
+  });
+
+  it('leaves a plain elbow alone where the ends face each other', () => {
+    expect(elbowAround({ p: { x: 100, y: 20 }, n: { x: 1, y: 0 } }, { p: { x: 300, y: 60 }, n: { x: -1, y: 0 } }, { x: 0, y: 0, w: 100, h: 40 }, { x: 300, y: 40, w: 100, h: 40 })).toBeNull();
+  });
+
+  it('keeps a label off a node, moving along its route or to the other side of it', () => {
+    const consumer: Rect = { x: 290, y: 140, w: 200, h: 150 };
+    const room = rectIndex([consumer]);
+    const route = [{ x: 200, y: 215 }, { x: 245, y: 215 }, { x: 245, y: 188 }, { x: 290, y: 188 }];
+    const size = { w: 150, h: 11 };
+    const box = labelBoxAvoiding(route, size, room.overlap);
+    expect(room.overlap(box)).toBe(0);
+  });
+
+  it('keeps a place it was given when that’s clear, and the one that covers least when nothing is', () => {
+    const room = rectIndex([{ x: 0, y: 0, w: 100, h: 100 }]);
+    const given = { x: 200, y: 0, w: 20, h: 10 };
+    expect(labelBoxAvoiding([{ x: 0, y: 50 }, { x: 100, y: 50 }], given, room.overlap, given)).toBe(given);
+    const boxed = rectIndex([{ x: -1000, y: -1000, w: 3000, h: 3000 }]);
+    expect(labelBoxAvoiding([{ x: 0, y: 50 }, { x: 100, y: 50 }], { w: 20, h: 10 }, boxed.overlap)).toBeTruthy();
+  });
+
+  it('adds up how much of a box the rects cover, each once, across cells', () => {
+    const room = rectIndex([{ x: 0, y: 0, w: 400, h: 10 }], 100);
+    expect(room.overlap({ x: 50, y: 0, w: 300, h: 10 })).toBe(3000);
+    room.add({ x: 500, y: 0, w: 10, h: 10 });
+    expect(room.overlap({ x: 500, y: 0, w: 5, h: 5 })).toBe(25);
+    expect(room.overlap({ x: 0, y: 20, w: 5, h: 5 })).toBe(0);
   });
 });

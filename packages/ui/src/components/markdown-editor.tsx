@@ -8,7 +8,11 @@ import type { ChangeDetails } from '@ui-sdk/core';
 import { useFieldControl } from '@ui-sdk/react/field';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { fieldSurfaceVariants } from '@/components/ui/input';
-import { ToolbarButton, type ToolbarButtonProps } from '@/components/ui/toolbar';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Toolbar, ToolbarButton, ToolbarText, type ToolbarButtonProps } from '@/components/ui/toolbar';
+import { Icon } from '@/lib/icon';
 import { changeDetails } from '@/lib/change-details';
 import { cn } from '@/lib/utils';
 
@@ -27,6 +31,18 @@ import { cn } from '@/lib/utils';
 /** The TipTap editor instance behind a MarkdownEditor. */
 export type MarkdownEditorInstance = NonNullable<Parameters<NonNullable<GitbookEditorProps['onEditorReady']>>[0]>;
 export type MarkdownEditorAttachment = EditorAttachment;
+
+/** How live demo blocks (`{% demo %}`) resolve and run: MarkdownView's `MarkdownViewDemo`, the same four fields. */
+export interface MarkdownEditorDemo {
+  /** Resolves a block's `src` to its component, source files and metadata. */
+  resolver?: GitbookEditorProps['demoResolver'];
+  /** Runs demos that carry their files inline and have no resolver behind them (`createAlmostNodeDemoRuntime()`). */
+  runtime?: GitbookEditorProps['demoRuntime'];
+  /** Demo files held in memory by `src` (`createDemoVFS`), e.g. demos pasted into the editor. */
+  vfs?: GitbookEditorProps['demoVFS'];
+  /** Extra npm dependencies inline demos may import (`{ "@brett_lamy/ui": "^6.0.0" }`). */
+  dependencies?: GitbookEditorProps['demoDependencies'];
+}
 
 /** Why the Markdown changed: an edit in the editor (typing, paste, a toolbar or "/" command), or a call through
     the ref (`setMarkdown`, `insertMarkdown`, `clear`). */
@@ -251,18 +267,16 @@ type MarkdownEditorOwnProps = VariantProps<typeof markdownEditorVariants> & {
   /** Not editable and dimmed. Inside a Field, the field's `disabled` applies too. */
   disabled?: boolean;
   autoFocus?: boolean;
-  /** The formatting toolbar, hidden while read-only or disabled. `true`: the built-in one (bold, italic, strike, code,
-      link). A node: a toolbar of your own in the same place, usually a `<Toolbar>` of `MarkdownEditorToolbarButton`s. */
+  /** The formatting toolbar, hidden while read-only or disabled. `true`: the built-in one, a `<Toolbar>` of
+      `MarkdownEditorToolbarButton`s (bold, italic, strikethrough, code, link). A node: a toolbar of your own in the same
+      place, usually a `<Toolbar>` of `MarkdownEditorToolbarButton`s. */
   toolbar?: boolean | React.ReactNode;
   /** The "/" block menu: on (default), off, or a custom item list. */
   slashMenu?: GitbookEditorProps['slashMenu'];
   /** @mention / #tag / $codebase pickers: off by default; true for the defaults, or per-trigger sources. */
   references?: GitbookEditorProps['references'];
-  /** Resolve live demo blocks and their source files inside the editor. */
-  demoResolver?: GitbookEditorProps['demoResolver'];
-  demoRuntime?: GitbookEditorProps['demoRuntime'];
-  demoVFS?: GitbookEditorProps['demoVFS'];
-  demoDependencies?: GitbookEditorProps['demoDependencies'];
+  /** Live demo blocks (`{% demo %}`): how they resolve and run. The same option MarkdownView takes. */
+  demo?: MarkdownEditorDemo;
   /** Parse pasted plain text that looks like Markdown into structure (default true). */
   pasteMarkdown?: boolean;
   /** Pasted or dropped images: inline image blocks (default) or attachment chips the host stores. */
@@ -352,6 +366,77 @@ export function MarkdownEditorToolbarButton({ command, mark, attributes, size = 
   );
 }
 
+/** The link button of the built-in toolbar: a popover with the URL, Apply and Remove (pressed while the caret is in a
+    link). */
+function MarkdownEditorLinkButton() {
+  const editor = React.useContext(EditorContext);
+  const [open, setOpen] = React.useState(false);
+  const [url, setUrl] = React.useState('');
+  const subscribe = React.useCallback((notify: () => void) => {
+    if (!editor) return () => {};
+    editor.on('transaction', notify);
+    return () => { editor.off('transaction', notify); };
+  }, [editor]);
+  const inLink = React.useSyncExternalStore(subscribe, () => (editor ? editor.isActive('link') : false), () => false);
+  const close = () => setOpen(false);
+  const chain = () => editor?.chain().focus() as unknown as { setLink(a: { href: string }): { run(): boolean }; unsetLink(): { run(): boolean } } | undefined;
+  return (
+    <Popover
+      open={open}
+      onOpenChange={(next) => {
+        if (next) setUrl(String(editor?.getAttributes('link').href ?? ''));
+        setOpen(next);
+      }}
+    >
+      <ToolbarButton
+        size="icon-sm"
+        disabled={!editor}
+        aria-label="Link"
+        aria-pressed={inLink}
+        data-pressed={inLink || undefined}
+        render={<PopoverTrigger />}
+      >
+        <Icon name="link" size={16} />
+      </ToolbarButton>
+      <PopoverContent aria-label="Link" className="w-72 p-2">
+        <form
+          className="flex items-center gap-1.5"
+          onSubmit={(event) => {
+            event.preventDefault();
+            const href = url.trim();
+            (href ? chain()?.setLink({ href }) : chain()?.unsetLink())?.run();
+            close();
+          }}
+        >
+          <Input size="sm" aria-label="URL" placeholder="https://…" value={url} onValueChange={setUrl} className="min-w-0 flex-1" />
+          <Button type="submit" size="sm">Apply</Button>
+          <Button type="button" size="sm" variant="ghost" disabled={!inLink} onClick={() => { chain()?.unsetLink().run(); close(); }}>
+            Remove
+          </Button>
+        </form>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+/** `toolbar={true}`: the kit's Toolbar of MarkdownEditorToolbarButtons, the same parts a toolbar of your own is made of.
+    Bold, italic, strikethrough and code are drawn as letters, as the system's format bar draws them. */
+function MarkdownEditorDefaultToolbar() {
+  return (
+    <Toolbar aria-label="Formatting" size="sm" className="w-full">
+      <MarkdownEditorToolbarButton command="toggleBold" mark="bold" aria-label="Bold"><span aria-hidden="true" className="font-bold">B</span></MarkdownEditorToolbarButton>
+      <MarkdownEditorToolbarButton command="toggleItalic" mark="italic" aria-label="Italic"><span aria-hidden="true" className="font-serif italic">I</span></MarkdownEditorToolbarButton>
+      <MarkdownEditorToolbarButton command="toggleStrike" mark="strike" aria-label="Strikethrough"><span aria-hidden="true" className="line-through">S</span></MarkdownEditorToolbarButton>
+      <MarkdownEditorToolbarButton command="toggleCode" mark="code" aria-label="Inline code"><span aria-hidden="true" className="font-mono text-footnote">{'</>'}</span></MarkdownEditorToolbarButton>
+      <MarkdownEditorLinkButton />
+      {/* A tip, not a control: the kit's muted text, and only where the bar has room for it. */}
+      <ToolbarText className="ms-auto hidden @md/mde-toolbar:inline">
+        Type <kbd className="font-mono">/</kbd> for blocks
+      </ToolbarText>
+    </Toolbar>
+  );
+}
+
 /** Sets a callback or object ref. */
 function setRef<T>(ref: React.Ref<T>, value: T | null) {
   if (typeof ref === 'function') ref(value);
@@ -378,10 +463,7 @@ export function MarkdownEditor({
     documentProperties,
     slashMenu = true,
     references = false,
-    demoResolver,
-    demoRuntime,
-    demoVFS,
-    demoDependencies,
+    demo,
     pasteMarkdown = true,
     imagePaste = 'inline',
     attachments,
@@ -648,27 +730,27 @@ export function MarkdownEditor({
         }
       }}
     >
-      {ownToolbar && editable ? (
+      {(ownToolbar || toolbar === true) && editable ? (
         <EditorContext.Provider value={editor}>
           <div
             data-slot="markdown-editor-toolbar"
-            className="flex flex-none items-center px-1.5 py-1 shadow-hairline-b group-data-[variant=plain]/mde:mb-2 group-data-[variant=plain]/mde:px-0"
+            className="@container/mde-toolbar flex flex-none items-center px-1.5 py-1 shadow-hairline-b group-data-[variant=plain]/mde:mb-2 group-data-[variant=plain]/mde:px-0"
           >
-            {toolbar}
+            {toolbar === true ? <MarkdownEditorDefaultToolbar /> : toolbar}
           </div>
         </EditorContext.Provider>
       ) : null}
       <GitbookEditor
         markdown={markdown}
         onChange={handleChange}
-        toolbar={toolbar === true && editable}
+        toolbar={false}
         documentProperties={documentProperties}
         slashMenu={slashMenu}
         references={references}
-        demoResolver={demoResolver}
-        demoRuntime={demoRuntime}
-        demoVFS={demoVFS}
-        demoDependencies={demoDependencies}
+        demoResolver={demo?.resolver}
+        demoRuntime={demo?.runtime}
+        demoVFS={demo?.vfs}
+        demoDependencies={demo?.dependencies}
         editable={editable}
         {...(placeholder !== undefined ? { placeholder } : {})}
         autofocus={autoFocus}

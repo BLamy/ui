@@ -7,7 +7,7 @@ import { createSimulation, NEVER_SETTLES, standInConfig, type MachineNames } fro
 
 /** A state's place in a config: its keys, from the root. */
 export type StatePath = readonly string[];
-export type MachineConfig = Record<string, unknown>;
+export type StateMachineConfig = Record<string, unknown>;
 
 /** An edit that can't be done, and why, in words. */
 export class StateEditRefused extends Error {}
@@ -15,20 +15,20 @@ export class StateEditRefused extends Error {}
 const isPlain = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
 const asList = (v: unknown): unknown[] => (Array.isArray(v) ? v : v === undefined ? [] : [v]);
 const sameStart = (path: StatePath, start: StatePath) => start.every((k, i) => path[i] === k) && path.length >= start.length;
-const rootIdOf = (config: MachineConfig) => (typeof config.id === 'string' ? config.id : '(machine)');
+const rootIdOf = (config: StateMachineConfig) => (typeof config.id === 'string' ? config.id : '(machine)');
 
 /** The state at `path`, or null. */
-export function stateAt(config: MachineConfig, path: StatePath): MachineConfig | null {
+export function stateAt(config: StateMachineConfig, path: StatePath): StateMachineConfig | null {
   let at: unknown = config;
   for (const key of path) at = isPlain(at) && isPlain(at.states) ? at.states[key] : undefined;
   return isPlain(at) ? at : null;
 }
 
 /** A new config with `fn` done to the state at `path`, and all that isn't on the way to it still the same objects. */
-function changeState(config: MachineConfig, path: StatePath, fn: (state: MachineConfig) => MachineConfig): MachineConfig {
+function changeState(config: StateMachineConfig, path: StatePath, fn: (state: StateMachineConfig) => StateMachineConfig): StateMachineConfig {
   if (!path.length) return fn(config);
   const [key, ...rest] = path;
-  const states = config.states as Record<string, MachineConfig>;
+  const states = config.states as Record<string, StateMachineConfig>;
   return { ...config, states: { ...states, [key]: changeState(states[key], rest, fn) } };
 }
 
@@ -56,9 +56,9 @@ const unescape = (segment: string) => segment.replace(/\\(.)/g, '$1');
 const escapeKey = (key: string) => key.replace(/[\\.]/g, '\\$&');
 
 /** Only ones that aren't a path can be found by id: an id's the first part of a `#id.path` target. */
-function explicitIds(config: MachineConfig): Map<string, StatePath> {
+function explicitIds(config: StateMachineConfig): Map<string, StatePath> {
   const ids = new Map<string, StatePath>([[rootIdOf(config), []]]);
-  const walk = (s: MachineConfig, path: StatePath) => {
+  const walk = (s: StateMachineConfig, path: StatePath) => {
     if (typeof s.id === 'string') ids.set(s.id, path);
     if (isPlain(s.states)) for (const [k, kid] of Object.entries(s.states)) if (isPlain(kid)) walk(kid, [...path, k]);
   };
@@ -110,8 +110,8 @@ function rewriteRecord(record: Record<string, unknown>, visit: (text: string) =>
   return Object.keys(out).length ? out : GONE;
 }
 
-function rewriteTargets(state: MachineConfig, path: StatePath, ids: ReadonlyMap<string, StatePath>, visit: TargetVisit): MachineConfig {
-  const out: MachineConfig = { ...state };
+function rewriteTargets(state: StateMachineConfig, path: StatePath, ids: ReadonlyMap<string, StatePath>, visit: TargetVisit): StateMachineConfig {
+  const out: StateMachineConfig = { ...state };
   const parsed = (relativeTo: 'parent' | 'self') => (text: string) => {
     const w = parseTarget(text, path, ids, relativeTo);
     return w ? visit(w) : text;
@@ -146,7 +146,7 @@ function rewriteTargets(state: MachineConfig, path: StatePath, ids: ReadonlyMap<
 }
 
 /** What to write to get from `from` to `to`, in the shortest of the forms XState takes. */
-export function targetText(config: MachineConfig, from: StatePath, to: StatePath): string {
+export function targetText(config: StateMachineConfig, from: StatePath, to: StatePath): string {
   const keys = to.map(escapeKey);
   if (from.length && to.length === from.length && from.slice(0, -1).every((k, i) => k === to[i])) return keys[keys.length - 1];
   if (to.length > from.length && sameStart(to, from)) return `.${keys.slice(from.length).join('.')}`;
@@ -178,12 +178,12 @@ export function uniqueName(base: string, taken: readonly string[]): string {
   for (let n = 2; ; n++) if (!taken.includes(`${base}${n}`)) return `${base}${n}`;
 }
 
-const keysOf = (state: MachineConfig | null) => (state && isPlain(state.states) ? Object.keys(state.states) : []);
+const keysOf = (state: StateMachineConfig | null) => (state && isPlain(state.states) ? Object.keys(state.states) : []);
 
 /* ── States ── */
 
 /** A new state in `parent`. If `parent` had none, it's where it starts now, unless they're all at once. */
-export function addState(config: MachineConfig, parent: StatePath, key: string): MachineConfig {
+export function addState(config: StateMachineConfig, parent: StatePath, key: string): StateMachineConfig {
   const at = stateAt(config, parent);
   if (!at) throw new StateEditRefused(`There’s no state at ${parent.join('.') || 'the root'}.`);
   const problem = stateNameProblem(key, keysOf(at));
@@ -198,7 +198,7 @@ export function addState(config: MachineConfig, parent: StatePath, key: string):
 /** Takes a state away, with whatever's inside it and every transition that goes to any of that. A transition left with no
  *  targets goes too, as otherwise it'd stay where it was instead. If it's where its parent starts, and there are others, that's
  *  left for XState to refuse. */
-export function removeState(config: MachineConfig, path: StatePath): MachineConfig {
+export function removeState(config: StateMachineConfig, path: StatePath): StateMachineConfig {
   if (!path.length) throw new StateEditRefused('The machine itself can’t be deleted.');
   if (!stateAt(config, path)) throw new StateEditRefused(`There’s no state at ${path.join('.')}.`);
   const ids = explicitIds(config);
@@ -216,7 +216,7 @@ export function removeState(config: MachineConfig, path: StatePath): MachineConf
 
 /** A new name for a state, and for wherever it's written that way: targets from anywhere, however they're written, and where
  *  its parent starts. An id that's written out stays as it is. */
-export function renameState(config: MachineConfig, path: StatePath, key: string): MachineConfig {
+export function renameState(config: StateMachineConfig, path: StatePath, key: string): StateMachineConfig {
   if (!path.length) throw new StateEditRefused('The machine’s own name is its id, in its config.');
   const parent = stateAt(config, path.slice(0, -1));
   const old = path[path.length - 1];
@@ -240,7 +240,7 @@ export function renameState(config: MachineConfig, path: StatePath, key: string)
 }
 
 /** Where a state with others in it starts. */
-export function setInitial(config: MachineConfig, parent: StatePath, key: string): MachineConfig {
+export function setInitial(config: StateMachineConfig, parent: StatePath, key: string): StateMachineConfig {
   const at = stateAt(config, parent);
   if (!at || !keysOf(at).includes(key)) throw new StateEditRefused(`There’s no state called “${key}” there.`);
   if (at.type === 'parallel') throw new StateEditRefused('Everything in a parallel state starts at once.');
@@ -268,7 +268,7 @@ function setIn(state: Record<string, unknown>, slot: Slot, value: unknown): Reco
 }
 
 /** Where in its state's config a transition's list is, going by the event it's drawn with. */
-function slotOf(state: MachineConfig, place: TransitionPlace): Slot {
+function slotOf(state: StateMachineConfig, place: TransitionPlace): Slot {
   const { event, stateId } = place;
   if (event === null) return ['always'];
   if (isPlain(state.on) && state.on[event] !== undefined) return ['on', event];
@@ -285,7 +285,7 @@ function slotOf(state: MachineConfig, place: TransitionPlace): Slot {
 }
 
 /** A transition from `from` on `event`. There can be any number of the same event, or the same two states. */
-export function addTransition(config: MachineConfig, from: StatePath, event: string, to: StatePath, guard?: string): MachineConfig {
+export function addTransition(config: StateMachineConfig, from: StatePath, event: string, to: StatePath, guard?: string): StateMachineConfig {
   const problem = eventNameProblem(event);
   if (problem) throw new StateEditRefused(problem);
   if (!stateAt(config, from)) throw new StateEditRefused(`There’s no state at ${from.join('.') || 'the root'}.`);
@@ -300,7 +300,7 @@ export function addTransition(config: MachineConfig, from: StatePath, event: str
 }
 
 /** Takes a transition away, or only the one target of it, when it has more. */
-export function removeTransition(config: MachineConfig, place: TransitionPlace): MachineConfig {
+export function removeTransition(config: StateMachineConfig, place: TransitionPlace): StateMachineConfig {
   return changeState(config, place.state, (s) => {
     const slot = slotOf(s, place);
     const value = getIn(s, slot);
@@ -317,7 +317,7 @@ export function removeTransition(config: MachineConfig, place: TransitionPlace):
 }
 
 /** Changes one entry of a transition's list, as an object. */
-function changeEntry(config: MachineConfig, place: TransitionPlace, fn: (entry: Record<string, unknown>) => Record<string, unknown>): MachineConfig {
+function changeEntry(config: StateMachineConfig, place: TransitionPlace, fn: (entry: Record<string, unknown>) => Record<string, unknown>): StateMachineConfig {
   return changeState(config, place.state, (s) => {
     const slot = slotOf(s, place);
     const value = getIn(s, slot);
@@ -330,7 +330,7 @@ function changeEntry(config: MachineConfig, place: TransitionPlace, fn: (entry: 
 }
 
 /** Which event takes it. Only an event of your own can change: `after` and `done` are what they are. */
-export function setTransitionEvent(config: MachineConfig, place: TransitionPlace, event: string): MachineConfig {
+export function setTransitionEvent(config: StateMachineConfig, place: TransitionPlace, event: string): StateMachineConfig {
   const problem = eventNameProblem(event);
   if (problem) throw new StateEditRefused(problem);
   const state = stateAt(config, place.state);
@@ -355,12 +355,12 @@ export function setTransitionEvent(config: MachineConfig, place: TransitionPlace
 }
 
 /** Which guard it goes through, by name, or none. What the name means stays out of the config. */
-export function setTransitionGuard(config: MachineConfig, place: TransitionPlace, guard: string | null): MachineConfig {
+export function setTransitionGuard(config: StateMachineConfig, place: TransitionPlace, guard: string | null): StateMachineConfig {
   return changeEntry(config, place, ({ guard: _guard, ...rest }) => (guard ? { ...rest, guard } : rest));
 }
 
 /** Where it goes to. */
-export function setTransitionTarget(config: MachineConfig, place: TransitionPlace, to: StatePath): MachineConfig {
+export function setTransitionTarget(config: StateMachineConfig, place: TransitionPlace, to: StatePath): StateMachineConfig {
   if (!stateAt(config, to)) throw new StateEditRefused(`There’s no state at ${to.join('.') || 'the root'}.`);
   const text = targetText(config, place.state, to);
   return changeEntry(config, place, (entry) => ({
@@ -370,7 +370,7 @@ export function setTransitionTarget(config: MachineConfig, place: TransitionPlac
 }
 
 /** Where it comes from. Only an event's can move: `always`, `after` and `done` go with what their state does. */
-export function setTransitionSource(config: MachineConfig, place: TransitionPlace, from: StatePath): MachineConfig {
+export function setTransitionSource(config: StateMachineConfig, place: TransitionPlace, from: StatePath): StateMachineConfig {
   const state = stateAt(config, place.state);
   if (place.event === null || !isPlain(state?.on) || state.on[place.event] === undefined) throw new StateEditRefused('This one goes with what its state does, so it can’t move to another.');
   if (!stateAt(config, from)) throw new StateEditRefused(`There’s no state at ${from.join('.') || 'the root'}.`);
@@ -390,7 +390,7 @@ export function setTransitionSource(config: MachineConfig, place: TransitionPlac
   });
 }
 
-function removeWhole(config: MachineConfig, place: TransitionPlace): MachineConfig {
+function removeWhole(config: StateMachineConfig, place: TransitionPlace): StateMachineConfig {
   return changeState(config, place.state, (s) => {
     const slot = slotOf(s, place);
     const left = asList(getIn(s, slot)).filter((_, i) => i !== place.index);
@@ -400,7 +400,7 @@ function removeWhole(config: MachineConfig, place: TransitionPlace): MachineConf
 
 /** Several at once, as one edit. Transitions go first, from the end of each list, so that the others stay where they were
  *  found, and what's left of the states after that. */
-export function removeItems(config: MachineConfig, items: { states?: readonly StatePath[]; transitions?: readonly TransitionPlace[] }): MachineConfig {
+export function removeItems(config: StateMachineConfig, items: { states?: readonly StatePath[]; transitions?: readonly TransitionPlace[] }): StateMachineConfig {
   const places = [...(items.transitions ?? [])].sort((a, b) => b.index - a.index || b.target - a.target);
   let next = config;
   for (const place of places) next = removeTransition(next, place);
@@ -425,10 +425,10 @@ export function inlineCodeIn(config: unknown): string[] {
   return out;
 }
 
-export type MachineImplementations = Partial<Record<keyof MachineNames, Readonly<Record<string, unknown>> | undefined>>;
+export type StateMachineImplementations = Partial<Record<keyof MachineNames, Readonly<Record<string, unknown>> | undefined>>;
 
 /** What a config names with nothing behind it. A delay that's written as a number has its own, so it's not named. */
-export function missingImplementations(config: unknown, implementations: MachineImplementations = {}): MachineNames {
+export function missingImplementations(config: unknown, implementations: StateMachineImplementations = {}): MachineNames {
   const { names } = standInConfig(config);
   const missing = (kind: keyof MachineNames) => names[kind].filter((name) => !implementations[kind]?.[name]);
   return { guards: missing('guards'), actions: missing('actions'), actors: missing('actors'), delays: missing('delays') };
@@ -436,14 +436,14 @@ export function missingImplementations(config: unknown, implementations: Machine
 
 /* ── Asking XState ── */
 
-export type EditOutcome<M = unknown> = { ok: true; config: MachineConfig; machine: M } | { ok: false; reason: string };
+export type EditOutcome<M = unknown> = { ok: true; config: StateMachineConfig; machine: M } | { ok: false; reason: string };
 
 type XState = Parameters<typeof createSimulation>[0];
 
 /** Does an edit, and asks XState about the result, which is what decides. It starts it too, with stand-ins, as there are things
  *  it only finds then. One that never settles isn't refused, as there's no reason it can't be on its way to being something
  *  else. Simulating it says what's wrong with it. */
-export function tryEdit<M = unknown>(xstate: XState, config: MachineConfig, edit: (config: MachineConfig) => MachineConfig): EditOutcome<M> {
+export function tryEdit<M = unknown>(xstate: XState, config: StateMachineConfig, edit: (config: StateMachineConfig) => StateMachineConfig): EditOutcome<M> {
   try {
     const next = edit(config);
     const machine = xstate.createMachine(next as never) as M;

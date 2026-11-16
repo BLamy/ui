@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useMemo, useRef } from 'react';
 import { useCanvas } from '@/components/ui/canvas';
 import { Diagram, DiagramNodeBody, DiagramToolbar } from '@/components/ui/diagram';
+import { DiagramFrame, DiagramFrameBar, DiagramFrameBoard, DiagramFramePanel } from '@/components/ui/diagram-frame';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Icon } from '@/lib/icon';
@@ -41,18 +42,18 @@ const KINDS: DiagramNode[] = [
   { id: 'root', kind: 'root', label: 'A root, which holds everything', x: 0, y: 0, w: 900, h: 420 },
   { id: 'plain', kind: 'node', parent: 'root', label: 'A node', x: 40, y: 56, w: 120, h: 36 },
   { id: 'detail', kind: 'node', parent: 'root', label: 'With a detail', detail: 'invoke fetchUser', x: 200, y: 50, w: 150, h: 50 },
-  { id: 'final', kind: 'final', parent: 'root', label: 'Final', x: 400, y: 56, w: 110, h: 36 },
-  { id: 'initial', kind: 'initial', parent: 'root', x: 560, y: 66, w: 12, h: 12 },
-  { id: 'compound', kind: 'compound', parent: 'root', label: 'Compound', x: 40, y: 140, w: 320, h: 240 },
+  { id: 'final', variant: 'double', parent: 'root', label: 'Double', x: 400, y: 56, w: 110, h: 36 },
+  { id: 'initial', kind: 'marker', parent: 'root', label: 'Start', x: 560, y: 66, w: 12, h: 12 },
+  { id: 'compound', kind: 'group', parent: 'root', label: 'A group', x: 40, y: 140, w: 320, h: 240 },
   { id: 'inner', kind: 'node', parent: 'compound', label: 'Inside', x: 90, y: 200, w: 110, h: 36 },
-  { id: 'parallel', kind: 'parallel', parent: 'root', label: 'Parallel', detail: 'parallel', x: 400, y: 140, w: 460, h: 240 },
+  { id: 'parallel', kind: 'group', variant: 'dashed', parent: 'root', label: 'A dashed group', detail: 'of regions', x: 400, y: 140, w: 460, h: 240 },
   { id: 'r1', kind: 'region', parent: 'parallel', label: 'A region', x: 412, y: 170, w: 436, h: 90 },
   { id: 'r2', kind: 'region', parent: 'parallel', label: 'Another', x: 412, y: 276, w: 436, h: 90 },
   { id: 'r1a', kind: 'node', parent: 'r1', label: 'One', x: 560, y: 195, w: 100, h: 36 },
   { id: 'r2a', kind: 'node', parent: 'r2', label: 'Two', x: 560, y: 300, w: 100, h: 36 },
 ];
 
-/** Every kind of node. */
+/** Every kind of node (`node`, `group`, `region`, `root`, `marker`) and border (`default`, `dashed`, `double`). */
 export const NodeKinds: Story = {
   render: () => <Phone w={1000} h={500}><Diagram nodes={KINDS} /></Phone>,
 };
@@ -62,18 +63,18 @@ export const NodeKindsDark: Story = {
 };
 
 const EDGE_NODES: DiagramNode[] = [
-  { id: 'a', label: 'event', x: 0, y: 0, w: 110, h: 36 },
+  { id: 'a', label: 'default', x: 0, y: 0, w: 110, h: 36 },
   { id: 'a2', label: 'target', x: 300, y: 0, w: 110, h: 36 },
-  { id: 'b', label: 'always', x: 0, y: 70, w: 110, h: 36 },
+  { id: 'b', label: 'dashed', x: 0, y: 70, w: 110, h: 36 },
   { id: 'b2', label: 'target', x: 300, y: 70, w: 110, h: 36 },
-  { id: 'c', label: 'after', x: 0, y: 140, w: 110, h: 36 },
+  { id: 'c', label: 'dotted', x: 0, y: 140, w: 110, h: 36 },
   { id: 'c2', label: 'target', x: 300, y: 140, w: 110, h: 36 },
-  { id: 'd', label: 'done', x: 0, y: 210, w: 110, h: 36 },
+  { id: 'd', label: 'strong', x: 0, y: 210, w: 110, h: 36 },
   { id: 'd2', label: 'target', x: 300, y: 210, w: 110, h: 36 },
-  { id: 'e', label: 'invoke', x: 0, y: 280, w: 110, h: 36 },
+  { id: 'e', label: 'destructive', x: 0, y: 280, w: 110, h: 36 },
   { id: 'e2', label: 'target', x: 300, y: 280, w: 110, h: 36 },
-  { id: 'dot', kind: 'initial', x: 49, y: 350, w: 12, h: 12 },
-  { id: 'f2', label: 'initial', x: 300, y: 338, w: 110, h: 36 },
+  { id: 'dot', kind: 'marker', x: 49, y: 350, w: 12, h: 12 },
+  { id: 'f2', label: 'from a marker', x: 300, y: 338, w: 110, h: 36 },
   { id: 's', label: 'straight', x: 520, y: 0, w: 110, h: 36 },
   { id: 's2', label: 'target', x: 800, y: 90, w: 110, h: 36 },
   { id: 'el', label: 'elbow', x: 520, y: 100, w: 110, h: 36 },
@@ -83,21 +84,21 @@ const EDGE_NODES: DiagramNode[] = [
   { id: 'loop', label: 'self-loops', x: 540, y: 340, w: 130, h: 36 },
   { id: 'p', label: 'parallel', x: 730, y: 370, w: 110, h: 90 },
   { id: 'p2', label: 'edges', x: 950, y: 370, w: 110, h: 90 },
-  { id: 'box', kind: 'compound', label: 'to and from its own child', x: 0, y: 420, w: 420, h: 120 },
+  { id: 'box', kind: 'group', label: 'to and from its own child', x: 0, y: 420, w: 420, h: 120 },
   { id: 'kid', parent: 'box', label: 'child', x: 120, y: 470, w: 110, h: 36 },
 ];
 const EDGES: DiagramEdge[] = [
-  { id: 'ev', from: 'a', to: 'a2', kind: 'event', label: 'SUBMIT' },
-  { id: 'al', from: 'b', to: 'b2', kind: 'always', label: 'always [isValid]' },
-  { id: 'af', from: 'c', to: 'c2', kind: 'after', label: 'after 5000' },
-  { id: 'do', from: 'd', to: 'd2', kind: 'done', label: 'done' },
-  { id: 'in', from: 'e', to: 'e2', kind: 'invoke', label: 'done: fetchUser' },
-  { id: 'it', from: 'dot', to: 'f2', kind: 'initial' },
+  { id: 'ev', from: 'a', to: 'a2', label: 'SUBMIT' },
+  { id: 'al', from: 'b', to: 'b2', variant: 'dashed', label: 'always [isValid]' },
+  { id: 'af', from: 'c', to: 'c2', variant: 'dotted', label: 'after 5000' },
+  { id: 'do', from: 'd', to: 'd2', variant: 'strong', label: 'strong' },
+  { id: 'in', from: 'e', to: 'e2', tone: 'destructive', label: 'can’t' },
+  { id: 'it', from: 'dot', to: 'f2', variant: 'strong' },
   { id: 'r1', from: 's', to: 's2', route: 'straight', label: 'a straight route' },
   { id: 'r2', from: 'el', to: 'el2', route: 'elbow', label: 'an elbow route' },
   { id: 'r3', from: 'cu', to: 'cu2', route: 'curve', label: 'a curved route' },
   { id: 'l1', from: 'loop', to: 'loop', label: 'RETRY' },
-  { id: 'l2', from: 'loop', to: 'loop', label: 'PING', kind: 'after' },
+  { id: 'l2', from: 'loop', to: 'loop', label: 'PING', variant: 'dotted' },
   { id: 'p1', from: 'p', to: 'p2', label: 'one' },
   { id: 'p2', from: 'p', to: 'p2', label: 'two' },
   { id: 'p3', from: 'p', to: 'p2', label: 'three' },
@@ -105,7 +106,8 @@ const EDGES: DiagramEdge[] = [
   { id: 'wall2', from: 'kid', to: 'box', route: 'curve' },
 ];
 
-/** Every kind of edge, routes with no layout behind them, self-loops, parallel edges, and an edge to its own child. */
+/** Every edge line (`default`, `dashed`, `dotted`, `strong`) and the `destructive` tone, routes with no layout behind
+ *  them, self-loops, parallel edges, and an edge to its own child. */
 export const EdgeKinds: Story = {
   render: () => <Phone w={1200} h={640}><Diagram nodes={EDGE_NODES} edges={EDGES} /></Phone>,
 };
@@ -158,7 +160,7 @@ const WORDY: DiagramNode[] = [
   { id: 'nospaces', label: 'aVeryLongStateNameWithNoSpacesInItAtAllThatHasToBreakSomewhereOrItWillRunOutOfItsBox', x: 280, y: 90, w: 1, h: 1 },
   { id: 'cjk', label: '認証を確認しています', detail: 'アップロードを待っています', x: 0, y: 190, w: 1, h: 1 },
   { id: 'cjklong', label: 'これはとても長い状態の名前で、折り返さなければ箱からはみ出してしまいます', x: 280, y: 190, w: 1, h: 1 },
-  { id: 'final', kind: 'final', label: 'quarantined', x: 0, y: 280, w: 1, h: 1 },
+  { id: 'final', variant: 'double', label: 'quarantined', x: 0, y: 280, w: 1, h: 1 },
   { id: 'emoji', label: '🚀 launching 🌕', x: 280, y: 280, w: 1, h: 1 },
 ];
 
@@ -194,7 +196,7 @@ const SELECTABLE: DiagramNode[] = [
   { id: 'a', label: 'One selected', x: 0, y: 0, w: 130, h: 36 },
   { id: 'b', label: 'And another', x: 220, y: 0, w: 130, h: 36 },
   { id: 'c', label: 'Not this one', x: 110, y: 90, w: 130, h: 36 },
-  { id: 'box', kind: 'compound', label: 'A selected compound', x: 0, y: 170, w: 350, h: 90 },
+  { id: 'box', kind: 'group', label: 'A selected compound', x: 0, y: 170, w: 350, h: 90 },
   { id: 'd', parent: 'box', label: 'Inside it', x: 110, y: 205, w: 130, h: 36 },
 ];
 const SELECTABLE_EDGES: DiagramEdge[] = [
@@ -203,7 +205,8 @@ const SELECTABLE_EDGES: DiagramEdge[] = [
   { id: 'bc', from: 'b', to: 'c' },
 ];
 
-/** What's selected gets a ring, and an edge the theme's primary color. Both stay the same thickness on screen at any zoom. */
+/** What's selected gets a tint and a line on its edge (a group, only the line), and an edge the theme's primary color,
+ *  thicker. All stay the same thickness on screen at any zoom. */
 export const Selected: Story = {
   render: () => <Phone w={500} h={320}><Diagram defaultNodes={SELECTABLE} defaultEdges={SELECTABLE_EDGES} editable defaultSelection={{ nodes: ['a', 'b', 'box'], edges: ['ab'] }} /></Phone>,
 };
@@ -213,9 +216,9 @@ export const SelectedDark: Story = {
 };
 
 const PORTED: DiagramNode[] = [
-  { id: 'w', label: 'Worker', x: 0, y: 40, w: 130, h: 80, ports: [{ id: 'db', side: 'r', at: 0.25, kind: 'sql' }, { id: 'files', side: 'r', at: 0.75, kind: 'files' }, { id: 'in', side: 'l', direction: 'in' }] },
-  { id: 'd1', label: 'D1', x: 260, y: 0, w: 110, h: 50, ports: [{ id: 'in', side: 'l', kind: 'sql', direction: 'in' }] },
-  { id: 'r2', label: 'R2', x: 260, y: 110, w: 110, h: 50, ports: [{ id: 'in', side: 'l', kind: 'files', direction: 'in' }] },
+  { id: 'w', label: 'Worker', x: 0, y: 40, w: 130, h: 80, ports: [{ id: 'db', side: 'right', at: 0.25, kind: 'sql' }, { id: 'files', side: 'right', at: 0.75, kind: 'files' }, { id: 'in', side: 'left', direction: 'in' }] },
+  { id: 'd1', label: 'D1', x: 260, y: 0, w: 110, h: 50, ports: [{ id: 'in', side: 'left', kind: 'sql', direction: 'in' }] },
+  { id: 'r2', label: 'R2', x: 260, y: 110, w: 110, h: 50, ports: [{ id: 'in', side: 'left', kind: 'files', direction: 'in' }] },
 ];
 const PORTED_EDGES: DiagramEdge[] = [
   { id: 'a', from: 'w', fromPort: 'db', to: 'd1', toPort: 'in', label: 'prepare' },
@@ -268,7 +271,8 @@ export const LoadingDark: Story = {
   render: () => <Phone w={400} h={240} appearance="dark"><Diagram nodes={[]} loading /></Phone>,
 };
 
-/** Read-only: nothing selects, moves or connects; the keys still go everywhere, and Enter calls `onAction`. Ports are quiet. */
+/** Read-only: nothing moves, connects or is deleted, but you can select and read; the keys go everywhere, and Enter calls
+ *  `onAction`. Ports are quiet. */
 export const ReadOnly: Story = {
   render: () => <Phone w={500} h={240}><Diagram nodes={PORTED} edges={PORTED_EDGES} aria-label="Read-only services" onAction={() => undefined} /></Phone>,
 };
@@ -282,10 +286,81 @@ export const WithToolbarDark: Story = {
   render: () => <Phone w={600} h={320} appearance="dark"><Diagram defaultNodes={SELECTABLE} defaultEdges={SELECTABLE_EDGES} editable overlay={<DiagramToolbar />} minimap={{ side: 'bottom', align: 'end' }} /></Phone>,
 };
 
-/** Phone-sized: the toolbar at the top, the minimap off, and the whole machine fitted until you move it. */
+/** Phone-sized, edge to edge: the toolbar at the top, the minimap off, and the whole machine fitted clear of the toolbar
+ *  until you move it. */
 export const Phone390: Story = {
   name: 'Phone',
-  render: () => <Phone w={390} h={720}><Diagram nodes={UPLOAD_NODES} edges={UPLOAD_EDGES} aria-label="File upload" overlay={<DiagramToolbar side="top" />} /></Phone>,
+  parameters: { layout: 'fullscreen' },
+  render: () => <Phone w={390} h={844}><Diagram nodes={UPLOAD_NODES} edges={UPLOAD_EDGES} aria-label="File upload" overlay={<DiagramToolbar side="top" />} /></Phone>,
+};
+
+/** In a DiagramFrame on a phone: the toolbar goes to the top by itself, and the first fit leaves room for it and for the
+ *  frame's bar at the foot. Ports shrink with a board fitted this far out, rather than crowding their nodes. */
+export const PhoneInFrame: Story = {
+  parameters: { layout: 'fullscreen' },
+  render: () => (
+    <Phone w={390} h={844}>
+      <DiagramFrame>
+        <DiagramFrameBoard>
+          <Diagram nodes={SERVICES} edges={SERVICE_EDGES} renderNode={renderService} aria-label="Services" overlay={<DiagramToolbar />} />
+          <DiagramFrameBar>4 services</DiagramFrameBar>
+        </DiagramFrameBoard>
+        <DiagramFramePanel title="Services"><p className="m-0">Nothing selected.</p></DiagramFramePanel>
+      </DiagramFrame>
+    </Phone>
+  ),
+};
+
+export const PhoneInFrameDark: Story = {
+  parameters: { layout: 'fullscreen' },
+  render: () => (
+    <Phone w={390} h={844} appearance="dark">
+      <DiagramFrame>
+        <DiagramFrameBoard>
+          <Diagram nodes={SERVICES} edges={SERVICE_EDGES} renderNode={renderService} aria-label="Services" overlay={<DiagramToolbar />} defaultSelection={{ nodes: ['queue'], edges: [] }} />
+          <DiagramFrameBar>4 services</DiagramFrameBar>
+        </DiagramFrameBoard>
+        <DiagramFramePanel title="Services"><p className="m-0">Jobs is selected.</p></DiagramFramePanel>
+      </DiagramFrame>
+    </Phone>
+  ),
+};
+
+/* Cards with their ports' names written inside them, as a system of services draws them. The R2 → Queue edge leaves on
+   the right and arrives on the left of a card to its left, and the Queue → Consumer label would sit on the consumer's
+   port names if it went where a label goes by default. */
+const SERVICES: DiagramNode[] = [
+  { id: 'files', label: 'Files', detail: 'R2', x: 0, y: 0, w: 200, h: 90, ports: [{ id: 'events', side: 'right', at: 0.5, label: 'events', direction: 'out' }] },
+  { id: 'queue', label: 'Jobs', detail: 'Queue', x: 0, y: 170, w: 200, h: 90, ports: [{ id: 'events', side: 'left', at: 0.35, label: 'events', direction: 'in' }, { id: 'batch', side: 'right', at: 0.5, label: 'batch', direction: 'out' }] },
+  { id: 'consumer', label: 'Consumer', detail: 'Worker', x: 400, y: 140, w: 200, h: 150, ports: [{ id: 'queue', side: 'left', at: 0.32, label: 'queue', direction: 'in' }, { id: 'email', side: 'left', at: 0.5, label: 'email', direction: 'in' }, { id: 'env', side: 'right', at: 0.5, label: 'env', direction: 'out' }] },
+  { id: 'db', label: 'Uploads', detail: 'D1', x: 720, y: 160, w: 200, h: 90, ports: [{ id: 'in', side: 'left', at: 0.5, label: 'queries', direction: 'in' }] },
+];
+const SERVICE_EDGES: DiagramEdge[] = [
+  { id: 'r2-queue', from: 'files', fromPort: 'events', to: 'queue', toPort: 'events', label: 'events' },
+  { id: 'queue-consumer', from: 'queue', fromPort: 'batch', to: 'consumer', toPort: 'queue', label: 'message batch from a Queue' },
+  { id: 'consumer-db', from: 'consumer', fromPort: 'env', to: 'db', toPort: 'in', label: 'env.DB' },
+];
+const renderService = (node: DiagramNode) => (
+  <DiagramNodeBody node={node} className="items-stretch justify-start gap-0.5 text-start">
+    {(node.ports ?? []).map((p) => (
+      <span key={p.id} className="absolute text-caption text-muted-foreground" style={{ top: `calc(${(p.at ?? 0.5) * 100}% - 0.5lh)`, ...(p.side === 'left' ? { left: 10 } : { right: 10 }) }}>{p.label}</span>
+    ))}
+  </DiagramNodeBody>
+);
+
+/** Labels keep off the cards and their ports' names, and a route whose ends face away from each other goes around the
+ *  cards rather than behind them. At 100%. */
+export const LabelsClearOfNodes: Story = {
+  render: () => <Phone w={900} h={380}><Diagram nodes={SERVICES} edges={SERVICE_EDGES} renderNode={renderService} defaultViewport={{ x: 40, y: 50, zoom: 1 }} aria-label="Services" /></Phone>,
+};
+
+export const LabelsClearOfNodesDark: Story = {
+  render: () => <Phone w={900} h={380} appearance="dark"><Diagram nodes={SERVICES} edges={SERVICE_EDGES} renderNode={renderService} defaultViewport={{ x: 40, y: 50, zoom: 1 }} aria-label="Services" /></Phone>,
+};
+
+/** `error`: why the diagram can't be drawn, under the toolbar's row, in place of the empty state. */
+export const WithError: Story = {
+  render: () => <Phone w={500} h={240}><Diagram nodes={[]} error="This machine can’t be drawn: “open” targets a state that doesn’t exist." overlay={<DiagramToolbar side="top" />} /></Phone>,
 };
 
 /** Keys sent by the story: focus the board, go to a node, press Enter, then C and an arrow. */
@@ -298,10 +373,28 @@ const press = (keys: string[]) => async ({ canvasElement }: { canvasElement: HTM
   }
 };
 
-/** Focus on a node: the ring in the focus color, the view following. */
+/** Focus on a node: a ring outside it, past a gap, the view following. */
 export const Focused: Story = {
   render: () => <Phone w={500} h={320}><Diagram defaultNodes={SELECTABLE} defaultEdges={SELECTABLE_EDGES} editable /></Phone>,
   play: press(['Home', 'ArrowRight']),
+};
+
+/** Focused and selected, beside selected only and focused only: a selection is a fill and a line on its edge, focus a
+ *  ring past a gap, and both is both, so they don't rely on the two being different colors (they're one blue). */
+export const FocusedAndSelected: Story = {
+  render: () => <Phone w={500} h={320}><Diagram defaultNodes={SELECTABLE} defaultEdges={SELECTABLE_EDGES} editable defaultSelection={{ nodes: ['a', 'b'], edges: [] }} /></Phone>,
+  play: press(['Home']),
+};
+
+export const FocusedAndSelectedDark: Story = {
+  render: () => <Phone w={500} h={320} appearance="dark"><Diagram defaultNodes={SELECTABLE} defaultEdges={SELECTABLE_EDGES} editable defaultSelection={{ nodes: ['a', 'b'], edges: [] }} /></Phone>,
+  play: press(['Home']),
+};
+
+/** Focus on an edge: a wide band under the line, apart from a selected edge's color. */
+export const FocusedEdge: Story = {
+  render: () => <Phone w={500} h={320}><Diagram defaultNodes={SELECTABLE} defaultEdges={SELECTABLE_EDGES} editable defaultSelection={{ nodes: [], edges: ['ab'] }} /></Phone>,
+  play: press(['Home', ']']),
 };
 
 /** Connecting by keyboard (C, then an arrow): the dashed route to what's offered, which is allowed. */

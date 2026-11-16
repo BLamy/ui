@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from "vitest"
 import { mount, tick } from "../__fixtures__/dom"
 import { MarkdownContent } from "./DocsRenderer"
 import { HighlightedCode } from "./HighlightedCode"
-import { FALLBACK_MAX_LENGTH, fallbackSpans } from "./fallback-lexer"
+import { FALLBACK_MAX_LENGTH, fallbackSpans } from "@brett_lamy/ui/lib/syntax-lexer"
 
 /* gpu-lexer, three ways: the real module (no WebGPU in happy-dom, so its parse() rejects), a parse() that rejects
    outright, and one that resolves with its own spans. */

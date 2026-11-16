@@ -13,7 +13,7 @@
    (see PathBreadcrumb.test.ts). */
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react"
 import { Menu, MenuContent, MenuItem, MenuTrigger, createMenuController } from "@ui-sdk/react/menu"
-import { Check, ChevronRight, FileCode2, Folder } from "lucide-react"
+import { Glyph } from "../ui/glyph"
 import { useOpenOnCurrent } from "../ui/menu-current"
 
 export interface CrumbSegment {
@@ -205,9 +205,9 @@ export function PathBreadcrumb({ src, path, paths, onSelect, className }: PathBr
                 aria-current={current || undefined}
                 onSelect={() => choose(entry)}
               >
-                {entry.kind === "dir" ? <Folder width={13} height={13} aria-hidden="true" /> : <FileCode2 width={13} height={13} aria-hidden="true" />}
+                {entry.kind === "dir" ? <Glyph name="folder" size={13} /> : <Glyph name="doc-code" size={13} />}
                 <span className="docs-demo-crumb-option-text">{entry.name}</span>
-                {current ? <Check className="docs-demo-crumb-check" width={13} height={13} aria-hidden="true" /> : null}
+                {current ? <Glyph name="check" className="docs-demo-crumb-check" size={13} /> : null}
               </MenuItem>
             )
           })}
@@ -220,7 +220,7 @@ export function PathBreadcrumb({ src, path, paths, onSelect, className }: PathBr
           const last = !hidden && item.kind === "file"
           return (
             <li key={id} className="docs-demo-crumb-item" data-last={last || undefined}>
-              {index > 0 ? <ChevronRight className="docs-demo-crumb-sep" width={12} height={12} aria-hidden="true" /> : null}
+              {index > 0 ? <Glyph name="chevron-right" className="docs-demo-crumb-sep" size={12} /> : null}
               <MenuTrigger
                 controller={menu}
                 payload={id}
@@ -231,7 +231,7 @@ export function PathBreadcrumb({ src, path, paths, onSelect, className }: PathBr
                 aria-label={hidden ? "Show hidden path segments" : undefined}
                 title={hidden ? undefined : item.kind === "src" ? undefined : item.path}
               >
-                {last ? <FileCode2 width={13} height={13} aria-hidden="true" /> : null}
+                {last ? <Glyph name="doc-code" size={13} /> : null}
                 <span className="docs-demo-crumb-text">{hidden ? "…" : item.name}</span>
               </MenuTrigger>
             </li>
@@ -242,9 +242,9 @@ export function PathBreadcrumb({ src, path, paths, onSelect, className }: PathBr
       <ol ref={measure} className="docs-demo-crumbs-list docs-demo-crumbs-measure" aria-hidden="true">
         {[...segments.map((s) => s.name), "…"].map((name, index) => (
           <li key={`${index}:${name}`} className="docs-demo-crumb-item">
-            {index > 0 ? <ChevronRight className="docs-demo-crumb-sep" width={12} height={12} /> : null}
+            {index > 0 ? <Glyph name="chevron-right" className="docs-demo-crumb-sep" size={12} /> : null}
             <span className="docs-demo-crumb">
-              {index === segments.length - 1 ? <FileCode2 width={13} height={13} /> : null}
+              {index === segments.length - 1 ? <Glyph name="doc-code" size={13} /> : null}
               <span className="docs-demo-crumb-text">{name}</span>
             </span>
           </li>

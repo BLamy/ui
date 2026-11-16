@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { IndexBar, alphabetItems } from '@/components/ui/index-bar';
+import { IndexBar, indexBarAlphabetItems } from '@/components/ui/index-bar';
 import { List, ListRow, ListSection } from '@/components/ui/list';
 import { Phone } from '../stories/frame';
 
@@ -19,7 +19,7 @@ function AlphaExample() {
       <div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', fontSize: 15, color: 'var(--muted-foreground)' }}>
         {last ? 'Jumped to ' + last : 'Drag the rail →'}
       </div>
-      <IndexBar items={alphabetItems(['A', 'B', 'C', 'H', 'K', 'S', 'W', 'Z'])} onJump={setLast} className="top-3 bottom-3" />
+      <IndexBar items={indexBarAlphabetItems(['A', 'B', 'C', 'H', 'K', 'S', 'W', 'Z'])} onJump={setLast} className="top-3 bottom-3" />
     </>
   );
 }
@@ -154,7 +154,7 @@ function ListExample() {
           ))}
         </List>
       </div>
-      <IndexBar items={alphabetItems(letters)} className="top-3 bottom-3" />
+      <IndexBar items={indexBarAlphabetItems(letters)} className="top-3 bottom-3" />
     </>
   );
 }

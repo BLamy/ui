@@ -6,9 +6,9 @@ const nodes: DiagramNode[] = [
   { id: 'root', kind: 'root', x: 0, y: 0, w: 1000, h: 1000 },
   { id: 'a', parent: 'root', x: 100, y: 100, w: 100, h: 40 },
   { id: 'b', parent: 'root', x: 300, y: 100, w: 100, h: 40 },
-  { id: 'box', kind: 'compound', parent: 'root', x: 100, y: 300, w: 300, h: 300 },
+  { id: 'box', kind: 'group', parent: 'root', x: 100, y: 300, w: 300, h: 300 },
   { id: 'kid', parent: 'box', x: 150, y: 350, w: 100, h: 40 },
-  { id: 'p', kind: 'parallel', parent: 'root', x: 500, y: 300, w: 300, h: 300 },
+  { id: 'p', kind: 'group', variant: 'dashed', parent: 'root', x: 500, y: 300, w: 300, h: 300 },
   { id: 'r', kind: 'region', parent: 'p', x: 510, y: 330, w: 280, h: 100 },
   { id: 'rk', parent: 'r', x: 550, y: 350, w: 100, h: 40 },
 ];
@@ -228,8 +228,8 @@ describe('what’s under the pointer', () => {
 describe('connecting', () => {
   const list: DiagramNode[] = [
     { id: 'root', kind: 'root', x: -1000, y: -1000, w: 3000, h: 3000 },
-    { id: 'a', parent: 'root', x: 0, y: 0, w: 100, h: 40, ports: [{ id: 'out', side: 'r' }] },
-    { id: 'b', parent: 'root', x: 300, y: 0, w: 100, h: 40, ports: [{ id: 'p1', side: 'l', at: 0.25 }, { id: 'p2', side: 'l', at: 0.75 }] },
+    { id: 'a', parent: 'root', x: 0, y: 0, w: 100, h: 40, ports: [{ id: 'out', side: 'right' }] },
+    { id: 'b', parent: 'root', x: 300, y: 0, w: 100, h: 40, ports: [{ id: 'p1', side: 'left', at: 0.25 }, { id: 'p2', side: 'left', at: 0.75 }] },
     { id: 'c', parent: 'root', x: 300, y: 100, w: 100, h: 40 },
     { id: 'lid', parent: 'root', x: 280, y: 10, w: 40, h: 20 },
   ];

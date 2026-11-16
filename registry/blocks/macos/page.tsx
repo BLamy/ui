@@ -103,7 +103,7 @@ export default function MacOS({ initialApps, initialPages, initialQuery = '', de
   return (
     <BLProvider appearance={dark ? 'dark' : 'light'} tint={ALFRED_TINT[dark ? 'dark' : 'light']} className="bg-transparent">
       <TailscaleProvider tailscale={controller} options={tailscale ?? real ?? undefined}>
-        <AlfredProvider hud={hud} dark={dark} toggleDark={() => setOverride(!dark)} reset={reset} close={close}>
+        <AlfredProvider hud={hud} appearance={dark ? 'dark' : 'light'} toggleAppearance={() => setOverride(!dark)} reset={reset} close={close}>
           <Desktop dark={dark} open={open} show={show} close={close} boot={boot} menu={menu} hud={hud} initialApps={initialApps} initialDock={dock} persistKey={key} initialMenu={initialMenu} />
         </AlfredProvider>
       </TailscaleProvider>
@@ -141,6 +141,7 @@ interface ScreenProps {
 }
 
 function Screen({ dark, open, show, close, boot, menu, hud, initialDock, persistKey, initialMenu, size }: ScreenProps & { size: { width: number; height: number } }) {
+  const appearance = dark ? 'dark' : 'light';
   const { power, setPower } = useAlfred();
   const desktop = useDesktop();
   // A phone-sized desktop is an iPhone: its own chrome, a springboard, and one full-screen app at a time.
@@ -204,14 +205,14 @@ function Screen({ dark, open, show, close, boot, menu, hud, initialDock, persist
   const wake = useCallback(() => setPower(null), [setPower]);
 
   return (
-    <Wallpaper dark={dark}>
+    <Wallpaper appearance={appearance}>
       <div className="flex h-full flex-col">
-        {phone ? <StatusBar dark={dark} inApp={foreground !== null && !switching} /> : <MenuBar dark={dark} onAlfred={toggle} initialMenu={initialMenu} />}
+        {phone ? <StatusBar appearance={appearance} inApp={foreground !== null && !switching} /> : <MenuBar appearance={appearance} onAlfred={toggle} initialMenu={initialMenu} />}
         {/* The desktop: pressing the bare wallpaper puts Finder frontmost, as on a Mac. */}
         <div className="relative min-h-0 flex-1" onPointerDown={(e) => { if (e.target === e.currentTarget) desktop.blur(); }}>
           {phone ? (
             <Springboard
-              dark={dark}
+              appearance={appearance}
               away={foreground !== null || switching}
               onLaunch={(id, from) => { setOrigins((o) => ({ ...o, [id]: from })); desktop.open(id); }}
               onSearch={show}
@@ -223,7 +224,7 @@ function Screen({ dark, open, show, close, boot, menu, hud, initialDock, persist
               const from = origins[w.app] ?? { x: layer.width / 2, y: layer.height / 2 };
               return (
                 <DesktopWindow
-                  key={w.app} win={w} dark={dark} dock={reserve}
+                  key={w.app} win={w} appearance={appearance} dock={reserve}
                   phone={phone ? {
                     shown: w.app === foreground,
                     origin: `${from.x}px ${from.y}px`,
@@ -236,7 +237,7 @@ function Screen({ dark, open, show, close, boot, menu, hud, initialDock, persist
           {switching ? (
             <AppSwitcher
               apps={stack.flatMap((w) => APPS.filter((a) => a.id === w.app))}
-              layer={layer} switcher={switcher} dark={dark}
+              layer={layer} switcher={switcher} appearance={appearance}
               onPick={(id) => { desktop.open(id); switcher.hide(); }}
               onQuit={quit}
               onBack={() => switcher.hide()}
@@ -279,11 +280,11 @@ function Screen({ dark, open, show, close, boot, menu, hud, initialDock, persist
             </div>
           ) : null}
         </div>
-        {phone ? <HomeBar dark={dark} inApp={foreground !== null && !switching} onHome={goHome} onSwitcher={showSwitcher} /> : null}
+        {phone ? <HomeBar appearance={appearance} inApp={foreground !== null && !switching} onHome={goHome} onSwitcher={showSwitcher} /> : null}
       </div>
-      {dock ? <Dock dark={dark} tile={tile} onAlfred={toggle} prefs={dockPrefs} onPrefs={setDockPrefs} /> : null}
+      {dock ? <Dock appearance={appearance} tile={tile} onAlfred={toggle} prefs={dockPrefs} onPrefs={setDockPrefs} /> : null}
       <ToastRegion variant="hud" toaster={hud.toaster} side={phone ? 'top' : 'bottom'} offset={phone ? STATUS_H + 8 : reserve ? 92 : 24} aria-label="Alfred notifications" />
-      <PowerOverlay state={power} onWake={wake} dark={dark} />
+      <PowerOverlay state={power} onWake={wake} appearance={appearance} />
     </Wallpaper>
   );
 }

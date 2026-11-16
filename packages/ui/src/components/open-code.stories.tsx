@@ -99,6 +99,40 @@ export const LoadError: Story = {
   render: (args) => <Page><OpenCode {...base(args)} host={host} loadRuntime={broken} className="h-full" /></Page>,
 };
 
+/* A host whose container has two servers listening: the app preview opens beside the terminal (under it when compact),
+   with a port switch, Reload and Close. The preview URLs are the host service worker's (`/__virtual__/<port>/`); with
+   no worker behind them in Storybook the frame shows whatever the server answers, which is the layout's point here. */
+const virtualUrl = (port: number) => (typeof window === 'undefined' ? `http://localhost/__virtual__/${port}/` : new URL(`/__virtual__/${port}/`, window.location.href).href);
+const previewHost: OpenCodeHostBridge = {
+  ...host,
+  previews: {
+    ready: async () => {},
+    list: () => [
+      { port: 5173, url: virtualUrl(5173), name: 'Vite app' },
+      { port: 8787, url: virtualUrl(8787), name: 'API' },
+    ],
+    subscribe: () => () => {},
+    fetch: async () => new Response('<!doctype html><title>App</title><h1>Counter: 10</h1>', { headers: { 'content-type': 'text/html' } }),
+  },
+};
+
+/** With previews: the app beside the terminal, its port switch (Vite app, API), Reload and Close. */
+export const WithPreview: Story = {
+  render: (args) => <Page><OpenCode {...base(args)} host={previewHost} loadRuntime={async () => runtime} className="h-full" /></Page>,
+};
+
+/** The same in a phone-sized pane: the preview stacks under the terminal. */
+export const WithPreviewPhone: Story = {
+  args: { variant: 'plain' },
+  render: (args) => (
+    <Phone>
+      <div className="absolute inset-0 flex flex-col">
+        <OpenCode {...base(args)} host={previewHost} loadRuntime={async () => runtime} className="min-h-0 flex-1" />
+      </div>
+    </Phone>
+  ),
+};
+
 /** `variant="plain"` filling a phone-sized pane: no border or radius, and the preview would stack under the terminal. */
 export const PlainInPhone: Story = {
   args: { variant: 'plain' },

@@ -142,7 +142,9 @@ const GLASS_BLUR: CSSProperties = { backdropFilter: 'blur(16px)', WebkitBackdrop
    rect, so there is no second card to fade in and no seam under the cap.
    ck-floating-sheet__surface stays as a hook for the peek-mask rules in styles.css. */
 const surfaceBase =
-  'ck-floating-sheet__surface pointer-events-auto absolute top-0 left-1/2 box-border flex h-[max(calc(var(--fs-rest)*1px_-_var(--fs-gutter)*1px),calc(var(--fs-extent)*1px_-_var(--fs-gutter)*1px*(1_-_var(--fs-grown))))] w-[max(52px,calc(100%_-_var(--fs-gutter)*2px*(1_-_var(--fs-grown))))] -translate-x-1/2 flex-col overflow-hidden rounded-t-[calc(var(--fs-radius)*(1_-_var(--fs-grown)*var(--fs-square)))] rounded-b-[calc(var(--fs-radius-bottom)*(1_-_var(--fs-grown)))] border transition-[background-color,border-color,box-shadow,backdrop-filter,color,translate,opacity] duration-spring-smooth ease-spring-smooth motion-reduce:transition-none';
+  'ck-floating-sheet__surface pointer-events-auto absolute inset-x-0 top-0 mx-auto box-border flex h-[max(calc(var(--fs-rest)*1px_-_var(--fs-gutter)*1px),calc(var(--fs-extent)*1px_-_var(--fs-gutter)*1px*(1_-_var(--fs-grown))))] w-[min(var(--fs-max-w,100%),max(52px,calc(100%_-_var(--fs-gutter)*2px*(1_-_var(--fs-grown)))))] flex-col'
+  // A surface narrower than its host (`width`) sits at its `align`: `gutter` in from that edge.
+  + ' data-[align=start]:ms-[calc(var(--fs-gutter)*1px*(1_-_var(--fs-grown)))] data-[align=start]:me-auto data-[align=end]:ms-auto data-[align=end]:me-[calc(var(--fs-gutter)*1px*(1_-_var(--fs-grown)))] overflow-hidden rounded-t-[calc(var(--fs-radius)*(1_-_var(--fs-grown)*var(--fs-square)))] rounded-b-[calc(var(--fs-radius-bottom)*(1_-_var(--fs-grown)))] border transition-[background-color,border-color,box-shadow,backdrop-filter,color,translate,opacity] duration-spring-smooth ease-spring-smooth motion-reduce:transition-none';
 /* The material, mixed from the scope's own tokens (so it follows the page, or the `sheet` scope of an explicit
    appearance): translucent glass (the card colour at a growing alpha under a highlight gradient), or an opaque
    card (the card colour, a soft shadow that deepens as it grows). The FAB wears the same. */
@@ -237,7 +239,12 @@ export interface FloatingSheetProps {
   /** Corner radius while resting: px, or any CSS length. Default `var(--radius-sheet)`, the radius of every modal
       sheet and of Dialog's `tray`. Squares off as the sheet fills the host. */
   radius?: number | string;
-  /** `glass` (default) blurs the page behind it; `sheet` is an opaque card. */
+  /** The surface's largest inline size: px, or any CSS length. Default: the host's width less the `gutter`. A wide
+   *  host (a tablet or a desktop window) keeps the card to a readable column, as a Maps card does on an iPad. */
+  width?: number | string;
+  /** Where a surface narrower than the host sits: `center` (default), or `gutter` in from the `start` / `end` edge. */
+  align?: 'start' | 'center' | 'end';
+  /** `glass` (default) blurs the page behind it; `card` is an opaque card. */
   variant?: FloatingSheetVariant;
   /** Colour scheme of the surface: `auto` (default) follows the page; `light` / `dark` override it. */
   appearance?: FloatingSheetAppearance;
@@ -252,6 +259,10 @@ export interface FloatingSheetProps {
   scrollRef?: RefObject<HTMLElement | null>;
   /** Dim the host behind the sheet as it grows. */
   scrim?: boolean;
+  /** Key of the current view of a flow (review → pay → done), as on Sheet and Dialog: with it, `SheetHeader
+   *  variant="bar"`, `SheetBack`, `SheetTitle` and `SheetView` inside travel the way the flow moves (a new key from
+   *  the end, one seen before from the start). Give each step its own `peek` to spring the sheet between heights. */
+  view?: string;
   /** Accessible name of the sheet (its FAB is "Open" + this name unless the FloatingSheetFab names itself). */
   'aria-label'?: string;
   /** The root layer element. */
@@ -297,6 +308,9 @@ export function FloatingSheet({
   hideOnScroll = true,
   scrollRef,
   scrim = true,
+  view,
+  width,
+  align = 'center',
   'aria-label': label = 'Sheet',
   ref,
   children,
@@ -483,6 +497,7 @@ export function FloatingSheet({
             <Sheet
               side="bottom"
               contained
+              view={view}
               controller={controller}
               open={shown}
               onOpenChange={onDrawerOpenChange}
@@ -516,8 +531,10 @@ export function FloatingSheet({
                     data-peeking={(peek > 0 && resting === 0) || undefined}
                     data-dragging={state.dragging || undefined}
                     data-hidden={hidden || undefined}
+                    data-align={align}
                     className={cn(floatingSheetSurfaceVariants({ variant, hidden }), surfaceClassName)}
                     style={{
+                      '--fs-max-w': width === undefined ? undefined : typeof width === 'number' ? `${width}px` : width,
                       '--fs-gutter': gutter,
                       '--fs-radius': typeof radius === 'number' ? `${radius}px` : radius,
                       '--fs-radius-bottom': gutter > 0 ? 'var(--fs-radius)' : '0px',

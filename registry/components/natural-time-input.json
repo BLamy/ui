@@ -4,24 +4,10 @@
   "description": "A text field that reads dates, times and recurrences written in English (\"every weekday at 9am\") with gpu-time, and previews what it understood: the recognised words, the resolved occurrences in a time zone, a Repeats chip and the parser's notes. Put it in a Field for its label, description and error. Works on the CPU or the GPU; the package loads on first use.",
   "page": "natural-time-input",
   "exports": [
-    "NaturalTimeInput",
-    "useTimeParse",
-    "parseTime",
-    "loadGpuTime",
-    "formatOccurrence",
-    "timeTextSegments",
-    "describeRecurrence",
-    "rruleLine"
+    "NaturalTimeInput"
   ],
   "imports": [
     "NaturalTimeInput"
   ],
-  "types": [
-    "TimeParseResult",
-    "TimeOccurrence",
-    "TimeDiagnostic",
-    "TimeSpan",
-    "UseTimeParseOptions",
-    "TimeParseState"
-  ]
+  "types": []
 }

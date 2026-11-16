@@ -2,22 +2,23 @@ import { createContext, useState, type KeyboardEvent } from "react"
 import { Checkbox } from "@ui-sdk/react/checkbox"
 import { createMenuController, Menu, MenuContent, MenuContextTrigger, MenuItemIndicator, MenuRadioGroup, MenuRadioItem } from "@ui-sdk/react/menu"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@ui-sdk/react/tooltip"
-import { Ban, Check, Circle, CircleCheck, CircleHelp, CircleMinus, CirclePause, CircleX, Clock3 } from "lucide-react"
+import { Glyph } from "../ui/glyph"
+import { type IconName } from "@brett_lamy/ui/lib/icon"
 import type { ListItemNode, TaskState } from "../gitbook/ast"
 import { TASK_STATES } from "../gitbook/tasks"
 import { useOpenOnCurrent } from "../ui/menu-current"
 
 /** The icons used by the checkbox, tooltip and state picker. */
 export const TASK_STATE_ICONS = {
-  pending: Circle,
-  "in-progress": Clock3,
-  implemented: CircleHelp,
-  blocked: Ban,
-  parked: CirclePause,
-  refuted: CircleX,
-  verified: CircleCheck,
-  cancelled: CircleMinus,
-} as const
+  pending: "circle",
+  "in-progress": "clock",
+  implemented: "question-circle",
+  blocked: "nosign",
+  parked: "pause-circle",
+  refuted: "xmark-circle",
+  verified: "check-circle",
+  cancelled: "minus-circle",
+} as const satisfies Record<TaskState, IconName>
 
 export type TaskStateChangeHandler = (item: ListItemNode, state: TaskState) => void
 export const TaskStateChangeContext = createContext<TaskStateChangeHandler | undefined>(undefined)
@@ -36,7 +37,7 @@ export interface TaskCheckboxProps {
  */
 export function TaskCheckbox({ state, onChange, label = "Task", className }: TaskCheckboxProps) {
   const meta = TASK_STATES.find((item) => item.id === state) ?? TASK_STATES[0]
-  const StateIcon = TASK_STATE_ICONS[meta.id]
+  const stateIcon = TASK_STATE_ICONS[meta.id]
   const mixed = state !== "pending" && state !== "verified"
   const [menu] = useState(() => createMenuController())
   const current = useOpenOnCurrent('[role="menuitemradio"][data-checked]')
@@ -63,7 +64,7 @@ export function TaskCheckbox({ state, onChange, label = "Task", className }: Tas
       <TooltipContent className="docs-tooltip" side="top" sideOffset={6}>{meta.label}</TooltipContent>
     </Tooltip>
   )
-  const icon = <StateIcon className="docs-task-state-icon" size={20} strokeWidth={1.7} aria-hidden="true" data-state-icon={state} />
+  const icon = <Glyph name={stateIcon} className="docs-task-state-icon" size={20} sw={1.7} data-state-icon={state} />
   const classes = ["docs-task-control", className].filter(Boolean).join(" ")
   if (!onChange) return <span className={classes} data-task-state={state}>{control}{icon}</span>
   return (
@@ -73,12 +74,12 @@ export function TaskCheckbox({ state, onChange, label = "Task", className }: Tas
         <MenuContent aria-label="Task state" className="docs-task-state-menu" {...current.content}>
           <MenuRadioGroup value={state} onValueChange={(next) => onChange(next as TaskState)}>
             {TASK_STATES.map((item) => {
-              const Icon = TASK_STATE_ICONS[item.id]
+              const itemIcon = TASK_STATE_ICONS[item.id]
               return (
                 <MenuRadioItem key={item.id} value={item.id} label={item.label} closeOnSelect data-state={item.id}>
-                  <Icon size={19} strokeWidth={1.7} aria-hidden="true" data-state-icon={item.id} />
+                  <Glyph name={itemIcon} size={19} sw={1.7} data-state-icon={item.id} />
                   <span>{item.label}</span>
-                  <MenuItemIndicator keepMounted><Check size={14} aria-hidden="true" /></MenuItemIndicator>
+                  <MenuItemIndicator keepMounted><Glyph name="check" size={14} /></MenuItemIndicator>
                 </MenuRadioItem>
               )
             })}

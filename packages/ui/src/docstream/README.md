@@ -102,14 +102,14 @@ import { GitbookStreamdown } from "@brett_lamy/ui/docstream/playground" // = Pla
 import { GitbookStreamdown } from "@brett_lamy/ui/docstream"
 import "@brett_lamy/ui/docstream/styles.css"
 
-export function Answer({ text, isStreaming }: { text: string; isStreaming: boolean }) {
+export function Answer({ text, streaming }: { text: string; streaming: boolean }) {
   return (
-    <GitbookStreamdown markdown={text} isStreaming={isStreaming} />
+    <GitbookStreamdown markdown={text} streaming={streaming} />
   )
 }
 ```
 
-`isStreaming` adds `aria-busy` and a `data-streaming` attribute to the wrapper. `isAnimating` is also accepted for compatibility with stream UI state.
+`streaming` adds `aria-busy` and a `data-streaming` attribute to the wrapper. `animating` is also accepted for compatibility with stream UI state.
 
 ## Docs Sites
 
@@ -255,10 +255,11 @@ custom events; press one to jump), speed, fullscreen, and a drawn cursor whose c
 ripple. Keys work inside the player: Space/K, ←/→ (5 s), J/L (10 s), `<`/`>` speed,
 F fullscreen, Home/End. `chrome` is `"browser"` (default), `"minimal"` or `"none"`;
 `controls={false}` with `chrome="none"` is a still frame of the page at `initialTime`.
-`playerRef` gives `{ play, pause, seek, toggle, getCurrentTime }`. Other props: `url`,
+`ref` gives `{ play, pause, seek, toggle, getCurrentTime, inspect }`. Other props: `url`,
 `title`, `trafficLights`, `autoplay`, `loop`, `speeds`, `markers`, `markerKinds`,
-`cursor`, `fit` (`"width"` | `"contain"`), `poster`, `lazy`, `onTimeUpdate`,
-`onPlayingChange`, `onMarkerPress`, `className`, `style`. `formatReplayTime(ms)` gives
+`cursor`, `fit` (`"width"` | `"contain"`), `poster`, `mounted` (`"visible"` by default, `true`, or `false` to hold
+it), `devtools` (`false` removes DevTools), `onTimeUpdate`, `onPlayingChange`, `onMarkerAction(marker, details)`, and
+the root element's props (`id`, `className`, `style`, `data-*`, `aria-*`). `formatReplayTime(ms)` gives
 `m:ss`. `replayDemoEvents` (a small synthetic recording) is exported from
 `@brett_lamy/ui/docstream/replay/demo`, outside the main entry.
 
@@ -336,30 +337,31 @@ variables. A frame load is not success: the runtime must acknowledge that it ren
 request. Startup and rendering timeouts report errors. Source changes, Stop, and unmount dispose
 the iframe, message listeners, and timers.
 
-`GitbookStreamdown isStreaming` disables Run while an answer is arriving. Unclosed fences also
+`GitbookStreamdown streaming` disables Run while an answer is arriving. Unclosed fences also
 stay inert. Completing a response enables Run without executing it automatically.
 
 For response attachments, import the component directly; it needs no optional runtime peer or
-stylesheet. `TuiEmbed` is an alias of `TuiPreview`:
+stylesheet:
 
 ```tsx
 import { TuiPreview } from "@brett_lamy/ui/docstream/tui"
 
-<TuiPreview code={generatedSource} language="tsx" isStreaming={isStreaming} height={360} />
+<TuiPreview code={generatedSource} language="tsx" streaming={streaming} height={360} />
 ```
 
 Hosts can configure a trusted self-hosted runtime, including its deployment prefix, or disable previews:
 
 ```tsx
-<GitbookStreamdown markdown={answer} isStreaming={isStreaming}
+<GitbookStreamdown markdown={answer} streaming={streaming}
   tui={{ runtimeUrl: "https://example.com/opentui/workbench/example/", height: 320 }} />
 <MarkdownContent markdown={page} tui={false} />
 ```
 
 Runtime URLs can be absolute or relative to the host page and must resolve to HTTP(S) without credentials. `height` is bounded to
-160–720 pixels; the frame follows its container's width. `theme` takes `{ mode, background, foreground }`.
+160–720 pixels; the frame follows its container's width. `appearance` (`auto`, `light`, `dark`) picks light or dark; `theme` takes `{ background, foreground }` over its colors.
+The root `<section>` takes `ref` and the usual element props (`id`, `style`, `data-*`, `aria-*`).
 `startupTimeoutMs` and `renderTimeoutMs` default to 30 seconds each (bounded to 1–120 seconds).
-The component's `onStatusChange` reports `idle`, `starting`, `running`, `error`, or `stopped`;
+The component's `onStateChange` reports `idle`, `starting`, `running`, `error`, or `stopped`;
 the same state is exposed on `data-tui-state` for browser verification.
 
 ## 3D models and Strudel music
@@ -398,10 +400,11 @@ and key, a step grid for its mini-notation (click a step to rest it, double-clic
 knob per effect (`lpf`, `room`, `delay`, … — add more from its menu); the master strip has the
 tempo. Every control rewrites only the characters it owns, and edits play live.
 
-The rack sits on a full syntax tree you can use directly (`@brett_lamy/ui/docstream/strudel`):
+The rack sits on a full syntax tree you can use directly (`@brett_lamy/ui/docstream/strudel/rack`, the entry that
+brings the parser, acorn):
 
 ```ts
-import { parseStrudel, parseMini, setMethod, mixCode, formatNumber } from "@brett_lamy/ui/docstream/strudel"
+import { parseStrudel, parseMini, setMethod, mixCode, formatNumber } from "@brett_lamy/ui/docstream/strudel/rack"
 
 const song = parseStrudel(code) // acorn JS tree + tempo, tracks, master chain, every mini string
 song.tracks[0].chain.methods     // [{ name: "lpf", args: [{ kind: "number", value: 800, start, end }] }, …]
@@ -412,10 +415,11 @@ mixCode(song, { solo: new Set([0]) })                              // the code w
 
 The master strip's **Rack | Grid** switch puts the modules on a masonry grid: drag a module's
 title to move it, drag its corner to resize it (arrow keys work on both handles).
-`<StrudelRack layout="grid" persistKey="my-song" />` starts there and remembers the arrangement.
+`<StrudelRack defaultVariant="grid" persistKey="my-song" />` starts there and remembers the arrangement.
 
-`StrudelRack`, `RackGrid`, `StepGrid`, `Knob` and `Fader` are exported for custom studios. The parser
-(acorn) loads only when a rack opens.
+`StrudelRack`, `RackGrid`, `StepGrid`, `Knob` and `Fader` are exported for custom studios from
+`@brett_lamy/ui/docstream/strudel/rack`. The player's entry (`@brett_lamy/ui/docstream/strudel`) loads the rack and its
+parser (acorn) only when a reader opens it.
 
 ## GitBook Syntax
 
@@ -960,7 +964,7 @@ import { AssetResolverProvider, MarkdownContent } from "@brett_lamy/ui/docstream
 - `GitbookStreamdown`: Parses and renders markdown for read-only stream output.
 - `DocsRenderer`: Renders a parsed `DocumentNode`.
 - `MarkdownContent`: Parses and renders a markdown string.
-- `ReplayPreview` / `ReplayEmbed`: A session-replay player for rrweb `events`, or an embed of public Loop QA pages / CORS-enabled event data via `source`.
+- `ReplayPreview`: A session-replay player for rrweb `events`, or an embed of public Loop QA pages / CORS-enabled event data via `source`.
 - `VideoEmbed`: Renders direct video assets or hosted video players.
 - `StlViewer`: Interactive WebGL preview of an `.stl` model (`parseStl`, `isStlUrl` alongside).
 - `StrudelPlayer`: Audio player for a Strudel pattern (`code`) or `.strudel` file (`src`), with an optional equipment rack.
@@ -1022,6 +1026,30 @@ terminal glyph has its own tokens (`--gb-term-bg`, `--gb-term-fg`), so setting
 panel colors to `currentColor` doesn't blank it. Components also expose stable classes such as `docs-code`, `docs-tabs`, `docs-hint`, `docs-table`, and `docs-openapi`.
 
 Code highlighting follows the surrounding `color-scheme`: set `color-scheme: dark` on a dark page (or any dark container) and code switches to the dark palette. Each token color is a custom property (`--docs-tok-keyword`, `--docs-tok-string`, `--docs-tok-type`, `--docs-tok-function`, `--docs-tok-number`, `--docs-tok-constant`, `--docs-tok-operator`, `--docs-tok-comment`) if you want your own palette.
+
+The semantic colors follow your theme too. Hints, mention and citation chips, task states and the replay player read
+`--primary` (info), `--success`, `--warning` and `--destructive`, hairlines read `--border` and corners `--radius`,
+each with a neutral fallback, through docstream's `--gb-info`, `--gb-success`, `--gb-warning`, `--gb-danger`,
+`--gb-primary`, `--gb-border` and `--gb-radius` (defined once, in `tokens.css`, for the renderer and the editor
+alike). Set a `--gb-*` token to give documents a color of their own.
+
+### What docstream shares with the kit, and what it keeps
+
+Docstream ships inside `@brett_lamy/ui` and uses the kit's own pieces where one exists: its glyphs are the kit's
+`Icon` (`@brett_lamy/ui/lib/icon`), its code fences' synchronous lexer is the kit's (`@brett_lamy/ui/lib/syntax-lexer`,
+the one CodeEditor falls back to, colored with the same `--bl-syntax-*` palette), and its semantic colors fall back to
+the kit's tokens. Three look-alikes stay docstream's own, on purpose:
+
+- **Expandables** (`{% expandable %}`, the TUI preview's source, the property sheet) are `DetailsCollapsible`, not the
+  kit's `Disclosure`. A server-rendered page must open and close before (or without) JavaScript and let find-in-page
+  reveal a closed section, so docstream renders a native `<details>` until hydration and swaps in UI SDK's
+  Collapsible after. The kit's Disclosure is a client-rendered Collapsible with a measured spring, styled with
+  Tailwind utilities, which a docstream host without the kit's stylesheet doesn't load. Both are UI SDK's
+  Collapsible after hydration, so the behavior (keyboard, `aria-expanded`, `hidden="until-found"`) is shared.
+- **Tab sets and command boxes** use UI SDK's `Tabs` directly, as the kit's `Tabs` does, but with docstream's plain
+  CSS (`.docs-tabs`): GitBook's tab blocks sync across sets and pages (`sync="key"`), collapse code-only sets into one
+  fence and become sections, none of which the kit's Tabs has, and they must render without the kit's sheet.
+- **Hints** (`{% hint %}`) have no counterpart in the kit, which has no callout component.
 
 ### Live demos with in-page components
 
@@ -1123,6 +1151,6 @@ Use an `xstate` fence for a JSON machine config or static TypeScript `createMach
 
 An `xstate` fence draws `invoke` too: what's invoked goes on a second line of its state, and `onDone` and `onError` are `done` and `error` edges. None of it runs, including an actor written inline, which is called `actor`.
 
-`parseXState`, which reads a config without running it, and `xstateToMermaid` are in `@brett_lamy/ui/docstream/xstate/machine`. They're on their own entry because they load Babel and XState straight away, which the fence doesn't until it's displayed.
+`xstateToMermaid` is in `@brett_lamy/ui/docstream/xstate/machine`, on its own entry because it loads Babel and XState straight away, which the fence doesn't until it's displayed. It reads the source with the library's `parseXState` (`@brett_lamy/ui/lib/state-diagram-source`, which reads a config without running it) and draws from `machineToDraft`, so a fence and a [StateDiagram](https://blamy.github.io/ui/#/state-diagram) say the same about a machine.
 
 The React components `XStateDiagram`, `XStatePreview`, `TsCircuit`, and `TsCircuitPreview` are available from the root entry and the lightweight `/xstate` and `/tscircuit` entries. Result-only previews support custom live editors.

@@ -22,9 +22,9 @@ function loop(cx: number, cy: number, rx: number, ry: number, n = 56): PencilPoi
 }
 const ink = (label: string) => pencilInks.find((i) => i.label === label)!.value;
 const SEEDED: PencilStroke[] = [
-  { tool: 'pen', color: ink('Black'), width: 1, pressure: false, complete: true, points: wave(70, 110, 300, 34, 1.5) },
-  { tool: 'marker', color: ink('Yellow'), width: 1, pressure: false, complete: true, points: wave(90, 200, 320, 10, 0.5) },
-  { tool: 'pencil', color: ink('Pink'), width: 1.7, pressure: false, complete: true, points: loop(460, 150, 90, 55) },
+  { tool: 'pen', ink: ink('Black'), widthScale: 1, pressure: false, complete: true, points: wave(70, 110, 300, 34, 1.5) },
+  { tool: 'marker', ink: ink('Yellow'), widthScale: 1, pressure: false, complete: true, points: wave(90, 200, 320, 10, 0.5) },
+  { tool: 'pencil', ink: ink('Pink'), widthScale: 1.7, pressure: false, complete: true, points: loop(460, 150, 90, 55) },
 ];
 
 function Frame({ dark, children }: { dark?: boolean; children: React.ReactNode }) {
@@ -39,11 +39,11 @@ const meta: Meta<PencilCanvasProps & { dark?: boolean }> = {
   title: 'Organisms/PencilCanvas',
   component: PencilCanvas,
   parameters: { layout: 'centered' },
-  args: { tool: 'pen', ink: pencilInks[0].value, width: 1, variant: 'freehand', disabled: false, dark: false },
+  args: { tool: 'pen', ink: pencilInks[0].value, widthScale: 1, variant: 'freehand', disabled: false, dark: false },
   argTypes: {
     tool: { control: 'inline-radio', options: ['pen', 'marker', 'pencil', 'eraser'] },
     ink: { control: 'select', options: pencilInks.map((i) => i.value) },
-    width: { control: 'inline-radio', options: [0.6, 1, 1.7, 2.6] },
+    widthScale: { control: 'inline-radio', options: [0.6, 1, 1.7, 2.6] },
     variant: { control: 'inline-radio', options: ['freehand', 'plain'] },
     strokes: { control: false },
     defaultStrokes: { control: false },

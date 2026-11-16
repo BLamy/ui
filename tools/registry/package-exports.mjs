@@ -18,7 +18,7 @@
  * packages/ui/scripts/build-docstream.mjs, so their targets keep the shape their own packages had: `source` beside the
  * workspace's `@org/source`, then `types`, `import` and `default`; a stylesheet is its built file. */
 import { existsSync, readFileSync } from 'node:fs';
-import { ROOT, SRC, aliasOf, moduleExports } from './graph.mjs';
+import { ROOT, SRC, aliasOf, importsOf, moduleExports, resolveModule } from './graph.mjs';
 
 const GENERATED_SOURCE = /^\.\/src\/(components|lib)\/.+\.tsx?$/;
 
@@ -31,24 +31,74 @@ export const isInternalModule = (mod) => INTERNAL.test(readFileSync(`${ROOT}/${S
 /** `@/components/ui/dialog` → `./dialog`, `@/lib/theme` → `./lib/theme`. */
 export const subpathOf = (mod) => aliasOf(mod).replace(/^@\/components\/ui\//, './').replace(/^@\/lib\//, './lib/');
 
-/** The modules that get an entry point, relative to packages/ui/src. */
-export function packageModules(graph) {
-  return graph.modules.filter((mod) => {
-    const item = graph.items.get(graph.owner.get(mod));
-    if (!item || (item.kind === 'lib' && !item.manifest)) return false;
-    if (isInternalModule(mod)) return false;
-    return moduleExports(`${SRC}/${mod}`).values.size > 0;
-  });
+const INDEX = /\/index\.tsx?$/;
+
+/* A folder's index.ts is the folder: the modules of that folder the index reaches (its re-exports and what they
+   import, inside the folder) are its implementation, so they get no entry of their own and the folder's entry is their
+   one import path (`@brett_lamy/ui/composer`, never `@brett_lamy/ui/composer/composer`). A module of the folder the
+   index doesn't reach is a separate half with its own entry (`lib/ffmpeg/react` beside `lib/ffmpeg`). */
+const folderCache = new WeakMap();
+function folderIndexes(graph) {
+  if (folderCache.has(graph)) return folderCache.get(graph);
+  const coveredBy = new Map(); // module -> the index module whose entry carries it
+  for (const index of graph.modules.filter((m) => INDEX.test(m))) {
+    const dir = index.replace(INDEX, '/');
+    const seen = new Set([index]);
+    const queue = [index];
+    while (queue.length) {
+      const mod = queue.pop();
+      for (const spec of importsOf(`${SRC}/${mod}`)) {
+        const target = resolveModule(mod, spec, graph.all);
+        if (target && target.startsWith(dir) && !seen.has(target)) { seen.add(target); queue.push(target); }
+      }
+    }
+    for (const mod of seen) if (mod !== index) coveredBy.set(mod, index);
+  }
+  folderCache.set(graph, coveredBy);
+  return coveredBy;
 }
 
-/** `import { … } from '<this>'` for a module on npm: its subpath, or the package root when it has none. */
-export function npmSpecifier(graph, mod) {
-  return packageModules(graph).includes(mod) ? `@brett_lamy/ui${subpathOf(mod).slice(1)}` : '@brett_lamy/ui';
+/* A module published on a hand-written entry instead of one of its own, so each of its names has one import path:
+   CloudflareDiagram is on `@brett_lamy/ui/cloudflare` with the catalog (`src/cloudflare.ts` re-exports all of it). */
+export const HAND_ENTRY = { 'components/cloudflare-diagram.tsx': './cloudflare' };
+
+const modulesCache = new WeakMap();
+/** The modules that get an entry point, relative to packages/ui/src. */
+export function packageModules(graph) {
+  if (modulesCache.has(graph)) return modulesCache.get(graph);
+  const covered = folderIndexes(graph);
+  const modules = graph.modules.filter((mod) => {
+    const item = graph.items.get(graph.owner.get(mod));
+    if (!item || (item.kind === 'lib' && !item.manifest)) return false;
+    // A `.generated` module is the data a sibling reads (the Google Fonts table, the tokens): its sibling is the API.
+    if (covered.has(mod) || isInternalModule(mod) || HAND_ENTRY[mod] || /\.generated\.tsx?$/.test(mod)) return false;
+    return moduleExports(`${SRC}/${mod}`).values.size > 0;
+  });
+  modulesCache.set(graph, modules);
+  return modules;
+}
+
+/** The module whose entry carries `name` of `mod`: `mod` itself when it has an entry, else the index of its folder
+ *  when that index exports the name; null when the name is only on the package root. */
+export function entryModuleOf(graph, mod, name) {
+  if (packageModules(graph).includes(mod)) return mod;
+  const index = folderIndexes(graph).get(mod);
+  if (!index) return null;
+  const ex = moduleExports(`${SRC}/${index}`);
+  return name === undefined || ex.values.has(name) || ex.types.has(name) ? index : null;
+}
+
+/** `import { … } from '<this>'` for a name of a module on npm: its entry's subpath, or the package root when it has none. */
+export function npmSpecifier(graph, mod, name) {
+  if (HAND_ENTRY[mod]) return `@brett_lamy/ui${HAND_ENTRY[mod].slice(1)}`;
+  const entry = entryModuleOf(graph, mod, name);
+  return entry ? `@brett_lamy/ui${subpathOf(entry).slice(1)}` : '@brett_lamy/ui';
 }
 
 /* The entries docstream and docstream-editor published at 2.0.1 (their package.json `exports`), each subpath → its file
-   under src/<part>/. The two marked "+" are the library's own additions since: the xstate fence's machine (the one
-   entry that loads the optional xstate peer) and the capnp fence. Add an entry here, never by hand in package.json. */
+   under src/<part>/. The three marked "+" are the library's own additions since: the xstate fence's machine (the one
+   entry that loads the optional xstate peer), the capnp fence, and the Strudel rack with its parser (acorn), split off
+   `./strudel` so the player's entry doesn't load it. Add an entry here, never by hand in package.json. */
 export const FOLDED = {
   docstream: {
     '.': 'index.ts',
@@ -66,6 +116,7 @@ export const FOLDED = {
     './video': 'video/index.ts',
     './stl': 'stl/index.ts',
     './strudel': 'strudel/index.ts',
+    './strudel/rack': 'strudel/rack.ts', // +
     './tui': 'tui/index.ts',
     './viz': 'viz/index.ts',
     './playground': 'playground/index.ts',

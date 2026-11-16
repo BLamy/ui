@@ -25,11 +25,11 @@ import { cn, cx } from '@/lib/utils';
    small waterfall beside them and sorting in a menu. Under 760 px the columns with `hideBelow: 'regular'` (`type` and
    `size`) go. */
 
-export type RequestColumnId = 'name' | 'url' | 'method' | 'status' | 'type' | 'size' | 'duration' | 'waterfall';
+export type RequestTableColumnId = 'name' | 'url' | 'method' | 'status' | 'type' | 'size' | 'duration' | 'waterfall';
 
 /** The built-in columns' sizes and headers. `type` and `size` go first when the table is narrow: below its regular size
  *  class. Their cells and sort values come with them when you name one by id in `columns`. */
-export const REQUEST_COLUMNS: Record<RequestColumnId, DataTableColumn<RequestRow>> = {
+export const REQUEST_TABLE_COLUMNS: Record<RequestTableColumnId, DataTableColumn<RequestRow>> = {
   name: { id: 'name', header: 'Name', flex: 3, minWidth: 160 },
   url: { id: 'url', header: 'URL', flex: 3, minWidth: 200 },
   method: { id: 'method', header: 'Method', width: 66, minWidth: 48 },
@@ -40,7 +40,7 @@ export const REQUEST_COLUMNS: Record<RequestColumnId, DataTableColumn<RequestRow
   waterfall: { id: 'waterfall', header: 'Waterfall', label: 'Start time', flex: 2, minWidth: 120 },
 };
 
-const DEFAULT_COLUMNS: readonly RequestColumnId[] = ['name', 'method', 'status', 'type', 'size', 'duration', 'waterfall'];
+const DEFAULT_COLUMNS: readonly RequestTableColumnId[] = ['name', 'method', 'status', 'type', 'size', 'duration', 'waterfall'];
 
 const BAR_CLASS = [
   // The waterfall runs left to right in either direction, as a time axis does.
@@ -118,7 +118,7 @@ function links(content: ReactNode) {
 
 /** A built-in column's cell, class and sort value, for the table's time range (`timed`: a real one, given or from
  *  rows with a time, not the placeholder an empty table gets) and links. */
-function builtIn<T extends RequestRow>(id: RequestColumnId, range: DataTableTimeRange, timed: boolean, renderLink: ((row: T) => ReactNode) | undefined): Partial<DataTableColumn<T>> {
+function builtIn<T extends RequestRow>(id: RequestTableColumnId, range: DataTableTimeRange, timed: boolean, renderLink: ((row: T) => ReactNode) | undefined): Partial<DataTableColumn<T>> {
   const sortValue = (row: T) => requestSortValue(row, id);
   switch (id) {
     case 'name':
@@ -154,7 +154,7 @@ function builtIn<T extends RequestRow>(id: RequestColumnId, range: DataTableTime
 export interface RequestTableProps<T extends RequestRow = RequestRow>
   extends Omit<DataTableProps<T>, 'columns' | 'rowTime' | 'overlay' | 'renderStackedRow' | 'countLabel' | 'timeRange'> {
   /** Which columns, in order: a built-in's id, or a column of your own (with a built-in's `id` to adjust that one). */
-  columns?: readonly (RequestColumnId | DataTableColumn<T>)[];
+  columns?: readonly (RequestTableColumnId | DataTableColumn<T>)[];
   /** The waterfall's range, in ms. Default: from the first request to the last answer. Give the recording's own range if
    *  rows come and go with the current time, or every bar moves when they do. */
   timeRange?: DataTableTimeRange;
@@ -202,10 +202,10 @@ export function RequestTable<T extends RequestRow = RequestRow>({
   const key = columnsProp.every((column) => typeof column === 'string') ? columnsProp.join() : columnsProp;
   const columns = useMemo(() => columnsProp.map((column): DataTableColumn<T> => {
     const spec = typeof column === 'string' ? { id: column } : column;
-    const known = (REQUEST_COLUMNS as Record<string, DataTableColumn<RequestRow> | undefined>)[spec.id] as DataTableColumn<T> | undefined;
+    const known = (REQUEST_TABLE_COLUMNS as Record<string, DataTableColumn<RequestRow> | undefined>)[spec.id] as DataTableColumn<T> | undefined;
     if (!known) return spec;
     // A column of your own with a built-in's id keeps the built-in's cell unless it brings one.
-    return { ...known, ...builtIn<T>(spec.id as RequestColumnId, range, timed, renderLink), ...spec };
+    return { ...known, ...builtIn<T>(spec.id as RequestTableColumnId, range, timed, renderLink), ...spec };
   }), [key, range, timed, renderLink]);
 
   const has = useMemo(() => new Set(columns.map((column) => column.id)), [columns]);

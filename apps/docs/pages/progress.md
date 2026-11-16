@@ -110,7 +110,7 @@ relative w-full overflow-hidden rounded-full bg-secondary-strong
 Defined in `@/components/ui/progress`. Base classes:
 
 ```text
-cn( 'absolute inset-y-0 left-0 rounded-full transition-[width] duration-spring-smooth ease-spring-smooth motion-reduce:transition-none', 'data-indeterminate:w-2/5 data-indeterminate:animate-bl-progress data-indeterminate:transition-none', 'motion-reduce:data-indeterminate:w-full motion-reduce:data-indeterminate:animate-none motion-reduce:data-indeterminate:opacity-35', )
+absolute inset-y-0 start-0 rounded-full transition-[width] duration-spring-smooth ease-spring-smooth motion-reduce:transition-none rtl:[--bl-progress-dir:-1] data-indeterminate:w-2/5 data-indeterminate:animate-bl-progress data-indeterminate:transition-none motion-reduce:data-indeterminate:w-full motion-reduce:data-indeterminate:animate-none motion-reduce:data-indeterminate:opacity-35
 ```
 
 **`tone`** — default `default`

@@ -69,7 +69,11 @@ const { Resizer, Edge, Dim, Page, Close } = createParts(adaptivePane, {
 /** What `className` and `style` are given when they are functions (`presentation` is the one that shows). */
 export type AdaptivePaneState = { presentation: AdaptivePaneShown; open: boolean; side: AdaptivePaneSide };
 
-export interface AdaptivePaneProps extends Omit<AdaptivePaneOptions, 'presentation'> {
+/** The root is a `div`: `ref`, `id`, `data-*`, `inert`, its events and the rest of a div's props reach it in every
+ *  presentation (the column, or the box the drawer, push or cover sits in). */
+export interface AdaptivePaneProps
+  extends Omit<AdaptivePaneOptions, 'presentation'>,
+    Omit<ComponentProps<'div'>, keyof AdaptivePaneOptions | 'className' | 'style' | 'children' | 'aria-label'> {
   /** How it shows. Default `auto`: from the size-class scope (regular: `column`, medium: `drawer`, compact: `push`
    *  for an `end` pane, else `drawer`). */
   presentation?: AdaptivePanePresentation;
@@ -96,11 +100,20 @@ export interface AdaptivePaneProps extends Omit<AdaptivePaneOptions, 'presentati
   children?: ReactNode;
 }
 
-/** `auto`, resolved against the size class of the scope the pane is written in. Outside every scope: regular. */
-function resolvePresentation(presentation: AdaptivePanePresentation, side: AdaptivePaneSide, sizeClass: SizeClass | undefined): AdaptivePaneShown {
+/** The pane's `auto` rule, the one place it is written: what `presentation="auto"` shows in a size class (the scope
+ *  the pane is written in; outside every scope, regular). Regular: `column`. Medium: `drawer`, or what `medium` says
+ *  (Sidebar keeps a navigation column there, as an iPad's split view does). Compact: `push` for an `end` pane, else
+ *  `drawer`. Components built on AdaptivePane (Sidebar, DiagramFrame) call it for the presentation they need before
+ *  they render the pane. */
+export function resolveAdaptivePanePresentation(
+  presentation: AdaptivePanePresentation,
+  side: AdaptivePaneSide,
+  sizeClass: SizeClass | undefined,
+  { medium = 'drawer' }: { medium?: 'drawer' | 'column' } = {},
+): AdaptivePaneShown {
   if (presentation !== 'auto') return presentation;
   if (sizeClass === 'compact') return side === 'end' ? 'push' : 'drawer';
-  return sizeClass === 'medium' ? 'drawer' : 'column';
+  return sizeClass === 'medium' ? medium : 'column';
 }
 
 /* What the parts inside read: the presentation that shows and the pane's naming. */
@@ -119,16 +132,17 @@ const resolve = <T,>(value: T | ((state: AdaptivePaneState) => T) | undefined, s
 export function AdaptivePane({
   presentation = 'auto', open, defaultOpen, onOpenChange, widths, defaultWidths, onWidthsChange, side = 'start', minWidth, maxWidth,
   swipeToOpen, controller, columnWidth, drawerWidth, resizable = false, swipe, modal, dismissible, zIndex = 30,
-  'aria-label': label, className, style, children,
+  'aria-label': label, className, style, children, id: idProp, ...rest
 }: AdaptivePaneProps) {
-  const shown = resolvePresentation(presentation, side, useSizeClassScope());
+  const shown = resolveAdaptivePanePresentation(presentation, side, useSizeClassScope());
   const handle = usePrimitive(adaptivePane, {
     presentation: shown, open, defaultOpen, onOpenChange, widths, defaultWidths, onWidthsChange, side, minWidth, maxWidth, swipeToOpen, controller,
   } as AdaptivePaneOptions);
   const { api } = handle;
   const kept = useKeptChildren(children);
   const titleId = useId();
-  const paneId = useId();
+  const ownId = useId();
+  const paneId = idProp ?? ownId;
   usePublishPane(controller, handle.instance as unknown as PaneStore, paneId);
   const [titled, setTitled] = useState(false);
   const context = useMemo(() => ({ presentation: shown, titleId, setTitled }), [shown, titleId]);
@@ -138,6 +152,7 @@ export function AdaptivePane({
   const resizer = useMemo(() => (resizable ? <PaneResizer side={side} /> : null), [resizable, side]);
   const naming = useMemo(() => (label ? { 'aria-label': label } : titled ? { 'aria-labelledby': titleId } : { 'aria-label': 'Pane' }), [label, titled, titleId]);
   return usePart(handle, 'root', {}, {
+    ...rest,
     id: paneId,
     className: (state: RootState) => {
       const own = { presentation: state.presentation, open: state.open, side: state.side };

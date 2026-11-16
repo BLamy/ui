@@ -9,9 +9,9 @@
 
    Everything that holds something per line can follow an edit (`LineEdit`) instead of starting over: the grid of a long
    line, the lexer's states and checkpoints, the token cache, the row counts. The document itself is in lib/code-document. */
-import { BUILTIN_TYPES, type CodeToken, type CodeTokenType } from '@/lib/syntax';
+import type { CodeToken } from '@/lib/syntax';
+import { BUILTIN_TYPES, type CodeTokenType } from '@/lib/syntax-lexer';
 
-export type { CodeToken, CodeTokenType } from '@/lib/syntax';
 
 /** The lines an edit touched: `[fromLine, oldEndLine]` before it is `[fromLine, newEndLine]` after. The offsets say where on
     those first and last lines. */

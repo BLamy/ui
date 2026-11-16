@@ -142,3 +142,21 @@ it('on a phone the Library tab is the Library rows, and pressing it again comes 
   await settle();
   expect(sidebar().hasAttribute('data-top')).toBe(true);
 });
+
+it('on a phone each tab keeps its place: back to Library lands on the album you left', async () => {
+  size = { width: 390, height: 844 };
+  await act(async () => root.render(<AppleMusic initialSection="albums" initialAlbum="neon-tidewater" />));
+  await settle();
+  const tab = (name: string) => [...element.querySelectorAll<HTMLElement>('[role="tab"]')].find((t) => t.textContent?.includes(name))!;
+  const detailPages = () => [...element.querySelectorAll('[data-slot="split-view-detail"] [data-slot="navigation-stack-page"]')];
+  expect(albumTitle()).toContain('Neon Tidewater');
+  await act(async () => tab('Radio').click());
+  await settle();
+  expect(tab('Radio').getAttribute('aria-selected')).toBe('true');
+  await act(async () => tab('Library').click());
+  await settle();
+  expect(tab('Library').getAttribute('aria-selected')).toBe('true');
+  expect(element.querySelector('[data-slot="split-view-detail"]')?.hasAttribute('data-top')).toBe(true);
+  expect(detailPages()).toHaveLength(2);
+  expect(albumTitle()).toContain('Neon Tidewater');
+});

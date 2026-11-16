@@ -7,7 +7,7 @@ const NODES: DiagramNode[] = [
   { id: 'a', label: 'Inbox', x: 40, y: 60, w: 110, h: 36 },
   { id: 'b', label: 'Triage', x: 240, y: 60, w: 110, h: 36 },
   { id: 'c', label: 'Archive', x: 240, y: 200, w: 110, h: 36 },
-  { id: 'box', kind: 'compound', label: 'Review', x: 440, y: 20, w: 300, h: 240 },
+  { id: 'box', kind: 'group', label: 'Review', x: 440, y: 20, w: 300, h: 240 },
   { id: 'kid1', parent: 'box', label: 'Read', x: 470, y: 70, w: 100, h: 36 },
   { id: 'kid2', parent: 'box', label: 'Reply', x: 610, y: 170, w: 100, h: 36 },
   { id: 'far', label: 'Elsewhere', x: 40, y: 300, w: 110, h: 36 },

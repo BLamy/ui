@@ -50,19 +50,19 @@ Parse once and render many times? Use `parseMarkdown` + `DocsRenderer` instead; 
 {% step %}
 ### Stream an answer
 
-`GitbookStreamdown` takes the markdown you have so far. Pass the growing string on every chunk and set `isStreaming` until the stream ends.
+`GitbookStreamdown` takes the markdown you have so far. Pass the growing string on every chunk and set `streaming` until the stream ends.
 
 ```tsx title="Answer.tsx"
 import { GitbookStreamdown } from "@brett_lamy/ui/docstream"
 
 export function Answer({ text, done }: { text: string; done: boolean }) {
-  return <GitbookStreamdown markdown={text} isStreaming={!done} />
+  return <GitbookStreamdown markdown={text} streaming={!done} />
 }
 ```
 
 {% demo src="start-quick/stream" %}
 
-There is no separate streaming parser. The whole partial document is re-parsed on each update, and the parser is tolerant of unterminated input: an open hint or fence collects everything to the end of the input and renders as it grows. While `isStreaming` is set, a half-arrived inline token (`[^1`, `@da`, a block tag still being typed) is held back so it never flashes as plain text. More in [Streaming](../06-ai/01-streaming.md).
+There is no separate streaming parser. The whole partial document is re-parsed on each update, and the parser is tolerant of unterminated input: an open hint or fence collects everything to the end of the input and renders as it grows. While `streaming` is set, a half-arrived inline token (`[^1`, `@da`, a block tag still being typed) is held back so it never flashes as plain text. More in [Streaming](../06-ai/01-streaming.md).
 {% endstep %}
 
 {% step %}

@@ -21,10 +21,11 @@ import {
 {% tab title="npm" %}
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 
-Import the stylesheet once at your app's entry, then the parts from their module:
+Import the stylesheets once at your app's entry (the kit's, then docstream's, which this part renders with), then the parts from their module:
 
 ```tsx
 import '@brett_lamy/ui/styles.css'
+import '@brett_lamy/ui/docstream/styles.css'
 
 import {
   Conversation, ConversationEmpty, ConversationMessages,
@@ -89,7 +90,7 @@ Product-specific rows above the composer (T3 Code's "This thread is settled" ban
 - The empty state's title is a heading (`h2`, or `headingLevel`), so a screen reader's heading list finds the prompt.
 - The transcript is [MessageScroller](https://blamy.github.io/ui/#/message-scroller)'s labelled `role="log"` region (name it with `aria-label` when a page shows two), with `aria-busy` while `streaming`.
 - `ConversationTyping` is `role="status"` with the label "Thinking"; a running tool call is an image named "Running", a failed one "Failed".
-- `ConversationSuggestion` is the kit's Button, and `ConversationWorkLog` a UI SDK Collapsible: its summary row is the trigger, with `aria-expanded` and `aria-controls` on its panel.
+- `ConversationSuggestion` is the kit's Button, and `ConversationWorkLog` a UI SDK Collapsible: its summary row is the trigger, with `aria-expanded` and `aria-controls` on its panel. Its tool calls are a list (`ul`, each `ConversationToolCall` an `li`), so a screen reader says how many steps there are and where each ends.
 - The composer keeps focus and its draft across the empty-to-thread move.
 
 ## Props
@@ -142,4 +143,4 @@ The message parts also work in a bare [MessageScroller](https://blamy.github.io/
 
 ## Styling
 
-Every part has a `data-slot`: `conversation` (with `data-empty`), `conversation-empty`, `conversation-messages`, `conversation-composer`, `conversation-suggestions`, `user-message`, `assistant-message`, `typing-indicator`, `work-log` (with UI SDK's `collapsible` parts inside it, which carry `data-open` / `data-closed`) and `tool-call` (with `data-status`). Widths are CSS variables: set `--conversation-width`, `--message-column-width` and `--message-gutter` on the `Conversation` (or any ancestor) to fit it to its host. All parts take `className`, merged last with `cn`.
+Every part has a `data-slot`: `conversation` (with `data-empty`), `conversation-empty`, `conversation-messages`, `conversation-composer`, `conversation-suggestions`, `conversation-user-message`, `conversation-assistant-message`, `conversation-typing`, `conversation-work-log` (with UI SDK's `collapsible` parts inside it, which carry `data-open` / `data-closed`) and `conversation-tool-call` (with `data-status`): each part's slot is its name in kebab case. Widths are CSS variables: set `--conversation-width`, `--message-column-width` and `--message-gutter` on the `Conversation` (or any ancestor) to fit it to its host. All parts take `className`, merged last with `cn`.

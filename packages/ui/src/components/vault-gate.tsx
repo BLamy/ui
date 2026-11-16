@@ -137,8 +137,8 @@ export function VaultUnsupported({ vault, className, ...props }: VaultUnsupporte
 export const vaultRecoveryKeyVariants = cva(
   'grid justify-center gap-x-6 gap-y-1 rounded-ctl bg-secondary px-3 py-3 font-mono text-callout font-semibold tracking-wide text-foreground tabular-nums select-text [-webkit-user-select:text]',
   {
-    variants: { layout: { grid: 'grid-cols-[repeat(2,max-content)]', row: 'grid-cols-[repeat(4,max-content)]' } },
-    defaultVariants: { layout: 'grid' },
+    variants: { variant: { grid: 'grid-cols-[repeat(2,max-content)]', row: 'grid-cols-[repeat(4,max-content)]' } },
+    defaultVariants: { variant: 'grid' },
   },
 );
 
@@ -148,9 +148,9 @@ export interface VaultRecoveryKeyProps extends Omit<ComponentProps<'div'>, 'chil
 }
 
 /** The recovery key in groups of four. A labelled group so a screen reader reads it as one thing; not a live region. */
-export function VaultRecoveryKey({ value, layout, className, ...props }: VaultRecoveryKeyProps) {
+export function VaultRecoveryKey({ value, variant, className, ...props }: VaultRecoveryKeyProps) {
   return (
-    <div data-slot="vault-recovery-key" role="group" aria-label="Recovery key" className={cn(vaultRecoveryKeyVariants({ layout }), className)} {...props}>
+    <div data-slot="vault-recovery-key" role="group" aria-label="Recovery key" data-variant={variant ?? 'grid'} className={cn(vaultRecoveryKeyVariants({ variant }), className)} {...props}>
       {/* Read letter by letter by assistive tech; the visible groups are for the eye (and copying). */}
       <span className="sr-only select-none">{value.split('-').map((group) => group.split('').join(' ')).join(', ')}</span>
       {value.split('-').map((group, i) => (
@@ -304,6 +304,8 @@ export function VaultEnrollDialog({
           <DialogTitle>
             {recoveryStep ? 'Save your recovery key' : regenerate ? 'Replace your recovery key' : `Protect ${name} with a passkey`}
           </DialogTitle>
+          {/* The × of every flow bar; the recovery step can't be dismissed, so it leaves itself out there. */}
+          <DialogClose />
         </DialogHeader>
 
         <DialogView>
@@ -328,12 +330,7 @@ export function VaultEnrollDialog({
                     <span>Waiting for your passkey…</span>
                   </div>
                 ) : null}
-                {error ? (
-                  <p id={errorId} role="alert" className={calloutVariants({ tone: 'destructive' })}>
-                    <Icon name="exclamation-circle" size={16} />
-                    <span className="min-w-0 [overflow-wrap:anywhere]">{error}</span>
-                  </p>
-                ) : null}
+                {error ? <Callout id={errorId} tone="destructive">{error}</Callout> : null}
               </div>
               <DialogFooter>
                 {step === 'working' ? (
@@ -368,7 +365,7 @@ export function VaultEnrollDialog({
                 <p className={cn('m-0 text-footnote', vaultMutedClass)}>
                   Keep it in a password manager or print it. Anyone who has it can open your data, and nobody can reissue it.
                 </p>
-                {copyFailed ? <p role="alert" className={cn('m-0 text-footnote', vaultErrorClass)}>Copying was blocked. Select the key and copy it by hand.</p> : null}
+                {copyFailed ? <Callout tone="destructive">Copying was blocked. Select the key and copy it by hand.</Callout> : null}
                 {requireVerification ? (
                   <Field invalid={typed.length > 0 && !verified && typed.replace(/[\s-]/g, '').length >= 32}>
                     <FieldLabel className={vaultMutedClass}>Type the key to confirm you saved it</FieldLabel>
@@ -380,7 +377,7 @@ export function VaultEnrollDialog({
                   <Checkbox checked={saved} onCheckedChange={(checked) => setSaved(checked === true)} shape="square" />
                   I saved my recovery key somewhere safe
                 </Label>
-                {error ? <p role="alert" className={cn('m-0 text-footnote', vaultErrorClass)}>{error}</p> : null}
+                {error ? <Callout tone="destructive">{error}</Callout> : null}
               </div>
               <DialogFooter>
                 <DialogClose value="done" action={finish} disabled={!saved || !verified} render={<Button className={vaultActionClass} />}>
@@ -392,6 +389,16 @@ export function VaultEnrollDialog({
         </DialogView>
       </DialogContent>
     </Dialog>
+  );
+}
+
+/** An error or a notice in the module's one look: the kit's callout (`calloutVariants`), announced as it appears. */
+function Callout({ tone, className, children, ...props }: ComponentProps<'p'> & { tone: 'destructive' | 'warning' }) {
+  return (
+    <p role="alert" className={cn(calloutVariants({ tone }), className)} {...props}>
+      <Icon name="exclamation-circle" size={16} />
+      <span className="min-w-0 [overflow-wrap:anywhere]">{children}</span>
+    </p>
   );
 }
 
@@ -505,6 +512,8 @@ export function VaultUnlock({ vault, appName, title, description, autoFocus = tr
             <FieldLabel className={vaultMutedClass}>Recovery key</FieldLabel>
             <Input value={text} onValueChange={setText} autoComplete="off" autoFocus={autoFocus} className="font-mono uppercase" spellCheck={false} autoCapitalize="characters" autoCorrect="off" placeholder="XXXX-XXXX-XXXX-XXXX-XXXX-XXXX-XXXX-XXXX" />
             <FieldDescription className={vaultMutedClass}>Eight groups of four letters and digits. Case and dashes don&apos;t matter.</FieldDescription>
+            {/* The field's own error, under it and describing it; announced as it appears. */}
+            <FieldError role="alert">{error}</FieldError>
           </Field>
           {/* Still focusable while it unlocks, so focus isn't dropped mid-way. */}
           <Button type="submit" size="lg" className={vaultActionClass} disabled={!text.trim() || unlocking} focusableWhenDisabled={unlocking}>
@@ -513,7 +522,8 @@ export function VaultUnlock({ vault, appName, title, description, autoFocus = tr
         </form>
       )}
 
-      {error ? <p role="alert" className={cn('m-0 text-footnote', vaultErrorClass)}>{error}</p> : null}
+      {/* A passkey unlock has no field to attach its error to: the shared callout, under the button. */}
+      {error && mode === 'passkey' ? <Callout tone="destructive" className="w-full text-left">{error}</Callout> : null}
 
       <div className="flex flex-col items-center gap-1">
         {!passkeyOff ? (
@@ -531,7 +541,7 @@ export function VaultUnlock({ vault, appName, title, description, autoFocus = tr
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogClose variant="cancel" className={vaultLinkClass}>Cancel</AlertDialogClose>
-              <AlertDialogClose variant="destructive" value="confirm" className={vaultErrorClass} action={() => { setError(null); v.reset().catch((e) => setError(vaultErrorMessage(e))); }}>Erase</AlertDialogClose>
+              <AlertDialogClose tone="destructive" value="confirm" className={vaultErrorClass} action={() => { setError(null); v.reset().catch((e) => setError(vaultErrorMessage(e))); }}>Erase</AlertDialogClose>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
@@ -616,8 +626,8 @@ export function VaultGate({
       body = (
         <>
           {recoveryNotice && !state.recoveryConfirmed ? (
-            <div role="region" aria-label="Recovery key" className="m-3 flex shrink-0 items-center gap-3 rounded-card bg-secondary p-3 text-subhead">
-              <Icon name="key" size={20} className="shrink-0 text-primary" />
+            <div role="region" aria-label="Recovery key" className={cn(calloutVariants({ tone: 'warning' }), 'm-3 shrink-0 items-center gap-3 text-subhead')}>
+              <Icon name="key" size={18} />
               <span className="min-w-0 flex-1">You haven&apos;t confirmed saving your recovery key. Without it, losing your passkey means losing your data.</span>
               <Button size="sm" className={vaultActionClass} onClick={() => setDialog({ open: true, mode: 'regenerate' })}>Get a new key</Button>
             </div>

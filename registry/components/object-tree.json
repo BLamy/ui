@@ -10,11 +10,7 @@
     "ObjectTree",
     "ObjectValue",
     "nodeFromValue",
-    "childrenOfValue",
-    "previewFromValue",
-    "previewText",
-    "previewTokens",
-    "copyTextOf"
+    "childrenOfValue"
   ],
   "imports": [
     "ObjectTree",
@@ -27,13 +23,6 @@
     "ObjectValueProps",
     "ObjectTreeNode",
     "ObjectTreeRoot",
-    "ObjectTreeGetterResult",
-    "ValuePreview",
-    "ValueProperty",
-    "ValueMapEntry",
-    "ValueType",
-    "ValueTokenType",
-    "ValueToken",
-    "ValuePreviewOptions"
+    "ObjectTreeGetterResult"
   ]
 }

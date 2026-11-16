@@ -65,13 +65,13 @@ Five parts in one module (`@/components/ui/tailscale-controls`). Each reads the 
 
 {% demo src="tailscale/states" %}
 
-The kit's [Button](https://blamy.github.io/ui/#/button), so it takes Button's `variant` and `size` and sits beside other buttons at the same height. By state: **Sign in with Tailscale** (idle, signed out) with the mark; **Signing in…** / **Connecting…** / **Waiting for approval…** with a spinner, where a press cancels (`aria-busy` and `data-pending` are set, and the accessible name ends with "Press to cancel."); **Sign out of Tailscale** (connected); **Try again** after a failure, with a warning glyph (its accessible name is "Try again to sign in to Tailscale"). The label and glyph carry the state, never colour alone, and the button keeps the `variant` you chose in every state.
+The kit's [Button](https://blamy.github.io/ui/#/button), so it takes Button's `variant` and `size` and sits beside other buttons at the same height. By state: **Sign in with Tailscale** (idle, signed out) with the mark; **Signing in…** / **Connecting…** / **Waiting for approval…** with a spinner, where a press cancels (`aria-busy` is set, the accessible name ends with "Press to cancel.", and hovering or focusing it from the keyboard shows **Cancel**; it isn't dimmed like a pending button, because it still does something); **Sign out of Tailscale** (connected); **Try again** after a failure, with a warning glyph (its accessible name is "Try again to sign in to Tailscale"). The label and glyph carry the state, never colour alone, and the button keeps the `variant` you chose in every state.
 
 | Prop | Default | Effect |
 | --- | --- | --- |
 | `variant` | `contrast` | Any Button variant: `contrast` is the usual dark-on-light "Sign in with …" look; `outline` and `secondary` are quieter. |
 | `size` | `default` | Any Button size: `sm` 32px, `default` 36px, `lg` 44px, `pill` (full width). |
-| `labels` | English | `signIn`, `signingIn`, `connecting`, `approval`, `signOut`, `retry` (the visible text), `retryName` (the accessible name after a failure; start it with `retry`), `cancelHint`. |
+| `labels` | English | `signIn`, `signingIn`, `connecting`, `approval`, `signOut`, `retry` (the visible text), `retryName` (the accessible name after a failure; start it with `retry`), `cancelHint` (added to the busy name), `cancel` (the busy label on hover and focus). |
 | `onSignIn` / `onCancel` / `onSignOut` | the controller's | Replace what a press does in that state. |
 | `status` | the controller's | Show this status instead (stories, a controller of your own). |
 | `tailscale` | the provider's | The controller. |
@@ -85,7 +85,8 @@ A polite `role="status"` region: a pill with an icon and a word, and the details
 | Prop | Default | Effect |
 | --- | --- | --- |
 | `variant` | `inline` | `inline` (details beside the pill) · `stacked` (details under it) · `pill` (the pill alone). |
-| `status` / `tailnet` / `loginUrl` / `error` | the controller's | Show these instead. |
+| `status` / `tailnet` / `loginUrl` | the controller's | Show these instead. |
+| `description` | the controller's error, in words | What failed, beside the pill when `status` is `error`. |
 | `tailscale` | the provider's | The controller. |
 
 ### TailscaleMark

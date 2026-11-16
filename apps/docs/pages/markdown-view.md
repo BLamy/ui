@@ -12,7 +12,7 @@ Use a sibling when the job differs:
 {% tab title="shadcn CLI" %}
 {% command %}npx shadcn@latest add https://blamy.github.io/ui/r/markdown-view.json{% endcommand %}
 
-Copies the source into your project's `components/ui/` (with the parts it is built from) and adds BL UI's tokens to your CSS — no runtime package. It is yours to edit. Import from your alias:
+Copies the source into your project's `components/ui/` (with the parts it is built from), adds BL UI's tokens to your CSS and installs `@brett_lamy/ui` for Docstream, which it imports by the package's name. The copied source is yours to edit. Import from your alias:
 
 ```tsx
 import { MarkdownView } from '@/components/ui/markdown-view'
@@ -21,10 +21,11 @@ import { MarkdownView } from '@/components/ui/markdown-view'
 {% tab title="npm" %}
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 
-Import the stylesheet once at your app's entry, then the parts from their module:
+Import the stylesheets once at your app's entry (the kit's, then docstream's, which this part renders with), then the parts from their module:
 
 ```tsx
 import '@brett_lamy/ui/styles.css'
+import '@brett_lamy/ui/docstream/styles.css'
 
 import { MarkdownView } from '@brett_lamy/ui/markdown-view'
 ```
@@ -51,10 +52,10 @@ The `MarkdownView` wrapper keeps BL UI's `wb-md` styling and sets `data-renderer
 
 ## Streaming updates
 
-Pass the latest accumulated markdown as chunks arrive. `streaming` is forwarded to Docstream as `isStreaming`, which exposes accessible busy state and a streaming data attribute while content is arriving.
+Pass the latest accumulated markdown as chunks arrive. `streaming` is passed to Docstream's renderer, which marks the region busy and sets a streaming data attribute while content is arriving.
 
 ```tsx
-<MarkdownView markdown={partialAnswer} streaming={isStreaming} />
+<MarkdownView markdown={partialAnswer} streaming={streaming} />
 ```
 
 ## Props
@@ -65,7 +66,7 @@ Pass the latest accumulated markdown as chunks arrive. `streaming` is forwarded 
 | `streaming` | `boolean` | `false` | The text is still arriving: an unfinished block stays open, the region is marked busy, and the root gets `data-streaming`. |
 | `onReferenceClick` | `(ref: ReferenceNode) => void` | | Called when an @mention, #tag or citation chip is clicked. |
 | `renderReference` | `(ref: ReferenceNode) => ReactNode \| null` | | Draw a chip yourself; return `null` for the default chip. |
-| `demoResolver` | Docstream's resolver | | Resolves `{% demo %}` blocks to components and their source files. |
+| `demo` | `MarkdownViewDemo` | | Live demo blocks (`{% demo %}`), the same option as MarkdownEditor's: `resolver` (to components and their source files), `runtime` (runs demos that carry their files inline), `vfs` (demo files held in memory), `dependencies` (extra npm packages inline demos may import). |
 | `sourceRenderer` | Docstream's renderer | | Renders component and Storybook source references. |
 | `renderCode` | `(block: CodeBlockNode, details: CodeBlockRenderDetails) => ReactNode \| null` | | Draw a code fence yourself; return `null` for Docstream's. See "Your own code blocks" below. |
 | `tui` | Docstream's TUI options \| `false` | | Configures the sandboxed terminal behind `tui` code fences (see [TuiPreview](https://blamy.github.io/ui/#/tui-preview)); `false` renders them as code. |
@@ -75,7 +76,7 @@ Pass the latest accumulated markdown as chunks arrive. `streaming` is forwarded 
 
 ## Styling
 
-Import `@brett_lamy/ui/styles.css`; the component brings Docstream's stylesheet with it. The root is `<div data-slot="markdown-view" data-renderer="docstream" class="wb-md">`. `.wb-md` sets the reading rhythm (headings, lists, inline code, tables) from the theme's variables; the first block starts at the top of the box and the last adds no space under it, so a reply that opens with a heading sits flush in a bubble or a card. Code fences take their surface from `--code` / `--code-foreground` and their token colors from CodeEditor's `--bl-syntax-*` knobs (`.wb-md` points Docstream's `--docs-tok-*` at them), so one setting colors a snippet the same in a CodeEditor and in a MarkdownView. Fences are colored on first render, on the server too, by Docstream's synchronous lexer; where WebGPU works, its tokens replace those when they arrive. `<code data-highlighter>` says which one drew a fence (`gpu`, `fallback`, or `none` for a `text` fence). Pass `className` for layout. Docstream's own sheet is not in a cascade layer yet, so to override one of its rules use a selector at least as specific as its own.
+Import `@brett_lamy/ui/styles.css`, then Docstream's sheet, `@brett_lamy/ui/docstream/styles.css` (the registry item adds that `@import` to your CSS). The component imports no CSS itself, so it loads in plain Node (server rendering, a test runner without CSS handling). The root is `<div data-slot="markdown-view" data-renderer="docstream" class="wb-md">`. `.wb-md` sets the reading rhythm (headings, lists, inline code, tables) from the theme's variables; the first block starts at the top of the box and the last adds no space under it, so a reply that opens with a heading sits flush in a bubble or a card. Code fences take their surface from `--code` / `--code-foreground` and their token colors from CodeEditor's `--bl-syntax-*` knobs (`.wb-md` points Docstream's `--docs-tok-*` at them), so one setting colors a snippet the same in a CodeEditor and in a MarkdownView. Fences are colored on first render, on the server too, by Docstream's synchronous lexer; where WebGPU works, its tokens replace those when they arrive. `<code data-highlighter>` says which one drew a fence (`gpu`, `fallback`, or `none` for a `text` fence). Pass `className` for layout. To let `className` win over Docstream's rules without `!important`, import its sheet into the `docstream` layer that `@brett_lamy/ui/styles.css` declares under the utilities: in your CSS, after the kit's sheet, `@import "@brett_lamy/ui/docstream/styles.css" layer(docstream);`. Imported unlayered (a plain `import` in JavaScript), it outranks every layered rule, so an override then needs a selector at least as specific as its own.
 
 ## Accessibility
 
@@ -97,7 +98,7 @@ Use the **Markdown**, **Rich editor**, and **Preview** tabs inside the example t
 
 {% demo src="docstream/kitchen-sink" %}
 
-`demoResolver` connects live demo blocks to their components and files. `sourceRenderer` renders component and Storybook references; the example uses Docstream's `SourcePreview` with a bundled source client.
+`demo={{ resolver }}` connects live demo blocks to their components and files. `sourceRenderer` renders component and Storybook references; the example uses Docstream's `SourcePreview` with a bundled source client.
 
 ### XState and tscircuit
 

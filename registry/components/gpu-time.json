@@ -1,0 +1,30 @@
+{
+  "name": "gpu-time",
+  "title": "Natural-language times",
+  "description": "Dates, times and recurrences written in English, parsed by gpu-time (a ~50 KB model, CPU by default, loaded on first use): parseTime resolves occurrences, RRULEs and the recognised spans; formatOccurrence, describeRecurrence and timeTextSegments turn the result into text. useTimeParse is the debounced React side NaturalTimeInput uses.",
+  "page": "natural-time-input",
+  "exports": [
+    "useTimeParse",
+    "parseTime",
+    "loadGpuTime",
+    "formatOccurrence",
+    "timeTextSegments",
+    "describeRecurrence",
+    "rruleLine"
+  ],
+  "imports": [
+    "parseTime",
+    "formatOccurrence"
+  ],
+  "types": [
+    "TimeParseOptions",
+    "UseTimeParseOptions",
+    "TimeParseState",
+    "TimeParseResult",
+    "TimeOccurrence",
+    "TimeDiagnostic",
+    "TimeSpan",
+    "FormatOccurrenceOptions",
+    "TimeTextSegment"
+  ]
+}

@@ -21,5 +21,8 @@
     "ReplayDevtoolsTab",
     "ReplayInspection",
     "ReplayInspectionTab"
-  ]
+  ],
+  "css": {
+    "@import \"@brett_lamy/ui/docstream/styles.css\"": {}
+  }
 }

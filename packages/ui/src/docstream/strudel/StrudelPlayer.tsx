@@ -1,7 +1,8 @@
 import { lazy, Suspense, useEffect, useId, useRef, useState, useSyncExternalStore, type CSSProperties, type Ref } from "react"
 import type { ChangeDetails } from "@ui-sdk/core"
-import { Code2, Loader2, Pause, Play, SlidersHorizontal, Undo2 } from "lucide-react"
+import { Glyph } from "../ui/glyph"
 import { HighlightedCode } from "../docs/HighlightedCode"
+import { changeDetails } from "../ui/change-details"
 import type { StrudelRackChangeDetails } from "./rack-types"
 import { Panel, PanelTrigger, usePanel } from "./panel"
 import {
@@ -22,11 +23,9 @@ const StrudelRack = lazy(() => import("./StrudelRack"))
 /** Why a panel (equipment or code) opened or closed: UI SDK's collapsible reasons. */
 export type StrudelPanelChangeReason = "trigger-press" | "find-in-page" | "imperative"
 
-/** What `onCodeChange` reports with the code: a rack edit (a knob, fader, mute, sound…) or the Revert button. */
-export interface StrudelCodeChangeDetails {
-  reason: "rack-edit" | "revert"
-  /** The click, key or drag behind it, when there is one. */
-  event?: Event
+/** What `onCodeChange` reports with the code: UI SDK's `ChangeDetails` (`reason`, `event`, `source`, `cancel()`), for a
+ *  rack edit (a knob, fader, mute, sound…) or the Revert button. `details.cancel()` keeps the code as it was. */
+export type StrudelCodeChangeDetails = ChangeDetails<"rack-edit" | "revert"> & {
   /** For a rack edit: which control made it and how (the rack's own `onValueChange` details). */
   rack?: StrudelRackChangeDetails
 }
@@ -62,11 +61,8 @@ export interface StrudelPlayerProps {
   defaultCodeOpen?: boolean
   /** Runs when the code panel wants to open or close. `details.reason` says why, `details.cancel()` stops it. */
   onCodeOpenChange?: (open: boolean, details: ChangeDetails<StrudelPanelChangeReason>) => void
-  /** @deprecated Use `defaultCodeOpen`. Still honored when `defaultCodeOpen` is not set. */
-  showCode?: boolean
-  /** @deprecated Use `defaultRackOpen`. Still honored when `defaultRackOpen` is not set. */
-  showRack?: boolean
-  /** Called with the code after every rack edit, and after Revert; `details.reason` says which. */
+  /** Called with the code after every rack edit, and after Revert; `details.reason` says which, `details.cancel()` keeps
+   *  the code as it was. */
   onCodeChange?: (code: string, details: StrudelCodeChangeDetails) => void
 }
 
@@ -178,14 +174,12 @@ export function StrudelPlayer({
   codeOpen: codeOpenProp,
   defaultCodeOpen,
   onCodeOpenChange,
-  showCode = false,
-  showRack = false,
   onCodeChange,
 }: StrudelPlayerProps) {
   const id = useId()
   const [source, setSource] = useState<Source>(() => (code !== undefined ? { kind: "ready", code } : { kind: "loading" }))
-  const [codeOpen, setCodeOpen] = usePanelOpen(codeOpenProp, defaultCodeOpen ?? showCode, onCodeOpenChange)
-  const [rackOpen, setRackOpen] = usePanelOpen(rackOpenProp, defaultRackOpen ?? showRack, onRackOpenChange)
+  const [codeOpen, setCodeOpen] = usePanelOpen(codeOpenProp, defaultCodeOpen ?? false, onCodeOpenChange)
+  const [rackOpen, setRackOpen] = usePanelOpen(rackOpenProp, defaultRackOpen ?? false, onRackOpenChange)
   // The rack edits a working copy; `playable` is that copy with the rack's mutes and solos applied.
   const [edited, setEdited] = useState<string | null>(null)
   const [playable, setPlayable] = useState<string | null>(null)
@@ -244,9 +238,10 @@ export function StrudelPlayer({
     return () => clearTimeout(timer)
   }, [toPlay])
 
-  const edit = (next: string, reason: StrudelCodeChangeDetails["reason"], extra: Omit<StrudelCodeChangeDetails, "reason"> = {}) => {
-    setEdited(next)
-    onCodeChange?.(next, { reason, ...extra })
+  const edit = (next: string, reason: StrudelCodeChangeDetails["reason"], { event, rack }: { event?: Event; rack?: StrudelRackChangeDetails } = {}) => {
+    const details: StrudelCodeChangeDetails = Object.assign(changeDetails(reason, event), rack ? { rack } : {})
+    onCodeChange?.(next, details)
+    if (!details.canceled) setEdited(next)
   }
 
   useEffect(() => {
@@ -311,11 +306,11 @@ export function StrudelPlayer({
           aria-label={status === "idle" ? `Play ${label}` : `Stop ${label}`}
         >
           {status === "loading" ? (
-            <Loader2 className="docstream-strudel__spin" size={18} />
+            <Glyph name="progress" className="docstream-strudel__spin" size={18} />
           ) : status === "playing" ? (
-            <Pause size={18} />
+            <Glyph name="pause" size={18} />
           ) : (
-            <Play size={18} />
+            <Glyph name="play" size={18} />
           )}
         </button>
         <div className="docstream-strudel__meta">
@@ -327,12 +322,12 @@ export function StrudelPlayer({
         <canvas ref={canvasRef} className="docstream-strudel__roll" aria-hidden="true" />
         {source.kind === "ready" && rack && (
           <PanelTrigger panel={rackPanel} className="docstream-strudel__toggle" aria-label="Equipment" title={rackOpen ? "Hide equipment" : "Show equipment"}>
-            <SlidersHorizontal size={16} />
+            <Glyph name="sliders" size={16} />
           </PanelTrigger>
         )}
         {source.kind === "ready" && (
           <PanelTrigger panel={codePanel} className="docstream-strudel__toggle" aria-label="Code" title={codeOpen ? "Hide code" : "Show code"}>
-            <Code2 size={16} />
+            <Glyph name="code" size={16} />
           </PanelTrigger>
         )}
       </div>
@@ -346,7 +341,7 @@ export function StrudelPlayer({
           <Suspense fallback={<div className="docstream-strudel__sub">Loading equipment…</div>}>
             {edited !== null && edited !== ready && (
               <button type="button" className="docstream-strudel__revert" onClick={(event) => edit(ready!, "revert", { event: event.nativeEvent })}>
-                <Undo2 size={13} aria-hidden="true" /> Revert edits
+                <Glyph name="arrow-uturn-backward" size={13} /> Revert edits
               </button>
             )}
             <StrudelRack value={current} onValueChange={(next, rack) => edit(next, "rack-edit", { rack, ...(rack.event ? { event: rack.event } : {}) })} onPlayableChange={setPlayable} />

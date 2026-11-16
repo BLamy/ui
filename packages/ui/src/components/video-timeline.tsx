@@ -1,7 +1,7 @@
 'use client';
 import {
-  Fragment, useLayoutEffect, useRef, useState,
-  type CSSProperties, type DragEvent, type ReactNode, type RefObject,
+  Fragment, useCallback, useLayoutEffect, useRef, useState,
+  type ComponentProps, type CSSProperties, type DragEvent, type ReactNode, type Ref, type RefObject,
 } from 'react';
 import { createParts, usePart, usePrimitive, type PrimitiveHandle } from '@ui-sdk/react/primitive';
 import { Slider, SliderControl, SliderThumb, SliderTrack } from '@ui-sdk/react/slider';
@@ -13,18 +13,20 @@ import { usePlaybackState, type Playback } from '@/lib/playback';
 import { cn } from '@/lib/utils';
 import {
   clipDuration, clipEnd, formatTimecode, magneticIndex, quantize, timelineDuration,
-  type Timeline, type TimelineClip, type TimelineTrack,
+  type Timeline, type TimelineClip, type TimelineMedia, type TimelineTrack,
 } from '@/lib/video-timeline-model';
 import type { ChangeDetails } from '@ui-sdk/core';
 import {
   clampTimelineZoom, timelineClipName, timelineTrackName, TIMELINE_TAIL, videoTimeline,
-  type ClipSpan, type TimelineMediaInfo, type VideoTimelineOptions,
+  type ClipSpan, type VideoTimelineOptions,
 } from '@/lib/video-timeline-primitive';
 import { Toggle } from '@/components/ui/toggle';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 export { timelineZoomRange } from '@/lib/video-timeline-primitive';
+export type { TimelineMedia } from '@/lib/video-timeline-model';
 export type {
-  TimelineMediaInfo, VideoTimelineAction, VideoTimelineChangeDetails, VideoTimelineChangeReason,
+  VideoTimelineAction, VideoTimelineChangeDetails, VideoTimelineChangeReason,
   VideoTimelineSelectionReason, VideoTimelineZoomReason,
 } from '@/lib/video-timeline-primitive';
 
@@ -46,7 +48,8 @@ export type {
    Escape clears, Delete removes the selection. On the ruler: ←/→ a frame, ⇧←/→ or Page Up/Down a second, Home/End.
 
    The track headers are 132 px wide (`headerWidth`). In a compact container (a phone, a narrow pane) they shrink to
-   56 px: the track's short name on a button whose menu holds Hide, Mute and Lock.
+   56 px: the track's short code (`V1`, `A2`, `Main`) on a button named and tooltipped with its full name, whose menu
+   holds Hide, Mute and Lock.
 
    <VideoTimeline value={timeline} onValueChange={(next) => push(next)} playback={playback} media={media} /> ══ */
 
@@ -65,7 +68,10 @@ export interface TimelineDrop {
  *  so the browser hears it wasn't taken. */
 export type TimelineDropDetails = ChangeDetails<'drop'> & TimelineDrop;
 
-export interface VideoTimelineProps extends Omit<VideoTimelineOptions, 'playback'> {
+/** The root is a `div`: `ref`, `id`, `data-*`, its events and the rest of a div's props reach it. */
+export interface VideoTimelineProps
+  extends Omit<VideoTimelineOptions, 'playback'>,
+    Omit<ComponentProps<'div'>, keyof VideoTimelineOptions | 'children' | 'ref' | 'style' | 'className' | 'aria-label'> {
   /** The shared playback clock (`usePlaybackClock`) the playhead and the ruler follow. */
   playback: Playback;
   /** A clip's content: a Filmstrip, a Waveform, a title… (default: its name). */
@@ -82,6 +88,7 @@ export interface VideoTimelineProps extends Omit<VideoTimelineOptions, 'playback
   'aria-label'?: string;
   className?: string;
   style?: CSSProperties;
+  ref?: Ref<HTMLDivElement>;
 }
 
 const HEADER = 132;
@@ -118,20 +125,34 @@ type RootState = { value: Timeline; selectedClips: string[]; zoom: number; guide
 
 export function VideoTimeline({
   playback, renderClip, clipClassName, trackHeight = defaultHeight, onDropMedia, headerWidth, 'aria-label': label = 'Timeline',
-  className, style, ...options
+  className, style, ref,
+  value, defaultValue, onValueChange, selectedClips, defaultSelectedClips, onSelectedClipsChange, zoom, defaultZoom, onZoomChange,
+  media, fps, snap, readOnly,
+  ...rest
 }: VideoTimelineProps) {
-  const handle = usePrimitive(videoTimeline, { ...options, playback } as VideoTimelineOptions);
+  const options: VideoTimelineOptions = {
+    value, defaultValue, onValueChange, selectedClips, defaultSelectedClips, onSelectedClipsChange, zoom, defaultZoom, onZoomChange,
+    media, fps, snap, readOnly, playback,
+  };
+  const handle = usePrimitive(videoTimeline, options);
   // The root's own width picks the header: full in a medium or regular container, a menu button in a compact one.
   const [sizeRef, sizeClass] = useSizeClass();
+  // The root is measured and is also the caller's `ref`.
+  const rootRef = useCallback((el: HTMLDivElement | null) => {
+    sizeRef(el);
+    if (typeof ref === 'function') ref(el);
+    else if (ref) ref.current = el;
+  }, [sizeRef, ref]);
   const compact = sizeClass === 'compact';
   const header = headerWidth ?? (compact ? COMPACT_HEADER : HEADER);
   return usePart(handle, 'root', {}, {
-    ref: sizeRef,
+    ...rest,
+    ref: rootRef,
     'aria-label': label,
     className: cn('relative flex min-h-0 flex-col overflow-hidden bg-background text-foreground select-none', className),
     style: { '--header': `${header}px`, '--ruler': `${RULER}px`, ...style } as CSSProperties,
     children: (state: RootState) => (
-      <TimelineBody state={state} handle={handle} clock={playback} fps={options.fps ?? 30} media={options.media ?? {}} header={header} compact={compact}
+      <TimelineBody state={state} handle={handle} clock={playback} fps={fps ?? 30} media={media ?? {}} header={header} compact={compact}
         renderClip={renderClip} clipClassName={clipClassName} trackHeight={trackHeight} onDropMedia={onDropMedia} />
     ),
   }, 'div');
@@ -145,7 +166,7 @@ interface BodyProps extends Pick<VideoTimelineProps, 'renderClip' | 'clipClassNa
   header: number;
   compact: boolean;
   fps: number;
-  media: Record<string, TimelineMediaInfo | undefined>;
+  media: Record<string, TimelineMedia | undefined>;
   trackHeight: (track: TimelineTrack) => number;
 }
 
@@ -277,13 +298,21 @@ function TimelineBody({ state, handle, clock, header: HEADER, compact, fps, medi
               {compact ? (
                 <div className="sticky left-0 z-20 box-border flex w-(--header) shrink-0 items-center justify-center border-r border-border bg-background">
                   <DropdownMenu>
-                    <DropdownMenuTrigger disabled={!editable} aria-label={`${name} options`}
-                      className="relative flex h-7 max-w-[calc(var(--header)-8px)] cursor-pointer items-center gap-0.5 rounded-md border-0 bg-transparent px-1 text-caption font-semibold text-foreground/70 hover:bg-secondary data-disabled:cursor-default pointer-coarse:after:absolute pointer-coarse:after:-inset-2">
-                      <span className="truncate">{shortTrackName(track, ti)}</span>
-                      {track.hidden || track.muted || track.locked ? <Icon name={track.locked ? 'lock-fill' : track.hidden ? 'eye-slash' : 'speaker-slash'} size={11} className="shrink-0" /> : null}
-                      {/* It opens a menu: say so before it is pressed. */}
-                      {editable ? <Icon name="chevron-down" size={9} sw={2.4} className="shrink-0 text-foreground/50" /> : null}
-                    </DropdownMenuTrigger>
+                    {/* The short code fits the 56 px header; the full name is the button's name and its tooltip. */}
+                    <Tooltip>
+                      <TooltipTrigger
+                        render={
+                          <DropdownMenuTrigger disabled={!editable} aria-label={`${name} options`}
+                            className="relative flex h-7 max-w-[calc(var(--header)-8px)] cursor-pointer items-center gap-0.5 rounded-md border-0 bg-transparent px-1 text-caption font-semibold text-foreground/70 hover:bg-secondary data-disabled:cursor-default pointer-coarse:after:absolute pointer-coarse:after:-inset-2" />
+                        }
+                      >
+                        <span data-part="track-code" className="truncate">{shortTrackName(track, ti, shown.tracks)}</span>
+                        {track.hidden || track.muted || track.locked ? <Icon name={track.locked ? 'lock-fill' : track.hidden ? 'eye-slash' : 'speaker-slash'} size={11} className="shrink-0" /> : null}
+                        {/* It opens a menu: say so before it is pressed. */}
+                        {editable ? <Icon name="chevron-down" size={9} sw={2.4} className="shrink-0 text-foreground/50" /> : null}
+                      </TooltipTrigger>
+                      <TooltipContent>{name}</TooltipContent>
+                    </Tooltip>
                     <DropdownMenuContent size="sm" align="start">
                       {track.kind === 'video' ? (
                         <DropdownMenuCheckboxItem value="hidden" checked={!!track.hidden} icon={<Icon name="eye-slash" size={15} />}
@@ -301,16 +330,16 @@ function TimelineBody({ state, handle, clock, header: HEADER, compact, fps, medi
                   <span className="min-w-0 flex-1 truncate text-caption font-semibold text-foreground/70">{name}</span>
                   {/* Each toggle shows the state it is in: the slashed glyph while the track is hidden or muted. */}
                   {track.kind === 'video' ? (
-                    <Toggle size="sm" aria-label="Hide track" pressed={!!track.hidden} disabled={!editable} className={headerToggle}
+                    <Toggle size="sm" aria-label={`Hide ${name}`} pressed={!!track.hidden} disabled={!editable} className={headerToggle}
                       onPressedChange={(v, d) => api.setTrack(track.id, { hidden: v }, { reason: 'press', event: d.event })}>
                       <Icon name={track.hidden ? 'eye-slash' : 'eye'} size={14} />
                     </Toggle>
                   ) : null}
-                  <Toggle size="sm" aria-label="Mute track" pressed={!!track.muted} disabled={!editable} className={headerToggle}
+                  <Toggle size="sm" aria-label={`Mute ${name}`} pressed={!!track.muted} disabled={!editable} className={headerToggle}
                     onPressedChange={(v, d) => api.setTrack(track.id, { muted: v }, { reason: 'press', event: d.event })}>
                     <Icon name={track.muted ? 'speaker-slash' : 'speaker'} size={14} />
                   </Toggle>
-                  <Toggle size="sm" aria-label="Lock track" pressed={!!track.locked} disabled={!editable} className={headerToggle}
+                  <Toggle size="sm" aria-label={`Lock ${name}`} pressed={!!track.locked} disabled={!editable} className={headerToggle}
                     onPressedChange={(v, d) => api.setTrack(track.id, { locked: v }, { reason: 'press', event: d.event })}>
                     <Icon name={track.locked ? 'lock-fill' : 'lock'} size={14} />
                   </Toggle>
@@ -383,10 +412,12 @@ function TimelineBody({ state, handle, clock, header: HEADER, compact, fps, medi
   );
 }
 
-/** A track's name in a compact header: `V1`, `A2`, `Main`, or the first word of its own name. */
-function shortTrackName(track: TimelineTrack, index: number): string {
-  if (track.name) return track.name.split(/\s+/)[0] ?? track.name;
-  return track.kind === 'audio' ? `A${index + 1}` : track.magnetic ? 'Main' : `V${index + 1}`;
+/** A track's code in a compact header, by its place among the tracks of its kind: `V1`, `V2`, `A1`, and `Main` for
+ *  the magnetic track. Always 2–4 characters, so it fits the 56 px header whatever the track is called. */
+function shortTrackName(track: TimelineTrack, index: number, tracks: readonly TimelineTrack[]): string {
+  if (track.magnetic && track.kind === 'video') return 'Main';
+  const n = tracks.slice(0, index + 1).filter((t) => t.kind === track.kind && !(t.magnetic && t.kind === 'video')).length;
+  return (track.kind === 'audio' ? 'A' : 'V') + n;
 }
 
 /** The playhead's time, re-rendered on its own as the clock ticks. */

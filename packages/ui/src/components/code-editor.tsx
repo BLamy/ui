@@ -13,9 +13,10 @@ import {
 import { CodeDocument, CodeHistory, caretAt } from '@/lib/code-document';
 import { clipTokens, lineSet, tooBigForPage, type CodeHighlight, type CodeLineRange, type CodeSelection } from '@/lib/code-editor-model';
 import {
-  PLAIN_LANGUAGES, codeTokenClass, lexSyntax, peekSyntax, fallbackResult, tokenizeLines, webgpuSupported,
+  codeTokenClass, lexSyntax, peekSyntax, fallbackResult, tokenizeLines, webgpuSupported,
   type CodeToken, type SyntaxEngine, type SyntaxHighlighter, type SyntaxResult,
 } from '@/lib/syntax';
+import { PLAIN_LANGUAGES } from '@/lib/syntax-lexer';
 import { prefersReducedMotion } from '@/lib/reduced-motion';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/lib/icon';
@@ -42,7 +43,6 @@ export type {
 } from '@/lib/code-editor-window';
 export { codeEditorGutterCellVariants, codeEditorLineVariants };
 export type { CodeEditorAlign, CodeHighlight, CodeHighlightContext, CodeLineRange } from '@/lib/code-editor-model';
-export type { CodeToken, CodeTokenType } from '@/lib/syntax';
 
 /* ── Hook ── */
 
@@ -73,7 +73,7 @@ export function useSyntaxTokens(code: string, { language, enabled = true, engine
   const off = !enabled || (!!language && PLAIN_LANGUAGES.has(language.toLowerCase()));
   const forced = engine === 'fallback';
   const ready = (src: string): SyntaxResult | null =>
-    off ? null : forced ? fallbackResult(src) : peekSyntax(src, engine) ?? (webgpuSupported(engine) ? null : fallbackResult(src));
+    off ? null : forced ? fallbackResult(src, language) : peekSyntax(src, engine, language) ?? (webgpuSupported(engine) ? null : fallbackResult(src, language));
   const [state, setState] = useState<{ code: string; engine: SyntaxEngine; result: SyntaxResult | null }>(() => ({ code, engine, result: ready(code) }));
 
   const same = state.code === code && state.engine === engine;
@@ -91,15 +91,15 @@ export function useSyntaxTokens(code: string, { language, enabled = true, engine
     const keep = (r: SyntaxResult) =>
       setState((s) => (s.code === code && s.engine === engine && s.result === r ? s : { code, engine, result: r }));
     if (forced) {
-      keep(fallbackResult(code));
+      keep(fallbackResult(code, language));
       return;
     }
     let live = true;
-    const hit = peekSyntax(code, engine);
+    const hit = peekSyntax(code, engine, language);
     if (hit) keep(hit);
-    else void lexSyntax(code, engine).then((r) => { if (live) keep(r); });
+    else void lexSyntax(code, engine, language).then((r) => { if (live) keep(r); });
     return () => { live = false; };
-  }, [code, off, forced, engine]);
+  }, [code, off, forced, engine, language]);
 
   const spans = result?.spans ?? null;
   const lines = useMemo(() => tokenizeLines(code, spans), [code, spans]);

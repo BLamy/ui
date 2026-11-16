@@ -3,7 +3,7 @@
    next, what's selected, and what to commit. There's only ever one gesture, so a press can't start two things and a
    cancel can't leave one half done. Nothing's committed until the pointer comes up. */
 import { dist, inFrame, intersects, rectOf, snapMove, unionRect, type Guide, type Pt, type Rect } from '@/lib/canvas-math';
-import { ancestorsOf, edgesAtPoint, nodeAt, portPoint, type ConnectorGeometry, type DiagramConnection, type DiagramIndex, type DiagramSelection, type DiagramSide } from '@/lib/diagram-model';
+import { ancestorsOf, edgesAtPoint, holdsNodes, nodeAt, portPoint, type ConnectorGeometry, type DiagramConnection, type DiagramIndex, type DiagramSelection, type DiagramSide } from '@/lib/diagram-model';
 
 /** Where a connection starts or lands: a node, or one of its ports. */
 export interface DiagramConnectionEnd {
@@ -133,7 +133,7 @@ export function hitTestDiagram(p: Pt, what: {
   if (handle) return handle;
   const n = nodeAt(p, what.index);
   const node = n && n.kind !== 'root' ? n : null;
-  const holds = node && (node.kind === 'compound' || node.kind === 'parallel' || node.kind === 'region');
+  const holds = node && holdsNodes(node);
   if (node && !holds) return { kind: 'node', id: node.id };
   const label = what.labels.find((l) => inFrame(p, l.box));
   if (label) return { kind: 'edge', id: label.id };
@@ -145,7 +145,7 @@ export function hitTestDiagram(p: Pt, what: {
   return node ? { kind: 'node', id: node.id } : null;
 }
 
-/** What a node's selection can move. A root doesn't, and a region moves as its parallel state. Something inside something
+/** What a node's selection can move. A root doesn't, and a region moves as the group it's a lane of. Something inside something
  *  else that's also moving only goes along with it. */
 export function movableNodes(index: DiagramIndex<any>, ids: readonly string[]): string[] {
   const out = new Set<string>();
@@ -163,7 +163,7 @@ export function nodesInMarquee(index: DiagramIndex<any>, rect: Rect): string[] {
   const out: string[] = [];
   for (const n of index.nodes) {
     if (n.kind === 'root') continue;
-    const holds = n.kind === 'compound' || n.kind === 'parallel' || n.kind === 'region';
+    const holds = holdsNodes(n);
     const touched = holds
       ? n.x >= rect.x && n.y >= rect.y && n.x + n.w <= rect.x + rect.w && n.y + n.h <= rect.y + rect.h
       : intersects(rect, n);

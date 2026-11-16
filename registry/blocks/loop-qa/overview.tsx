@@ -119,7 +119,7 @@ function Exploration() {
       }
       bodyClassName="grid gap-4 p-4 @5xl:grid-cols-[1fr_240px]!"
     >
-      <ReplayPreview events={EXPLORATION_EVENTS} initialTime={EXPLORATIONS[0]!.initialTime} playerRef={player} title="Exploration replay" />
+      <ReplayPreview events={EXPLORATION_EVENTS} initialTime={EXPLORATIONS[0]!.initialTime} ref={player} title="Exploration replay" />
       <Swap value={ex.id} direction={dir}>
         <div className="flex flex-col gap-3">
           <div>

@@ -151,7 +151,7 @@ function Browser({ initialUrls }: { initialUrls?: string[] }) {
       onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) shortcuts.setScope(scope, false); }}
     >
       <div className="relative flex min-h-0 flex-1 flex-col">
-        <Toolbar browser={browser} snapshot={snapshot} history={history} totals={browser.state.totals} inputRef={addressRef} overview={overview} onOverviewChange={setOverview} compact={compact} onExitNode={chooseExitNode} />
+        <Toolbar browser={browser} snapshot={snapshot} history={history} totals={browser.state.totals} inputRef={addressRef} overview={overview} onOverviewChange={setOverview} sizeClass={sizeClass} onExitNode={chooseExitNode} />
         {!compact && browser.state.tabs.length > 1 ? <TabStrip browser={browser} /> : null}
         <main className="relative min-h-0 flex-1 bg-background" aria-busy={tab.status === 'loading'}>
           {tab.status === 'start' ? <StartPage snapshot={snapshot} history={history} totals={browser.state.totals} onOpen={open} />

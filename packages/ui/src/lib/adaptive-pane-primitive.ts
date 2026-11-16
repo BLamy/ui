@@ -13,7 +13,7 @@ import {
 } from '@ui-sdk/core';
 import { bindBack } from '@/lib/back';
 import { bindEdgeSwipe } from '@/lib/edge-swipe';
-import { createStack, type StackExit } from '@/lib/stack';
+import { createPageStack, type PageStackExit } from '@/lib/stack';
 
 /* ══ AdaptivePane — one region, five presentations ══
    `column` docks the pane beside its siblings, `drawer` moves it over the host from its side (UI SDK's Drawer,
@@ -27,7 +27,7 @@ import { createStack, type StackExit } from '@/lib/stack';
    to the host's width with Enter or a double-click. Widths are kept per presentation. A closed drawer can also open
    by a swipe from the host's edge (`swipeToOpen`, `bindEdgeSwipe`), past a third of the host or with a flick.
 
-   The push is a two-page stack from `createStack`: the host's page, and the pane on top. Opening pushes it, and the
+   The push is a two-page stack from `createPageStack`: the host's page, and the pane on top. Opening pushes it, and the
    close part, Escape, the platform back and a swipe from its leading edge pop it, each through `onOpenChange` with
    its reason. While it covers the page, the host's other children are inert, and the page parallaxes and follows a
    swipe from one variable the root writes on its host (`--adaptive-pane-under`, with `data-adaptive-pane-swiping` /
@@ -118,7 +118,7 @@ type AdaptivePaneState = {
   draft: ResizeDraft | null;
   /** The push's stack: the host's page, and the pane while it is pushed. */
   pages: string[];
-  exiting: StackExit[];
+  exiting: PageStackExit[];
 };
 
 /** Width a resized pane leaves for what is beside it. */
@@ -246,7 +246,7 @@ export const adaptivePane = definePrimitive({
       open !== store.get().open && change('open', open, { reason, event });
     const setWidths = (widths: AdaptivePaneWidths, { reason = 'imperative', event }: ChangeOptions<AdaptivePaneWidthsChangeReason> = {}) =>
       change('widths', widths, { reason, event });
-    const stack = createStack<AdaptivePaneState, AdaptivePaneOpenChangeReason>(context, {
+    const stack = createPageStack<AdaptivePaneState, AdaptivePaneOpenChangeReason>(context, {
       key: 'pages',
       exiting: 'exiting',
       set: (pages, details) => change('open', pages.length > 1, details),

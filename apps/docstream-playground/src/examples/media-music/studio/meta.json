@@ -1,6 +1,6 @@
 {
   "title": "Player with the rack open",
-  "description": "`showRack` opens the equipment generated from the code. Press play, then mute, solo, turn knobs or click steps: the edits play live.",
+  "description": "`defaultRackOpen` opens the equipment generated from the code. Press play, then mute, solo, turn knobs or click steps: the edits play live.",
   "status": "Audio",
   "height": 720,
   "variants": [

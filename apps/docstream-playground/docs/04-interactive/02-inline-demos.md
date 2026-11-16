@@ -164,7 +164,7 @@ Bare imports resolve through almost-node — installed packages first, else [esm
 import { PlaygroundStreamdown } from "@brett_lamy/ui/docstream/playground"
 
 // Live code fences and inline demos run in almost-node by default.
-<PlaygroundStreamdown markdown={md} isStreaming={!done} />
+<PlaygroundStreamdown markdown={md} streaming={!done} />
 ```
 {% endtab %}
 {% tab title="createAlmostNodeDemoRuntime" %}

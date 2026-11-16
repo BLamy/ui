@@ -86,7 +86,7 @@ export type {
 } from "./demo"
 export { CitationSources, DocstreamRefContext, InlineReference } from "./docs/reference"
 export type { CitationPreview, CitationPreviewResolver, DocstreamRefContextValue } from "./docs/reference"
-export { ReplayEmbed, ReplayPreview, formatReplayTime } from "./replay/ReplayPreview"
+export { ReplayPreview, formatReplayTime } from "./replay/ReplayPreview"
 export type {
   ReplayEventsSource,
   ReplayEventsUrlSource,
@@ -111,7 +111,7 @@ export { SplitCard, SplitResult, SplitSource } from "./docs/SplitCard"
 export { isStrudelFile, isStrudelLanguage } from "./strudel/url"
 export type { StrudelCodeChangeDetails, StrudelPanelChangeReason, StrudelPlayerProps } from "./strudel/StrudelPlayer"
 export type { StrudelRackChangeDetails, StrudelRackChangeReason, StrudelRackControl } from "./strudel/rack-types"
-export { DEFAULT_TUI_RUNTIME_URL, TuiPreview, TuiEmbed, isTuiCodeBlock } from "./tui"
+export { DEFAULT_TUI_RUNTIME_URL, TuiPreview, isTuiCodeBlock } from "./tui"
 export type { TuiAppearance, TuiPreviewProps, TuiPreviewOptions, TuiPreviewState, TuiTheme } from "./tui"
 export { OpenApiOperation } from "./openapi/OpenApiOperation"
 export { createInlineDemoProject, createReactDemoFiles } from "./playground/project"

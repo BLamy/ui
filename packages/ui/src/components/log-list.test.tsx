@@ -3,7 +3,7 @@ import { useState, type ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { getReplayDevtools, replayDevtoolsAt } from '@brett_lamy/ui/docstream/replay';
-import { LogList, LogListRowContent, createLogListController, type LogRowState } from '@/components/ui/log-list';
+import { LogList, LogListRowContent, createLogListController, type LogListRowState } from '@/components/ui/log-list';
 import { RequestTable } from '@/components/ui/request-table';
 import type { LogRow } from '@/lib/log-list-model';
 
@@ -96,6 +96,8 @@ describe('LogList', () => {
     const title = screen.getByText('Nothing logged yet');
     expect(title.getAttribute('data-slot')).toBe('empty-state-title');
     expect(title.closest('[data-slot=log-list-empty]')).toBeTruthy();
+    // A grid owns only rows: the status region is the grid's sibling.
+    expect(title.closest('[role=grid]')).toBeNull();
     rerender(<LogList rows={makeRows(2)} emptyState="Nothing logged yet" footer="12 more later" />);
     expect(screen.queryByText('Nothing logged yet')).toBeNull();
     expect(screen.getByText('12 more later')).toBeTruthy();
@@ -147,7 +149,7 @@ describe('the position marker', () => {
 
   it('moves without rendering a single row, through currentTime', () => {
     const renders = vi.fn();
-    const renderRow = (r: LogRow, state: LogRowState): ReactNode => {
+    const renderRow = (r: LogRow, state: LogListRowState): ReactNode => {
       renders(state.index);
       return <LogListRowContent row={r} />;
     };

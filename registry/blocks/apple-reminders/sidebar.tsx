@@ -53,7 +53,7 @@ function ListItem({ l, collapsed }: { l: RList; collapsed: boolean }) {
     <div className="relative flex w-full after:absolute after:right-0 after:bottom-0 after:left-[55px] after:h-px after:bg-border last:after:hidden has-data-selected:after:hidden">
       <SplitViewItem value={l.id} tint={l.color} preview={<ListPreview list={l} items={items} />}
         className="min-h-[50px] gap-3 rounded-ctl px-3 text-body">
-        <ListIcon glyph={l.glyph} color={l.color} size={30} className="transition-colors duration-150 group-data-current/item:bg-white group-data-current/item:text-(--list-color)" />
+        <ListIcon glyph={l.glyph} tint={l.color} size={30} className="transition-colors duration-150 group-data-current/item:bg-white group-data-current/item:text-(--list-color)" />
         <span className="min-w-0 flex-1 truncate" title={l.file?.path}>{l.name}
           {l.file ? <span className="block truncate text-footnote text-muted-foreground group-data-current/item:text-white/80">{l.file.path.split('/').slice(1).join('/')}</span> : null}
         </span>
@@ -74,7 +74,7 @@ function InlineResults() {
       {v.groups.map((g) => (
         <section key={g.key} className="pb-3">
           <h3 className="m-0 px-4 pt-3 pb-1 text-title font-bold" style={{ color: g.color }}>{g.title}</h3>
-          {g.items.map((r) => <ReminderRow key={r.id} r={r} color={g.color ?? SYSTEM.gray} phone />)}
+          {g.items.map((r) => <ReminderRow key={r.id} r={r} tint={g.color ?? SYSTEM.gray} phone />)}
         </section>
       ))}
     </div>

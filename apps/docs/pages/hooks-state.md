@@ -24,7 +24,7 @@ import { useRowLabel } from '@/lib/row-label'                                   
 
 `useState` backed by `localStorage` as JSON. A missing, unparseable or invalid stored value falls back to the initial one, and storage that throws (private mode, quota, disabled) is ignored: the state just does not persist.
 
-- **Export:** public, with `loadJSON` and `saveJSON`. Registry item `persistent-state` (`@/lib/persistent-state`).
+- **Export:** public; `loadJSON` and `saveJSON`, the reads and writes underneath, are on `@brett_lamy/ui/lib/persistent-state`. Registry item `persistent-state` (`@/lib/persistent-state`).
 - **Needs:** nothing.
 
 ```ts

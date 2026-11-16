@@ -210,7 +210,7 @@ export function ThreadGroup({ label, collapsible, defaultOpen = true, open, onOp
 export type ThreadStatus = 'idle' | 'running' | 'unread' | 'error';
 export interface ThreadItemProps {
   /** highlighted as the open thread */
-  active?: boolean;
+  current?: boolean;
   /** running: a pulsing dot replaces the icon · unread: bold title + dot · error: red dot */
   status?: ThreadStatus;
   /** trailing text, e.g. the thread's age */
@@ -223,12 +223,12 @@ export interface ThreadItemProps {
   className?: string;
   children?: React.ReactNode;
 }
-export function ThreadItem({ active, status = 'idle', meta, icon = 'bubble-left', preview, onClick, className, children }: ThreadItemProps) {
+export function ThreadItem({ current, status = 'idle', meta, icon = 'bubble-left', preview, onClick, className, children }: ThreadItemProps) {
   const close = useCloseDrawer();
   const rowProps = {
     'data-status': status,
-    'aria-current': active ? ('page' as const) : undefined,
-    className: cn(rowBtn, 'box-border w-full px-2 py-1.5 text-footnote text-foreground', active ? 'bg-secondary-strong' : 'bg-transparent', className),
+    'aria-current': current ? ('page' as const) : undefined,
+    className: cn(rowBtn, 'box-border w-full px-2 py-1.5 text-footnote text-foreground', current ? 'bg-secondary-strong' : 'bg-transparent', className),
     onClick: () => {
       onClick?.();
       close();

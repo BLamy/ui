@@ -1,7 +1,10 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Diagram, DiagramToolbar } from '@/components/ui/diagram';
-import { DiagramFrame, DiagramFrameBar, DiagramFrameBoard, DiagramFrameCover, DiagramFrameInput, DiagramFramePanel, DiagramFrameSection, type DiagramFrameProps } from '@/components/ui/diagram-frame';
+import { DiagramFrame, DiagramFrameBar, DiagramFrameBoard, DiagramFrameCover, DiagramFrameCoverHeader, DiagramFramePanel, DiagramFrameSection, type DiagramFrameProps } from '@/components/ui/diagram-frame';
+import { Field, FieldError, FieldLabel } from '@/components/ui/field';
+import { Input } from '@/components/ui/input';
 import { Phone } from '../stories/frame';
 
 const meta: Meta<typeof DiagramFrame> = {
@@ -18,33 +21,48 @@ const NODES = [
 ];
 const EDGES = [{ id: 'ab', from: 'a', to: 'b', label: 'then' }];
 
-function Example({ cover, ...props }: Partial<DiagramFrameProps> & { cover?: boolean }) {
+function Example({ cover: coverAtFirst, refused, ...props }: Partial<DiagramFrameProps> & { cover?: boolean; refused?: boolean }) {
+  const [name, setName] = useState('One');
+  const [refusal, setRefusal] = useState<string | null>(refused ? '“two words” can’t be a name.' : null);
+  const [cover, setCover] = useState(!!coverAtFirst);
   return (
     <DiagramFrame {...props}>
       <DiagramFrameBoard>
-        <Diagram defaultNodes={NODES} defaultEdges={EDGES} editable aria-label="An example" overlay={<DiagramToolbar side="top" />} />
+        <Diagram defaultNodes={NODES} defaultEdges={EDGES} editable aria-label="An example" overlay={<DiagramToolbar />} />
         <DiagramFrameBar>Two nodes</DiagramFrameBar>
       </DiagramFrameBoard>
       <DiagramFramePanel title="Details">
         <DiagramFrameSection title="This node">
-          <DiagramFrameInput label="Name" value="One" onValueCommit={() => {}} />
+          <Field invalid={!!refusal}>
+            <FieldLabel>Name</FieldLabel>
+            <Input size="sm" value={name} onValueCommit={(next) => {
+              if (/\s/.test(next)) { setRefusal(`“${next}” can’t be a name.`); return; }
+              setRefusal(null);
+              setName(next);
+            }} />
+            <FieldError>{refusal}</FieldError>
+          </Field>
           <p className="m-0 text-footnote text-foreground/70">What’s in a panel is up to what’s made of this.</p>
         </DiagramFrameSection>
         <DiagramFrameSection title="Actions">
-          <div><Button variant="secondary" size="sm">Delete</Button></div>
+          <div className="flex gap-2">
+            <Button variant="secondary" size="sm" onClick={() => setCover(true)}>Look inside</Button>
+            <Button variant="secondary" size="sm">Delete</Button>
+          </div>
         </DiagramFrameSection>
       </DiagramFramePanel>
       {cover ? (
         <DiagramFrameCover>
-          <div className="flex shrink-0 items-center gap-2 border-b border-border p-2">
-            <Button variant="secondary" size="sm">Back to the board</Button>
-            <span className="text-footnote font-semibold">Inside One</span>
-          </div>
+          <DiagramFrameCoverHeader title={`Inside ${name}`} backLabel="Board" onBack={() => setCover(false)} />
+          <p className="m-0 p-5 text-subhead text-muted-foreground">What’s inside what’s selected goes here.</p>
         </DiagramFrameCover>
       ) : null}
     </DiagramFrame>
   );
 }
+
+/** A phone's screen, edge to edge: the story's canvas has no padding, so nothing's cut off at 390 px. */
+const phone = { parameters: { layout: 'fullscreen' } } as const;
 
 /** With the room (regular), the panel's a column beside the board, open to begin with. */
 export const Column: Story = {
@@ -64,12 +82,14 @@ export const Drawer: Story = {
 /** Compact (a phone): closed to begin with, as it would go over the board. */
 export const Phone390: Story = {
   name: 'Phone',
-  render: () => <Phone w={390} h={720}><Example /></Phone>,
+  ...phone,
+  render: () => <Phone w={390} h={844}><Example /></Phone>,
 };
 
 /** Compact and open: a page pushed over the board, with a back button that names it. */
 export const PhoneOpen: Story = {
-  render: () => <Phone w={390} h={720}><Example defaultOpen /></Phone>,
+  ...phone,
+  render: () => <Phone w={390} h={844}><Example defaultOpen /></Phone>,
 };
 
 /** `side="start"`: the panel on the leading edge. */
@@ -77,9 +97,20 @@ export const Start: Story = {
   render: () => <Phone w={900} h={360}><Example side="start" /></Phone>,
 };
 
-/** A cover over all of it: what's inside what's selected. The board and the panel are inert underneath. */
+/** A cover over all of it: what's inside what's selected, with a bar that goes back. The board and the panel are inert
+ *  underneath. */
 export const Cover: Story = {
   render: () => <Phone w={900} h={360}><Example cover /></Phone>,
+};
+
+export const CoverPhone: Story = {
+  ...phone,
+  render: () => <Phone w={390} h={844}><Example cover /></Phone>,
+};
+
+/** A field that refuses what it's given: the Field's invalid edge and its error, tied to the input. */
+export const Refused: Story = {
+  render: () => <Phone w={900} h={360}><Example refused /></Phone>,
 };
 
 export const Dark: Story = {
@@ -87,5 +118,6 @@ export const Dark: Story = {
 };
 
 export const PhoneOpenDark: Story = {
-  render: () => <Phone w={390} h={720} appearance="dark"><Example defaultOpen /></Phone>,
+  ...phone,
+  render: () => <Phone w={390} h={844} appearance="dark"><Example defaultOpen /></Phone>,
 };

@@ -5,7 +5,7 @@ A board with a panel beside it: a [Diagram](#/diagram) (or anything else on a bo
 Use [AdaptivePane](#/adaptive-pane) directly for a pane beside a page that isn't a board, [SplitView](#/split-view) for list and detail columns that become a stack, and [Sheet](#/sheet) for a modal panel that isn't part of the layout. [StateDiagram](#/state-diagram) and [CloudflareDiagram](#/cloudflare-diagram) are made of this.
 
 {% hint style="info" %}
-**Why it's its own component, not an AdaptivePane variant.** It *is* AdaptivePane for the panel. What it adds is what a board needs around it: its own size class (a board is usable narrower than a page), a status bar on the board while the panel's closed, a drawer that leaves the board live, a cover for what's inside a node, and the panel's sections and commit-on-Enter fields. Those are a composition of AdaptivePane, Field and Input, written once.
+**Why it's its own component, not an AdaptivePane variant.** It *is* AdaptivePane for the panel. What it adds is what a board needs around it: its own size class (a board is usable narrower than a page), a status bar on the board while the panel's closed, a drawer that leaves the board live, a cover (with its own back bar) for what's inside a node, and the panel's sections. A field in the panel is the kit's [Field](#/field) and [Input](#/input), with `onValueCommit` for one that changes something once you're done with it.
 {% endhint %}
 
 {% tabs title="Installation" sync="install" %}
@@ -50,7 +50,11 @@ Like the library's other containers, the frame fills the nearest positioned box.
     </DiagramFrameBoard>
     <DiagramFramePanel title="Inspector" backLabel="Rules">
       <DiagramFrameSection title="This step">
-        <DiagramFrameInput label="Name" value={selected.label} onValueCommit={rename} />
+        <Field invalid={!!refused}>
+          <FieldLabel>Name</FieldLabel>
+          <Input size="sm" value={selected.label} onValueCommit={rename} />
+          <FieldError>{refused}</FieldError>
+        </Field>
       </DiagramFrameSection>
     </DiagramFramePanel>
   </DiagramFrame>
@@ -71,15 +75,28 @@ The frame measures its own width (`breakpoints`, default 440 and 720 px) and is 
 
 `presentation` forces one (`column`, `drawer`, `push`, `cover`); `side="start"` puts it on the leading edge. `open` / `defaultOpen` / `onOpenChange(open, details)` control it: `details.reason` is AdaptivePane's (`trigger-press`, `close-press`, `escape-key`, `swipe`, `back`…), and `details.cancel()` keeps it as it is. `modal` on the panel makes a drawer dim and block the board.
 
+Left to itself, opening or closing the panel holds for the way it shows now. Going back from a pushed page on a phone is going back to the board, not hiding the inspector, so when the frame widens into a column, the column shows again (as an iPad's split view does), and a column open on a wide frame doesn't come back as a page pushed over the board on a narrow one.
+
 ## The bar, the trigger and the cover
 
-`DiagramFrameBar` floats at the foot of the board while the panel's closed: its children are a status, read politely as it changes, and its trigger opens the panel. `DiagramFrameTrigger` is that button on its own (its text is the panel's title), for a toolbar of your own (`render`). Opened by its trigger as a column, focus goes into the panel; closed from inside, it comes back to the trigger. A drawer and a pushed page move focus themselves.
+`DiagramFrameBar` floats at the foot of the board while the panel's closed: its children are a status, read politely as it changes, and its trigger opens the panel. A Diagram on the board fits its content clear of it, and puts its `DiagramToolbar` at the top. `DiagramFrameTrigger` is that button on its own (its text is the panel's title), for a toolbar of your own (`render`). Opened by its trigger as a column, focus goes into the panel; closed from inside, it comes back to the trigger. A drawer and a pushed page move focus themselves.
 
-`DiagramFrameCover` goes over all of it: something to see in place of the board, like what's inside a node. The board and the panel stay as they are underneath, inert. Render it while it shows, and give it a way back.
+`DiagramFrameCover` goes over all of it: something to see in place of the board, like what's inside a node. The board and the panel stay as they are underneath, inert. Render it while it shows, with a `DiagramFrameCoverHeader` at its top: the same bar as a pushed panel's, "‹ back" at the start (named "Back to" its `backLabel`) and a centered title. Its back button has focus when the cover opens.
+
+```tsx
+{inside ? (
+  <DiagramFrameCover>
+    <DiagramFrameCoverHeader title={`Inside ${inside.label}`} backLabel="Rules" onBack={() => setInside(null)} />
+    <Inside node={inside} />
+  </DiagramFrameCover>
+) : null}
+```
 
 ## Panel parts
 
-`DiagramFrameSection` is a titled region of the panel (its title is a grouped section label). `DiagramFrameInput` is a labelled field (a [Field](#/field) with an [Input](#/input)) that changes something once you're done with it rather than on every key: Enter or leaving it commits (`onValueCommit`), Escape puts it back and goes no further, so the panel stays open. If the owner refuses the value, the field shows what it was.
+`DiagramFrameSection` is a titled region of the panel (its title is a grouped section label). The panel's body lines up with its title.
+
+A field that changes something once you're done with it, rather than on every key, is a [Field](#/field) with an [Input](#/input) and `onValueCommit(value, details)`: Enter or leaving it commits, Escape puts it back and goes no further, so the panel stays open. If you refuse the value (`value` doesn't change), the field shows what it was; say why in the Field's `FieldError`, with `invalid` on the Field, so the input shows its invalid edge and is described by the reason.
 
 ## Accessibility
 
@@ -105,12 +122,13 @@ The frame measures its own width (`breakpoints`, default 440 and 720 px) and is 
 
 | Prop | Default | Effect |
 | --- | --- | --- |
-| `title` | — (required) | Names and heads the panel; the trigger's text. |
+| `title` | — (required) | Heads the panel and names it; the trigger's text. Any node: give it an `aria-label` when it isn't text. |
 | `backLabel` | `Board` | What a pushed panel's back button says. |
 | `width` | 288 | Its width as a column (a drawer is at least 300). |
 | `modal` | `false` | Whether a drawer dims and blocks the board. |
 | `actions` | — | Things to do after the title (a ToolbarButton, a menu). |
 | `className` | — | The pane's box. |
+| `ref`, `id`, `data-*`, … | — | The panel's element (`data-slot="diagram-frame-panel"`, around the pane). |
 
 ### DiagramFrameBar
 
@@ -119,17 +137,17 @@ The frame measures its own width (`breakpoints`, default 440 and 720 px) and is 
 | `children` | — | The status. |
 | `trigger` | `<DiagramFrameTrigger />` | What opens the panel; `null` for nothing. |
 
-### DiagramFrameInput
+### DiagramFrameCoverHeader
 
 | Prop | Default | Effect |
 | --- | --- | --- |
-| `label` | — (required) | Its label. |
-| `value` | — (required) | What it says now, and goes back to. |
-| `onValueCommit(value)` | — (required) | The text, once changed and finished with. |
-| `size` | `sm` | As on Input. Any other Input prop passes through. |
+| `title` | — (required) | What the cover shows, centered. |
+| `onBack(event)` | — (required) | Goes back: unmount the cover. |
+| `backLabel` | `Back` | What it goes back to, beside the chevron while it fits; the button is named "Back to" it. |
+| `actions` | — | Things to do at the end of the bar. |
 
-`DiagramFrameBoard`, `DiagramFrameCover` and `DiagramFrameSection` (with its `title`) take their element's props. `useDiagramFrame()` gives a part inside the frame `{ open, setOpen, presentation, sizeClass }`.
+`DiagramFrameBoard`, `DiagramFrameCover`, `DiagramFrameCoverHeader` and `DiagramFrameSection` (with its `title`) take their element's props. `useDiagramFrame()` gives a part inside the frame `{ open, setOpen, presentation, sizeClass, covered }`: `covered` is whether a cover is over it, for focus to wait on before it goes back to something under it.
 
 ## Styling
 
-Slots: `diagram-frame` (with `data-presentation`, `data-open`, `data-covered`, `data-size-class`), `diagram-frame-board`, `diagram-frame-bar`, `diagram-frame-status`, `diagram-frame-panel-body`, `diagram-frame-cover` and `diagram-frame-section`; the trigger is AdaptivePane's, marked `data-diagram-frame-trigger`, and the panel is an AdaptivePane (`adaptive-pane`, with its header parts).
+Slots: `diagram-frame` (with `data-presentation`, `data-open`, `data-covered`, `data-size-class`: `compact`, `medium` or `regular`), `diagram-frame-board`, `diagram-frame-bar`, `diagram-frame-status`, `diagram-frame-panel`, `diagram-frame-panel-body`, `diagram-frame-cover`, `diagram-frame-cover-header` (`diagram-frame-cover-back`, `diagram-frame-cover-title`) and `diagram-frame-section`; the trigger is AdaptivePane's, marked `data-diagram-frame-trigger`, and the panel is an AdaptivePane (`adaptive-pane`, with its header parts).

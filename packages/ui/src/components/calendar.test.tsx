@@ -158,6 +158,23 @@ describe('Calendar', () => {
     const months = document.querySelector('[data-slot=calendar-months]')!;
     expect(months.className).toContain('flex-wrap');
     expect(months.querySelectorAll('[data-slot=calendar-grid]')).toHaveLength(2);
+    // Side by side: no captions.
+    expect(months.hasAttribute('data-stacked')).toBe(false);
+  });
+
+  it('captions each month when the grids wrap onto rows, from the layout, not the size class', async () => {
+    // A regular-width page whose calendar sits in a narrow column: the second grid starts below the first.
+    const offsetTop = vi.spyOn(HTMLElement.prototype, 'offsetTop', 'get').mockImplementation(function (this: HTMLElement) {
+      return this.getAttribute('data-slot') === 'calendar-grid' && this.previousElementSibling ? 320 : 0;
+    });
+    render(<Calendar {...en} months={2} />);
+    await settle();
+    const months = document.querySelector('[data-slot=calendar-months]')!;
+    expect(months.hasAttribute('data-stacked')).toBe(true);
+    const caption = months.querySelector('[data-slot=calendar-grid-heading]')!;
+    expect(caption.textContent).toBe('September 2026');
+    expect(caption.className).toContain('in-data-stacked:table-caption');
+    offsetTop.mockRestore();
   });
 
   it('grows its days to touch size in a compact container, sharing a width that never runs past it', async () => {

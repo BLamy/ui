@@ -4,24 +4,15 @@
 
    A one-time adapter probe decides first. When WebGPU is unavailable (no `navigator.gpu`, no adapter, insecure
    context) or — in the default `auto` engine — the only adapter is a software one (SwiftShader in headless CI,
-   llvmpipe), a deliberately small fallback — comments, strings, numbers, keywords, calls — labels the code at once,
-   and the element says so with `data-highlighter="fallback"`. It is a degraded mode, not a second highlighter. */
+   llvmpipe), the kit's synchronous lexer (lib/syntax-lexer, the one docstream's fences use too: per-language rules
+   for the common languages, a C-family default for the rest) labels the code at once, and the element says so with
+   `data-highlighter="fallback"`. */
 import { navigatorGpu, probeWebGPU, webgpuProbeResult } from '@/lib/webgpu';
+import { fallbackSpans, type CodeTokenType, type SyntaxSpan } from '@/lib/syntax-lexer';
 
 export { probeWebGPU } from '@/lib/webgpu';
 export type { WebGPUProbe } from '@/lib/webgpu';
 
-/** The library's token colors: each is a `bl-tok-<type>` class that reads a `--bl-syntax-*` property. */
-export type CodeTokenType =
-  | 'plain'
-  | 'comment'
-  | 'string'
-  | 'number'
-  | 'keyword'
-  | 'type'
-  | 'function'
-  | 'constant'
-  | 'operator';
 
 /** A labelled piece of text, whichever renderer draws it. The pieces of a highlighted range, joined, are that range. */
 export interface CodeToken {
@@ -36,13 +27,6 @@ export interface CodeToken {
 export function codeTokenClass(token: Pick<CodeToken, 'className'> & { type?: CodeTokenType }): string {
   const color = token.type && token.type !== 'plain' ? `bl-tok bl-tok-${token.type}` : '';
   return token.className ? (color ? `${color} ${token.className}` : token.className) : color;
-}
-
-/** A labelled range of the source: half-open UTF-16 offsets (gpu-lexer's output shape). */
-export interface SyntaxSpan {
-  type: CodeTokenType;
-  start: number;
-  end: number;
 }
 
 /** What produced the tokens: `gpu` (gpu-lexer on WebGPU), `fallback` (no hardware WebGPU, or forced), `pending`
@@ -97,10 +81,13 @@ function lruSet(map: Map<string, SyntaxResult>, code: string, result: SyntaxResu
 
 /** A finished result for this source, if one is cached: the GPU's, or the fallback's once `engine` is known not to
     use the GPU here. */
-export function peekSyntax(code: string, engine: SyntaxEngine = 'auto'): SyntaxResult | undefined {
-  if (engine === 'fallback') return lruGet(fallbackCache, code);
-  return lruGet(cache, code) ?? (webgpuSupported(engine) ? undefined : lruGet(fallbackCache, code));
+export function peekSyntax(code: string, engine: SyntaxEngine = 'auto', language?: string | null): SyntaxResult | undefined {
+  if (engine === 'fallback') return lruGet(fallbackCache, fallbackKey(code, language));
+  return lruGet(cache, code) ?? (webgpuSupported(engine) ? undefined : lruGet(fallbackCache, fallbackKey(code, language)));
 }
+
+/** The fallback reads the language (gpu-lexer needs none), so its results are cached per language. */
+const fallbackKey = (code: string, language?: string | null) => `${(language ?? '').toLowerCase()}\0${code}`;
 
 /* ── Span normalisation ── gpu-lexer sometimes labels operators (`=>`, `?.`, `??`) and punctuation as a keyword,
    type, function or constant. Such spans are re-cut: operator runs become `operator`, punctuation, a lone `.` or `:`
@@ -202,7 +189,7 @@ async function gpuSpans(code: string): Promise<SyntaxSpan[]> {
   return normalizeSpans(code, out);
 }
 
-function gpuResult(code: string): Promise<SyntaxResult> {
+function gpuResult(code: string, language?: string | null): Promise<SyntaxResult> {
   return (queue = queue.then(() =>
     gpuSpans(code).then(
       (spans): SyntaxResult => {
@@ -212,23 +199,23 @@ function gpuResult(code: string): Promise<SyntaxResult> {
       (error: unknown): SyntaxResult => {
         // "WebGPU unavailable" means no adapter: stop trying. Anything else (a buffer limit) only fails this source.
         if (gpuState !== 'ready' && /unavailable/i.test(String(error))) gpuState = 'unavailable';
-        return fallbackResult(code);
+        return fallbackResult(code, language);
       },
     ),
   )) as Promise<SyntaxResult>;
 }
 
 /** Lex `code` with `engine` (default `auto`): gpu-lexer when the engine and the one-time adapter probe allow it,
-    else the small fallback. Cached and de-duplicated. */
-export function lexSyntax(code: string, engine: SyntaxEngine = 'auto'): Promise<SyntaxResult> {
-  const hit = peekSyntax(code, engine);
+    else the fallback (lib/syntax-lexer), which reads `language` when it has rules for it. Cached and de-duplicated. */
+export function lexSyntax(code: string, engine: SyntaxEngine = 'auto', language?: string | null): Promise<SyntaxResult> {
+  const hit = peekSyntax(code, engine, language);
   if (hit) return Promise.resolve(hit);
-  if (!webgpuSupported(engine)) return Promise.resolve(fallbackResult(code));
-  const key = engine + '\0' + code;
+  if (!webgpuSupported(engine)) return Promise.resolve(fallbackResult(code, language));
+  const key = engine + '\0' + fallbackKey(code, language);
   const pending = inflight.get(key);
   if (pending) return pending;
   const run = probeWebGPU()
-    .then(() => (webgpuSupported(engine) ? gpuResult(code) : fallbackResult(code)))
+    .then(() => (webgpuSupported(engine) ? gpuResult(code, language) : fallbackResult(code, language)))
     .then((result) => {
       inflight.delete(key);
       if (result.highlighter === 'gpu') lruSet(cache, code, result);
@@ -238,57 +225,15 @@ export function lexSyntax(code: string, engine: SyntaxEngine = 'auto'): Promise<
   return run;
 }
 
-/** The fallback result, synchronously (cached). */
-export function fallbackResult(code: string): SyntaxResult {
-  const hit = lruGet(fallbackCache, code);
+/** The fallback result for `code` in `language` (none: the C-family default), synchronously (cached). Any size: the
+    lexer is linear, and CodeEditor colors big files with it too. */
+export function fallbackResult(code: string, language?: string | null): SyntaxResult {
+  const key = fallbackKey(code, language);
+  const hit = lruGet(fallbackCache, key);
   if (hit) return hit;
-  const result: SyntaxResult = { spans: normalizeSpans(code, fallbackSpans(code)), highlighter: 'fallback' };
-  lruSet(fallbackCache, code, result);
+  const result: SyntaxResult = { spans: normalizeSpans(code, fallbackSpans(code, language, Infinity)), highlighter: 'fallback' };
+  lruSet(fallbackCache, key, result);
   return result;
-}
-
-/* ── Minimal fallback lexer ── C-family / script shaped: `//`, `#` and block comments, quoted strings, numbers,
-   a shared keyword list, `true`/`null`-style constants, calls, capitalized types and operators (`=>`, `?.`, `??`,
-   `...`, `::`, `->`; a lone `.` or `:` and brackets stay plain). */
-
-const KEYWORDS = new Set(
-  ('as async await break case catch class const continue def default delete do elif else enum export extends ' +
-    'fn for from func function go if impl implements import in instanceof interface let match mod module mut new ' +
-    'package pass private protected pub public raise readonly return static struct super switch then this throw ' +
-    'trait try type typeof use var void where while with yield fi done esac local echo').split(' '),
-);
-const CONSTANTS = new Set('true false null undefined nil None True False NaN Infinity self'.split(' '));
-/** Built-in type names: types, as gpu-lexer labels them (and so does the windowed lexer, lib/code-editor-model.ts). */
-export const BUILTIN_TYPES = new Set('string number boolean bigint symbol unknown never any'.split(' '));
-const RX =
-  /(\/\/[^\n]*|#(?=[ \t!]|$)[^\n]*|\/\*[\s\S]*?(?:\*\/|$)|<!--[\s\S]*?(?:-->|$))|("(?:[^"\\\n]|\\.)*"?|'(?:[^'\\\n]|\\.)*'?|`(?:[^`\\]|\\.)*`?)|(\b(?:0[xob][\da-f_]+|\d[\d_]*(?:\.\d+)?(?:e[+-]?\d+)?)\b)|([A-Za-z_$][\w$]*)|(\?\.(?!\d)|\.{2,3}|::|[=<>!+\-*/%&|^~?:]*[=<>!+\-*/%&|^~?][=<>!+\-*/%&|^~?:]*)/gi;
-
-export function fallbackSpans(code: string): SyntaxSpan[] {
-  const out: SyntaxSpan[] = [];
-  RX.lastIndex = 0;
-  let m: RegExpExecArray | null;
-  while ((m = RX.exec(code))) {
-    const start = m.index;
-    const end = start + m[0].length;
-    let type: CodeTokenType = 'plain';
-    if (m[1]) type = 'comment';
-    else if (m[2]) type = 'string';
-    else if (m[3]) type = 'number';
-    else if (m[4]) {
-      const w = m[4];
-      type = KEYWORDS.has(w)
-        ? 'keyword'
-        : CONSTANTS.has(w)
-          ? 'constant'
-          : /^\s*\(/.test(code.slice(end, end + 8))
-            ? 'function'
-            : /^[A-Z]([a-z]|$)/.test(w) || BUILTIN_TYPES.has(w)
-              ? 'type'
-              : 'plain';
-    } else if (m[5]) type = 'operator';
-    if (type !== 'plain') out.push({ type, start, end });
-  }
-  return out;
 }
 
 /* ── Spans → lines ── */
@@ -333,6 +278,3 @@ export function languageFromPath(path: string): string {
   };
   return map[ext] ?? (ext || 'text');
 }
-
-/** Languages that are never lexed. */
-export const PLAIN_LANGUAGES = new Set(['text', 'txt', 'plaintext', 'plain', 'none']);

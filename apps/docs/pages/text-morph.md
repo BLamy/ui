@@ -43,7 +43,7 @@ Pass the text as a single string child; changing it runs the morph. At rest it r
 - There is no morph for multi-line text: if either the old or new text contains a newline, or the user prefers reduced motion, it swaps at once.
 - The morph measures the rendered run, so the element needs the final font; a web font that loads late is re-measured once `document.fonts` is ready.
 - The root is an `inline-block` at rest and while morphing, so box utilities (`truncate`, padding, a background) apply the same way throughout. Padding and a background on the root are part of the animated width: the whole box springs, as in the `Boxed` story (`className="rounded-ctl bg-secondary px-2"`).
-- The width is pinned (and springs) only while a morph runs. It is released when the morph ends, when a new text interrupts it, and when the change can't morph (reduced motion, multi-line text), so a later change of font, size or text never meets a stale width. A `style.width` of your own is kept.
+- The width is pinned (and springs) only while a morph runs. It is released when the morph ends (a new text that arrives mid-morph carries on from the current width into the next morph, and the width is released when that one ends) and whenever the change can't morph (reduced motion, multi-line text), so a later change of font, size or text never meets a stale width. A `style.width` of your own is kept.
 
 ## Accessibility
 

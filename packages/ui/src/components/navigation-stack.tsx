@@ -13,7 +13,7 @@ import {
   BackLabel, backName, barBackButton, barTitle, barTitleFade, barTitleHidden, largeTitleText, useBackFit,
 } from '@/lib/nav-bar';
 import type { SizeClass } from '@/lib/size-class';
-import type { Stack, StackExit } from '@/lib/stack';
+import type { PageStack, PageStackExit } from '@/lib/stack';
 import {
   createNavigationStackController,
   navigationStack,
@@ -138,7 +138,7 @@ export function useNavigationStack(): NavigationStackController {
 
 type SwipeSource = { onSwipe: (fn: (swipe: NavigationStackSwipe) => void) => () => void };
 
-type RootState = { pages: string[]; exiting: StackExit[]; sizeClass: SizeClass | undefined };
+type RootState = { pages: string[]; exiting: PageStackExit[]; sizeClass: SizeClass | undefined };
 
 export interface NavigationStackProps
   extends Omit<ComponentProps<'div'>, 'className' | 'style' | 'children'>,
@@ -193,7 +193,7 @@ export function NavigationStack({
     pages, defaultPages: defaultPages ?? (firstPage === undefined ? undefined : [firstPage]), controller, onPagesChange, onRootBack, onBarHiddenChange: onHidden,
   });
   const api = handle.api as unknown as NavigationStackController;
-  const { stack, internal } = handle.api as unknown as { stack: Stack; internal: SwipeSource };
+  const { stack, internal } = handle.api as unknown as { stack: PageStack; internal: SwipeSource };
 
   // A new resetKey pops to the first page (compared with the last one seen, so a remount pops nothing).
   const lastReset = useRef(resetKey);
@@ -251,8 +251,8 @@ const valueOf = (c: ReactNode) => (isValidElement(c) && typeof (c.props as { val
 interface PagesProps {
   api: NavigationStackController;
   pages: string[];
-  exiting: StackExit[];
-  /** Whether a page renders: in the stack, or leaving (`createStack`'s `present`). */
+  exiting: PageStackExit[];
+  /** Whether a page renders: in the stack, or leaving (`createPageStack`'s `present`). */
   present: (page: string) => boolean;
   titles: Titles;
   rootEl: HTMLDivElement | null;

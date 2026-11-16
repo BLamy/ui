@@ -56,7 +56,7 @@ function Row({ entry: e, category, now }: { entry: Entry; category: Selection; n
     <SplitViewItem value={e.id} variant="row" className="min-h-[58px] py-2" preview={a ? <AccountPreview account={a} /> : undefined}>
       {e.kind === 'wifi' ? (
         <WifiTile />
-      ) : <SiteTile title={e.title} color={a!.color} size={32} className={cn(e.kind === 'deleted' && 'opacity-60 grayscale')} />}
+      ) : <SiteTile title={e.title} tint={a!.color} size={32} className={cn(e.kind === 'deleted' && 'opacity-60 grayscale')} />}
       <span className="min-w-0 flex-1">
         <span className="flex items-center gap-1.5">
           <span className="truncate text-[15.5px] font-medium leading-[1.3]">{e.title}</span>

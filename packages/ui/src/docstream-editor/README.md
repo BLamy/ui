@@ -573,7 +573,7 @@ For read-only previews or AI stream output, pair this package with `@brett_lamy/
 ```tsx
 import { GitbookStreamdown } from "@brett_lamy/ui/docstream"
 
-<GitbookStreamdown markdown={markdown} isStreaming={false} />
+<GitbookStreamdown markdown={markdown} streaming={false} />
 ```
 
 Embed nodes preserve the Docstream media attributes (`title`, `poster`,

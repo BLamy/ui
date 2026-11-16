@@ -120,7 +120,9 @@ Typing opens the list, and so do the Down and Up arrows and the chevron. The che
 
 ## Small screens
 
-`presentation="auto"` on the root shows the popup as a bottom sheet on small touch screens (shaped like the kit's Sheet), with the input in its header; `"sheet"` always does.
+`presentation="auto"` on the root shows the popup as a bottom sheet on small touch screens (shaped like the kit's Sheet, grabber included), with the input in its header; `"sheet"` always does. In a sheet the rows are 44px touch targets in body text, also under a small field; only `size="sm"` on `ComboboxContent` keeps them dense there.
+
+{% demo src="combobox/sheet" %}
 
 ## Accessibility
 

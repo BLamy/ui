@@ -105,7 +105,7 @@ Dragging from the leading edge (the left, or the right in right-to-left text, wh
 
 ## Back button and title morph
 
-The back button names the page behind it, as on iOS. Its label gets whatever room the centered title leaves on its side of the bar — measured, not counted in characters — so a long previous title is ellipsized; only when a sliver is left does it fall back to **Back**, and then to the chevron alone.
+The back button names the page behind it, as on iOS. Its label gets whatever room the centered title leaves on its side of the bar — measured, not counted in characters — and the previous title shows only when all of it fits there: a title that doesn't fit is never cut with an ellipsis, it becomes **Back**, and then the chevron alone, as UIKit does.
 
 Titles travel between pages. On push the previous page's title — its large title, or the inline one once it has scrolled — flies into the new back button, shrinking and taking the tint (an inline title, already the size of the back label, stays solid instead of cross-fading, and the new back chevron fades in at its resting place rather than sweeping through the title); on pop the back label flies back into the title it names. The edge swipe scrubs the flight with your finger and finishes it on the tray spring, and a push or pop that lands mid-flight simply takes over. Reduced motion skips the flight.
 

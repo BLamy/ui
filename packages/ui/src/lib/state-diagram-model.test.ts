@@ -2,21 +2,21 @@ import { describe, expect, it } from 'vitest';
 import { createMachine, fromPromise, setup } from 'xstate';
 import { toDirectedGraph } from 'xstate/graph';
 import { uploadMachine } from '../stories/upload-machine';
-import { describeEvent, machineToDraft, type MachineLike } from './state-diagram-model';
+import { describeEvent, machineToDraft, type StateMachineLike } from './state-diagram-model';
 
-const draftOf = (m: unknown) => machineToDraft(m as MachineLike);
-const edgeList = (m: unknown) => draftOf(m).edges.filter((e) => e.kind !== 'initial').map((e) => `${e.from} ${e.label} -> ${e.to}`);
+const draftOf = (m: unknown) => machineToDraft(m as StateMachineLike);
+const edgeList = (m: unknown) => draftOf(m).edges.filter((e) => e.data?.transition !== 'initial').map((e) => `${e.from} ${e.label} -> ${e.to}`);
 
 describe('the spike’s machine', () => {
   const { nodes, edges } = draftOf(uploadMachine);
-  const states = nodes.filter((n) => n.kind !== 'initial');
-  const ways = edges.filter((e) => e.kind !== 'initial');
+  const states = nodes.filter((n) => n.data?.type !== 'initial');
+  const ways = edges.filter((e) => e.data?.transition !== 'initial');
 
   it('has all 33 states and all 36 edges, where toDirectedGraph has 29', () => {
     expect(states).toHaveLength(33);
     expect(ways).toHaveLength(36);
-    expect(nodes.filter((n) => n.kind === 'initial')).toHaveLength(7);
-    expect(edges.filter((e) => e.kind === 'initial')).toHaveLength(7);
+    expect(nodes.filter((n) => n.data?.type === 'initial')).toHaveLength(7);
+    expect(edges.filter((e) => e.data?.transition === 'initial')).toHaveLength(7);
     const flat: { edges: unknown[]; children: unknown[] }[] = [];
     const walk = (n: { edges: unknown[]; children: unknown[] }) => { flat.push(n); n.children.forEach((k) => walk(k as never)); };
     walk(toDirectedGraph(uploadMachine as never) as never);
@@ -24,7 +24,7 @@ describe('the spike’s machine', () => {
   });
 
   it('counts each kind as the spike did', () => {
-    const by = (k: string) => ways.filter((e) => e.kind === k).length;
+    const by = (k: string) => ways.filter((e) => e.data?.transition === k).length;
     expect({ event: by('event'), invoke: by('invoke'), always: by('always'), after: by('after'), done: by('done') }).toEqual({ event: 8, invoke: 14, always: 7, after: 5, done: 2 });
     expect(ways.filter((e) => e.from === e.to)).toHaveLength(4);
   });
@@ -35,15 +35,17 @@ describe('the spike’s machine', () => {
   });
 
   it('gets compound and parallel states, regions, initial markers and final states right', () => {
-    const kind = (id: string) => nodes.find((n) => n.id === id)?.kind;
-    expect(kind('upload')).toBe('root');
-    expect(kind('upload.worker')).toBe('compound');
-    expect(kind('upload.processing')).toBe('parallel');
-    expect(kind('upload.processing.scan')).toBe('region');
-    expect(kind('upload.done')).toBe('final');
-    expect(kind('upload.worker.streaming')).toBe('node');
-    expect(kind('upload.worker.__initial')).toBe('initial');
-    expect(kind('upload.processing.__initial')).toBeUndefined();
+    const look = (id: string) => { const n = nodes.find((m) => m.id === id); return n && [n.kind, n.variant ?? 'default']; };
+    expect(look('upload')).toEqual(['root', 'default']);
+    expect(look('upload.worker')).toEqual(['group', 'default']);
+    expect(look('upload.processing')).toEqual(['group', 'dashed']);
+    expect(look('upload.processing.scan')).toEqual(['region', 'default']);
+    expect(look('upload.done')).toEqual(['node', 'double']);
+    expect(look('upload.worker.streaming')).toEqual(['node', 'default']);
+    expect(look('upload.worker.__initial')).toEqual(['marker', 'default']);
+    expect(look('upload.processing.__initial')).toBeUndefined();
+    const line = (transition: string) => [...new Set(edges.filter((e) => e.data?.transition === transition).map((e) => e.variant ?? 'default'))];
+    expect([line('event'), line('done'), line('invoke'), line('always'), line('after'), line('initial')]).toEqual([['default'], ['default'], ['default'], ['dashed'], ['dotted'], ['strong']]);
     expect(nodes.find((n) => n.id === 'upload.worker.streaming')?.parent).toBe('upload.worker');
     expect(edges.find((e) => e.from === 'upload.worker.__initial')?.to).toBe('upload.worker.authenticating');
   });
@@ -56,7 +58,9 @@ describe('the spike’s machine', () => {
 
   it('keeps what simulating needs on each edge', () => {
     const chunk = ways.find((e) => e.label === 'CHUNK')!;
-    expect(chunk.data).toEqual({ event: 'CHUNK', internal: true });
+    expect(chunk.data).toEqual({ transition: 'event', event: 'CHUNK', internal: true });
+    expect(ways.find((e) => e.label === 'always [withinQuota]')?.data?.transition).toBe('always');
+    expect(nodes.find((n) => n.id === 'upload.processing')?.data?.type).toBe('parallel');
     expect(chunk.from).toBe(chunk.to);
     const backoff = ways.find((e) => e.label === 'after BACKOFF [retriesLeft]')!;
     expect(backoff.data?.guard).toBe('retriesLeft');
@@ -82,7 +86,7 @@ describe('the spike’s machine', () => {
       guards: { g: () => { called++; return true; } },
       actions: { a: () => { called++; } },
     }).createMachine({ initial: 'x', states: { x: { entry: 'a', always: { guard: 'g', target: 'y' } }, y: {} } });
-    machineToDraft(m as unknown as MachineLike);
+    machineToDraft(m as unknown as StateMachineLike);
     expect(called).toBe(0);
   });
 });
@@ -176,8 +180,8 @@ describe('what an event’s called', () => {
 
   it('says what a snapshot edge is, the same as a done or an error', () => {
     const m = createMachine({ id: 'm', initial: 'a', states: { a: { invoke: { src: 'x', onSnapshot: 'a', onDone: 'b' } }, b: {} } });
-    const edges = machineToDraft(m as never).edges.filter((e) => e.kind !== 'initial');
+    const edges = machineToDraft(m as never).edges.filter((e) => e.data?.transition !== 'initial');
     expect(edges.map((e) => e.label).sort()).toEqual(['done', 'snapshot']);
-    expect(edges.every((e) => e.kind === 'invoke')).toBe(true);
+    expect(edges.every((e) => e.data?.transition === 'invoke')).toBe(true);
   });
 });

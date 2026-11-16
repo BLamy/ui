@@ -38,7 +38,9 @@ describe('TailscaleLoginButton', () => {
     await waitFor(() => expect(screen.getByRole('link', { name: 'Continue to Tailscale' })).toBeTruthy());
     const busy = screen.getByRole('button', { name: 'Signing in… Press to cancel.' });
     expect(busy.getAttribute('aria-busy')).toBe('true');
-    expect(busy.hasAttribute('data-pending')).toBe(true);
+    // A press cancels, so it is not drawn as a pending (dimmed) button; "Cancel" shows on hover and keyboard focus.
+    expect(busy.hasAttribute('data-pending')).toBe(false);
+    expect(busy.textContent).toContain('Cancel');
     expect(screen.getByRole('link', { name: 'Continue to Tailscale' }).getAttribute('href')).toMatch(/^https:\/\/login\.tailscale\.example\//);
 
     act(() => fake.approve());
@@ -123,6 +125,13 @@ describe('TailscaleStatusBadge', () => {
     rerender(<TailscaleStatusBadge status="connected" tailnet="corp.ts.net" variant="stacked" />);
     expect(screen.getByRole('status').className).toContain('flex-col');
     rerender(<TailscaleStatusBadge status="connected" tailnet="corp.ts.net" variant="pill" />);
+    expect(screen.getByRole('status').textContent).toBe('Connected');
+  });
+
+  it('says what failed with its description, only when the status is error', () => {
+    const { rerender } = render(<TailscaleStatusBadge status="error" description="The control server refused the key." />);
+    expect(screen.getByRole('status').textContent).toBe('ErrorThe control server refused the key.');
+    rerender(<TailscaleStatusBadge status="connected" description="The control server refused the key." />);
     expect(screen.getByRole('status').textContent).toBe('Connected');
   });
 });

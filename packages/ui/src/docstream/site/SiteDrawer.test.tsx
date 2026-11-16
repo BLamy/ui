@@ -22,7 +22,7 @@ afterEach(async () => {
   site = undefined
 })
 
-const open = async (ui = <DocsSite files={FILES} routing="memory" title="Acme" defaultTheme="dark" themeStorageKey={false} />) => {
+const open = async (ui = <DocsSite files={FILES} routing="memory" title="Acme" defaultAppearance="dark" appearanceStorageKey={false} />) => {
   site = await mount(ui)
   return site.host
 }

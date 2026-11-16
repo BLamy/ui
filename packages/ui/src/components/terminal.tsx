@@ -7,7 +7,7 @@ import {
   createTerminalShell,
   type TerminalCommandHandler, type TerminalCompleter, type TerminalShell,
 } from '@/lib/terminal-line';
-import { useAppearance } from '@/lib/theme';
+import { themeScopeClass, useAppearance, type AppearancePreference } from '@/lib/theme';
 import { cn } from '@/lib/utils';
 
 /* ══ Terminal — a real terminal emulator (wterm) that fills its container and wears the theme.
@@ -16,15 +16,18 @@ import { cn } from '@/lib/utils';
    <Terminal shell={shell} />                                               a shell you keep outside, across remounts
 
    wterm's stylesheet comes in through the library's stylesheet, under every utility (styles.css), so the recipe below
-   themes it with its own custom properties: an unlayered copy would outrank these classes. ══ */
+   themes it with its own custom properties: an unlayered copy would outrank these classes. The dark palette is keyed to
+   `.dark` and not to a `.light` on the terminal itself, so `appearance="light"` holds inside a dark page. ══ */
 
 /* The sixteen ANSI colors, from the theme's status colors. A palette has no magenta or cyan, so those mix red with blue
    and blue with green. On a light surface the status colors are too pale to read as text, so each is darkened there.
    "white" is a mid gray in light, as in VS Code's light theme: it's the color programs use for quiet text. All of them are
-   opaque, mixed rather than `--muted-foreground`, because the terminal core takes them as plain RGB and drops any alpha. */
+   opaque, mixed rather than `--muted-foreground`, because the terminal core takes them as plain RGB and drops any alpha.
+   Keyboard focus is in wterm's hidden textarea: the terminal rings then, as CodeEditor's card does for its input. */
 export const terminalVariants = cva(
   [
     'bl-scroll size-full min-h-0 min-w-0 rounded-none px-3 py-2.5 font-mono shadow-none',
+    'has-[textarea:focus]:ring-2 has-[textarea:focus]:ring-ring has-[textarea:focus]:ring-inset',
     '[--term-bg:var(--background)] [--term-fg:var(--foreground)] [--term-cursor:var(--primary)]',
     '[--term-selection-bg:color-mix(in_oklab,var(--primary)_30%,transparent)] selection:bg-primary/30',
     '[--term-search-match:color-mix(in_oklab,var(--term-yellow)_30%,transparent)] [--term-search-active:color-mix(in_oklab,var(--term-yellow)_55%,transparent)] [--term-search-border:var(--term-yellow)]',
@@ -35,10 +38,10 @@ export const terminalVariants = cva(
     '[--term-color-4:color-mix(in_oklab,var(--term-blue)_85%,black)] [--term-color-5:color-mix(in_oklab,var(--term-magenta)_80%,black)] [--term-color-6:color-mix(in_oklab,var(--term-cyan)_65%,black)]',
     '[--term-color-9:var(--term-red)] [--term-color-10:color-mix(in_oklab,var(--term-green)_80%,black)] [--term-color-11:color-mix(in_oklab,var(--term-yellow)_70%,black)]',
     '[--term-color-12:var(--term-blue)] [--term-color-13:var(--term-magenta)] [--term-color-14:color-mix(in_oklab,var(--term-cyan)_80%,black)]',
-    'dark:[--term-color-0:color-mix(in_oklab,var(--foreground)_18%,var(--background))] dark:[--term-color-7:color-mix(in_oklab,var(--foreground)_80%,var(--background))] dark:[--term-color-15:var(--foreground)]',
-    'dark:[--term-color-1:var(--term-red)] dark:[--term-color-2:var(--term-green)] dark:[--term-color-3:var(--term-yellow)] dark:[--term-color-4:var(--term-blue)] dark:[--term-color-5:var(--term-magenta)] dark:[--term-color-6:var(--term-cyan)]',
-    'dark:[--term-color-9:color-mix(in_oklab,var(--term-red)_75%,white)] dark:[--term-color-10:color-mix(in_oklab,var(--term-green)_75%,white)] dark:[--term-color-11:color-mix(in_oklab,var(--term-yellow)_75%,white)]',
-    'dark:[--term-color-12:color-mix(in_oklab,var(--term-blue)_75%,white)] dark:[--term-color-13:color-mix(in_oklab,var(--term-magenta)_75%,white)] dark:[--term-color-14:color-mix(in_oklab,var(--term-cyan)_75%,white)]',
+    'dark:not-[.light]:[--term-color-0:color-mix(in_oklab,var(--foreground)_18%,var(--background))] dark:not-[.light]:[--term-color-7:color-mix(in_oklab,var(--foreground)_80%,var(--background))] dark:not-[.light]:[--term-color-15:var(--foreground)]',
+    'dark:not-[.light]:[--term-color-1:var(--term-red)] dark:not-[.light]:[--term-color-2:var(--term-green)] dark:not-[.light]:[--term-color-3:var(--term-yellow)] dark:not-[.light]:[--term-color-4:var(--term-blue)] dark:not-[.light]:[--term-color-5:var(--term-magenta)] dark:not-[.light]:[--term-color-6:var(--term-cyan)]',
+    'dark:not-[.light]:[--term-color-9:color-mix(in_oklab,var(--term-red)_75%,white)] dark:not-[.light]:[--term-color-10:color-mix(in_oklab,var(--term-green)_75%,white)] dark:not-[.light]:[--term-color-11:color-mix(in_oklab,var(--term-yellow)_75%,white)]',
+    'dark:not-[.light]:[--term-color-12:color-mix(in_oklab,var(--term-blue)_75%,white)] dark:not-[.light]:[--term-color-13:color-mix(in_oklab,var(--term-magenta)_75%,white)] dark:not-[.light]:[--term-color-14:color-mix(in_oklab,var(--term-cyan)_75%,white)]',
   ],
   {
     variants: {
@@ -109,6 +112,9 @@ function useTerminalCore(core: TerminalProps['core']): TerminalCore | null | und
 export interface TerminalProps
   extends Omit<HTMLAttributes<HTMLDivElement>, keyof WTermEvents | 'children' | 'onInput'>, WTermEvents, WTermOptions, VariantProps<typeof terminalVariants> {
   ref?: Ref<TerminalHandle>;
+  /** Light or dark terminal. `auto` (default) follows the page's appearance; `light` or `dark` holds one whatever the page
+   *  is, a dark terminal in a light IDE for instance. */
+  appearance?: AppearancePreference;
   /** The terminal core. `ghostty` (default) loads a 600 KB WebAssembly file from your site on first use and re-wraps text
    *  when the terminal resizes, falling back to `builtin` if it can't be loaded. `builtin` needs no file, but narrowing a
    *  terminal cuts off what's on screen for good. Or pass a core of your own, which stays yours to dispose of. */
@@ -143,7 +149,7 @@ export interface TerminalProps
 const ignore = () => {};
 
 export function Terminal({
-  ref, className, style, size, core: coreProp, onData, onCommand, prompt, complete, onEof, history, greeting, shell: shellProp, readOnly, autoFocus,
+  ref, className, style, size, appearance = 'auto', core: coreProp, onData, onCommand, prompt, complete, onEof, history, greeting, shell: shellProp, readOnly, autoFocus,
   onReady, onResize, onFocusCapture, ...props
 }: TerminalProps) {
   const term = useRef<WTerminalHandle>(null);
@@ -171,17 +177,19 @@ export function Terminal({
 
   // The core holds the sixteen colors as RGB, read from the CSS when it starts, so a change of appearance has to reach it.
   // Without a provider to say so, the host's `.dark` on <html> is all there is to watch.
-  const appearance = useAppearance();
+  // A forced `appearance` is the terminal's own: `dark scheme-dark` or `light scheme-light` on its root.
+  const ambient = useAppearance();
+  const forced = appearance === 'auto' ? undefined : appearance;
   useEffect(() => {
     const reread = () => term.current?.instance?.setThemeColors(null);
-    if (appearance) {
+    if (ambient || forced) {
       reread();
       return undefined;
     }
     const watcher = new MutationObserver(reread);
     watcher.observe(document.documentElement, { attributes: true, attributeFilter: ['class', 'data-theme', 'style'] });
     return () => watcher.disconnect();
-  }, [appearance]);
+  }, [ambient, forced]);
 
   // A shell made here dies with this component. Strict Mode's rehearsal unmount must not kill it, hence the timeout.
   const disposing = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -248,7 +256,7 @@ export function Terminal({
 
   // Starting wterm on one core and then changing it would throw away what's been written.
   if (core === undefined) {
-    return <div {...props} data-slot="terminal" data-read-only={readOnly || undefined} className={cn('wterm', terminalVariants({ size }), className)} style={style} />;
+    return <div {...props} data-slot="terminal" data-read-only={readOnly || undefined} className={cn('wterm', terminalVariants({ size }), themeScopeClass(forced), className)} style={style} />;
   }
 
   return (
@@ -258,7 +266,8 @@ export function Terminal({
       core={core ?? undefined}
       data-slot="terminal"
       data-read-only={readOnly || undefined}
-      className={cn(terminalVariants({ size }), className)}
+      data-appearance={forced}
+      className={cn(terminalVariants({ size }), themeScopeClass(forced), className)}
       style={style}
       autoResize
       onData={handleData}

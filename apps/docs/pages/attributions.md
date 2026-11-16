@@ -43,7 +43,6 @@ UI SDK is licensed under the [Apache License 2.0](https://www.apache.org/license
 | [KaTeX](https://katex.org) | Math blocks | MIT |
 | [Tiptap](https://tiptap.dev) and [ProseMirror](https://prosemirror.net) | The rich-text editors | MIT |
 | [highlight.js](https://highlightjs.org) and [lowlight](https://github.com/wooorm/lowlight) | Code-block highlighting in the docs site's editor setup | BSD-3-Clause, MIT |
-| [Lucide](https://lucide.dev) (`lucide-react`) | Icons inside Docstream's own chrome | ISC |
 | [yaml](https://eemeli.org/yaml/) | Front matter and YAML parsing | ISC |
 | [Acorn](https://github.com/acornjs/acorn) | Parsing Strudel code for its syntax tree | MIT |
 | [rrweb](https://github.com/rrweb-io/rrweb) | Replaying recorded sessions in ReplayPreview | MIT |

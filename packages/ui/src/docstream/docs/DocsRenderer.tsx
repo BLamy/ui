@@ -1,15 +1,8 @@
 import { useContext, useEffect, useMemo, useState, type ComponentProps, type ReactNode } from "react"
 import { Tabs as TabsRoot, TabsIndicator, TabsList, TabsPanel, TabsTab } from "@ui-sdk/react/tabs"
 import { DetailsCollapsible } from "../ui/details-collapsible"
-import {
-  AlertTriangle,
-  CheckCircle2,
-  ChevronRight,
-  File,
-  Info,
-  Terminal,
-  XCircle,
-} from "lucide-react"
+import { Glyph } from "../ui/glyph"
+import { type IconName } from "@brett_lamy/ui/lib/icon"
 
 import type { Block, CodeBlockNode, CommandNode, DocumentNode, Inline, PackageManager, SourceRefNode, StepNode } from "../gitbook/ast"
 import { PACKAGE_MANAGERS, packageManagerCommands } from "../gitbook/package-managers"
@@ -156,11 +149,11 @@ function InlineText({ nodes }: { nodes: Inline[] }) {
 }
 
 const HINT_ICONS = {
-  info: Info,
-  success: CheckCircle2,
-  warning: AlertTriangle,
-  danger: XCircle,
-}
+  info: "info",
+  success: "check-circle",
+  warning: "warning",
+  danger: "xmark-circle",
+} as const satisfies Record<string, IconName>
 
 function embedSrc(url: string): string | null {
   const yt = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]+)/)
@@ -224,7 +217,7 @@ function CommandBox({ block }: { block: CommandNode }) {
     >
       <div className="docs-tabs-code-head">
         <span className="docs-tabs-code-term" aria-hidden="true">
-          <Terminal width={12} height={12} strokeWidth={2.4} />
+          <Glyph name="terminal" size={12} sw={2.4} />
         </span>
         <TabStrip titles={[...PACKAGE_MANAGERS]} label="Package manager" />
         <span className="docs-tabs-code-title" />
@@ -289,7 +282,7 @@ function Tabs({ block, liveRenderer, sourceRenderer }: { block: Extract<Block, {
         <div className="docs-tabs-code-head">
           {shell ? (
             <span className="docs-tabs-code-term" aria-hidden="true">
-              <Terminal width={12} height={12} strokeWidth={2.4} />
+              <Glyph name="terminal" size={12} sw={2.4} />
             </span>
           ) : null}
           <TabStrip titles={block.tabs.map((t) => t.title)} label={block.sync ? `${block.sync} options` : "Content tabs"} />
@@ -355,7 +348,7 @@ function BlockView({ block, liveRenderer, sourceRenderer }: { block: Block } & R
       if (isXStateLanguage(block.language)) return <XStateDiagram code={block.code} />
       if (isTsCircuitLanguage(block.language)) return <TsCircuit code={block.code} title={block.title ?? undefined} />
       if (isTuiCodeBlock(block) && tui.options !== false) {
-        return <TuiPreview {...tui.options} code={block.code} language={block.language ?? undefined} title={block.title ?? tui.options?.title} streaming={tui.isStreaming || block.closingFence === ""} />
+        return <TuiPreview {...tui.options} code={block.code} language={block.language ?? undefined} title={block.title ?? tui.options?.title} streaming={tui.streaming || block.closingFence === ""} />
       }
       if (block.language === "mermaid") {
         return (
@@ -405,10 +398,10 @@ function BlockView({ block, liveRenderer, sourceRenderer }: { block: Block } & R
         </div>
       )
     case "hint": {
-      const Icon = HINT_ICONS[block.style] ?? Info
+      const hintIcon = HINT_ICONS[block.style as keyof typeof HINT_ICONS] ?? "info"
       return (
         <div className={`docs-hint docs-hint-${block.style}`}>
-          <Icon className="docs-hint-icon" />
+          <Glyph name={hintIcon} className="docs-hint-icon" size={24} />
           <div>
             <Blocks blocks={block.children} liveRenderer={liveRenderer} sourceRenderer={sourceRenderer} />
           </div>
@@ -426,7 +419,7 @@ function BlockView({ block, liveRenderer, sourceRenderer }: { block: Block } & R
           triggerClassName="docs-expandable-trigger"
           panelClassName="docs-expandable-body"
           summary={<>
-            <ChevronRight className="docs-expandable-caret" width={14} height={14} strokeWidth={2.2} aria-hidden="true" />
+            <Glyph name="chevron-right" className="docs-expandable-caret" size={14} sw={2.2} />
             {block.summary}
           </>}
         >
@@ -477,18 +470,18 @@ function BlockView({ block, liveRenderer, sourceRenderer }: { block: Block } & R
         />
       ) : (
         <a className="docs-content-ref" href={block.url} target="_blank" rel="noreferrer">
-          <File className="size-4" /> {block.url}
+          <Glyph name="doc" className="size-4" size={24} /> {block.url}
         </a>
       )
     }
     case "content-ref":
       return (
         <a className="docs-content-ref" href={block.url}>
-          <File className="size-4" />
+          <Glyph name="doc" className="size-4" size={24} />
           <span>
             <InlineText nodes={withoutLinks(block.children)} />
           </span>
-          <ChevronRight className="size-4 ml-auto" />
+          <Glyph name="chevron-right" className="size-4 ml-auto" size={24} />
         </a>
       )
     case "source-ref":
@@ -496,7 +489,7 @@ function BlockView({ block, liveRenderer, sourceRenderer }: { block: Block } & R
         sourceRenderer(block)
       ) : (
         <div className="docs-source-ref" data-docstream-source-ref="">
-          <File className="size-4" />
+          <Glyph name="doc" className="size-4" size={24} />
           <span>{block.title ?? `${block.path}#${block.exportName}`}</span>
           <code>{block.mount}:{block.path}</code>
         </div>
@@ -695,7 +688,7 @@ export interface DocRenderOptions {
   /** Options for `tui` fenced previews; false shows their source as ordinary code. */
   tui?: TuiPreviewOptions | false
   /** Prevents terminal previews from running while source is being streamed. */
-  isStreaming?: boolean
+  streaming?: boolean
   /** Make rendered task checkboxes interactive. Update the supplied item and re-render to persist a choice. */
   onTaskStateChange?: TaskStateChangeHandler
   /** Show the document's frontmatter as a property sheet (default true). */
@@ -748,10 +741,10 @@ function withEnv(doc: DocumentNode, { envHost, env }: DocRenderOptions, children
   return <DocstreamEnvProvider declared={declared} host={envHost}>{children}</DocstreamEnvProvider>
 }
 
-function withDemoContext({ demoResolver, demoRuntime, demoDependencies, demoVFS, onTaskStateChange, tui, isStreaming, renderCode }: DocRenderOptions, children: ReactNode) {
+function withDemoContext({ demoResolver, demoRuntime, demoDependencies, demoVFS, onTaskStateChange, tui, streaming, renderCode }: DocRenderOptions, children: ReactNode) {
   let out = children
   if (renderCode) out = <CodeRenderContext.Provider value={renderCode}>{out}</CodeRenderContext.Provider>
-  if (tui !== undefined || isStreaming !== undefined) out = <TuiProvider options={tui} isStreaming={isStreaming}>{out}</TuiProvider>
+  if (tui !== undefined || streaming !== undefined) out = <TuiProvider options={tui} streaming={streaming}>{out}</TuiProvider>
   if (onTaskStateChange) out = <TaskStateChangeContext.Provider value={onTaskStateChange}>{out}</TaskStateChangeContext.Provider>
   if (demoVFS) out = <DocstreamDemoVFSContext.Provider value={demoVFS}>{out}</DocstreamDemoVFSContext.Provider>
   if (demoRuntime || demoDependencies) {
@@ -760,9 +753,9 @@ function withDemoContext({ demoResolver, demoRuntime, demoDependencies, demoVFS,
   return demoResolver ? <DocstreamDemoContext.Provider value={demoResolver}>{out}</DocstreamDemoContext.Provider> : out
 }
 
-function TuiProvider({ options, isStreaming, children }: { options?: TuiPreviewOptions | false; isStreaming?: boolean; children: ReactNode }) {
+function TuiProvider({ options, streaming, children }: { options?: TuiPreviewOptions | false; streaming?: boolean; children: ReactNode }) {
   const inherited = useContext(TuiContext)
-  const value = useMemo(() => ({ options: options ?? inherited.options, isStreaming: isStreaming ?? inherited.isStreaming }), [options, isStreaming, inherited])
+  const value = useMemo(() => ({ options: options ?? inherited.options, streaming: streaming ?? inherited.streaming }), [options, streaming, inherited])
   return <TuiContext.Provider value={value}>{children}</TuiContext.Provider>
 }
 
@@ -807,12 +800,12 @@ export function MarkdownContent({
   envHost,
   env,
   tui,
-  isStreaming,
+  streaming,
   renderCode,
 }: { markdown: string; className?: string } & Renderers & DocRenderOptions) {
   const doc = useMemo(() => parseMarkdown(markdown), [markdown])
   return withDemoContext(
-    { demoResolver, demoRuntime, demoDependencies, demoVFS, onTaskStateChange, tui, isStreaming, renderCode },
+    { demoResolver, demoRuntime, demoDependencies, demoVFS, onTaskStateChange, tui, streaming, renderCode },
     withEnv(doc, { envHost, env }, <div data-docstream="" className={className}>
       <PageActionsBar markdown={markdown} options={pageActions} />
       {documentProperties && doc.properties ? <DocumentProperties properties={doc.properties} defaultOpen={typeof documentProperties === "object" && documentProperties.defaultOpen} /> : null}
@@ -837,11 +830,11 @@ export function DocsRenderer({
   envHost,
   env,
   tui,
-  isStreaming,
+  streaming,
   renderCode,
 }: { doc: DocumentNode; /** Source for page actions; defaults to `serializeMarkdown(doc)`. */ markdown?: string } & Renderers & DocRenderOptions) {
   return withDemoContext(
-    { demoResolver, demoRuntime, demoDependencies, demoVFS, onTaskStateChange, tui, isStreaming, renderCode },
+    { demoResolver, demoRuntime, demoDependencies, demoVFS, onTaskStateChange, tui, streaming, renderCode },
     withEnv(doc, { envHost, env }, <article className="docs-article">
       <PageActionsBar markdown={markdown ?? (() => serializeMarkdown(doc))} options={pageActions} />
       {documentProperties && doc.properties ? <DocumentProperties properties={doc.properties} defaultOpen={typeof documentProperties === "object" && documentProperties.defaultOpen} /> : null}

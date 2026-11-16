@@ -17,7 +17,7 @@ const pages = [
   { icon: 'bell', title: 'Alerts' },
 ]
 
-// This 380px frame is narrower than the provider's `breakpoint`, so the
+// This 380px frame is narrower than the provider's `breakpoints.medium`, so the
 // provider is compact and `presentation="auto"` shows the sidebar as a drawer
 // behind the trigger, with 44px rows. A press on a row closes the drawer by
 // itself; Escape, the scrim and a swipe toward the edge close it too.
@@ -26,7 +26,7 @@ export default function NarrowContainer() {
   return (
     <div className="p-4">
       <div className="mx-auto h-[440px] max-w-[380px] overflow-hidden rounded-card shadow-hairline">
-        <SidebarProvider breakpoint={560}>
+        <SidebarProvider breakpoints={{ medium: 560 }}>
           <Sidebar width={260}>
             <SidebarHeader>
               <SidebarAccount title="Creamery Ops" description="Production" />

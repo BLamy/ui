@@ -330,7 +330,7 @@ Sets up the passkey, then shows the recovery key once. It is a [Dialog](https://
 </VaultEnrollDialog>
 ```
 
-`VaultRecoveryKey` renders a key in groups of four (slot `vault-recovery-key`, a `group` named "Recovery key"), read letter by letter by a screen reader, and is exported for your own flow (for instance after `regenerateRecoveryKey()`); `vaultRecoveryKeyVariants({ layout: 'grid' | 'row' })` sets two or four columns, packed to the centre. Copy uses the kit's `useCopy` (it announces "Copied"); Copy and Save as file share the row and are 44px tall where the dialog is a sheet on a touch screen.
+`VaultRecoveryKey` renders a key in groups of four (slot `vault-recovery-key`, a `group` named "Recovery key"), read letter by letter by a screen reader, and is exported for your own flow (for instance after `regenerateRecoveryKey()`); `variant` (`'grid'`, the default, or `'row'`; `vaultRecoveryKeyVariants({ variant })`) sets two or four columns, packed to the centre. Copy uses the kit's `useCopy` (it announces "Copied"); Copy and Save as file share the row and are 44px tall where the dialog is a sheet on a touch screen.
 
 ### VaultSetup, VaultUnlock, VaultUnsupported, VaultStatusBadge
 
@@ -344,7 +344,7 @@ The dialog and the confirmation are UI SDK dialogs (a [Dialog](https://blamy.git
 
 ## Styling
 
-Slots: `vault-gate` (with `data-status`), `vault-setup`, `vault-unlock` (with `data-mode`), `vault-unsupported`, `vault-status-badge` (with `data-status`) and `vault-recovery-key`; the enroll dialog's card is a `dialog-content` with `data-vault-enroll-dialog`. The screens take `className` and `style`. The vault screens darken the theme's primary where it holds text (white on the iOS blue is 3.6:1, under WCAG AA for body text), so in light mode their buttons read a shade deeper than elsewhere in the kit; in dark mode they use the theme's primary.
+Slots: `vault-gate` (with `data-status`), `vault-setup`, `vault-unlock` (with `data-mode`), `vault-unsupported`, `vault-status-badge` (with `data-status`) and `vault-recovery-key`; the enroll dialog's card is a `dialog-content` with `data-vault-enroll-dialog`. The screens take `className` and `style`. The vault screens darken the theme's primary where it holds text (white on the iOS blue is 3.6:1, under WCAG AA for body text), so in both themes their buttons are a shade deeper than elsewhere in the kit (the dark theme's blue is the same system blue, with the same 3.6:1 under white); in dark mode their links use the theme's primary, which passes as text on the dark surfaces. Errors and notices are the kit's callout (`calloutVariants`): a failed step is a `destructive` callout, the recovery key's error is the field's `FieldError`, and the "you haven't confirmed your recovery key" notice is a `warning` callout, since it warns of losing data.
 
 ## Testing
 

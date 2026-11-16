@@ -18,16 +18,16 @@ export interface GitbookStreamdownProps extends DocRenderOptions {
   liveRenderer?: LivePreviewRenderer
   sourceRenderer?: SourceReferenceRenderer
   className?: string
-  isAnimating?: boolean
-  isStreaming?: boolean
+  animating?: boolean
+  streaming?: boolean
   markdown?: string
 }
 
 export function GitbookStreamdown({
   children,
   className,
-  isAnimating,
-  isStreaming = false,
+  animating,
+  streaming = false,
   markdown,
   liveRenderer,
   sourceRenderer,
@@ -45,16 +45,16 @@ export function GitbookStreamdown({
 }: GitbookStreamdownProps) {
   const content = markdown ?? children ?? ""
   const gitbookDoc = useMemo(
-    () => parseMarkdown(isStreaming ? trimPartialInlineToken(content) : content),
-    [content, isStreaming]
+    () => parseMarkdown(streaming ? trimPartialInlineToken(content) : content),
+    [content, streaming]
   )
 
   return (
     <div
-      aria-busy={isAnimating ?? isStreaming}
+      aria-busy={animating ?? streaming}
       className={className}
       data-docstream=""
-      data-streaming={isStreaming ? "" : undefined}
+      data-streaming={streaming ? "" : undefined}
     >
       <DocsRenderer
         doc={gitbookDoc}
@@ -65,14 +65,14 @@ export function GitbookStreamdown({
         demoRuntime={demoRuntime}
         demoDependencies={demoDependencies}
         demoVFS={demoVFS}
-        pageActions={isStreaming ? false : pageActions}
+        pageActions={streaming ? false : pageActions}
         documentProperties={documentProperties}
         onTaskStateChange={onTaskStateChange}
         envHost={envHost}
         env={env}
         tui={tui}
         renderCode={renderCode}
-        isStreaming={isStreaming}
+        streaming={streaming}
       />
     </div>
   )

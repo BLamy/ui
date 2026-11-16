@@ -46,7 +46,7 @@ export default function Alerts() {
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                   <AlertDialogClose variant="cancel">Cancel</AlertDialogClose>
-                  <AlertDialogClose variant="destructive" value="delete">Delete</AlertDialogClose>
+                  <AlertDialogClose tone="destructive" value="delete">Delete</AlertDialogClose>
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
@@ -61,7 +61,7 @@ export default function Alerts() {
                 </AlertDialogHeader>
                 <AlertDialogFooter orientation="vertical">
                   <AlertDialogClose value="keep">Keep a copy</AlertDialogClose>
-                  <AlertDialogClose variant="destructive" value="erase">Delete from this device</AlertDialogClose>
+                  <AlertDialogClose tone="destructive" value="erase">Delete from this device</AlertDialogClose>
                   <AlertDialogClose variant="cancel">Cancel</AlertDialogClose>
                 </AlertDialogFooter>
               </AlertDialogContent>

@@ -178,7 +178,7 @@
         { "id": "ffmpeg", "title": "FFmpeg" },
         { "id": "filmstrip", "title": "Filmstrip" },
         { "id": "stl-viewer", "title": "StlViewer" },
-        { "id": "strudel", "title": "Strudel" },
+        { "id": "strudel-player", "title": "StrudelPlayer" },
         { "id": "video-preview", "title": "VideoPreview" },
         { "id": "video-timeline", "title": "VideoTimeline" },
         { "id": "waveform", "title": "Waveform" }

@@ -25,8 +25,8 @@ function SettingsIcon({ glyph, ...p }: { glyph: Glyph } & Omit<IconProps, 'name'
   return <Icon name={glyph} shapes={glyph in MARKS ? MARKS[glyph as keyof typeof MARKS] : undefined} {...p} />;
 }
 
-/** The colored rounded square (squircle-ish radius) with a white glyph. `color` may be a gradient. */
-export function Tile({ glyph, color, size = 29 }: { glyph: Glyph; color: string; size?: number }) {
+/** The colored rounded square (squircle-ish radius) with a white glyph. `tint` may be a gradient. */
+export function Tile({ glyph, tint: color, size = 29 }: { glyph: Glyph; tint: string; size?: number }) {
   return (
     <span aria-hidden="true" className="grid shrink-0 place-items-center text-white"
       style={{ width: size, height: size, borderRadius: size * 0.235, background: color }}>
@@ -128,7 +128,7 @@ export function RowView({ row, last }: { row: Row; last?: boolean }) {
   const v = s.values;
   const mac = s.layout === 'desktop';
   const tile = (glyph?: Glyph, color?: string) =>
-    glyph && color ? <Tile glyph={glyph} color={color} size={s.layout === 'desktop' ? 22 : 29} /> : undefined;
+    glyph && color ? <Tile glyph={glyph} tint={color} size={s.layout === 'desktop' ? 22 : 29} /> : undefined;
   switch (row.t) {
     case 'toggle':
       return <Shell last={last} icon={tile(row.glyph, row.color)} title={row.title} description={row.subtitle} 
@@ -354,7 +354,7 @@ function PaneHeader({ pane }: { pane: Pane }) {
   if (!pane.glyph || !pane.color) return null;
   return layout === 'desktop' ? (
     <div className="mb-5 flex items-center gap-3.5 rounded-ctl bg-secondary/40 p-4 shadow-[0_0_0_.5px_var(--border)]">
-      <Tile glyph={pane.glyph} color={pane.color} size={44} />
+      <Tile glyph={pane.glyph} tint={pane.color} size={44} />
       <div className="min-w-0">
         <div className="text-subhead font-semibold">{pane.title}</div>
         <div className="mt-0.5 text-caption leading-[1.4] text-muted-foreground">{pane.blurb} <span className="text-primary">Learn more…</span></div>
@@ -362,7 +362,7 @@ function PaneHeader({ pane }: { pane: Pane }) {
     </div>
   ) : (
     <div className="mb-[22px] flex flex-col items-center rounded-panel bg-card px-5 pt-5 pb-4 text-center">
-      <Tile glyph={pane.glyph} color={pane.color} size={58} />
+      <Tile glyph={pane.glyph} tint={pane.color} size={58} />
       <div className="mt-2.5 text-[22px] leading-tight font-bold tracking-[-.3px]">{pane.title}</div>
       <p className="mt-1.5 mb-0 max-w-[420px] text-detail leading-[1.35] text-muted-foreground">{pane.blurb} <span className="text-primary">Learn more…</span></p>
     </div>
@@ -395,7 +395,7 @@ export function SearchResults({ onOpen }: { onOpen?: () => void }) {
         const icon = iconFor(h.pane);
         return (
           <Shell key={h.pane + h.title} last={i === hits.length - 1} title={h.title} description={h.trail || undefined}
-            icon={icon?.glyph && icon.color ? <Tile glyph={icon.glyph} color={icon.color} size={s.layout === 'desktop' ? 22 : 29} /> : undefined}
+            icon={icon?.glyph && icon.color ? <Tile glyph={icon.glyph} tint={icon.color} size={s.layout === 'desktop' ? 22 : 29} /> : undefined}
             accessory={s.layout !== 'desktop' ? 'chevron' : undefined} onClick={() => { s.openPath(pathTo(h.pane)); onOpen?.(); }} />
         );
       })}

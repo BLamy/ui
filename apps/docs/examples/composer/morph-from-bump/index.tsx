@@ -1,7 +1,18 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { Composer, ComposerBump, ComposerBumpHandle, ComposerCard, ComposerFooter, ComposerInput, ComposerSend, ComposerSpacer, ComposerText } from '@/components/ui/composer/composer'
-import { ComposerCards, ComposerMorphCard } from '@/components/ui/composer/composer-cards'
+import {
+  Composer,
+  ComposerBump,
+  ComposerBumpHandle,
+  ComposerCard,
+  ComposerFooter,
+  ComposerInput,
+  ComposerSend,
+  ComposerSpacer,
+  ComposerText,
+  ComposerCards,
+  ComposerMorphCard,
+} from '@/components/ui/composer'
 import { ThemeScope } from '@/lib/theme'
 
 const STEPS = ['Read the billing page', 'Found the usage endpoint', 'Wrote a failing test']

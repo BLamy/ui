@@ -56,7 +56,7 @@ function Counted() {
       <FieldLabel>Bio</FieldLabel>
       <Textarea size="sm" value={bio} onValueChange={setBio} />
       <FieldDescription>{bio.length} / 80</FieldDescription>
-      <FieldError match>Keep it under 80 characters.</FieldError>
+      {bio.length > 80 ? <FieldError match>Keep it under 80 characters.</FieldError> : null}
     </Field>
   );
 }

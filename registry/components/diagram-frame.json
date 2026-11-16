@@ -1,7 +1,7 @@
 {
   "name": "diagram-frame",
   "title": "DiagramFrame",
-  "description": "A board with a panel: flat parts on AdaptivePane, so the panel is a column beside the board when there's the room, a drawer over it that doesn't dim it at medium sizes, and a page pushed over it on a phone. A bar on the board opens it, a cover goes over everything, and sections and commit-on-Enter inputs fill it.",
+  "description": "A board with a panel: flat parts on AdaptivePane, so the panel is a column beside the board when there's the room, a drawer over it that doesn't dim it at medium sizes, and a page pushed over it on a phone. A bar on the board opens it (and a Diagram's fit leaves room for it), a cover with a back bar goes over everything, and titled sections fill the panel, with the kit's Field and Input (onValueCommit) for its fields.",
   "page": "diagram-frame",
   "exports": [
     "DiagramFrame",
@@ -10,8 +10,8 @@
     "DiagramFrameBar",
     "DiagramFrameTrigger",
     "DiagramFrameCover",
+    "DiagramFrameCoverHeader",
     "DiagramFrameSection",
-    "DiagramFrameInput",
     "useDiagramFrame"
   ],
   "imports": [

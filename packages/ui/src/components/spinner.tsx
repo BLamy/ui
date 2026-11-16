@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useRef, useState, type CSSProperties, type HTMLAttributes, type Ref } from 'react';
+import { useCallback, useEffect, useRef, useState, type CSSProperties, type HTMLAttributes, type Ref } from 'react';
 import { cn } from '@/lib/utils';
 import { SHAPES, SHAPE_IDS, ShapeLoader, type ShapeAnimation, type ShapePattern } from '@/lib/spinner-shapes';
 
@@ -198,12 +198,14 @@ function useVisibleToUser(ref: React.RefObject<HTMLElement | null>) {
   return visible;
 }
 
+/** One stable callback ref for the spinner's own ref and the caller's: a new function each render would detach and
+    re-attach the caller's ref (null, then the node) on every render. */
 function useMergedRef<T>(own: React.RefObject<T | null>, ref: Ref<T> | undefined) {
-  return (node: T | null) => {
+  return useCallback((node: T | null) => {
     own.current = node;
     if (typeof ref === 'function') ref(node);
     else if (ref) ref.current = node;
-  };
+  }, [own, ref]);
 }
 
 /** A loading indicator. The default is the iOS activity indicator (eight fading spokes, stepped rotation); it grows in

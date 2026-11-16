@@ -1,5 +1,5 @@
 'use client';
-import { Children, createContext, isValidElement, useContext, useMemo, type ComponentProps, type CSSProperties, type ReactNode } from 'react';
+import { Children, createContext, isValidElement, useContext, useLayoutEffect, useMemo, useRef, useState, type ComponentProps, type CSSProperties, type ReactNode } from 'react';
 import type { TabsTabState } from '@ui-sdk/core/tabs';
 import { Button as SdkButton } from '@ui-sdk/react/button';
 import {
@@ -14,6 +14,7 @@ import { cva } from 'class-variance-authority';
 import { Icon, type IconName } from '@/lib/icon';
 import { barBottomHeight, barSurface } from '@/lib/primitives';
 import { useSizeClassScope } from '@/lib/container';
+import { createReselect, scrollToTop, StackParentContext, type Reselect, type StackParent } from '@/lib/stack-parent';
 import { useChromeHidden } from '@/lib/theme';
 import { cn, cx } from '@/lib/utils';
 import { Separator, type SeparatorProps } from '@/components/ui/separator';
@@ -44,6 +45,10 @@ import { segmentIndicatorVariants, segmentItemVariants, segmentTrackVariants, ty
        <TabsPanels><TabsPanel value="home">…</TabsPanel></TabsPanels>   panels in TabsPanels stack and cross-fade
      </Tabs>
 
+   An app's tab bar (`bar`, `rail`) does what iOS's does when its selected tab is pressed again: a NavigationStack in
+   that tab's panel goes back to its first page, and at the first page the panel scrolls to its top (the same
+   `StackParent.onReselect` signal SplitView's tab bar sends its columns, lib/stack-parent).
+
    UI SDK owns the behavior: one tab stop, arrow keys that move and select (`activation="manual"` waits for Enter or
    Space), `value` / `onValueChange(value, details)`, and panels that unmount unless `keepMounted`. The bar and the
    panels may be written either way round: a bar (or a list) that is a direct child and comes after the panels is
@@ -73,6 +78,8 @@ interface TabsContextValue {
   size: SegmentSize;
 }
 const TabsContext = createContext<TabsContextValue | null>(null);
+/** The selected tab pressed again, by its value: what the panels' stacks listen to (`bar` and `rail`). */
+const TabsReselectContext = createContext<Reselect<string> | null>(null);
 const FALLBACK: TabsContextValue = { variant: 'segmented', side: 'top', orientation: 'horizontal', size: 'default' };
 const useTabsContext = () => useContext(TabsContext) ?? FALLBACK;
 
@@ -141,20 +148,23 @@ export function Tabs<T extends string = string>({ variant: look = 'segmented', p
   const variant = useLook(look, presentation);
   const at = side ?? DEFAULT_SIDE[variant];
   const orientation: TabsOrientation = at === 'start' || at === 'end' ? 'vertical' : 'horizontal';
+  const [reselect] = useState(() => createReselect<string>());
   const context = useMemo(() => ({ variant, side: at, orientation, size }), [variant, at, orientation, size]);
   // A bottom bar publishes how much it covers, for the stacks that scroll under it (NavigationStackContent).
   const covers = variant === 'bar' && at === 'bottom';
   return (
     <TabsContext.Provider value={context}>
-      <SdkTabs<T>
-        data-variant={variant}
-        data-side={at}
-        data-size={size}
-        orientation={orientation}
-        className={cx(tabsVariants({ side: at, variant }), className)}
-        style={covers ? (state) => ({ '--tabs-bar-h': barBottomHeight, ...(typeof style === 'function' ? style(state) : style) } as CSSProperties) : style}
-        {...props}
-      />
+      <TabsReselectContext.Provider value={reselect}>
+        <SdkTabs<T>
+          data-variant={variant}
+          data-side={at}
+          data-size={size}
+          orientation={orientation}
+          className={cx(tabsVariants({ side: at, variant }), className)}
+          style={covers ? (state) => ({ '--tabs-bar-h': barBottomHeight, ...(typeof style === 'function' ? style(state) : style) } as CSSProperties) : style}
+          {...props}
+        />
+      </TabsReselectContext.Provider>
     </TabsContext.Provider>
   );
 }
@@ -314,11 +324,27 @@ export type TabsTabProps = ComponentProps<typeof SdkTabsTab> & {
 
 /** A tab. Its children are the label; `icon` adds a glyph. A function child gets the tab's state (`selected`,
  *  `disabled`) and draws the whole tab itself. */
-export function TabsTab({ className, icon, children, ...props }: TabsTabProps) {
+export function TabsTab({ className, icon, children, onPointerDownCapture, onClick, ...props }: TabsTabProps) {
   const { variant, size } = useTabsContext();
+  const reselect = useContext(TabsReselectContext);
   const stacked = STACKED.has(variant);
+  // Whether the tab was the selected one when the press began (the press itself may select it first).
+  const wasSelected = useRef(false);
   return (
-    <SdkTabsTab className={cx(tabsTabVariants({ variant, size }), className)} {...props}>
+    <SdkTabsTab
+      className={cx(tabsTabVariants({ variant, size }), className)}
+      onPointerDownCapture={(event) => {
+        wasSelected.current = event.currentTarget.getAttribute('aria-selected') === 'true';
+        onPointerDownCapture?.(event);
+      }}
+      onClick={(event) => {
+        onClick?.(event);
+        // An app's tab bar: the selected tab pressed again (a pointer, or Enter / Space) goes back to its first page.
+        const selected = event.detail > 0 ? wasSelected.current : event.currentTarget.getAttribute('aria-selected') === 'true';
+        if (stacked && selected && !event.defaultPrevented && props.value != null) reselect?.emit(String(props.value));
+      }}
+      {...props}
+    >
       {(state) => (
         <TabsTabContext.Provider value={state}>
           {typeof children === 'function' ? children(state) : (
@@ -536,10 +562,27 @@ export type TabsPanelProps = ComponentProps<typeof SdkTabsPanel>;
 
 /** A tab's content. A bare panel sits in the flow: the one that was showing leaves at once. Inside `TabsPanels` the
  *  panels stack and scroll on their own, and the old one slides out while the new one slides in. */
-export function TabsPanel({ className, ...props }: TabsPanelProps) {
+export function TabsPanel({ className, ref, ...props }: TabsPanelProps) {
   const stacked = useContext(PanelsContext);
-  return (
+  const { variant } = useTabsContext();
+  const reselect = useContext(TabsReselectContext);
+  const value = props.value == null ? undefined : String(props.value);
+  // An app's tab bar: its selected tab pressed again reaches a NavigationStack in the panel (back to its first page)
+  // and the panel itself (back to its top).
+  const appTabs = STACKED.has(variant) && !!reselect && value !== undefined;
+  const own = useRef<HTMLDivElement | null>(null);
+  const parent = useMemo<StackParent | null>(
+    () => (appTabs ? { back: null, setTitle: () => {}, onReselect: (listener) => reselect.on(value, listener) } : null),
+    [appTabs, reselect, value],
+  );
+  useLayoutEffect(() => (appTabs ? reselect.on(value, () => scrollToTop(own.current)) : undefined), [appTabs, reselect, value]);
+  const panel = (
     <SdkTabsPanel
+      ref={(el: HTMLDivElement | null) => {
+        own.current = el;
+        if (typeof ref === 'function') ref(el);
+        else if (ref) (ref as { current: HTMLDivElement | null }).current = el;
+      }}
       className={cx(
         stacked
           ? ['absolute inset-0 overflow-auto outline-none focus-visible:ring-2 focus-visible:ring-ring/45 focus-visible:ring-inset not-data-selected:pointer-events-none', panelEnter, panelExit]
@@ -549,4 +592,5 @@ export function TabsPanel({ className, ...props }: TabsPanelProps) {
       {...props}
     />
   );
+  return parent ? <StackParentContext.Provider value={parent}>{panel}</StackParentContext.Provider> : panel;
 }

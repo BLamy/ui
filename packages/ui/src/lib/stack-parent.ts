@@ -17,10 +17,31 @@ export interface StackParent {
   /** The first page's title, for what comes after the container (a collapsed SplitView's next column labels its
    *  back button with it). `undefined` takes it back. */
   setTitle: (title: string | undefined) => void;
-  /** Listens for the container's place being picked again while it shows (a SplitView tab bar's selected tab
-   *  pressed again): a stack pops to its first page, or scrolls that page to the top when it is there already, as
+  /** Listens for the container's place being picked again while it shows (the selected tab of a SplitView tab bar
+   *  or of a Tabs `bar` / `rail`, pressed again): a stack pops to its first page, or scrolls that page to the top when it is there already, as
    *  iOS does. Returns the way to stop listening. */
   onReselect?: (listener: () => void) => () => void;
+}
+
+/** A container's "picked again" signal, by place (a SplitView column, a Tabs panel's value): what feeds
+ *  `StackParent.onReselect`. SplitView's tab bar and Tabs `bar` / `rail` both emit it when their selected tab is
+ *  pressed again, so a NavigationStack under either pops to its first page, then scrolls it to the top. */
+export interface Reselect<K = string> {
+  emit: (place: K) => void;
+  on: (place: K, listener: () => void) => () => void;
+}
+
+export function createReselect<K = string>(): Reselect<K> {
+  const listeners = new Map<K, Set<() => void>>();
+  return {
+    emit: (place) => listeners.get(place)?.forEach((l) => l()),
+    on(place, listener) {
+      const set = listeners.get(place) ?? new Set();
+      listeners.set(place, set);
+      set.add(listener);
+      return () => { set.delete(listener); };
+    },
+  };
 }
 
 /** Scrolls a page's content back to its top: smoothly, unless the reader asked for reduced motion. */

@@ -1,13 +1,8 @@
+/* `@brett_lamy/ui/docstream/strudel`: the player and the one shared runtime that drives it. The rack, its hardware and
+   the syntax tree (which bring the parser, acorn) are `@brett_lamy/ui/docstream/strudel/rack`. */
 export { StrudelPlayer } from "./StrudelPlayer"
 export type { StrudelCodeChangeDetails, StrudelPanelChangeReason, StrudelPlayerProps } from "./StrudelPlayer"
-export { StrudelRack, STRUDEL_PARAMS, trackName } from "./StrudelRack"
-export type { StrudelRackChangeDetails, StrudelRackChangeReason, StrudelRackControl, StrudelRackProps } from "./StrudelRack"
-export { StepGrid } from "./StepGrid"
-export { RackGrid } from "./RackGrid"
-export type { GridItem, GridLayout, RackGridProps } from "./RackGrid"
-export type { StepGridProps } from "./StepGrid"
-export { Fader, Knob } from "./controls"
-export type { ControlProps, ControlValueChangeDetails, ControlValueChangeReason } from "./controls"
+export type { StrudelRackChangeDetails, StrudelRackChangeReason, StrudelRackControl } from "./rack-types"
 export {
   DEFAULT_SAMPLES,
   getStrudelSnapshot,
@@ -19,4 +14,3 @@ export {
 } from "./engine"
 export type { StrudelHap, StrudelPattern, StrudelSnapshot } from "./engine"
 export { isStrudelFile, isStrudelLanguage } from "./url"
-export * from "./ast"

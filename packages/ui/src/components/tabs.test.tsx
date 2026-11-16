@@ -8,6 +8,9 @@ import {
 } from '@/components/ui/tabs';
 import { setChromeHidden } from '@/lib/theme';
 import { SizeClassProvider } from '@/lib/container';
+import {
+  createNavigationStackController, NavigationStack, NavigationStackBar, NavigationStackPage, NavigationStackTitle,
+} from '@/components/ui/navigation-stack';
 
 declare global { var __UI_SDK_STRICT__: boolean | undefined }
 globalThis.__UI_SDK_STRICT__ = true;
@@ -557,5 +560,67 @@ describe('Tabs size and presentation', () => {
     render(<App />);
     await settle();
     expect(root().getAttribute('data-variant')).toBe('bar');
+  });
+});
+
+describe('Tabs bar: the selected tab pressed again', () => {
+  it('pops a NavigationStack in its panel to its first page, then scrolls the panel to the top', async () => {
+    const controller = createNavigationStackController();
+    render(
+      <Tabs variant="bar" defaultValue="library">
+        <TabsPanels>
+          <TabsPanel value="library" data-testid="library-panel">
+            <NavigationStack controller={controller} defaultPages={['root', 'album']}>
+              <NavigationStackPage value="root"><NavigationStackBar><NavigationStackTitle>Library</NavigationStackTitle></NavigationStackBar></NavigationStackPage>
+              <NavigationStackPage value="album"><NavigationStackBar><NavigationStackTitle>Album</NavigationStackTitle></NavigationStackBar></NavigationStackPage>
+            </NavigationStack>
+          </TabsPanel>
+          <TabsPanel value="radio">Radio</TabsPanel>
+        </TabsPanels>
+        <TabsBar>
+          <TabsList aria-label="Sections">
+            <TabsTab value="library" icon="books-vertical">Library</TabsTab>
+            <TabsTab value="radio" icon="dot-radiowaves-left-and-right">Radio</TabsTab>
+          </TabsList>
+        </TabsBar>
+      </Tabs>,
+    );
+    await settle();
+    expect(controller.getPages()).toEqual(['root', 'album']);
+    // Picking another tab is not a reselect.
+    await act(async () => screen.getByRole('tab', { name: 'Radio' }).click());
+    await act(async () => screen.getByRole('tab', { name: 'Library' }).click());
+    await settle();
+    expect(controller.getPages()).toEqual(['root', 'album']);
+    // The selected tab again: back to the first page.
+    await act(async () => screen.getByRole('tab', { name: 'Library' }).click());
+    await settle();
+    expect(controller.getPages()).toEqual(['root']);
+    // And again, at the first page: the panel scrolls to its top.
+    const panel = screen.getByTestId('library-panel');
+    panel.scrollTop = 80;
+    const scrollTo = vi.fn();
+    panel.scrollTo = scrollTo as unknown as typeof panel.scrollTo;
+    await act(async () => screen.getByRole('tab', { name: 'Library' }).click());
+    expect(scrollTo).toHaveBeenCalledWith(expect.objectContaining({ top: 0 }));
+  });
+
+  it('does nothing in an in-page look', async () => {
+    const controller = createNavigationStackController();
+    render(
+      <Tabs defaultValue="a">
+        <TabsList aria-label="Views"><TabsTab value="a">A</TabsTab><TabsTab value="b">B</TabsTab></TabsList>
+        <TabsPanel value="a">
+          <NavigationStack controller={controller} defaultPages={['root', 'next']}>
+            <NavigationStackPage value="root">Root</NavigationStackPage>
+            <NavigationStackPage value="next">Next</NavigationStackPage>
+          </NavigationStack>
+        </TabsPanel>
+      </Tabs>,
+    );
+    await settle();
+    await act(async () => screen.getByRole('tab', { name: 'A' }).click());
+    await settle();
+    expect(controller.getPages()).toEqual(['root', 'next']);
   });
 });

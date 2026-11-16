@@ -1,7 +1,7 @@
 {
   "name": "date-picker",
   "title": "DatePicker",
-  "description": "A date input with a calendar button that opens a Calendar in a popup, for one date or a range: UI SDK's Date Picker, composed from a field (the kit's field box, sized on the root), its input and trigger, and a content part that takes every Calendar part.",
+  "description": "A date input with a calendar button that opens a Calendar in a popup, for one date or a range: UI SDK's Date Picker, composed from a field box (the kit's filled field, sized with `size` on `DatePickerInputGroup`), its input and trigger, and a content part that takes every Calendar part.",
   "page": "date-picker",
   "exports": [
     "DatePicker",

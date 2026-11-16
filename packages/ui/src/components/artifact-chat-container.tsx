@@ -60,34 +60,37 @@ import {
    caret and a streaming reply survive the switch. ══ */
 
 /** The resolved presentation: the docked chat column, or the chat floating over the content. */
-export type ArtifactChatPresentation = 'split' | 'floating';
+export type ArtifactChatContainerPresentation = 'split' | 'floating';
 /** Which inline edge the docked column sits on (left / right in a left-to-right page). */
-export type ArtifactChatSide = 'start' | 'end';
+export type ArtifactChatContainerSide = 'start' | 'end';
 /** What `onOpenChange` receives: the floating sheet's details (`swipe`, `handle-press`, `handle-key`, `escape-key`,
     `outside-press`, `imperative`) with `cancel()`. */
 export type ArtifactChatContainerOpenChangeDetails = FloatingSheetChangeDetails;
+/** What `onMinimizedChange` receives: the floating sheet's (`swipe`, `trigger-press`, `imperative`) with `cancel()`. */
+export type ArtifactChatContainerMinimizedChangeDetails = FloatingSheetMinimizedChangeDetails;
 type OpenChangeReason = ArtifactChatContainerOpenChangeDetails['reason'];
 /** Why the real composer came back or went: the working status pressed (`trigger-press`), the chat grown by its
     cap (`handle-press`, `handle-key`) or a drag (`swipe`), or code (`setComposing`, or `working` starting or
     stopping). */
-export type ArtifactChatComposingChangeReason = 'trigger-press' | 'handle-press' | 'handle-key' | 'swipe' | 'imperative';
-export type ArtifactChatComposingChangeDetails = ChangeDetails<ArtifactChatComposingChangeReason>;
+export type ArtifactChatContainerComposingChangeReason = 'trigger-press' | 'handle-press' | 'handle-key' | 'swipe' | 'imperative';
+export type ArtifactChatContainerComposingChangeDetails = ChangeDetails<ArtifactChatContainerComposingChangeReason>;
 
 export interface ArtifactChatContainerContextValue {
   /** The container's own size class (`compact` below `breakpoint`). */
   sizeClass: SizeClass;
   /** The resolved presentation. */
-  presentation: ArtifactChatPresentation;
+  presentation: ArtifactChatContainerPresentation;
   /** Whether the floating chat has grown over the content. Always false while docked. */
   open: boolean;
-  /** Grows the floating chat or brings it back to rest (`onOpenChange` hears `imperative`). */
-  setOpen: (open: boolean, given?: ChangeGiven<OpenChangeReason>) => void;
+  /** Grows the floating chat or brings it back to rest (`onOpenChange` hears `imperative`). `false` when the change
+   *  was canceled, like every kit setter. */
+  setOpen: (open: boolean, given?: ChangeGiven<OpenChangeReason>) => boolean;
   /** Whether the real composer shows, rather than the working status (while `working`). */
   composing: boolean;
-  setComposing: (composing: boolean, given?: ChangeGiven<ArtifactChatComposingChangeReason>) => void;
+  setComposing: (composing: boolean, given?: ChangeGiven<ArtifactChatContainerComposingChangeReason>) => boolean;
   /** Whether the floating chat is folded into its FAB. */
   minimized: boolean;
-  setMinimized: (minimized: boolean, given?: ChangeGiven<FloatingSheetMinimizedChangeReason>) => void;
+  setMinimized: (minimized: boolean, given?: ChangeGiven<FloatingSheetMinimizedChangeReason>) => boolean;
 }
 
 const ArtifactChatContainerContext = createContext<ArtifactChatContainerContextValue | null>(null);
@@ -102,8 +105,8 @@ export function useArtifactChatContainer(): ArtifactChatContainerContextValue {
 
 /* What the parts read from the root; not public. */
 interface PartsContextValue {
-  presentation: ArtifactChatPresentation;
-  side: ArtifactChatSide;
+  presentation: ArtifactChatContainerPresentation;
+  side: ArtifactChatContainerSide;
   contentRef: RefObject<HTMLDivElement | null>;
   /** The Chat and Composer parts keep their children mounted (`useKeptChildren`) and hand the root their dock refs. */
   keepChat: (dock: KeptChildren['dock'] | null) => void;
@@ -145,14 +148,14 @@ export interface ArtifactChatContainerProps extends Omit<ComponentProps<'div'>, 
    * it below. `floating` always floats it over the content (maps, canvases, full-bleed artifacts); `split` always
    * docks it.
    */
-  presentation?: 'auto' | ArtifactChatPresentation;
+  presentation?: 'auto' | ArtifactChatContainerPresentation;
   /** The container width, px, below which `auto` floats the chat: the container's size class is `compact` under it
       (`data-size-class` on the root, and the size-class scope popups inside follow). Default 760. */
   breakpoint?: number;
   /** Width of the docked chat column. Default 400. */
   chatWidth?: number | string;
   /** Which inline edge the docked column sits on. Default `start`; `end` for an assistant beside an app's page. */
-  chatSide?: ArtifactChatSide;
+  chatSide?: ArtifactChatContainerSide;
   /** Accessible name of the chat (the docked column's landmark, the floating sheet, and "Open …" on its FAB). */
   chatLabel?: string;
   /** Controlled state of the floating chat grown over the content. */
@@ -163,7 +166,7 @@ export interface ArtifactChatContainerProps extends Omit<ComponentProps<'div'>, 
   /** Controlled fold of the floating chat into its FAB (a drag below rest folds it; the FAB unfolds it). */
   minimized?: boolean;
   defaultMinimized?: boolean;
-  onMinimizedChange?: (minimized: boolean, details: FloatingSheetMinimizedChangeDetails) => void;
+  onMinimizedChange?: (minimized: boolean, details: ArtifactChatContainerMinimizedChangeDetails) => void;
   /** The agent is working: the floating composer becomes a tappable status that brings the composer back. */
   working?: boolean;
   /** The status's text. Default "Working…". */
@@ -171,19 +174,20 @@ export interface ArtifactChatContainerProps extends Omit<ComponentProps<'div'>, 
   /** Controlled: whether the real composer shows while `working` (it hides when work starts, by default). */
   composing?: boolean;
   /** The composer showing or hiding while `working`. `details.cancel()` keeps it as it is. */
-  onComposingChange?: (composing: boolean, details: ArtifactChatComposingChangeDetails) => void;
+  onComposingChange?: (composing: boolean, details: ArtifactChatContainerComposingChangeDetails) => void;
   /** Transcript kept visible above the floating composer while the chat rests (px, or a share of the container). */
   peek?: FloatingSheetSize;
   /** Inset of the floating chat from the container's edges. Default 12. */
   gutter?: number;
-  /** The floating chat's look: `glass` (default) over the content, or an opaque `sheet`. */
+  /** The floating chat's look: `glass` (default) over the content, or the opaque `card`. */
   variant?: FloatingSheetVariant;
   /** Colour scheme of the chat surfaces (the column, the floating sheet, the composer's glass): `auto` (default)
       follows the page; `light` / `dark` let the chat disagree with it. */
   appearance?: FloatingSheetAppearance;
   /** The edge of the container the FAB rests on. Default `bottom`. */
   fabSide?: FloatingSheetFabSide;
-  /** Where along that edge. Default `center`. */
+  /** Where along that edge. Default: the `chatSide` on a wide container (where the floating chat rests, `chatWidth`
+   *  wide), `center` on a phone. */
   fabAlign?: FloatingSheetFabAlign;
   /** The FAB's face. Default: a sparkle. */
   fabIcon?: ReactNode;
@@ -217,7 +221,7 @@ export function ArtifactChatContainer({
   variant = 'glass',
   appearance = 'auto',
   fabSide = 'bottom',
-  fabAlign = 'center',
+  fabAlign: fabAlignProp,
   fabIcon,
   hideOnScroll = true,
   children,
@@ -249,15 +253,18 @@ export function ArtifactChatContainer({
     [rootRef, ref],
   );
   const scheme: Appearance | undefined = appearance === 'auto' ? undefined : appearance;
-  const presentation: ArtifactChatPresentation =
+  const presentation: ArtifactChatContainerPresentation =
     requestedPresentation === 'auto' ? (sizeClass === 'compact' ? 'floating' : 'split') : requestedPresentation;
   const floating = presentation === 'floating';
   const end = chatSide === 'end';
+  const wide = sizeClass !== 'compact';
+  // The FAB folds where the chat rests: its side on a wide container, the middle on a phone.
+  const fabAlign = fabAlignProp ?? (wide && fabSide !== 'start' && fabSide !== 'end' ? chatSide : 'center');
 
   // Every change goes through these with its reason: the consumer hears it first and may cancel it.
   const [open, changeOpen] = useControllableChange<boolean, OpenChangeReason>(controlledOpen, defaultOpen, onOpenChange);
   const [minimized, changeMinimized] = useControllableChange<boolean, FloatingSheetMinimizedChangeReason>(controlledMinimized, defaultMinimized, onMinimizedChange);
-  const [composing, changeComposing] = useControllableChange<boolean, ArtifactChatComposingChangeReason>(controlledComposing, !working, onComposingChange);
+  const [composing, changeComposing] = useControllableChange<boolean, ArtifactChatContainerComposingChangeReason>(controlledComposing, !working, onComposingChange);
   useEffect(() => {
     // Work starting hides the composer and work stopping brings it back (uncontrolled; a controlled parent decides).
     if (controlledComposing === undefined) changeComposing(!working);
@@ -394,17 +401,11 @@ export function ArtifactChatContainer({
     sizeClass,
     presentation,
     open: floating && open,
-    setOpen: (next, given) => {
-      changeOpen(next, given);
-    },
+    setOpen: (next, given) => changeOpen(next, given),
     composing,
-    setComposing: (next, given) => {
-      changeComposing(next, given);
-    },
+    setComposing: (next, given) => changeComposing(next, given),
     minimized,
-    setMinimized: (next, given) => {
-      changeMinimized(next, given);
-    },
+    setMinimized: (next, given) => changeMinimized(next, given),
   };
   const parts: PartsContextValue = {
     presentation,
@@ -472,6 +473,10 @@ export function ArtifactChatContainer({
                   }}
                   peek={peek}
                   gutter={gutter}
+                  // On a wide container the floating chat keeps the chat's width, pinned to its side; on a phone it
+                  // spans the width.
+                  width={wide ? chatWidth : undefined}
+                  align={wide ? chatSide : 'center'}
                   variant={variant}
                   appearance={appearance}
                   bodyAlign="end"

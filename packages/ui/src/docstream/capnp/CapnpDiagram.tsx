@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react"
-import { ChevronRight } from "lucide-react"
+import { Glyph } from "../ui/glyph"
 import { useAsset } from "../asset-resolver"
 import { HighlightedCode } from "../docs/HighlightedCode"
 import { SplitCard, SplitCopyButton, SplitResult } from "../docs/SplitCard"
@@ -72,10 +72,8 @@ type System = ReturnType<Cloudflare["placeInLayers"]>
 interface Size { width: number; height: number }
 interface View { x: number; y: number; zoom: number }
 
-// What sits over the board: the zoom tools at its top, and the frame's bar ("3 services", Services) at its foot.
-const CLEAR_TOP = 60
-const CLEAR_BOTTOM = 64
-const CLEAR_SIDE = 20
+// The air at a board's edge.
+const EDGE = 20
 // Below this a service's words are too small to read. A board too narrow for the whole system at this size (a phone)
 // starts here, at the first layer, and the rest is a drag, Fit, or the Services panel away. Services connect left to
 // right, so a narrow board can't stack them in a column: the connections would have to come back round through them.
@@ -96,16 +94,15 @@ function boundsOf(cloudflare: Cloudflare, system: System) {
   return Number.isFinite(x0) ? { x0, y0, x1, y1 } : null
 }
 
-/** Where the board starts: the whole system in the room the tools leave, never larger than life, and never smaller than
- *  can be read. */
+/** Where the board starts when the whole system wouldn't be legible: at the first layer, at the smallest size that can be
+ *  read. Undefined when it would be, and then the Diagram fits it, in the room its toolbar and bar leave. */
 function startView(box: { x0: number; y0: number; x1: number; y1: number }, size: Size): View | undefined {
   if (size.width <= 0 || size.height <= 0) return undefined
-  const w = size.width - CLEAR_SIDE * 2
-  const h = size.height - CLEAR_TOP - CLEAR_BOTTOM
+  const w = size.width - EDGE * 2, h = size.height - EDGE * 2
   const fit = Math.min(1, w / (box.x1 - box.x0), h / (box.y1 - box.y0))
-  if (fit >= LEGIBLE) return { zoom: fit, x: size.width / 2 - ((box.x0 + box.x1) / 2) * fit, y: CLEAR_TOP + h / 2 - ((box.y0 + box.y1) / 2) * fit }
+  if (fit >= LEGIBLE) return undefined
   const zoom = Math.max(LEGIBLE, Math.min(fit, h / (box.y1 - box.y0)))
-  return { zoom, x: CLEAR_SIDE - box.x0 * zoom, y: CLEAR_TOP + Math.max(0, (h - (box.y1 - box.y0) * zoom) / 2) - box.y0 * zoom }
+  return { zoom, x: EDGE - box.x0 * zoom, y: size.height / 2 - ((box.y0 + box.y1) / 2) * zoom }
 }
 
 /** The element's size, as it changes. */
@@ -185,7 +182,7 @@ export function CapnpDiagram({ code, title, appearance }: CapnpDiagramProps) {
         triggerClassName="docs-capnp-source-trigger"
         panelClassName="docs-capnp-source-body"
         summary={<>
-          <ChevronRight className="docs-capnp-caret" size={14} strokeWidth={2.2} aria-hidden="true" />
+          <Glyph name="chevron-right" className="docs-capnp-caret" size={14} sw={2.2} />
           <span>Source</span>
           <span className="docs-capnp-language">capnp</span>
         </>}

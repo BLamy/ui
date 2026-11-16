@@ -25,7 +25,7 @@ export default function GeneratedModel({ variant = "torus" }: { variant?: string
   const size = mesh.max.map((v, i) => (v - mesh.min[i]!).toFixed(1)).join(" × ")
   return (
     <div style={{ display: "grid", gap: 12, maxWidth: 560, margin: "0 auto" }}>
-      {url && <StlViewer key={`${url}-${spin}`} src={url} title={`${shape}.stl`} color={color} autoRotate={spin} />}
+      {url && <StlViewer key={`${url}-${spin}`} src={url} title={`${shape}.stl`} tint={color} autoRotate={spin} />}
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 14, fontSize: 13 }}>
         <label style={row}>
           detail

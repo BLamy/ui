@@ -88,7 +88,7 @@ export const sheetGrabberVariants = cva('mx-auto mt-[5px] mb-px block h-[5px] w-
   defaultVariants: { handle: false },
 });
 
-/** The inset of a floating tray from its host's edges, px: Dialog's `variant="tray"` (`mx-2.5`, 10px over the safe
-    area at the bottom) and FloatingSheet's resting card (`gutter`) are the same object on a phone, with this inset
+/** The inset of a floating tray from its host's edges, px: Dialog's and Sheet's `variant="tray"` (`mx-2.5`, 10px over
+    the safe area at the bottom) and FloatingSheet's resting card (`gutter`) are the same object on a phone, with this inset
     and `--radius-sheet` corners. */
 export const trayInset = 10;

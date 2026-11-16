@@ -12,6 +12,9 @@
   --background: #fff;
   --foreground: #0B0B0F;
   --card: #fff;
+  /* The selected segment (Segmented, ToggleGroup, Tabs): set in every light scope too, so a light subtree on a dark
+     page doesn't inherit the dark gray. */
+  --segment: #fff;
   --card-foreground: #0B0B0F;
   --popover: #fff;
   --popover-foreground: #0B0B0F;
@@ -117,6 +120,7 @@
   --background: #FFFFFF;
   --foreground: #17171C;
   --card: #FFFFFF;
+  --segment: #FFFFFF;
   --card-foreground: #17171C;
   --popover: #F2F2F5;
   --popover-foreground: #17171C;
@@ -215,6 +219,7 @@
   color-scheme: light;
   --foreground: #1C1C1E;
   --card: #FFFFFF;
+  --segment: #FFFFFF;
   --card-foreground: #1C1C1E;
   --popover: #F2F2F7;
   --popover-foreground: #1C1C1E;
@@ -236,6 +241,7 @@
   --foreground: #EDEDF2;
   --card: rgba(31, 31, 39, .86);
   --card-foreground: #EDEDF2;
+  --segment: #636366;
   --popover: #26262E;
   --popover-foreground: #EDEDF2;
   --secondary: rgba(255, 255, 255, .08);
@@ -259,6 +265,7 @@
   --background: #FFFFFF;
   --foreground: #1C1C1E;
   --card: rgba(255, 255, 255, .86);
+  --segment: #FFFFFF;
   --card-foreground: #1C1C1E;
   --popover: #F2F2F5;
   --popover-foreground: #1C1C1E;

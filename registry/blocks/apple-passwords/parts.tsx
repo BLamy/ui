@@ -24,7 +24,7 @@ export function useClock(live: boolean): CodeClock {
 
 /* ── Tiles ── */
 /** A site's tile: its initial on its color, with the soft top light Apple's generated icons have. */
-export function SiteTile({ title, color, size = 32, className }: { title: string; color: string; size?: number; className?: string }) {
+export function SiteTile({ title, tint: color, size = 32, className }: { title: string; tint: string; size?: number; className?: string }) {
   return (
     <span aria-hidden="true"
       className={cn('grid shrink-0 place-items-center font-semibold text-white shadow-[inset_0_0_0_.5px_black] shadow-black/12', className)}
@@ -138,13 +138,13 @@ export function CodeValue({ seed, now, size = 'md' }: { seed: string; now: CodeC
 }
 
 /* ── Header of every detail: the big tile, the title, when it last changed ── */
-export function DetailHeader({ icon, title, subtitle }: { icon: ReactNode; title: ReactNode; subtitle: ReactNode }) {
+export function DetailHeader({ icon, title, description }: { icon: ReactNode; title: ReactNode; description: ReactNode }) {
   return (
     <div className="flex flex-col items-center gap-3 px-4 pt-7 pb-3 text-center">
       {icon}
       <div className="w-full max-w-[420px] min-w-0">
         <div className="truncate text-[24px] font-bold tracking-[-.3px] @md:text-[26px]">{title}</div>
-        <div className="mt-0.5 text-footnote text-muted-foreground">{subtitle}</div>
+        <div className="mt-0.5 text-footnote text-muted-foreground">{description}</div>
       </div>
     </div>
   );

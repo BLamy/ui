@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { Composer, ComposerBump, ComposerBumpHandle, ComposerCard, ComposerFooter, ComposerInput, ComposerSend, ComposerSpacer, ComposerStop, ComposerText } from '@/components/ui/composer/composer'
+import { Composer, ComposerBump, ComposerBumpHandle, ComposerCard, ComposerFooter, ComposerInput, ComposerSend, ComposerSpacer, ComposerStop, ComposerText } from '@/components/ui/composer'
 import { Progress } from '@/components/ui/progress'
 import { ThemeScope } from '@/lib/theme'
 

@@ -116,7 +116,7 @@ const devtools: ReplayDevtools = {
 export default function CustomStage() {
   return (
     <div style={{ width: "100%", maxWidth: 720 }}>
-      <ReplayPreview stage={stage} devtools={devtools} markers lazy={false} />
+      <ReplayPreview stage={stage} devtools={devtools} markers mounted />
     </div>
   )
 }

@@ -61,6 +61,16 @@ export const PaletteDark: Story = {
   render: () => <Panel dark height={200}><Terminal {...writes(PALETTE_ROWS)} /></Panel>,
 };
 
+/** `appearance="dark"` on a light page: a dark terminal in a light IDE. */
+export const ForcedDark: Story = {
+  render: () => <Panel height={200}><Terminal appearance="dark" {...writes(PALETTE_ROWS)} /></Panel>,
+};
+
+/** `appearance="light"` on a dark page. */
+export const ForcedLight: Story = {
+  render: () => <Panel dark height={200}><Terminal appearance="light" {...writes(PALETTE_ROWS)} /></Panel>,
+};
+
 export const Small: Story = {
   render: () => <Panel height={200}><Terminal size="sm" {...writes(BUILD_LOG)} /></Panel>,
 };

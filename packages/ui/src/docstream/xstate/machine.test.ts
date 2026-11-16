@@ -2,7 +2,8 @@ import { readFileSync } from "node:fs"
 import { join } from "node:path"
 import { describe, expect, it } from "vitest"
 import { createMachine, type AnyStateNode } from "xstate"
-import { parseXState, xstateToMermaid } from "./machine"
+import { parseXState } from "@brett_lamy/ui/lib/state-diagram-source"
+import { xstateToMermaid } from "./machine"
 import { render } from "pele"
 
 const toggle = { id: "toggle", initial: "off", states: { off: { on: { TOGGLE: "on" } }, on: { on: { TOGGLE: "off" } } } }

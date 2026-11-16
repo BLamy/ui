@@ -122,11 +122,14 @@ export const sheetVariants = cva(
   "pointer-events-auto relative box-border flex flex-col shadow-[0_0_40px_black] shadow-black/22 outline-none after:absolute after:bg-inherit after:content-[''] data-dragging:select-none",
   {
     variants: {
-      /** `card`: the modal sheet (rounded on its free edges, a grabber on the bottom one). `panel`: a full-length
-       *  edge panel with no chrome of its own, flush with its edge and divided from the page by a hairline
-       *  (a drawer of navigation or an inspector). */
+      /** The same names as Dialog's sheet looks. `default`: the modal sheet attached to its edge (rounded on its free
+       *  edges, a grabber on the bottom one). `tray`: the card floating `trayInset` (10px) in from the edges with
+       *  `--radius-sheet` on every corner, Dialog's `tray` and FloatingSheet's resting card. `panel`: a full-length
+       *  edge panel with no chrome of its own, flush with its edge and divided from the page by a hairline (a drawer
+       *  of navigation or an inspector). */
       variant: {
-        card: 'bg-card text-card-foreground',
+        default: 'bg-card text-card-foreground',
+        tray: 'rounded-sheet bg-card text-card-foreground after:hidden',
         panel: 'bg-background text-foreground',
       },
       side: {
@@ -137,16 +140,21 @@ export const sheetVariants = cva(
       },
     },
     compoundVariants: [
-      { variant: 'card', side: 'bottom', class: 'rounded-t-sheet' },
-      { variant: 'card', side: 'top', class: 'rounded-b-sheet' },
-      { variant: 'card', side: 'left', class: 'rounded-r-sheet' },
-      { variant: 'card', side: 'right', class: 'rounded-l-sheet' },
+      { variant: 'default', side: 'bottom', class: 'rounded-t-sheet' },
+      { variant: 'default', side: 'top', class: 'rounded-b-sheet' },
+      { variant: 'default', side: 'left', class: 'rounded-r-sheet' },
+      { variant: 'default', side: 'right', class: 'rounded-l-sheet' },
+      // The tray: inset by `trayInset` from every edge it would touch, clear of the safe areas.
+      { variant: 'tray', side: 'bottom', class: 'mx-2.5 mb-[max(10px,env(safe-area-inset-bottom))] w-[calc(100%-20px)] pb-3' },
+      { variant: 'tray', side: 'top', class: 'mx-2.5 mt-[max(10px,var(--bl-safe-top))] w-[calc(100%-20px)] pt-0' },
+      { variant: 'tray', side: 'left', class: 'my-2.5 ml-2.5 h-[calc(100%-20px)]' },
+      { variant: 'tray', side: 'right', class: 'my-2.5 mr-2.5 h-[calc(100%-20px)]' },
       { variant: 'panel', side: 'bottom', class: 'border-t border-border' },
       { variant: 'panel', side: 'top', class: 'border-b border-border' },
       { variant: 'panel', side: 'left', class: 'w-80 max-w-[85%] border-r border-border' },
       { variant: 'panel', side: 'right', class: 'w-80 max-w-[85%] border-l border-border' },
     ],
-    defaultVariants: { variant: 'card', side: 'bottom' },
+    defaultVariants: { variant: 'default', side: 'bottom' },
   },
 );
 
@@ -155,8 +163,9 @@ export const sheetVariants = cva(
 export { sheetGrabberVariants } from '@/lib/surface';
 
 export type SheetContentProps<Payload = unknown> = Parameters<typeof SdkDrawerContent<Payload>>[0] & {
-  /** `card` (default): the modal sheet. `panel`: a full-length edge panel whose children are the whole panel. */
-  variant?: 'card' | 'panel';
+  /** `default`: the modal sheet, attached to its edge. `tray`: the same card floating 10px in from the edges, every
+   *  corner rounded (Dialog's `tray`). `panel`: a full-length edge panel whose children are the whole panel. */
+  variant?: 'default' | 'tray' | 'panel';
   /** Show the grabber on bottom cards (default true). With more than one snap point it is a SheetHandle. */
   grabber?: boolean;
   /** Whether a drag of the sheet toward its edge closes it (default true). `false` keeps Escape and the scrim,
@@ -166,7 +175,7 @@ export type SheetContentProps<Payload = unknown> = Parameters<typeof SdkDrawerCo
 
 /** The sheet. Name it with a SheetTitle, or `aria-label`. */
 export function SheetContent<Payload = unknown>({
-  className, style, children, variant = 'card', grabber = true, swipe = true, ...props
+  className, style, children, variant = 'default', grabber = true, swipe = true, ...props
 }: SheetContentProps<Payload>) {
   const scope = useThemeScopeProps();
   const resizable = useContext(SheetResizableContext);

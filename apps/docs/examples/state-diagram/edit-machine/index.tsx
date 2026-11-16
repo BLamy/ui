@@ -17,7 +17,7 @@ export default function EditMachine() {
       <div className="relative">
         {which === 'machine'
           ? <StateDiagram key="machine" machine={uploadMachine as never} editable aria-label="A file upload" />
-          : <StateDiagram key="code" config={WITH_CODE} editable />}
+          : <StateDiagram key="code" defaultConfig={WITH_CODE} editable />}
       </div>
     </div>
   )

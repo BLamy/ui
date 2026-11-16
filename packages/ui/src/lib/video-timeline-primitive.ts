@@ -6,7 +6,7 @@ import type { Playback } from '@/lib/playback';
 import {
   clipEnd, findClip, formatTimecode, magneticIndex, moveClip, quantize, removeClips, snapTargets, snapTime,
   timelineDuration, trimClip, updateTrack,
-  type Timeline, type TimelineClip, type TimelineTrack,
+  type Timeline, type TimelineClip, type TimelineMedia, type TimelineTrack,
 } from '@/lib/video-timeline-model';
 
 /* ══ videoTimeline — the editing behavior of a lib/video-timeline-model Timeline ══
@@ -42,14 +42,6 @@ export type VideoTimelineSelectionReason = 'item-press' | 'track-press' | 'escap
 /** Why the zoom changed: ⌘/Ctrl + wheel or a pinch, or a call from code. */
 export type VideoTimelineZoomReason = 'wheel' | 'imperative';
 
-export interface TimelineMediaInfo {
-  /** Seconds (trim limit); ignored for stills. */
-  duration: number;
-  kind: 'video' | 'audio' | 'image';
-  /** The clip label when the clip has none. */
-  name?: string;
-}
-
 export const timelineZoomRange = { min: 2, max: 600 } as const;
 export const clampTimelineZoom = (z: number) => Math.max(timelineZoomRange.min, Math.min(timelineZoomRange.max, z));
 
@@ -72,7 +64,7 @@ export interface VideoTimelineOptions {
   /** The clock the playhead follows: a trim shows the frame at the edge, and a drag pauses it. */
   playback: Pick<Playback, 'getState' | 'seek' | 'pause'>;
   /** Media lengths (trim limits) and names (clip labels), by media id. */
-  media?: Record<string, TimelineMediaInfo | undefined>;
+  media?: Record<string, TimelineMedia | undefined>;
   /** Frames per second: edits land on frames. Default 30. */
   fps?: number;
   /** Snap to clip edges, the playhead and 0. Default true. */
@@ -147,7 +139,7 @@ export const videoTimeline = definePrimitive({
     const media = () => context.options().media ?? {};
     const limits = (clip: TimelineClip) => {
       const m = media()[clip.media];
-      return { mediaDuration: m && m.kind !== 'image' ? m.duration : Infinity, minDuration: frame() };
+      return { mediaDuration: m && m.kind !== 'image' ? (m.duration ?? Infinity) : Infinity, minDuration: frame() };
     };
     const trackOf = (tl: Timeline, id: string) => tl.tracks.find((t) => t.id === id);
     const frozen = (track: TimelineTrack | undefined) => !track || track.locked || store.get().readOnly;

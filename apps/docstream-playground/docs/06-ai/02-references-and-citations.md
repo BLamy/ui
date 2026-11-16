@@ -123,7 +123,7 @@ A nested provider replaces the outer value entirely. Spread the outer context (a
 
 ## Streaming behavior
 
-While `isStreaming` is set, a half-arrived `[^1`, `@bre` or `#seas` at the end of the buffer is held back by `trimPartialInlineToken`, so chips never flash as plain text or change id mid-stream. See [Streaming](01-streaming.md#trimpartialinlinetoken) for it live.
+While `streaming` is set, a half-arrived `[^1`, `@bre` or `#seas` at the end of the buffer is held back by `trimPartialInlineToken`, so chips never flash as plain text or change id mid-stream. See [Streaming](01-streaming.md#trimpartialinlinetoken) for it live.
 
 ## Building blocks
 

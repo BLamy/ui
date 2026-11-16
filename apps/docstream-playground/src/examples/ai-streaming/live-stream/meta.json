@@ -1,6 +1,6 @@
 {
   "title": "Live stream",
-  "description": "Markdown arriving a few characters at a time through `GitbookStreamdown` with `isStreaming`. Toggle **Show raw buffer** to see what `trimPartialInlineToken` holds back.",
+  "description": "Markdown arriving a few characters at a time through `GitbookStreamdown` with `streaming`. Toggle **Show raw buffer** to see what `trimPartialInlineToken` holds back.",
   "height": 640,
   "status": "Live",
   "variants": [

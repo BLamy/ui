@@ -32,11 +32,11 @@ import { listboxItemVariants, listboxVariants } from '@/components/ui/listbox';
 import { Icon } from '@/lib/icon';
 import {
   ListDataItems, OptionRow, OptionRowSizeContext, PickerFieldSizeContext, optionGroupClass, optionGroupLabelClass, optionLabel, optionRowSizes,
-  optionSeparatorClass, optionSheetClass, useOptionDescription, useOptionRowSize, usePickerFieldSize, useReportFieldSize,
+  optionSeparatorClass, useOptionDescription, useOptionRowSize, usePickerFieldSize, useReportFieldSize,
   type ListDataParts, type OptionRowProps, type OptionRowSize,
 } from '@/lib/option-row';
 import { useTriggerPalette, type PopupPalette } from '@/lib/trigger-palette';
-import { popoverMotion, popoverSurface, selectableText, valueChip } from '@/lib/primitives';
+import { popoverMotion, popoverSheet, popoverSurface, selectableText, valueChip } from '@/lib/primitives';
 import { scopeStyle, useLayerHost, useThemeScopeProps } from '@/lib/theme';
 import { usePresentation } from '@/lib/container';
 import { cn, cx } from '@/lib/utils';
@@ -152,6 +152,9 @@ export function ComboboxInput({ className, ...props }: ComponentProps<typeof Sdk
         [
           'h-full min-w-0 flex-1 border-0 bg-transparent p-0 [font:inherit] text-foreground outline-none placeholder:text-tertiary-foreground',
           'in-data-[slot=combobox-chips]:h-8 in-data-[slot=combobox-chips]:min-w-20 in-data-[slot=combobox-chips]:ps-1',
+          // In a sheet, UI SDK moves the input into the sheet's header, out of its field box: there it is the iOS search
+          // field (SearchInput's fill and focus line, at the control radius).
+          'in-data-[slot=combobox-header]:box-border in-data-[slot=combobox-header]:h-9 in-data-[slot=combobox-header]:w-full in-data-[slot=combobox-header]:flex-none in-data-[slot=combobox-header]:rounded-ctl in-data-[slot=combobox-header]:bg-secondary in-data-[slot=combobox-header]:px-3 in-data-[slot=combobox-header]:text-body in-data-[slot=combobox-header]:transition-[box-shadow] in-data-[slot=combobox-header]:focus:shadow-[inset_0_0_0_1.5px_var(--primary)]',
           selectableText,
         ],
         className,
@@ -234,7 +237,7 @@ export function ComboboxContent({ className, style, sideOffset = 8, anchor, size
       <SdkComboboxContent
         ref={trigger.ref}
         data-theme-scope={colors['data-theme-scope']}
-        data-size={size}
+        data-size={size === 'field-sm' ? 'sm' : size}
         sideOffset={sideOffset}
         anchor={anchor ?? field?.[0]}
         className={cx(
@@ -242,7 +245,8 @@ export function ComboboxContent({ className, style, sideOffset = 8, anchor, size
             popoverSurface, popoverMotion, 'box-border flex w-(--anchor-width) flex-col',
             // Nothing to show (no option matches and no empty or status message): no empty bubble.
             '[&:not(:has([data-slot=combobox-item]:not([hidden]),[data-empty],[data-slot=combobox-status]:not(:empty)))]:hidden',
-            optionSheetClass, colors.className,
+            popoverSheet, '*:data-[slot=combobox-header]:px-4 *:data-[slot=combobox-header]:pt-1 *:data-[slot=combobox-header]:pb-2',
+            colors.className,
           ],
           className,
         )}

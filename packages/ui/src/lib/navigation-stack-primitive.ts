@@ -9,10 +9,10 @@ import { bindEdgeSwipe } from '@/lib/edge-swipe';
 import { bindPullToRefresh } from '@/lib/pull-to-refresh';
 import { bindScrollEdge } from '@/lib/scroll-edge';
 import { bindSizeClass, type SizeClass } from '@/lib/size-class';
-import { createStack, type StackExit, type StackReason } from '@/lib/stack';
+import { createPageStack, type PageStackExit, type PageStackReason } from '@/lib/stack';
 
 /* ══ navigationStack — iOS's UINavigationController as a primitive ══
-   A stack of pages, bottom to top, kept in `pages` (a list of page keys) by `createStack` (`lib/stack`): a pushed page
+   A stack of pages, bottom to top, kept in `pages` (a list of page keys) by `createPageStack` (`lib/stack`): a pushed page
    slides in over the others, covered pages are inert, focus goes into a pushed page and back to what pushed it on a
    pop, and Escape, the platform back (`bindBack`) and a swipe from the leading edge (`bindEdgeSwipe`) pop the top
    page, the innermost stack first. Each page has a bar (back button, title, leading and trailing items), a scrolling
@@ -27,7 +27,7 @@ import { createStack, type StackExit, type StackReason } from '@/lib/stack';
    No React in here: render it with `createParts(navigationStack, { root: 'div', page: 'section', … })`. ══ */
 
 /** Why the pages changed: Escape, the platform back, an edge swipe, a back or push button, or code. */
-export type NavigationStackReason = StackReason | 'trigger-press';
+export type NavigationStackReason = PageStackReason | 'trigger-press';
 
 /** What `onPagesChange` receives besides the new pages. `cancel()` keeps the pages as they were. */
 export type NavigationStackChangeDetails = ChangeDetails<NavigationStackReason>;
@@ -78,7 +78,7 @@ export interface NavigationStackOptions {
 /** The primitive's state (what its parts render from). */
 export interface NavigationStackState {
   pages: string[];
-  exiting: StackExit[];
+  exiting: PageStackExit[];
   /** The root's own size class, once measured. */
   sizeClass: SizeClass | undefined;
   /** Pages scrolled past their large title (or a few px without one). */
@@ -158,7 +158,7 @@ export const navigationStack = definePrimitive({
   api: (context) => {
     const { store } = context;
     const change = createChange(context);
-    const stack = createStack<NavigationStackState, NavigationStackReason>(context, {
+    const stack = createPageStack<NavigationStackState, NavigationStackReason>(context, {
       key: 'pages',
       exiting: 'exiting',
       set: (value, details) => change('pages', value, details),
@@ -323,7 +323,7 @@ export const navigationStack = definePrimitive({
     return api;
   },
   slots: (slot) => ({
-    root: slot<object, { pages: string[]; exiting: StackExit[]; sizeClass: SizeClass | undefined }>({
+    root: slot<object, { pages: string[]; exiting: PageStackExit[]; sizeClass: SizeClass | undefined }>({
       state: (state) => ({ pages: state.pages, exiting: state.exiting, sizeClass: state.sizeClass }),
       bind: (el, { api }) => {
         const offSwipe = bindEdgeSwipe(el, { size: EDGE, threshold: COMMIT, ...api.internal.swipe });

@@ -64,7 +64,7 @@ export function BugPage({ value, id }: { value: string; id: string }) {
 
           <div className="grid items-start gap-5 @5xl:grid-cols-[1fr_280px]!">
             <div className="flex min-w-0 flex-col gap-5">
-              <ReplayPreview events={replayDemoEvents} initialTime={featured ? 8400 : 2250} playerRef={player} title={`Replay of ${b.id}`} />
+              <ReplayPreview events={replayDemoEvents} initialTime={featured ? 8400 : 2250} ref={player} title={`Replay of ${b.id}`} />
 
               <Tabs variant="underline" defaultValue="network">
                 <TabsList aria-label="Logs">

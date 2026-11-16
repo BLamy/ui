@@ -1,5 +1,6 @@
 import { useState } from "react"
 import { SLASH_ITEMS } from "@brett_lamy/ui/docstream-editor"
+import { Icon } from "@brett_lamy/ui/lib/icon"
 
 /**
  * The menu's filter, on its own: an item matches when its title and keywords, lower-cased,
@@ -26,7 +27,7 @@ export default function SlashFilter() {
       <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "grid", gap: 2, maxHeight: 360, overflow: "auto" }}>
         {matches.map((item) => (
           <li key={item.title} style={{ display: "grid", gridTemplateColumns: "20px 150px 1fr", alignItems: "center", gap: 8, padding: "4px 6px", fontSize: 13 }}>
-            <item.icon size={16} aria-hidden="true" />
+            <Icon name={item.icon} size={16} />
             <strong style={{ fontWeight: 500 }}>{item.title}</strong>
             <code style={{ fontSize: 12, color: "var(--muted-foreground, #6e6e7a)" }}>{item.keywords}</code>
           </li>

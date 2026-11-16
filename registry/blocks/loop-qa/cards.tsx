@@ -68,7 +68,7 @@ export function BugPreview({ bug, ...props }: PreviewProps & { bug: Bug }) {
 /* ── Run ── the run's own RunCard, edge to edge in the hover card. */
 
 export function RunPreview({ runId, ...props }: PreviewProps & { runId: string }) {
-  return <Preview cardClassName="w-80 p-0" card={<RunCard runId={runId} compact className="rounded-card border-0 bg-transparent" />} {...props} />;
+  return <Preview cardClassName="w-80 p-0" card={<RunCard runId={runId} density="compact" className="rounded-card border-0 bg-transparent" />} {...props} />;
 }
 
 /* ── Project ── */

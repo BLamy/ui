@@ -3,7 +3,7 @@
    you add) — and the song gets a master strip with the tempo. Every control edits the code in place (edit.ts),
    so the code stays the source of truth: what you turn is what you'd have typed. */
 import { useEffect, useMemo, useRef, useState } from "react"
-import { AudioWaveform, Drum, KeyboardMusic, Plus, X } from "lucide-react"
+import { Glyph } from "../ui/glyph"
 import { Menu, MenuContent, MenuItem, MenuTrigger } from "@ui-sdk/react/menu"
 import { SegmentedControl, SegmentedControlItem } from "@ui-sdk/react/segmented-control"
 import { Select, SelectContent, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@ui-sdk/react/select"
@@ -21,17 +21,14 @@ export type { StrudelRackChangeDetails, StrudelRackChangeReason, StrudelRackCont
 export interface StrudelRackProps {
   /** The Strudel code the rack is drawn from. Controlled: pass the code `onValueChange` reports. */
   value?: string
-  /** @deprecated Use `value`. */
-  code?: string
   /** The edited code, and which control edited it and how. */
   onValueChange?: (code: string, details: StrudelRackChangeDetails) => void
-  /** @deprecated Use `onValueChange`. Still called, with the same details. */
-  onChange?: (code: string, details: StrudelRackChangeDetails) => void
   /** The code to play for the current mute/solo mix (the written code with silenced tracks). */
   onPlayableChange?: (code: string) => void
   className?: string
-  /** "rack": modules stacked full width. "grid": a masonry grid you drag and resize. Defaults to "rack". */
-  layout?: "rack" | "grid"
+  /** The look it opens in, before the reader switches it (or `persistKey` remembers their choice): `"rack"`, modules
+   *  stacked full width (the default), or `"grid"`, a masonry grid you drag and resize. */
+  defaultVariant?: "rack" | "grid"
   /** Remember the layout (mode, order and sizes) in localStorage under this key. */
   persistKey?: string
 }
@@ -175,7 +172,7 @@ function Device({
   const missing = Object.keys(STRUDEL_PARAMS).filter((p) => !present.includes(p) && p !== "cutoff")
   const audible = isAudible(track, mix)
   const name = trackName(track)
-  const Icon = track.kind === "drums" ? Drum : track.kind === "melodic" ? KeyboardMusic : AudioWaveform
+  const icon = track.kind === "drums" ? "drum" : track.kind === "melodic" ? "pianokeys" : "waveform"
 
     type How = { reason: StrudelRackChangeReason; event?: Event }
   const emit = (next: string, control: StrudelRackControl, { reason, event }: How, param?: string) =>
@@ -188,7 +185,7 @@ function Device({
     <section className="strudel-device" data-kind={track.kind} data-audible={audible} aria-label={name}>
       <header className="strudel-device__head">
         <span className="strudel-device__led" aria-hidden="true" />
-        <Icon size={14} aria-hidden="true" />
+        <Glyph name={icon} size={14} />
         <span className="strudel-device__name" title={code.slice(track.start, track.end)}>
           {name}
         </span>
@@ -260,7 +257,7 @@ function Device({
                     onValueChange={(v, how) => set(p, v, "effect", how)}
                   />
                   <button type="button" className="strudel-device__remove" aria-label={`Remove ${spec.label}`} onClick={(event) => emit(removeMethod(code, chain, p), "effect", { reason: "remove-press", event: event.nativeEvent }, p)}>
-                    <X size={10} />
+                    <Glyph name="xmark" size={10} />
                   </button>
                 </div>
               )
@@ -268,7 +265,7 @@ function Device({
             {missing.length > 0 && (
               <Menu onAction={(effect, { event }) => set(effect, STRUDEL_PARAMS[effect]!.default, "effect", { reason: "item-press", ...(event ? { event } : {}) })}>
                 <MenuTrigger className="strudel-device__add" aria-label={`Add an effect to ${name}`} title="Add an effect">
-                  <Plus size={14} aria-hidden="true" />
+                  <Glyph name="plus" size={14} />
                 </MenuTrigger>
                 <MenuContent className="strudel-popup" align="start" sideOffset={8}>
                   {missing.map((p) => (
@@ -287,14 +284,13 @@ function Device({
 }
 
 /** Equipment generated from Strudel code. Controlled: `value` in, edited code out through `onValueChange` (with what edited it). */
-export function StrudelRack({ value, code: legacyCode, onValueChange, onChange: legacyOnChange, onPlayableChange, className, layout = "rack", persistKey }: StrudelRackProps) {
-  const code = value ?? legacyCode ?? ""
+export function StrudelRack({ value, onValueChange, onPlayableChange, className, defaultVariant = "rack", persistKey }: StrudelRackProps) {
+  const code = value ?? ""
   const onChange = (next: string, details: StrudelRackChangeDetails) => {
     onValueChange?.(next, details)
-    legacyOnChange?.(next, details)
   }
   const [saved] = useState(() => load(persistKey))
-  const [mode, setMode] = useState<"rack" | "grid">(saved.mode ?? layout)
+  const [mode, setMode] = useState<"rack" | "grid">(saved.mode ?? defaultVariant)
   const [grid, setGrid] = useState<GridLayout>(saved.grid ?? { order: [], sizes: {} })
   // The master strip, and the switch in it, mounts again in the other layout: focus goes back to the switch.
   const layoutSwitch = useRef<HTMLDivElement>(null)

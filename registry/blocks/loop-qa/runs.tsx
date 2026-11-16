@@ -95,7 +95,8 @@ export function RunRing({ run: r, size = 44 }: { run: Run; size?: number }) {
 }
 
 /** The run card: ring, title, status, what it's doing now (live) or what it found (done). */
-export function RunCard({ runId, compact, className, footer }: { runId: string; compact?: boolean; className?: string; footer?: ReactNode }) {
+export function RunCard({ runId, density = 'default', className, footer }: { runId: string; density?: 'compact' | 'default'; className?: string; footer?: ReactNode }) {
+  const compact = density === 'compact';
   const qa = useLoopQA();
   const r = qa.runs.find((x) => x.id === runId);
   if (!r) return null;

@@ -19,7 +19,7 @@ import { SegmentedControl, SegmentedControlItem } from '@ui-sdk/react/segmented-
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@ui-sdk/react/select'
 import { Toggle, ToggleGroup } from '@ui-sdk/react/toggle'
 import { Tree, TreeGroup, TreeItem, TreeItemIndicator, TreeItemLabel } from '@ui-sdk/react/tree'
-import { ChevronDown, ChevronRight, CircleX, Info, Network, SquareTerminal, TriangleAlert, X } from 'lucide-react'
+import { Glyph } from "../ui/glyph"
 import { DevtoolsPanelResize, DevtoolsPanelRoot, RequestRow, RequestTable, Tabs, TabsList, TabsPanel, TabsTab } from './devtools-parts'
 import type { ReplayConsoleEntry, ReplayDevtoolsState, ReplayRequest } from './devtools'
 import { sourceName, type ResolvedReplayEvidence } from './evidence'
@@ -59,9 +59,10 @@ export function DevtoolsButtons({ counts, open, onOpen }: {
         aria-label={`Console: ${errors} ${errors === 1 ? 'error' : 'errors'}, ${warnings} ${warnings === 1 ? 'warning' : 'warnings'}`}
         title="Console"
       >
-        <SquareTerminal size={14} strokeWidth={2} aria-hidden="true" />
-        {errors ? <span data-part="failed">{errors}</span> : null}
-        {warnings ? <span data-part="warn">{warnings}</span> : null}
+        <Glyph name="terminal" size={14} sw={2} />
+        {/* A glyph with each count, so an error and a warning differ by shape as well as color, as in Chrome. */}
+        {errors ? <span data-part="failed"><Glyph name="xmark-circle" size={11} sw={2.4} />{errors}</span> : null}
+        {warnings ? <span data-part="warn"><Glyph name="warning" size={11} sw={2.4} />{warnings}</span> : null}
       </Toggle>
       <Toggle
         value="network"
@@ -70,9 +71,9 @@ export function DevtoolsButtons({ counts, open, onOpen }: {
         aria-label={`Network: ${requests} ${requests === 1 ? 'request' : 'requests'}, ${failed} failed`}
         title="Network"
       >
-        <Network size={14} strokeWidth={2} aria-hidden="true" />
+        <Glyph name="network" size={14} sw={2} />
         <span data-part="count">{requests}</span>
-        {failed ? <span data-part="failed">{failed}</span> : null}
+        {failed ? <span data-part="failed"><Glyph name="xmark-circle" size={11} sw={2.4} />{failed}</span> : null}
       </Toggle>
     </ToggleGroup>
   )
@@ -155,12 +156,12 @@ export function DevtoolsPanel({ state, tab, onTab, onClose, onSeek, inspection, 
             {tabs.map((t) => (
               <TabsTab key={t.id} value={t.id}>
                 {t.label}
-                {t.id === 'console' && state.counts.errors ? <span data-part="failed">{state.counts.errors}</span> : null}
-                {t.id === 'network' && state.counts.failed ? <span data-part="failed">{state.counts.failed}</span> : null}
+                {t.id === 'console' && state.counts.errors ? <span data-part="failed"><Glyph name="xmark-circle" size={11} sw={2.4} />{state.counts.errors}</span> : null}
+                {t.id === 'network' && state.counts.failed ? <span data-part="failed"><Glyph name="xmark-circle" size={11} sw={2.4} />{state.counts.failed}</span> : null}
               </TabsTab>
             ))}
           </TabsList>
-          <button type="button" data-slot="replay-devtools-close" aria-label="Close DevTools" onClick={onClose}><X size={14} aria-hidden="true" /></button>
+          <button type="button" data-slot="replay-devtools-close" aria-label="Close DevTools" onClick={onClose}><Glyph name="xmark" size={14} /></button>
         </div>
         {shown === 'console'
           ? <ConsolePane state={state} onSeek={onSeek} inspected={inspection?.tab === 'console' ? inspection : null} />
@@ -175,7 +176,7 @@ export function DevtoolsPanel({ state, tab, onTab, onClose, onSeek, inspection, 
 /* ── Console ─────────────────────────────────────────────────────────────────────── */
 
 type LevelFilter = 'all' | 'error' | 'warn' | 'info'
-const LEVEL_ICON = { error: CircleX, warn: TriangleAlert, info: Info } as const
+const LEVEL_ICON = { error: 'xmark-circle', warn: 'warning', info: 'info' } as const
 const LEVELS: { value: LevelFilter; label: string }[] = [
   { value: 'all', label: 'All levels' },
   { value: 'error', label: 'Errors' },
@@ -212,7 +213,7 @@ function ConsolePane({ state, onSeek, inspected }: {
         <Select items={LEVELS} value={level} onValueChange={(next) => { if (next) setLevel(next as LevelFilter) }}>
           <SelectTrigger aria-label="Log levels">
             <SelectValue />
-            <ChevronDown size={12} data-part="caret" aria-hidden="true" />
+            <Glyph name="chevron-down" size={12} data-part="caret" />
           </SelectTrigger>
           <SelectContent sideOffset={3}>
             {LEVELS.map((l) => <SelectItem key={l.value} value={l.value}>{l.label}</SelectItem>)}
@@ -237,10 +238,10 @@ function ConsolePane({ state, onSeek, inspected }: {
 }
 
 function ConsoleRow({ entry, onSeek, inspected }: { entry: ReplayConsoleEntry; onSeek: (ms: number) => void; inspected: boolean }) {
-  const Glyph = entry.level === 'error' || entry.level === 'warn' || entry.level === 'info' ? LEVEL_ICON[entry.level] : null
+  const glyph = entry.level === 'error' || entry.level === 'warn' || entry.level === 'info' ? LEVEL_ICON[entry.level] : null
   const body = (
     <>
-      <span data-part="icon" aria-hidden="true">{Glyph ? <Glyph size={12} strokeWidth={2.2} /> : null}</span>
+      <span data-part="icon" aria-hidden="true">{glyph ? <Glyph name={glyph} size={12} sw={2.2} /> : null}</span>
       <span data-part="message">{entry.message || ' '}</span>
     </>
   )
@@ -316,9 +317,9 @@ function NetworkPane({ state, onSeek, inspected }: {
           <RequestTable aria-label="Requests" value={selectedId} onValueChange={setSelectedId}>
             <thead>
               <tr>
-                <th scope="col">Name</th>
-                <th scope="col">Status</th>
-                {selected ? null : <><th scope="col">Method</th><th scope="col">Type</th><th scope="col">Time</th><th scope="col" data-col="waterfall">Waterfall</th></>}
+                <th scope="col" data-col="name">Name</th>
+                <th scope="col" data-col="status">Status</th>
+                {selected ? null : <><th scope="col" data-col="method">Method</th><th scope="col" data-col="type">Type</th><th scope="col" data-col="time">Time</th><th scope="col" data-col="waterfall">Waterfall</th></>}
               </tr>
             </thead>
             <tbody>
@@ -340,9 +341,10 @@ function NetworkPane({ state, onSeek, inspected }: {
                       <td data-col="waterfall">
                         <span
                           data-part="bar"
+                          // On a track inset by the cell's padding, so the last request's bar ends inside the panel.
                           style={{
-                            left: `${((r.time - span.first) / span.length) * 100}%`,
-                            width: `max(2px, ${(((r.duration ?? 0) / span.length) * 100).toFixed(2)}%)`,
+                            left: `calc(8px + (100% - 18px) * ${((r.time - span.first) / span.length).toFixed(4)})`,
+                            width: `max(2px, calc((100% - 18px) * ${((r.duration ?? 0) / span.length).toFixed(4)}))`,
                           }}
                         />
                       </td>
@@ -376,7 +378,7 @@ function RequestDetail({ request, onClose, onSeek }: { request: Row; onClose: ()
     <div data-slot="replay-devtools-detail">
       <Tabs defaultValue="headers">
         <div data-slot="replay-devtools-detail-tabs">
-          <button type="button" aria-label="Close request details" data-slot="replay-devtools-close" onClick={onClose}><X size={13} aria-hidden="true" /></button>
+          <button type="button" aria-label="Close request details" data-slot="replay-devtools-close" onClick={onClose}><Glyph name="xmark" size={13} /></button>
           <TabsList data-part="replay-devtools-tablist" aria-label={`${request.name} details`}>
             {DETAIL_TABS.map((t) => <TabsTab key={t} value={t}>{t[0]!.toUpperCase() + t.slice(1)}</TabsTab>)}
           </TabsList>
@@ -401,7 +403,7 @@ function RequestDetail({ request, onClose, onSeek }: { request: Row; onClose: ()
 function Section({ title, rows }: { title: string; rows: [string, string][] }) {
   return (
     <Collapsible defaultOpen data-part="replay-devtools-section">
-      <CollapsibleTrigger><ChevronRight size={12} data-part="chevron" aria-hidden="true" />{title}</CollapsibleTrigger>
+      <CollapsibleTrigger><Glyph name="chevron-right" size={12} data-part="chevron" />{title}</CollapsibleTrigger>
       <CollapsiblePanel render={<dl />}>
         {rows.map(([k, v]) => (
           <div key={k}><dt>{k}</dt><dd>{v}</dd></div>
@@ -589,7 +591,7 @@ function ElementsPane({ getDocument, selected, onSelect, onHover }: ElementsProp
     return (
       <TreeItem key={r.id} value={r.id} branch={r.branch} label={tag}>
         <TreeItemLabel data-part="replay-devtools-node" data-kind="element" onPointerEnter={() => onHover(r.el)}>
-          {r.branch ? <TreeItemIndicator data-part="twisty"><ChevronRight size={11} /></TreeItemIndicator> : <span data-part="twisty" />}
+          {r.branch ? <TreeItemIndicator data-part="twisty"><Glyph name="chevron-right" size={11} /></TreeItemIndicator> : <span data-part="twisty" />}
           <span data-part="tag">&lt;{tag}</span>
           {r.attrs.map(([name, value]) => (
             <span key={name} data-part="attr">

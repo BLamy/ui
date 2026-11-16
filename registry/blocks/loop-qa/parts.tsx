@@ -70,7 +70,7 @@ export const pillVariants = cva(
     variants: {
       tone: {
         critical: 'bg-destructive text-white',
-        danger: 'bg-destructive/12 text-destructive',
+        destructive: 'bg-destructive/12 text-destructive',
         warning: 'bg-warning/14 text-warning',
         info: 'bg-(--lq-info)/13 text-(--lq-info)',
         success: 'bg-success/13 text-success',
@@ -93,7 +93,7 @@ export function Pill({ tone, dot, className, children }: { tone?: PillTone; dot?
   );
 }
 
-export const SEVERITY_TONE: Record<Severity, PillTone> = { critical: 'critical', high: 'danger', medium: 'warning', low: 'info' };
+export const SEVERITY_TONE: Record<Severity, PillTone> = { critical: 'critical', high: 'destructive', medium: 'warning', low: 'info' };
 export function SeverityBadge({ severity, className }: { severity: Severity; className?: string }) {
   return <Pill tone={SEVERITY_TONE[severity]} className={className}>{SEVERITY_LABEL[severity]}</Pill>;
 }
@@ -109,7 +109,7 @@ export function StatusBadge({ status, className }: { status: BugStatus; classNam
 const RUN_META: Record<RunStatus, { tone: PillTone; label: string; icon?: string }> = {
   running: { tone: 'primary', label: 'Running' },
   completed: { tone: 'success', label: 'Completed', icon: 'check' },
-  failed: { tone: 'danger', label: 'Failed', icon: 'xmark' },
+  failed: { tone: 'destructive', label: 'Failed', icon: 'xmark' },
   blocked: { tone: 'warning', label: 'Blocked', icon: 'exclamation-circle' },
 };
 export function RunStatusBadge({ status, className }: { status: RunStatus; className?: string }) {

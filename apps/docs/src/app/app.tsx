@@ -93,11 +93,11 @@ export default function App({ appearance, height }: { appearance: Appearance; he
         title="BL UI"
         logo={<Logo />}
         links={[{ label: 'GitHub', href: GITHUB }]}
-        theme={appearance}
-        themeToggle={false}
-        themeStorageKey={false}
+        appearance={appearance}
+        appearanceToggle={false}
+        appearanceStorageKey={false}
         height={height}
-        accentColor="#0A84FF"
+        tint="#0A84FF"
         demoResolver={demoResolver}
         documentProperties={false}
         pageActions={(page) => {

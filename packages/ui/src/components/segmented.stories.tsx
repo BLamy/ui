@@ -4,6 +4,7 @@ import { Segmented, SegmentedItem, type SegmentSize } from '@/components/ui/segm
 import { Tabs, TabsList, TabsTab } from '@/components/ui/tabs';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle';
 import { Icon } from '@/lib/icon';
+import { ThemeScope } from '@/lib/theme';
 import { Pad } from '../stories/frame';
 
 const meta: Meta<typeof Segmented> = {
@@ -154,4 +155,18 @@ export const SharedTrack: Story = {
 export const SharedTrackDark: Story = {
   parameters: { dark: true },
   render: SharedTrack.render,
+};
+
+/** A light region on a dark page (a light demo frame inside the dark docs site, a `ThemeScope appearance="light"`): the
+    selected card is the light card, not the page's dark gray, because every light scope sets `--segment` itself. */
+export const LightScopeOnDarkPage: Story = {
+  parameters: { dark: true },
+  render: () => (
+    <div className="flex flex-col gap-3">
+      <LookAlikes size="default" />
+      <ThemeScope appearance="light" className="rounded-panel bg-background p-3">
+        <LookAlikes size="default" />
+      </ThemeScope>
+    </div>
+  ),
 };

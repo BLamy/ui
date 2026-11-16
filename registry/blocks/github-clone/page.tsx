@@ -17,7 +17,7 @@ import { Button as SdkButton } from '@ui-sdk/react/button';
 import { Tabs, TabsBar, TabsList } from '@/components/ui/tabs';
 import { SizeClassProvider, useSizeClass, useSizeClassScope } from '@/lib/container';
 import type { Tailscale } from '@/lib/tailscale';
-import { BLProvider, useAppearance, ThemeScope } from '@/lib/theme';
+import { BLProvider, useAppearance, ThemeScope, type Appearance } from '@/lib/theme';
 import { cn } from '@/lib/utils';
 import { PasswordsKeychain, useKeychainSignIn, type DeviceAuth } from '../apple-passwords/page';
 import { githubClient, githubRepo, type GitHub } from './github-api';
@@ -65,7 +65,7 @@ export default function GithubClone({ keychain = true, auth, tailscale, ...props
   // Phone below 640px, GitHub's desktop layout with sidebars from 1012px; the block's box is the size-class scope
   // its screens and Dialogs read.
   const [ref, sizeClass] = useSizeClass<HTMLDivElement>({ breakpoints: GITHUB_BREAKPOINTS });
-  const app = <GithubApp {...props} dark={appearance === 'dark'} />;
+  const app = <GithubApp {...props} appearance={appearance} />;
   return (
     <BLProvider tint={GITHUB_TINT[appearance]} style={GITHUB_THEME[appearance]} className="min-h-0 bg-background">
       <ThemeScope scope="workbench" appearance={appearance} tint={GITHUB_TINT[appearance]} style={GITHUB_THEME[appearance]}
@@ -82,13 +82,13 @@ export default function GithubClone({ keychain = true, auth, tailscale, ...props
   );
 }
 
-type AppProps = Omit<GithubCloneProps, 'keychain' | 'auth' | 'tailscale'> & { dark: boolean };
+type AppProps = Omit<GithubCloneProps, 'keychain' | 'auth' | 'tailscale'> & { appearance: Appearance };
 
 /** Where the medium (no sidebars) and regular (GitHub's desktop layout) classes start, px of the block's width. */
 const GITHUB_BREAKPOINTS = { medium: 640, regular: 1012 };
 
 /** Picks the source: live with a token (the chosen repository), the sample without one or when chosen. */
-function GithubApp({ dark, repo: initialRepo, token, github, ...initial }: AppProps) {
+function GithubApp({ appearance, repo: initialRepo, token, github, ...initial }: AppProps) {
   const keychain = useKeychainSignIn('github');
   const liveToken = token ?? keychain?.token;
   const gh = useMemo(() => github ?? (liveToken ? githubClient(liveToken) : null), [github, liveToken]);
@@ -99,7 +99,7 @@ function GithubApp({ dark, repo: initialRepo, token, github, ...initial }: AppPr
   // The initial screen (a PR, a path) belongs to the first repository shown; another one opens on its Code tab.
   const first = useRef(source.id);
   const sizeClass = useSizeClassScope();
-  const ui: Layout = { phone: sizeClass === 'compact', wide: sizeClass === 'regular', dark };
+  const ui: Layout = { phone: sizeClass === 'compact', wide: sizeClass === 'regular', appearance };
   return (
     <>
       <RepoScreens key={source.id} ui={ui} source={source} keychain={keychain} openPicker={() => setPicking(true)}

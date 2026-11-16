@@ -24,7 +24,7 @@ From script, `springCss('translate', 'smooth')` in `@/lib/motion` writes the sam
 | Entrance and exit (`data-starting-style`, `data-ending-style`) | Every popup (`popoverMotion` in `@/lib/primitives`), Dialog, Sheet, Toast: UI SDK's parts write the attributes, the kit's classes animate them. |
 | `animateIn` / `animateOut` | `Conversation` (a part that leaves after its exit), `ArtifactChatContainer` (the chat column when the container turns compact). |
 | `bindPanel` | UI SDK's Collapsible and Accordion, under the kit's [Disclosure](https://blamy.github.io/ui/#/disclosure), and UI SDK's Tree for opening branches. |
-| A page stack | [NavigationStack](https://blamy.github.io/ui/#/navigation-stack), on the kit's `createStack` from `@/lib/stack`, built on UI SDK's `bindLayer` and `animateIn` / `animateOut` (see [The kit's behaviors](https://blamy.github.io/ui/#/behaviors-kit)). |
+| A page stack | [NavigationStack](https://blamy.github.io/ui/#/navigation-stack), on the kit's `createPageStack` from `@/lib/stack`, built on UI SDK's `bindLayer` and `animateIn` / `animateOut` (see [The kit's behaviors](https://blamy.github.io/ui/#/behaviors-kit)). |
 | Keeping a React element mounted through its exit | `usePresence`, `usePresenceList` and `useEnterExit` from `@/lib/presence`, the kit's React side of `animateIn` / `animateOut` (see [The kit's behaviors](https://blamy.github.io/ui/#/behaviors-kit)). |
 
 ## Panels that animate their height

@@ -113,7 +113,7 @@ export function Landing() {
       </SiteSection>
 
       <SiteSection title="Not screenshots" lede="Every example on this site is the real component, running. This one is Tabs with a NavigationStack in each, inset Lists, and a Dialog shown as a tray: open a friend, then swipe back from the leading edge.">
-        <MarkdownView markdown={DEMO} demoResolver={demoResolver} className="dk-md" />
+        <MarkdownView markdown={DEMO} demo={{ resolver: demoResolver }} className="dk-md" />
       </SiteSection>
 
       <SiteSection title="Two ways in" lede="The same source, two ways: copy what you need into your project, or install the package.">

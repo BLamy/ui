@@ -26,17 +26,17 @@ const channels: Record<string, string[]> = {
 // mention badge. It reads the tab through `group-hover:`, `group-active:` and
 // `group-data-selected:`.
 function WorkspaceTile({
-  color = 'var(--primary)',
+  tint = 'var(--primary)',
   mentions,
   children,
 }: {
-  color?: string
+  tint?: string
   mentions?: number
   children: ReactNode
 }) {
   return (
     <span
-      style={{ '--tile': color } as CSSProperties}
+      style={{ '--tile': tint } as CSSProperties}
       className="relative box-border grid size-[34px] shrink-0 place-items-center rounded-[17px] border-2 border-transparent bg-secondary-strong font-sans text-[14px] leading-[normal] font-extrabold text-secondary-foreground [transition:border-radius_var(--duration-spring-bouncy)_var(--ease-spring-bouncy),background-color_var(--duration-spring-snappy)_var(--ease-spring-snappy),border-color_var(--duration-spring-snappy)_var(--ease-spring-snappy),color_var(--duration-spring-snappy)_var(--ease-spring-snappy),scale_var(--duration-spring-snappy)_var(--ease-spring-snappy)] group-hover:rounded-[11px] group-data-selected:rounded-[11px] group-data-selected:border-(--tile) group-data-selected:bg-(--tile) group-data-selected:text-white group-active:scale-[.94] motion-reduce:transition-none group-focus-visible:outline-2 group-focus-visible:outline-offset-2 group-focus-visible:outline-link"
     >
       {children}
@@ -81,7 +81,7 @@ function ServerRail({
           {servers.map((s) => (
             <TabsTab key={s.id} value={s.id} aria-label={s.title}>
               <TabsPill attention={s.unread} />
-              <WorkspaceTile color={s.color} mentions={s.mentions}>
+              <WorkspaceTile tint={s.color} mentions={s.mentions}>
                 {s.label}
               </WorkspaceTile>
             </TabsTab>

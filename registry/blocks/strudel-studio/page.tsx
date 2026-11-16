@@ -12,7 +12,7 @@ import { Tabs, TabsList, TabsPanel, TabsTab } from '@/components/ui/tabs';
 import { Icon } from '@/lib/icon';
 import { BLProvider } from '@/lib/theme';
 import { cn } from '@/lib/utils';
-import { parseStrudel, StrudelRack, StrudelSyntaxError, type StrudelSong } from '@brett_lamy/ui/docstream/strudel';
+import { parseStrudel, StrudelRack, StrudelSyntaxError, type StrudelSong } from '@brett_lamy/ui/docstream/strudel/rack';
 import { Textarea } from '@ui-sdk/react/textarea';
 import { SONGS, type StudioSong } from './songs';
 import { SyntaxTree } from './syntax-tree';
@@ -150,7 +150,7 @@ export default function StrudelStudio({ initialSong = 'night-drive' }: StrudelSt
             </TabsPanel>
           </Tabs>
           <div className="min-w-0 overflow-auto">
-            <StrudelRack key={songId} value={code} onValueChange={setCode} onPlayableChange={setPlayable} layout="grid" persistKey={`strudel-studio:${songId}`} />
+            <StrudelRack key={songId} value={code} onValueChange={setCode} onPlayableChange={setPlayable} defaultVariant="grid" persistKey={`strudel-studio:${songId}`} />
           </div>
         </div>
       </div>

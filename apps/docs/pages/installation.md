@@ -109,7 +109,7 @@ Each part's page has an **Installation** section with its command. Parts land in
 // src/App.tsx
 import {
   Composer, ComposerCard, ComposerInput, ComposerFooter, ComposerSend,
-} from '@/components/ui/composer/composer'
+} from '@/components/ui/composer'
 import AppleReminders from '@/components/blocks/apple-reminders/page'
 
 export default function App() {
@@ -309,9 +309,9 @@ import { NavigationStack } from '@brett_lamy/ui/navigation-stack'
 import { SplitView } from '@brett_lamy/ui/split-view'
 ```
 
-Every module has its own entry, at the registry's path under the package name: `@/components/ui/split-view` is `@brett_lamy/ui/split-view`, `@/lib/theme` is `@brett_lamy/ui/lib/theme`, and each component page shows its import. The components, their parts and the documented hooks are also on the package root, `import { BLProvider, NavigationStack, SplitView } from '@brett_lamy/ui'`. Both tree-shake the same in a production build; a module entry also keeps the dev server and your editor from loading the whole index to resolve one name, and switching to or from the registry changes only the prefix.
+Every module has its own entry, at the registry's path under the package name: `@/components/ui/split-view` is `@brett_lamy/ui/split-view`, `@/lib/theme` is `@brett_lamy/ui/lib/theme`, and each component page shows its import. The components, their parts and the documented hooks are also on the package root, `import { BLProvider, NavigationStack, SplitView } from '@brett_lamy/ui'`; the engines and models (`lib/session-recorder`, `lib/cron`, `lib/diagram-model`, `lib/syntax`…) are only on their own entries, and a folder is one entry (`@brett_lamy/ui/composer`, `@brett_lamy/ui/pencilkit`). Both tree-shake the same in a production build; a module entry also keeps the dev server and your editor from loading the whole index to resolve one name, and switching to or from the registry changes only the prefix.
 
-Docstream, the Markdown renderer and editor inside the package, has entries of its own (`@brett_lamy/ui/docstream/site`, `@brett_lamy/ui/docstream-editor`…) and needs no bundler configuration. `MarkdownView` brings docstream's stylesheet; if you render docstream's components directly, also import `@brett_lamy/ui/docstream/styles.css`.
+Docstream, the Markdown renderer and editor inside the package, has entries of its own (`@brett_lamy/ui/docstream/site`, `@brett_lamy/ui/docstream-editor`…) and needs no bundler configuration. Its stylesheet is separate: import `@brett_lamy/ui/docstream/styles.css` after `@brett_lamy/ui/styles.css` when you use MarkdownView, Conversation, ReplayPreview, StlViewer, StrudelPlayer, TuiPreview or docstream's components directly (with the registry, those items add the `@import` to your CSS). The editor's sheet is already inside `@brett_lamy/ui/styles.css`. No JavaScript module of the package imports CSS, so every entry loads in plain Node.
 {% endstep %}
 {% endstepper %}
 {% endtab %}

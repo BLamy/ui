@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { StrudelPlayer, type StrudelPlayerProps } from '@/components/ui/strudel-player';
-import { Pad } from '../stories/frame';
+import { Pad, Phone } from '../stories/frame';
 
 /* Inline code, so nothing is fetched: Strudel (and its samples) load only on the first press of play, which these
    stories never make. The player rests idle. */
@@ -23,7 +23,16 @@ const meta: Meta<StrudelPlayerProps> = {
     onRackOpenChange: { control: false },
     onCodeOpenChange: { control: false },
   },
-  decorators: [(Story, ctx) => <Pad w={720} appearance={ctx.parameters.dark ? 'dark' : 'light'}><Story /></Pad>],
+  decorators: [
+    (Story, ctx) =>
+      ctx.parameters.phone ? (
+        <Phone appearance={ctx.parameters.dark ? 'dark' : 'light'}>
+          <div className="bl-scroll absolute inset-0 overflow-y-auto p-4"><Story /></div>
+        </Phone>
+      ) : (
+        <Pad w={720} appearance={ctx.parameters.dark ? 'dark' : 'light'}><Story /></Pad>
+      ),
+  ],
 };
 export default meta;
 type Story = StoryObj<StrudelPlayerProps>;
@@ -39,3 +48,6 @@ export const WithRack: Story = { args: { defaultRackOpen: true } };
 
 /** The player on a dark surface. */
 export const Dark: Story = { parameters: { dark: true } };
+
+/** On a phone: the title gives way to the roll, and the code panel scrolls sideways. */
+export const PhoneFrame: Story = { args: { defaultCodeOpen: true }, parameters: { phone: true } };

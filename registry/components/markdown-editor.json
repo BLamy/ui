@@ -19,6 +19,11 @@
     "MarkdownEditorInstance",
     "MarkdownEditorAttachment",
     "MarkdownEditorValueChangeDetails",
-    "MarkdownEditorValueChangeReason"
-  ]
+    "MarkdownEditorValueChangeReason",
+    "MarkdownEditorDemo"
+  ],
+  "css": {
+    "@import \"@brett_lamy/ui/docstream/styles.css\"": {},
+    "@import \"@brett_lamy/ui/docstream-editor/styles.css\" layer(components.bl-editor)": {}
+  }
 }

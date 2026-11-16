@@ -17,7 +17,7 @@ Numbers from production builds of a fresh shadcn app (`shadcn create --base aria
 What the numbers say:
 
 - **JavaScript is the same either way.** The npm package is built with one output module per source module and `sideEffects` limited to CSS, so a bundler drops what you don't import. Importing `Button` (from `@brett_lamy/ui/button` or from the root) does not pull the Composer.
-- **CSS is where they differ.** The registry adds Tailwind utilities only for the classes in the files you copied, because Tailwind scans your source. The npm stylesheet is precompiled for the whole library, including the Markdown editor's styles, so it is roughly 3–4× larger in gzip whatever you import. (Docstream's own sheet, `@brett_lamy/ui/docstream/styles.css`, is separate and comes with MarkdownView; KaTeX's styles load with the first math block.)
+- **CSS is where they differ.** The registry adds Tailwind utilities only for the classes in the files you copied, because Tailwind scans your source. The npm stylesheet is precompiled for the whole library, including the Markdown editor's styles, so it is roughly 3–4× larger in gzip whatever you import. (Docstream's own sheet, `@brett_lamy/ui/docstream/styles.css`, is separate: import it when you render Markdown; KaTeX's styles load with the first math block.)
 - **Motion is the real cost.** `Button` alone adds about 210 kB raw (67 kB gzip) of JavaScript, because its label morph uses `framer-motion`. That is the price of the springs; it is shared by every other part, so `SplitView` adds only 49 kB raw on top of `Button`.
 
 Your numbers will differ with your app, plugins and browser targets. To measure yours, run `vite build` (or `next build`) with and without the import.
@@ -44,11 +44,11 @@ Start with the registry for a product. Use npm when you want the parts unmodifie
   import { lazy, Suspense } from 'react'
 
   const Composer = lazy(() =>
-    import('@/components/ui/composer/composer').then((m) => ({ default: m.Composer })),
+    import('@/components/ui/composer').then((m) => ({ default: m.Composer })),
   )
   ```
 
-  With the package it is the same line on `@brett_lamy/ui/composer/composer`. A lazy import of the root would put the whole library behind the split point.
+  With the package it is the same line on `@brett_lamy/ui/composer`. A lazy import of the root would put the whole library behind the split point.
 
   Composer is a family of parts, so lazy-load the module that renders the whole composition (your `PromptBox` component) rather than one part at a time.
 - **What already waits.** Some costs are deferred for you. Docstream loads Mermaid (Pele), KaTeX and rrweb only when a page shows a diagram, math or a replay, and Strudel on the first play; the diagrams load ELK, in a worker, only when a layout is asked for, and CloudflareDiagram loads XState only for a service with a machine; the Cloudflare catalog (about 26 kB gzipped) and `jsonc-parser` are only on `@brett_lamy/ui/cloudflare` and `@brett_lamy/ui/cloudflare-diagram`, so no other import reaches them.

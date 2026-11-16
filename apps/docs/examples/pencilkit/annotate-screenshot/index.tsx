@@ -1,11 +1,15 @@
 import { useState } from 'react'
-import { type PencilInk, type PencilTool } from '@/components/ui/pencilkit/constants'
-import { PencilCanvas } from '@/components/ui/pencilkit/pencil-canvas'
 import {
-  PencilActions, PencilInkPicker, PencilToolbar, PencilToolbarPinned, PencilToolPicker,
-} from '@/components/ui/pencilkit/pencil-toolbar'
+  type PencilInk,
+  type PencilTool,
+  PencilCanvas,
+  PencilActions,
+  PencilInkPicker,
+  PencilToolbar,
+  PencilToolPicker,
+  usePencilHistory,
+} from '@/components/ui/pencilkit'
 import { ToolbarSeparator } from '@/components/ui/toolbar'
-import { usePencilHistory } from '@/components/ui/pencilkit/use-pencil-history'
 
 const highlighters: PencilInk[] = [
   { value: '#FFD60A', label: 'Yellow' },
@@ -85,7 +89,22 @@ export default function AnnotateScreenshot() {
         onStrokesChange={history.onStrokesChange}
       >
         {/* The toolbar sits in the flow: place it over the canvas yourself. */}
-        <PencilToolbar className="absolute inset-x-2.5 bottom-3.5 mx-auto">
+        <PencilToolbar
+          className="absolute inset-x-2.5 bottom-3.5 mx-auto"
+          trailing={
+            <>
+              <ToolbarSeparator />
+              <PencilActions
+                onUndo={history.undo}
+                onRedo={history.redo}
+                onClear={history.clear}
+                canUndo={history.canUndo}
+                canRedo={history.canRedo}
+                canClear={history.canClear}
+              />
+            </>
+          }
+        >
           <PencilToolPicker
             value={tool}
             onValueChange={setTool}
@@ -93,17 +112,6 @@ export default function AnnotateScreenshot() {
           />
           <ToolbarSeparator />
           <PencilInkPicker value={ink} onValueChange={setInk} inks={highlighters} />
-          <PencilToolbarPinned>
-            <ToolbarSeparator />
-            <PencilActions
-              onUndo={history.undo}
-              onRedo={history.redo}
-              onClear={history.clear}
-              canUndo={history.canUndo}
-              canRedo={history.canRedo}
-              canClear={history.canClear}
-            />
-          </PencilToolbarPinned>
         </PencilToolbar>
       </PencilCanvas>
     </div>

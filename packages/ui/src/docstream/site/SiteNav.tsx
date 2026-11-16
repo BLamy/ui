@@ -5,7 +5,7 @@
    before hydration. The page being read is the tree's `current` item. */
 import { useId, useMemo } from "react"
 import { Tree, TreeGroup, TreeItem, TreeItemIndicator, TreeItemLabel } from "@ui-sdk/react/tree"
-import { ChevronRight } from "lucide-react"
+import { Glyph } from "../ui/glyph"
 
 import { navCurrent, navIndex, navTreeItems, type NavNode } from "./nav"
 import { pressesInPlace } from "./press"
@@ -41,7 +41,7 @@ function Items({ nodes, depth, href }: { nodes: NavNode[]; depth: number; href: 
     const branch = node.children.length > 0
     const indicator = branch ? (
       <TreeItemIndicator className="ds-site-nav-toggle">
-        <ChevronRight size={14} aria-hidden="true" />
+        <Glyph name="chevron-right" size={14} />
       </TreeItemIndicator>
     ) : null
     const label = <span className="ds-site-nav-label">{item.title}</span>

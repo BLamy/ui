@@ -46,6 +46,10 @@ const [rows, setRows] = useState(() => parseCsv(text).rows)
 
 Cells are strings and are shown as written: `1,234.50` stays `1,234.50`. A column whose values all read as numbers (thousands commas, a currency sign, `%` and `(12)` negatives included) or as ISO dates is right-aligned, sorts by value and gets a histogram. Any other column sorts as text, in natural order ("file 2" before "file 10"), ignoring case. Empty cells sort last in both directions.
 
+With titles and no rows, the titles stay and `emptyState` shows under them: a `status` region beside the grid, not in it (a grid owns only rows). Paste cells or press Add Row to start.
+
+{% demo src="spreadsheet/empty" %}
+
 ## Open and save a CSV
 
 `parseCsv` reads RFC 4180 CSV (quoted fields, `""` escapes, line breaks inside quotes). It detects the delimiter (comma, tab, semicolon or pipe) and remembers the line ending, byte-order mark and final newline. `stringifyCsv` writes the rows back in that same format, so a file you open and save changes only where you edited it.
@@ -114,7 +118,7 @@ With the mouse, click a column's title to select the column, a row number to sel
 | `density` | `compact` | Row height: `compact` (28 px), `default` (32 px) or `comfortable` (36 px, for touch). |
 | `statusBar` | `true` | The status bar: size, sort timing, the selection's sum and average, Add Row. |
 | `actions` | — | Extra controls at the end of the status bar. |
-| `emptyState` | "No rows" | Shown over the body with no rows: an [EmptyState](https://blamy.github.io/ui/#/empty-state) that says to paste cells or add a row (not when read-only). |
+| `emptyState` | "No rows" | Shown under the titles with no rows: an [EmptyState](https://blamy.github.io/ui/#/empty-state) that says to paste cells or add a row (not when read-only). A string replaces the whole default, so it is a title with no description. |
 | `columnWidth` | `120` | Width of an empty column. Other columns start sized to their title and first rows (up to 320 px). |
 | `columnWidths` / `defaultColumnWidths` | — | Widths set so far, in px by column index (`{ "0": 180 }`). A column with none keeps its estimated size. |
 | `onColumnWidthsChange` | — | `(widths, details)` after a drag ends (`drag`), a key moves an edge (`resize-key`), a double-click fits a column (`handle-press`), or code sets them (`imperative`). |
@@ -145,7 +149,7 @@ It also has `focus()`, `clear()`, `redo()`, `addRow()` and `setColumnWidths(widt
 
 ## Parts and attributes
 
-The root is `data-slot="spreadsheet"`, and inside it `spreadsheet-grid` (`role="grid"`), two `spreadsheet-rowgroup`s, `spreadsheet-row`s, `spreadsheet-corner`, `spreadsheet-column` (a title, with `data-selected` when the selection covers it, and its `spreadsheet-resizer`, with `data-dragging`), `spreadsheet-rowheader` (`data-selected`), `spreadsheet-cell`, `spreadsheet-editor`, `spreadsheet-empty` and `spreadsheet-footer` (the status bar). A cell has `data-active` while it is the active cell, `data-editing`, and from the cell range `aria-selected`, `data-selected` and `data-range-edge` (`top`, `right`, `bottom`, `left`), which draws the selection's outline.
+The root is `data-slot="spreadsheet"`, and inside it `spreadsheet-grid` (`role="grid"`), two `spreadsheet-rowgroup`s, `spreadsheet-row`s, `spreadsheet-corner`, `spreadsheet-column` (a title, with `data-selected` when the selection covers it, and its `spreadsheet-resizer`, with `data-dragging`), `spreadsheet-rowheader` (`data-selected`), `spreadsheet-cell`, `spreadsheet-editor`, then, with no rows, `spreadsheet-empty` after the grid, and `spreadsheet-footer` (the status bar). The corner's column header is named "Row number" by visually hidden text. A cell has `data-active` while it is the active cell, `data-editing`, and from the cell range `aria-selected`, `data-selected` and `data-range-edge` (`top`, `right`, `bottom`, `left`), which draws the selection's outline.
 
 ## The model
 

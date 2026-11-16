@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, useState, type ReactNode, type RefObject } from "react"
-import { Play } from "lucide-react"
+import { Glyph } from "../ui/glyph"
 import { SplitCard, SplitSource } from "./SplitCard"
 
 /* Mermaid diagrams, drawn by Pele (https://pele.run): Mermaid text in, SVG out, synchronously and with no
@@ -76,7 +76,7 @@ export function PeleDiagram({ code, className, children }: { code: string; class
         <span className="docs-split-label">Pele</span>
         {playground ? (
           <a className="docs-split-action" href={playground} target="_blank" rel="noreferrer">
-            <Play width={14} height={14} strokeWidth={2} aria-hidden="true" />
+            <Glyph name="play" size={14} sw={2} />
             Open in Playground
           </a>
         ) : null}

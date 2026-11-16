@@ -56,12 +56,12 @@ export default function StreamingAnswer({ variant = "normal" }: { variant?: stri
         <button type="button" onClick={() => setRun((r) => r + 1)}>
           {done ? "Replay" : "Restart"}
         </button>
-        <code>isStreaming={String(!done)}</code>
+        <code>streaming={String(!done)}</code>
         <span style={{ opacity: 0.7 }}>
           {length} / {ANSWER.length} chars
         </span>
       </div>
-      <GitbookStreamdown markdown={ANSWER.slice(0, length)} isStreaming={!done} />
+      <GitbookStreamdown markdown={ANSWER.slice(0, length)} streaming={!done} />
     </div>
   )
 }

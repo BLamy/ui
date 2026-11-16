@@ -11,9 +11,9 @@ import { cn } from '@/lib/utils';
    Letters are matched by character and occurrence (the 2nd "o" pairs with the 2nd "o"), which is what reads
    as "shared letters" for labels. The root is an inline-block at rest and while morphing, so box utilities
    (`truncate`, padding, a background) apply the same way throughout. The root's border box (padding included)
-   is pinned and springs only while a morph runs; the inline width is released when it ends, when a new text
-   interrupts it, or when the change can't morph (reduced motion, multi-line), so a later change of font, size or
-   text without a morph is never clipped by a stale width. */
+   is pinned and springs only while a morph runs; the inline width is released when the morph ends (a new text
+   mid-morph carries on from the current width into the next one) and whenever the change can't morph (reduced
+   motion, multi-line), so a later change of font, size or text without a morph is never clipped by a stale width. */
 
 interface Glyph { key: string; ch: string }
 /** `xs` are glyph offsets from the root's padding edge (where the absolute letter layer starts); `y` is the run's

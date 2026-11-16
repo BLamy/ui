@@ -13,6 +13,8 @@
  *   - arbitrary sizes  text-[Npx]      for the values the text scale covers (use text-footnote, text-body, …)
  *   - arbitrary shadows shadow-[…]     for the shared hairlines (use shadow-hairline, …)
  *   - font-ios (use font-sans; the bl-theme sets --font-sans to the iOS stack)
+ * and docstream's stylesheets (packages/ui/src/docstream*, **.css): their semantic `--gb-*` colors, hairline and radius
+ * are defined only in src/docstream/tokens.css, each on the kit's token (no allowlist: none may be a literal).
  *
  * The allowlist stores a per-file count of violations that already exist; the check fails when a file goes over its
  * count, so the debt can only shrink. Colors inside a `const NAME = …` line written in UPPER_SNAKE case are named
@@ -89,9 +91,29 @@ for (const [file, c] of Object.entries(current)) {
     if (c[k] > (a[k] || 0)) errors.push(`${file}: ${c[k]} ${k} literal(s), allowed ${a[k] || 0}`);
   }
 }
+
+/* Docstream's and the editor's stylesheets keep their own `--gb-*` namespace (docstream themes itself without the kit's
+   sheet), but their semantic colors, hairline and radius are defined once, in src/docstream/tokens.css, and each falls
+   back to the kit's token (`var(--success, …)`, `var(--border, …)`, `calc(var(--radius, …) …)`) or is mixed from one of
+   them: never a bare literal, and never redefined in another of their sheets. */
+const DOCSTREAM_TOKENS = 'packages/ui/src/docstream/tokens.css';
+const SEMANTIC = /(?:^|[;{\s])(--gb-(?:primary|border|radius|info|success|warning|danger)(?:-border|-bg)?)\s*:\s*([^;]+);/g;
+const sheets = ['packages/ui/src/docstream', 'packages/ui/src/docstream-editor'].flatMap((d) => walk(join(ROOT, d), [], /\.css$/));
+for (const sheet of sheets) {
+  const file = relative(ROOT, sheet);
+  const css = readFileSync(sheet, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+  for (const [, prop, value] of css.matchAll(SEMANTIC)) {
+    if (file !== DOCSTREAM_TOKENS) errors.push(`${file}: ${prop} is defined in ${DOCSTREAM_TOKENS} only`);
+    else if (!/^(?:var\(--|color-mix\(in srgb, var\(--|calc\(var\(--)/.test(value.trim())) errors.push(`${file}: ${prop}: ${value.trim()} — fall back to the kit's token`);
+  }
+}
+for (const sheet of ['packages/ui/src/docstream/styles.css', 'packages/ui/src/docstream-editor/styles.css']) {
+  if (!/@import\s+["'][./]*(?:docstream\/)?tokens\.css["']/.test(readFileSync(join(ROOT, sheet), 'utf8'))) errors.push(`${sheet}: imports ${DOCSTREAM_TOKENS}`);
+}
+
 if (errors.length) {
   console.error(errors.map((e) => '✗ ' + e).join('\n'));
   console.error('\nUse a theme utility (see the Theming page), or a named content constant. `--update` only to record a deliberate exception.');
   process.exit(1);
 }
-console.log(`tokens: ${files.length} files clean`);
+console.log(`tokens: ${files.length} files clean, and docstream's ${sheets.length} stylesheets take the kit's semantic tokens`);

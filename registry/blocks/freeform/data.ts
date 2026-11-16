@@ -1,5 +1,5 @@
 /* Freeform's sample boards — every name and plan here is invented. Ids are fixed so a frame repeats. */
-import type { PencilPoint } from '@/components/ui/pencilkit/constants';
+import type { PencilPoint } from '@/components/ui/pencilkit';
 import { strokeFrame } from './geometry';
 import {
   makeConnector, makeImage, makeLink, makeShape, makeSticky, makeText,
@@ -71,19 +71,19 @@ const launch: Item[] = [
   shape('l-design', 'round', 380, 260, 200, 92, '#D7C3FF', 'Design'),
   shape('l-build', 'round', 680, 260, 200, 92, '#B5EBB0', 'Build'),
   shape('l-ship', 'round', 980, 260, 200, 92, '#FFE27A', 'Ship'),
-  conn('l-c1', { from: { id: 'l-research', side: 'r' }, to: { id: 'l-design', side: 'l' }, route: 'straight' }),
-  conn('l-c2', { from: { id: 'l-design', side: 'r' }, to: { id: 'l-build', side: 'l' }, route: 'straight' }),
-  conn('l-c3', { from: { id: 'l-build', side: 'r' }, to: { id: 'l-ship', side: 'l' }, route: 'straight' }),
+  conn('l-c1', { from: { id: 'l-research', side: 'right' }, to: { id: 'l-design', side: 'left' }, route: 'straight' }),
+  conn('l-c2', { from: { id: 'l-design', side: 'right' }, to: { id: 'l-build', side: 'left' }, route: 'straight' }),
+  conn('l-c3', { from: { id: 'l-build', side: 'right' }, to: { id: 'l-ship', side: 'left' }, route: 'straight' }),
   stroke('l-ring', '#FF375F', loop(1080, 306, 150, 76), 'pen', 1.1),
   shape('l-star', 'star', 1250, 226, 120, 120, '#FFD60A'),
-  conn('l-c4', { from: { id: 'l-ship', side: 'r' }, to: { id: 'l-star', side: 'l' }, route: 'curve', heads: 'end' }),
+  conn('l-c4', { from: { id: 'l-ship', side: 'right' }, to: { id: 'l-star', side: 'left' }, route: 'curve', heads: 'end' }),
   text('l-risks', 80, 440, 'Risks', 30, { bold: true, w: 240 }),
   sticky('l-s1', 80, 500, ORANGE, 'Legacy sign-in API is still in use', -3),
   sticky('l-s2', 290, 512, PINK, 'Design review could slip a week', 2),
   sticky('l-s3', 500, 496, BLUE, 'Need an accessibility audit', -1.5),
   shape('l-bubble', 'bubble', 820, 470, 230, 150, '#FFB7C5', 'Demo for the whole team on Friday!', 3),
   shape('l-heart', 'heart', 1120, 500, 110, 100, '#FF6B81'),
-  conn('l-c5', { from: { id: 'l-s3', side: 'r' }, to: { id: 'l-bubble', side: 'l' }, route: 'elbow', heads: 'end', dashed: true }),
+  conn('l-c5', { from: { id: 'l-s3', side: 'right' }, to: { id: 'l-bubble', side: 'left' }, route: 'elbow', heads: 'end', dashed: true }),
 ];
 
 const tokyo: Item[] = [

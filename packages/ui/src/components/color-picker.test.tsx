@@ -308,6 +308,9 @@ describe('ColorPickerSwatches', () => {
     expect(options.map((option) => option.getAttribute('aria-selected'))).toEqual(['false', 'true', 'false']);
     expect(options.map((option) => option.getAttribute('tabindex'))).toEqual(['-1', '0', '-1']);
     expect(options[0].getAttribute('aria-label')).toMatch(/red/);
+    // 28px swatches with a 44px hit area on a touch screen.
+    expect(options[0].className).toContain('size-7');
+    expect(options[0].className).toContain('pointer-coarse:after:-inset-2');
   });
 
   it('moves between presets with the arrow keys and picks one with Enter', () => {

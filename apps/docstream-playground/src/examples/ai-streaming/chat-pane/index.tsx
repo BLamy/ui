@@ -64,7 +64,7 @@ export default function ChatPane() {
               <div key={m.id} className="chat-assistant">
                 <GitbookStreamdown
                   markdown={m.text}
-                  isStreaming={m.id === streamingId}
+                  streaming={m.id === streamingId}
                   // Copy page is hidden while streaming, then copies just this answer.
                   pageActions={{ actions: ["copy"] }}
                   documentProperties={false}

@@ -1,4 +1,5 @@
-import { cloneElement, isValidElement, type ReactNode } from 'react';
+'use client';
+import { cloneElement, isValidElement, useEffect, useState, type ReactNode } from 'react';
 import { renderElement, type PartProps } from '@ui-sdk/react/primitive';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { cn, cx } from '@/lib/utils';
@@ -63,8 +64,20 @@ export interface EmptyStateProps
   action?: ReactNode;
 }
 
+/** False on the first render, true from the next: a live region must be in the page before its words are, or NVDA and
+ *  JAWS miss them (a region inserted with its content already in it is announced by VoiceOver alone). */
+function useArrived(live: boolean): boolean {
+  const [arrived, setArrived] = useState(!live);
+  useEffect(() => { if (live) setArrived(true); }, [live]);
+  return arrived;
+}
+
+const LIVE_ROLES = new Set(['status', 'alert', 'log']);
+
 export function EmptyState({ icon, title, description, action, size, className, render, ...props }: EmptyStateProps) {
   const s = size ?? 'default';
+  // As a live region (`renderEmptyState` makes it one), the box mounts empty and its words follow, so they're announced.
+  const arrived = useArrived(LIVE_ROLES.has(props.role ?? '') || (props['aria-live'] != null && props['aria-live'] !== 'off'));
   return renderElement(
     'div',
     {
@@ -72,7 +85,7 @@ export function EmptyState({ icon, title, description, action, size, className, 
       'data-size': s,
       ...props,
       className: cx(emptyStateVariants({ size: s }), className),
-      children: (
+      children: arrived ? (
         <>
           {icon ? <div data-slot="empty-state-icon" aria-hidden className={iconVariants({ size: s })}>{icon}</div> : null}
           {title ? <div data-slot="empty-state-title" className={titleVariants({ size: s })}>{title}</div> : null}
@@ -83,7 +96,7 @@ export function EmptyState({ icon, title, description, action, size, className, 
             </div>
           ) : null}
         </>
-      ),
+      ) : null,
     },
     render,
   );
@@ -94,8 +107,9 @@ export function EmptyState({ icon, title, description, action, size, className, 
  *  - a string or number: the title of a small `EmptyState` (with the default's icon, not its description);
  *  - `null`, `false` or `''`: nothing;
  *  - any other node: drawn as it is.
- *  The result is a polite `status` region (an `EmptyState` gets `role="status"`, any other node is wrapped in one), so
- *  a filter that empties the collection is announced. */
+ *  The result is a polite `status` region (an `EmptyState` gets `role="status"`, any other node is wrapped in one) that
+ *  mounts empty and gets its words on the next render, so a filter that empties the collection is announced by every
+ *  screen reader, not only by those that read a region inserted with its content. */
 export function renderEmptyState(value: ReactNode, defaults: EmptyStateProps = {}): ReactNode {
   if (value === undefined) return <EmptyState size="sm" role="status" {...defaults} />;
   if (value === null || value === false || value === '') return null;
@@ -103,5 +117,11 @@ export function renderEmptyState(value: ReactNode, defaults: EmptyStateProps = {
     return <EmptyState size={defaults.size ?? 'sm'} role="status" icon={defaults.icon} title={value} />;
   if (isValidElement<EmptyStateProps>(value) && value.type === EmptyState)
     return value.props.role ? value : cloneElement(value, { role: 'status' });
-  return <div role="status" data-slot="empty-state-region" className="contents">{value}</div>;
+  return <EmptyRegion>{value}</EmptyRegion>;
+}
+
+/** A polite region around a node of the caller's, which mounts empty and is filled on the next render (see `useArrived`). */
+function EmptyRegion({ children }: { children: ReactNode }) {
+  const arrived = useArrived(true);
+  return <div role="status" data-slot="empty-state-region" className="contents">{arrived ? children : null}</div>;
 }

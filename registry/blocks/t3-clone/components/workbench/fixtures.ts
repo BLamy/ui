@@ -49,7 +49,7 @@ const REPLY_COMPONENT = `The scroller anchors each new turn near the top of the 
 \`\`\`jsx
 <MessageScroller
   items={msgs.map(m => ({ id: m.id, anchor: m.role === 'user', node: <Message m={m}/> }))}
-  streaming={isStreaming}
+  streaming={streaming}
   threadKey={thread.id}
 />
 \`\`\`

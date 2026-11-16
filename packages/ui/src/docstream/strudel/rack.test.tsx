@@ -4,7 +4,7 @@ import { renderToStaticMarkup } from "react-dom/server"
 import { createRef } from "react"
 import { describe, expect, it, vi } from "vitest"
 import { click, focus, mount, press, tick } from "../__fixtures__/dom"
-import { StrudelPlayer } from "./StrudelPlayer"
+import { StrudelPlayer, type StrudelCodeChangeDetails } from "./StrudelPlayer"
 import { StrudelRack, type StrudelRackChangeDetails } from "./StrudelRack"
 
 declare global {
@@ -22,7 +22,7 @@ stack(
 
 function Rack({ log, playable }: { log: string[]; playable?: string[] }) {
   const [code, setCode] = useState(SONG)
-  return <StrudelRack code={code} onChange={(next) => { log.push(next); setCode(next) }} onPlayableChange={(next) => playable?.push(next)} />
+  return <StrudelRack value={code} onValueChange={(next) => { log.push(next); setCode(next) }} onPlayableChange={(next) => playable?.push(next)} />
 }
 
 const device = (host: HTMLElement, name: string) => host.querySelector<HTMLElement>(`section.strudel-device[aria-label="${name}"]`)!
@@ -183,10 +183,9 @@ describe("StrudelRack", () => {
 
   it("value / onValueChange: the edited code with which control edited it and how", async () => {
     const log: [string, StrudelRackChangeDetails][] = []
-    const legacy: string[] = []
     function Controlled() {
       const [code, setCode] = useState(SONG)
-      return <StrudelRack value={code} onValueChange={(next, details) => { log.push([next, details]); setCode(next) }} onChange={(next) => void legacy.push(next)} />
+      return <StrudelRack value={code} onValueChange={(next, details) => { log.push([next, details]); setCode(next) }} />
     }
     const view = await mount(<Controlled />)
     await focus(named(device(view.host, "bd · sd · hh"), "slider", "Gain")!)
@@ -207,18 +206,16 @@ describe("StrudelRack", () => {
     await press("End")
     expect(log.at(-1)![1]).toMatchObject({ reason: "step-key", control: "tempo" })
     expect(log.at(-1)![1].track).toBeUndefined()
-    // The deprecated onChange still hears every edit.
-    expect(legacy).toEqual(log.map(([code]) => code))
     await view.unmount()
   })
 
   it("renders on the server, and names a syntax error instead", () => {
-    const html = renderToStaticMarkup(<StrudelRack code={SONG} onChange={() => {}} />)
+    const html = renderToStaticMarkup(<StrudelRack value={SONG} onValueChange={() => {}} />)
     expect(html.match(/data-slot="toggle"/g)).toHaveLength(6)
     expect(html).toContain('role="radiogroup"')
     expect(html.match(/role="combobox"/g)).toHaveLength(3)
     expect(html).not.toContain("<select")
-    expect(renderToStaticMarkup(<StrudelRack code={"stack("} onChange={() => {}} />)).toContain('role="alert"')
+    expect(renderToStaticMarkup(<StrudelRack value={"stack("} onValueChange={() => {}} />)).toContain('role="alert"')
   })
 })
 
@@ -268,28 +265,25 @@ describe("StrudelPlayer", () => {
     await view.unmount()
   })
 
-  it("`showCode` renders the code open, on the server too, and `rack={false}` leaves the equipment button out", async () => {
-    const html = renderToStaticMarkup(<StrudelPlayer code={SONG} showCode rack={false} />)
+  it("`defaultCodeOpen` renders the code open, on the server too, and `rack={false}` leaves the equipment button out", async () => {
+    const html = renderToStaticMarkup(<StrudelPlayer code={SONG} defaultCodeOpen rack={false} />)
     expect(html).toContain('aria-expanded="true"')
     expect(html).toContain("docstream-strudel__code")
     expect(html).not.toContain('aria-label="Equipment"')
-    const view = await mount(<StrudelPlayer code={SONG} showCode rack={false} />)
+    const view = await mount(<StrudelPlayer code={SONG} defaultCodeOpen rack={false} />)
     expect(toggles(view.host).map((t) => t.getAttribute("aria-label"))).toEqual(["Code"])
     expect(view.host.querySelector(".docstream-strudel__code")).not.toBeNull()
     await view.unmount()
   })
 
-  it("`defaultCodeOpen` / `defaultRackOpen` open a panel at first; the deprecated `showCode` / `showRack` still do", async () => {
-    for (const props of [{ defaultCodeOpen: true }, { showCode: true }]) {
-      expect(renderToStaticMarkup(<StrudelPlayer code={SONG} rack={false} {...props} />)).toContain("docstream-strudel__code")
-    }
+  it("`defaultCodeOpen` / `defaultRackOpen` open a panel at first", async () => {
+    expect(renderToStaticMarkup(<StrudelPlayer code={SONG} rack={false} defaultCodeOpen />)).toContain("docstream-strudel__code")
     const view = await mount(<StrudelPlayer code={SONG} defaultRackOpen />)
     for (let i = 0; i < 20 && !view.host.querySelector(".strudel-rack"); i++) await tick(10)
     expect(toggles(view.host)[0]!.getAttribute("aria-expanded")).toBe("true")
     expect(view.host.querySelector(".strudel-rack")).not.toBeNull()
     await view.unmount()
-    // The new name wins over the old one.
-    expect(renderToStaticMarkup(<StrudelPlayer code={SONG} rack={false} showCode defaultCodeOpen={false} />)).not.toContain("docstream-strudel__code")
+    expect(renderToStaticMarkup(<StrudelPlayer code={SONG} rack={false} defaultCodeOpen={false} />)).not.toContain("docstream-strudel__code")
   })
 
   it("`codeOpen` / `rackOpen` control the panels: the toggle only asks, with UI SDK's details", async () => {
@@ -320,8 +314,8 @@ describe("StrudelPlayer", () => {
     await view.unmount()
   })
 
-  it("onCodeChange says whether the rack edited the code or Revert put it back", async () => {
-    const calls: [string, { reason: string; event?: Event; rack?: StrudelRackChangeDetails }][] = []
+  it("onCodeChange says whether the rack edited the code or Revert put it back, with UI SDK's details", async () => {
+    const calls: [string, StrudelCodeChangeDetails][] = []
     const view = await mount(<StrudelPlayer code={SONG} title="Night drive" defaultRackOpen onCodeChange={(next, details) => calls.push([next, details])} />)
     for (let i = 0; i < 20 && !view.host.querySelector(".strudel-rack"); i++) await tick(10)
     const gain = named(device(view.host, "bd · sd · hh"), "slider", "Gain")!
@@ -334,6 +328,17 @@ describe("StrudelPlayer", () => {
     expect(calls.at(-1)![0]).toBe(SONG)
     expect(calls.at(-1)![1]).toMatchObject({ reason: "revert" })
     expect(calls.at(-1)![1].event?.type).toBe("click")
+    expect(typeof calls.at(-1)![1].cancel).toBe("function")
+    await view.unmount()
+  })
+
+  it("a canceled onCodeChange keeps the code as it was", async () => {
+    const view = await mount(<StrudelPlayer code={SONG} title="Night drive" defaultRackOpen defaultCodeOpen onCodeChange={(_next, details) => details.cancel()} />)
+    for (let i = 0; i < 20 && !view.host.querySelector(".strudel-rack"); i++) await tick(10)
+    await focus(named(device(view.host, "bd · sd · hh"), "slider", "Gain")!)
+    await press("PageUp")
+    expect(view.host.querySelector(".docstream-strudel__code")!.textContent).toContain(".gain(.8)")
+    expect(view.host.querySelector("button.docstream-strudel__revert")).toBeNull()
     await view.unmount()
   })
 

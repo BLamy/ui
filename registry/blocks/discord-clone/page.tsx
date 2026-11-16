@@ -76,7 +76,7 @@ export default function DiscordClone({
                 {WORKSPACES.map((w) => (
                   <TabsTab key={w.id} value={w.id} aria-label={w.title}>
                     <TabsPill />
-                    <WorkspaceTile color={w.color} title={w.title}>{w.label}</WorkspaceTile>
+                    <WorkspaceTile tint={w.color} title={w.title}>{w.label}</WorkspaceTile>
                   </TabsTab>
                 ))}
               </TabsList>
@@ -109,7 +109,7 @@ export default function DiscordClone({
                             .map((m) => (
                               <ChannelThreadItem
                                 key={m.id}
-                                active={thread?.mode === 'full' && thread.id === m.id}
+                                current={thread?.mode === 'full' && thread.id === m.id}
                                 onClick={() => setThread({ id: m.id, mode: 'full' })}
                               >
                                 {m.thread!.title}

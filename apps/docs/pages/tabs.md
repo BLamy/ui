@@ -168,7 +168,7 @@ When your router shows the screen, leave the panels out: the bar is then only th
 
 Where you nest them decides how pushes interact with the bar; there is no mode flag.
 
-**Bar persists.** Each tab's panel holds a `NavigationStack` (`keepMounted` keeps its state while another tab shows), so pushes slide under the bar and the bar stays put: UIKit's `tabBarController(navController)` shape.
+**Bar persists.** Each tab's panel holds a `NavigationStack` (`keepMounted` keeps its state while another tab shows), so pushes slide under the bar and the bar stays put: UIKit's `tabBarController(navController)` shape. Pressing the selected tab again does what iOS does: the stack in its panel goes back to its first page, and pressed again there, the page (or the panel, when it scrolls itself) goes back to its top. SplitView's tab bar does the same for its columns: both send the `StackParent.onReselect` signal from `lib/stack-parent`, which NavigationStack listens to. In-page looks (`segmented`, `underline`) don't.
 
 **Bar rides the root.** Put the tabs inside the stack's root screen and a push covers the bar and the root together: `navController(tabBarController)`.
 

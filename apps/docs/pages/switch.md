@@ -77,7 +77,7 @@ UI SDK's `Switch` props, the main ones:
 
 ## Styling
 
-The root is the track, `data-slot="switch"` (a named group, `group/switch`, with `data-size`: `bg-secondary-strong`, `bg-success` when `data-checked`), and `SwitchThumb` is `data-slot="switch-thumb"`; it reads the size with `group-data-[size=sm]:`. `switchVariants({ size })` returns the track's classes. Keyboard focus draws the kit's solid focus ring. Both carry `data-checked` / `data-unchecked`, `data-disabled`, `data-readonly` and `data-required`; the thumb's stretch while held is `group-active:`.
+The root is the track, `data-slot="switch"` (a named group, `group/switch`, with `data-size`: `bg-secondary-strong`, `bg-success` when `data-checked`), and `SwitchThumb` is `data-slot="switch-thumb"`; it reads the size with `group-data-[size=sm]:`. `switchVariants({ size })` returns the track's classes. Keyboard focus draws the kit's solid focus ring. Both carry `data-checked` / `data-unchecked`, `data-disabled`, `data-readonly` and `data-required`; the thumb's stretch while held is `group-active:`. In right-to-left text the switch mirrors, as on iOS: the thumb starts at the inline start and travels by `--switch-dir` (`-1` under `rtl:`).
 
 ## cva recipes
 

@@ -12,6 +12,7 @@ import type { TailscalePeer, TailscaleSnapshot } from '@/lib/tailscale';
 import { cn } from '@/lib/utils';
 import { displayAddress, hostOf, parseAddress } from './loader';
 import type { Browser, Entry, Tab, Totals } from './use-browser';
+import type { SizeClass } from '@/lib/size-class';
 
 const TABS_ICON = [{ r: [8.5, 8.5, 11.5, 11.5, 2.4] }, { d: 'M15.5 6.5V6A2.5 2.5 0 0 0 13 3.5H6A2.5 2.5 0 0 0 3.5 6v7A2.5 2.5 0 0 0 6 15.5h.5' }] as const;
 
@@ -141,7 +142,7 @@ function AddressField({ browser, snapshot, history, inputRef }: { browser: Brows
   );
 }
 
-export function Toolbar({ browser, snapshot, history, totals, inputRef, overview, onOverviewChange, compact, onExitNode }: {
+export function Toolbar({ browser, snapshot, history, totals, inputRef, overview, onOverviewChange, sizeClass, onExitNode }: {
   browser: Browser;
   snapshot: TailscaleSnapshot;
   onExitNode: (id: string | null) => Promise<void>;
@@ -150,8 +151,10 @@ export function Toolbar({ browser, snapshot, history, totals, inputRef, overview
   inputRef: RefObject<HTMLInputElement | null>;
   overview: boolean;
   onOverviewChange: (open: boolean) => void;
-  compact: boolean;
+  /** The browser window's size class: a compact one drops the New Tab button. */
+  sizeClass: SizeClass | undefined;
 }) {
+  const compact = sizeClass === 'compact';
   const [menu, setMenu] = useState(false);
   return (
     <div data-slot="safari-toolbar" className="flex h-12 shrink-0 items-center gap-1.5 bg-bar px-3 shadow-hairline-b">

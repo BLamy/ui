@@ -41,14 +41,14 @@ export function endOfText(from: CodePosition, text: string): CodePosition {
 /* ── Edits ── */
 
 /** Replace `[from, to)` with `text`. */
-export interface CodeEdit {
+export interface CodeDocumentEdit {
   from: CodePosition;
   to: CodePosition;
   text: string;
 }
 
 /** An edit that happened: enough to report it, undo it, and bring anything keyed by line up to date. */
-export interface AppliedEdit extends CodeEdit {
+export interface AppliedEdit extends CodeDocumentEdit {
   /** What was in the range. */
   removed: string;
   /** Where the new text ends, in the text after the edit. */
@@ -149,7 +149,7 @@ export class CodeDocument implements LineSource {
   }
 
   /** Makes an edit. Any line ending in its text becomes a line break. */
-  replace(edit: CodeEdit): AppliedEdit {
+  replace(edit: CodeDocumentEdit): AppliedEdit {
     const from = this.clamp(edit.from);
     const to = this.clamp(edit.to);
     const removed = this.slice(from, to);
@@ -179,7 +179,7 @@ export class CodeDocument implements LineSource {
 
 /** The smallest edit that turns a document into a text: for a `value` that came from outside, so the caret, the scroll and
     undo all carry on. `null` if they're the same. */
-export function editBetween(document: CodeDocument, text: string): CodeEdit | null {
+export function editBetween(document: CodeDocument, text: string): CodeDocumentEdit | null {
   const next = splitEditorLines(text);
   const oldCount = document.count;
   const newCount = next.length;
@@ -377,8 +377,8 @@ export class CodeHistory {
   }
 }
 
-export const undoEdit = (step: UndoStep): CodeEdit => ({ from: step.from, to: endOfText(step.from, step.inserted), text: step.removed });
-export const redoEdit = (step: UndoStep): CodeEdit => ({ from: step.from, to: endOfText(step.from, step.removed), text: step.inserted });
+export const undoEdit = (step: UndoStep): CodeDocumentEdit => ({ from: step.from, to: endOfText(step.from, step.inserted), text: step.removed });
+export const redoEdit = (step: UndoStep): CodeDocumentEdit => ({ from: step.from, to: endOfText(step.from, step.removed), text: step.inserted });
 
 /* ── Indents ── */
 
@@ -417,7 +417,7 @@ export function leadingWhitespace(text: string): number {
 
 /** An edit to make, and where the selection goes after it (the end of the new text, if nothing's said). */
 export interface EditCommand {
-  edit: CodeEdit;
+  edit: CodeDocumentEdit;
   after?: CodeSelection;
   origin: CodeEditOrigin;
 }
@@ -558,7 +558,7 @@ export function indentCommand(document: LineSource, selection: CodeSelection, in
     if (next === text) return null;
     const shift = next.length - text.length;
     const move = (p: CodePosition): CodePosition => (p.line === first ? { line: first, offset: Math.max(0, p.offset + shift) } : p);
-    const edit: CodeEdit = shift > 0
+    const edit: CodeDocumentEdit = shift > 0
       ? { from: { line: first, offset: 0 }, to: { line: first, offset: 0 }, text: indent }
       : { from: { line: first, offset: 0 }, to: { line: first, offset: -shift }, text: '' };
     return { edit, after: { anchor: move(selection.anchor), focus: move(selection.focus) }, origin: 'indent' };

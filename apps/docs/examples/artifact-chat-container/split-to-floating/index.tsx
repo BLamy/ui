@@ -5,7 +5,7 @@ import {
   ArtifactChatContainerComposer,
   ArtifactChatContainerContent,
 } from '@/components/ui/artifact-chat-container'
-import { Composer, ComposerAdd, ComposerAttachments, ComposerCard, ComposerExpand, ComposerFooter, ComposerInput, ComposerSend, ComposerSpacer } from '@/components/ui/composer/composer'
+import { Composer, ComposerAdd, ComposerAttachments, ComposerCard, ComposerExpand, ComposerFooter, ComposerInput, ComposerSend, ComposerSpacer } from '@/components/ui/composer'
 
 const messages = [
   ['You', 'Compare conversion by region.'],
