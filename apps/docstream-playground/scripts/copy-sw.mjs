@@ -1,6 +1,6 @@
 // Copy the almost-node service worker into public/ so the static Pages build
 // serves it at <base>/__sw__.js (the vite plugin only serves it in dev).
-import { copyFileSync, mkdirSync } from 'node:fs';
+import { copyFileSync, mkdirSync, readdirSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -14,7 +14,6 @@ console.log('copied __sw__.js -> public/');
 // The bundled runtime references its web workers as root-absolute
 // "/assets/<worker>.js" URLs; Vite resolves those against public/. Copy them
 // so the worker entries resolve at build time and ship with the site.
-import { readdirSync } from 'node:fs';
 const assetsSrc = path.join(here, '..', 'node_modules', '@agent-wasm', 'core', 'dist', 'assets');
 const assetsDest = path.join(here, '..', 'public', 'assets');
 mkdirSync(assetsDest, { recursive: true });

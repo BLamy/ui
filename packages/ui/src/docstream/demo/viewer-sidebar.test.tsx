@@ -168,14 +168,14 @@ describe("breadcrumb", () => {
   })
 
   it("collapses the middle into a … that lists the hidden segments when the segments don't fit", async () => {
-    vi.stubGlobal("ResizeObserver", class { observe() {} disconnect() {} unobserve() {} })
+    vi.stubGlobal("ResizeObserver", class { observe = () => {}; disconnect = () => {}; unobserve = () => {} })
     // 60px per breadcrumb item and a 200px header: all five (300) don't fit; first + … + last (180) do.
     vi.spyOn(HTMLElement.prototype, "clientWidth", "get").mockImplementation(function (this: HTMLElement) {
       return this.classList.contains("docs-demo-crumbs") ? 200 : 0
     })
     vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(function (this: HTMLElement) {
       const w = this.classList.contains("docs-demo-crumb-item") ? 60 : 0
-      return { width: w, left: 0, top: 0, right: w, bottom: 0, height: 0, x: 0, y: 0, toJSON() {} }
+      return { width: w, left: 0, top: 0, right: w, bottom: 0, height: 0, x: 0, y: 0, toJSON: () => ({}) }
     })
     await act(async () => root.render(<DemoViewer src="a/b" title="T" files={FILES} />))
     await flush()

@@ -28,7 +28,7 @@ export const GbTaskItem = TaskItem.extend({
     }
   },
   addInputRules() {
-    return [wrappingInputRule({ find: /^\s*(?:[-+*]\s)?\[([ xX~?bd!\-])\]\s$/, type: this.type, getAttributes: (match) => {
+    return [wrappingInputRule({ find: /^\s*(?:[-+*]\s)?\[([ xX~?bd!-])\]\s$/, type: this.type, getAttributes: (match) => {
       const state = taskStateFromMarker(match[1]) ?? "pending"
       return { state, checked: state === "verified" }
     } })]

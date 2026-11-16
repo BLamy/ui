@@ -171,7 +171,7 @@ export const rackGrid = definePrimitive({
     }
   },
   slots: (slot) => ({
-    root: slot<{}, { order: string[]; moving: string | null; resizing: string | null }>({
+    root: slot<object, { order: string[]; moving: string | null; resizing: string | null }>({
       role: "list",
       state: (state, { api }) => ({ order: api.reorder.order(state), moving: state.moving?.key ?? null, resizing: state.resizing }),
       attrs: (state) => ({

@@ -19,6 +19,10 @@
     {
       "id": "diagrams",
       "label": "Diagrams"
+    },
+    {
+      "id": "workerd",
+      "label": "workerd config"
     }
   ]
 }

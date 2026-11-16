@@ -1,13 +1,9 @@
-// react-dom is installed (a peer of our deps) but its types are not; the test only needs this one function.
-// @ts-ignore
-import { renderToString as untypedRenderToString } from "react-dom/server"
-import type { ReactElement } from "react"
+import { renderToString } from "react-dom/server"
 import { describe, expect, it } from "vitest"
 import { MarkdownContent } from "../docs/DocsRenderer"
 import { DemoViewer, NO_RUNTIME_NOTE } from "./DemoViewer"
 import type { DemoResolver, InlineDemoRuntimeProps } from "./types"
 
-const renderToString = untypedRenderToString as (element: ReactElement) => string
 
 const FILES = [
   { path: "index.tsx", content: "export default function Demo() { return null }", language: "tsx" },

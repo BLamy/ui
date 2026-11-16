@@ -1,15 +1,12 @@
 /* Acceptance test for 1.2.0: "Copy page" gives Markdown that renders back to the same page. */
 import { readFileSync } from "node:fs"
 import { describe, expect, it } from "vitest"
-// @ts-ignore react-dom's types aren't installed; only this function is needed.
-import { renderToString as untypedRenderToString } from "react-dom/server"
-import type { ReactElement } from "react"
+import { renderToString } from "react-dom/server"
 import { MarkdownContent } from "../docs/DocsRenderer"
 import { preloadDemos } from "./DemoViewer"
 import { resolveDemosToMarkdown } from "./markdown"
 import type { DemoResolver, InlineDemoRuntime } from "./types"
 
-const renderToString = untypedRenderToString as (element: ReactElement) => string
 const page = readFileSync(new URL("../gitbook/__fixtures__/docs-page.md", import.meta.url), "utf8")
 
 const FILES: Record<string, { path: string; content: string; language?: string }[]> = {

@@ -30,7 +30,8 @@ export interface MarkdownViewProps extends Omit<React.ComponentProps<'div'>, 'ch
   renderReference?: (ref: ReferenceNode) => React.ReactNode | null;
   /** Draw a code fence yourself (a CodeEditor, your own highlighter); return `null` to fall back to Docstream's.
    *  `details.placement` is `block` (a whole fence) or `tab` (one tab's body); `details.highlighted` is Docstream's
-   *  own highlighted `<code>`, to frame. Widget fences (tui, mermaid, strudel, live demos) never reach it. */
+   *  own highlighted `<code>`, to frame. Widget fences (tui, mermaid, strudel, live demos) never reach it; a `capnp` fence
+   *  does, and a workerd config it declines is drawn as its Cloudflare services. */
   renderCode?: (block: CodeBlockNode, details: CodeBlockRenderDetails) => React.ReactNode | null | undefined;
 }
 

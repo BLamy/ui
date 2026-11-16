@@ -13,6 +13,7 @@ Everything on this site is also published as plain Markdown, so an agent doesn't
 | Every cva recipe and its options | `https://blamy.github.io/ui/md/variants.md` |
 | Every registry item (parts and blocks) | `https://blamy.github.io/ui/r/registry.json` |
 | One registry item | `https://blamy.github.io/ui/r/<item>.json` |
+| How to move a 5.x or docstream 2.0.1 app | `https://blamy.github.io/ui/md/migrating-to-6.md` |
 
 Each page's **Copy page** action exports the same Markdown plus its demo files, which is the quickest way to hand a single component to a chat that can't browse.
 
@@ -35,7 +36,7 @@ Setup:
 Before writing any UI, read https://blamy.github.io/ui/llms.txt and then the Markdown pages for the parts you plan to use (https://blamy.github.io/ui/md/<page>.md). Pick parts from those pages instead of building your own, and use the registry blocks (https://blamy.github.io/ui/r/registry.json, type registry:block) as reference for whole-app layouts.
 
 Rules:
-- Add parts one at a time with npx shadcn@latest add https://blamy.github.io/ui/r/<item>.json. The source is copied into src/components/ui/<name>.tsx (libraries into src/lib/) and can be edited; only the items a part imports are copied with it. Import through the @/ alias, never from @brett_lamy/ui. Blocks land in src/components/blocks/<name>/.
+- Add parts one at a time with npx shadcn@latest add https://blamy.github.io/ui/r/<item>.json. The source is copied into src/components/ui/<name>.tsx (libraries into src/lib/) and can be edited; only the items a part imports are copied with it. Import through the @/ alias, never from @brett_lamy/ui. The one exception is already in the copied files: parts built on docstream (MarkdownView, MarkdownEditor, the Composer, ReplayPreview…) import @brett_lamy/ui/docstream/..., and adding them installs @brett_lamy/ui for that; leave those imports as they are. Blocks land in src/components/blocks/<name>/.
 - Color, radius, type and shadows come from theme utilities: bg-background, text-foreground, text-muted-foreground, border-border, bg-primary, rounded-ctl, text-footnote, shadow-hairline. Do not hard-code hex values, rgba() or arbitrary radius and text sizes, and do not add a second palette.
 - Every component exports a cva recipe (buttonVariants, badgeVariants, ...). Reuse it for links and custom elements, and change a default by editing the copied file, not by wrapping it.
 - Do not invent props or exports. If a part's page doesn't show it, check the installed file first.
@@ -67,7 +68,7 @@ Before writing any UI, read https://blamy.github.io/ui/llms.txt and then the Mar
 
 Rules:
 - Make the smallest change that works. Don't restyle, rename or move existing code I didn't ask about, and don't upgrade unrelated dependencies.
-- Add parts one at a time with npx shadcn@latest add https://blamy.github.io/ui/r/<item>.json and import them through the alias (never from @brett_lamy/ui). Reuse the app's existing data, routing and state.
+- Add parts one at a time with npx shadcn@latest add https://blamy.github.io/ui/r/<item>.json and import them through the alias (never from @brett_lamy/ui; the copied parts built on docstream keep their own @brett_lamy/ui/docstream/... imports, and adding them installs @brett_lamy/ui). Reuse the app's existing data, routing and state.
 - Color comes from shadcn's CSS variables through utilities (bg-background, text-foreground, text-muted-foreground, border-border, bg-primary, ...). Map anything the app hard-codes onto those instead of adding new colors.
 - Do not invent props or exports. If a part's page doesn't show it, check the installed file first.
 - If the app already has its own component library, tell me where BL UI overlaps it and suggest which to keep instead of replacing it.

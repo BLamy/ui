@@ -17,7 +17,7 @@ type Span = {
    `data-highlighter` on the <code> says which drew it: "gpu", "fallback" or "none". */
 
 function escapeHtml(value: string) {
-  return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\"/g, "&quot;")
+  return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;")
 }
 
 function spansToHtml(code: string, spans: readonly Span[]) {

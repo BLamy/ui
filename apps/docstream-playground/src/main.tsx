@@ -14,7 +14,7 @@ import { useGithubEnv } from './github-env';
 /* The whole site is the docs/ folder: DocsSite keeps the Markdown, builds the sidebar from the
    folders, and renders every page through docstream. Add a file there and it's on the site.
    The text files beside the pages (OpenAPI specs, …) come along as the site's assets. */
-const files = import.meta.glob('../docs/**/*.{md,json,yaml,yml}', { query: '?raw', import: 'default', eager: true }) as Record<string, string>;
+const files = import.meta.glob('../docs/**/*.{md,json,yaml,yml,capnp}', { query: '?raw', import: 'default', eager: true }) as Record<string, string>;
 
 // Folder names are humanized ("getting-started" → "Getting started"); these read better spelled out.
 const FOLDER_TITLES: Record<string, string> = { ai: 'AI', media: 'Media & embeds' };

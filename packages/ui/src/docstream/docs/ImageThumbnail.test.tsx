@@ -1,7 +1,5 @@
 // @vitest-environment happy-dom
-// @ts-ignore react-dom's types are not installed; the tests only need this function.
-import { renderToString as untypedRenderToString } from "react-dom/server"
-import type { ReactElement } from "react"
+import { renderToString } from "react-dom/server"
 import { describe, expect, it } from "vitest"
 import { parseMarkdown } from "../gitbook/parse"
 import { serializeMarkdown } from "../gitbook/serialize"
@@ -9,7 +7,6 @@ import { MarkdownContent } from "./DocsRenderer"
 import { ImageThumbnail, thumbnailLabel } from "./ImageThumbnail"
 import { focus, mount, press, tick } from "../__fixtures__/dom"
 
-const renderToString = untypedRenderToString as (element: ReactElement) => string
 const html = (md: string) => renderToString(<MarkdownContent markdown={md} />)
 
 describe("thumbnail images", () => {

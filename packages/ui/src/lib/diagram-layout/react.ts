@@ -46,6 +46,12 @@ export function useDiagramLayout<N = unknown, E = unknown>(draft: DiagramDraft<N
 
   useEffect(() => {
     const current = latest.current;
+    // Nothing to lay out (a diagram whose nodes all have places hands over an empty draft): no engine, so no ELK and no worker.
+    if (!current.nodes.length) {
+      setState({ result: { nodes: [], edges: [], bounds: { x: 0, y: 0, w: 0, h: 0 }, engine: 'main-thread', ms: 0 }, status: 'ready', error: null });
+      lastGraph.current = null;
+      return;
+    }
     const stop = new AbortController();
     setState((s) => ({ ...s, status: s.result ? 'working' : 'pending', error: null }));
     (async () => {

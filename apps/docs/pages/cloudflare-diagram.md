@@ -187,7 +187,11 @@ if (read.ok) {
 | A `wrapped` D1 binding, a `hyperdrive` | A `d1` or `hyperdrive` service, and an edge to it |
 | A `disk`, `external` or `network` service, a socket, a `text`, `json` or `data` value | Not drawn, and said in `read.notes`. Sockets are in `read.sockets` too |
 
-In docs, a `capnp` fence that's a workerd config draws itself, read-only, with the notes under it and the source a press away, and other Cap'n Proto stays code. The diagram and the catalog load by dynamic import when the first one is on a page, so a page without one never gets them:
+In Markdown, a `capnp` fence that's a workerd config draws itself on a read-only `CloudflareDiagram`, with the notes under it and the source a press away, and other Cap'n Proto stays code. That's docstream's, so it's the same in [MarkdownView](#/markdown-view), [MarkdownEditor](#/markdown-editor) (beside the source you edit) and these docs. The diagram and the catalog load by dynamic import when the first one is shown, so a page without one never gets them, and `placeInLayers` places every service, so ELK never loads. Here's one through `MarkdownView`, and one that doesn't read:
+
+{% demo src="docstream/workerd-config" %}
+
+The same fence, written in this page:
 
 ```capnp
 using Workerd = import "/workerd/workerd.capnp";

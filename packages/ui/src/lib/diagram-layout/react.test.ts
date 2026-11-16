@@ -1,5 +1,8 @@
-import { describe, expect, it } from 'vitest';
-import { onLayout } from '@/lib/diagram-layout/react';
+// @vitest-environment happy-dom
+import { act, createElement } from 'react';
+import { createRoot } from 'react-dom/client';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { onLayout, useDiagramLayout } from '@/lib/diagram-layout/react';
 
 // A service renamed, or given a machine, lays out the same, as its size doesn't change, so no new layout comes. What's
 // drawn has to be the draft as it is now, where the last layout put it.
@@ -37,5 +40,27 @@ describe('onLayout', () => {
   it('keeps a port’s own place', () => {
     const { nodes } = onLayout({ nodes: [{ id: 'a', ports: [{ id: 'env', side: 'r' as const, at: 0.9 }, { id: 'other', side: 'l' as const }] }] }, laid);
     expect(nodes[0]!.ports).toEqual([{ id: 'env', side: 'r', at: 0.9 }, { id: 'other', side: 'l' }]);
+  });
+});
+
+describe('useDiagramLayout', () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  // A diagram whose nodes all have places (a CloudflareDiagram drawing a system from placeInLayers) hands over an empty draft.
+  it('starts no engine for an empty draft: no worker, and so no ELK', async () => {
+    (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
+    const Worker = vi.fn();
+    vi.stubGlobal('Worker', Worker);
+    const empty = { nodes: [], edges: [] };
+    let status = '';
+    function Probe() {
+      status = useDiagramLayout(empty).status;
+      return null;
+    }
+    const root = createRoot(document.createElement('div'));
+    await act(async () => root.render(createElement(Probe)));
+    expect(status).toBe('ready');
+    expect(Worker).not.toHaveBeenCalled();
+    act(() => root.unmount());
   });
 });

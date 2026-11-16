@@ -1,0 +1,6 @@
+{
+  "title": "A workerd config in Markdown",
+  "description": "A capnp fence that's a workerd config, rendered by MarkdownView as the Cloudflare services it runs.",
+  "height": 720,
+  "status": "Live"
+}

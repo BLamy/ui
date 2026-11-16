@@ -1,21 +1,10 @@
 /* The editor must install and bundle without Docstream's optional almost-node playground:
    no source file may import `@brett_lamy/ui/docstream/playground` or `@agent-wasm/core`
    (hosts opt in by passing `liveRenderer` / `demoRuntime`). */
-// @ts-ignore node's types aren't installed; only these functions are needed.
-import * as untypedFs from "node:fs"
-// @ts-ignore
-import * as untypedChildProcess from "node:child_process"
+import { execFileSync } from "node:child_process"
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs"
 import { describe, expect, it } from "vitest"
 
-const { existsSync, readdirSync, readFileSync, statSync } = untypedFs as {
-  existsSync(path: string): boolean
-  readdirSync(path: string): string[]
-  readFileSync(path: string, encoding: "utf8"): string
-  statSync(path: string): { isDirectory(): boolean }
-}
-const { execFileSync } = untypedChildProcess as {
-  execFileSync(file: string, args: string[], options: { cwd: string; stdio: "pipe" }): unknown
-}
 
 // The editor is part of @brett_lamy/ui, at `@brett_lamy/ui/docstream-editor/*`, and built into dist/docstream-editor with the library.
 const root = new URL("../../..", import.meta.url).pathname.replace(/\/$/, "")

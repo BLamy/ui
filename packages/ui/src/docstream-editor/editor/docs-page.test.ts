@@ -1,13 +1,11 @@
 /* "Copy a docs page, paste it into the editor, get the same page back": byte-stable round trips. */
-// @ts-ignore node's types aren't installed; only this function is needed.
-import { readFileSync as untypedReadFileSync } from "node:fs"
+import { readFileSync } from "node:fs"
 import { describe, expect, it } from "vitest"
 import { parseMarkdown, type Block, type DocumentNode } from "@brett_lamy/ui/docstream/gitbook"
 import { resolveDemosToMarkdown, type DemoResolver } from "@brett_lamy/ui/docstream/demo"
 import { astToTiptap, serializeEditorMarkdown, tiptapToAst, type PMNode } from "./convert"
 import { getGitbookSchema } from "./extensions"
 
-const readFileSync = untypedReadFileSync as (url: URL, encoding: "utf8") => string
 
 /** docstream's representative docs page (every block type docs sites use, canonical form). */
 const page = readFileSync(new URL("./__fixtures__/docs-page.md", import.meta.url), "utf8")

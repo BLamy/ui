@@ -6,16 +6,23 @@ import { CopyIcon, useCopied } from "./copy"
    when the card is wide, stacked when it isn't. Mermaid diagrams (drawn by Pele) and math blocks (typeset by KaTeX)
    use it. */
 
+/** The header's copy button: an icon, named "Copy <label> source" until it has copied. */
+export function SplitCopyButton({ label, code }: { label: string; code: string }) {
+  const { copied, copy } = useCopied()
+  return (
+    <button type="button" className="docs-split-action docs-split-copy" aria-label={copied ? "Copied" : `Copy ${label} source`} onClick={() => void copy(code)}>
+      <CopyIcon copied={copied} size={16} />
+    </button>
+  )
+}
+
 /** The source pane: its label, a copy button and the highlighted source. */
 export function SplitSource({ label, code, language }: { label: string; code: string; language: string }) {
-  const { copied, copy } = useCopied()
   return (
     <div className="docs-split-pane docs-split-source-pane">
       <div className="docs-split-head">
         <span className="docs-split-label">{label}</span>
-        <button type="button" className="docs-split-action docs-split-copy" aria-label={copied ? "Copied" : `Copy ${label} source`} onClick={() => void copy(code)}>
-          <CopyIcon copied={copied} size={16} />
-        </button>
+        <SplitCopyButton label={label} code={code} />
       </div>
       <pre className="docs-split-source">
         <HighlightedCode code={code} language={language} />
@@ -37,7 +44,7 @@ export function SplitResult({ label, action, className, children }: { label: str
   )
 }
 
-export function SplitCard({ className, children, ...rest }: { className?: string; children: ReactNode } & Record<`data-${string}`, string>) {
+export function SplitCard({ className, children, ...rest }: { className?: string; children: ReactNode; "aria-label"?: string } & Record<`data-${string}`, string>) {
   return (
     <section className={`docs-split-card${className ? ` ${className}` : ""}`} {...rest}>
       <div className="docs-split-grid">{children}</div>

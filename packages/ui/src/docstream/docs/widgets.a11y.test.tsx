@@ -193,17 +193,19 @@ describe("DocPageActions", () => {
 })
 
 describe("CopyButton", () => {
-  it("is named by its tooltip, which says Copied after a copy", async () => {
+  // Named by its tooltip, and by its own aria-label with the same words, which is there before the tooltip ever shows.
+  it("is named by its tooltip and its own label alike, which say Copied after a copy", async () => {
     const writeText = vi.fn(async () => {})
     vi.stubGlobal("navigator", { ...navigator, clipboard: { writeText } })
     const { host } = await render(<CopyButton text="npm i x" label="Copy command" />)
     const button = q(host, "button.docs-copy")
     const name = () => document.getElementById(button.getAttribute("aria-labelledby")!)!.textContent
-    expect(button.hasAttribute("aria-label")).toBe(false)
     expect(name()).toBe("Copy command")
+    expect(button.getAttribute("aria-label")).toBe("Copy command")
     await click(button)
     expect(writeText).toHaveBeenCalledWith("npm i x")
     expect(name()).toBe("Copied")
+    expect(button.getAttribute("aria-label")).toBe("Copied")
     expect(button.hasAttribute("data-copied")).toBe(true)
   })
 })

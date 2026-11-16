@@ -1459,3 +1459,12 @@
 /* Keep rendered diagrams out of the editable selection and fill their split-grid cell. */
 .gb-code .gb-diagram-result { min-width: 0; display: flex; }
 .gb-diagram-result > .docs-split-pane { flex: 1; min-width: 0; }
+
+/* A workerd config's board needs room: it goes under its source, as a narrow card stacks the other diagrams, and
+   beside it only once the card is wide enough for both. */
+.gb-code-capnp .docs-split-grid { grid-template-columns: minmax(0, 1fr); }
+.gb-code-capnp .docs-split-grid > .docs-split-source-pane { box-shadow: 0 1px 0 var(--gb-border); }
+@container (min-width: 960px) {
+  .gb-code-capnp .docs-split-grid { grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); }
+  .gb-code-capnp .docs-split-grid > .docs-split-source-pane { box-shadow: 1px 0 0 var(--gb-border); }
+}

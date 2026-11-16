@@ -1,9 +1,7 @@
 // @vitest-environment happy-dom
-// @ts-ignore react-dom's types are not installed; the tests only need these functions.
-import { renderToString as untypedRenderToString } from "react-dom/server"
-// @ts-ignore
-import { createRoot as untypedCreateRoot } from "react-dom/client"
-import { act, type ReactElement } from "react"
+import { renderToString } from "react-dom/server"
+import { createRoot } from "react-dom/client"
+import { act } from "react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { AssetResolverProvider } from "../asset-resolver"
 import { MarkdownContent } from "../docs/DocsRenderer"
@@ -13,8 +11,6 @@ import { replayDemoEvents } from "./demo"
 import { BrowserBar, splitReplayAddress } from "./ReplayPlayer"
 import { ReplayFile, isRrwebUrl, splitReplayFragment } from "./ReplayFile"
 
-const renderToString = untypedRenderToString as (element: ReactElement) => string
-const createRoot = untypedCreateRoot as (el: Element) => { render(node: ReactElement): void; unmount(): void }
 
 vi.mock("./ReplayStage", () => ({
   preloadReplayStage: () => Promise.resolve(),

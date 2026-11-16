@@ -1,16 +1,16 @@
 # @brett_lamy/ui
 
-Touch-first React components inspired by UIKit container patterns, built on [UI SDK](https://ui-sdk.dev) and Tailwind v4: UI SDK owns the behavior (keyboard, focus, selection, popups, ARIA), this library the look, the tokens and the iOS containers. Colors, radius and font come from your shadcn theme (CSS variables); the iOS look ships as an optional theme. The library has lists, navigation, adaptive split views, drawers, sheets, a reusable jump rail, the Composer (a Markdown prompt box), PencilKit drawing and the message scroller. Product-specific compositions (an IDE workbench, a team-chat shell, a map chat, …) are **blocks**, installed from the shadcn registry rather than this package.
+Touch-first React components inspired by UIKit container patterns, built on [UI SDK](https://ui-sdk.dev) and Tailwind v4: UI SDK owns the behavior (keyboard, focus, selection, popups, ARIA), this library the look, the tokens and the iOS containers. Colors, radius and font come from your shadcn theme (CSS variables); the iOS look ships as an optional theme. The library has lists, navigation, adaptive split views, drawers, sheets, a reusable jump rail, the Composer (a Markdown prompt box), PencilKit drawing, the message scroller, diagrams (Diagram, StateDiagram, CloudflareDiagram) and docstream, the GitBook-flavored Markdown renderer and editor behind MarkdownView and MarkdownEditor. Product-specific compositions (an IDE workbench, a team-chat shell, a map chat, …) are **blocks**, installed from the shadcn registry rather than this package.
 
 ## Install
 
 Two ways, from the same source files. The docs explain both: [Installation](https://blamy.github.io/ui/#/installation) and [Optimization](https://blamy.github.io/ui/#/optimization).
 
-- **shadcn registry (recommended for products).** `npx shadcn add https://blamy.github.io/ui/r/split-view.json` copies the source of one component and what it imports into your app (`components/ui/…`, `lib/…`), so you own the files and only ship what you use.
-- **npm.** One dependency with everything in it:
+- **shadcn registry (recommended for products).** Install the two UI SDK aliases (below) and the base item, then `npx shadcn@latest add https://blamy.github.io/ui/r/split-view.json` copies the source of one component and what it imports into your app (`components/ui/…`, `lib/…`), so you own the files and only ship what you use.
+- **npm.** One dependency with everything in it. It depends on our fork of UI SDK under upstream's names; list the two aliases yourself too, so your own `@ui-sdk/react` imports share the kit's copy:
 
 ```sh
-npm i @brett_lamy/ui
+npm install @brett_lamy/ui @ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1 @ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1
 ```
 
 Import the stylesheet once — and, for the iOS palette, the bl-theme (it sets shadcn's CSS variables; leave it out to use your own shadcn theme). `BLProvider` picks light/dark and a tint for a subtree, and `ThemeScope` scopes any set of variables to a subtree:
@@ -37,11 +37,15 @@ export function App() {
 }
 ```
 
-The package is ESM with one output module per source module (`sideEffects` is limited to CSS), so bundlers drop what you don't import; component modules start with `'use client'` for Next.js.
+The package is ESM with one output module per source module (`sideEffects` is limited to CSS), so bundlers drop what you don't import; component modules start with `'use client'` for Next.js. Every module also has its own entry at the registry's path: `@/components/ui/split-view` is `@brett_lamy/ui/split-view`, `@/lib/theme` is `@brett_lamy/ui/lib/theme`.
 
 React 19 is required (the components use `use(Context)`, `<Context value>` and `ref` as a prop).
 
-The package depends on our fork of UI SDK under upstream's names (`@ui-sdk/core` → `npm:@brett_lamy/ui-sdk-core`, `@ui-sdk/react` → `npm:@brett_lamy/ui-sdk-react`), so `npm i @brett_lamy/ui` brings it. A registry install copies source that imports `@ui-sdk/core` and `@ui-sdk/react`: add the two aliases to your app yourself (see [Installation](https://blamy.github.io/ui/#/installation)). UI SDK puts a little runtime CSS in a cascade layer named `ui-sdk`; `styles.css` declares it first, and an app with its own Tailwind build should start its global CSS with `@layer ui-sdk;`. Coming from 5.x: [Migrating to 6.0](https://blamy.github.io/ui/#/migrating-to-6).
+The package depends on our fork of UI SDK under upstream's names (`@ui-sdk/core` → `npm:@brett_lamy/ui-sdk-core`, `@ui-sdk/react` → `npm:@brett_lamy/ui-sdk-react`). A registry install copies source that imports `@ui-sdk/core` and `@ui-sdk/react`: add the two aliases to your app before the first `add` (see [Installation](https://blamy.github.io/ui/#/installation)). UI SDK puts a little runtime CSS in a cascade layer named `ui-sdk`; `styles.css` declares it first, and an app with its own Tailwind build should start its global CSS with `@layer ui-sdk;`. Coming from 5.x: [Migrating to 6.0](https://blamy.github.io/ui/#/migrating-to-6).
+
+## Docstream
+
+Docstream and its editor are part of this package: `@brett_lamy/ui/docstream` and its entries (`/site`, `/gitbook`, `/replay`, `/stl`, `/strudel`, `/xstate`, `/capnp`, `/playground`, `/viz`, `/vite`…), and `@brett_lamy/ui/docstream-editor` (`/editor`, `/convert`). They replace the npm packages `@brett_lamy/docstream` and `@brett_lamy/docstream-editor`, which stop at 2.0.1: rename `@brett_lamy/docstream` to `@brett_lamy/ui/docstream` in your imports. Docstream styles itself: import `@brett_lamy/ui/docstream/styles.css` when you render its components directly (`MarkdownView` brings it); the editor's sheet is already in `@brett_lamy/ui/styles.css`. Its optional peers are this package's: `@agent-wasm/core` (`/playground`), `@brett_lamy/viz-engine` (`/viz`), `vite` (`/vite`) and `xstate` (the xstate fence). Its own docs: [#/docstream](https://blamy.github.io/ui/#/docstream) and [#/docstream-editor](https://blamy.github.io/ui/#/docstream-editor).
 
 ## IndexBar
 
@@ -83,7 +87,9 @@ import { IndexBar, alphabetItems } from '@brett_lamy/ui';
 - Motion: `springs`, `springCss`, `TextMorph`, `NumberMorph`, `AnimatedHeight`, `Swap`, `Celebrate`
 - Foundations: `BLProvider`, `ThemeScope`, `AppearanceProvider`, `Icon`, `Avatar`, `Spinner`
 - Chat: `Composer` and its parts, conversation parts (`Conversation`, `UserMessage`, `AssistantMessage`, `WorkLog`, `ToolCall`, …), `MessageScroller`, `MarkdownView`, `FloatingSheet`, `ArtifactChatContainer`
-- Editors and media: `CodeEditor`, `MarkdownEditor`, `Terminal`, `Workspace`, `DebugToolbar`, `Canvas`, PencilKit (`PencilCanvas`, `PencilToolbar`, `ImageAnnotator`), the video parts
+- Editors and media: `CodeEditor`, `MarkdownEditor`, `Terminal`, `Workspace`, `DebugToolbar`, PencilKit (`PencilCanvas`, `PencilToolbar`, `ImageAnnotator`), the video parts
+- Canvas and diagrams: `Canvas`, `Diagram`, `DiagramFrame`, `StateDiagram` (XState, an optional peer; ELK lays diagrams out when asked, also optional); `CloudflareDiagram` and the Cloudflare catalog on their own entry, `@brett_lamy/ui/cloudflare`
+- Engines on their own entries (`@brett_lamy/ui/lib/<module>`): the passkey vault, PGlite, FFmpeg, Tailscale, the file-upload and table models; OpenCode's runtime on `@brett_lamy/ui/opencode`
 - Blocks, installed from the registry rather than this package: the team-chat shell (`discord-clone`: `ChatShell` and its regions, channels, messages, members), the IDE workbench (`t3-clone`: `WorkbenchShell` and its parts, `WorkbenchComposer`, `ModelPicker`, the terminal dock and surfaces), the demo apps (`map-chat`, `delivery-tracking`, `split-view-demos`, `pencilkit-sketch`) and the full apps (GitHub, Apple Mail, VS Code, …)
 
 Every component exports its props type from the package root. See the Storybook catalog for interaction and responsive examples.
@@ -235,6 +241,9 @@ function Sketch() {
 ## Workspace development
 
 ```sh
-pnpm nx build @brett_lamy/ui
+pnpm nx build @brett_lamy/ui   # Vite, then docstream's per-file tsc build
+pnpm nx test @brett_lamy/ui    # builds first: docstream's entry-boundary test reads dist
 pnpm nx lint @brett_lamy/ui
 ```
+
+The rules every module follows, and the checks CI runs, are in the repository's [CONVENTIONS.md](https://github.com/BLamy/ui/blob/main/CONVENTIONS.md).

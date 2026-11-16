@@ -3,7 +3,7 @@
 BL UI is built on other people's open-source work. This page lists the third-party libraries the components, blocks and docs use, what each one does here, and its license. Versions are the ones this release pins. Each project's own license text ships with its npm package, and the links go to the projects.
 
 {% hint style="info" %}
-Most of these are MIT, ISC, BSD or Apache-2.0. Three need a closer look before you ship them in a closed-source app. **Strudel** (`@strudel/web`, used by docstream's Strudel player and the Strudel Studio and Apple Music blocks) is **AGPL-3.0-or-later**. **FFmpeg** (the video tools' WebAssembly build) is **LGPL-2.1+**. **ELK** (`elkjs`, which lays out diagrams, and is only installed if you ask for that) is **EPL-2.0 OR GPL-3.0-or-later**.
+Most of these are MIT, ISC, BSD or Apache-2.0. Three need a closer look before you ship them in a closed-source app. **Strudel** (`@strudel/web`, used by docstream's Strudel player and the Strudel Studio and Apple Music blocks) is **AGPL-3.0-or-later**: it is a dependency of `@brett_lamy/ui`, so it installs with the package, but it runs in the page only once a pattern plays (docstream's own words: "Strudel runs in the page (`@strudel/web`, AGPL-3.0, loaded on the first play)"). **FFmpeg** (the video tools' WebAssembly build) is **LGPL-2.1+**. **ELK** (`elkjs`, which lays out diagrams, and is only installed if you ask for that) is **EPL-2.0 OR GPL-3.0-or-later**.
 {% endhint %}
 
 ## Foundations
@@ -37,7 +37,8 @@ UI SDK is licensed under the [Apache License 2.0](https://www.apache.org/license
 | --- | --- | --- |
 | Docstream and Docstream Editor (`@brett_lamy/ui/docstream`, `@brett_lamy/ui/docstream-editor`) | MarkdownView, MarkdownEditor and the docs site itself. Part of BL UI since 6.0 (before, the packages `@brett_lamy/docstream` and `@brett_lamy/docstream-editor`, from [BLamy/docstream](https://github.com/BLamy/docstream) and [BLamy/docstream-editor](https://github.com/BLamy/docstream-editor)); they bring the libraries below. | — |
 | [Pele](https://pele.run) by Obsidian | Mermaid diagrams, drawn as SVG | MIT |
-| [XState](https://stately.ai/docs/xstate) by Stately, an optional peer | Reading, simulating and editing state machines in StateDiagram | MIT |
+| [XState](https://stately.ai/docs/xstate) by Stately, an optional peer | Reading, simulating and editing state machines in StateDiagram and CloudflareDiagram, and docstream's ` ```xstate ` fence (loaded when one is shown; docstream 2.0.1 had it as a dependency) | MIT |
+| [Babel's parser](https://babeljs.io/docs/babel-parser) (`@babel/parser`) | Reading a TypeScript `createMachine({…})` in docstream's xstate fence, without running it (`@brett_lamy/ui/docstream/xstate/machine`) | MIT |
 | [ELK](https://eclipse.dev/elk/) (`elkjs`) by the Eclipse Foundation, an optional peer | Laying out Diagram and StateDiagram, in a worker, when a layout's first asked for. An app with fixed positions never loads it | **EPL-2.0 OR GPL-3.0-or-later** |
 | [KaTeX](https://katex.org) | Math blocks | MIT |
 | [Tiptap](https://tiptap.dev) and [ProseMirror](https://prosemirror.net) | The rich-text editors | MIT |
@@ -46,6 +47,8 @@ UI SDK is licensed under the [Apache License 2.0](https://www.apache.org/license
 | [yaml](https://eemeli.org/yaml/) | Front matter and YAML parsing | ISC |
 | [Acorn](https://github.com/acornjs/acorn) | Parsing Strudel code for its syntax tree | MIT |
 | [rrweb](https://github.com/rrweb-io/rrweb) | Replaying recorded sessions in ReplayPreview | MIT |
+| [tscircuit](https://tscircuit.com) ([RunFrame](https://github.com/tscircuit/runframe), `@tscircuit/eval`) | Docstream's ` ```tscircuit ` fence: the circuit runs in tscircuit's hosted RunFrame (`runframe.vercel.app`, cross-origin) and its compiler loads from jsDelivr in a worker, at a pinned version. Nothing of it ships in the package, and the fence needs the network | Not shipped (see each project) |
+| [VizEngine](https://www.npmjs.com/package/@brett_lamy/viz-engine) (`@brett_lamy/viz-engine`), an optional peer | `VizEmbed` scenes in a document (`@brett_lamy/ui/docstream/viz`) | The author's own package |
 
 ## GPU libraries
 
@@ -60,7 +63,8 @@ UI SDK is licensed under the [Apache License 2.0](https://www.apache.org/license
 
 | Library | Used for | License |
 | --- | --- | --- |
-| [Strudel](https://strudel.cc) (`@strudel/web`) | Live-coded music in the Strudel player, Strudel Studio and Apple Music blocks | **AGPL-3.0-or-later** |
+| [Strudel](https://strudel.cc) (`@strudel/web`) | Live-coded music in docstream's Strudel player (StrudelPlayer, the ` ```strudel ` fence) and the Strudel Studio and Apple Music blocks; loaded on the first play | **AGPL-3.0-or-later** |
+| [Tidal's dirt-samples](https://github.com/tidalcycles/Dirt-Samples) | The sample banks the Strudel player loads by default (`github:tidalcycles/dirt-samples`), fetched on the first play, so `s("bd sd")` sounds as it does on strudel.cc. Not shipped; pass your own `samples` to use others | See the repository |
 | [FFmpeg](https://ffmpeg.org), with [libvpx](https://chromium.googlesource.com/webm/libvpx) and [LAME](https://lame.sourceforge.io), built with the [openclaw/ffmpeg-wasm](https://github.com/openclaw/ffmpeg-wasm) scripts | The WebAssembly video tools. It is built from source without `--enable-gpl` or `--enable-nonfree`, and each license file is copied next to the build. | **LGPL-2.1+** (FFmpeg, LAME), BSD (libvpx), MIT (build scripts) |
 
 The STL viewer is Docstream's own WebGL code and has no third-party dependencies.

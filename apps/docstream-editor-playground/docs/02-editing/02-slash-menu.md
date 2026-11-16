@@ -38,6 +38,9 @@ Type `/` anywhere in the text and a menu of blocks opens at the caret. Keep typi
 | Updates | `changelog release notes` | `{% updates format="full" %}` with one update dated today and a **What changed** heading |
 | OpenAPI operation | `api swagger endpoint rest` | `{% openapi-operation path="/" method="get" %}` |
 | Mermaid diagram | `chart graph flowchart` | a `mermaid` fence with `graph TD` / `A --> B` |
+| XState diagram | `state machine statechart graph transitions` | an `xstate` fence: a request machine whose `loading` state invokes `fetchPage` |
+| workerd config | `capnp cloudflare worker durable object services diagram` | a `capnp` fence: a Worker bound to its Durable Object, drawn as the two |
+| tscircuit example | `circuit pcb schematic electronics tsx` | a `tscircuit` fence: a board with one resistor |
 | Strudel music | `audio song beat pattern live code tidal` | a `strudel` fence with a four-note pattern |
 | Citation | `cite footnote source reference superscript` | `[^n]`, the next unused citation number |
 

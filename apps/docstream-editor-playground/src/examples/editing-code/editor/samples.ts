@@ -93,11 +93,36 @@ sequenceDiagram
 \`\`\`
 `
 
+// A Worker, its Durable Object and a KV namespace: change a binding and the board follows.
+const WORKERD = `# A workerd config
+
+\`\`\`capnp
+using Workerd = import "/workerd/workerd.capnp";
+
+const config :Workerd.Config = (
+  services = [ (name = "main", worker = .main) ],
+  sockets = [ (name = "http", address = "*:8080", http = (), service = "main") ],
+);
+
+const main :Workerd.Worker = (
+  modules = [ (name = "worker.js", esModule = embed "worker.js") ],
+  compatibilityDate = "2026-01-01",
+  bindings = [
+    (name = "ROOMS", durableObjectNamespace = "Room"),
+    (name = "CACHE", kvNamespace = "cache"),
+  ],
+  durableObjectNamespaces = [ (className = "Room", uniqueKey = "rooms", enableSql = true) ],
+  durableObjectStorage = (inMemory = ()),
+);
+\`\`\`
+`
+
 export const SAMPLES = {
   code: { label: "Code", markdown: CODE, tip: "Each block has a title field, a language field, a # (line numbers) box and a Live box. Titled fences number their lines unless told not to." },
   commands: { label: "Commands", markdown: COMMANDS, tip: "Edit the npm command under a box; the pnpm / yarn / bun fields override what's derived." },
   math: { label: "Math", markdown: MATH, tip: "Edit the TeX on the left of a card; KaTeX redraws on the right after a short pause." },
   diagrams: { label: "Diagrams", markdown: DIAGRAMS, tip: "Edit the Mermaid source; the diagram redraws when you pause." },
+  workerd: { label: "workerd config", markdown: WORKERD, tip: "Add a binding, say (name = \"FILES\", r2Bucket = \"files\"), and the board draws it when you pause." },
 } satisfies Record<string, Sample>
 
 export type SampleId = keyof typeof SAMPLES

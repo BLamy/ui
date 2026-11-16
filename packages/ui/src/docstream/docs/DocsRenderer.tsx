@@ -353,7 +353,6 @@ function BlockView({ block, liveRenderer, sourceRenderer }: { block: Block } & R
     }
     case "code":
       if (isXStateLanguage(block.language)) return <XStateDiagram code={block.code} />
-      if (isCapnpLanguage(block.language) && isWorkerdConfig(block.code)) return <CapnpDiagram code={block.code} {...(block.title ? { title: block.title } : {})} />
       if (isTsCircuitLanguage(block.language)) return <TsCircuit code={block.code} title={block.title ?? undefined} />
       if (isTuiCodeBlock(block) && tui.options !== false) {
         return <TuiPreview {...tui.options} code={block.code} language={block.language ?? undefined} title={block.title ?? tui.options?.title} streaming={tui.isStreaming || block.closingFence === ""} />
@@ -380,6 +379,9 @@ function BlockView({ block, liveRenderer, sourceRenderer }: { block: Block } & R
         })
         if (custom != null) return <>{custom}</>
       }
+      // A workerd config draws as its services, after the host's renderCode has declined it: capnp fences reached
+      // renderCode before docstream drew any. Other Cap'n Proto stays code.
+      if (isCapnpLanguage(block.language) && isWorkerdConfig(block.code)) return <CapnpDiagram code={block.code} {...(block.title ? { title: block.title } : {})} />
       return (
         <div className="docs-code" data-language={block.language ?? undefined}>
           {/* A header bar only when there's a title (file name) to show; otherwise just the code
@@ -729,7 +731,8 @@ export interface DocRenderOptions {
   /**
    * Draws fenced code blocks yourself: `(block, { placement, highlighted }) => ReactNode`. Return `null` or
    * `undefined` for docstream's own rendering. Widget fences (mermaid, xstate, tscircuit, strudel, tui, live
-   * React) are not passed to it. Provided through context, so nested renderers inherit it.
+   * React) are not passed to it. A `capnp` fence is: one that is a workerd config and that it declines is drawn as
+   * the Cloudflare services it runs. Provided through context, so nested renderers inherit it.
    */
   renderCode?: CodeBlockRenderer
 }

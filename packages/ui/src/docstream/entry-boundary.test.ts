@@ -146,9 +146,15 @@ describe("entry boundaries", () => {
     expect(() => execFileSync(process.execPath, ["--input-type=module", "-e", script], { cwd: root, stdio: "pipe" })).not.toThrow()
   })
 
-  // The capnp fence draws with the library's Cloudflare entry, which brings the catalog, about 150 KB: only when there's one to draw.
-  it.each(entries)("%s (%s) loads the library's Cloudflare entry only through a dynamic import", (_name, target) => {
-    expect([...graph(target, { dynamic: false }).bare].filter((spec) => spec === "@brett_lamy/ui/cloudflare")).toEqual([])
+  // The capnp fence draws with the library's Cloudflare entry, which brings the diagram and the catalog, about 150 KB: only
+  // when there's one to draw. Nothing of docstream's reaches either another way.
+  it.each(entries)("%s (%s) loads the library's Cloudflare diagram and catalog only through a dynamic import", (_name, target) => {
+    expect([...graph(target, { dynamic: false }).bare].filter((spec) => /^@brett_lamy\/ui\/(cloudflare|cloudflare-diagram|lib\/cloudflare-)/.test(spec))).toEqual([])
+  })
+
+  // Every service the fence draws has its place (placeInLayers), so no docstream entry ever asks for a layout engine.
+  it.each(entries)("%s (%s) never loads ELK", (_name, target) => {
+    expect([...graph(target).bare].filter((spec) => spec === "elkjs" || spec.startsWith("elkjs/") || spec.includes("diagram-layout"))).toEqual([])
   })
 
   it.each(entries)("%s (%s) loads rrweb only through a dynamic import", (_name, target) => {

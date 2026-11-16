@@ -86,7 +86,7 @@ export const devtoolsPanel = definePrimitive({
     }
   },
   slots: (slot) => ({
-    root: slot<{}, { size: number; dragging: boolean }>({
+    root: slot<object, { size: number; dragging: boolean }>({
       state: (state) => ({ size: state.size, dragging: state.dragging }),
       attrs: (state, part) => ({
         id: `${part.id}-panel`,
@@ -94,7 +94,7 @@ export const devtoolsPanel = definePrimitive({
         style: css({ "--replay-devtools-height": `${state.size}%` }),
       }),
     }),
-    resize: slot<{}, { dragging: boolean }>({
+    resize: slot<object, { dragging: boolean }>({
       role: "separator",
       state: (state) => ({ dragging: state.dragging }),
       attrs: (state, part) => ({

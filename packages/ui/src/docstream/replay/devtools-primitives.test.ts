@@ -76,7 +76,7 @@ describe("devtoolsPanel: the panel and the separator on its top edge", () => {
     const panel = mount(devtoolsPanel, { defaultSize: 58, onSizeChange: (_size, details) => reasons.push(details.reason) }, markup)
     view = panel
     const handle = panel.part("resize")!
-    const rect = (top: number, height: number) => () => ({ left: 0, right: 600, width: 600, top, bottom: top + height, height, x: 0, y: top, toJSON() {} }) as DOMRect
+    const rect = (top: number, height: number) => () => ({ left: 0, right: 600, width: 600, top, bottom: top + height, height, x: 0, y: top, toJSON: () => ({}) }) as DOMRect
     // A 400px stage, the separator on the panel's top edge at 58%.
     panel.root.parentElement!.getBoundingClientRect = rect(0, 400)
     handle.getBoundingClientRect = rect(165, 7)

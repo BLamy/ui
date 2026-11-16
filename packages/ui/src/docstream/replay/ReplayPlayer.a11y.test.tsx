@@ -415,7 +415,7 @@ describe("the Elements pane (Tree)", () => {
   function page() {
     const doc = document.implementation.createHTMLDocument("page")
     doc.body.innerHTML = '<main><form><input placeholder="Search tasks" class="field"><button>Go</button></form><p>Hello there</p></main>'
-    for (const el of doc.querySelectorAll("*")) el.getBoundingClientRect = () => ({ left: 10, top: 40, width: 100, height: 20, right: 110, bottom: 60, x: 10, y: 40, toJSON() {} }) as DOMRect
+    for (const el of doc.querySelectorAll("*")) el.getBoundingClientRect = () => ({ left: 10, top: 40, width: 100, height: 20, right: 110, bottom: 60, x: 10, y: 40, toJSON: () => ({}) }) as DOMRect
     return doc
   }
   const label = (item: Element) => item.querySelector(':scope > [data-slot="tree-label"]')!.textContent

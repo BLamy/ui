@@ -65,7 +65,8 @@ export interface CopyButtonProps {
   className?: string
 }
 
-/** Icon button that copies `text` and swaps to a tick. Its tooltip names it, and says "Copied" after a copy. */
+/** Icon button that copies `text` and swaps to a tick. Its tooltip names it, and says "Copied" after a copy. The name is
+ *  its own `aria-label` too, as the tooltip's text is only in the page while the tooltip shows. */
 export function CopyButton({ text, label = "Copy code", className }: CopyButtonProps) {
   const { copied, copy } = useCopied()
   const name = copied ? "Copied" : label
@@ -73,6 +74,7 @@ export function CopyButton({ text, label = "Copy code", className }: CopyButtonP
     <Tooltip type="label" closeOnPress={false}>
       <TooltipTrigger
         className={className ? `docs-copy ${className}` : "docs-copy"}
+        aria-label={name}
         onClick={() => void copy(text)}
         data-copied={copied || undefined}
       >

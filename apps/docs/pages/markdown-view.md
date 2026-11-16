@@ -107,6 +107,12 @@ Use a `tscircuit` fence for a TSX circuit such as `circuit.add(<board>...</board
 
 {% demo src="docstream/diagrams" %}
 
+### Workerd configs
+
+A `capnp` fence that's a workerd config, or `{% embed url="config.capnp" %}` for a file of one, is drawn as the Cloudflare services it runs, on a read-only [CloudflareDiagram](#/cloudflare-diagram): each Worker, its Durable Object classes and what its bindings reach, with what isn't a Cloudflare service (a disk, a socket) listed under the board and the source in a disclosure under that. A config that doesn't read says where. The diagram and the Cloudflare catalog load from `@brett_lamy/ui/cloudflare` when the first config is shown, and no layout engine loads at all. Other Cap'n Proto stays code, and `renderCode` is asked first, so a fence you draw yourself stays yours.
+
+{% demo src="docstream/workerd-config" %}
+
 ### Chat replies
 
 Render each assistant turn with `MarkdownView` and keep your own bubbles for user turns. Fenced code gets highlighting and lists keep their spacing.

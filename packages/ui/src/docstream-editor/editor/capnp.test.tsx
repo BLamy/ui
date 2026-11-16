@@ -16,7 +16,8 @@ let root: Root
 beforeEach(() => { host = document.createElement("div"); document.body.append(host); root = createRoot(host) })
 afterEach(() => { act(() => root.unmount()); host.remove(); vi.restoreAllMocks() })
 async function until(check: () => boolean) {
-  for (let i = 0; i < 150 && !check(); i++) await act(() => new Promise((r) => setTimeout(r, 20)))
+  // The first board waits for a cold import of the Cloudflare entry (the diagram and its catalog): give it time under load.
+  for (let i = 0; i < 500 && !check(); i++) await act(() => new Promise((r) => setTimeout(r, 20)))
   expect(check()).toBe(true)
 }
 const nodes = () => [...host.querySelectorAll("[data-docstream-capnp] [data-slot=diagram-node]")].map((n) => n.getAttribute("data-node")).sort()
@@ -36,6 +37,9 @@ describe("a workerd config in the editor", () => {
     await until(() => nodes().length === 2)
     expect(nodes()).toEqual(["main", "main.Room"])
     expect(host.querySelector(".gb-code-capnp .gb-diagram-result")?.getAttribute("contenteditable")).toBe("false")
+    // The same result pane the read-only card draws, beside the editable source the other diagram fences have.
+    expect(host.querySelector(".gb-code-capnp .gb-diagram-result > .docs-capnp-result .docs-split-label")?.textContent).toBe("Cloudflare services")
+    expect(host.querySelector(".gb-code-capnp .docs-split-source-pane .docs-split-label")?.textContent).toBe("workerd config")
     const second = WORKERD_STARTER.replace('bindings = [ (name = "ROOMS", durableObjectNamespace = "Room") ],', 'bindings = [ (name = "ROOMS", durableObjectNamespace = "Room"), (name = "CACHE", kvNamespace = "cache") ],')
     await act(async () => { editor.commands.insertContentAt({ from: 1, to: editor.state.doc.firstChild!.nodeSize - 1 }, { type: "text", text: second }) })
     await until(() => nodes().length === 3)

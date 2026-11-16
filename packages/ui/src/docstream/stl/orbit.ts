@@ -109,7 +109,7 @@ export const orbit = definePrimitive({
     }
   },
   slots: (slot) => ({
-    root: slot<{}, { dragging: boolean }>({
+    root: slot<object, { dragging: boolean }>({
       role: "application",
       focus: "tab-stop",
       keys: [...KEYS],

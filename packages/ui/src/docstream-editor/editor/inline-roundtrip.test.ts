@@ -1,13 +1,10 @@
 /* The docstream inline round-trip table (docstream src/gitbook/inline-roundtrip.test.ts), through the editor. */
-// @ts-ignore node's types aren't installed; only these functions are needed.
-import { readdirSync as untypedReaddirSync, readFileSync as untypedReadFileSync } from "node:fs"
+import { readdirSync, readFileSync } from "node:fs"
 import { describe, expect, it } from "vitest"
 import { parseMarkdown, serializeMarkdown, type DocumentNode } from "@brett_lamy/ui/docstream/gitbook"
 import { astToTiptap, serializeEditorMarkdown, tiptapToAst, type PMNode } from "./convert"
 import { getGitbookSchema } from "./extensions"
 
-const readdirSync = untypedReaddirSync as (url: URL) => string[]
-const readFileSync = untypedReadFileSync as (url: URL, encoding: "utf8") => string
 
 const schema = getGitbookSchema()
 

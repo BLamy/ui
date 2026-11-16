@@ -17,7 +17,7 @@ Numbers from production builds of a fresh shadcn app (`shadcn create --base aria
 What the numbers say:
 
 - **JavaScript is the same either way.** The npm package is built with one output module per source module and `sideEffects` limited to CSS, so a bundler drops what you don't import. Importing `Button` (from `@brett_lamy/ui/button` or from the root) does not pull the Composer.
-- **CSS is where they differ.** The registry adds Tailwind utilities only for the classes in the files you copied, because Tailwind scans your source. The npm stylesheet is precompiled for the whole library, including the Markdown and KaTeX styles, so it is roughly 3–4× larger in gzip whatever you import.
+- **CSS is where they differ.** The registry adds Tailwind utilities only for the classes in the files you copied, because Tailwind scans your source. The npm stylesheet is precompiled for the whole library, including the Markdown editor's styles, so it is roughly 3–4× larger in gzip whatever you import. (Docstream's own sheet, `@brett_lamy/ui/docstream/styles.css`, is separate and comes with MarkdownView; KaTeX's styles load with the first math block.)
 - **Motion is the real cost.** `Button` alone adds about 210 kB raw (67 kB gzip) of JavaScript, because its label morph uses `framer-motion`. That is the price of the springs; it is shared by every other part, so `SplitView` adds only 49 kB raw on top of `Button`.
 
 Your numbers will differ with your app, plugins and browser targets. To measure yours, run `vite build` (or `next build`) with and without the import.
@@ -51,7 +51,8 @@ Start with the registry for a product. Use npm when you want the parts unmodifie
   With the package it is the same line on `@brett_lamy/ui/composer/composer`. A lazy import of the root would put the whole library behind the split point.
 
   Composer is a family of parts, so lazy-load the module that renders the whole composition (your `PromptBox` component) rather than one part at a time.
-- **Pre-bundle in dev.** Vite discovers dependencies as they are first imported, and a late discovery reloads the page. The docs app lists the TipTap packages in `optimizeDeps.include` for that reason (`apps/docs/vite.config.mts`); do the same for any package Vite reports as newly found.
+- **What already waits.** Some costs are deferred for you. Docstream loads Mermaid (Pele), KaTeX and rrweb only when a page shows a diagram, math or a replay, and Strudel on the first play; the diagrams load ELK, in a worker, only when a layout is asked for, and CloudflareDiagram loads XState only for a service with a machine; the Cloudflare catalog (about 26 kB gzipped) and `jsonc-parser` are only on `@brett_lamy/ui/cloudflare` and `@brett_lamy/ui/cloudflare-diagram`, so no other import reaches them.
+- **Pre-bundle in dev.** Vite discovers dependencies as they are first imported, and a late discovery reloads the page. The docs app lists the TipTap packages, and the libraries docstream loads lazily, in `optimizeDeps.include` for that reason (`apps/docs/vite.config.mts`); do the same for any package Vite reports as newly found. Docstream itself needs no entry: from `node_modules` it is pre-bundled like any dependency.
 - **Chunking.** If one vendor chunk grows, `build.rollupOptions.output.manualChunks` can put `framer-motion` and `@ui-sdk/react` / `@ui-sdk/core` in their own long-cached chunks. Measure before and after: the two are used together by most parts, and splitting them rarely shrinks the total.
 
 ## Next.js

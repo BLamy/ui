@@ -95,12 +95,6 @@ graph LR
 
 The diagram is `PeleDiagram`, the same component docstream's renderer draws with, so a diagram that renders in the editor renders on the page. The diagram types Pele draws, with a gallery, are on docstream's [Math and diagrams](https://blamy.github.io/docstream/#/writing/math-and-diagrams) page.
 
-## Next
-
-{% content-ref url="05-tables-and-layout.md" %}
-[Tables and layout](05-tables-and-layout.md)
-{% endcontent-ref %}
-
 ## XState and tscircuit
 
 `xstate` and `tscircuit` fences work like Mermaid: edit the source pane, then watch the preview update after a short pause. Type `/` and choose **XState diagram** or **tscircuit example** to insert a starting point. The result pane stays outside the editable document, and the source is saved as the original Markdown fence.
@@ -120,8 +114,6 @@ export const toggle = createMachine({
 
 XState accepts JSON configs and static TypeScript machine configs. Actions, guards and invoked actors are never executed. A state's `invoke` shows on a second line, with its `onDone` and `onError` as `done` and `error` edges, which is what **XState diagram** starts you with. Invalid or unfinished source shows an inline error without stopping editing.
 
-A `capnp` fence that's a workerd config draws as the Cloudflare services it runs, under its source, as you edit it. Type `/` and choose **workerd config** for a Worker and its Durable Object to start from. An embedded `.capnp` file is drawn the same way. Cap'n Proto that isn't a config stays code.
-
 ```tscircuit
 circuit.add(
   <board width="16mm" height="12mm">
@@ -133,3 +125,17 @@ circuit.add(
 ```
 
 The circuit runs in a cross-origin hosted RunFrame, with schematic, PCB and 3D views. It requires a network connection. Edit component values or positions to redraw the preview; the iframe stays mounted while you type. Regular `tsx` fences remain ordinary code blocks.
+
+## Workerd configs
+
+A `capnp` fence that's a workerd config is a diagram card too: the editable source, and the Cloudflare services it runs on a read-only [`CloudflareDiagram`](https://blamy.github.io/ui/#/cloudflare-diagram), redrawn after a short pause in typing. The board needs room, so it goes under the source, and beside it once the card is wide enough for both. What isn't one of Cloudflare's services, like a disk or a socket, is listed under the board. Type `/` and choose **workerd config** for a Worker and its Durable Object to start from. An embedded `.capnp` file, `{% embed url="config.capnp" %}`, is drawn the same way, read-only. Cap'n Proto that isn't a config, like a schema, stays code.
+
+{% demo src="editing-code/editor" variants="workerd:workerd config" %}
+
+The board is the library's `CloudflareDiagram`, which docstream's `CapnpPreview` loads from `@brett_lamy/ui/cloudflare` when the first config is shown, so the editor's bundle doesn't carry the Cloudflare catalog. A config that doesn't read says where, in the result pane, and editing goes on. See docstream's [Math and diagrams](https://blamy.github.io/ui/#/docstream/writing/math-and-diagrams) page for the read-only card.
+
+## Next
+
+{% content-ref url="05-tables-and-layout.md" %}
+[Tables and layout](05-tables-and-layout.md)
+{% endcontent-ref %}

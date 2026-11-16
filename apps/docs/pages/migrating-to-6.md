@@ -1,14 +1,17 @@
 # Migrating to 6.0
 
-BL UI 6.0 changes two things, and moves one. Every interactive part is now built on [UI SDK](https://ui-sdk.dev) instead of react-aria-components, and its API is UI SDK's: `onClick` instead of `onPress`, `disabled` instead of `isDisabled`, `value` and `onValueChange(value, details)` instead of keys and selections, and roots with named parts instead of wrappers that take "the first child". And the library is smaller: components that did the same job as another one were merged into it (117 modules became 99), and every concept has one prop name across the kit. And Docstream, the Markdown renderer and editor behind MarkdownView, MarkdownEditor and the Composer, is part of the package now: `@brett_lamy/docstream` and `@brett_lamy/docstream-editor` stop at 2.0.1 (see [Docstream is part of the library](#docstream-is-part-of-the-library)). This page lists every change, with the before and after, so you can move a 5.x app to 6.0 from here.
+BL UI 6.0 changes two things, and moves one. Every interactive part is now built on [UI SDK](https://ui-sdk.dev) instead of react-aria-components, and its API is UI SDK's: `onClick` instead of `onPress`, `disabled` instead of `isDisabled`, `value` and `onValueChange(value, details)` instead of keys and selections, and roots with named parts instead of wrappers that take "the first child". The library is smaller: components that did the same job as another one were merged into it (5.16's 118 component modules are 98, plus the four new diagram modules), and every concept has one prop name across the kit. And Docstream, the Markdown renderer and editor behind MarkdownView, MarkdownEditor and the Composer, is part of the package now: `@brett_lamy/docstream` and `@brett_lamy/docstream-editor` stop at 2.0.1. This page lists every change, with the before and after, so you can move a 5.x app to 6.0 from here.
 
 Read it in this order:
 
-1. [Changes that apply everywhere](#changes-that-apply-everywhere): the UI SDK vocabulary, which is most of a migration, and [where Docstream went](#docstream-is-part-of-the-library).
-2. [One spelling per concept](#one-spelling-per-concept): the prop names every component now shares.
-3. [Components that merged, moved or were renamed](#components-that-merged-moved-or-were-renamed): one table from every removed or renamed module, export and prop to what you write now.
-4. The family sections, from [Buttons and toggles](#buttons-and-toggles) on: what changed inside each component that kept its name.
-5. [What looks different](#what-looks-different).
+1. [What changed and why](#what-changed-and-why): UI SDK, React 19, the `ui-sdk` cascade layer and the install lines.
+2. [Docstream is part of the library](#docstream-is-part-of-the-library) and [the package surface](#the-package-surface): what you import from where.
+3. [Changes that apply everywhere](#changes-that-apply-everywhere): the UI SDK vocabulary, which is most of a migration.
+4. [One spelling per concept](#one-spelling-per-concept): the prop names every component now shares.
+5. [Components that merged, moved or were renamed](#components-that-merged-moved-or-were-renamed): one table from every removed or renamed module, export and prop to what you write now.
+6. The family sections, from [Buttons and toggles](#buttons-and-toggles) on: what changed inside each component that kept its name.
+7. [New in 6.0](#new-in-6-0) and [What looks different](#what-looks-different).
+8. Only if you built on the unpublished branch where the diagrams were developed: [Diagrams from the preview](#diagrams-from-the-preview).
 
 Most tokens, radii, springs and sizes are the same as in 5.x. What you change is the props you pass, the parts you compose, the names you import, and any CSS of yours that selected react-aria's state attributes. The places where the look changed on purpose are listed at the end.
 
@@ -38,9 +41,9 @@ A CSS Module loads too late to come first, so keep the line in the global styles
 
 BL UI uses its fork of UI SDK, published as `@brett_lamy/ui-sdk-core` and `@brett_lamy/ui-sdk-react` and installed under upstream's names through npm aliases. The fork is upstream plus layer hosts (popups contained in an element such as `BLProvider`'s root), a `when` option on `bindLayer`, and the kernel type `SlotProps` exported from `@ui-sdk/core/renderer`; the other behaviors the containers need (size classes, the navigation stack, edge swipes, the platform back, pull to refresh) are BL UI's own, in `@/lib` (see [Built on UI SDK](https://blamy.github.io/ui/#/ui-sdk)). Every import, in the kit and in your code, is `@ui-sdk/core/…` and `@ui-sdk/react/…`.
 
-With the npm package, `@brett_lamy/ui` depends on the two aliases, so installing it brings them:
+With the npm package, `@brett_lamy/ui` depends on the two aliases. List them in your app too, at the version it pins, so your own `@ui-sdk/react` imports share the kit's copy (with React 19):
 
-{% command %}npm install @brett_lamy/ui@6 react@19 react-dom@19{% endcommand %}
+{% command %}npm install @brett_lamy/ui@6 @ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1 @ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1 react@19 react-dom@19{% endcommand %}
 
 With the registry, the copied source imports `@ui-sdk/core` and `@ui-sdk/react`, so your app needs the same two aliased dependencies. Add them before the first `shadcn add`:
 
@@ -59,22 +62,43 @@ which writes:
 
 Pin both to the same version: `@ui-sdk/react` depends on `@ui-sdk/core`, and the app, the kit and any UI SDK component of your own must share one copy of the core. A package that declares `@ui-sdk/core` as a peer dependency resolves it to your aliased copy. Docstream and its editor (behind `MarkdownView`, `MarkdownEditor`, `Composer` and the replay, STL and Strudel parts) are part of `@brett_lamy/ui` now, so they run on the kit's core with nothing to set up. Your own code imports UI SDK the usual way: `import { Menu } from '@ui-sdk/react/menu'`.
 
-### Docstream is part of the library
+## Docstream is part of the library
 
-Docstream (the GitBook-flavored Markdown and AI-stream renderer, with its docs sites, demos, replays, 3D models and Strudel player) and the Docstream editor (the Tiptap editor for the same Markdown) were two packages of their own, `@brett_lamy/docstream` and `@brett_lamy/docstream-editor`, which BL UI depended on. In 6.0 they are part of `@brett_lamy/ui`, built and published with it: every entry they had is the same module under the library's name. The two npm packages stop at 2.0.1, the version 6.0 was built with; nothing is published under those names again.
+Docstream (the GitBook-flavored Markdown and AI-stream renderer, with its docs sites, demos, replays, 3D models and Strudel player) and the Docstream editor (the Tiptap editor for the same Markdown) were two packages of their own, `@brett_lamy/docstream` and `@brett_lamy/docstream-editor`, which BL UI depended on. In 6.0 they are part of `@brett_lamy/ui`, built, tested and published with it: every entry they had is the same module under the library's name, and their components, props and Markdown are 2.0.1's. The two npm packages stop at 2.0.1, the version 6.0 was built with; nothing is published under those names again, and docstream's version is the library's from here on.
 
-| 5.x | 6.0 |
+| 5.x (docstream 2.0.1) | 6.0 |
 | --- | --- |
 | `npm install @brett_lamy/docstream @brett_lamy/docstream-editor` | nothing: `npm install @brett_lamy/ui` brings both |
 | `@brett_lamy/docstream` | `@brett_lamy/ui/docstream` |
-| `@brett_lamy/docstream/<entry>`: `/gitbook`, `/streamdown`, `/reference`, `/properties`, `/tasks`, `/assets`, `/openapi`, `/replay`, `/replay/demo`, `/video`, `/stl`, `/strudel`, `/tui`, `/viz`, `/playground`, `/source`, `/demo`, `/vite`, `/site`, `/xstate`, `/tscircuit` | `@brett_lamy/ui/docstream/<entry>`, the same entries (and `/xstate/machine`, `/capnp`, new) |
+| `@brett_lamy/docstream/<entry>`: `/gitbook`, `/streamdown`, `/reference`, `/properties`, `/tasks`, `/assets`, `/openapi`, `/replay`, `/replay/demo`, `/video`, `/stl`, `/strudel`, `/tui`, `/viz`, `/playground`, `/source`, `/demo`, `/vite`, `/site`, `/xstate`, `/tscircuit` | `@brett_lamy/ui/docstream/<entry>`, the same entries; new: `/xstate/machine` (`parseXState`, `xstateToMermaid`) and `/capnp` (the ` ```capnp ` fence, which draws a workerd config on a [CloudflareDiagram](https://blamy.github.io/ui/#/cloudflare-diagram)) |
 | `@brett_lamy/docstream/styles.css`, `/site/styles.css`, `/properties/styles.css`, `/tasks/styles.css` | `@brett_lamy/ui/docstream/styles.css`, `/site/styles.css`, `/properties/styles.css`, `/tasks/styles.css` |
 | `@brett_lamy/docstream-editor`, `/editor`, `/convert` | `@brett_lamy/ui/docstream-editor`, `/editor`, `/convert` |
-| `@brett_lamy/docstream-editor/styles.css` | already inside `@brett_lamy/ui/styles.css` (in a layer); import `@brett_lamy/ui/docstream-editor/styles.css` only in an app that doesn't load BL UI's stylesheet |
+| `@brett_lamy/docstream-editor/styles.css` | already inside `@brett_lamy/ui/styles.css` (in a layer): import `@brett_lamy/ui/docstream-editor/styles.css` only in an app that doesn't load BL UI's stylesheet, never both |
+| `xstate`, a dependency of docstream | an optional peer: install `xstate` (^5.33.3) if your pages draw ` ```xstate ` fences; it loads when one is shown |
 
-Remove the two packages from your `package.json` and rename the imports; a search and replace of `@brett_lamy/docstream` with `@brett_lamy/ui/docstream` does all of it (it turns `@brett_lamy/docstream-editor` into `@brett_lamy/ui/docstream-editor` too). Keep importing docstream's stylesheet once at your app's entry if you render Markdown, replays or Strudel: `import '@brett_lamy/ui/docstream/styles.css'`. Docstream's optional peers are the library's optional peers now: `@agent-wasm/core` (the `/playground` entry), `@brett_lamy/viz-engine` (`/viz`), `vite` (`/vite`) and `xstate` (the ` ```xstate ` fence, loaded when one is drawn).
+Remove the two packages from your `package.json` and rename the imports: a search and replace of `@brett_lamy/docstream` with `@brett_lamy/ui/docstream` does all of it (it turns `@brett_lamy/docstream-editor` into `@brett_lamy/ui/docstream-editor` too). `MarkdownView` imports docstream's stylesheet itself; if you render docstream's own components (`DocsSite`, `GitbookStreamdown`, the replay, STL or Strudel players…), import `@brett_lamy/ui/docstream/styles.css` once at your app's entry, as you did with 2.0.1. Docstream's other optional peers are the library's optional peers now, each loaded only by its own entry: `@agent-wasm/core` (`/playground`), `@brett_lamy/viz-engine` (`/viz`) and `vite` (`/vite`). The ` ```xstate ` fence also keeps a machine's `invoke` now, drawn and never run.
 
-With the registry, docstream isn't copied: an item built on it (`markdown-view`, `markdown-editor`, `composer`, `replay-preview`, `tui-preview`, `stl-viewer`, `strudel-player`, and blocks such as Apple Notes or Replay Canvas) imports `@brett_lamy/ui/docstream…` and adds `@brett_lamy/ui` to your dependencies, where it used to add `@brett_lamy/docstream`.
+**An app that used only docstream** (a docs site, an AI answer pane) installs `@brett_lamy/ui` and imports only `@brett_lamy/ui/docstream…` and `@brett_lamy/ui/docstream-editor…`. React 19 is the only peer it must provide: UI SDK comes with the library. Each entry keeps its own module graph (a test in the library holds every docstream entry to it), so the bundle carries no kit component it doesn't import, and it needs neither the kit's `styles.css` nor Tailwind: docstream styles itself with `@brett_lamy/ui/docstream/styles.css`, and the editor with `@brett_lamy/ui/docstream-editor/styles.css`. What it does gain is the library's dependencies in `node_modules` (Tiptap, framer-motion, the GPU parsers and the rest), whether or not it imports them.
+
+With the registry, docstream isn't copied: an item built on it (`markdown-view`, `markdown-editor`, `composer`, `replay-preview`, `tui-preview`, `stl-viewer`, `strudel-player`, and the blocks Apple Music, Apple Notes, Apple Reminders, Loop QA, Replay Canvas, Strudel Studio and Time Machine) imports `@brett_lamy/ui/docstream…` and adds `@brett_lamy/ui` to your dependencies, where it used to add `@brett_lamy/docstream`.
+
+## The package surface
+
+Every module has its own entry, at the registry's path under the package name, so a name has one import path in both installs. `node tools/registry/build.mjs` writes the entries into the package's `exports` from the same import graph that builds the registry.
+
+| Entry | What it holds | In a registry install |
+| --- | --- | --- |
+| `@brett_lamy/ui` | the components, their parts, cva recipes, controllers and the kit's own hooks | the same names, each from its module |
+| `@brett_lamy/ui/<module>` | every component module: `@brett_lamy/ui/dialog`, `@brett_lamy/ui/composer/composer`, `@brett_lamy/ui/cloudflare-diagram` | `@/components/ui/<module>` |
+| `@brett_lamy/ui/lib/<module>` | the library modules with an API of their own: the engines (`lib/vault`, `lib/pglite`, `lib/ffmpeg`, `lib/tailscale`…), the models, `lib/theme`, `lib/motion`, `lib/icon`, `lib/canvas-math`, `lib/diagram-layout` | `@/lib/<module>` |
+| `@brett_lamy/ui/opencode` | OpenCode's runtime loaders, hosts and vault stores | — |
+| `@brett_lamy/ui/cloudflare` | CloudflareDiagram with the Cloudflare catalog, systems, `wrangler.jsonc` and workerd readers. Only this entry and `@brett_lamy/ui/cloudflare-diagram` reach the catalog | — |
+| `@brett_lamy/ui/docstream/<entry>`, `@brett_lamy/ui/docstream-editor/<entry>` | Docstream and its editor ([above](#docstream-is-part-of-the-library)) | not copied: the item installs `@brett_lamy/ui` |
+| `@brett_lamy/ui/styles.css`, `@brett_lamy/ui/theme.css` | the stylesheet, and the optional iOS palette | the `bl-ui` and `bl-theme` items |
+
+A module that is the kit's wiring between its own modules (a context, a store, internal helpers) has no entry: a registry install copies it with the item that owns it, and none of its names is package API.
+
+What left the root: the engine modules' functions and types (`createVault`, `PGliteProvider`, `useQuery`, `parseCsv`, `createFfmpeg`, `TailscaleProvider`…) are on their `@brett_lamy/ui/lib/<module>` entry only; the canvas math is on `@brett_lamy/ui/lib/canvas-math`; OpenCode's runtime on `@brett_lamy/ui/opencode`; Docstream's parsers, helpers and demo data on `@brett_lamy/ui/docstream/<entry>`; and the kit's class fragments, contexts and plumbing (`FONT`, `BARH`, `pressable`, `IC`, `BLSafeCtx`, `chromeStore`…) are internal. [The table of renames](#components-that-merged-moved-or-were-renamed) gives every one of those names its new path, from the `@brett_lamy/ui/tui` row on. `@brett_lamy/ui/tui` itself is `@brett_lamy/ui/tui-preview`.
 
 ## Changes that apply everywhere
 
@@ -267,6 +291,7 @@ Where two components did one job, 6.0 keeps one and folds the other into it as a
 | `tailscale-login` docs page | [Sign in with Tailscale](https://blamy.github.io/ui/#/tailscale), page `tailscale` | |
 | `form`: `Form` | `<FieldGroup className="gap-5" render={<form onSubmit={save} />}>` | **care**. [Forms](https://blamy.github.io/ui/#/form) is a guide page now |
 | `form`: `FormSection`, `FormSectionProps` | `FieldSet` + `FieldLegend` + `FieldDescription` from `@/components/ui/field` | see [Forms and text fields](#forms-and-text-fields) |
+| `text-field`: `TextField`, `TextFieldProps` (and `FieldDescription`, `FieldError` from it) | `@/components/ui/field`: `Field` (its props are `ComponentProps<typeof Field>`), `FieldLabel`, `FieldDescription`, `FieldError` | **care**. `Field` owns only `name`, `disabled` and `invalid`; the value moves onto the control (see [Forms and text fields](#forms-and-text-fields)) |
 | `search-field`: `SearchField`, `SearchFieldProps`, `SearchFieldSubmitDetails` | `@/components/ui/search-input`: `SearchInput`, `SearchInputProps`, `SearchInputSubmitDetails` | slot `search-field` → `search-input`; new `size`, `icon`, `clearable`, `searchInputVariants` |
 | `lib/search-field-primitive`: `searchField`, `SearchFieldOptions`, `SearchFieldSubmitReason` | `lib/search-input-primitive`: `searchInput`, `SearchInputOptions`, `SearchInputSubmitReason` | |
 | `time-input`: `TimeInput` (the natural-language date and recurrence box), `TimeInputProps`, `TimeInputChange` | `@/components/ui/natural-time-input`: `NaturalTimeInput`, `NaturalTimeInputProps`, `NaturalTimeInputChange` | slots `natural-time-input*`. **`TimeInput` is now the segmented time control** (the old `TimeField`) |
@@ -327,7 +352,7 @@ Where two components did one job, 6.0 keeps one and folds the other into it as a
 | `CommandMenuDialogTrigger` | `DialogTrigger` from `@/components/ui/dialog` (`shortcut="mod+k"`) | |
 | `CommandMenuDialogContent overlayClassName` | `backdropClassName` | |
 | `tab-view`, `tab-bar` | `@/components/ui/tabs` | **care** |
-| `TabView` `placement`, `orientation` | `Tabs` `variant: 'segmented' \| 'underline' \| 'bar' \| 'rail' \| 'switcher' \| 'plain'`, `side: 'top' \| 'bottom' \| 'start' \| 'end'` | `side` sets the orientation; its default follows `variant` (`bar` bottom, `rail` and `workspace` start, others top) |
+| `TabView` `placement`, `orientation` | `Tabs` `variant: 'segmented' \| 'underline' \| 'bar' \| 'rail' \| 'switcher' \| 'plain'`, `side: 'top' \| 'bottom' \| 'start' \| 'end'` | `side` sets the orientation; its default follows `variant` (`bar` bottom, `rail` and `switcher` start, others top) |
 | `TabViewBar variant`, `hideOnScroll` | `Tabs variant` on the root + `TabsBar hideOnScroll` | the bar writes `data-hidden` while scrolled away |
 | `TabViewList`, `TabViewIndicator`, `TabViewPill`, `TabViewSeparator`, `TabViewHeader`, `TabViewFooter`, `TabViewPanels`, `TabViewPanel` | `TabsList`, `TabsIndicator`, `TabsPill`, `TabsSeparator`, `TabsHeader`, `TabsFooter`, `TabsPanels`, `TabsPanel` | every part takes its element's props and `ref` |
 | `TabViewTab` / `TabViewAction` `icon: string`, `title` | `TabsTab` / `TabsAction` `icon: IconName \| ReactNode`, the label as children | |
@@ -352,7 +377,7 @@ Where two components did one job, 6.0 keeps one and folds the other into it as a
 | ProgressRing / CountdownRing `size="md"` | `size="default"` (`ProgressRingSize`) | `showValue` needs 40px (`lg`) or more |
 | CountdownRing `warnAt`, `warnColor`, `data-warning`, `--ring-warn`; `labelSize`, `CountdownRingLabelSize` | `urgentAt`, `urgentTint`, `data-urgent`, `--ring-urgent`; removed (the value sizes with the ring) | |
 | ProgressRing `color`, `trackColor`; CountdownRing `color`, `urgentColor`, `trackColor`, `showLabel`; `countdownRingLabelVariants` | `tint`, `trackTint`; `tint`, `urgentTint`, `trackTint`, `showValue`; `countdownRingValueVariants` | caller colors are `tint` kit-wide, as on Avatar |
-| ProgressStepper data type `ProgressStep`; states `done`, `active`, `todo`; `--ck-stepper-accent`, `--ck-stepper-idle` | `ProgressStepperStep` (the part is `ProgressStepperItem`); `complete`, `current`, `upcoming`; `--stepper-accent`, `--stepper-track` | new parts `ProgressStep`, `ProgressStepIcon`, `ProgressStepTrack`, `ProgressStepLabel`, `ProgressStepDescription` |
+| ProgressStepper data type `ProgressStep`; states `done`, `active`, `todo`; `--ck-stepper-accent`, `--ck-stepper-idle` | `ProgressStepperStep` (the part is `ProgressStepperItem`); `complete`, `current`, `upcoming`; `--stepper-accent`, `--stepper-track` | new parts `ProgressStepperItem`, `ProgressStepperItemIcon`, `ProgressStepperItemTrack`, `ProgressStepperItemLabel`, `ProgressStepperItemDescription` |
 | NumberMorph `locales`; Morph `id` | `locale`; `layoutId` (`id` is the DOM id again) | |
 | `qr-svg`: `QRSvg`, `QRSvgProps` | `@/components/ui/qr-code`: `QRCode`, `QRCodeProps` | **care**. `value` is required |
 | QRSvg `title`, `color`; `lib/qr` type `QRCode` | `aria-label`, a `text-*` class (the modules are `currentColor`); `QRMatrix` | encode errors go to `onError` |
@@ -442,6 +467,7 @@ Where two components did one job, 6.0 keeps one and folds the other into it as a
 | `workbench-theme`: `WorkbenchTheme`, `WorkbenchThemeProps` | `<ThemeScope scope="workbench">` from `@/lib/theme` | **care**. [Theming](https://blamy.github.io/ui/#/theming), "The workbench scope" |
 | `useWorkbenchAppearance()`, `WorkbenchAppearanceProvider` | `useScopeAppearance('workbench')` or `useThemeScope()?.appearance`; a `ThemeScope` publishes its scope | |
 | `code-editor-window` (component) | `lib/code-editor-window` | CodeEditor's private renderer |
+| `syntax-highlighting`: `SyntaxHighlighting`, `SyntaxHighlightingHeader`, `SyntaxHighlightingTitle`, `SyntaxHighlightingCopyButton`, `SyntaxHighlightingContent`, `syntaxHighlightingVariants`, `useSyntaxHighlighting`, `SyntaxLineRange` | `<CodeEditor readOnly value={code}>` with `CodeEditorHeader`, `CodeEditorTitle`, `CodeEditorCopyButton`, `CodeEditorContent`; `codeEditorVariants`, `useCodeEditor()`, `CodeLineRange` | one code surface; see [Other components](#other-components) |
 | `FbMd`, `HlPre`, `hlTokens`, `DocstreamRefContext`, `DocstreamRefContextValue` (in `markdown-view`) | removed | |
 | `replay-preview`: `formatReplayTime`, `ReplayStage`, `preloadReplayStage`, `getReplayMarkers`, `getReplayMeta`, `getReplayPointerTrack`, `replayPointerAt`, `getReplayDevtools`, `replayDevtoolsAt`, `getReplayInspections`, `resolveReplayInspections`, `replayInspectionAt`, `replayDemoEvents` and their types | `@brett_lamy/ui/docstream/replay` (`replayDemoEvents` from `@brett_lamy/ui/docstream/replay/demo`) | the kit keeps `ReplayPreview` and the props, handle and data types |
 | `tui-preview`: `TuiEmbed`, `DEFAULT_TUI_RUNTIME_URL`, `isTuiCodeBlock` | `@brett_lamy/ui/docstream/tui` | the kit keeps `TuiPreview` |
@@ -452,12 +478,12 @@ Where two components did one job, 6.0 keeps one and folds the other into it as a
 | `strudel-player`: `DEFAULT_SAMPLES`, `strudelNow`, `StrudelPattern`, `StrudelHap` | `@brett_lamy/ui/docstream/strudel` | the kit keeps `StrudelPlayer`, `playStrudel`, `stopStrudel`, `updateStrudel`, `subscribeStrudel`, `getStrudelSnapshot` |
 | `stl-viewer`: `parseStl`, `isStlUrl`, `StlMesh` | `@brett_lamy/ui/docstream/stl` | the kit keeps `StlViewer` |
 | Terminal `size="md"` | `size="default"` | |
-| MarkdownEditor `invalid`; `onKeyDown`, `onPaste`; `contentClassName` | a `Field`; `handleKeyDown`, `handlePaste` (ProseMirror's); `classNames.content` | `onFocus` / `onBlur` get the event |
+| MarkdownEditor `invalid`; `onKeyDown`, `onPaste`; `contentClassName` | a `Field`; `handleKeyDown`, `handlePaste` (ProseMirror's); `classNames.content` | |
 | CodeEditor `contentClassName`; `onLineNumberClick`, `lineNumberClickable`, `lineNumberLabel`, `lineNumberTitle`; `scrollToLine` prop | `<CodeEditorContent className>`; `lineNumbers={{ onClick, clickable, label, title, side }}` (`CodeEditorLineNumbers`); `revealLine` | **care**. The handle keeps `scrollToLine()` |
 | CodeEditorCopyButton `label`, `onCopy(value)` | `aria-label`, `onValueCopy(value)` | it is the kit's Button |
 | CodeEditor and MarkdownEditor `variant="ghost"` | `variant="plain"` | the kit's one spelling for "no chrome" (Button's `ghost` is a different look and stays). CSS hooks `.bl-syntax-ghost` → `.bl-syntax-plain`, `.bl-mde[data-variant="ghost"]` → `[data-variant="plain"]` |
 | CodeEditor marker `active` | `pressed` (`aria-pressed`, `data-pressed`) | a marker that toggles, like a set breakpoint |
-| MarkdownEditor `onFocus(event)` / `onBlur(event)` (TipTap's, the DOM event) | `onEditorFocus` / `onEditorBlur`; `onFocus` / `onBlur` are React's, on the root | |
+| MarkdownEditor `onFocus()` / `onBlur()` (the editor's focus, no argument; TipTap's DOM event in 6.0 previews) | `onEditorFocus(event)` / `onEditorBlur(event)`; `onFocus` / `onBlur` are React's, on the root | |
 | OpenCode `height`, `theme`, `rounded-none border-0` to strip the chrome | a class (`className="h-[620px]"`), `appearance`, `variant="plain"` (`openCodeVariants`) | **care** |
 | `WbPopover`, `WbPopoverProps` (5.x); `WbPopoverContent`, `useSurfacePalette`, `wbPopoverSurface`, `isLightSurface` from `composer-popover` | `<PopoverContent variant="plain" palette="trigger">`; `useTriggerPalette` from `@/lib/trigger-palette` (`isLightSurface` is private) | `palette="trigger"` also on `DropdownMenuContent` and `SelectContent` |
 | `ComposerMenuItem`, `composerMenuItemVariants` | `DropdownMenuRadioItem` in a `DropdownMenuContent size="sm"` | |
@@ -523,12 +549,12 @@ Where two components did one job, 6.0 keeps one and folds the other into it as a
 | DataTable / RequestTable `layout`, `data-layout` | `presentation` (`'auto' \| 'table' \| 'stacked'`), `data-presentation` | mechanical |
 | CodeEditor `lineDecoration` `{ tint }` (`'current' \| 'info' \| 'success' \| 'warning' \| 'danger' \| 'muted'`), the band's `data-tint` | `{ tone }` with `destructive` for `danger`; `data-tone` | mechanical |
 | Workspace `TabDropRegion` `left` / `right`; `controller.getActiveTabsetId()`; a tabset's `data-active` | `WorkspaceDropRegion` `start` / `end` (the inline edges); `getCurrentTabsetId()`; `data-current` | the drop indicator's `data-region` is logical too |
-| Workspace types `TabNode`, `TabsetNode`, `SplitNode`, `TabNodeInput`, `TabsetNodeInput`, `SplitNodeInput`, `TabDropTarget`, `TabDropRegion` | `WorkspaceTabNode`, `WorkspaceTabsetNode`, `WorkspaceSplitNode`, `WorkspaceTabNodeInput`, `WorkspaceTabsetNodeInput`, `WorkspaceSplitNodeInput`, `WorkspaceDropTarget`, `WorkspaceDropRegion` | mechanical |
+| Workspace types `TabNode`, `TabsetNode`, `SplitNode`, `TabNodeInput`, `TabsetNodeInput`, `SplitNodeInput`, `TabDropTarget`, `TabDropRegion` | `WorkspaceTabNode`, `WorkspaceTabsetNode`, `WorkspaceSplitNode`; the three inputs are one type, `WorkspaceNodeInput` (a tabset or a split); `WorkspaceDropTarget`, `WorkspaceDropRegion` | mechanical |
 | FileUploadDropzone `hint` | `description` | mechanical |
 | TailscaleSummary `detail` | `description` | mechanical |
 | `useQuery`, `useLiveQuery`, `useSchema` result `isLoading` | `loading` | mechanical |
 | `ValueToken.tint` (`previewTokens`) | `ValueToken.type`, as `CodeToken.type` | mechanical |
-| ProgressStepper parts `ProgressStep`, `ProgressStepIcon`, `ProgressStepTrack`, `ProgressStepLabel`, `ProgressStepDescription`, `ProgressStepProps`, `ProgressStepState`; data type `ProgressStepItem`; slots `progress-step*` | `ProgressStepperItem`, `ProgressStepperItemIcon`, `ProgressStepperItemTrack`, `ProgressStepperItemLabel`, `ProgressStepperItemDescription`, `ProgressStepperItemProps`, `ProgressStepperItemState`; `ProgressStepperStep`; `progress-stepper-item*` | mechanical |
+| ProgressStepper parts `ProgressStep`, `ProgressStepIcon`, `ProgressStepTrack`, `ProgressStepLabel`, `ProgressStepDescription`, `ProgressStepProps`, `ProgressStepState`; data type `ProgressStepItem`; slots `progress-step*` (6.0 previews) | `ProgressStepperItem`, `ProgressStepperItemIcon`, `ProgressStepperItemTrack`, `ProgressStepperItemLabel`, `ProgressStepperItemDescription`, `ProgressStepperItemProps`, `ProgressStepperItemState`; `ProgressStepperStep`; `progress-stepper-item*` | mechanical |
 | `unsupportedMessage` (vault-gate) | `vaultUnsupportedMessage` | mechanical |
 | `direction`, `fades` (`lib/motion`) | `motionDirection`, `motionFades` | mechanical |
 | `deviceId` (`lib/durable-streams`) | `cloudDeviceId` | mechanical |
@@ -1049,7 +1075,7 @@ For Checkbox and Radio, a `className` that styled the old row (gap, text size, o
 
 ## Forms and text fields
 
-[Field](https://blamy.github.io/ui/#/field), [Input](https://blamy.github.io/ui/#/input), [Textarea](https://blamy.github.io/ui/#/textarea), [SearchInput](https://blamy.github.io/ui/#/search-input) (was SearchField), [Forms](https://blamy.github.io/ui/#/form), FilterInput (on [Filter](https://blamy.github.io/ui/#/filter)), [SqlEditor](https://blamy.github.io/ui/#/sql-console), [Spreadsheet](https://blamy.github.io/ui/#/spreadsheet).
+[Field](https://blamy.github.io/ui/#/field), [Input](https://blamy.github.io/ui/#/input), [Textarea](https://blamy.github.io/ui/#/textarea), [SearchInput](https://blamy.github.io/ui/#/search-input) (was SearchField), [Forms](https://blamy.github.io/ui/#/form), FilterInput (on [Filter](https://blamy.github.io/ui/#/filter)), SqlEditor (now `SqlConsoleEditor`, on [SqlConsole](https://blamy.github.io/ui/#/sql-console)), [Spreadsheet](https://blamy.github.io/ui/#/spreadsheet).
 
 `TextField` is gone. Its module is now `@/components/ui/field` (registry item `field`; the old item and file are deleted, with no alias), and `Field` owns only `name`, `disabled` and `invalid`: everything about the value moves onto the control.
 
@@ -1074,7 +1100,7 @@ For Checkbox and Radio, a `className` that styled the old row (gap, text size, o
 | `filter-input` | the result read out by a `role="status"` region inside it | UI SDK's `announce()` (`[data-ui-sdk-announcer]`); the input's `aria-describedby` is the hint only. The box is a `SearchInput` (`role="searchbox"`) |
 | `filter-input` | `query` (the parser options), `useFilterQuery({ debounce, now })` | `parse`; `debounceMs`, `reference` |
 | `sql-editor` | `onChange`, `isDisabled`, `isReadOnly`, `isRunning` | `onValueChange(value, details)`, `disabled`, `readOnly`, `pending` (`data-pending`) |
-| `sql-editor` | `size`, `footer`, `actions`, `runLabel` | `rows` (default 8); the footer is the children: `<SqlEditorFooter>{actions}</SqlEditorFooter>`, `<SqlEditorRun>Label</SqlEditorRun>`, `{false}` for none |
+| `sql-editor` | `size`, `footer`, `actions`, `runLabel` | `rows` (default 8); the footer is the children: `<SqlConsoleEditorFooter>{actions}</SqlConsoleEditorFooter>`, `<SqlConsoleEditorRun>Label</SqlConsoleEditorRun>`, `{false}` for none |
 | `sql-editor` | Run on Ctrl+Enter or ⌘+Enter everywhere | ⌘+Enter on Apple platforms, Ctrl+Enter elsewhere (`submitShortcut="mod+enter"`) |
 | `sql-editor` | textarea slot `sql-editor-input` | `textarea` (select `[data-slot=sql-console-editor] textarea`) |
 | `sql-editor` | ⌥↑ / ⌥↓ step through `history`; Escape brings the draft back | ↑ with the caret on the first line and ↓ on the last (no modifier), UI SDK's `createInputHistory`; ↓ past the newest brings the draft back, and Escape is no longer claimed. A step reports `reason: 'imperative'` (Textarea has no `history-key` reason yet); cancel it in `onValueChange` and the key goes to the browser. |
@@ -1322,7 +1348,7 @@ Every overlay is a root + a trigger part + a content part. The trigger has no lo
 | --- | --- | --- |
 | `popover` | `PopoverTrigger` wrapper with `isOpen` / `onOpenChange` | `Popover` root (`open`, `onOpenChange`, `modal`, `openOnHover`, `delay`, `closeDelay`, `presentation`, `controller`, `container`) + `PopoverTrigger` part |
 | `popover` | `Popover` = a bare styled surface (used with a `Dialog` or `ListBox` inside) | removed as a surface: `<PopoverContent variant="plain">` inside a `<Popover>`. Selects, comboboxes and menus own their own content parts. |
-| `popover` | `PopoverContent` (`placement`, `offset`, `{close}` children) | `PopoverContent` (`variant: 'panel' \| 'surface'`, `side`, `align`, `sideOffset` 8, `alignOffset`, `initialFocus`, `finalFocus`, `keepMounted`, `arrow`, `palette`). Name it with `PopoverTitle` (`className="sr-only"` to hide it): an `aria-label` on the content loses to the trigger's name. |
+| `popover` | `PopoverContent` (`placement`, `offset`, `{close}` children) | `PopoverContent` (`variant: 'panel' \| 'plain'`, `side`, `align`, `sideOffset` 8, `alignOffset`, `initialFocus`, `finalFocus`, `keepMounted`, `arrow`, `palette`). Name it with `PopoverTitle` (`className="sr-only"` to hide it): an `aria-label` on the content loses to the trigger's name. |
 | `popover` | `<Heading slot="title">`, `close()` | `PopoverTitle`, `<PopoverClose render={<Button size="sm" />}>Done</PopoverClose>`. New: `PopoverArrow`, `PopoverDescription`, `createPopoverController`. |
 | `tooltip` | `TooltipTrigger` wrapper (`delay` 500, `closeDelay` 200, `isOpen`, `isDisabled`, `trigger`) + `Tooltip` content | `Tooltip` root (`delay`, `closeDelay`, `open`, `disabled`, `type`, `toggleable`, `closeOnPress`, `shortcut`, `controller`) + `TooltipTrigger` part + `TooltipContent` (`side` top, `arrow`). `trigger="focus"` has no equivalent. |
 | `tooltip` | `TooltipProps` = content props | `TooltipProps` = root props; `TooltipContentProps` = content props. New: `TooltipArrow`, `TooltipShortcut`, `createTooltipController`. |
@@ -1466,7 +1492,7 @@ For a target you hit-test yourself (a canvas item, a map pin), call `controller.
 | `tabs` | `keyboardActivation="manual"`, `isDisabled` / `disabledKeys` | `activation="manual"`, `disabled` on each `TabsTab` |
 | `tabs` | `TabDirection`, `useTabPanelDirection()` | removed: panels read `data-activation-direction` and `data-starting-style` |
 | `tabs` | slots `tab-list`, `tab`, `tab-indicator`, `tab-panel` | `tabs-list`, `tabs-tab`, `tabs-indicator`, `tabs-panel` |
-| `tab-view`, `tab-bar` → `tabs` | `TabView`, `TabViewBar`, `TabViewList`, `TabViewTab`, `TabViewPanels`, `TabViewPanel`… from their own modules | `Tabs` with `variant` (`segmented`, `underline`, `bar`, `rail`, `workspace`, `plain`) and `side`, and the parts `TabsBar`, `TabsList`, `TabsTab`, `TabsIndicator`, `TabsPill`, `TabsSeparator`, `TabsAction`, `TabsHeader`, `TabsFooter`, `TabsPanels`, `TabsPanel`, all from `@/components/ui/tabs` (see [the table above](#components-that-merged-moved-or-were-renamed)) |
+| `tab-view`, `tab-bar` → `tabs` | `TabView`, `TabViewBar`, `TabViewList`, `TabViewTab`, `TabViewPanels`, `TabViewPanel`… from their own modules | `Tabs` with `variant` (`segmented`, `underline`, `bar`, `rail`, `switcher`, `plain`) and `side`, and the parts `TabsBar`, `TabsList`, `TabsTab`, `TabsIndicator`, `TabsPill`, `TabsSeparator`, `TabsAction`, `TabsHeader`, `TabsFooter`, `TabsPanels`, `TabsPanel`, all from `@/components/ui/tabs` (see [the table above](#components-that-merged-moved-or-were-renamed)) |
 | `tabs` (TabView) | `selectedKey` / `onSelectionChange`, `TabViewTab id textValue`, `TabViewPanel id shouldForceMount` | `value` / `onValueChange`, `TabsTab value`, `TabsPanel value keepMounted` |
 | `tabs` (TabView) | `TabViewIndicator` inside each tab; `variant="pill" attention` | one `TabsIndicator` inside `TabsList` (the list draws one unless you place your own); `TabsPill attention` inside each tab |
 | `tabs` (TabView) | tab render state `{ isSelected, isHovered, … }` (`TabRenderProps`) | `{ selected, disabled }`; hover with `group-hover/tab:` |
@@ -1685,7 +1711,7 @@ Rows take real roving focus (no `aria-activedescendant`): style them with `focus
 | `log-list`, `request-table` | `selectedId`, `defaultSelectedId`, `onSelectionChange(id)` | `value`, `defaultValue`, `onValueChange(value, details)` |
 | `log-list`, `request-table` | `onRowPress(row, index)` | `onAction(id, { row, index, reason, event })` |
 | `log-list`, `request-table` | `ref` to `LogListHandle` / `RequestTableHandle` | `controller` from `createLogListController()` / `createDataTableController()` (RequestTable is a preset of DataTable); `ref` reaches the root `<div>` |
-| `log-list`, `request-table` | `scrollToId(id, 'nearest')` | `controller.scrollToId(id, { align: 'auto' })`; also `focus()`, `setValue()`, and `setExpanded()` / `setPlayhead()` / `setSort()` / `setColumnWidths()` |
+| `log-list`, `request-table` | `scrollToId(id, 'nearest')` | `controller.scrollToId(id, { align: 'auto' })`; also `focus()`, `setValue()`, and `setExpanded()` / `setCurrentTime()` / `setSort()` / `setColumnWidths()` |
 | `log-list` | `expandedIds: Set`, `onExpandedChange(Set)` | `expanded: RowId[]`, `onExpandedChange(RowId[], details)` |
 | `log-list` | `onFollowChange(following)` | `onFollowingChange(following, details)` |
 | `request-table` | `onSortChange(sort)`, `onColumnWidthsChange(widths)` (every move) | `(sort, details)`, `(widths, details)` (once, on release) |
@@ -1693,10 +1719,10 @@ Rows take real roving focus (no `aria-activedescendant`): style them with `focus
 | `request-table` | a sort button inside each column header | the column header itself is pressed (click, Enter, Space) |
 | `request-table` | `stackBelow={480}` | `breakpoints={{ medium: 480 }}` (`DataTableBreakpoints`, defaults `medium` 480 and `regular` 760): two-line rows below `medium`; the root writes `data-size-class` |
 | `request-table` | column `hideBelow: number` (px; `type` 760, `size` 640) | `hideBelow: 'medium' \| 'regular'`, a size class; `type` and `size` both hide below `regular` (760px), so `size` now hides from 760px rather than 640px |
-| `request-table` | `data-playhead`, `--request-*` on the root | `--data-table-*` on `[data-slot=data-table-grid]`; the engine's slots are `data-table`, `data-table-row`, `data-table-cell`…, and the request parts keep `request-table-name`, `-bar`, `-link`, `-playhead` |
+| `request-table` | `data-playhead`, `--request-*` on the root | `--data-table-*` on `[data-slot=data-table-grid]`; the engine's slots are `data-table`, `data-table-row`, `data-table-cell`…, and the request parts keep `request-table-name`, `-bar`, `-link` (the playhead is `request-table-current-time`) |
 | `request-table` | `RequestColumn`, `RequestSort`, `requestTableVariants`, `sortRequests` | `DataTableColumn`, `DataTableSort`, `dataTableVariants`, `sortDataTableRows`; sizes under 1 kB read "280 B" |
 | `log-list`, `request-table` | `density: 'compact' \| 'comfortable'`; an empty list's text | adds `default`; `emptyState` (the kit's `EmptyState`) |
-| `result-table` → `data-table` | `ResultTable result durationMs maxRows maxHeight onCopy toolbar emptyMessage resizable` (react-aria Table) | removed: the SQL console renders each result with `DataTable` (virtualized, every column resizes, a value too long for its cell opens in a popover). A host with rows of its own writes `<DataTable rows columns selectionMode="none" toolbar>`; the console's height is `--sql-console-result-height` |
+| `result-table` → `data-table` | `ResultTable result durationMs maxRows maxHeight onCopy toolbar emptyMessage resizable` (react-aria Table) | removed: the SQL console renders each result with `DataTable` (virtualized, every column resizes, a value too long for its cell opens in a popover). A host with rows of its own writes `<DataTable rows columns mode="none" toolbar>`; the console's height is `--sql-console-result-height` |
 | `sql-console` | `sidebar`, `transfer`, `headerActions`, `layout`, `resultMaxHeight` | compose `SqlConsoleHeader` (with `SqlConsoleDatabaseMenu`), `SqlConsoleSidebar`, `SqlConsoleEditor`, `SqlConsoleResults`; two columns only with a sidebar in a medium box |
 
 ```tsx
@@ -2095,7 +2121,7 @@ The sheet is a bottom UI SDK Drawer in its own layer host, with snap points at t
 | `onDismiss()` | `onVisibleChange(visible, details)` (and `defaultVisible`); `onVisibleChange={(v) => { if (!v) close() }}` |
 | `dismissible`, `minimizable` | `collapse: 'fab' \| 'hide' \| 'none'` (default `fab`): `dismissible` is `collapse="hide"`, `minimizable={false}` is `collapse="none"`; new controlled `minimized` / `defaultMinimized` / `onMinimizedChange(minimized, details)` |
 | `detents`, `label` | `snapPoints` (the same values), `aria-label` (it names the sheet, `role="dialog"`) |
-| `appearance: 'glass' \| 'sheet'`, `tone: 'auto' \| 'dark' \| 'light'` | `variant: 'glass' \| 'sheet'`, `appearance: 'auto' \| 'light' \| 'dark'` (`auto` mixes the material from the page's own tokens) |
+| `appearance: 'glass' \| 'sheet'`, `tone: 'auto' \| 'dark' \| 'light'` | `variant: 'glass' \| 'card'` (the old `'sheet'` look is `'card'`), `appearance: 'auto' \| 'light' \| 'dark'` (`auto` mixes the material from the page's own tokens) |
 | `fabPosition` (eight corners and edges), `fabIcon` | `<FloatingSheetFab side align>{icon}</FloatingSheetFab>`: `side: 'top' \| 'bottom' \| 'start' \| 'end'`, `align: 'start' \| 'center' \| 'end'` (the FAB button itself; `aria-label` names it) |
 | `FloatingSheet.Body`, `.Foot`, `.Fab`, `.Context`, `.useFloatingSheet` | `FloatingSheetBody`, `FloatingSheetFooter`, `FloatingSheetFab`, `useFloatingSheet()`; Body and Footer render where they are written (Body first) |
 | `useFloatingSheet().progress` live on every drag frame | the resting stop (0 at the peek, 1 full); style live effects off the `--fs-grown` variable on `[data-slot=floating-sheet-surface]`. `setOpen(open, given?)` and `setMinimized(m, given?)` go through the change callbacks |
@@ -2149,7 +2175,7 @@ The sheet is a bottom UI SDK Drawer in its own layer host, with snap points at t
 | `adaptive-pane` | `onOpen` (turned on the edge strip) | `swipeToOpen`; the open arrives as `onOpenChange(true, { reason: 'swipe' })`. It opens past a third of the host's width, or sooner with a flick |
 | `adaptive-pane` | `swipe` | unchanged: `swipe={false}` keeps the drawer from following a drag shut; `dismissible={false}` turns off every dismissal |
 | `adaptive-pane` | `scrimClassName`, `scrim`, `shadow`; `columnClassName` / `columnStyle` beside `className` / `style` | removed (the scrim is `bg-overlay`, one panel shadow); one `className` / `style` on the pane in every presentation, or a function of `{ presentation, open, side }` |
-| `adaptive-pane` | `side: 'left' \| 'right'` (default `left`) | also UI SDK's logical `start` / `end`, which follow the reading direction; the default is `start` |
+| `adaptive-pane` | `side: 'left' \| 'right'` (default `left`) | `side: 'start' \| 'end'` only (UI SDK's logical sides, which follow the reading direction); the default is `start` |
 | `adaptive-pane` | `hidden` unmounted the children | children stay mounted, off the page |
 | `adaptive-pane` | `sideDrawerVariants`, `sideDrawerPageClass`, `--side-drawer-under`, slots `side-drawer-panel`, `-bar`, `-back`, `-close` | removed; `adaptivePanePageClass`, `--adaptive-pane-under`, `data-adaptive-pane-swiping` / `-settling`; slots `adaptive-pane-page`, `adaptive-pane-header`, `adaptive-pane-close` |
 | `adaptive-pane` | — | New: `createAdaptivePaneController()`, `aria-label`, `dismissible`, `modal` |
@@ -2241,10 +2267,10 @@ Swipe actions are UI SDK's `createSwipeActions` and reordering is `createReorder
 | `list` | → showed the trailing actions, ← the leading ones | ← shows the trailing actions and → the leading ones (the way a swipe moves the row) |
 | `list` | `ListRowAction.onAction()` | `onAction(details)` with `reason` `action-press`, `full-swipe` or `delete-key` |
 | `list` | one open row at a time across every list | an open row closes on any press outside it |
-| `list` | — | New: `ListRow controller={createListRowController()}` (`show('leading' \| 'trailing')`, `close()`) |
+| `list` | — | New: `ListRow controller={createListRowController()}` (`show('start' \| 'end')`, `close()`) |
 | `list` | rows directly in the section; buttons `[data-row-action]`, grip `[data-row-grip]` | each row wrapped in `[data-slot=list-section-item]` inside `[data-slot=list-section-rows]` (a `list`); buttons `[data-slot=list-row-action]`, grip `[data-slot=list-section-handle]`; actions `[data-slot=list-row-actions][data-side=start \| end]` |
 | `index-bar` | `avail`, `onLetter(key)`, the exported `AL` | `items={alphabetItems(available)}` (`items` is required) and `onJump` |
-| `index-bar` | `onJump(key, point, index)` | `onJump(key, details)`: `details` has `index`, `item`, `reason` (`drag`, `list-navigation`, `item-press`, `imperative`) and `event`; keys stop at either end, PageUp and PageDown work; options are `[data-slot=index-bar-option]` with `data-highlighted` |
+| `index-bar` | `onJump(key, point, index)` | `onJump(value, details)` (items take `value`, not `key`): `details` has `index`, `item`, `reason` (`drag`, `list-navigation`, `item-press`, `imperative`) and `event`; keys stop at either end, PageUp and PageDown work; options are `[data-slot=index-bar-option]` with `data-highlighted` |
 | `index-bar` | `side: 'left' \| 'right'`, `label`, `top` / `bottom` / `width`, `value`, item `dim` | `side: 'start' \| 'end'` (default `end`), `aria-label`, classes on the rail (`className="top-14 bottom-2"`), `current` (`aria-current`), item `disabled` (`aria-disabled`, still reachable) |
 | `trace-timeline` | `label`, `top`, `bottom`, `railWidth`, `renderPreview`, `previewLines`, `previewWidth` | `aria-label` (default "Timeline"), classes on the rail, a `<TraceTimelinePreview lines width>{(time, stop) => …}</TraceTimelinePreview>` child; Alt+↑ / ↓ move between lanes, `[` / `]` between requests |
 | `message-scroller` | `items={[{ id, anchor, node }]}`, type `MessageScrollerItem` | `MessageScrollerItem value anchor` children (a component; items may be nested), `MessageScrollerItemProps`; new `aria-label`, `ref`, `--message-column-width` / `--message-gutter` |
@@ -2386,7 +2412,7 @@ The Composer's parts are the kit's own now: its buttons are the kit's `Button`, 
 | --- | --- | --- |
 | `code-editor` | `onLineNumberPress`, `isLineNumberPressable`, `lineNumberLabel`, `lineNumberTitle` (also on `CodeEditorWindow`) | one object: `lineNumbers={{ onClick, clickable, label, title, side }}` (`CodeEditorLineNumbers`). `CodeEditorWindow` is CodeEditor's private renderer now (`lib/code-editor-window`) |
 | `code-editor` | `scrollToLine` prop, `contentClassName` | `revealLine` (the handle keeps `scrollToLine()`); a class on `<CodeEditorContent>` |
-| `code-editor` | gutter `onPress`, `isPressable`; marker `onPress`, `isActive` | gutter `onClick`, `clickable`; marker `onClick`, `active` |
+| `code-editor` | gutter `onPress`, `isPressable`; marker `onPress`, `isActive` | gutter `onClick`, `clickable`; marker `onClick`, `pressed` (`aria-pressed`, `data-pressed`) |
 | `code-editor` | `[data-slot=code-editor-marker]`, `code-editor-gutter-cell`, `code-editor-copy` on pressable cells and the copy button | UI SDK's `[data-slot=button]`; select cells with `[data-code-editor-cell="marker"]` (or the gutter id) |
 | `code-editor` | `CodeEditorCopyButton` react-aria Button props, `label`, `onCopy(value)` | the kit's `Button` (`variant="quiet" size="icon-sm"` unless you pass others): `onClick`, `disabled`, `aria-label` (default "Copy code"), `onValueCopy(value)` |
 | `code-editor` | `onChange(value, change)`, `onEdit(change)`, `CodeEditorChange` with `origin` (`input`, …) | `onValueChange(value, details)`, `onEdit(details)`: `CodeEditorValueChangeDetails`, UI SDK's change details (`reason`, `event`, `source`, `cancel()`) plus `from` / `to` / `newTo` / `text` / `removed`. `origin` is `reason`, and `input` is `input-change`. `cancel()` takes an edit back in an editor without `value` |
@@ -2428,7 +2454,7 @@ The Composer's parts are the kit's own now: its buttons are the kit's `Button`, 
 | `video-timeline` | every clip a Tab stop; ⇧←/→ nudged a clip a second; the ruler's Page Up/Down moved ten seconds | the clips are one Tab stop (⌥ + arrows move between them, Home/End along a track); ⇧←/→ trims the end, ⌥⇧←/→ the start, ↑/↓ change track; the ruler (UI SDK `Slider`) moves a second with ⇧ or Page Up/Down |
 | `waveform` | `tone="primary"` | `className="text-primary"`; tones `default`, `muted`, `success`, `warning`, `destructive`; `ref` |
 | `terminal` | `size: 'sm' \| 'md'` (default `md`) | `size: 'sm' \| 'default'` (default `default`) |
-| `markdown-editor` | `invalid`, `onKeyDown` / `onPaste` returning a boolean, `onFocus()` / `onBlur()`, `contentClassName`, `forwardRef` | a `Field` around it; `handleKeyDown` / `handlePaste` (ProseMirror's names); `onFocus(event)` / `onBlur(event)`; `classNames.content`; `ref` as a prop. The default look is the shared field surface |
+| `markdown-editor` | `invalid`, `onKeyDown` / `onPaste` returning a boolean, `onFocus()` / `onBlur()`, `contentClassName`, `forwardRef` | a `Field` around it; `handleKeyDown` / `handlePaste` (ProseMirror's names); `onEditorFocus(event)` / `onEditorBlur(event)` (`onFocus` / `onBlur` are React's, on the root); `classNames.content`; `ref` as a prop. The default look is the shared field surface |
 | `open-code` | `height` (a number), `theme: 'light' \| 'dark'`, `rounded-none border-0` to drop the card | size it with a class (`className="h-[620px]"`), `appearance` (default: the nearest ThemeScope's), `variant="plain"` (`openCodeVariants`) |
 | `workbench-theme` | `<WorkbenchTheme appearance tint>`, `useWorkbenchAppearance()`, `WorkbenchAppearanceProvider` | `<ThemeScope scope="workbench" appearance tint>` (its popups wear the scope too), `useScopeAppearance('workbench')` or `useThemeScope()?.appearance` |
 | `markdown-view` | `FbMd`, `HlPre`, `hlTokens`, `DocstreamRefContext` | removed. `MarkdownView` takes its root's `div` props and `ref`, and writes `data-streaming` |
@@ -2442,7 +2468,7 @@ const markers = (line) => sites(line).map((column) => ({ column, label: `Break a
 
 // 6.0
 const gutters = [{ id: 'bp', width: 16, onClick: toggle, clickable: canBreak, render: dot }]
-const markers = (line) => sites(line).map((column) => ({ column, label: `Break at ${column}`, active: on(line, column), onClick: () => flip(line, column) }))
+const markers = (line) => sites(line).map((column) => ({ column, label: `Break at ${column}`, pressed: on(line, column), onClick: () => flip(line, column) }))
 <CodeEditor readOnly lines={lines} gutters={gutters} markers={markers} lineNumbers={{ onClick: jump, clickable: ran }} />
 ```
 
@@ -2460,6 +2486,27 @@ const [canvas] = useState(() => createCanvasController())
 <Button onClick={() => canvas.fit(unionRect(rects))}>Fit</Button>
 <TraceTimeline value={t} onValueChange={(t) => setT(t)} onValueCommit={(t) => video.seek(t)} />
 ```
+
+## New in 6.0
+
+Nothing here replaces something you have; each page says what it is for and when to use a sibling instead.
+
+| What | Where |
+| --- | --- |
+| [Diagram](https://blamy.github.io/ui/#/diagram): nodes, edges and regions on a Canvas, from plain data; read-only, or an editor with selection, connecting, undo, a controller and agent actions. ELK lays it out when asked (an optional peer) | `@brett_lamy/ui/diagram`, root |
+| [DiagramFrame](https://blamy.github.io/ui/#/diagram-frame): a board with a panel beside it, a drawer, or a page pushed over it, from the frame's own size class | `@brett_lamy/ui/diagram-frame`, root |
+| [StateDiagram](https://blamy.github.io/ui/#/state-diagram): an XState machine drawn, simulated and edited (`xstate`, an optional peer) | `@brett_lamy/ui/state-diagram`, root |
+| [CloudflareDiagram](https://blamy.github.io/ui/#/cloudflare-diagram): a system of Cloudflare's services, from a catalog, `wrangler.jsonc` or a workerd config; and the [Cloudflare Studio](https://blamy.github.io/ui/#/blocks) block | `@brett_lamy/ui/cloudflare`, `@brett_lamy/ui/cloudflare-diagram` (not the root, so no other import reaches the catalog) |
+| [DataTable](https://blamy.github.io/ui/#/data-table): the virtualized table under RequestTable and the SQL console's results | `@brett_lamy/ui/data-table`, root |
+| [Toolbar](https://blamy.github.io/ui/#/toolbar): one tab stop for a row of controls, floating or as the iOS bottom bar | `@brett_lamy/ui/toolbar`, root |
+| [EmptyState](https://blamy.github.io/ui/#/empty-state): what every `emptyState` shows by default | `@brett_lamy/ui/empty-state`, root |
+| [Swap](https://blamy.github.io/ui/#/swap): content that changes in place, by sliding or popping | `@brett_lamy/ui/swap`, root |
+| [Field](https://blamy.github.io/ui/#/field), [Listbox](https://blamy.github.io/ui/#/listbox), [SearchInput](https://blamy.github.io/ui/#/search-input), [DateInput](https://blamy.github.io/ui/#/date-input), [NaturalTimeInput](https://blamy.github.io/ui/#/natural-time-input), [QRCode](https://blamy.github.io/ui/#/qr-code): the modules that replace TextField, ListBox, SearchField, DateField, TimeInput and QRSvg, with new APIs | their own entries, root |
+| `AlertDialog` and `createConfirm()`, on the [Dialog](https://blamy.github.io/ui/#/dialog) page; `AvatarGroup` in a module of its own | `@brett_lamy/ui/dialog`, `@brett_lamy/ui/avatar-group`, root |
+| Controllers for every stateful component (`createDialogController()`, `createTreeController()`…), and agent actions on every primitive ([Agent-ready components](https://blamy.github.io/ui/#/agent-ready)) | with each component |
+| The behaviors the containers are built from, documented for parts of your own: [Behaviors](https://blamy.github.io/ui/#/behaviors) and [The kit's behaviors](https://blamy.github.io/ui/#/behaviors-kit) | `@ui-sdk/core`, `@/lib/<behavior>` |
+
+The 5.x docs pages on react-aria's hooks (`aria-hooks`, `aria-press`, `aria-focus`…) are gone with react-aria; the Behaviors pages cover what UI SDK offers in their place. The old `docstream` page is [MarkdownView](https://blamy.github.io/ui/#/markdown-view)'s, and `#/docstream` is now docstream's own documentation.
 
 ## What looks different
 
@@ -2517,9 +2564,11 @@ const [canvas] = useState(() => createCanvasController())
 
 Popups opened inside a `BLProvider` (or any layer host) stay inside it, as before, and a popup presented as a sheet now dims only that host.
 
-## Diagram, DiagramFrame and StateDiagram
+## Diagrams from the preview
 
-Diagram, DiagramFrame and StateDiagram are new in 6.0. An app built on the preview branch (5.17) changes these:
+Diagram, DiagramFrame, StateDiagram, CloudflareDiagram and docstream's capnp fence were never in a 5.x release or in docstream 2.0.1: a 5.x app starts from their pages. They were developed on an unpublished branch (its package said 5.17.0, but the 5.17.0 on npm doesn't have them), and an app built on that branch changes what follows.
+
+### Diagram, DiagramFrame and StateDiagram
 
 | Before | After |
 | --- | --- |
@@ -2545,9 +2594,7 @@ Diagram, DiagramFrame and StateDiagram are new in 6.0. An app built on the previ
 | StateDiagram `data-slot="simulation-event"`, `edit-undo`… on buttons | `data-action="send"`, `undo`…; fields `data-field="name"`, `event`, `guard` |
 | The panel's Segmented between Edit and Run | Tabs (`TabsList`, `TabsTab`, `TabsPanel keepMounted`) |
 
-## CloudflareDiagram and Cloudflare Studio
-
-CloudflareDiagram, its catalog and the Cloudflare Studio block are new in 6.0. An app built on the preview branch (`@brett_lamy/ui/cloudflare` at 5.17) changes these:
+### CloudflareDiagram and Cloudflare Studio
 
 | Before | After |
 | --- | --- |
@@ -2568,3 +2615,14 @@ CloudflareDiagram, its catalog and the Cloudflare Studio block are new in 6.0. A
 | `data-slot="cloudflare-service-machine"` | `data-part="machine"` (a Badge) |
 
 The block's export is a Dialog (a sheet at a phone's size), and its buttons are `data-action="new"`, `open`, `export`, `download`, `download-all`.
+
+### The capnp fence (`@brett_lamy/ui/docstream/capnp`)
+
+| Before | After |
+| --- | --- |
+| `section.docs-capnp`, with a Source / Diagram button (`.docs-capnp-toggle`, `aria-pressed`) that swapped the board for the source | A split card like the other diagram fences (`.docs-split-card.docs-capnp-preview`, still `[data-docstream-capnp]`): the board and its notes stay, the header has a copy button, and the source is a disclosure under them (`.docs-capnp-source`: a `<details>` before hydration, UI SDK's Collapsible after) |
+| `pre.docs-capnp-source` | `.docs-capnp-source-body > pre.docs-split-source` |
+| A workerd config fence never reached `renderCode` | `renderCode` is asked first, as for any code fence; return `null` and the config is drawn |
+| `CapnpPreview` returned the board and its notes | A result pane, `.docs-split-render-pane.docs-capnp-result`, with `label` (default "Cloudflare services") and `action` |
+| — | `appearance` (`auto`, `light`, `dark`) on `CapnpDiagram`, `CapnpPreview` and `CapnpEmbed`; types `CapnpAppearance`, `CapnpPreviewProps`, `CapnpEmbedProps` |
+| An embed that couldn't be read: a bare `[role=alert]` | The same alert, inside the card |

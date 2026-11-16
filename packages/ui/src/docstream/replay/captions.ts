@@ -33,7 +33,7 @@ function cueText(lines: string[]): string {
 
 /** The cues of a WebVTT file, by start time. Malformed blocks are skipped; text that isn't WebVTT gives none. */
 export function parseWebVTT(text: string): ReplayCaption[] {
-  const blocks = text.replace(/^﻿/, '').replace(/\r\n?/g, '\n').split(/\n{2,}/)
+  const blocks = text.replace(/^\uFEFF/, '').replace(/\r\n?/g, '\n').split(/\n{2,}/)
   if (!/^WEBVTT(?:[ \t]|$)/.test(blocks[0] ?? '')) return []
   const cues: ReplayCaption[] = []
   for (const block of blocks.slice(1)) {

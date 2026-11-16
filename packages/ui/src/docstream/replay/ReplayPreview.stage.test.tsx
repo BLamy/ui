@@ -1,11 +1,8 @@
 // @vitest-environment happy-dom
 // A stage of your own, DevTools as data, and Elements through an interface: the seams that let the player sit on
 // something other than rrweb. Nothing here loads rrweb, and the mock below fails if anything tries to.
-// react-dom is installed (a peer of our deps) but its types are not; the tests only need these functions.
-// @ts-ignore
-import { renderToString as untypedRenderToString } from "react-dom/server"
-// @ts-ignore
-import { createRoot as untypedCreateRoot } from "react-dom/client"
+import { renderToString } from "react-dom/server"
+import { createRoot } from "react-dom/client"
 import { act, forwardRef, useImperativeHandle, type ReactElement } from "react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { replayDemoEvents } from "./demo"
@@ -14,8 +11,6 @@ import { getReplayDevtoolsMarkers } from "./markers"
 import { ReplayPreview } from "./ReplayPreview"
 import type { ReplayCustomStage, ReplayCustomStageProps, ReplayElementsSource, ReplayStageHandle } from "./stage-types"
 
-const renderToString = untypedRenderToString as (element: ReactElement) => string
-const createRoot = untypedCreateRoot as (el: Element) => { render(node: ReactElement): void; unmount(): void }
 
 vi.mock("./ReplayStage", () => ({
   preloadReplayStage: () => Promise.reject(new Error("rrweb's stage was asked for")),
@@ -318,7 +313,7 @@ describe("Elements through an interface", () => {
     const doc = page()
     // In the iframe it was rebuilt in, nothing has a size. The engine knows where it was on screen.
     const button = doc.getElementById("go")!
-    button.getBoundingClientRect = () => ({ left: 0, top: 0, width: 0, height: 0, right: 0, bottom: 0, x: 0, y: 0, toJSON() {} }) as DOMRect
+    button.getBoundingClientRect = () => ({ left: 0, top: 0, width: 0, height: 0, right: 0, bottom: 0, x: 0, y: 0, toJSON: () => ({}) }) as DOMRect
     const asked: Element[] = []
     const source: ReplayElementsSource = {
       getDocument: () => doc,
@@ -346,7 +341,7 @@ describe("Elements through an interface", () => {
 
   it("a source with no rectangles leaves it to the document's own", async () => {
     const doc = page()
-    doc.getElementById("go")!.getBoundingClientRect = () => ({ left: 1, top: 2, width: 3, height: 4, right: 4, bottom: 6, x: 1, y: 2, toJSON() {} }) as DOMRect
+    doc.getElementById("go")!.getBoundingClientRect = () => ({ left: 1, top: 2, width: 3, height: 4, right: 4, bottom: 6, x: 1, y: 2, toJSON: () => ({}) }) as DOMRect
     const el = await mount(<ReplayPreview stage={custom} lazy={false} devtools={data} elements={{ getDocument: () => doc }} inspections={[{ time: 1_000, element: "#go" }]} />, 1_100)
     const box = el.querySelector<HTMLElement>('[data-slot="replay-preview-highlight"]')!
     expect([box.style.left, box.style.width]).toEqual(["1px", "3px"])

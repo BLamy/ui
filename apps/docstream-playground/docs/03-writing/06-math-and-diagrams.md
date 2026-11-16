@@ -365,7 +365,27 @@ const main :Workerd.Worker = (
 );
 ```
 
-Import `CapnpDiagram`, or the board alone as `CapnpPreview`, from `@brett_lamy/ui/docstream/capnp`. The reader is `readWorkerdConfig` on `@brett_lamy/ui/cloudflare`, which, with the diagram and its catalog, loads only when a config's displayed.
+A config in a file of its own is embedded, and drawn the same way, by its file name. The file goes through the host's [asset resolver](../05-media/06-assets.md), like a model or an image, so a path beside the page works in a repo and in a [`DocsSite`](../02-docs-site/04-loading-files.md):
+
+{% embed url="workerd/event-log.capnp" %}
+
+```md
+{% embed url="workerd/event-log.capnp" %}
+```
+
+A config that doesn't read says where, and the source is still a press away:
+
+```capnp
+using Workerd = import "/workerd/workerd.capnp";
+
+const config :Workerd.Config = (
+  services = [ (name = "main", worker = .main ],
+);
+```
+
+A host's [`renderCode`](05-code.md) is asked first, as for any code fence: return `null` and the config is drawn. The board is the library's own `CloudflareDiagram`, so the page needs the library's stylesheet, `@brett_lamy/ui/styles.css`, beside docstream's. It follows the page's light or dark scheme, as the terminal preview does; `appearance` (`"auto"`, `"light"` or `"dark"`) on `CapnpDiagram` sets it.
+
+Import `CapnpDiagram`, the board alone as `CapnpPreview`, or the embed as `CapnpEmbed`, from `@brett_lamy/ui/docstream/capnp`. The reader is `readWorkerdConfig` on `@brett_lamy/ui/cloudflare`, which, with the diagram and its catalog, loads only when a config is displayed. Every service gets its place from `placeInLayers`, so no layout engine loads either.
 
 ## tscircuit examples
 

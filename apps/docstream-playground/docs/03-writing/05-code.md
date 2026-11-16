@@ -242,7 +242,7 @@ export function Docs({ markdown }: { markdown: string }) {
 | `details.placement` | `"block"`: a fence on its own; you draw all of it (header and copy button included). `"tab"`: one tab of a [code-only tab set](02-callouts-and-tabs.md#code-only-tabs-collapse); you draw the panel's body, and the tab strip, title and copy button stay docstream's. |
 | `details.highlighted` | Docstream's own highlighted `<code>` for the fence, to put inside your chrome. |
 
-Widget fences never reach it: `mermaid`, `xstate`, `tscircuit`, `strudel`, `tui` and live React fences keep their widgets. `renderCode` is new in 2.0.1.
+Widget fences never reach it: `mermaid`, `xstate`, `tscircuit`, `strudel`, `tui` and live React fences keep their widgets. A `capnp` fence does reach it, as it did before docstream drew any: one that's a workerd config and that you decline (`null`) is [drawn as its services](06-math-and-diagrams.md#workerd-configs). `renderCode` is new in 2.0.1.
 
 ## Copy buttons
 
@@ -255,9 +255,10 @@ Every code surface has one:
 | Code-only [tab set](02-callouts-and-tabs.md#code-only-tabs-collapse) | The selected tab's code |
 | `{% command %}` | The command for the selected package manager |
 | Mermaid / math card | The diagram or TeX source |
+| workerd config card | The config's source |
 | Demo code panel | The file shown |
 
-Copy buttons write to the clipboard and confirm with a check mark. On touch screens they are 44px targets, and the floating one shows at full strength, as there is no hover to reveal it. Keyboard focus draws a 2px ring in `--primary` with a gap in the panel's color. The `CopyButton` component and `copyText` helper are exported for your own chrome.
+Copy buttons write to the clipboard and confirm with a check mark. Each is named for what it copies ("Copy code", "Copy npm command", "Copy src/App.tsx"), by its tooltip and its own `aria-label`, so the name is there before the tooltip ever shows. On touch screens they are 44px targets, and the floating one shows at full strength, as there is no hover to reveal it. Keyboard focus draws a 2px ring in `--primary` with a gap in the panel's color. The `CopyButton` component and `copyText` helper are exported for your own chrome.
 
 ## Collapsible code
 

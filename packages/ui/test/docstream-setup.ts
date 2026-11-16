@@ -18,15 +18,15 @@ if (part) {
   vi.setConfig({ testTimeout: 20_000 });
   if (typeof HTMLElement !== 'undefined') {
     // Without the Popover API UI SDK falls back to a portal on <body>, which the server renderer refuses.
-    HTMLElement.prototype.showPopover = function () {};
-    HTMLElement.prototype.hidePopover = function () {};
+    HTMLElement.prototype.showPopover = () => {};
+    HTMLElement.prototype.hidePopover = () => {};
     Element.prototype.getAnimations = () => [];
-    Element.prototype.scrollIntoView = function () {};
+    Element.prototype.scrollIntoView = () => {};
     Element.prototype.checkVisibility = () => true;
     globalThis.ResizeObserver ??= class {
-      observe() {}
-      unobserve() {}
-      disconnect() {}
+      observe = () => {};
+      unobserve = () => {};
+      disconnect = () => {};
     } as unknown as typeof ResizeObserver;
   }
   if (part === 'docstream-editor' && typeof document !== 'undefined') {

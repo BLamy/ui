@@ -127,7 +127,7 @@ export const knob = definePrimitive({
     }
   },
   slots: (slot) => ({
-    root: slot<{}, { value: number; fraction: number; text: string; disabled: boolean; dragging: boolean }>({
+    root: slot<object, { value: number; fraction: number; text: string; disabled: boolean; dragging: boolean }>({
       state: (state) => ({
         value: state.value,
         fraction: fractionOf(state.value, state, state.log ? "log" : "linear"),
@@ -140,7 +140,7 @@ export const knob = definePrimitive({
         "data-dragging": state.dragging ? "" : undefined,
       }),
     }),
-    dial: slot<{}, { value: number; fraction: number; disabled: boolean; dragging: boolean }>({
+    dial: slot<object, { value: number; fraction: number; disabled: boolean; dragging: boolean }>({
       role: "slider",
       focus: "tab-stop",
       keys: [...KEYS],
@@ -168,7 +168,7 @@ export const knob = definePrimitive({
         dblclick: (event, { api }) => api.reset(event),
       },
     }),
-    value: slot<{}, { text: string }>({
+    value: slot<object, { text: string }>({
       state: (state) => ({ text: (state.format ?? plain)(state.value) }),
       attrs: (state) => ({ "data-disabled": state.disabled ? "" : undefined }),
     }),

@@ -1,9 +1,6 @@
 // @vitest-environment happy-dom
-// react-dom is installed (a peer of our deps) but its types are not; the tests only need these functions.
-// @ts-ignore
-import { renderToString as untypedRenderToString } from "react-dom/server"
-// @ts-ignore
-import { createRoot as untypedCreateRoot } from "react-dom/client"
+import { renderToString } from "react-dom/server"
+import { createRoot } from "react-dom/client"
 import { act, forwardRef, useImperativeHandle, type ReactElement } from "react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { replayDemoEvents } from "./demo"
@@ -12,8 +9,6 @@ import { ReplayPreview, formatReplayTime } from "./ReplayPreview"
 import type { ReplayPreviewHandle } from "./ReplayPreview"
 import type { ReplayStageHandle, ReplayStageProps } from "./stage-types"
 
-const renderToString = untypedRenderToString as (element: ReactElement) => string
-const createRoot = untypedCreateRoot as (el: Element) => { render(node: ReactElement): void; unmount(): void }
 
 // gpu-lexer needs WebGPU: a stand-in that marks `const` a keyword and identifiers before "(" functions.
 vi.mock("gpu-lexer", () => ({
@@ -303,7 +298,7 @@ describe("player behaviour", () => {
     // rrweb marks replayed hover with `:hover` classes; DevTools shows the page's own.
     doc.body.innerHTML = '<main class=":hover"><form><input placeholder="Search tasks" class="field :hover"><button>Go</button></form></main>'
     const input = doc.querySelector("input")!
-    input.getBoundingClientRect = () => ({ left: 40, top: 60, width: 220, height: 32, right: 260, bottom: 92, x: 40, y: 60, toJSON() {} }) as DOMRect
+    input.getBoundingClientRect = () => ({ left: 40, top: 60, width: 220, height: 32, right: 260, bottom: 92, x: 40, y: 60, toJSON: () => ({}) }) as DOMRect
     stage.doc = doc
     stage.time = 1000
     const el = await mount(<ReplayPreview events={replayDemoEvents} lazy={false} inspections={[{ time: 1500, element: 'input[placeholder="Search tasks"]', label: "The search box" }]} />)

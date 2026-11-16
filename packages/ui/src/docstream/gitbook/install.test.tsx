@@ -1,7 +1,5 @@
 import { describe, expect, it } from "vitest"
-// @ts-ignore react-dom's types aren't installed; only this function is needed.
-import { renderToString as untypedRenderToString } from "react-dom/server"
-import type { ReactElement } from "react"
+import { renderToString } from "react-dom/server"
 import { MarkdownContent } from "../docs/DocsRenderer"
 import { resolveDemosToMarkdown } from "../demo/markdown"
 import { documentOutline } from "./outline"
@@ -9,7 +7,6 @@ import { packageManagerCommands } from "./package-managers"
 import { parseMarkdown, trimPartialInlineToken } from "./parse"
 import { serializeMarkdown } from "./serialize"
 
-const renderToString = untypedRenderToString as (element: ReactElement) => string
 
 describe("packageManagerCommands", () => {
   const cases: [string, string, string, string][] = [

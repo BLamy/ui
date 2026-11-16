@@ -7,8 +7,16 @@ import { PAGE_LIST, pageSource } from './pages';
 
 export { PAGE_LIST };
 
+/** The page's Markdown under the title the site gives it: DocsSite titles a page by its sidebar label (nav.json's
+ *  `title`), not its own `# heading`, and Copy page starts with that, so the export does too. */
+const titled = (id: string): string => {
+  const title = PAGE_LIST.find((p) => p.id === id)?.title;
+  const source = pageSource(id);
+  return title ? source.replace(/^# .*$/m, `# ${title}`) : source;
+};
+
 /** The page as docstream resolves it for "Copy page" (default options — no docs-side post-processing). */
-export const exportPage = (id: string): Promise<string> => resolveDemosToMarkdown(pageSource(id), demoResolver);
+export const exportPage = (id: string): Promise<string> => resolveDemosToMarkdown(titled(id), demoResolver);
 
 /** JSON with sorted keys, so two ASTs compare by content. */
 const canon = (v: unknown): string =>
@@ -42,7 +50,7 @@ export async function exportMismatches(): Promise<string[]> {
         }
         return x;
       })));
-    const source = shape(parseMarkdown(pageSource(id)), demos.source);
+    const source = shape(parseMarkdown(titled(id)), demos.source);
     const exported = shape(parseMarkdown(await exportPage(id)), demos.exported);
     if (source !== exported) {
       problems.push(`${id}: the export's block structure differs from the page's`);

@@ -2008,46 +2008,6 @@ details[open] > .docstream-tui__source-trigger .docstream-tui__caret {
 /* A source-and-result card (Mermaid → Pele, LaTeX → KaTeX): side by side when the card is wide, the source above
    the result when it isn't. */
 .docs-mermaid-preview,
-/* A workerd config drawn as the Cloudflare services it runs (```capnp, or an embedded .capnp): the board fills the card, with
-   what isn't drawn listed under it, and the source a press away. The board is the library's CloudflareDiagram, in its own styles. */
-.docs-capnp {
-  border: 1px solid var(--gb-border);
-  border-radius: 16px;
-  overflow: hidden;
-  background: var(--gb-panel);
-  color: var(--gb-panel-foreground, inherit);
-  margin: 1.25em 0;
-}
-
-.docs-capnp > .docs-split-head {
-  margin: 0;
-  padding: 8px 12px 8px 16px;
-}
-
-.docs-capnp-board {
-  position: relative;
-  height: 380px;
-  border-top: 1px solid var(--gb-border);
-}
-
-.docs-capnp-source {
-  margin: 0;
-  border-top: 1px solid var(--gb-border);
-}
-
-.docs-capnp-notes {
-  margin: 0;
-  padding: 8px 16px 10px 32px;
-  border-top: 1px solid var(--gb-border);
-  font-size: 13px;
-  color: var(--gb-muted-foreground, inherit);
-}
-
-.docs-capnp .docs-mermaid-pending,
-.docs-capnp .docs-mermaid-error {
-  border-top: 1px solid var(--gb-border);
-}
-
 .docs-split-card {
   container-type: inline-size;
   border: 1px solid var(--gb-border);
@@ -2144,6 +2104,136 @@ details[open] > .docstream-tui__source-trigger .docstream-tui__caret {
   border-radius: 0;
   background: none;
   font-size: inherit;
+}
+
+/* A workerd config drawn as the Cloudflare services it runs (```capnp, or an embedded .capnp): a split card of one
+   column, as the board needs the card's width. The board (the library's CloudflareDiagram, in the library's own
+   styles) fills the result pane, what isn't drawn is listed under it, and the source is a disclosure at the foot, the
+   same server-safe <details> → Collapsible the terminal preview's source uses. */
+.docs-capnp-preview .docs-split-grid {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+/* The board starts with the whole system in view, between the zoom tools and the frame's bar; on a narrow card, at a
+   size that can be read, from the first services (CapnpDiagram.tsx, startView). */
+.docs-capnp-board {
+  position: relative;
+  height: 420px;
+  overflow: hidden;
+  border: 1px solid var(--gb-border);
+  border-radius: calc(var(--gb-radius, 12px) - 2px);
+}
+
+.docs-capnp-board.docs-mermaid {
+  padding: 0;
+}
+
+/* Why a config can't be drawn, in the danger ink only: a host's own `pre` box (MarkdownView's code panel) isn't for it. */
+.docs-capnp-result > .docs-mermaid-error {
+  margin: 0;
+  padding: 0;
+  border-radius: 0;
+  background: none;
+  color: var(--gb-danger);
+}
+
+/* Specific enough to hold inside the editor, whose sheet rolls host prose rules on lists back (`.gb .ProseMirror
+   :is(ul, li, …) { all: revert-layer }`, 0,2,2). */
+.docs-split-pane.docs-capnp-result > ul.docs-capnp-notes {
+  margin: 12px 0 0;
+  padding: 0 0 0 18px;
+  list-style: disc;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--gb-muted-foreground);
+}
+
+/* Set on the items too: a host's prose (the editor's, an article's) styles list items directly. */
+.docs-split-pane.docs-capnp-result > ul.docs-capnp-notes > li {
+  margin: 0;
+  font-size: inherit;
+  line-height: inherit;
+  color: inherit;
+}
+
+.docs-split-pane.docs-capnp-result > ul.docs-capnp-notes > li + li {
+  margin-top: 2px;
+}
+
+.docs-capnp-source {
+  box-shadow: 0 -1px 0 var(--gb-border);
+}
+
+.docs-capnp-source-trigger {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  min-height: 36px;
+  margin: 0;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 0;
+  appearance: none;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  text-align: start;
+  cursor: pointer;
+  list-style: none;
+}
+
+.docs-capnp-source-trigger::-webkit-details-marker {
+  display: none;
+}
+
+.docs-capnp-source-trigger:hover {
+  background: var(--gb-hover);
+}
+
+.docs-capnp-source-trigger:focus-visible {
+  outline: 2px solid var(--gb-primary);
+  outline-offset: -2px;
+}
+
+.docs-capnp-caret {
+  flex: none;
+  color: var(--gb-muted-foreground);
+  transition: transform 160ms ease;
+}
+
+.docs-capnp-source-trigger[data-open] .docs-capnp-caret,
+details[open] > .docs-capnp-source-trigger .docs-capnp-caret {
+  transform: rotate(90deg);
+}
+
+.docs-capnp-language {
+  color: var(--gb-muted-foreground);
+  font-weight: 400;
+}
+
+/* On the pane, as the split cards' sources are: a host's own `pre` box (MarkdownView's code panel) isn't for it. */
+.docs-capnp-source-body > .docs-split-source {
+  max-height: 420px;
+  margin: 0;
+  padding: 12px 18px 16px;
+  border-radius: 0;
+  background: none;
+  box-shadow: 0 -1px 0 var(--gb-border);
+}
+
+@media (pointer: coarse) {
+  .docs-capnp-source-trigger {
+    min-height: 44px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .docs-capnp-caret {
+    transition: none;
+  }
 }
 
 .docs-mermaid {

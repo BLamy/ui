@@ -2,8 +2,8 @@
 
 BL UI is built on [UI SDK](https://ui-sdk.dev) (keyboard, focus, selection, popups, ARIA) and Tailwind CSS v4, and needs React 19. It uses our fork of UI SDK under upstream's package names (see [Built on UI SDK](https://blamy.github.io/ui/#/ui-sdk)). You can take it two ways from one source of truth:
 
-- **shadcn registry (recommended).** `npx shadcn@latest add …` copies the source of the parts you pick into your project. There is no runtime dependency on `@brett_lamy/ui`, only what each part imports (`@ui-sdk/core`, `@ui-sdk/react`, `framer-motion`, …). You own the files, so you can edit variants and defaults, and you ship exactly what you added.
-- **npm package.** `npm install @brett_lamy/ui` gives you everything, packaged together. It is generated from the same sources: ESM, one output module per source module so bundlers tree-shake, an entry per module at the registry's path (`@brett_lamy/ui/dialog` for `@/components/ui/dialog`), and `'use client'` on component modules for Next.js.
+- **shadcn registry (recommended).** `npx shadcn@latest add …` copies the source of the parts you pick into your project, with only what each part imports (`@ui-sdk/core`, `@ui-sdk/react`, `framer-motion`, …). You own the files, so you can edit variants and defaults, and you ship exactly what you added. The one exception is docstream, the Markdown renderer and editor inside `@brett_lamy/ui`: it isn't copied, so a part built on it (MarkdownView, MarkdownEditor, the Composer, ReplayPreview, StlViewer, StrudelPlayer, TuiPreview) adds `@brett_lamy/ui` to your dependencies and imports `@brett_lamy/ui/docstream…`.
+- **npm package.** `npm install @brett_lamy/ui` gives you everything, packaged together, docstream included. It is generated from the same sources: ESM, one output module per source module so bundlers tree-shake, an entry per module at the registry's path (`@brett_lamy/ui/dialog` for `@/components/ui/dialog`), and `'use client'` on component modules for Next.js.
 
 | | Registry | npm |
 | --- | --- | --- |
@@ -131,7 +131,7 @@ export default function App() {
 
 {% command %}npm run dev{% endcommand %}
 
-Some parts are built on docstream, whose dependencies include CommonJS-only packages. If Vite reports a missing export from `@brett_lamy/ui/docstream` or `@brett_lamy/ui/docstream-editor`, add those entries to `optimizeDeps.include` (see [Optimization](https://blamy.github.io/ui/#/optimization)).
+The parts built on docstream import `@brett_lamy/ui/docstream…` from the installed package, which Vite pre-bundles like any other dependency: no configuration. Docstream loads its heavy renderers (KaTeX, rrweb, Pele) only when a page needs them; if the dev server reloads the page the first time one loads, list it in `optimizeDeps.include` (see [Optimization](https://blamy.github.io/ui/#/optimization)).
 {% endstep %}
 {% endstepper %}
 {% endtab %}
@@ -242,7 +242,7 @@ Browser-only parts (the Composer's editor, maps, session replay) can also be loa
 | `registry:lib` | `lib/<name>.ts` | `icon`, `motion`, `theme`, `utils` |
 | `registry:block` | `components/blocks/<name>/` | `apple-mail`, `discord-clone` |
 
-Each item declares the items it imports, so `npx shadcn@latest add …/list.json` also copies `button`, `icon`, `motion`, `utils` and the rest of what `list` needs, and installs the npm packages those files import (`framer-motion`, `class-variance-authority`, …), and only those. The two UI SDK packages are the exception: install them yourself under their aliases, as in the steps above, so the copied files' `@ui-sdk/core` and `@ui-sdk/react` imports resolve to our fork. The index is [`registry.json`](https://blamy.github.io/ui/r/registry.json).
+Each item declares the items it imports, so `npx shadcn@latest add …/list.json` also copies `button`, `icon`, `motion`, `utils` and the rest of what `list` needs, and installs the npm packages those files import (`framer-motion`, `class-variance-authority`, …), and only those. An item lists UI SDK under its alias (`@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@…`); install the two aliases yourself first anyway, as in the steps above, so both are at the same version before anything imports them. A part built on docstream lists `@brett_lamy/ui` itself, at the library's version. The index is [`registry.json`](https://blamy.github.io/ui/r/registry.json).
 
 > **BL UI replaces `components/ui/button.tsx` and `lib/utils.ts`.** Dependencies are declared on BL UI's own items, so shadcn's stock `button` is never pulled in, and adding a part that uses Button writes BL UI's `button.tsx` over yours. The same goes for `lib/utils.ts`. BL UI's `cn` is a superset of shadcn's (the same `clsx` plus `tailwind-merge`, with BL UI's tokens registered), so code that calls `cn` keeps working, but your `Button` variants and any edits to these two files are replaced. Commit first, and review the diff after `add`. The CLI asks before overwriting; `-o` answers yes.
 
@@ -283,9 +283,9 @@ A block is a whole app or screen composed from library parts. Adding one copies 
 {% step %}
 ### Install
 
-BL UI needs React 19. `@brett_lamy/ui` depends on our fork of UI SDK under upstream's names, so the install brings `@ui-sdk/core` and `@ui-sdk/react` with it. Tailwind is optional here: the package ships a precompiled stylesheet for its own classes. You only need Tailwind if you also write Tailwind classes in your app.
+BL UI needs React 19. `@brett_lamy/ui` depends on our fork of UI SDK under upstream's names, `@ui-sdk/core` and `@ui-sdk/react`. List the same two aliases in your own dependencies, at the version the package pins, so code of yours that imports `@ui-sdk/react/…` shares the kit's copy (and resolves at all under pnpm). Tailwind is optional here: the package ships a precompiled stylesheet for its own classes. You only need Tailwind if you also write Tailwind classes in your app.
 
-{% command %}npm install @brett_lamy/ui{% endcommand %}
+{% command %}npm install @brett_lamy/ui @ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1 @ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1{% endcommand %}
 {% endstep %}
 
 {% step %}
@@ -311,7 +311,7 @@ import { SplitView } from '@brett_lamy/ui/split-view'
 
 Every module has its own entry, at the registry's path under the package name: `@/components/ui/split-view` is `@brett_lamy/ui/split-view`, `@/lib/theme` is `@brett_lamy/ui/lib/theme`, and each component page shows its import. The components, their parts and the documented hooks are also on the package root, `import { BLProvider, NavigationStack, SplitView } from '@brett_lamy/ui'`. Both tree-shake the same in a production build; a module entry also keeps the dev server and your editor from loading the whole index to resolve one name, and switching to or from the registry changes only the prefix.
 
-Vite pre-bundles the docstream entries on first use. If it reports a missing export from `@brett_lamy/ui/docstream` or `@brett_lamy/ui/docstream-editor`, add them to `optimizeDeps.include` ([Optimization](https://blamy.github.io/ui/#/optimization)).
+Docstream, the Markdown renderer and editor inside the package, has entries of its own (`@brett_lamy/ui/docstream/site`, `@brett_lamy/ui/docstream-editor`…) and needs no bundler configuration. `MarkdownView` brings docstream's stylesheet; if you render docstream's components directly, also import `@brett_lamy/ui/docstream/styles.css`.
 {% endstep %}
 {% endstepper %}
 {% endtab %}
@@ -321,7 +321,9 @@ Vite pre-bundles the docstream entries on first use. If it reports a missing exp
 {% step %}
 ### Install
 
-{% command %}npm install @brett_lamy/ui{% endcommand %}
+The package and the same two UI SDK aliases as on Vite:
+
+{% command %}npm install @brett_lamy/ui @ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1 @ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1{% endcommand %}
 {% endstep %}
 
 {% step %}
@@ -364,7 +366,7 @@ Module entries (`@brett_lamy/ui/button`) need no configuration. If you import fr
 {% endtab %}
 {% endtabs %}
 
-The npm package contains the library only (every component and lib, `styles.css`, `theme.css`). Blocks are registry-only. 6.0 is a breaking release: the components moved from react-aria-components to UI SDK, and their props follow UI SDK's API. See [Migrating to 6.0](https://blamy.github.io/ui/#/migrating-to-6).
+The npm package contains the library only (every component and lib, docstream and its editor, `styles.css`, `theme.css`). Blocks are registry-only. 6.0 is a breaking release: the components moved from react-aria-components to UI SDK, and their props follow UI SDK's API. See [Migrating to 6.0](https://blamy.github.io/ui/#/migrating-to-6).
 
 ## What the registry installs
 
@@ -375,6 +377,7 @@ The npm package contains the library only (every component and lib, `styles.css`
 | `button`, `dialog`, `select`, `tabs`, … | shadcn-style primitives, one item each, in `components/ui/<name>.tsx` |
 | `list`, `split-view`, `navigation-stack`, `composer`, … | Containers and larger parts, grouped with the modules that belong together |
 | `icon`, `motion`, `theme`, `utils`, … | Libraries in `lib/<name>.ts` |
+| `markdown-view`, `markdown-editor`, `composer`, `replay-preview`, … | Parts built on docstream: their own module is copied, and docstream comes from `@brett_lamy/ui`, which the item adds to your dependencies |
 | `github-clone`, `apple-mail`, … | A whole app in `components/blocks/<name>/`, see [Blocks](https://blamy.github.io/ui/#/blocks) |
 
 ## Provider
@@ -392,7 +395,8 @@ The npm package contains the library only (every component and lib, `styles.css`
 ## Requirements
 
 - React and React DOM 19 (and `@types/react` 19.2.10 or newer with TypeScript)
-- `@ui-sdk/core` and `@ui-sdk/react`, as the aliases `npm:@brett_lamy/ui-sdk-core` and `npm:@brett_lamy/ui-sdk-react` (the npm package brings them; a registry install adds them by hand)
+- `@ui-sdk/core` and `@ui-sdk/react`, as the aliases `npm:@brett_lamy/ui-sdk-core` and `npm:@brett_lamy/ui-sdk-react`, both at the same version (the npm package depends on them; list them in your app either way)
+- Only for the parts that use them: `xstate` (StateDiagram, the xstate fence), `elkjs` (automatic diagram layout), `@electric-sql/pglite` (the PGlite parts), `@agent-wasm/core` (docstream's live playground), optional peers of the package
 - `@layer ui-sdk;` declared before your other CSS when you have your own Tailwind build
 - Tailwind CSS v4 (for the registry path, and for any Tailwind classes of your own)
 - shadcn's CSS variables, from your shadcn theme or the bl-theme

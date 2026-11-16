@@ -13,10 +13,10 @@ import { findCall, parseStrudel, StrudelSyntaxError, type StrudelArg, type Strud
 import { formatNumber, isAudible, mixCode, removeMethod, setMethod, setMiniAtom, setMiniSource, setTempo, type StrudelMix } from "./ast/edit"
 import { Fader, Knob, defaultFormat } from "./controls"
 import type { StrudelRackChangeDetails, StrudelRackChangeReason, StrudelRackControl } from "./rack-types"
-
-export type { StrudelRackChangeDetails, StrudelRackChangeReason, StrudelRackControl } from "./rack-types"
 import { StepGrid } from "./StepGrid"
 import { RackGrid, type GridLayout } from "./RackGrid"
+
+export type { StrudelRackChangeDetails, StrudelRackChangeReason, StrudelRackControl } from "./rack-types"
 
 export interface StrudelRackProps {
   /** The Strudel code the rack is drawn from. Controlled: pass the code `onValueChange` reports. */

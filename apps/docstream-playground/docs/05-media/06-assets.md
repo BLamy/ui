@@ -19,7 +19,7 @@ Two mechanisms, from simplest to most flexible. (A [`DocsSite`](../02-docs-site/
 | In the document | Resolved with |
 | --- | --- |
 | Images: `![alt](src)`, `<img src>`, figures, thumbnails | the resolver, then `resolveAsset` |
-| `{% embed %}` of `.stl`, `.strudel`, `.rrweb` | the resolver, then `resolveAsset` |
+| `{% embed %}` of `.stl`, `.strudel`, `.rrweb`, `.capnp` | the resolver, then `resolveAsset` |
 | An embed's `poster` | `resolveAsset` only |
 | A video's own `url` (`.mp4`, `.webm`, `.ogg`) and YouTube | not resolved: used as written |
 | An OpenAPI block's spec link: `[api](specs/api.json)` | the resolver, then `resolveAsset` |

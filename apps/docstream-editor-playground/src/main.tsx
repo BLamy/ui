@@ -11,7 +11,7 @@ import { useGithubEnv } from './github-env';
 
 /* The whole site is the docs/ folder, published by docstream's DocsSite: the sidebar comes from
    the folders, and every page is rendered by docstream. Live editors are {% demo %} folders. */
-const files = import.meta.glob('../docs/**/*.{md,json,yaml,yml}', { query: '?raw', import: 'default', eager: true }) as Record<string, string>;
+const files = import.meta.glob('../docs/**/*.{md,json,yaml,yml,capnp}', { query: '?raw', import: 'default', eager: true }) as Record<string, string>;
 
 const FOLDER_TITLES: Record<string, string> = { api: 'API' };
 const treeOptions: BuildDocsTreeOptions = { folderTitle: (name) => FOLDER_TITLES[name] ?? humanize(name) };

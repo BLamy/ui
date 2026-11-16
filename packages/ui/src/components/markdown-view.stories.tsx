@@ -81,3 +81,33 @@ export const References: Story = {
 };
 
 export const PhoneFrame: Story = { args: { markdown: REPLY }, parameters: { phone: true } };
+
+/* A `capnp` fence that's a workerd config: the services it runs on a read-only CloudflareDiagram, what isn't one listed
+   under it, and the source in a disclosure. The diagram loads from `@brett_lamy/ui/cloudflare` when it's first shown. */
+const WORKERD = `A chat app's \`config.capnp\`:
+
+\`\`\`capnp
+using Workerd = import "/workerd/workerd.capnp";
+
+const config :Workerd.Config = (
+  services = [ (name = "main", worker = .main), (name = "do-storage", disk = (path = "do-storage", writable = true)) ],
+  sockets = [ (name = "http", address = "*:8080", http = (), service = "main") ],
+);
+
+const main :Workerd.Worker = (
+  modules = [ (name = "worker.js", esModule = embed "worker.js") ],
+  compatibilityDate = "2026-01-01",
+  bindings = [ (name = "ROOMS", durableObjectNamespace = "Room"), (name = "SESSIONS", kvNamespace = "sessions") ],
+  durableObjectNamespaces = [ (className = "Room", uniqueKey = "rooms", enableSql = true) ],
+  durableObjectStorage = (localDisk = "do-storage"),
+);
+\`\`\``;
+
+export const WorkerdConfig: Story = { args: { markdown: WORKERD } };
+
+export const WorkerdConfigDark: Story = { args: { markdown: WORKERD }, parameters: { dark: true } };
+
+export const WorkerdConfigOnAPhone: Story = { args: { markdown: WORKERD }, parameters: { phone: true } };
+
+/** A config that doesn't read says where, and its source is still a press away. */
+export const WorkerdConfigUnreadable: Story = { args: { markdown: WORKERD.replace('enableSql = true) ],', 'enableSql = true ],') } };

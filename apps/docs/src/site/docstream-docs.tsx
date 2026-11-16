@@ -9,7 +9,7 @@ import { embeddedSiteProps, type EmbeddedDocsProps } from './embedded';
 import { docstreamDemoRuntime, docstreamLiveRenderer, docstreamSourceModules } from './playground-parts';
 import { BLMark, REPO_URL } from './site-parts';
 
-const files = import.meta.glob('../../../docstream-playground/docs/**/*.{md,json,yaml,yml}', { query: '?raw', import: 'default', eager: true }) as Record<string, string>;
+const files = import.meta.glob('../../../docstream-playground/docs/**/*.{md,json,yaml,yml,capnp}', { query: '?raw', import: 'default', eager: true }) as Record<string, string>;
 
 // Folder names are humanized ("getting-started" → "Getting started"); these read better spelled out.
 const FOLDER_TITLES: Record<string, string> = { ai: 'AI', media: 'Media & embeds' };

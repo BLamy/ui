@@ -13,7 +13,7 @@ const examplesRoot = join(__dirname, "src/examples")
 
 // What the site's glob loads (demo/src/main.tsx): the pages and the text assets beside them.
 const files = (readdirSync(docsRoot, { recursive: true, encoding: "utf8" }) as string[])
-  .filter((p) => /\.(md|json|ya?ml)$/.test(p))
+  .filter((p) => /\.(md|json|ya?ml|capnp)$/.test(p))
   .map((p) => ({ path: p.split("\\").join("/"), content: readFileSync(join(docsRoot, p), "utf8") }))
 const tree = buildDocsTree(files)
 const publicBase = "/docstream/"
@@ -67,7 +67,7 @@ describe("demo/docs", () => {
 
       it("links to pages that exist", () => {
         for (const href of links(page.markdown)) {
-          if (/\.(png|jpe?g|gif|svg|webp|mp4|webm|stl|rrweb|json|ya?ml|strudel|txt)(#|$)/i.test(href)) {
+          if (/\.(png|jpe?g|gif|svg|webp|mp4|webm|stl|rrweb|json|ya?ml|strudel|txt|capnp)(#|$)/i.test(href)) {
             // A file: root-relative ones are served from demo/public, relative ones from the VFS.
             const file = href.split("#")[0]!
             if (file.startsWith(publicBase)) expect(existsSync(join(__dirname, "public", file.slice(publicBase.length))), `${page.path} → ${href}`).toBe(true)
