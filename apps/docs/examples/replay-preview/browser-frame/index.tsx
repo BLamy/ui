@@ -1,4 +1,4 @@
-import { replayDemoEvents } from '@brett_lamy/docstream/replay/demo'
+import { replayDemoEvents } from '@brett_lamy/ui/docstream/replay/demo'
 import { ReplayPreview } from '@/components/ui/replay-preview'
 
 // The browser frame, paused just before checkout fails. Press play (or Space),

@@ -5,13 +5,15 @@ import tailwindcss from '@tailwindcss/vite';
 import dts from 'vite-plugin-dts';
 import * as path from 'path';
 import { copyFileSync } from 'fs';
+import { execFileSync } from 'child_process';
 import pkg from './package.json' with { type: 'json' };
 import { aliases } from '../../tools/alias.mjs';
 
 const entry = Object.fromEntries(
   Object.values(pkg.exports)
     .map((target) => (typeof target === 'object' ? (target as Record<string, string>)['@org/source'] : undefined))
-    .filter((source): source is string => !!source && /\.tsx?$/.test(source))
+    // docstream's and the editor's entries are built apart, a module per file (scripts/build-docstream.mjs).
+    .filter((source): source is string => !!source && /\.tsx?$/.test(source) && !/^\.\/src\/docstream(-editor)?\//.test(source))
     .map((source) => [source.replace(/^\.\/src\//, '').replace(/\.tsx?$/, ''), source.slice(2)]),
 );
 
@@ -24,6 +26,8 @@ export default defineConfig(() => ({
     tailwindcss(),
     dts({
       entryRoot: 'src',
+      // docstream's and the editor's declarations are written here too, as the library's modules import them; their own
+      // per-file build (scripts/build-docstream.mjs) then writes them again beside their modules.
       exclude: ['**/*.stories.tsx', 'src/stories/**'],
       tsconfigPath: path.join(import.meta.dirname, 'tsconfig.lib.json'),
     }),
@@ -40,6 +44,17 @@ export default defineConfig(() => ({
       name: 'bl-ffmpeg-worker',
       closeBundle: () =>
         copyFileSync(path.join(import.meta.dirname, 'src/lib/ffmpeg/ffmpeg-worker.js'), path.join(import.meta.dirname, 'dist/ffmpeg-worker.js')),
+    },
+    // docstream and docstream-editor are compiled as they were as packages of their own, a module per file with tsc, into
+    // dist/docstream and dist/docstream-editor (scripts/build-docstream.mjs). The library's own modules import them by the
+    // package's name, so they stay external here. Last, after the library's own output is written.
+    {
+      name: 'bl-docstream',
+      closeBundle: {
+        sequential: true,
+        order: 'post' as const,
+        handler: () => execFileSync(process.execPath, [path.join(import.meta.dirname, 'scripts/build-docstream.mjs')], { stdio: 'inherit' }),
+      },
     },
   ],
   // Uncomment this if you are using workers.
@@ -71,8 +86,10 @@ export default defineConfig(() => ({
       // 'use client' directives survive per file. (The stylesheet is still a single dist/index.css.)
       output: { preserveModules: true, preserveModulesRoot: 'src', entryFileNames: '[name].js' },
       // External packages that should not be bundled into your library.
-      // Dependencies stay external so apps share one copy (UI SDK's layer stack and focus state must be shared).
+      // Dependencies stay external so apps share one copy (UI SDK's layer stack and focus state must be shared), and so do
+      // the library's docstream entries, which its modules import by the package's name and which are built apart.
       external: (id: string) =>
+        /^@brett_lamy\/ui\/(docstream(-editor)?(\/|$)|cloudflare$)/.test(id) ||
         [...Object.keys(pkg.dependencies ?? {}), ...Object.keys(pkg.peerDependencies ?? {}), 'react/jsx-runtime']
           .some((dep) => id === dep || id.startsWith(dep + '/')),
     },

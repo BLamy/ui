@@ -348,7 +348,7 @@ Add `title="…"` and the tab set becomes a **section**: the title renders as a 
 {% tab title="Preview" %}
 {% tabs title="Add docstream to a project" level="3" sync="install-method" %}
 {% tab title="npm" %}
-{% command %}npm install @brett_lamy/ui/docstream react react-dom{% endcommand %}
+{% command %}npm install @brett_lamy/ui react react-dom{% endcommand %}
 
 Then import the stylesheet once, at your app's entry:
 
@@ -370,7 +370,7 @@ Link the build into your app with `npm link`, or point a Vite alias at `src/inde
 ````md
 {% tabs title="Add docstream to a project" level="3" sync="install-method" %}
 {% tab title="npm" %}
-{% command %}npm install @brett_lamy/ui/docstream react react-dom{% endcommand %}
+{% command %}npm install @brett_lamy/ui react react-dom{% endcommand %}
 
 Then import the stylesheet once, at your app's entry:
 

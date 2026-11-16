@@ -1,26 +1,15 @@
 /* BL UI documentation: docstream's DocsSite over the docs' Markdown. Components and Blocks are the header's tabs; the
    sidebar comes from pages/nav.json (as a SUMMARY.md) and the blocks from pages/blocks.md, so every URL stays what it
-   was (`#/composer`, `#/blocks`, `#/blocks/apple-notes`). */
-import { useMemo, useState, type MouseEvent, type ReactNode } from 'react';
-import { DocstreamEnvProvider } from '@brett_lamy/docstream';
-import { DocsSite, type DocsPage, type DocsSiteTab } from '@brett_lamy/docstream/site';
-import { AppearanceProvider, type Appearance } from '@/lib/theme';
+   was (`#/composer`, `#/blocks`, `#/blocks/apple-notes`). The BL site (../site/site.tsx) puts its header above it and
+   owns the appearance: the header has the only switch. */
+import { useMemo, type MouseEvent, type ReactNode } from 'react';
+import { DocstreamEnvProvider } from '@brett_lamy/ui/docstream';
+import { DocsSite, type DocsPage, type DocsSiteTab } from '@brett_lamy/ui/docstream/site';
+import type { Appearance } from '@/lib/theme';
 import { demoResolver } from '../demos';
 import { EnvKeychain } from '../env-keychain';
 import { BLOCK_PAGES, NAV, SITE_BLOCKS, SITE_URL, pageMdPath, pageSource, pageUrl } from '../pages';
 import './shell.css';
-
-const THEME_KEY = 'bldocs-theme';
-
-/* `?theme=` wins (handy for links and screenshots), then the saved choice, then the OS preference. */
-function initialAppearance(): Appearance {
-  if (typeof window === 'undefined') return 'light';
-  const q = new URLSearchParams(window.location.search).get('theme');
-  if (q === 'light' || q === 'dark') return q;
-  const saved = window.localStorage.getItem(THEME_KEY);
-  if (saved === 'light' || saved === 'dark') return saved;
-  return window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-}
 
 function Logo({ size = 26 }: { size?: number }) {
   return (
@@ -91,11 +80,10 @@ function renderPage(page: DocsPage, content: ReactNode) {
 
 const GITHUB = 'https://github.com/BLamy/ui';
 
-export default function App() {
+/** `appearance` comes from the site (its header switches it); `height` is the room under the site's header. */
+export default function App({ appearance, height }: { appearance: Appearance; height?: string }) {
   const files = useMemo(docsFiles, []);
-  const [appearance, setAppearance] = useState<Appearance>(initialAppearance);
   return (
-    <AppearanceProvider value={appearance}>
       <DocsSite
         files={files}
         tabs={TABS}
@@ -103,11 +91,9 @@ export default function App() {
         logo={<Logo />}
         links={[{ label: 'GitHub', href: GITHUB }]}
         theme={appearance}
+        themeToggle={false}
         themeStorageKey={false}
-        onThemeChange={(next) => {
-          setAppearance(next);
-          window.localStorage.setItem(THEME_KEY, next);
-        }}
+        height={height}
         accentColor="#0A84FF"
         demoResolver={demoResolver}
         documentProperties={false}
@@ -120,6 +106,5 @@ export default function App() {
         renderPage={renderPage}
         sidebarFooter={<span style={{ fontSize: 11, opacity: 0.7 }}>Rendered with Docstream</span>}
       />
-    </AppearanceProvider>
   );
 }

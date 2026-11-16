@@ -30,7 +30,7 @@ export default function SizedText() {
         <Diagram nodes={nodes} autoSize aria-label="In another font" />
       </ThemeScope>
       <div className="p-2">
-        <Button variant="secondary" onPress={() => setName(name === 'idle' ? 'waitingForTheLastOfTheChunks' : 'idle')}>Rename the first node</Button>
+        <Button variant="secondary" onClick={() => setName(name === 'idle' ? 'waitingForTheLastOfTheChunks' : 'idle')}>Rename the first node</Button>
       </div>
     </div>
   )

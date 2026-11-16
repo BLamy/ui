@@ -387,7 +387,7 @@ const propsOf = (d) => (d.members ?? []).filter((m) => m.kind !== 'method');
 
 const dts = workersTypesPath();
 const files = await directoryFiles();
-const { rows: products, productAtUrl } = readProducts(files);
+const { rows: products } = readProducts(files);
 const schema = readSchema();
 const { found: bindingSites, top: topProps } = findBindings(schema);
 const bundle = readWranglerBundle();
@@ -578,7 +578,7 @@ const catalog = {
     ...b,
     ...(BINDING_PRODUCT[b.key].alsoReaches ? { alsoReaches: BINDING_PRODUCT[b.key].alsoReaches } : null),
   })),
-  handlers: handlers.map(({ line: _l, ...h }) => h),
+  handlers: handlers.map((h) => Object.fromEntries(Object.entries(h).filter(([key]) => key !== 'line'))),
   contextTypes,
   receives,
   runsCode,

@@ -18,7 +18,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@ui-sdk/react/popover"
 import { Toggle, ToggleIcon } from "@ui-sdk/react/toggle"
 import { Toolbar, ToolbarButton } from "@ui-sdk/react/toolbar"
 
-import { parseMarkdown, type CitationDef } from "@brett_lamy/docstream/gitbook"
+import { parseMarkdown, type CitationDef } from "@brett_lamy/ui/docstream/gitbook"
 import {
   DocstreamDemoVFSContext,
   createDemoVFS,
@@ -32,9 +32,9 @@ import {
   type DemoVFSChange,
   type DocstreamClipboardPayload,
   type InlineDemoRuntime,
-} from "@brett_lamy/docstream/demo"
-import type { LivePreviewRenderer } from "@brett_lamy/docstream"
-import type { SourceFileSnapshot, SourceReferenceClient } from "@brett_lamy/docstream/source"
+} from "@brett_lamy/ui/docstream/demo"
+import type { LivePreviewRenderer } from "@brett_lamy/ui/docstream"
+import type { SourceFileSnapshot, SourceReferenceClient } from "@brett_lamy/ui/docstream/source"
 import {
   attachmentName,
   collectAttachmentIds,
@@ -55,14 +55,14 @@ import {
 } from "./demo-clipboard"
 import { createGitbookExtensions, type ReferenceSources } from "./extensions"
 import { EditorRuntimeProvider, type FilePicker, type FileUploader } from "./runtime"
-import { AssetResolverProvider, type AssetResolver } from "@brett_lamy/docstream/assets"
+import { AssetResolverProvider, type AssetResolver } from "@brett_lamy/ui/docstream/assets"
 import type { SlashItem } from "./slash-menu"
 import { DocumentEnvScope, DocumentPropertiesEditor } from "./document-properties"
-import type { DocstreamEnvHost } from "@brett_lamy/docstream"
+import type { DocstreamEnvHost } from "@brett_lamy/ui/docstream"
 
 export type { EditorAttachment } from "./attachments"
 export type { FilePicker, FilePickKind, FileUploader } from "./runtime"
-export type { AssetResolver } from "@brett_lamy/docstream/assets"
+export type { AssetResolver } from "@brett_lamy/ui/docstream/assets"
 
 export interface GitbookEditorProps {
   /** Editable YAML frontmatter, shown as document properties above the body (default true). */
@@ -139,12 +139,12 @@ export interface GitbookEditorProps {
   /**
    * Runs the Preview of demos that carry their files inline and have no resolver behind them
    * (as `DocRenderOptions.demoRuntime`), e.g. `createAlmostNodeDemoRuntime()` from
-   * `@brett_lamy/docstream/playground`. Without one, such demos show their code with a note.
+   * `@brett_lamy/ui/docstream/playground`. Without one, such demos show their code with a note.
    */
   demoRuntime?: InlineDemoRuntime
   /**
    * Renders the preview above `live` jsx/tsx code blocks (as `DocRenderOptions`' `liveRenderer`),
-   * e.g. `almostNodeLiveRenderer` from `@brett_lamy/docstream/playground`. The editor never
+   * e.g. `almostNodeLiveRenderer` from `@brett_lamy/ui/docstream/playground`. The editor never
    * loads a runtime itself; without one, live code blocks are edited as plain code.
    */
   liveRenderer?: LivePreviewRenderer

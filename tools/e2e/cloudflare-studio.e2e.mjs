@@ -1,7 +1,8 @@
 import { test, expect } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
 
-/* The cloudflare-studio block, through its docs demo, with real input: the spike's file upload built from nothing by hand,
+/* Not run in the 6.0 integration wave (no Playwright there): updated to the 6.0 parts and attributes by reading, so run it
+   before trusting it. The cloudflare-studio block, through its docs demo, with real input: the spike's file upload built from nothing by hand,
    kept through a reload, exported, and at a phone's width. Each test has a browser context of its own, so nothing's saved
    to begin with. */
 
@@ -45,7 +46,7 @@ const press = async (page, id) => {
 };
 /** A new connection's selected, and this names it on env. */
 const bind = async (page, name) => {
-  const field = panel(page).locator('[data-slot=cloudflare-binding-name] input');
+  const field = panel(page).locator('[data-field="binding-name"]');
   await field.fill(name);
   await field.press('Enter');
   await expect(field).toHaveValue(name);
@@ -53,11 +54,11 @@ const bind = async (page, name) => {
 const add = async (page, kind) => {
   const search = page.locator('[data-slot=cloudflare-search] input');
   await search.fill(kind.replace('-', ' '));
-  await page.locator(`[data-slot=cloudflare-search] [data-slot=list-box-item][data-key="${kind}"]`).click();
+  await page.locator(`[role=option][data-kind="${kind}"]`).click();
 };
 const rename = async (page, id, name) => {
   await press(page, id);
-  const field = panel(page).locator('[data-slot=cloudflare-label] input');
+  const field = panel(page).locator('[data-field="label"]');
   await field.fill(name);
   await field.press('Enter');
   await expect(service(page, id)).toContainText(name);
@@ -71,9 +72,9 @@ test('the file upload, from nothing, by hand, kept through a reload, and exporte
   await open(page);
   // It opens with the example, and New starts from nothing.
   await expect(services(page)).toHaveCount(6);
-  await page.locator('[data-slot=cloudflare-studio-new]').click();
+  await page.locator('[data-action=new]').click();
   await expect(services(page)).toHaveCount(0);
-  const name = page.locator('[data-slot=cloudflare-studio-name]');
+  const name = page.locator('input[aria-label="System name"]');
   await name.fill('File upload');
   for (const kind of ['workers', 'r2', 'queues', 'workers', 'd1', 'durable-objects']) await add(page, kind);
   await expect(services(page)).toHaveCount(6);
@@ -98,19 +99,19 @@ test('the file upload, from nothing, by hand, kept through a reload, and exporte
   await expect(page.locator('[data-slot=diagram-edge]')).toHaveCount(5);
   // Room gets a machine, and the consumer tells it a file's ready.
   await press(page, 'durable-objects');
-  await panel(page).locator('[data-slot=cloudflare-machine-add]').click();
+  await panel(page).locator('[data-action=add-machine]').click();
   await expect(page.locator('[data-slot=state-diagram]')).toBeVisible();
-  await page.locator('[data-slot=cloudflare-machine-back]').click();
+  await page.locator('[data-action=machine-back]').click();
   const toRoom = await page.locator('[data-slot=diagram-edge]').evaluateAll((els) => els.map((el) => el.getAttribute('data-edge')).find((id) => /^workers-2.*durable/.test(id)));
   const line = await page.locator(`[data-slot=diagram-edge][data-edge="${toRoom}"]`).evaluate((el) => { const p = el.getPointAtLength(el.getTotalLength() / 2), m = el.getScreenCTM(); return { x: m.a * p.x + m.e, y: m.d * p.y + m.f }; });
   await page.mouse.click(line.x, line.y);
-  const events = panel(page).locator('[data-slot=cloudflare-events] input');
+  const events = panel(page).locator('[data-field="events"]');
   await events.fill('FILE_READY');
   await events.press('Enter');
   // Its new machine doesn't receive that yet, and it says so.
-  await expect(panel(page).locator('[data-slot=cloudflare-issue]').first()).toContainText('FILE_READY');
+  await expect(panel(page).locator('[data-slot=cloudflare-issue][data-code=event-not-received]')).toContainText('FILE_READY');
 
-  await page.locator('[data-slot=cloudflare-studio-export]').click();
+  await page.locator('[data-action=export]').click();
   await expect.poll(() => files(page)).toEqual(['system.json', 'api/wrangler.jsonc', 'consumer/wrangler.jsonc', 'machines/durable-objects.js']);
   const api = await fileText(page, 'api/wrangler.jsonc');
   expect(api).toContain('"name": "api"');
@@ -127,7 +128,7 @@ test('the file upload, from nothing, by hand, kept through a reload, and exporte
   // A download is the file, with its folder in its name.
   const [download] = await Promise.all([
     page.waitForEvent('download'),
-    page.locator('[data-slot=cloudflare-studio-file][data-path="system.json"] [data-slot=cloudflare-studio-download]').click(),
+    page.locator('[data-slot=cloudflare-studio-file][data-path="system.json"] [data-action=download]').click(),
   ]);
   expect(download.suggestedFilename()).toBe('system.json');
   const system = JSON.parse(await readFile(await download.path(), 'utf8'));
@@ -136,7 +137,7 @@ test('the file upload, from nothing, by hand, kept through a reload, and exporte
   expect(JSON.parse((await saved(page)).system)).toEqual(system);
   const [config] = await Promise.all([
     page.waitForEvent('download'),
-    page.locator('[data-slot=cloudflare-studio-file][data-path="api/wrangler.jsonc"] [data-slot=cloudflare-studio-download]').click(),
+    page.locator('[data-slot=cloudflare-studio-file][data-path="api/wrangler.jsonc"] [data-action=download]').click(),
   ]);
   expect(config.suggestedFilename()).toBe('api-wrangler.jsonc');
   expect(await readFile(await config.path(), 'utf8')).toBe(api);
@@ -150,10 +151,10 @@ test('a file that isn’t a system changes nothing and says why, and one that is
   await expect(services(page)).toHaveCount(6);
   const big = { services: Array.from({ length: 60 }, (_, i) => ({ id: `w${i}`, kind: 'workers', label: `Worker ${i}`, at: { x: (i % 10) * 300, y: Math.floor(i / 10) * 200 } })), edges: [] };
   await input.setInputFiles({ name: 'big.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(big)) });
-  await expect(page.locator('[data-slot=cloudflare-studio-name]')).toHaveValue('big');
+  await expect(page.locator('input[aria-label="System name"]')).toHaveValue('big');
   // Too big for the screen: it's all there, if not all drawn, and it all exports.
   await expect.poll(async () => JSON.parse((await saved(page)).system).services.length).toBe(60);
-  await page.locator('[data-slot=cloudflare-studio-export]').click();
+  await page.locator('[data-action=export]').click();
   await expect.poll(async () => (await files(page)).length).toBe(61);
 });
 
@@ -164,18 +165,19 @@ test.describe('at a phone’s width', () => {
     await open(page);
     await expect(services(page)).toHaveCount(6);
     await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
-    await page.locator('[data-slot=diagram-frame-open]').click();
-    await expect(page.locator('[data-slot=credenza] [data-slot=cloudflare-panel]')).toBeVisible();
-    // An edit in the tray, then wider: the edit's still there, and the inspector's beside the board.
+    await page.locator('[data-slot=diagram-frame-trigger]').click();
+    await expect(page.locator('[data-slot=diagram-frame][data-presentation=push] [data-slot=cloudflare-panel]')).toBeVisible();
+    // An edit in the pushed panel, then wider: the edit's still there, and the inspector's a column beside the board.
     await page.locator('[data-slot=cloudflare-search] input').fill('kv');
-    await page.locator('[data-slot=cloudflare-search] [data-slot=list-box-item][data-key="kv"]').click();
+    await page.locator('[role=option][data-kind="kv"]').click();
+    await page.getByRole('button', { name: 'Board' }).click();
     await expect(services(page)).toHaveCount(7);
     await page.setViewportSize({ width: 1100, height: 780 });
     await expect(services(page)).toHaveCount(7);
-    await expect(page.locator('[data-slot=side-drawer] [data-slot=cloudflare-panel]')).toBeVisible();
+    await expect(page.locator('[data-slot=diagram-frame][data-presentation=column] [data-slot=cloudflare-panel]')).toBeVisible();
     await page.setViewportSize({ width: 390, height: 780 });
     await expect(services(page)).toHaveCount(7);
-    await page.locator('[data-slot=cloudflare-studio-export]').click();
+    await page.locator('[data-action=export]').click();
     await expect.poll(() => files(page)).toContain('machines/room.js');
     await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
   });

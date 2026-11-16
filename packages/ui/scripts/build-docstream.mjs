@@ -10,14 +10,12 @@ import { dirname, join, relative, resolve } from "node:path"
 import { fileURLToPath } from "node:url"
 
 // docstream and docstream-editor are part of @brett_lamy/ui (`@brett_lamy/ui/docstream/*`, `@brett_lamy/ui/docstream-editor/*`), and
-// are built as they were as packages of their own, into dist/docstream and dist/docstream-editor, after the library's Vite build.
-// The editor's imports of docstream are the package's own name, which resolves to dist/docstream, so docstream goes first.
+// are built as they were as packages of their own (2.0.1's scripts/build.mjs, unchanged since 1.4.0), into dist/docstream and
+// dist/docstream-editor, after the library's Vite build (the `bl-docstream` plugin in vite.config.mts runs this).
+// The editor imports docstream by the package's name, which resolves to dist/docstream, so docstream goes first. The capnp
+// fence's lazy import of `@brett_lamy/ui/cloudflare` reads the library's own dist/cloudflare.d.ts when it's there.
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..")
 const tsc = createRequire(import.meta.url).resolve("typescript/bin/tsc")
-// What docstream imports of the rest of the library, by the package's name, it reads from the library's own build.
-for (const entry of ["index.d.ts", "cloudflare.d.ts"]) {
-  if (!existsSync(join(root, "dist", entry))) throw new Error(`dist/${entry} isn't there yet: docstream is built after the library's own build`)
-}
 
 for (const part of ["docstream", "docstream-editor"]) {
 const src = join(root, "src", part)

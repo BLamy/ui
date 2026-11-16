@@ -13,7 +13,7 @@ A stepper is a numbered rail of steps, for anything the reader does in order: in
 {% stepper %}
 {% step %}
 ### Install the package
-{% command %}npm install @brett_lamy/ui/docstream react react-dom{% endcommand %}
+{% command %}npm install @brett_lamy/ui react react-dom{% endcommand %}
 {% endstep %}
 {% step %}
 ### Import the stylesheet
@@ -40,7 +40,7 @@ export function Docs({ markdown }: { markdown: string }) {
 {% stepper %}
 {% step %}
 ### Install the package
-{% command %}npm install @brett_lamy/ui/docstream react react-dom{% endcommand %}
+{% command %}npm install @brett_lamy/ui react react-dom{% endcommand %}
 {% endstep %}
 {% step %}
 ### Import the stylesheet

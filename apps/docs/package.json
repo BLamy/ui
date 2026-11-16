@@ -5,8 +5,6 @@
   "type": "module",
   "dependencies": {
     "@agent-wasm/core": "0.4.0",
-    "@brett_lamy/docstream": "2.0.1",
-    "@brett_lamy/docstream-editor": "2.0.1",
     "@brett_lamy/registry": "workspace:*",
     "@brett_lamy/ui": "workspace:*",
     "@tiptap/core": "3.30.5",
@@ -58,6 +56,7 @@
   },
   "devDependencies": {
     "@agent-wasm/tailscale-connect": "1.39.98-t02582083d",
-    "@electric-sql/pglite": "0.5.8"
+    "@electric-sql/pglite": "0.5.8",
+    "xstate": "5.33.3"
   }
 }

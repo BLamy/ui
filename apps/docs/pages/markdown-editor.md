@@ -1,6 +1,6 @@
 # MarkdownEditor
 
-A Markdown field on the `@brett_lamy/docstream-editor` WYSIWYG editor. It reads and writes the same GitBook-flavored Markdown that [MarkdownView](https://blamy.github.io/ui/#/markdown-view) renders, so what you type is what readers get. Type `/` for blocks, paste Markdown to get structure, and paste or drop images as inline image blocks or as attachment chips.
+A Markdown field on the `@brett_lamy/ui/docstream-editor` WYSIWYG editor. It reads and writes the same GitBook-flavored Markdown that [MarkdownView](https://blamy.github.io/ui/#/markdown-view) renders, so what you type is what readers get. Type `/` for blocks, paste Markdown to get structure, and paste or drop images as inline image blocks or as attachment chips.
 
 Use a sibling when the job differs: [MarkdownView](https://blamy.github.io/ui/#/markdown-view) shows Markdown nobody edits (a reply, release notes), [Textarea](https://blamy.github.io/ui/#/textarea) takes plain text with no formatting, and [CodeEditor](https://blamy.github.io/ui/#/code-editor) edits source code.
 
@@ -171,7 +171,7 @@ The Docstream editor's stylesheet ships inside `@brett_lamy/ui/styles.css` in a 
 />
 ```
 
-Descendant variants on `className` work too (`[&_.ProseMirror_h2]:text-[21px]`). Don't import `@brett_lamy/docstream-editor/styles.css` yourself: an unlayered copy outranks every layer, and you'd be back to `!important`.
+Descendant variants on `className` work too (`[&_.ProseMirror_h2]:text-[21px]`). Don't import `@brett_lamy/ui/docstream-editor/styles.css` yourself: an unlayered copy outranks every layer, and you'd be back to `!important`.
 
 ## cva recipes
 

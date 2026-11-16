@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { replayDemoEvents } from '@brett_lamy/docstream/replay/demo';
+import { replayDemoEvents } from '@brett_lamy/ui/docstream/replay/demo';
 import { ReplayPreview, type ReplayMarker } from '@/components/ui/replay-preview';
 import { Panel } from '../stories/primitive-frame';
 import { Phone } from '../stories/frame';

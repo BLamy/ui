@@ -255,7 +255,7 @@ const doc: DocumentNode = {
       style: "success",
       children: [{ type: "paragraph", children: [{ type: "text", text: "All systems go.", bold: true }] }],
     },
-    { type: "command", command: "npm install @brett_lamy/ui/docstream" },
+    { type: "command", command: "npm install @brett_lamy/ui" },
   ],
 }
 
@@ -266,5 +266,5 @@ serializeMarkdown(doc)
 // **All systems go.**
 // {% endhint %}
 //
-// {% command %}npm install @brett_lamy/ui/docstream{% endcommand %}
+// {% command %}npm install @brett_lamy/ui{% endcommand %}
 ```

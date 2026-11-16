@@ -1,7 +1,7 @@
 {
   "name": "strudel-player",
   "title": "StrudelPlayer",
-  "description": "An audio player for a Strudel live-coded pattern, inline code or a .strudel file: play/stop, a scrolling piano roll, the code, and an equipment rack. Strudel runs in the page, loaded on the first play; one pattern plays at a time. A re-export of @brett_lamy/docstream/strudel's player and the functions that drive its runtime.",
+  "description": "An audio player for a Strudel live-coded pattern, inline code or a .strudel file: play/stop, a scrolling piano roll, the code, and an equipment rack. Strudel runs in the page, loaded on the first play; one pattern plays at a time. A re-export of the player at @brett_lamy/ui/docstream/strudel and the functions that drive its runtime.",
   "page": "strudel",
   "exports": [
     "StrudelPlayer",

@@ -26,8 +26,8 @@ GitBook-aware markdown rendering for React applications and AI streaming surface
 ## Installation
 
 ```sh
-pnpm add @brett_lamy/ui/docstream
-# or: npm install @brett_lamy/ui/docstream
+pnpm add @brett_lamy/ui
+# or: npm install @brett_lamy/ui
 ```
 
 React and React DOM are peer dependencies and must be provided by your app.
@@ -514,7 +514,7 @@ Install the optional peer dependency when a document needs a live, seekable
 scene rather than a rendered clip:
 
 ```sh
-npm install @brett_lamy/ui/docstream @brett_lamy/viz-engine
+npm install @brett_lamy/ui @brett_lamy/viz-engine
 ```
 
 ```tsx
@@ -828,12 +828,12 @@ reader's choice. The choice is matched by tab title and is remembered in
 {% tabs sync="pm" %}
 {% tab title="npm" %}
 ```sh
-npm install @brett_lamy/ui/docstream
+npm install @brett_lamy/ui
 ```
 {% endtab %}
 {% tab title="pnpm" %}
 ```sh
-pnpm add @brett_lamy/ui/docstream
+pnpm add @brett_lamy/ui
 ```
 {% endtab %}
 {% endtabs %}

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { replayDemoEvents } from '@brett_lamy/docstream/replay/demo'
+import { replayDemoEvents } from '@brett_lamy/ui/docstream/replay/demo'
 import { ReplayPreview, type ReplayMarker } from '@/components/ui/replay-preview'
 
 // Your own moments on the rail — findings from an agent, test assertions —

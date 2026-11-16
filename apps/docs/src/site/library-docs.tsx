@@ -1,44 +1,30 @@
-/* The libraries' docs sites, each a DocsSite under its own hash prefix (`#/docstream/…`), loaded on first visit. They
-   follow the site's theme and sit under its header. */
+/* The docs sites the BL site mounts beside the ui docs — docstream's, the editor's and the roadmap — each a DocsSite
+   under its own hash prefix (`#/docstream/…`), loaded on first visit. */
 import { lazy, Suspense } from 'react';
-import { DocsSite } from '@brett_lamy/docstream/site';
-import type { Appearance } from '@/lib/theme';
-import { BLMark } from './site-header';
-import { ROADMAP_FILES } from './roadmap';
+import { Spinner } from '@/components/ui/spinner';
+import type { EmbeddedDocsProps } from './embedded';
 
-const DocstreamDocs = lazy(() => import('docstream-playground/site').then((m) => ({ default: m.DocstreamDocs })));
-const EditorDocs = lazy(() => import('docstream-editor-playground/site').then((m) => ({ default: m.EditorDocs })));
-
-/** The libraries with docs sites of their own, by route prefix. */
+/** Route prefixes, longest first (`docstream-editor` before `docstream`). */
 export const DOCS_SITES = ['docstream-editor', 'docstream', 'roadmap'] as const;
 export type DocsSiteId = (typeof DOCS_SITES)[number];
 
-const shared = (appearance: Appearance) => ({
-  theme: appearance,
-  themeToggle: false,
-  themeStorageKey: false as const,
-  applyThemeTo: 'site' as const,
-  height: 'calc(100dvh - var(--site-header-h))',
-});
+const SITES = {
+  docstream: lazy(() => import('./docstream-docs')),
+  'docstream-editor': lazy(() => import('./editor-docs')),
+  roadmap: lazy(() => import('./roadmap-docs')),
+} satisfies Record<DocsSiteId, unknown>;
 
-export function LibraryDocs({ id, appearance }: { id: DocsSiteId; appearance: Appearance }) {
+export function LibraryDocs({ id, ...props }: EmbeddedDocsProps & { id: DocsSiteId }) {
+  const Site = SITES[id];
   return (
-    <div className="site-docs">
-      <Suspense fallback={<div className="site-loading">Loading the docs…</div>}>
-        {id === 'docstream' ? <DocstreamDocs basePath="docstream" demoPrefix="docstream:" {...shared(appearance)} />
-          : id === 'docstream-editor' ? <EditorDocs basePath="docstream-editor" demoPrefix="docstream-editor:" {...shared(appearance)} />
-          : (
-            <DocsSite
-              files={ROADMAP_FILES}
-              basePath="roadmap"
-              title="Roadmap"
-              logo={<BLMark size={24} />}
-              editUrl={(page) => (/^0[124]-/.test(page.path) ? undefined : `https://github.com/BLamy/ui/edit/main/apps/docs/roadmap/${page.path}`)}
-              sidebarFooter={<>The package and module maps are generated from <code>libraries.ts</code>; a test checks them against the code.</>}
-              {...shared(appearance)}
-            />
-          )}
-      </Suspense>
-    </div>
+    <Suspense
+      fallback={(
+        <div role="status" className="grid h-full place-items-center bg-background text-footnote text-muted-foreground">
+          <span className="flex items-center gap-2"><Spinner size={16} /> Loading the docs…</span>
+        </div>
+      )}
+    >
+      <Site {...props} />
+    </Suspense>
   );
 }

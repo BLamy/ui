@@ -1,8 +1,8 @@
 'use client';
 import * as React from 'react';
 import { useRef, useState } from 'react';
-import { GitbookEditor, type GitbookEditorProps } from '@brett_lamy/docstream-editor/editor';
-import type { EditorAttachment } from '@brett_lamy/docstream-editor';
+import { GitbookEditor, type GitbookEditorProps } from '@brett_lamy/ui/docstream-editor/editor';
+import type { EditorAttachment } from '@brett_lamy/ui/docstream-editor';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { animateIn, announce, bindDrag, bindLayer, createFocusRecovery, dragThreshold, type ChangeDetails, type FocusRecovery } from '@ui-sdk/core';
 import { createVelocityTracker, rubberBand } from '@ui-sdk/core/gesture';

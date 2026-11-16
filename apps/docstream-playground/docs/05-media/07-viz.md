@@ -14,7 +14,7 @@ This page shows code only. VizEngine is an optional peer dependency, and this de
 
 `VizEmbed` lives on its own entry, so the root entry never imports VizEngine. Install the peer next to docstream:
 
-{% command %}npm install @brett_lamy/ui/docstream @brett_lamy/viz-engine{% endcommand %}
+{% command %}npm install @brett_lamy/ui @brett_lamy/viz-engine{% endcommand %}
 
 ```tsx lineNumbers="false"
 import { VizEmbed } from "@brett_lamy/ui/docstream/viz"

@@ -222,7 +222,7 @@ The fallback reads the language tag: TypeScript and JavaScript (JSX too), JSON, 
 `renderCode` hands every ordinary fence to you: your own editor, your own highlighter, or docstream's highlighting in your frame. Return `null` (or `undefined`) for docstream's rendering, as `renderReference` does for chips. It works on `GitbookStreamdown`, `MarkdownContent` and `DocsRenderer`, and nested renderers inherit it:
 
 ```tsx title="Docs.tsx"
-import { GitbookStreamdown, type CodeBlockRenderer } from "@brett_lamy/docstream"
+import { GitbookStreamdown, type CodeBlockRenderer } from "@brett_lamy/ui/docstream"
 import { CodeEditor } from "./CodeEditor"
 
 const renderCode: CodeBlockRenderer = (block, { placement, highlighted }) => {
@@ -354,13 +354,13 @@ The wrapper's attributes replace the fence's own. For new pages, put the attribu
 
 {% tabs sync="example" %}
 {% tab title="Preview" %}
-{% command %}npm install @brett_lamy/ui/docstream react react-dom{% endcommand %}
+{% command %}npm install @brett_lamy/ui react react-dom{% endcommand %}
 
 {% command %}npx shadcn@latest add https://example.com/r/composer.json{% endcommand %}
 {% endtab %}
 {% tab title="Markdown" %}
 ````md
-{% command %}npm install @brett_lamy/ui/docstream react react-dom{% endcommand %}
+{% command %}npm install @brett_lamy/ui react react-dom{% endcommand %}
 
 {% command %}npx shadcn@latest add https://example.com/r/composer.json{% endcommand %}
 ````
@@ -400,7 +400,7 @@ Try it — this is the same `packageManagerCommands` function the box calls:
 {% command %}
 npm create vite@latest my-docs -- --template react-ts
 cd my-docs
-npm install @brett_lamy/ui/docstream && npm run dev
+npm install @brett_lamy/ui && npm run dev
 {% endcommand %}
 {% endtab %}
 {% tab title="Markdown" %}
@@ -408,7 +408,7 @@ npm install @brett_lamy/ui/docstream && npm run dev
 {% command %}
 npm create vite@latest my-docs -- --template react-ts
 cd my-docs
-npm install @brett_lamy/ui/docstream && npm run dev
+npm install @brett_lamy/ui && npm run dev
 {% endcommand %}
 ````
 {% endtab %}
@@ -420,11 +420,11 @@ When a derivation isn't what you want, give that manager its command verbatim wi
 
 {% tabs sync="example" %}
 {% tab title="Preview" %}
-{% command bun="bun add @brett_lamy/ui/docstream --trust" yarn="yarn add @brett_lamy/ui/docstream --ignore-engines" %}npm install @brett_lamy/ui/docstream{% endcommand %}
+{% command bun="bun add @brett_lamy/ui --trust" yarn="yarn add @brett_lamy/ui --ignore-engines" %}npm install @brett_lamy/ui{% endcommand %}
 {% endtab %}
 {% tab title="Markdown" %}
 ````md
-{% command bun="bun add @brett_lamy/ui/docstream --trust" yarn="yarn add @brett_lamy/ui/docstream --ignore-engines" %}npm install @brett_lamy/ui/docstream{% endcommand %}
+{% command bun="bun add @brett_lamy/ui --trust" yarn="yarn add @brett_lamy/ui --ignore-engines" %}npm install @brett_lamy/ui{% endcommand %}
 ````
 {% endtab %}
 {% endtabs %}

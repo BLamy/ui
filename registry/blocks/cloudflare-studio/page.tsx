@@ -1,15 +1,16 @@
 /* Cloudflare Studio — a system of Cloudflare's services, drawn and edited on a CloudflareDiagram, with a machine for any
    service that runs code, and exported as files: the system's JSON, a wrangler.jsonc for each Worker, and a module for each
    machine. It's kept in the browser as it changes, so a reload carries on where it was, and nothing goes over the network or
-   needs an account. The inspector is the diagram's own: a SideDrawer beside the board, or a Credenza tray under it at a
-   phone's size. */
+   needs an account. The inspector is the diagram's own panel: a column beside the board, a drawer, or a page pushed over
+   it at a phone's size. Export is a Dialog (a sheet at a phone's size). */
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { CloudflareDiagram } from '@/components/ui/cloudflare-diagram';
-import { Credenza } from '@/components/ui/credenza';
-import { FileUploadButton } from '@/components/ui/file-upload';
+import {
+  Dialog, DialogBackdrop, DialogBody, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
+} from '@/components/ui/dialog';
+import { FileUploadTrigger } from '@/components/ui/file-upload';
 import { Input } from '@/components/ui/input';
-import { TextField } from '@/components/ui/text-field';
 import type { CloudflareSystem, SystemIssue } from '@/lib/cloudflare-system';
 import { EMPTY_SYSTEM, parseSystem } from '@/lib/cloudflare-system';
 import { cn } from '@/lib/utils';
@@ -45,9 +46,16 @@ function download(file: StudioFile) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
+/** A file that's opened, read as a studio: its name from the file's, unless it's the `system.json` this exports. */
+export function openedStudio(fileName: string, text: string, current: string): { studio: SavedStudio | null; issues: SystemIssue[] } {
+  const read = parseSystem(text);
+  if (read.issues.some((i) => i.code === 'json' || i.code === 'shape')) return { studio: null, issues: read.issues };
+  return { studio: { name: fileName.replace(/\.json$/i, '').replace(/^system$/, current), system: read.system }, issues: read.issues };
+}
+
 export default function CloudflareStudio({ initial = EXAMPLE, storageKey = 'cloudflare-studio', className }: CloudflareStudioProps) {
   const [studio, setStudio] = useState<SavedStudio>(() => (storageKey ? readSaved(storage()?.getItem(storageKey) ?? null) : null) ?? initial);
-  // Something loaded or started over replaces the board, and its undo history goes with it.
+  // Something opened or started over replaces the board, and its undo history goes with it.
   const [generation, setGeneration] = useState(0);
   const [exporting, setExporting] = useState(false);
   const [notes, setNotes] = useState<SystemIssue[]>([]);
@@ -55,6 +63,7 @@ export default function CloudflareStudio({ initial = EXAMPLE, storageKey = 'clou
   const first = useRef(true);
 
   useEffect(() => {
+    // What it opened with is already there (or is the example), so the first run writes nothing.
     if (first.current) { first.current = false; return; }
     if (!storageKey) return;
     try {
@@ -72,29 +81,35 @@ export default function CloudflareStudio({ initial = EXAMPLE, storageKey = 'clou
   };
   const changeSystem = (system: CloudflareSystem) => setStudio((s) => ({ ...s, system }));
   const open = async (file: File) => {
-    const read = parseSystem(await file.text());
-    if (read.issues.some((i) => i.code === 'json' || i.code === 'shape')) { setNotes(read.issues); return; }
-    replace({ name: file.name.replace(/\.json$/i, '').replace(/^system$/, studio.name), system: read.system }, read.issues);
+    const { studio: opened, issues } = openedStudio(file.name, await file.text(), studio.name);
+    if (opened) replace(opened, issues);
+    else setNotes(issues);
   };
   const files = useMemo(() => (exporting ? studioFiles(studio.system) : []), [exporting, studio.system]);
 
   return (
     <div data-slot="cloudflare-studio" className={cn('relative flex h-full min-h-[560px] w-full flex-col bg-background text-foreground', className)}>
       <header data-slot="cloudflare-studio-bar" className="flex flex-wrap items-center gap-2 border-b border-border px-3 py-2">
-        <TextField aria-label="The system’s name" value={studio.name} onChange={(name) => setStudio((s) => ({ ...s, name }))} className="min-w-0 flex-1 basis-40">
-          <Input data-slot="cloudflare-studio-name" size="sm" className="font-semibold" />
-        </TextField>
-        <span data-slot="cloudflare-studio-saved" data-saved={saved} role="status" className="text-footnote text-muted-foreground">
+        <Input
+                    aria-label="System name"
+          size="sm"
+          value={studio.name}
+          onValueChange={(name) => setStudio((s) => ({ ...s, name }))}
+          className="min-w-0 flex-1 basis-40 font-semibold"
+        />
+        <span data-slot="cloudflare-studio-saved" data-saved={saved} role="status" className="text-footnote text-foreground/70">
           {saved === 'saved' ? 'Kept in this browser' : saved === 'not-saved' ? 'Couldn’t keep it in this browser' : ''}
         </span>
-        <div className="flex flex-wrap gap-2">
-          <Button data-slot="cloudflare-studio-new" variant="secondary" size="sm" onPress={() => replace({ name: 'Untitled system', system: EMPTY_SYSTEM })}>New</Button>
-          <FileUploadButton data-slot="cloudflare-studio-open" variant="secondary" size="sm" accept={['application/json', '.json']} multiple={false} onFiles={(entries) => { if (entries[0]) void open(entries[0].file); }}>Open</FileUploadButton>
-          <Button data-slot="cloudflare-studio-export" size="sm" onPress={() => setExporting(true)}>Export</Button>
+        <div role="group" aria-label="System" className="flex flex-wrap gap-2">
+          <Button data-action="new" variant="secondary" size="sm" onClick={() => replace({ name: 'Untitled system', system: EMPTY_SYSTEM })}>New</Button>
+          <FileUploadTrigger data-action="open" variant="secondary" size="sm" accept={['application/json', '.json']} multiple={false} onFiles={(picked) => { if (picked[0]) void open(picked[0]); }}>Open…</FileUploadTrigger>
+          <Button data-action="export" size="sm" onClick={() => setExporting(true)}>Export…</Button>
         </div>
         {notes.length ? (
-          <ul data-slot="cloudflare-studio-notes" className="m-0 flex w-full list-none flex-col gap-1 p-0 text-footnote">
-            {notes.map((n, i) => <li key={i} data-code={n.code} className={n.severity === 'error' ? 'text-destructive' : 'text-muted-foreground'}>{n.message}</li>)}
+          <ul data-slot="cloudflare-studio-notes" aria-label="What the file said" className="m-0 flex w-full list-none flex-col gap-1 p-0 text-footnote">
+            {notes.map((n, i) => (
+              <li key={i} data-code={n.code} data-severity={n.severity} className={n.severity === 'error' ? 'text-destructive' : 'text-foreground/70'}>{n.message}</li>
+            ))}
           </ul>
         ) : null}
       </header>
@@ -104,30 +119,39 @@ export default function CloudflareStudio({ initial = EXAMPLE, storageKey = 'clou
           editable
           services={studio.system.services}
           edges={studio.system.edges}
-          onChange={(change) => changeSystem({ services: change.services, edges: change.edges })}
-          aria-label={studio.name}
+          onDataChange={changeSystem}
+          aria-label={studio.name || 'Untitled system'}
         />
       </div>
-      <Credenza open={exporting} onClose={() => setExporting(false)} title={`Export ${studio.name}`}>
-        <div data-slot="cloudflare-studio-files" className="bl-scroll flex max-h-[70vh] flex-col gap-4 overflow-y-auto pb-2">
-          <p className="m-0 text-footnote text-muted-foreground">Files only: nothing’s deployed. What a file still needs that the system doesn’t say is under it.</p>
-          <div><Button data-slot="cloudflare-studio-download-all" size="sm" onPress={() => files.forEach(download)}>Download all {files.length}</Button></div>
-          {files.map((file) => (
-            <section key={file.path} data-slot="cloudflare-studio-file" data-path={file.path} aria-label={file.path} className="flex flex-col gap-1.5">
-              <div className="flex items-center gap-2">
-                <span className="min-w-0 flex-1 truncate font-mono text-footnote font-semibold">{file.path}</span>
-                <Button data-slot="cloudflare-studio-download" variant="secondary" size="sm" aria-label={`Download ${file.path}`} onPress={() => download(file)}>Download</Button>
-              </div>
-              {file.needs.length ? (
-                <ul data-slot="cloudflare-studio-needs" className="m-0 flex list-none flex-col gap-0.5 p-0 text-footnote text-muted-foreground">
-                  {file.needs.map((need, i) => <li key={i}>{need}</li>)}
-                </ul>
-              ) : null}
-              <pre data-slot="cloudflare-studio-file-text" className="bl-scroll m-0 max-h-60 overflow-auto rounded-ctl bg-secondary p-2 font-mono text-caption">{file.text}</pre>
-            </section>
-          ))}
-        </div>
-      </Credenza>
+      <Dialog open={exporting} onOpenChange={setExporting}>
+        <DialogBackdrop />
+        <DialogContent size="lg">
+          <DialogClose />
+          <DialogHeader>
+            <DialogTitle>Export {studio.name}</DialogTitle>
+            <DialogDescription>Files only: nothing’s deployed, and there’s no account. What a file still needs that the system doesn’t say is listed under it.</DialogDescription>
+          </DialogHeader>
+          <DialogBody data-part="files" className="flex max-h-[60vh] flex-col gap-4 overflow-y-auto">
+            {files.map((file) => (
+              <section key={file.path} data-slot="cloudflare-studio-file" data-path={file.path} aria-label={file.path} className="flex flex-col gap-1.5">
+                <div className="flex items-center gap-2">
+                  <span className="min-w-0 flex-1 truncate font-mono text-footnote font-semibold">{file.path}</span>
+                  <Button data-action="download" variant="secondary" size="sm" aria-label={`Download ${file.path}`} onClick={() => download(file)}>Download</Button>
+                </div>
+                {file.needs.length ? (
+                  <ul data-slot="cloudflare-studio-needs" aria-label={`What ${file.path} still needs`} className="m-0 flex list-none flex-col gap-0.5 p-0 text-footnote text-foreground/70">
+                    {file.needs.map((need, i) => <li key={i}>{need}</li>)}
+                  </ul>
+                ) : null}
+                <pre data-slot="cloudflare-studio-file-text" className="bl-scroll m-0 max-h-60 overflow-auto rounded-ctl bg-secondary p-2 font-mono text-caption">{file.text}</pre>
+              </section>
+            ))}
+          </DialogBody>
+          <DialogFooter>
+            <Button data-action="download-all" onClick={() => files.forEach(download)}>Download all {files.length}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

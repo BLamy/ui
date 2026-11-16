@@ -1,7 +1,7 @@
 /* Task lists in Markdown, read and written by line. A file's `- [ ]` items are its reminders: headings group them
    into sections, a task indented under another is its subtask, and `#tags` are lifted out of the title. Each task
    keeps its line, so changing its state rewrites that one marker (`[ ]` → `[x]`, `[~]`, …) and nothing else. */
-import { TASK_STATES, taskStateFromMarker } from '@brett_lamy/docstream/gitbook';
+import { TASK_STATES, taskStateFromMarker } from '@brett_lamy/ui/docstream/gitbook';
 
 /** Docstream's task states: pending, in progress, implemented, blocked, parked, refuted, verified, cancelled. */
 export type TaskState = (typeof TASK_STATES)[number]['id'];

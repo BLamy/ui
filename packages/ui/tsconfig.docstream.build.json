@@ -11,7 +11,8 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
-    "customConditions": []
+    "customConditions": [],
+    "stripInternal": true
   },
   "include": [
     "src/docstream"

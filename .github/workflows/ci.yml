@@ -25,6 +25,14 @@ jobs:
           node tools/tokens/build.mjs --check
           node tools/tokens/check.mjs
           node tools/docs/variants-md.mjs --check
+          node tools/docs/install-md.mjs --check
+      # The catalog is what its pinned upstream sources make, byte for byte (the first run fetches them), and the built
+      # package keeps it on @brett_lamy/ui/cloudflare alone, with no Cloudflare artwork anywhere.
+      - name: Cloudflare catalog and entry
+        env: { GITHUB_TOKEN: '${{ github.token }}' }
+        run: |
+          node tools/cloudflare/catalog.mjs --check
+          node tools/cloudflare/check-package.mjs
       - run: pnpm exec playwright install chromium --with-deps
       - name: Behavior tests (taps, swipes, right-clicks)
         run: pnpm e2e

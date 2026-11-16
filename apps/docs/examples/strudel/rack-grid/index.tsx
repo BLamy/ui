@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { StrudelRack } from '@brett_lamy/docstream/strudel'
+import { StrudelRack } from '@brett_lamy/ui/docstream/strudel'
 import { playStrudel, stopStrudel, updateStrudel } from '@/components/ui/strudel-player'
 import { Button } from '@/components/ui/button'
 

@@ -77,8 +77,9 @@ test.describe('basic demo', () => {
 
   test('keeps the old preview, dimmed, while a new one is being read, and never shows offsets of old text', async ({ page }) => {
     const field = page.getByRole('textbox', { name: 'When' });
-    // There is an old preview to keep only once the default text has been read.
+    // There is an old preview to keep only once the default text has been read, and that reading has settled.
     await expect(page.locator(PREVIEW)).toBeVisible();
+    await expect(page.locator(ROOT)).not.toHaveAttribute('data-pending', /.*/);
     await field.click();
     await field.press('ControlOrMeta+a');
     // One key, then look at once (a single round trip): the 120 ms debounce has not fired yet.

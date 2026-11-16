@@ -1,7 +1,7 @@
 /* Build-time Markdown export (tools/docs/pages-md.mjs loads this through Vite's SSR loader, so the same
    import.meta.glob resolver config applies): every page as "Copy page" gives it — renderable docstream Markdown whose
    `{% demo %}` blocks carry the demos' real files inline. */
-import { parseMarkdown, resolveDemosToMarkdown, serializeMarkdown, type DemoNode } from '@brett_lamy/docstream';
+import { parseMarkdown, resolveDemosToMarkdown, serializeMarkdown, type DemoNode } from '@brett_lamy/ui/docstream';
 import { demoResolver } from './demos';
 import { PAGE_LIST, pageSource } from './pages';
 

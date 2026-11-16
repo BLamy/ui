@@ -14,7 +14,7 @@ export default meta;
 type Story = StoryObj<typeof CloudflareStudio>;
 
 function Full({ children, dark }: { children: ReactNode; dark?: boolean }) {
-  return <BLProvider dark={dark}><div className="h-screen w-full">{children}</div></BLProvider>;
+  return <BLProvider appearance={dark ? 'dark' : undefined}><div className="h-screen w-full">{children}</div></BLProvider>;
 }
 function Phone({ children }: { children: ReactNode }) {
   return <BLProvider><div className="relative h-[720px] w-[390px] overflow-hidden">{children}</div></BLProvider>;

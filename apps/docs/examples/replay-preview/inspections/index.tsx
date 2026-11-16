@@ -1,4 +1,4 @@
-import { replayDemoEvents } from '@brett_lamy/docstream/replay/demo'
+import { replayDemoEvents } from '@brett_lamy/ui/docstream/replay/demo'
 import { ReplayPreview, type ReplayInspection } from '@/components/ui/replay-preview'
 
 // What a debugger looked at, and when. Press play: at 0:06.8 DevTools opens on the

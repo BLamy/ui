@@ -39,7 +39,7 @@ export interface CanvasPointerInfo {
 }
 
 export type CanvasFitOptions = {
-  /** Screen pixels of air around the box. Default 72. */
+  /** Screen pixels of air around the box. Default the canvas's `fitPadding`, or 72. */
   padding?: number;
   /** How far in a fit may zoom. Default 1. */
   maxZoom?: number;
@@ -83,6 +83,8 @@ export type CanvasOptions = {
   panning?: boolean;
   /** What ⌘0 and `fit()` show (the bounds of your content); none centers the origin. */
   fit?: Rect | null;
+  /** How much air ⌘0 and `fit()` leave around `fit`, in screen px (default 72). */
+  fitPadding?: number;
   /** Default 0.02: far enough out for a map of a hundred screens. */
   minZoom?: number;
   /** Default 4. */
@@ -148,7 +150,7 @@ const editable = (target: EventTarget | null) =>
 export const canvas = definePrimitive({
   name: 'canvas',
   options: {
-    viewport: 'value', defaultViewport: 'value', onViewportChange: 'callback', panning: 'boolean', fit: 'value',
+    viewport: 'value', defaultViewport: 'value', onViewportChange: 'callback', panning: 'boolean', fit: 'value', fitPadding: 'number',
     minZoom: 'number', maxZoom: 'number', message: 'callback', autoFocus: 'boolean',
     onCanvasPointerDown: 'callback', onCanvasPointerMove: 'callback', onCanvasPointerUp: 'callback',
     onCanvasDoubleClick: 'callback', onNavigationStart: 'callback', onCanvasKeyDown: 'callback', controller: 'value',
@@ -217,7 +219,7 @@ export const canvas = definePrimitive({
         viewport.zoomTo(zoom, at, { reason: reason as ViewportReason, event }),
       zoomBy: (factor: number, at?: Pt, { reason = 'imperative', event }: ChangeOptions<CanvasViewportReason> = {}) =>
         viewport.zoomBy(factor, at, { reason: reason as ViewportReason, event }),
-      fit(rect?: Rect | null, { padding = 72, maxZoom = 1 }: CanvasFitOptions = {}, { reason = 'imperative', event }: ChangeOptions<CanvasViewportReason> = {}) {
+      fit(rect?: Rect | null, { padding = context.options().fitPadding ?? 72, maxZoom = 1 }: CanvasFitOptions = {}, { reason = 'imperative', event }: ChangeOptions<CanvasViewportReason> = {}) {
         const box = rect === undefined ? context.options().fit : rect;
         const details = { reason: reason as ViewportReason, event };
         if (!box || box.w <= 0 || box.h <= 0) {

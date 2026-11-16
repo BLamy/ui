@@ -1,0 +1,4 @@
+{
+  "title": "A workerd config",
+  "description": "A config.capnp read into a system and drawn read-only, with what isn't a Cloudflare service listed under it."
+}

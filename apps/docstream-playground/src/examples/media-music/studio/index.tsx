@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { StrudelPlayer, type StrudelCodeChangeDetails } from "@brett_lamy/docstream"
+import { StrudelPlayer, type StrudelCodeChangeDetails } from "@brett_lamy/ui/docstream"
 import { SONGS } from "./songs"
 
 // The rack edits the code; onCodeChange hands every edit back so a host can save it, with what made it.

@@ -1,7 +1,7 @@
-/** apps/docs/vite.config.mts: file lists the site reports on, without bundling the files. */
+/** apps/docs/vite.config.mts: what the site reports on, without bundling the files. */
 declare module 'virtual:bl-site-files' {
-  /** packages/ui/src modules (components/… and lib/…, tests and stories aside), sorted. */
-  export const uiModules: string[];
-  /** Markdown pages across the libraries' docs folders. */
+  /** The units of packages/ui/src (src/site/plan-graph.ts), sorted. */
+  export const uiUnits: string[];
+  /** Markdown pages across docstream's and the editor's docs folders. */
   export const libraryPages: number;
 }

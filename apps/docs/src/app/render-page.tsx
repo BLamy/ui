@@ -6,7 +6,7 @@
      ?render&resolver=0  without it: demos show the files they carry inline (the preview runs them in almost-node),
                          as the Markdown renders anywhere else */
 import { useState } from 'react';
-import { GitbookStreamdown } from '@brett_lamy/docstream';
+import { GitbookStreamdown } from '@brett_lamy/ui/docstream';
 import { demoResolver } from '../demos';
 import './shell.css';
 

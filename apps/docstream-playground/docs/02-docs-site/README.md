@@ -12,7 +12,7 @@ description: Point DocsSite at a folder of Markdown and get a GitBook-style site
 
 ## Five lines
 
-{% command %}npm install @brett_lamy/ui/docstream react react-dom{% endcommand %}
+{% command %}npm install @brett_lamy/ui react react-dom{% endcommand %}
 
 ```tsx title="main.tsx"
 import { createRoot } from "react-dom/client"

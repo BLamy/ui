@@ -19,7 +19,7 @@ Edit me — this hint is a real GitBook block. Pick another style under its icon
 
 {% tabs sync="pm" %}
 {% tab title="Install" %}
-{% command %}npm install @brett_lamy/ui/docstream-editor{% endcommand %}
+{% command %}npm install @brett_lamy/ui{% endcommand %}
 {% endtab %}
 
 {% tab title="Import" %}

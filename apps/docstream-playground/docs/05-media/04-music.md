@@ -154,7 +154,7 @@ Every edit says what made it. A knob or fader reports `onValueChange(value, deta
 
 ```tsx title="Studio.tsx"
 import { useState } from "react"
-import { Knob, StrudelRack, type StrudelRackChangeDetails } from "@brett_lamy/docstream/strudel"
+import { Knob, StrudelRack, type StrudelRackChangeDetails } from "@brett_lamy/ui/docstream/strudel"
 
 export function Studio({ initial, log }: { initial: string; log: (line: string) => void }) {
   const [code, setCode] = useState(initial)

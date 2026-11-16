@@ -11,8 +11,8 @@ export default function EditMachine() {
   return (
     <div className="grid h-full min-h-[560px] w-full grid-rows-[auto_1fr]">
       <div className="flex flex-wrap gap-2 border-b border-border p-3">
-        <Button variant="secondary" size="sm" onPress={() => setWhich('machine')}>The upload</Button>
-        <Button variant="secondary" size="sm" onPress={() => setWhich('code')}>With code in it</Button>
+        <Button variant="secondary" size="sm" onClick={() => setWhich('machine')}>The upload</Button>
+        <Button variant="secondary" size="sm" onClick={() => setWhich('code')}>With code in it</Button>
       </div>
       <div className="relative">
         {which === 'machine'

@@ -3,8 +3,8 @@
    this file inside a layer of its own must declare `@layer ui-sdk;` itself, first (see the README). */
 @layer ui-sdk;
 
-@import "@brett_lamy/docstream/properties/styles.css";
-@import "@brett_lamy/docstream/tasks/styles.css";
+@import "../docstream/docs/properties.css";
+@import "../docstream/docs/tasks.css";
 
 /*
  * Editor chrome for the GitBook node views (.gb-* classes emitted by
@@ -15,7 +15,7 @@
  * `data-highlighted`, `data-checked`, `data-disabled`), never from a state class.
  *
  * Visual parity contract: every block here mirrors its read-only twin in
- * @brett_lamy/docstream/styles.css (.docs-*) — same radii, spacing, hint
+ * @brett_lamy/ui/docstream/styles.css (.docs-*) — same radii, spacing, hint
  * palette, and typography — so what authors see in the editor is what
  * readers get from DocsRenderer.
  *
@@ -855,7 +855,7 @@
   margin-top: 8px;
 }
 .gb-inline-img-wrap { display: inline-block; vertical-align: middle; }
-/* A thumbnail image (docstream's .docs-thumb, styled by @brett_lamy/docstream/styles.css). First in a
+/* A thumbnail image (docstream's .docs-thumb, styled by @brett_lamy/ui/docstream/styles.css). First in a
    paragraph it floats left so the text runs beside it, as in the rendered document. */
 .gb-inline-thumb { display: inline-block; vertical-align: top; }
 /* TipTap wraps the node view in span.node-gbInlineImage, which is the paragraph's child. */

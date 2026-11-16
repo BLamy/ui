@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { indexDiagram, type DiagramEdge, type DiagramNode } from './diagram-model';
-import { cameraToShow, describeEdge, describeNode, edgesByNode, focusOrder, nearestNode, nodeInDirection, stepFocus, type DiagramFocus } from './diagram-keyboard';
+import { fitViewport, viewportToShow, describeEdge, describeNode, edgesByNode, focusOrder, nearestNode, nodeInDirection, stepFocus, type DiagramItem } from './diagram-keyboard';
 
 const node = (id: string, x: number, y: number, extra: Partial<DiagramNode> = {}): DiagramNode => ({ id, label: id, x, y, w: 100, h: 40, ...extra });
 const nodes: DiagramNode[] = [
@@ -14,8 +14,8 @@ const edges: DiagramEdge[] = [
   { id: 'loop', from: 'b', to: 'b', label: 'AGAIN' }, { id: 'in', from: 'b', to: 'k1' }, { id: 'k', from: 'k1', to: 'k2' },
 ];
 const ctx = { index: indexDiagram(nodes), edges };
-const n = (id: string): DiagramFocus => ({ kind: 'node', id });
-const e = (id: string): DiagramFocus => ({ kind: 'edge', id });
+const n = (id: string): DiagramItem => ({ kind: 'node', id });
+const e = (id: string): DiagramItem => ({ kind: 'edge', id });
 
 describe('a root', () => {
   it('isn’t somewhere focus goes, as it’s the background', () => {
@@ -94,7 +94,7 @@ describe('stepping', () => {
   it('reaches every node and every edge with one key, and comes back round', () => {
     const all = focusOrder(ctx);
     expect(all).toHaveLength(nodes.length + edges.length);
-    let at: DiagramFocus = all[0];
+    let at: DiagramItem = all[0];
     const seen = new Set<string>();
     for (let i = 0; i < all.length; i++) {
       seen.add(`${at.kind}:${at.id}`);
@@ -187,27 +187,35 @@ describe('what a screen reader hears', () => {
 
 describe('the view follows', () => {
   const size = { width: 800, height: 600 };
-  const camera = { x: 0, y: 0, z: 1 };
+  const viewport = { x: 0, y: 0, zoom: 1 };
 
-  it('leaves the camera alone when it’s already in view', () => {
-    expect(cameraToShow(camera, { x: 100, y: 100, w: 100, h: 40 }, size)).toBe(camera);
+  it('leaves the view alone when it’s already in view', () => {
+    expect(viewportToShow(viewport, { x: 100, y: 100, w: 100, h: 40 }, size)).toBe(viewport);
   });
 
   it('moves as little as it can, with air', () => {
-    expect(cameraToShow(camera, { x: 900, y: 100, w: 100, h: 40 }, size)).toEqual({ x: -248, y: 0, z: 1 });
-    expect(cameraToShow(camera, { x: -300, y: 100, w: 100, h: 40 }, size)).toEqual({ x: 348, y: 0, z: 1 });
-    expect(cameraToShow(camera, { x: 100, y: 900, w: 100, h: 40 }, size)).toEqual({ x: 0, y: -388, z: 1 });
+    expect(viewportToShow(viewport, { x: 900, y: 100, w: 100, h: 40 }, size)).toEqual({ x: -248, y: 0, zoom: 1 });
+    expect(viewportToShow(viewport, { x: -300, y: 100, w: 100, h: 40 }, size)).toEqual({ x: 348, y: 0, zoom: 1 });
+    expect(viewportToShow(viewport, { x: 100, y: 900, w: 100, h: 40 }, size)).toEqual({ x: 0, y: -388, zoom: 1 });
   });
 
   it('goes by what’s on screen, at the zoom it’s at', () => {
-    const z = { x: 0, y: 0, z: 2 };
-    const next = cameraToShow(z, { x: 500, y: 100, w: 100, h: 40 }, size);
+    const z = { x: 0, y: 0, zoom: 2 };
+    const next = viewportToShow(z, { x: 500, y: 100, w: 100, h: 40 }, size);
     // Its right edge is at 1200 on screen, and has to come to 752.
-    expect(next).toEqual({ x: -448, y: 0, z: 2 });
+    expect(next).toEqual({ x: -448, y: 0, zoom: 2 });
   });
 
   it('centers what’s too big to fit', () => {
-    const next = cameraToShow(camera, { x: 0, y: 0, w: 2000, h: 40 }, size);
+    const next = viewportToShow(viewport, { x: 0, y: 0, w: 2000, h: 40 }, size);
     expect(next.x).toBe(400 - 1000);
+  });
+
+  it('fits what there is, no closer than 100%, and the origin when there’s nothing', () => {
+    expect(fitViewport(null, size)).toEqual({ x: 400, y: 300, zoom: 1 });
+    expect(fitViewport({ x: 0, y: 0, w: 100, h: 50 }, size)).toEqual({ x: 350, y: 275, zoom: 1 });
+    const far = fitViewport({ x: 0, y: 0, w: 1504, h: 100 }, size);
+    expect(far.zoom).toBeCloseTo(0.5);
+    expect(far.x).toBeCloseTo(400 - 752 * 0.5);
   });
 });

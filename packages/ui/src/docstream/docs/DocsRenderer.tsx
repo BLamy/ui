@@ -1,4 +1,4 @@
-import { useContext, useEffect, useId, useMemo, useState, type ComponentProps, type ReactNode } from "react"
+import { useContext, useEffect, useMemo, useState, type ComponentProps, type ReactNode } from "react"
 import { Tabs as TabsRoot, TabsIndicator, TabsList, TabsPanel, TabsTab } from "@ui-sdk/react/tabs"
 import { DetailsCollapsible } from "../ui/details-collapsible"
 import {

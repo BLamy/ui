@@ -360,7 +360,7 @@ ${counterSource.trimEnd()}
 
 ## Optional runtimes and source preservation
 
-Live React fences are highlighted code unless a host supplies a \`liveRenderer\`. Docstream's optional \`@brett_lamy/docstream/playground\` entry supplies the sandbox runtime and requires \`@agent-wasm/core\`.
+Live React fences are highlighted code unless a host supplies a \`liveRenderer\`. Docstream's optional \`@brett_lamy/ui/docstream/playground\` entry supplies the sandbox runtime and requires \`@agent-wasm/core\`.
 
 \`\`\`tsx live="true" title="live-counter.tsx" entry="/src/main.tsx"
 import { useState } from 'react'
@@ -371,10 +371,10 @@ export default function App() {
 }
 \`\`\`
 
-VizEngine scenes use the optional \`@brett_lamy/docstream/viz\` entry and the \`@brett_lamy/viz-engine\` peer dependency:
+VizEngine scenes use the optional \`@brett_lamy/ui/docstream/viz\` entry and the \`@brett_lamy/viz-engine\` peer dependency:
 
 \`\`\`tsx
-import { VizEmbed } from '@brett_lamy/docstream/viz'
+import { VizEmbed } from '@brett_lamy/ui/docstream/viz'
 
 <VizEmbed scene={scene} title="An interactive scene" />
 \`\`\`

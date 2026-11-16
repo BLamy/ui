@@ -2,7 +2,7 @@
 /* @internal: the Composer's own wiring, shared by its modules and by ArtifactChatContainer. Registry installs copy it
    with the Composer; it has no npm entry (tools/registry/package-exports.mjs skips modules marked `@internal`). */
 import * as React from 'react';
-import type { GitbookEditorProps } from '@brett_lamy/docstream-editor/editor';
+import type { GitbookEditorProps } from '@brett_lamy/ui/docstream-editor/editor';
 import type { ComposerAttachment, ComposerContextValue } from '@/components/ui/composer/composer';
 
 /** How a ComposerQueue takes a draft sent while a reply streams: `false` when its `onItemsChange` refused it. */

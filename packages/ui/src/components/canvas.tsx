@@ -38,6 +38,8 @@ export interface CanvasProps extends CanvasOptions {
   /** The pattern behind the board (default `dots`). */
   background?: 'dots' | 'grid' | 'none';
   'aria-label'?: string;
+  /** What the canvas's keys do, for a component that adds its own (a diagram's), read after its name. */
+  'aria-describedby'?: string;
   ref?: Ref<HTMLDivElement>;
   /** Drawn over the canvas in screen space, not scaled. */
   overlay?: ReactNode;
@@ -87,9 +89,9 @@ export function useCanvas(options?: { optional?: boolean }): CanvasContextValue 
 }
 
 export function Canvas({
-  viewport, defaultViewport, onViewportChange, panning, fit, minZoom, maxZoom, message, autoFocus,
+  viewport, defaultViewport, onViewportChange, panning, fit, fitPadding, minZoom, maxZoom, message, autoFocus,
   onCanvasPointerDown, onCanvasPointerMove, onCanvasPointerUp, onCanvasDoubleClick, onNavigationStart, onCanvasKeyDown, controller,
-  background = 'dots', 'aria-label': ariaLabel = 'Canvas', overlay, children, className, style, ref: refProp,
+  background = 'dots', 'aria-label': ariaLabel = 'Canvas', 'aria-describedby': describedBy, overlay, children, className, style, ref: refProp,
 }: CanvasProps) {
   // Pointer layers ask for a press before the host; a press one takes stays with it until the pointer lifts.
   const layers = useRef<CanvasPointerLayer[]>([]);
@@ -102,7 +104,7 @@ export function Canvas({
     };
   }, []);
   const handle = usePrimitive(canvas, {
-    viewport, defaultViewport, onViewportChange, panning, fit, minZoom, maxZoom, message, autoFocus, onCanvasDoubleClick, onCanvasKeyDown, controller,
+    viewport, defaultViewport, onViewportChange, panning, fit, fitPadding, minZoom, maxZoom, message, autoFocus, onCanvasDoubleClick, onCanvasKeyDown, controller,
     onCanvasPointerDown: (event, info) => {
       for (const layer of [...layers.current].reverse()) {
         if (layer.onPointerDown(event, info)) { claimed.current.set(event.pointerId, layer); return; }
@@ -171,6 +173,7 @@ export function Canvas({
   const root = usePart(handle, 'root', {}, {
     ref: rootRef,
     'aria-label': ariaLabel,
+    'aria-describedby': describedBy,
     // The focus ring is an overlay above the board, inset so it never shifts or clips.
     className: cn(
       'absolute inset-0 cursor-default touch-none overflow-clip bg-background outline-none select-none',
@@ -261,12 +264,15 @@ export interface CanvasMarqueeProps extends OverlayPartProps {
 
 /** The rubber band of a drag-select, in board units. */
 export function CanvasMarquee({ rect, className, style }: CanvasMarqueeProps) {
+  // Chrome rounds a border under 1 px up to 1 px, and then the board's scale makes it thicker, so past 100% the line is
+  // an inset shadow, which isn't rounded. At 100% or less it is the border it always was.
+  const thin = (useCanvas({ optional: true })?.zoom ?? 1) > 1;
   return (
     <span
       data-slot="canvas-marquee"
       aria-hidden="true"
-      className={cn('pointer-events-none absolute border-(length:--canvas-marquee-line) border-solid border-primary bg-primary/10', className)}
-      style={{ left: rect.x, top: rect.y, width: rect.w, height: rect.h, '--canvas-marquee-line': px(1), ...style } as CSSProperties}
+      className={cn('pointer-events-none absolute bg-primary/10', !thin && 'border-(length:--canvas-marquee-line) border-solid border-primary', className)}
+      style={{ left: rect.x, top: rect.y, width: rect.w, height: rect.h, '--canvas-marquee-line': px(1), ...(thin ? { boxShadow: 'inset 0 0 0 var(--canvas-marquee-line) var(--primary)' } : null), ...style } as CSSProperties}
     />
   );
 }
@@ -324,6 +330,11 @@ export function CanvasMiniMap({ items, side = 'bottom', align = 'end', width = 1
   // The view in board units, and everything the map has to show: the items and the view.
   const view: Rect = { x: -v.x / v.zoom, y: -v.y / v.zoom, w: size.width / v.zoom, h: size.height / v.zoom };
   const { scale: k, offsetX: ox, offsetY: oy } = miniMapLayout(items, view, width, height);
+  // Panning only moves the view's outline: the marks stay put unless the map rescales, and there may be thousands.
+  const marks = useMemo(() => items.map((it, i) => (
+    <rect key={it.id ?? i} x={ox + it.x * k} y={oy + it.y * k} width={Math.max(1.5, it.w * k)} height={Math.max(1.5, it.h * k)} rx={1.5}
+      className={it.className ?? 'fill-muted-foreground/35'} />
+  )), [items, k, ox, oy]);
   return usePart(canvas, 'minimap', { items, width, height }, {
     className: cn(
       'absolute z-10 cursor-pointer overflow-hidden rounded-ctl bg-popover/90 shadow-raised backdrop-blur-md',
@@ -334,10 +345,7 @@ export function CanvasMiniMap({ items, side = 'bottom', align = 'end', width = 1
     style: { width, height, ...style },
     children: (
       <svg width={width} height={height} className="block" data-side={side} data-align={align}>
-        {items.map((it, i) => (
-          <rect key={it.id ?? i} x={ox + it.x * k} y={oy + it.y * k} width={Math.max(1.5, it.w * k)} height={Math.max(1.5, it.h * k)} rx={1.5}
-            className={it.className ?? 'fill-muted-foreground/35'} />
-        ))}
+        {marks}
         <rect data-slot="canvas-minimap-view" x={ox + view.x * k} y={oy + view.y * k} width={view.w * k} height={view.h * k} rx={2}
           className="fill-primary/8 stroke-primary" strokeWidth={1.5} />
       </svg>

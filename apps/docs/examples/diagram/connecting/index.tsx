@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Diagram, type DiagramChange } from '@/components/ui/diagram'
+import { Diagram, DiagramToolbar, type DiagramData, type DiagramDataChangeDetails, type DiagramDataChangeReason } from '@/components/ui/diagram'
 import type { DiagramEdge, DiagramNode } from '@/lib/diagram-model'
 
 const NODES: DiagramNode[] = [
@@ -25,16 +25,16 @@ const describe = (edges: readonly DiagramEdge[]) => edges.map((e) => `${e.from}$
 export default function Connecting() {
   const [nodes, setNodes] = useState(NODES)
   const [edges, setEdges] = useState(EDGES)
-  const [changes, setChanges] = useState<DiagramChange['reason'][]>([])
-  const onChange = (change: DiagramChange) => {
-    setChanges((c) => [...c, change.reason])
-    setNodes(change.nodes)
-    setEdges(change.edges)
+  const [changes, setChanges] = useState<DiagramDataChangeReason[]>([])
+  const onDataChange = (data: DiagramData, details: DiagramDataChangeDetails) => {
+    setChanges((c) => [...c, details.reason])
+    setNodes([...data.nodes])
+    setEdges([...data.edges])
   }
   return (
     <div className="grid h-full min-h-[560px] w-full grid-rows-[1fr_auto]">
       <div className="relative">
-        <Diagram editable nodes={nodes} edges={edges} onChange={onChange} aria-label="A Worker and what it can reach" />
+        <Diagram editable nodes={nodes} edges={edges} onDataChange={onDataChange} overlay={<DiagramToolbar />} aria-label="A Worker and what it can reach" />
       </div>
       <div className="flex items-center gap-3 border-t border-border p-3 text-footnote text-foreground">
         <span data-demo-edges={describe(edges)}>{edges.length} connections</span>

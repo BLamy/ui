@@ -131,7 +131,7 @@ const write = (text: string, system: CloudflareSystem, options = {}) => {
 const asKeys = (r: Extract<WranglerRead, { ok: true }>) => r.system.edges.map((e) => `${e.from}>${e.to}:${e.via}:${e.binding ?? ''}`);
 const parses = (text: string) => {
   const errors: unknown[] = [];
-  parseTree(text.replace(/^﻿/, ''), errors as never, { allowTrailingComma: true });
+  parseTree(text.replace(/^\uFEFF/, ''), errors as never, { allowTrailingComma: true });
   return errors;
 };
 /** Every comment in a text, as what's written: outside strings. */
@@ -393,7 +393,7 @@ describe('the file as it’s laid out', () => {
   });
 
   it('keeps a byte-order mark', () => {
-    const text = `﻿${DO_SHOP}`;
+    const text = `\uFEFF${DO_SHOP}`;
     expect(read(text).worker).toBe('tanstack-start-pair');
     expect(write(text, read(text).system).text).toBe(text);
     expect(add(text).startsWith('\uFEFF// Read by')).toBe(true);
@@ -732,7 +732,7 @@ describe('many changes, in any order', () => {
   it.each([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20])('stays a file that reads back as what was written, seed %i', (seed) => {
     const next = rng(seed * 7919);
     const pick = <T,>(list: readonly T[]) => list[Math.floor(next() * list.length)]!;
-    let text = pick([COMMENTED, STORAGE, QUEUES, SERVICES, `﻿${DO_SHOP}`, STORAGE.replace(/\n/g, '\r\n')]);
+    let text = pick([COMMENTED, STORAGE, QUEUES, SERVICES, `\uFEFF${DO_SHOP}`, STORAGE.replace(/\n/g, '\r\n')]);
     const allComments = commentsIn(text);
     for (let round = 0; round < 12; round++) {
       const r = read(text);

@@ -32,7 +32,7 @@ export function useDiagramLayout<N = unknown, E = unknown>(draft: DiagramDraft<N
     () => ({ result: initial ?? null, status: initial ? 'working' : 'pending', error: null }),
   );
   const engine = useRef<DiagramLayoutEngine | null>(null);
-  const started = useRef<Function | undefined>(undefined);
+  const started = useRef<DiagramLayoutOptions['worker'] | undefined>(undefined);
   const lastGraph = useRef<string | null>(null);
   const elkKey = useMemo(() => JSON.stringify(elk ?? null), [elk]);
   // What a layout depends on: not positions, which it's about to replace, nor anything else in a node's data.
@@ -83,7 +83,6 @@ export function useDiagramLayout<N = unknown, E = unknown>(draft: DiagramDraft<N
     return () => stop.abort();
     // `key` stands for the draft and `elk`. `fonts` and `shown` are here because the words haven't changed, but what they
     // measure has.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key, fonts, shown, worker, host]);
 
   useEffect(() => () => {
@@ -94,7 +93,6 @@ export function useDiagramLayout<N = unknown, E = unknown>(draft: DiagramDraft<N
   const result = state.result;
   // Where things are is the layout's, and what they are is the draft's as it is now. A new name the same size, or new data,
   // lays out the same, so no new layout brings it, and without this the last one's nodes were drawn as they were.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   const now = useMemo(() => (result ? onLayout(draft, result) : null), [draft.nodes, draft.edges, result]);
   return {
     nodes: now?.nodes ?? NOTHING, edges: now?.edges ?? NOTHING,

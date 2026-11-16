@@ -31,7 +31,7 @@ import { TuiPreview } from '@brett_lamy/ui/tui-preview'
 {% endtab %}
 {% endtabs %}
 
-The module re-exports Docstream's component with the types of its props and state (`TuiPreviewProps`, `TuiPreviewOptions`, `TuiPreviewState`, `TuiAppearance`, `TuiTheme`). `@brett_lamy/ui/tui` is the same module as its own entry, for a bundle that wants nothing else from the package. The default runtime URL (`DEFAULT_TUI_RUNTIME_URL`) and the fence test (`isTuiCodeBlock`) are Docstream's: import them from `@brett_lamy/docstream/tui`.
+The module re-exports Docstream's component with the types of its props and state (`TuiPreviewProps`, `TuiPreviewOptions`, `TuiPreviewState`, `TuiAppearance`, `TuiTheme`). `@brett_lamy/ui/tui` is the same module as its own entry, for a bundle that wants nothing else from the package. The default runtime URL (`DEFAULT_TUI_RUNTIME_URL`) and the fence test (`isTuiCodeBlock`) are Docstream's: import them from `@brett_lamy/ui/docstream/tui`.
 
 ## Usage
 

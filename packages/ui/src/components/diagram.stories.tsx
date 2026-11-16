@@ -1,7 +1,10 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useMemo, useRef } from 'react';
 import { useCanvas } from '@/components/ui/canvas';
-import { Diagram, DiagramNodeBody } from '@/components/ui/diagram';
+import { Diagram, DiagramNodeBody, DiagramToolbar } from '@/components/ui/diagram';
+import { Button } from '@/components/ui/button';
+import { EmptyState } from '@/components/ui/empty-state';
+import { Icon } from '@/lib/icon';
 import type { DiagramDraft } from '@/lib/diagram-layout';
 import { useDiagramLayout } from '@/lib/diagram-layout/react';
 import type { DiagramEdge, DiagramNode } from '@/lib/diagram-model';
@@ -11,6 +14,7 @@ import { Phone } from '../stories/frame';
 const meta: Meta<typeof Diagram> = {
   title: 'Organisms/Diagram',
   component: Diagram,
+  parameters: { layout: 'centered' },
 };
 export default meta;
 type Story = StoryObj<typeof Diagram>;
@@ -21,16 +25,16 @@ export const Machine: Story = {
 };
 
 export const MachineDark: Story = {
-  render: () => <Phone w={1360} h={560} dark><Diagram nodes={UPLOAD_NODES} edges={UPLOAD_EDGES} aria-label="File upload" /></Phone>,
+  render: () => <Phone w={1360} h={560} appearance="dark"><Diagram nodes={UPLOAD_NODES} edges={UPLOAD_EDGES} aria-label="File upload" /></Phone>,
 };
 
 /** Close enough to read: the parallel state and its regions. */
 export const MachineCloseUp: Story = {
-  render: () => <Phone w={1000} h={700}><Diagram nodes={UPLOAD_NODES} edges={UPLOAD_EDGES} defaultCamera={{ x: -1680, y: -210, z: 1.05 }} aria-label="File upload" /></Phone>,
+  render: () => <Phone w={1000} h={700}><Diagram nodes={UPLOAD_NODES} edges={UPLOAD_EDGES} defaultViewport={{ x: -1680, y: -210, zoom: 1.05 }} aria-label="File upload" /></Phone>,
 };
 
 export const MachineCloseUpDark: Story = {
-  render: () => <Phone w={1000} h={700} dark><Diagram nodes={UPLOAD_NODES} edges={UPLOAD_EDGES} defaultCamera={{ x: -1680, y: -210, z: 1.05 }} aria-label="File upload" /></Phone>,
+  render: () => <Phone w={1000} h={700} appearance="dark"><Diagram nodes={UPLOAD_NODES} edges={UPLOAD_EDGES} defaultViewport={{ x: -1680, y: -210, zoom: 1.05 }} aria-label="File upload" /></Phone>,
 };
 
 const KINDS: DiagramNode[] = [
@@ -54,7 +58,7 @@ export const NodeKinds: Story = {
 };
 
 export const NodeKindsDark: Story = {
-  render: () => <Phone w={1000} h={500} dark><Diagram nodes={KINDS} /></Phone>,
+  render: () => <Phone w={1000} h={500} appearance="dark"><Diagram nodes={KINDS} /></Phone>,
 };
 
 const EDGE_NODES: DiagramNode[] = [
@@ -107,27 +111,27 @@ export const EdgeKinds: Story = {
 };
 
 export const EdgeKindsDark: Story = {
-  render: () => <Phone w={1200} h={640} dark><Diagram nodes={EDGE_NODES} edges={EDGES} /></Phone>,
+  render: () => <Phone w={1200} h={640} appearance="dark"><Diagram nodes={EDGE_NODES} edges={EDGES} /></Phone>,
 };
 
 /** At the smallest zoom: lines keep their thickness, and the text is gone. */
 export const ZoomMin: Story = {
-  render: () => <Phone w={800} h={360}><Diagram nodes={UPLOAD_NODES} edges={UPLOAD_EDGES} defaultCamera={{ x: 370, y: 170, z: 0.02 }} aria-label="File upload" /></Phone>,
+  render: () => <Phone w={800} h={360}><Diagram nodes={UPLOAD_NODES} edges={UPLOAD_EDGES} defaultViewport={{ x: 370, y: 170, zoom: 0.02 }} aria-label="File upload" /></Phone>,
 };
 
 /** Below the point where an edge's label could be read, a node's can still be made out. */
 export const ZoomMiddle: Story = {
-  render: () => <Phone w={1200} h={360}><Diagram nodes={UPLOAD_NODES} edges={UPLOAD_EDGES} defaultCamera={{ x: 20, y: 80, z: 0.3 }} aria-label="File upload" /></Phone>,
+  render: () => <Phone w={1200} h={360}><Diagram nodes={UPLOAD_NODES} edges={UPLOAD_EDGES} defaultViewport={{ x: 20, y: 80, zoom: 0.3 }} aria-label="File upload" /></Phone>,
 };
 
 /** At the largest zoom: lines keep their thickness, and the text is big. */
 export const ZoomMax: Story = {
-  render: () => <Phone w={800} h={360}><Diagram nodes={UPLOAD_NODES} edges={UPLOAD_EDGES} defaultCamera={{ x: -7836, y: -1224, z: 4 }} aria-label="File upload" /></Phone>,
+  render: () => <Phone w={800} h={360}><Diagram nodes={UPLOAD_NODES} edges={UPLOAD_EDGES} defaultViewport={{ x: -7836, y: -1224, zoom: 4 }} aria-label="File upload" /></Phone>,
 };
 
 /** `CanvasMiniMap`, with the root left out so it isn't one solid block. */
 export const WithMiniMap: Story = {
-  render: () => <Phone w={1000} h={500}><Diagram nodes={UPLOAD_NODES} edges={UPLOAD_EDGES} minimap defaultCamera={{ x: -1600, y: -100, z: 0.9 }} aria-label="File upload" /></Phone>,
+  render: () => <Phone w={1000} h={500}><Diagram nodes={UPLOAD_NODES} edges={UPLOAD_EDGES} minimap defaultViewport={{ x: -1600, y: -100, zoom: 0.9 }} aria-label="File upload" /></Phone>,
 };
 
 function ZoomReadout() {
@@ -137,14 +141,14 @@ function ZoomReadout() {
 
 /** Children are in the board layer, and `useCanvas` works there. */
 export const WithChildren: Story = {
-  render: () => <Phone w={500} h={240}><Diagram nodes={EDGE_NODES.slice(0, 2)} edges={EDGES.slice(0, 1)} defaultCamera={{ x: 30, y: 30, z: 1 }}><ZoomReadout /></Diagram></Phone>,
+  render: () => <Phone w={500} h={240}><Diagram nodes={EDGE_NODES.slice(0, 2)} edges={EDGES.slice(0, 1)} defaultViewport={{ x: 30, y: 30, zoom: 1 }}><ZoomReadout /></Diagram></Phone>,
 };
 
 const renderCustom = (node: DiagramNode) => <DiagramNodeBody node={node} className="border-primary bg-primary/10" />;
 
 /** A custom node is whatever you draw in its box. Here, the usual body, with another color. */
 export const CustomNode: Story = {
-  render: () => <Phone w={500} h={160}><Diagram nodes={EDGE_NODES.slice(0, 2)} edges={EDGES.slice(0, 1)} renderNode={renderCustom} defaultCamera={{ x: 30, y: 50, z: 1 }} /></Phone>,
+  render: () => <Phone w={500} h={160}><Diagram nodes={EDGE_NODES.slice(0, 2)} edges={EDGES.slice(0, 1)} renderNode={renderCustom} defaultViewport={{ x: 30, y: 50, zoom: 1 }} /></Phone>,
 };
 
 const WORDY: DiagramNode[] = [
@@ -164,7 +168,7 @@ export const SizedToText: Story = {
 };
 
 export const SizedToTextDark: Story = {
-  render: () => <Phone w={700} h={400} dark><Diagram nodes={WORDY} autoSize /></Phone>,
+  render: () => <Phone w={700} h={400} appearance="dark"><Diagram nodes={WORDY} autoSize /></Phone>,
 };
 
 /** The same machine with no positions at all: its words are measured, and ELK places it in a worker. */
@@ -175,7 +179,7 @@ function LaidOutMachine() {
   }), []);
   const host = useRef<HTMLDivElement>(null);
   const laid = useDiagramLayout(draft, { host });
-  return <div ref={host} className="absolute inset-0"><Diagram nodes={laid.nodes} edges={laid.edges} aria-label="File upload" /></div>;
+  return <div ref={host} className="absolute inset-0"><Diagram nodes={laid.nodes} edges={laid.edges} loading={laid.status === 'pending'} aria-label="File upload" /></div>;
 }
 
 export const LaidOut: Story = {
@@ -183,7 +187,7 @@ export const LaidOut: Story = {
 };
 
 export const LaidOutDark: Story = {
-  render: () => <Phone w={1360} h={560} dark><LaidOutMachine /></Phone>,
+  render: () => <Phone w={1360} h={560} appearance="dark"><LaidOutMachine /></Phone>,
 };
 
 const SELECTABLE: DiagramNode[] = [
@@ -205,7 +209,7 @@ export const Selected: Story = {
 };
 
 export const SelectedDark: Story = {
-  render: () => <Phone w={500} h={320} dark><Diagram defaultNodes={SELECTABLE} defaultEdges={SELECTABLE_EDGES} editable defaultSelection={{ nodes: ['a', 'b', 'box'], edges: ['ab'] }} /></Phone>,
+  render: () => <Phone w={500} h={320} appearance="dark"><Diagram defaultNodes={SELECTABLE} defaultEdges={SELECTABLE_EDGES} editable defaultSelection={{ nodes: ['a', 'b', 'box'], edges: ['ab'] }} /></Phone>,
 };
 
 const PORTED: DiagramNode[] = [
@@ -228,7 +232,7 @@ export const PortsConnectable: Story = {
 };
 
 export const PortsConnectableDark: Story = {
-  render: () => <Phone w={500} h={240} dark><Diagram defaultNodes={PORTED} defaultEdges={PORTED_EDGES} editable /></Phone>,
+  render: () => <Phone w={500} h={240} appearance="dark"><Diagram defaultNodes={PORTED} defaultEdges={PORTED_EDGES} editable /></Phone>,
 };
 
 /** Selected, a node with no ports of its own has one on each side, and an edge has a handle on each end. */
@@ -241,7 +245,93 @@ export const ConnectHandles: Story = {
   ),
 };
 
-/** Nothing to draw: it's an empty canvas, centered on the origin. */
+/** Nothing to draw: the shared EmptyState, over an empty board centered on the origin. */
 export const Empty: Story = {
   render: () => <Phone w={400} h={240}><Diagram nodes={[]} /></Phone>,
+};
+
+/** An empty state of your own, with something to do about it. */
+export const EmptyWithAction: Story = {
+  render: () => (
+    <Phone w={400} h={280}>
+      <Diagram nodes={[]} editable emptyState={<EmptyState icon={<Icon name="grid-fill" size={28} />} title="No services yet" description="Add one from the catalog to start." action={<Button size="sm">Add a service</Button>} />} />
+    </Phone>
+  ),
+};
+
+/** `loading`: the data isn't here yet (a layout's running). No empty state, and a status says why. */
+export const Loading: Story = {
+  render: () => <Phone w={400} h={240}><Diagram nodes={[]} loading /></Phone>,
+};
+
+export const LoadingDark: Story = {
+  render: () => <Phone w={400} h={240} appearance="dark"><Diagram nodes={[]} loading /></Phone>,
+};
+
+/** Read-only: nothing selects, moves or connects; the keys still go everywhere, and Enter calls `onAction`. Ports are quiet. */
+export const ReadOnly: Story = {
+  render: () => <Phone w={500} h={240}><Diagram nodes={PORTED} edges={PORTED_EDGES} aria-label="Read-only services" onAction={() => undefined} /></Phone>,
+};
+
+/** `DiagramToolbar` in the overlay: zoom out, zoom in, fit, and undo and redo for an editable diagram. Tooltips name the keys. */
+export const WithToolbar: Story = {
+  render: () => <Phone w={600} h={320}><Diagram defaultNodes={SELECTABLE} defaultEdges={SELECTABLE_EDGES} editable overlay={<DiagramToolbar />} minimap={{ side: 'bottom', align: 'end' }} /></Phone>,
+};
+
+export const WithToolbarDark: Story = {
+  render: () => <Phone w={600} h={320} appearance="dark"><Diagram defaultNodes={SELECTABLE} defaultEdges={SELECTABLE_EDGES} editable overlay={<DiagramToolbar />} minimap={{ side: 'bottom', align: 'end' }} /></Phone>,
+};
+
+/** Phone-sized: the toolbar at the top, the minimap off, and the whole machine fitted until you move it. */
+export const Phone390: Story = {
+  name: 'Phone',
+  render: () => <Phone w={390} h={720}><Diagram nodes={UPLOAD_NODES} edges={UPLOAD_EDGES} aria-label="File upload" overlay={<DiagramToolbar side="top" />} /></Phone>,
+};
+
+/** Keys sent by the story: focus the board, go to a node, press Enter, then C and an arrow. */
+const press = (keys: string[]) => async ({ canvasElement }: { canvasElement: HTMLElement }) => {
+  const board = canvasElement.querySelector<HTMLElement>('[data-slot=canvas]');
+  board?.focus();
+  for (const key of keys) {
+    (document.activeElement ?? board)?.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }));
+    await new Promise((r) => setTimeout(r, 30));
+  }
+};
+
+/** Focus on a node: the ring in the focus color, the view following. */
+export const Focused: Story = {
+  render: () => <Phone w={500} h={320}><Diagram defaultNodes={SELECTABLE} defaultEdges={SELECTABLE_EDGES} editable /></Phone>,
+  play: press(['Home', 'ArrowRight']),
+};
+
+/** Connecting by keyboard (C, then an arrow): the dashed route to what's offered, which is allowed. */
+export const Connecting: Story = {
+  render: () => <Phone w={500} h={240}><Diagram defaultNodes={PORTED} defaultEdges={PORTED_EDGES} editable /></Phone>,
+  play: press(['Home', 'c', 'ArrowRight']),
+};
+
+/** A connection `isValidConnection` refuses: the route and the target in the destructive color, dashed, and why, read out. */
+export const InvalidConnection: Story = {
+  render: () => <Phone w={500} h={240}><Diagram defaultNodes={PORTED} defaultEdges={PORTED_EDGES} editable isValidConnection={(c) => (c.to === 'd1' ? 'D1 takes queries from one Worker only.' : true)} /></Phone>,
+  play: press(['Home', 'c', 'ArrowUp']),
+};
+
+export const InvalidConnectionDark: Story = {
+  render: () => <Phone w={500} h={240} appearance="dark"><Diagram defaultNodes={PORTED} defaultEdges={PORTED_EDGES} editable isValidConnection={(c) => (c.to === 'd1' ? 'D1 takes queries from one Worker only.' : true)} /></Phone>,
+  play: press(['Home', 'c', 'ArrowUp']),
+};
+
+/** What's current (a machine's state, the edge it just took), apart from what's selected. */
+export const Current: Story = {
+  render: () => <Phone w={500} h={320}><Diagram nodes={SELECTABLE} edges={SELECTABLE_EDGES} current={{ nodes: ['b'], edges: ['ab'] }} /></Phone>,
+};
+
+/** 2,400 nodes and 2,350 edges: above 200, only what's near the view is drawn, so a pan or a zoom stays smooth. */
+const GRID = 60;
+const MANY_NODES: DiagramNode[] = Array.from({ length: 2400 }, (_, i) => ({ id: `n${i}`, label: `State ${i + 1}`, x: (i % GRID) * 180, y: Math.floor(i / GRID) * 90, w: 120, h: 40 }));
+const MANY_EDGES: DiagramEdge[] = MANY_NODES.flatMap((n, i) => (i % GRID === GRID - 1 ? [] : [{ id: `e${i}`, from: n.id, to: `n${i + 1}`, label: i % 7 ? undefined : 'NEXT' }]));
+
+export const Large: Story = {
+  name: '2,400 nodes',
+  render: () => <Phone w={1000} h={600}><Diagram nodes={MANY_NODES} edges={MANY_EDGES} minimap overlay={<DiagramToolbar />} defaultViewport={{ x: 20, y: 20, zoom: 0.6 }} aria-label="A large machine" /></Phone>,
 };

@@ -17,7 +17,7 @@ const ADMIN: CloudflareSystem = {
 function Side({ name, system, onChange }: { name: string; system: CloudflareSystem; onChange: (next: CloudflareSystem) => void }) {
   return (
     <div className="relative min-h-0" data-demo-side={name} data-demo-services={system.services.map((s) => s.id).join(' ')} data-demo-problems={validateSystem(system).map((i) => i.code).join(' ')}>
-      <CloudflareDiagram editable services={system.services} edges={system.edges} onChange={(c) => onChange({ services: c.services, edges: c.edges })} aria-label={name} />
+      <CloudflareDiagram editable services={system.services} edges={system.edges} onDataChange={onChange} aria-label={name} />
     </div>
   )
 }

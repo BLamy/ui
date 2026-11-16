@@ -18,7 +18,7 @@ The legacy wrapper is kept as written:
 
 {% code title="install.sh" %}
 \`\`\`sh
-npm install @brett_lamy/ui/docstream-editor
+npm install @brett_lamy/ui
 \`\`\`
 {% endcode %}
 
@@ -39,19 +39,19 @@ createRoot(document.getElementById("root")).render(<App />)
 
 const COMMANDS = `# Install commands
 
-{% command %}npm install @brett_lamy/ui/docstream-editor @brett_lamy/ui/docstream{% endcommand %}
+{% command %}npm install @brett_lamy/ui{% endcommand %}
 
 Several lines, with a line that isn't npm:
 
 {% command %}
 npm create vite@latest my-docs -- --template react-ts
 cd my-docs
-npm install @brett_lamy/ui/docstream-editor
+npm install @brett_lamy/ui
 {% endcommand %}
 
 With a verbatim bun command:
 
-{% command bun="bun add @brett_lamy/ui/docstream-editor --trust" %}npm install @brett_lamy/ui/docstream-editor{% endcommand %}
+{% command bun="bun add @brett_lamy/ui --trust" %}npm install @brett_lamy/ui{% endcommand %}
 `
 
 const MATH = `# Math

@@ -1,5 +1,5 @@
-import { replayDemoEvents } from '@brett_lamy/docstream/replay/demo'
-import { formatReplayTime } from '@brett_lamy/docstream/replay'
+import { replayDemoEvents } from '@brett_lamy/ui/docstream/replay/demo'
+import { formatReplayTime } from '@brett_lamy/ui/docstream/replay'
 import { ReplayPreview } from '@/components/ui/replay-preview'
 
 // `chrome="none"` and `controls={false}` turn the player into a still frame

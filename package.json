@@ -17,6 +17,8 @@
     "registry:static": "node tools/registry/build.mjs --static",
     "tokens": "node tools/tokens/build.mjs && node tools/tokens/check.mjs",
     "variants": "node tools/docs/variants-md.mjs",
+    "cloudflare:catalog": "node tools/cloudflare/catalog.mjs",
+    "cloudflare:check": "node tools/cloudflare/check-package.mjs",
     "knip": "knip",
     "postinstall": "node tools/ui-sdk/build.mjs --if-stale",
     "ui-sdk": "node tools/ui-sdk/build.mjs",

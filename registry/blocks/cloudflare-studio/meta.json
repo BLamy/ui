@@ -1,7 +1,15 @@
 {
   "name": "cloudflare-studio",
   "title": "Cloudflare Studio",
-  "description": "A system of Cloudflare's services as an app: search the catalog to add a service, drag from a Worker's env to what it binds, choose the operations it uses, and give anything that runs code an XState machine, edited in a StateDiagram, with what crosses each connection checked against what the machine receives. Export gives the system's JSON, a wrangler.jsonc for each Worker with what it still needs listed, and a module for each machine, as files: nothing's deployed and there's no account. It's kept in the browser as it changes, and works down to a phone's width, with the inspector in a SideDrawer beside the board or a Credenza under it.",
-  "categories": ["developer", "diagram", "application"],
-  "files": ["page.tsx", "studio-files.ts", "example.ts"]
+  "description": "A system of Cloudflare's services as an app: search the catalog to add a service, drag from a Worker's env to what it binds, choose the operations it uses, and give anything that runs code an XState machine, edited in a StateDiagram, with what crosses each connection checked against what the machine receives. Export gives the system's JSON, a wrangler.jsonc for each Worker with what it still needs listed, and a module for each machine, as files: nothing's deployed and there's no account. It's kept in the browser as it changes, and works down to a phone's width, where the inspector is a page pushed over the board and Export is a sheet.",
+  "categories": [
+    "developer",
+    "diagram",
+    "application"
+  ],
+  "files": [
+    "page.tsx",
+    "studio-files.ts",
+    "example.ts"
+  ]
 }

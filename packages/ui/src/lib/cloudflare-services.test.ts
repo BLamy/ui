@@ -179,7 +179,8 @@ describe('a new connection', () => {
   });
 
   it('goes by what the service it goes to is bound as, if it says', () => {
-    const named = [...services, { id: 'files', kind: 'r2', binding: 'uploads_v2' }].filter((x, i, all) => all.findLastIndex((y) => y.id === x.id) === i);
+    // The last of each id: the bound one replaces the plain one.
+    const named = [...new Map([...services, { id: 'files', kind: 'r2', binding: 'uploads_v2' }].map((x) => [x.id, x] as const)).values()];
     const one = newEdge(named, [], to('a', 'files'))!;
     expect(one.binding).toBe('uploads_v2');
     // That's taken on this one, so it's made its own from that, and on another Worker, it isn't.

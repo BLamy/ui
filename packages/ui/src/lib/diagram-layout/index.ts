@@ -30,9 +30,12 @@ export interface DiagramLayoutResult<N = unknown, E = unknown> {
   ms: number;
 }
 
+/** Which way a layout's layers run: what an edge mostly points along. */
+export type DiagramDirection = 'right' | 'down' | 'left' | 'up';
+
 export interface DiagramLayoutOptions {
-  /** Which way the layers run (default `RIGHT`). */
-  direction?: 'RIGHT' | 'DOWN' | 'LEFT' | 'UP';
+  /** Which way the layers run (default `right`). */
+  direction?: DiagramDirection;
   /** ELK options of your own, which win over these defaults. */
   elk?: Record<string, string>;
   /** Text sizes. The default is `estimateText`, which is what a server has. In a browser, use `measureText`. */
@@ -138,7 +141,7 @@ export function toElkGraph<N, E>(draft: DiagramDraft<N, E>, options: Pick<Diagra
     id: ROOT,
     // Laying out what's inside something takes everything at once. With nothing inside anything, ELK can treat what isn't connected
     // apart, and pack it into rows, where otherwise it's all one long column.
-    layoutOptions: { ...DIAGRAM_ELK_OPTIONS, ...(placed.some((n) => index.parent.get(n.id)) ? null : { 'elk.hierarchyHandling': 'SEPARATE_CHILDREN' }), ...(options.direction ? { 'elk.direction': options.direction } : null), ...options.elk },
+    layoutOptions: { ...DIAGRAM_ELK_OPTIONS, ...(placed.some((n) => index.parent.get(n.id)) ? null : { 'elk.hierarchyHandling': 'SEPARATE_CHILDREN' }), ...(options.direction ? { 'elk.direction': options.direction.toUpperCase() } : null), ...options.elk },
     children: [],
     edges: [],
   };

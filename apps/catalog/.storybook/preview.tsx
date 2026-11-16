@@ -4,7 +4,7 @@ import type { Preview } from '@storybook/react-vite';
 // package index pulls in. Compiled together with the registry blocks' classes (registry/styles.css imports it).
 import '../../../registry/styles.css';
 // docstream's sheet carries the ReplayPreview player's styles (Time Machine); an app imports it once at its entry too.
-import '@brett_lamy/docstream/styles.css';
+import '@brett_lamy/ui/docstream/styles.css';
 
 const preview: Preview = {
   parameters: {

@@ -6,7 +6,7 @@
     "developer", "design", "replay", "application"
   ],
   "dependencies": [
-    "@brett_lamy/docstream",
+    "@brett_lamy/ui",
     "@ui-sdk/react"
   ],
   "files": [

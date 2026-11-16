@@ -46,11 +46,9 @@ const config: StorybookConfig = {
         'react', 'react-dom', 'react-dom/client', 'react/jsx-runtime', 'react/jsx-dev-runtime',
         'framer-motion', 'perfect-freehand', 'clsx', 'tailwind-merge', 'class-variance-authority',
         'highlight.js/lib/core', 'use-sync-external-store/shim/index.js', 'use-sync-external-store/shim/with-selector.js',
-        // docstream pulls CommonJS deps (style-to-js, debug) the browser can't import unbundled; pre-bundle it whole.
-        '@brett_lamy/ui > @brett_lamy/docstream',
-        '@brett_lamy/ui > @brett_lamy/docstream-editor',
-        // ReplayPreview's player (rrweb loads from it lazily).
-        '@brett_lamy/ui > @brett_lamy/docstream/replay',
+        // Docstream is the library's source here (`@brett_lamy/ui/docstream…`), never pre-bundled: a pre-bundled copy would be a
+        // second instance of its contexts. What it loads lazily is (rrweb for ReplayPreview's player, KaTeX, Pele, acorn).
+        '@brett_lamy/ui > rrweb', '@brett_lamy/ui > katex', '@brett_lamy/ui > pele', '@brett_lamy/ui > acorn',
       ],
     };
     return cfg;

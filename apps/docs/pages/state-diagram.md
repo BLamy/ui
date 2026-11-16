@@ -1,6 +1,8 @@
 # StateDiagram
 
-An [XState](https://stately.ai/docs/xstate) machine on a [Diagram](#/diagram). It draws from `machine.root`, which has everything resolved, so relative targets, `#id`s, parallel regions, `always`, `after`, `invoke` and guards are all there. Nothing of the machine runs.
+An [XState](https://stately.ai/docs/xstate) machine on a [Diagram](#/diagram). It draws from `machine.root`, which has everything resolved, so relative targets, `#id`s, parallel regions, `always`, `after`, `invoke` and guards are all there. Nothing of the machine runs, unless you ask it to simulate, and then only with stand-ins; with `editable`, it edits the machine's config.
+
+Use a plain [Diagram](#/diagram) with `machineToDraft` and `useDiagramLayout` for a machine drawn your own way, and [DiagramFrame](#/diagram-frame) for a board with a panel of your own. StateDiagram is a composition of those two, not a new kind of board: it's what they're for, made into one component because reading, running and editing a machine need the same three things (a layout, a simulation, a config history) wired together.
 
 {% tabs title="Installation" sync="install" %}
 {% tab title="shadcn CLI" %}
@@ -15,12 +17,12 @@ import { StateDiagram } from '@/components/ui/state-diagram'
 {% tab title="npm" %}
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 
-Import the stylesheet once at your app's entry, then the parts from the package root:
+Import the stylesheet once at your app's entry, then the parts from their module:
 
 ```tsx
 import '@brett_lamy/ui/styles.css'
 
-import { StateDiagram } from '@brett_lamy/ui'
+import { StateDiagram } from '@brett_lamy/ui/state-diagram'
 ```
 {% endtab %}
 {% endtabs %}
@@ -71,7 +73,7 @@ A machine's config is plain data under `setup()`, with its implementations named
 
 ## Simulating
 
-With `simulate`, a copy of the machine runs in the page, with stand-ins for everything it names, so none of your code runs. Where it is gets lit, parallel regions included, and the edges it just took. A panel offers only what it can do next: it asks `snapshot.can` about each event, with the guards answering as you've set them.
+With `simulate`, a copy of the machine runs in the page, with stand-ins for everything it names, so none of your code runs. Where it is becomes the diagram's `current` (marked, and `aria-current` for a screen reader), parallel regions included, and the edges it just took. A panel offers only what it can do next: it asks `snapshot.can` about each event, with the guards answering as you've set them.
 
 {% demo src="state-diagram/simulate" %}
 
@@ -96,7 +98,7 @@ With `simulate`, a copy of the machine runs in the page, with stand-ins for ever
 
 {% demo src="state-diagram/simulate-awkward" %}
 
-The panel sits beside the board at 560 px wide or more. Narrower than that, it's a [Credenza](#/credenza) tray that's closed to begin with, and it takes the bottom of the space, with the board fitted above it so that you can watch it. Nothing about it moves other than what the tray and the buttons do themselves, and they keep to reduced motion.
+The panel is a [DiagramFrame](#/diagram-frame)'s: a column beside the board from 720 px wide, a drawer over the board that doesn't dim it from 440 px, so the machine stays in sight while you press its events, and on a phone a page pushed over the board with a back button to it. While it's closed, a bar on the board says where the machine is and opens it. `panelPresentation` forces one, and `panelOpen` / `onPanelOpenChange` control it. The drawer and the push keep to reduced motion. Editing and running at once, the panel has two tabs, **Edit** and **Run**; the run goes on while you look at Edit.
 
 ## Editing
 
@@ -118,7 +120,7 @@ const [config, setConfig] = useState(door.config)
 | Connect two states | Select one and drag from a dot on its edge to the other, or press C and use the arrows. It starts off called `EVENT`, and the same two can be connected again |
 | Change a transition | Select it, and change its **Event** or its **Guard**, or drag one of its ends. `after`, `always` and `done` go with what their state does, so those can't be renamed or moved to another state |
 | Delete something | **Delete**, or the Delete key. A state takes everything inside it, and every transition that goes to any of that |
-| Undo | **Undo** and **Redo**, or ⌘Z and ⌘⇧Z from the board. A field keeps those for its own text |
+| Undo | **Undo** and **Redo**, or ⌘Z and ⌘⇧Z from the board. A field keeps those for its own text, and commits on Enter or leaving it; Escape puts it back |
 
 Nothing's moved by dragging, as where things are is ELK's. It's laid out again after each edit, and you'd lose what you'd moved.
 
@@ -140,19 +142,24 @@ Editing while it's running starts it over on the new machine, with the guards as
 | --- | --- | --- |
 | `machine` | — | A machine, from `createMachine` or `setup(...).createMachine`. |
 | `config` | — | Or its config, as JSON. |
-| `direction` | `RIGHT` | Which way the layers run. |
-| `initial` | — | A layout done ahead of time, on a server perhaps. |
+| `direction` | `right` | Which way the layers run: `right`, `down`, `left`, `up`. |
+| `layout` | — | A layout done ahead of time, on a server perhaps, shown until this one's ready. |
 | `simulate` | `false` | Run a copy of it, with a panel. Pass `{ guards, delays, actors }` to say how some of it goes, read when it starts. |
 | `editable` | `false` | Let its states and transitions be added, removed and changed. |
-| `onConfigChange` | — | The config after each edit, undoing included. With `config`, it's for you to pass it back. |
+| `onConfigChange(config)` | — | The config after each edit, undoing included. With `config`, it's for you to pass it back. |
 | `implementations` | the machine's own | What's behind the config's names, as `{ guards, actions, actors, delays }`, so that those with nothing are listed. |
 | `defaultSelection` | nothing | What's selected to begin with, while editing. |
-| `defaultPanelOpen` | if it fits beside the board | Whether the panel starts open. |
-| `minimap`, `background`, `fitPadding`, `camera`, `defaultCamera`, `onCameraChange` | as on `Diagram` | Passed to it. |
-| `aria-label` | the machine's name | The region's name. |
-| `className`, `style` | — | Merged onto the root. |
+| `panelOpen`, `defaultPanelOpen`, `onPanelOpenChange(open, details)` | open where it's a column | Whether the panel shows. |
+| `panelPresentation` | `auto` | `auto`, `column`, `drawer` or `push`: as on `DiagramFrame`. |
+| `minimap`, `background`, `fitPadding`, `viewport`, `defaultViewport`, `onViewportChange` | as on `Diagram` | Passed to it. |
+| `aria-label` | the machine's name | The diagram's name. |
+| `className`, `style` | — | Merged onto the frame. |
 
-The root carries `data-slot="state-diagram"`, with `state-diagram-error` and `state-diagram-status` in it when they're needed. Under them it's a `Diagram`. The panel is `simulation-panel`, with `simulation-now`, `simulation-event`, `simulation-finish`, `simulation-next`, `simulation-run`, `simulation-time`, `simulation-guard`, `simulation-reset`, `simulation-log` and `simulation-error` in it, and `diagram-frame-bar` is what opens it. While editing it's `edit-panel`, with `edit-refusal`, `edit-add-state`, `edit-undo`, `edit-redo`, `edit-name`, `edit-make-start`, `edit-add-inside`, `edit-event`, `edit-guard`, `edit-delete`, `edit-hint`, `edit-missing` and `edit-inline` in it.
+It's a `DiagramFrame` (with `data-state-diagram`) around a `Diagram`, with a `DiagramToolbar` (zoom and fit; its config has its own undo), a `DiagramFrameBar` and a `DiagramFramePanel`. `state-diagram-error` is the alert when XState or ELK won't have it. The panel is `simulation-panel` (with `data-status`), with `simulation-now`, `simulation-time`, `simulation-guard`, `simulation-log` and `simulation-error` in it, and its buttons are marked `data-action`: `send` (with `data-event`), `finish`, `next-timer`, `run`, `reset`. While editing it's `edit-panel`, with `edit-refusal`, `edit-hint`, `edit-missing` and `edit-inline`; its buttons are `data-action` `add-state`, `undo`, `redo`, `make-start`, `add-inside` and `delete`, and its fields `data-field` `name`, `event` and `guard`. Kit parts keep their own `data-slot`.
+
+## Accessibility
+
+Everything a `Diagram` says, with states called states. Where the machine is has `aria-current`, so a screen reader hears "current" on its states and the edges it just took, and the bar's status says it in words ("In open"). The panel is labelled by its title, its sections by theirs, the run's buttons are named by their events, and a guard's switch says "hasKey answers yes". A refused edit is an alert with what XState said.
 
 ### `machineToDraft(machine)`
 

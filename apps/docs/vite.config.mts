@@ -6,6 +6,22 @@ import { readFileSync } from 'node:fs';
 import type { Plugin } from 'vite';
 import { aliases } from '../../tools/alias.mjs';
 import { getServiceWorkerContent } from '@agent-wasm/core/next';
+import { countMarkdown, listUnits } from './src/site/plan-graph.ts';
+
+/* `virtual:bl-site-files`: what the BL site reports on without bundling the files — the units of packages/ui/src (the
+   roadmap's module map, see src/site/plan-graph.ts) and the Markdown pages of docstream's and the editor's docs. */
+function siteFiles(): Plugin {
+  const ID = 'virtual:bl-site-files';
+  return {
+    name: 'bl-site-files',
+    resolveId: (id) => (id === ID ? `\0${ID}` : null),
+    load(id) {
+      if (id !== `\0${ID}`) return null;
+      const pages = ['docstream-playground', 'docstream-editor-playground'].reduce((n, app) => n + countMarkdown(new URL(`../${app}/docs`, import.meta.url).pathname), 0);
+      return `export const uiUnits = ${JSON.stringify(listUnits())};\nexport const libraryPages = ${pages};\n`;
+    },
+  };
+}
 
 /* Folder-backed Docstream examples route their in-browser Vite server through this worker. */
 function almostNodeServiceWorker(): Plugin {
@@ -137,11 +153,12 @@ export default defineConfig(() => ({
     host: 'localhost',
     proxy: openCodeAssets,
   },
-  plugins: [react(), tailwindcss(), tailscaleServiceWorker(), almostNodeServiceWorker(), ffmpegIsolation(), extractInlinedBinaries()],
+  plugins: [react(), tailwindcss(), siteFiles(), tailscaleServiceWorker(), almostNodeServiceWorker(), ffmpegIsolation(), extractInlinedBinaries()],
   resolve: {
     conditions: ['@org/source'], alias: aliases,
-    // The registry and app share Docstream's demo contexts even when optional runtime peers differ.
-    dedupe: ['react', 'react-dom', '@brett_lamy/docstream', '@brett_lamy/docstream-editor'],
+    // Docstream is part of the library (`@brett_lamy/ui/docstream…`), served from its source like every other module, so
+    // the registry and the app share its demo contexts.
+    dedupe: ['react', 'react-dom'],
   },
   optimizeDeps: {
     // PGlite finds its WebAssembly with `new URL('./pglite.wasm', import.meta.url)`; pre-bundling would move the JS
@@ -168,18 +185,17 @@ export default defineConfig(() => ({
       '@tiptap/pm/view',
       '@tiptap/react',
       '@tiptap/starter-kit',
-      '@tiptap/suggestion',
       'highlight.js/lib/core',
       'highlight.js/lib/languages/*',
       'lowlight',
       'lowlight > highlight.js',
-      // docstream pulls CommonJS deps (style-to-js, debug) the browser can't import unbundled; pre-bundle it whole.
-      '@brett_lamy/ui > @brett_lamy/docstream',
-      '@brett_lamy/ui > @brett_lamy/docstream-editor',
-      // ReplayPreview's player (rrweb loads from it lazily).
-      '@brett_lamy/ui > @brett_lamy/docstream/replay',
-      // The live example card (ReactDemo with an in-page preview).
-      '@brett_lamy/docstream/playground',
+      // Docstream is the library's source here, never pre-bundled (a pre-bundled copy would be a second instance of its
+      // contexts). What it loads lazily is: found late, it would make the dev server re-optimize and reload the page.
+      '@brett_lamy/ui > rrweb',
+      '@brett_lamy/ui > katex',
+      '@brett_lamy/ui > pele',
+      '@brett_lamy/ui > acorn',
+      '@brett_lamy/ui > @babel/parser',
     ],
   },
   // PGlite's worker (examples/pglite/worker) imports the engine, which code-splits: workers must build as ES modules.

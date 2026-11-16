@@ -4,12 +4,12 @@ description: Install docstream, its peers and the stylesheet, and see exactly wh
 
 # Installation
 
-docstream is one package, `@brett_lamy/docstream`. It ships compiled ES modules with type declarations, needs no bundler configuration, and runs no install scripts — so `pnpm add` finishes without build-script prompts.
+docstream is part of BL UI: it comes with `@brett_lamy/ui`, at `@brett_lamy/ui/docstream` and the subpaths under it (see [Package entries](03-package-entries.md)). It ships compiled ES modules with type declarations, needs no bundler configuration, and runs no install scripts — so `pnpm add` finishes without build-script prompts.
 
-{% command %}npm install @brett_lamy/docstream react react-dom @ui-sdk/core@beta @ui-sdk/react@beta{% endcommand %}
+{% command %}npm install @brett_lamy/ui react react-dom{% endcommand %}
 
 {% hint style="info" %}
-React and React DOM (19 or newer) and [UI SDK](https://ui-sdk.dev) (`@ui-sdk/core` and `@ui-sdk/react`) are peer dependencies: docstream uses your app's copy. Its interactive parts (tabs, menus, popovers, hover cards, the site's sidebar and search, the replay and Strudel controls) are UI SDK components, sharing one copy of its core with your app. Everything else it needs — the GitBook parser, the code highlighter, Pele, KaTeX, rrweb, Strudel — is a regular dependency and installs with it.
+React and React DOM (19 or newer) are peer dependencies: docstream uses your app's copy. Its interactive parts (tabs, menus, popovers, hover cards, the site's sidebar and search, the replay and Strudel controls) are [UI SDK](https://ui-sdk.dev) components, from the same copy of UI SDK as the rest of BL UI (`@ui-sdk/core` and `@ui-sdk/react`, which `@brett_lamy/ui` brings). Everything else it needs — the GitBook parser, the code highlighter, Pele, KaTeX, rrweb, Strudel — is a regular dependency and installs with it.
 {% endhint %}
 
 ## Peer dependencies
@@ -20,11 +20,11 @@ React and React DOM (19 or newer) and [UI SDK](https://ui-sdk.dev) (`@ui-sdk/cor
 | `react-dom` | `>=19` | Yes | Everything that renders. |
 | `@ui-sdk/core` | `^0.1.0-beta.2` | Yes | The behaviors under every interactive part: keyboard, focus, dismissal, ARIA. |
 | `@ui-sdk/react` | `^0.1.0-beta.2` | Yes | The UI SDK components docstream renders. |
-| `@agent-wasm/core` | `>=0.4.0` | Optional | The `@brett_lamy/docstream/playground` entry: live code fences and runnable inline `{% demo %}` files, run by almost-node (a Vite dev server in the browser). |
-| `@brett_lamy/viz-engine` | `>=0.2.0` | Optional | The `@brett_lamy/docstream/viz` entry: `VizEmbed`. |
-| `vite` | `>=5` | Optional | The `@brett_lamy/docstream/vite` plugin (`docstreamSources`), imported from `vite.config.ts`. |
+| `@agent-wasm/core` | `>=0.4.0` | Optional | The `@brett_lamy/ui/docstream/playground` entry: live code fences and runnable inline `{% demo %}` files, run by almost-node (a Vite dev server in the browser). |
+| `@brett_lamy/viz-engine` | `>=0.2.0` | Optional | The `@brett_lamy/ui/docstream/viz` entry: `VizEmbed`. |
+| `vite` | `>=5` | Optional | The `@brett_lamy/ui/docstream/vite` plugin (`docstreamSources`), imported from `vite.config.ts`. |
 
-The optional peers are only ever imported by their own entry. A test (`src/entry-boundary.test.ts`) walks the module graph of every other entry — static, type-only and dynamic imports — and fails if almost-node shows up, so an app that never installs `@agent-wasm/core` typechecks and bundles cleanly.
+The optional peers are only ever imported by their own entry. A test (`packages/ui/src/docstream/entry-boundary.test.ts` in BL UI's repository) walks the module graph of every other entry — static, type-only and dynamic imports — and fails if almost-node shows up, so an app that never installs `@agent-wasm/core` typechecks and bundles cleanly.
 
 {% tabs title="Optional features" level="3" %}
 {% tab title="Playground" %}
@@ -33,7 +33,7 @@ Run live React code fences and inline-file demos in the page:
 {% command %}npm install @agent-wasm/core{% endcommand %}
 
 ```tsx lineNumbers="false"
-import { GitbookStreamdown } from "@brett_lamy/docstream/playground" // = PlaygroundStreamdown
+import { GitbookStreamdown } from "@brett_lamy/ui/docstream/playground" // = PlaygroundStreamdown
 ```
 
 The runtime needs almost-node's service worker at `/__sw__.js`: add `almostnodePlugin()` from `@agent-wasm/core/vite` to your Vite dev server, or serve `getServiceWorkerContent()` from `@agent-wasm/core/next` in production. See [Live code](../04-interactive/03-live-code.md).
@@ -45,7 +45,7 @@ Mount deterministic `@brett_lamy/viz-engine` scenes in a document:
 {% command %}npm install @brett_lamy/viz-engine{% endcommand %}
 
 ```tsx lineNumbers="false"
-import { VizEmbed } from "@brett_lamy/docstream/viz"
+import { VizEmbed } from "@brett_lamy/ui/docstream/viz"
 ```
 
 The `/viz` entry imports `@brett_lamy/viz-engine/styles.css` itself. See [Viz](../05-media/07-viz.md).
@@ -56,7 +56,7 @@ Render (and edit) real component and Storybook files from Markdown:
 
 ```ts title="vite.config.ts"
 import { defineConfig } from "vite"
-import { docstreamSources } from "@brett_lamy/docstream/vite"
+import { docstreamSources } from "@brett_lamy/ui/docstream/vite"
 
 export default defineConfig({
   plugins: [docstreamSources({ mounts: [{ name: "demo", root: "src/examples" }] })],
@@ -72,14 +72,14 @@ export default defineConfig({
 Import the CSS once, at your app's entry:
 
 ```ts title="main.tsx" lineNumbers="false"
-import "@brett_lamy/docstream/styles.css"
+import "@brett_lamy/ui/docstream/styles.css"
 ```
 
 `styles.css` covers every block the renderer draws — headings, hints, tabs, code, demos, the replay player, the Strudel rack — and pulls in the property-sheet and task-checkbox styles. Its colors come from `--gb-*` tokens that read shadcn-style host tokens (`--card`, `--border`, `--primary`, …) with neutral defaults, so it looks right with no setup and follows your theme when there is one. See [Theming](../07-reference/01-theming.md).
 
 ### The `ui-sdk` layer
 
-UI SDK adds a little CSS of its own (keeping closed popups hidden, for one) in a cascade layer named `ui-sdk` once a component mounts. `styles.css` declares that layer first, so docstream's rules win over it. If you import the stylesheet inside a layer of your own — `@import "@brett_lamy/docstream/styles.css" layer(docs)`, or through Tailwind's layers — declare it yourself at the very top of your global stylesheet, above `@import "tailwindcss"`:
+UI SDK adds a little CSS of its own (keeping closed popups hidden, for one) in a cascade layer named `ui-sdk` once a component mounts. `styles.css` declares that layer first, so docstream's rules win over it. If you import the stylesheet inside a layer of your own — `@import "@brett_lamy/ui/docstream/styles.css" layer(docs)`, or through Tailwind's layers — declare it yourself at the very top of your global stylesheet, above `@import "tailwindcss"`:
 
 ```css title="app.css" lineNumbers="false"
 @layer ui-sdk;
@@ -88,8 +88,8 @@ UI SDK adds a little CSS of its own (keeping closed popups hidden, for one) in a
 If you use `DocumentProperties` or `TaskCheckbox` on their own, outside a rendered document, their styles are separate entries too:
 
 ```ts lineNumbers="false"
-import "@brett_lamy/docstream/properties/styles.css"
-import "@brett_lamy/docstream/tasks/styles.css"
+import "@brett_lamy/ui/docstream/properties/styles.css"
+import "@brett_lamy/ui/docstream/tasks/styles.css"
 ```
 
 ### TypeScript and CSS imports
@@ -126,7 +126,7 @@ The renderer itself is small; the heavy pieces wait behind dynamic `import()` un
 The bundle-boundary tests enforce the rrweb and acorn rows: no entry may import either one statically (acorn is allowed statically only in `/strudel`, which is the parser's own entry).
 
 {% hint style="success" %}
-To keep a bundle smaller still, import a narrower entry: `@brett_lamy/docstream/gitbook` is the parser and serializer with no React, `@brett_lamy/docstream/streamdown` is just the streaming renderer. See [Package entries](03-package-entries.md).
+To keep a bundle smaller still, import a narrower entry: `@brett_lamy/ui/docstream/gitbook` is the parser and serializer with no React, `@brett_lamy/ui/docstream/streamdown` is just the streaming renderer. See [Package entries](03-package-entries.md).
 {% endhint %}
 
 ## Framework notes
@@ -146,14 +146,14 @@ Only docstream's UI SDK part modules carry a `"use client"` directive; the rende
 ```tsx title="app/docs/answer.tsx"
 "use client"
 
-import { GitbookStreamdown } from "@brett_lamy/docstream"
+import { GitbookStreamdown } from "@brett_lamy/ui/docstream"
 
 export function Answer({ text, done }: { text: string; done: boolean }) {
   return <GitbookStreamdown markdown={text} isStreaming={!done} />
 }
 ```
 
-Import `@brett_lamy/docstream/styles.css` from your root layout. The pure parser (`@brett_lamy/docstream/gitbook`) has no React and is safe in server components, route handlers and edge functions.
+Import `@brett_lamy/ui/docstream/styles.css` from your root layout. The pure parser (`@brett_lamy/ui/docstream/gitbook`) has no React and is safe in server components, route handlers and edge functions.
 {% endtab %}
 
 {% tab title="SSR and Node" %}
@@ -166,6 +166,19 @@ What to expect from a server render:
 - File-backed demos load through the resolver asynchronously. To have them settled for the first render (static export, SSR), call `preloadDemos(resolver, srcs)` first — see [Demos](../04-interactive/01-demos.md).
 {% endtab %}
 {% endtabs %}
+
+## From `@brett_lamy/docstream`
+
+The npm packages `@brett_lamy/docstream` and `@brett_lamy/docstream-editor` stop at 2.0.1: docstream is developed inside BL UI now and published with it. Every entry is the same module under the library's name, so moving is a rename of imports:
+
+| Before | After |
+| --- | --- |
+| `@brett_lamy/docstream` | `@brett_lamy/ui/docstream` |
+| `@brett_lamy/docstream/<entry>` (`/gitbook`, `/replay`, `/site/styles.css`, …) | `@brett_lamy/ui/docstream/<entry>` |
+| `@brett_lamy/docstream/styles.css` | `@brett_lamy/ui/docstream/styles.css` |
+| `@brett_lamy/docstream-editor`, `/editor`, `/convert` | `@brett_lamy/ui/docstream-editor`, `/editor`, `/convert` |
+
+Replace the two packages with `@brett_lamy/ui` in your `package.json`. The optional peers are the same.
 
 ## Upgrading to 2.0
 
@@ -180,9 +193,9 @@ What to expect from a server render:
 {% step %}
 ### Install the two UI SDK peers
 
-{% command %}npm install @brett_lamy/docstream@2 @ui-sdk/core@beta @ui-sdk/react@beta{% endcommand %}
+{% command %}npm install @brett_lamy/ui{% endcommand %}
 
-Both are peer dependencies (`^0.1.0-beta.2`), so your app and docstream share one copy of the core.
+The standalone `@brett_lamy/docstream` 2.0 took both as peer dependencies (`^0.1.0-beta.2`). Inside `@brett_lamy/ui` (6.0 and later) they come with the library, so your app and docstream share one copy of the core.
 {% endstep %}
 {% step %}
 ### Declare the layer, if you layer docstream

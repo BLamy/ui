@@ -7,7 +7,7 @@ One component, three looks.
 
 {% tabs title="Installation" sync="install-method" %}
 {% tab title="npm" %}
-{% command %}npm install @brett_lamy/ui/docstream react{% endcommand %}
+{% command %}npm install @brett_lamy/ui react{% endcommand %}
 {% endtab %}
 {% endtabs %}
 `

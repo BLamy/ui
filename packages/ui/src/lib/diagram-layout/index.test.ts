@@ -43,8 +43,8 @@ describe('toElkGraph', () => {
     expect(toElkGraph({ nodes: [{ id: 'a' }, { id: 'b' }] }).layoutOptions!['elk.hierarchyHandling']).toBe('SEPARATE_CHILDREN');
     expect(toElkGraph({ nodes: [{ id: 'a' }] }, { elk: { 'elk.hierarchyHandling': 'INCLUDE_CHILDREN' } }).layoutOptions!['elk.hierarchyHandling']).toBe('INCLUDE_CHILDREN');
     expect(g.layoutOptions!['elk.direction']).toBe('RIGHT');
-    expect(toElkGraph({ nodes: [] }, { direction: 'DOWN' }).layoutOptions!['elk.direction']).toBe('DOWN');
-    expect(toElkGraph({ nodes: [] }, { direction: 'DOWN', elk: { 'elk.direction': 'LEFT', 'elk.foo': 'bar' } }).layoutOptions).toMatchObject({ 'elk.direction': 'LEFT', 'elk.foo': 'bar' });
+    expect(toElkGraph({ nodes: [] }, { direction: 'down' }).layoutOptions!['elk.direction']).toBe('DOWN');
+    expect(toElkGraph({ nodes: [] }, { direction: 'down', elk: { 'elk.direction': 'LEFT', 'elk.foo': 'bar' } }).layoutOptions).toMatchObject({ 'elk.direction': 'LEFT', 'elk.foo': 'bar' });
     expect(Object.keys(DIAGRAM_ELK_OPTIONS)).toContain('elk.edgeRouting');
   });
 
@@ -232,7 +232,7 @@ describe('layoutDiagram, with real ELK, on a server', () => {
     const right = await layoutDiagram(draft, { text });
     expect(right.nodes[1].x).toBeGreaterThan(right.nodes[0].x);
     expect(right.nodes[1].y).toBe(right.nodes[0].y);
-    const down = await layoutDiagram(draft, { text, direction: 'DOWN' });
+    const down = await layoutDiagram(draft, { text, direction: 'down' });
     expect(down.nodes[1].y).toBeGreaterThan(down.nodes[0].y);
     expect(down.nodes[1].x).toBe(down.nodes[0].x);
   });

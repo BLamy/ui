@@ -4,7 +4,7 @@
    Replay), through the tailnet when this tab is on Tailscale with an exit node, else the CORS proxy. Variables no sign-in
    provides are typed once and kept in the same vault. */
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import type { DocstreamEnvHost } from '@brett_lamy/docstream';
+import type { DocstreamEnvHost } from '@brett_lamy/ui/docstream';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogBackdrop, DialogClose, DialogContent, DialogHeader, DialogTitle, DialogView } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';

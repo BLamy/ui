@@ -1,7 +1,9 @@
 name: Publish packages
 
 # Publishes every @brett_lamy/* library whose package.json version isn't on npm yet, in dependency order:
-# the two UI SDK fork packages (built from the vendor/ui-sdk submodule), then @brett_lamy/ui.
+# the two UI SDK fork packages (built from the vendor/ui-sdk submodule), then @brett_lamy/ui. Docstream and the
+# Docstream editor ship inside @brett_lamy/ui (`@brett_lamy/ui/docstream…`): @brett_lamy/docstream and
+# @brett_lamy/docstream-editor stopped at 2.0.1 and are not published from here.
 # `pnpm pack` rewrites `workspace:*` to the real versions; `npm publish` then uploads the tarball using
 # npm trusted publishing (OIDC — configure this workflow, publish.yml, as the trusted publisher for each
 # package on npmjs.com) or, if set, the NPM_TOKEN repository secret.
@@ -42,8 +44,10 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      - name: Build libraries
-        run: pnpm nx run-many -t build -p @brett_lamy/ui-sdk-core,@brett_lamy/ui-sdk-react,@brett_lamy/ui
+      # The library's tests read its build (docstream's entry boundaries load every dist entry in plain Node), so a
+      # version is only published once both pass.
+      - name: Build and test libraries
+        run: pnpm nx run-many -t build,test -p @brett_lamy/ui-sdk-core,@brett_lamy/ui-sdk-react,@brett_lamy/ui
 
       # Temporary: the claims npm's trusted publishing sees (payload only, no signature), to match its config.
       - name: Show OIDC claims

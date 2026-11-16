@@ -3670,6 +3670,58 @@
       }
     },
     {
+      "name": "cloudflare-diagram",
+      "type": "registry:ui",
+      "title": "CloudflareDiagram",
+      "description": "Cloudflare's services on a Diagram: each a node with what it can call and receive as ports, from a catalog generated from Cloudflare's docs, Wrangler's schema and the Workers types. A connection can only be one the catalog says there is, and it offers the real methods. What it's given is a system, which saves as JSON and reads from and writes to wrangler.jsonc, or is read from a workerd config.capnp: it says what's wrong with one, and with editable a search of the catalog adds a service and a service's machine opens in a StateDiagram. Read-only by default. No Cloudflare artwork. ELK and XState are optional peers.",
+      "dependencies": [
+        "@ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1",
+        "class-variance-authority@^0.7.1",
+        "xstate@^5.33.3"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/badge.json",
+        "https://blamy.github.io/ui/r/button.json",
+        "https://blamy.github.io/ui/r/canvas.json",
+        "https://blamy.github.io/ui/r/checkbox.json",
+        "https://blamy.github.io/ui/r/cloudflare-catalog.json",
+        "https://blamy.github.io/ui/r/cloudflare-services.json",
+        "https://blamy.github.io/ui/r/cloudflare-system.json",
+        "https://blamy.github.io/ui/r/combobox.json",
+        "https://blamy.github.io/ui/r/controllable-state.json",
+        "https://blamy.github.io/ui/r/diagram.json",
+        "https://blamy.github.io/ui/r/diagram-frame.json",
+        "https://blamy.github.io/ui/r/diagram-layout.json",
+        "https://blamy.github.io/ui/r/diagram-model.json",
+        "https://blamy.github.io/ui/r/diagram-primitive.json",
+        "https://blamy.github.io/ui/r/empty-state.json",
+        "https://blamy.github.io/ui/r/icon.json",
+        "https://blamy.github.io/ui/r/label.json",
+        "https://blamy.github.io/ui/r/state-diagram.json",
+        "https://blamy.github.io/ui/r/toolbar.json",
+        "https://blamy.github.io/ui/r/tooltip.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/cloudflare-diagram.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/cloudflare-diagram.tsx"
+        }
+      ],
+      "meta": {
+        "page": "cloudflare-diagram",
+        "exports": [
+          "CloudflareDiagram",
+          "CloudflareServiceNode",
+          "CloudflareServiceSearch",
+          "cloudflareServiceVariants",
+          "serviceNode"
+        ]
+      }
+    },
+    {
       "name": "code-editor-gpu",
       "type": "registry:lib",
       "title": "CodeEditor GPU highlighting",
@@ -3924,7 +3976,7 @@
       "title": "Composer",
       "description": "A prompt box as parts: a card with the Docstream editor, attachment tiles (images open the ImageAnnotator), footer option pills on the kit's DropdownMenu, send / stop / add buttons on the kit's Button, bumps above and below, a queue for drafts sent while a reply streams, and compact and FAB collapse.",
       "dependencies": [
-        "@brett_lamy/docstream-editor@2.0.1",
+        "@brett_lamy/ui@6.0.0",
         "@ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1",
         "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1",
         "class-variance-authority@^0.7.1",
@@ -4284,6 +4336,137 @@
           "DebugToolbar",
           "DebugToolbarButton",
           "debugToolbarActions"
+        ]
+      }
+    },
+    {
+      "name": "diagram-frame",
+      "type": "registry:ui",
+      "title": "DiagramFrame",
+      "description": "A board with a panel: flat parts on AdaptivePane, so the panel is a column beside the board when there's the room, a drawer over it that doesn't dim it at medium sizes, and a page pushed over it on a phone. A bar on the board opens it, a cover goes over everything, and sections and commit-on-Enter inputs fill it.",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/adaptive-pane.json",
+        "https://blamy.github.io/ui/r/button.json",
+        "https://blamy.github.io/ui/r/container.json",
+        "https://blamy.github.io/ui/r/field.json",
+        "https://blamy.github.io/ui/r/input.json",
+        "https://blamy.github.io/ui/r/primitives.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/diagram-frame.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/diagram-frame.tsx"
+        }
+      ],
+      "meta": {
+        "page": "diagram-frame",
+        "exports": [
+          "DiagramFrame",
+          "DiagramFrameBoard",
+          "DiagramFramePanel",
+          "DiagramFrameBar",
+          "DiagramFrameTrigger",
+          "DiagramFrameCover",
+          "DiagramFrameSection",
+          "DiagramFrameInput",
+          "useDiagramFrame"
+        ]
+      }
+    },
+    {
+      "name": "diagram-layout",
+      "type": "registry:lib",
+      "title": "Diagram layout",
+      "description": "Places a Diagram's nodes and routes its edges with ELK, in a Web Worker, measuring their words first. ELK is 442 KB gzipped and licensed EPL-2.0 OR GPL-3.0-or-later, so it's only loaded when a layout's first asked for, and this item is what installs it.",
+      "dependencies": [
+        "elkjs@^0.12.1"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/canvas-math.json",
+        "https://blamy.github.io/ui/r/diagram-model.json",
+        "https://blamy.github.io/ui/r/diagram-text.json",
+        "https://blamy.github.io/ui/r/use-font-version.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/diagram-layout/index.ts",
+          "type": "registry:lib",
+          "target": "lib/diagram-layout/index.ts"
+        },
+        {
+          "path": "packages/ui/src/lib/diagram-layout/layout-worker.js",
+          "type": "registry:lib",
+          "target": "lib/diagram-layout/layout-worker.js"
+        },
+        {
+          "path": "packages/ui/src/lib/diagram-layout/react.ts",
+          "type": "registry:lib",
+          "target": "lib/diagram-layout/react.ts"
+        }
+      ],
+      "meta": {
+        "page": "diagram",
+        "exports": [
+          "layoutDiagram",
+          "createDiagramLayoutEngine",
+          "runLayout",
+          "toElkGraph",
+          "fromElkGraph",
+          "DiagramLayoutError",
+          "DIAGRAM_ELK_OPTIONS",
+          "useDiagramLayout"
+        ]
+      }
+    },
+    {
+      "name": "diagram",
+      "type": "registry:ui",
+      "title": "Diagram",
+      "description": "Nodes, edges, labels and regions on a Canvas, as plain data, on one primitive (data, selection, history) with a controller and agent actions. Lines keep their thickness at any zoom, text hides when it's too small to read, and above 200 items only what's near the view is drawn. With editable: selecting, dragging, deleting and undo as one gesture, named ports, and connecting with validation; every change goes through onDataChange(data, details) and can be refused. One tab stop: every node and edge is reached by keyboard and says what it connects to. DiagramToolbar adds zoom, fit, undo and redo.",
+      "dependencies": [
+        "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1",
+        "class-variance-authority@^0.7.1"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/canvas.json",
+        "https://blamy.github.io/ui/r/canvas-math.json",
+        "https://blamy.github.io/ui/r/container.json",
+        "https://blamy.github.io/ui/r/diagram-gesture.json",
+        "https://blamy.github.io/ui/r/diagram-keyboard.json",
+        "https://blamy.github.io/ui/r/diagram-model.json",
+        "https://blamy.github.io/ui/r/diagram-primitive.json",
+        "https://blamy.github.io/ui/r/diagram-text.json",
+        "https://blamy.github.io/ui/r/empty-state.json",
+        "https://blamy.github.io/ui/r/icon.json",
+        "https://blamy.github.io/ui/r/spinner.json",
+        "https://blamy.github.io/ui/r/toolbar.json",
+        "https://blamy.github.io/ui/r/tooltip.json",
+        "https://blamy.github.io/ui/r/use-font-version.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/diagram.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/diagram.tsx"
+        }
+      ],
+      "meta": {
+        "page": "diagram",
+        "exports": [
+          "Diagram",
+          "DiagramNodeBody",
+          "DiagramToolbar",
+          "useDiagram",
+          "createDiagramController",
+          "diagramNodeVariants",
+          "diagramEdgeVariants"
         ]
       }
     },
@@ -5288,8 +5471,7 @@
       "title": "MarkdownEditor",
       "description": "A themed WYSIWYG Markdown editor over docstream-editor: slash menu, Markdown paste, inline or chip images, and the built-in formatting toolbar or one of your own (a Toolbar of MarkdownEditorToolbarButtons).",
       "dependencies": [
-        "@brett_lamy/docstream@2.0.1",
-        "@brett_lamy/docstream-editor@2.0.1",
+        "@brett_lamy/ui@6.0.0",
         "@ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1",
         "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1",
         "class-variance-authority@^0.7.1"
@@ -5325,7 +5507,7 @@
       "title": "MarkdownView",
       "description": "Read-only GitBook-flavored Markdown rendered by Docstream: headings, lists, tables, hints, tabs, highlighted code, live demos and reference chips, whole or streamed.",
       "dependencies": [
-        "@brett_lamy/docstream@2.0.1"
+        "@brett_lamy/ui@6.0.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -6182,7 +6364,7 @@
       "title": "ReplayPreview",
       "description": "An rrweb session replay in a browser frame: a URL bar that follows the recording, play/pause, a scrubber with click, error, failed-request and navigation markers, speed, fullscreen, Console and Network buttons that open a DevTools panel cut at the playhead (requests, failures, errors), a drawn cursor with click ripples, and a skeleton poster while the player loads.",
       "dependencies": [
-        "@brett_lamy/docstream@2.0.1"
+        "@brett_lamy/ui@6.0.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json"
@@ -6786,12 +6968,48 @@
       }
     },
     {
+      "name": "state-diagram",
+      "type": "registry:ui",
+      "title": "StateDiagram",
+      "description": "An XState machine on a Diagram, drawn from machine.root: compound and parallel states, initial markers, final states, and all of always, after, invoke and guards labelled. A machine or its JSON config, which can be run with stand-ins for all it names, and edited, writing to the config. XState and ELK are optional peers.",
+      "dependencies": [
+        "xstate@^5.33.3"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/button.json",
+        "https://blamy.github.io/ui/r/diagram.json",
+        "https://blamy.github.io/ui/r/diagram-frame.json",
+        "https://blamy.github.io/ui/r/diagram-layout.json",
+        "https://blamy.github.io/ui/r/diagram-model.json",
+        "https://blamy.github.io/ui/r/state-diagram-edit.json",
+        "https://blamy.github.io/ui/r/state-diagram-model.json",
+        "https://blamy.github.io/ui/r/state-diagram-simulation.json",
+        "https://blamy.github.io/ui/r/switch.json",
+        "https://blamy.github.io/ui/r/tabs.json",
+        "https://blamy.github.io/ui/r/toolbar.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/state-diagram.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/state-diagram.tsx"
+        }
+      ],
+      "meta": {
+        "page": "state-diagram",
+        "exports": [
+          "StateDiagram"
+        ]
+      }
+    },
+    {
       "name": "stl-viewer",
       "type": "registry:ui",
       "title": "StlViewer",
-      "description": "A 3D preview of an .stl model, binary or ASCII: WebGL, drag to orbit, pinch or ⌘-scroll to zoom, double-click to reset, and the triangle count and size under it. The model takes the theme's primary color. A re-export of @brett_lamy/docstream/stl's viewer.",
+      "description": "A 3D preview of an .stl model, binary or ASCII: WebGL, drag to orbit, pinch or ⌘-scroll to zoom, double-click to reset, and the triangle count and size under it. The model takes the theme's primary color. A re-export of the viewer at @brett_lamy/ui/docstream/stl.",
       "dependencies": [
-        "@brett_lamy/docstream@2.0.1"
+        "@brett_lamy/ui@6.0.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json"
@@ -6814,9 +7032,9 @@
       "name": "strudel-player",
       "type": "registry:ui",
       "title": "StrudelPlayer",
-      "description": "An audio player for a Strudel live-coded pattern, inline code or a .strudel file: play/stop, a scrolling piano roll, the code, and an equipment rack. Strudel runs in the page, loaded on the first play; one pattern plays at a time. A re-export of @brett_lamy/docstream/strudel's player and the functions that drive its runtime.",
+      "description": "An audio player for a Strudel live-coded pattern, inline code or a .strudel file: play/stop, a scrolling piano roll, the code, and an equipment rack. Strudel runs in the page, loaded on the first play; one pattern plays at a time. A re-export of the player at @brett_lamy/ui/docstream/strudel and the functions that drive its runtime.",
       "dependencies": [
-        "@brett_lamy/docstream@2.0.1"
+        "@brett_lamy/ui@6.0.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json"
@@ -7564,7 +7782,7 @@
       "title": "TuiPreview",
       "description": "An OpenTUI terminal program run on demand in a sandboxed, opaque-origin frame by OpenTUI's WebAssembly renderer: Run / Stop, a light or dark terminal that follows the page (`appearance`), keyboard input, visible start-up and render errors, and the same runtime Docstream uses for `tui` code fences.",
       "dependencies": [
-        "@brett_lamy/docstream@2.0.1"
+        "@brett_lamy/ui@6.0.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json"
@@ -8025,6 +8243,109 @@
       ]
     },
     {
+      "name": "cloudflare-catalog",
+      "type": "registry:lib",
+      "title": "Cloudflare Catalog",
+      "description": "Cloudflare Catalog — part of BL UI's library (lib/cloudflare-catalog.generated.ts, lib/cloudflare-catalog.ts).",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/cloudflare-catalog.generated.ts",
+          "type": "registry:lib",
+          "target": "lib/cloudflare-catalog.generated.ts"
+        },
+        {
+          "path": "packages/ui/src/lib/cloudflare-catalog.ts",
+          "type": "registry:lib",
+          "target": "lib/cloudflare-catalog.ts"
+        }
+      ]
+    },
+    {
+      "name": "cloudflare-services",
+      "type": "registry:lib",
+      "title": "Cloudflare Services",
+      "description": "Cloudflare Services — part of BL UI's library (lib/cloudflare-services.ts).",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/cloudflare-catalog.json",
+        "https://blamy.github.io/ui/r/diagram-model.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/cloudflare-services.ts",
+          "type": "registry:lib",
+          "target": "lib/cloudflare-services.ts"
+        }
+      ]
+    },
+    {
+      "name": "cloudflare-system",
+      "type": "registry:lib",
+      "title": "Cloudflare System",
+      "description": "Cloudflare System — part of BL UI's library (lib/cloudflare-system.ts).",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/cloudflare-catalog.json",
+        "https://blamy.github.io/ui/r/cloudflare-services.json",
+        "https://blamy.github.io/ui/r/state-diagram-edit.json",
+        "https://blamy.github.io/ui/r/state-diagram-model.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/cloudflare-system.ts",
+          "type": "registry:lib",
+          "target": "lib/cloudflare-system.ts"
+        }
+      ]
+    },
+    {
+      "name": "cloudflare-workerd",
+      "type": "registry:lib",
+      "title": "Cloudflare Workerd",
+      "description": "Cloudflare Workerd — part of BL UI's library (lib/cloudflare-workerd.ts).",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/cloudflare-services.json",
+        "https://blamy.github.io/ui/r/cloudflare-system.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/cloudflare-workerd.ts",
+          "type": "registry:lib",
+          "target": "lib/cloudflare-workerd.ts"
+        }
+      ]
+    },
+    {
+      "name": "cloudflare-wrangler",
+      "type": "registry:lib",
+      "title": "Cloudflare Wrangler",
+      "description": "Cloudflare Wrangler — part of BL UI's library (lib/cloudflare-wrangler.ts).",
+      "dependencies": [
+        "jsonc-parser@3.3.1"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/cloudflare-catalog.json",
+        "https://blamy.github.io/ui/r/cloudflare-services.json",
+        "https://blamy.github.io/ui/r/cloudflare-system.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/cloudflare-wrangler.ts",
+          "type": "registry:lib",
+          "target": "lib/cloudflare-wrangler.ts"
+        }
+      ]
+    },
+    {
       "name": "code-editor-primitive",
       "type": "registry:lib",
       "title": "Code Editor Primitive",
@@ -8148,6 +8469,99 @@
           "path": "packages/ui/src/lib/data-table-primitive.ts",
           "type": "registry:lib",
           "target": "lib/data-table-primitive.ts"
+        }
+      ]
+    },
+    {
+      "name": "diagram-gesture",
+      "type": "registry:lib",
+      "title": "Diagram Gesture",
+      "description": "Diagram Gesture — part of BL UI's library (lib/diagram-gesture.ts).",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/canvas-math.json",
+        "https://blamy.github.io/ui/r/diagram-model.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/diagram-gesture.ts",
+          "type": "registry:lib",
+          "target": "lib/diagram-gesture.ts"
+        }
+      ]
+    },
+    {
+      "name": "diagram-keyboard",
+      "type": "registry:lib",
+      "title": "Diagram Keyboard",
+      "description": "Diagram Keyboard — part of BL UI's library (lib/diagram-keyboard.ts).",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/canvas-math.json",
+        "https://blamy.github.io/ui/r/diagram-model.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/diagram-keyboard.ts",
+          "type": "registry:lib",
+          "target": "lib/diagram-keyboard.ts"
+        }
+      ]
+    },
+    {
+      "name": "diagram-model",
+      "type": "registry:lib",
+      "title": "Diagram Model",
+      "description": "Diagram Model — part of BL UI's library (lib/diagram-model.ts).",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/canvas-math.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/diagram-model.ts",
+          "type": "registry:lib",
+          "target": "lib/diagram-model.ts"
+        }
+      ]
+    },
+    {
+      "name": "diagram-primitive",
+      "type": "registry:lib",
+      "title": "Diagram Primitive",
+      "description": "Diagram Primitive — part of BL UI's library (lib/diagram-primitive.ts).",
+      "dependencies": [
+        "@ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/diagram-model.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/diagram-primitive.ts",
+          "type": "registry:lib",
+          "target": "lib/diagram-primitive.ts"
+        }
+      ]
+    },
+    {
+      "name": "diagram-text",
+      "type": "registry:lib",
+      "title": "Diagram Text",
+      "description": "Diagram Text — part of BL UI's library (lib/diagram-text.ts).",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/diagram-text.ts",
+          "type": "registry:lib",
+          "target": "lib/diagram-text.ts"
         }
       ]
     },
@@ -9045,6 +9459,64 @@
       ]
     },
     {
+      "name": "state-diagram-edit",
+      "type": "registry:lib",
+      "title": "State Diagram Edit",
+      "description": "State Diagram Edit — part of BL UI's library (lib/state-diagram-edit.ts).",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/state-diagram-model.json",
+        "https://blamy.github.io/ui/r/state-diagram-simulation.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/state-diagram-edit.ts",
+          "type": "registry:lib",
+          "target": "lib/state-diagram-edit.ts"
+        }
+      ]
+    },
+    {
+      "name": "state-diagram-model",
+      "type": "registry:lib",
+      "title": "State Diagram Model",
+      "description": "State Diagram Model — part of BL UI's library (lib/state-diagram-model.ts).",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/diagram-layout.json",
+        "https://blamy.github.io/ui/r/diagram-model.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/state-diagram-model.ts",
+          "type": "registry:lib",
+          "target": "lib/state-diagram-model.ts"
+        }
+      ]
+    },
+    {
+      "name": "state-diagram-simulation",
+      "type": "registry:lib",
+      "title": "State Diagram Simulation",
+      "description": "State Diagram Simulation — part of BL UI's library (lib/state-diagram-simulation.ts).",
+      "dependencies": [
+        "xstate@^5.33.3"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/state-diagram-model.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/state-diagram-simulation.ts",
+          "type": "registry:lib",
+          "target": "lib/state-diagram-simulation.ts"
+        }
+      ]
+    },
+    {
       "name": "surface-flow",
       "type": "registry:lib",
       "title": "Surface Flow",
@@ -9173,6 +9645,24 @@
           "path": "packages/ui/src/lib/trace-timeline-primitive.ts",
           "type": "registry:lib",
           "target": "lib/trace-timeline-primitive.ts"
+        }
+      ]
+    },
+    {
+      "name": "use-font-version",
+      "type": "registry:lib",
+      "title": "Use Font Version",
+      "description": "Use Font Version — part of BL UI's library (lib/use-font-version.ts).",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/diagram-text.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/use-font-version.ts",
+          "type": "registry:lib",
+          "target": "lib/use-font-version.ts"
         }
       ]
     },
@@ -9381,7 +9871,7 @@
         "media"
       ],
       "dependencies": [
-        "@brett_lamy/docstream@2.0.1",
+        "@brett_lamy/ui@6.0.0",
         "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1"
       ],
       "registryDependencies": [
@@ -9460,7 +9950,7 @@
       "dependencies": [
         "use-fs@2.1.0",
         "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1",
-        "@brett_lamy/docstream@2.0.1",
+        "@brett_lamy/ui@6.0.0",
         "@visual-json/react@0.4.0",
         "@visual-json/yaml@0.4.0"
       ],
@@ -9737,7 +10227,7 @@
       ],
       "dependencies": [
         "use-fs@2.1.0",
-        "@brett_lamy/docstream@2.0.1",
+        "@brett_lamy/ui@6.0.0",
         "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1"
       ],
       "registryDependencies": [
@@ -9890,6 +10380,50 @@
       ],
       "meta": {
         "entry": "components/blocks/apple-settings/page.tsx"
+      }
+    },
+    {
+      "name": "cloudflare-studio",
+      "type": "registry:block",
+      "title": "Cloudflare Studio",
+      "description": "A system of Cloudflare's services as an app: search the catalog to add a service, drag from a Worker's env to what it binds, choose the operations it uses, and give anything that runs code an XState machine, edited in a StateDiagram, with what crosses each connection checked against what the machine receives. Export gives the system's JSON, a wrangler.jsonc for each Worker with what it still needs listed, and a module for each machine, as files: nothing's deployed and there's no account. It's kept in the browser as it changes, and works down to a phone's width, where the inspector is a page pushed over the board and Export is a sheet.",
+      "categories": [
+        "developer",
+        "diagram",
+        "application"
+      ],
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/button.json",
+        "https://blamy.github.io/ui/r/cloudflare-diagram.json",
+        "https://blamy.github.io/ui/r/cloudflare-services.json",
+        "https://blamy.github.io/ui/r/cloudflare-system.json",
+        "https://blamy.github.io/ui/r/cloudflare-wrangler.json",
+        "https://blamy.github.io/ui/r/dialog.json",
+        "https://blamy.github.io/ui/r/file-upload.json",
+        "https://blamy.github.io/ui/r/input.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/cloudflare-studio/page.tsx",
+          "type": "registry:component",
+          "target": "components/blocks/cloudflare-studio/page.tsx"
+        },
+        {
+          "path": "registry/blocks/cloudflare-studio/studio-files.ts",
+          "type": "registry:component",
+          "target": "components/blocks/cloudflare-studio/studio-files.ts"
+        },
+        {
+          "path": "registry/blocks/cloudflare-studio/example.ts",
+          "type": "registry:component",
+          "target": "components/blocks/cloudflare-studio/example.ts"
+        }
+      ],
+      "meta": {
+        "entry": "components/blocks/cloudflare-studio/page.tsx"
       }
     },
     {
@@ -10171,6 +10705,7 @@
         "https://blamy.github.io/ui/r/canvas.json",
         "https://blamy.github.io/ui/r/canvas-math.json",
         "https://blamy.github.io/ui/r/container.json",
+        "https://blamy.github.io/ui/r/diagram-model.json",
         "https://blamy.github.io/ui/r/dropdown-menu.json",
         "https://blamy.github.io/ui/r/empty-state.json",
         "https://blamy.github.io/ui/r/hover-card.json",
@@ -10432,6 +10967,7 @@
         "https://blamy.github.io/ui/r/container.json",
         "https://blamy.github.io/ui/r/date-input.json",
         "https://blamy.github.io/ui/r/date-picker.json",
+        "https://blamy.github.io/ui/r/diagram-model.json",
         "https://blamy.github.io/ui/r/dialog.json",
         "https://blamy.github.io/ui/r/disclosure.json",
         "https://blamy.github.io/ui/r/dropdown-menu.json",
@@ -10698,7 +11234,7 @@
         "command-menu"
       ],
       "dependencies": [
-        "@brett_lamy/docstream@2.0.1",
+        "@brett_lamy/ui@6.0.0",
         "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1",
         "class-variance-authority@^0.7.1"
       ],
@@ -10868,7 +11404,7 @@
         "command-menu"
       ],
       "dependencies": [
-        "@agent-wasm/core@0.4.0",
+        "@agent-wasm/core@>=0.4.0",
         "@ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1",
         "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1"
       ],
@@ -11120,7 +11656,7 @@
         "application"
       ],
       "dependencies": [
-        "@brett_lamy/docstream@2.0.1",
+        "@brett_lamy/ui@6.0.0",
         "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1"
       ],
       "registryDependencies": [
@@ -11129,6 +11665,7 @@
         "https://blamy.github.io/ui/r/canvas-math.json",
         "https://blamy.github.io/ui/r/checkbox.json",
         "https://blamy.github.io/ui/r/container.json",
+        "https://blamy.github.io/ui/r/diagram-model.json",
         "https://blamy.github.io/ui/r/file-upload.json",
         "https://blamy.github.io/ui/r/hover-card.json",
         "https://blamy.github.io/ui/r/icon.json",
@@ -11588,7 +12125,7 @@
         "audio"
       ],
       "dependencies": [
-        "@brett_lamy/docstream@2.0.1",
+        "@brett_lamy/ui@6.0.0",
         "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1"
       ],
       "registryDependencies": [
@@ -11783,7 +12320,7 @@
         "productivity"
       ],
       "dependencies": [
-        "@brett_lamy/docstream@2.0.1",
+        "@brett_lamy/ui@6.0.0",
         "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1"
       ],
       "registryDependencies": [
@@ -11839,7 +12376,7 @@
         "developer-tools"
       ],
       "dependencies": [
-        "@agent-wasm/core@0.4.0"
+        "@agent-wasm/core@>=0.4.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -11975,7 +12512,7 @@
         "application"
       ],
       "dependencies": [
-        "@agent-wasm/core@0.4.0",
+        "@agent-wasm/core@>=0.4.0",
         "@agent-wasm/tailscale-connect@1.39.98-t02582083d",
         "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1"
       ],

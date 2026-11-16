@@ -52,7 +52,7 @@ export default function Workerd() {
         {system ? <CloudflareDiagram services={system.services} edges={system.edges} aria-label="A workerd config, as Cloudflare services" /> : null}
       </div>
       <div className="flex flex-col gap-2 border-t border-border p-3 text-footnote text-foreground">
-        <Textarea aria-label="config.capnp" data-demo-config rows={9} value={text} onChange={(e) => setText(e.target.value)} className="font-mono" />
+        <Textarea aria-label="config.capnp" data-demo-config rows={9} value={text} onValueChange={setText} className="font-mono" />
         {read.ok ? (
           <ul data-demo-notes className="m-0 flex list-none flex-col gap-1 p-0 text-muted-foreground">
             {read.notes.map((n, i) => <li key={i} data-code={n.code}>{n.message}</li>)}

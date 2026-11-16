@@ -9,15 +9,16 @@
      Alt + ↓ and ↑    into what a node holds, and out to what holds it
      PageDown, PageUp every node and then every edge, in order, round and round
      Home, End        the first and the last node */
-import { centerOf, type Pt, type Rect } from '@/lib/canvas-math';
+import { centerOf, type Pt, type Rect, type Viewport } from '@/lib/canvas-math';
 import { ancestorsOf, descendantsOf, type DiagramEdge, type DiagramIndex, type DiagramNode } from '@/lib/diagram-model';
 
-export interface DiagramFocus {
+/** A node or an edge, by id: what has focus, what `onAction` hands over, what a step goes to. */
+export interface DiagramItem {
   kind: 'node' | 'edge';
   id: string;
 }
 
-export interface DiagramFocusContext {
+export interface DiagramStepContext {
   index: DiagramIndex<any>;
   edges: readonly DiagramEdge<any>[];
 }
@@ -59,7 +60,7 @@ function bestThatWay(from: DiagramNode<any>, dir: Pt, candidates: Iterable<Diagr
 
 /** The node to go to from a node, that way: along an edge if one goes that way, or else whatever's nearest that way that
  *  isn't around it or in it. Null at the edge of the diagram, when there's nothing that way at all. */
-export function nodeInDirection(id: string, dir: Pt, { index, edges }: DiagramFocusContext): string | null {
+export function nodeInDirection(id: string, dir: Pt, { index, edges }: DiagramStepContext): string | null {
   const from = index.byId.get(id);
   if (!from) return null;
   const neighbours = new Map<string, DiagramNode<any>>();
@@ -76,19 +77,19 @@ export function nodeInDirection(id: string, dir: Pt, { index, edges }: DiagramFo
 
 const DIRS = { ArrowRight: { x: 1, y: 0 }, ArrowLeft: { x: -1, y: 0 }, ArrowDown: { x: 0, y: 1 }, ArrowUp: { x: 0, y: -1 } } as const;
 
-export type DiagramFocusStep = keyof typeof DIRS | 'edge+' | 'edge-' | 'in' | 'out' | 'next' | 'previous' | 'first' | 'last';
+export type DiagramStep = keyof typeof DIRS | 'edge+' | 'edge-' | 'in' | 'out' | 'next' | 'previous' | 'first' | 'last';
 
 /** Everything that can be focused, in order: nodes, then edges. */
-export function focusOrder({ index, edges }: DiagramFocusContext): DiagramFocus[] {
+export function focusOrder({ index, edges }: DiagramStepContext): DiagramItem[] {
   return [
     // A root's the background: a pointer can't land on it, and it can't be selected or connected.
-    ...index.nodes.filter((n) => n.kind !== 'root').map((n): DiagramFocus => ({ kind: 'node', id: n.id })),
-    ...edges.filter((e) => index.byId.has(e.from) && index.byId.has(e.to)).map((e): DiagramFocus => ({ kind: 'edge', id: e.id })),
+    ...index.nodes.filter((n) => n.kind !== 'root').map((n): DiagramItem => ({ kind: 'node', id: n.id })),
+    ...edges.filter((e) => index.byId.has(e.from) && index.byId.has(e.to)).map((e): DiagramItem => ({ kind: 'edge', id: e.id })),
   ];
 }
 
 /** Where a key takes focus. Null means it stays where it is. */
-export function stepFocus(current: DiagramFocus | null, step: DiagramFocusStep, ctx: DiagramFocusContext): DiagramFocus | null {
+export function stepFocus(current: DiagramItem | null, step: DiagramStep, ctx: DiagramStepContext): DiagramItem | null {
   const order = focusOrder(ctx);
   if (!order.length) return null;
   const nodes = order.filter((f) => f.kind === 'node');
@@ -192,11 +193,11 @@ export function describeEdge(edge: DiagramEdge<any>, index: DiagramIndex<any>): 
 
 /* ── The view follows ── */
 
-/** A camera that shows `box`, moving as little as it can, with `margin` px of air. If it doesn't fit at this zoom, it's
- *  centered instead. Returns the same camera if it's already in view. */
-export function cameraToShow<C extends { x: number; y: number; z: number }>(camera: C, box: Rect, size: { width: number; height: number }, margin = 48): C {
-  const left = box.x * camera.z + camera.x, top = box.y * camera.z + camera.y;
-  const w = box.w * camera.z, h = box.h * camera.z;
+/** A viewport that shows `box`, moving as little as it can, with `margin` px of air. If it doesn't fit at this zoom, it's
+ *  centered instead. Returns the same viewport if it's already in view. */
+export function viewportToShow<V extends Viewport>(viewport: V, box: Rect, size: { width: number; height: number }, margin = 48): V {
+  const left = box.x * viewport.zoom + viewport.x, top = box.y * viewport.zoom + viewport.y;
+  const w = box.w * viewport.zoom, h = box.h * viewport.zoom;
   const axis = (start: number, length: number, room: number) => {
     if (length + margin * 2 > room) return room / 2 - (start + length / 2);
     if (start < margin) return margin - start;
@@ -204,5 +205,13 @@ export function cameraToShow<C extends { x: number; y: number; z: number }>(came
     return 0;
   };
   const dx = axis(left, w, size.width), dy = axis(top, h, size.height);
-  return dx || dy ? { ...camera, x: camera.x + dx, y: camera.y + dy } : camera;
+  return dx || dy ? { ...viewport, x: viewport.x + dx, y: viewport.y + dy } : viewport;
+}
+
+/** The viewport that shows all of `box`, centered, with `padding` px of air, and no closer than 100%: what a diagram
+ *  shows until its view is moved. With nothing to show, the origin is in the middle at 100%. */
+export function fitViewport(box: Rect | null, size: { width: number; height: number }, padding = 24, { minZoom = 0.02, maxZoom = 1 }: { minZoom?: number; maxZoom?: number } = {}): Viewport {
+  if (!box || box.w <= 0 || box.h <= 0) return { x: size.width / 2, y: size.height / 2, zoom: 1 };
+  const zoom = Math.max(minZoom, Math.min(maxZoom, (size.width - padding * 2) / box.w, (size.height - padding * 2) / box.h));
+  return { zoom, x: size.width / 2 - (box.x + box.w / 2) * zoom, y: size.height / 2 - (box.y + box.h / 2) * zoom };
 }

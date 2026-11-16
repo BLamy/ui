@@ -2,8 +2,8 @@
    status (docstream's task states), date and time with quick picks, flag, priority, list, and subtasks you can check
    off or add to. A task from a Markdown file keeps only what its line holds: the title, status and subtasks. */
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { TASK_STATES } from '@brett_lamy/docstream/gitbook';
-import { TASK_STATE_ICONS } from '@brett_lamy/docstream/tasks';
+import { TASK_STATES } from '@brett_lamy/ui/docstream/gitbook';
+import { TASK_STATE_ICONS } from '@brett_lamy/ui/docstream/tasks';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogBackdrop, DialogClose, DialogContent, DialogHeader, DialogTitle, DialogView } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';

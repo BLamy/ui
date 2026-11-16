@@ -20,6 +20,35 @@ export type {
   CanvasProps, CanvasPointerInfo, CanvasContextValue, CanvasController, CanvasFitOptions, CanvasViewportChangeDetails, CanvasViewportReason,
   CanvasFrameProps, CanvasHandlesProps, CanvasMarqueeProps, CanvasGuidesProps, CanvasMiniMapProps, CanvasMiniMapItem, CanvasPointerLayer,
 } from './components/canvas';
+export { Diagram, DiagramNodeBody, DiagramToolbar, useDiagram, createDiagramController, diagramEdgeVariants, diagramNodeVariants } from './components/diagram';
+export type {
+  DiagramProps, DiagramNodeBodyProps, DiagramToolbarProps, DiagramContextValue, DiagramController, DiagramData, DiagramItem,
+  DiagramDataChangeDetails, DiagramDataChangeReason, DiagramSelectionChangeDetails, DiagramSelectionChangeReason,
+} from './components/diagram';
+export {
+  DiagramFrame, DiagramFrameBoard, DiagramFramePanel, DiagramFrameBar, DiagramFrameTrigger, DiagramFrameCover, DiagramFrameSection, DiagramFrameInput,
+  useDiagramFrame,
+} from './components/diagram-frame';
+export type {
+  DiagramFrameProps, DiagramFrameBoardProps, DiagramFramePanelProps, DiagramFrameBarProps, DiagramFrameTriggerProps, DiagramFrameCoverProps,
+  DiagramFrameSectionProps, DiagramFrameInputProps,
+} from './components/diagram-frame';
+export { StateDiagram } from './components/state-diagram';
+export type { StateDiagramProps } from './components/state-diagram';
+// The diagram's data: plain nodes and edges, and the operations an app does on them. The gesture, keyboard and text
+// engines stay internal (they ship with the item in a registry install).
+export { NOTHING_SELECTED, addConnection, checkConnection, deleteItems, diagramBounds, indexDiagram, moveEdgeEnd, moveNodes } from './lib/diagram-model';
+export type {
+  ConnectorRoute, DiagramConnection, DiagramEdge, DiagramIndex, DiagramModel, DiagramNode, DiagramNodeKind, DiagramPort, DiagramSelection, DiagramSide,
+} from './lib/diagram-model';
+export { DIAGRAM_ELK_OPTIONS, DiagramLayoutError, createDiagramLayoutEngine, fromElkGraph, layoutDiagram, runLayout, toElkGraph } from './lib/diagram-layout';
+export type { DiagramDirection, DiagramDraft, DiagramDraftNode, DiagramLayoutEngine, DiagramLayoutOptions, DiagramLayoutResult, ElkGraph } from './lib/diagram-layout';
+export { useDiagramLayout } from './lib/diagram-layout/react';
+export type { UseDiagramLayout, UseDiagramLayoutOptions } from './lib/diagram-layout/react';
+export { machineToDraft } from './lib/state-diagram-model';
+export type { MachineLike, StateEdgeData, StateNodeData } from './lib/state-diagram-model';
+export type { MachineConfig, MachineImplementations } from './lib/state-diagram-edit';
+export type { SimulationStandIns } from './lib/state-diagram-simulation';
 export type { AnimatedHeightProps } from './components/animated-height';
 export { Celebrate } from './components/celebrate';
 export type { CelebrateProps } from './components/celebrate';

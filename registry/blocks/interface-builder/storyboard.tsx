@@ -16,14 +16,15 @@ import { dragThreshold } from '@ui-sdk/core';
 import { Canvas, CanvasFrame, CanvasGuides, CanvasMiniMap, useCanvas, type CanvasController, type CanvasPointerInfo, type CanvasViewportChangeDetails } from '@/components/ui/canvas';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuGroupLabel, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuContextTrigger } from '@/components/ui/dropdown-menu';
 import { snapMove, toBoard, type Guide, type Pt, type Rect, type Viewport } from '@/lib/canvas-math';
+import { ARROW_SLIM, arrowHead, closedD, dirOf, distToConnector, facingCurve, type ConnectorGeometry } from '@/lib/diagram-model';
 import { Icon } from '@/lib/icon';
 import type { Appearance } from '@/lib/theme';
 import { cn } from '@/lib/utils';
 import { nodeLabel, specOf } from './catalog';
 import { libraryDrag, useLibraryDrag, type LibraryDrag } from './dnd';
 import {
-  contains, distToSegue, measure, nodeIndex, rectAt, rectIn, sameMeasure, sceneAt, sceneRect, segueGeometry, union, EMPTY_MEASURE,
-  type At, type DropTarget, type Measured, type SegueGeometry,
+  contains, measure, nodeIndex, rectAt, rectIn, sameMeasure, sceneAt, sceneRect, union, EMPTY_MEASURE,
+  type At, type DropTarget, type Measured,
 } from './geometry';
 import { DEVICES, newId, type Doc, type Node, type Scene, type Segue, type SegueKind } from './model';
 import { connect, removeSegue } from './ops';
@@ -168,27 +169,27 @@ export function Storyboard({ viewport, onViewportChange, controller, appearance,
 
   /* ── What's where ── */
   const segueGeo = useMemo(() => {
-    const out = new Map<string, SegueGeometry>();
+    const out = new Map<string, ConnectorGeometry>();
     for (const sg of doc.segues) {
       const from = doc.scenes.find((s) => s.id === sg.from), to = doc.scenes.find((s) => s.id === sg.to);
       if (!from || !to) continue;
       const src = segueSource(from, sg.id);
       const srcRect = src ? rectIn(m, src.id, from.id) ?? null : null;
-      out.set(sg.id, segueGeometry(sceneRect(from, device), sceneRect(to, device), srcRect, 10));
+      out.set(sg.id, facingCurve(sceneRect(from, device), sceneRect(to, device), srcRect, 10));
     }
     return out;
   }, [doc, m, device]);
 
   /** Relationships: an embedded scene (a TabsScreen's tab, a NavigationStack's root, a SplitView column) to its scene. */
   const relGeo = useMemo(() => {
-    const out = new Map<string, { geo: SegueGeometry; scene: string; node: string }>();
+    const out = new Map<string, { geo: ConnectorGeometry; scene: string; node: string }>();
     for (const s of doc.scenes) {
       walkTree(s.root, (n) => {
         if (n.type !== 'SceneRef' || !n.props.scene) return;
         const to = doc.scenes.find((x) => x.id === n.props.scene);
         const r = rectIn(m, n.id, s.id);
         if (!to || to.id === s.id) return;
-        out.set(n.id, { geo: segueGeometry(sceneRect(s, device), sceneRect(to, device), r ?? null, 10), scene: s.id, node: n.id });
+        out.set(n.id, { geo: facingCurve(sceneRect(s, device), sceneRect(to, device), r ?? null, 10), scene: s.id, node: n.id });
       });
     }
     return out;
@@ -325,7 +326,7 @@ export function Storyboard({ viewport, onViewportChange, controller, appearance,
       return;
     }
     // Segue lines.
-    for (const [id, geo] of segueGeo) if (distToSegue(geo, p) * z <= 6) { b.select({ kind: 'segue', segue: id }); return; }
+    for (const [id, geo] of segueGeo) if (distToConnector(geo, p) * z <= 6) { b.select({ kind: 'segue', segue: id }); return; }
     b.select({ kind: 'none' });
   };
 
@@ -341,7 +342,7 @@ export function Storyboard({ viewport, onViewportChange, controller, appearance,
     const frame = sceneAt(doc, device, p);
     const hit = frame && wrap.current ? stackAt(wrap.current, frame.id, client.x, client.y)[0] ?? null : null;
     let seg: string | null = null;
-    if (!hit) for (const [id, geo] of segueGeo) if (Math.hypot((geo.mid.x - p.x) * z, (geo.mid.y - p.y) * z) <= 13 || distToSegue(geo, p) * z <= 6) { seg = id; break; }
+    if (!hit) for (const [id, geo] of segueGeo) if (Math.hypot((geo.mid.x - p.x) * z, (geo.mid.y - p.y) * z) <= 13 || distToConnector(geo, p) * z <= 6) { seg = id; break; }
     const h = handleAt();
     const overHandle = h && Math.hypot((h.pt.x - p.x) * z, (h.pt.y - p.y) * z) <= HANDLE_PX + 4;
     const overDock = doc.scenes.some((s) => contains(dockRect(s), p));
@@ -800,7 +801,7 @@ function SceneFrame({ scene, doc, appearance, selection, picked, play, frameAt, 
 
 /* ── Arrows ── */
 
-function SegueLayer({ doc, geo, selected, hovered }: { doc: Doc; geo: Map<string, SegueGeometry>; selected: string | null; hovered: string | null }) {
+function SegueLayer({ doc, geo, selected, hovered }: { doc: Doc; geo: Map<string, ConnectorGeometry>; selected: string | null; hovered: string | null }) {
   const { zoom: z } = useCanvas();
   return (
     <svg aria-hidden="true" className="pointer-events-none absolute top-0 left-0 overflow-visible" width="1" height="1">
@@ -809,9 +810,7 @@ function SegueLayer({ doc, geo, selected, hovered }: { doc: Doc; geo: Map<string
         if (!g) return null;
         const on = s.id === selected, hot = s.id === hovered;
         const ink = on ? 'var(--primary)' : SEGUE_INK;
-        const head = 9 / z;
-        const a = g.angle;
-        const tip = `M ${g.end.x} ${g.end.y} L ${g.end.x - head * Math.cos(a - 0.45)} ${g.end.y - head * Math.sin(a - 0.45)} L ${g.end.x - head * Math.cos(a + 0.45)} ${g.end.y - head * Math.sin(a + 0.45)} Z`;
+        const tip = closedD(arrowHead(g.end, dirOf(g.angle), 9 / z, ARROW_SLIM));
         return (
           <g key={s.id} data-ib-segue={s.id}>
             <path d={g.d} fill="none" stroke={ink} strokeOpacity={on || hot ? 1 : 0.85} strokeWidth={(on || hot ? 2.4 : 1.6) / z} strokeDasharray={s.kind === 'modal' ? `${6 / z} ${4 / z}` : undefined} />
@@ -844,18 +843,17 @@ function EntryArrow({ path, selected }: { path: { from: Pt; to: Pt }; selected: 
 }
 
 /** Relationship arrows (Xcode's): solid, from a container's embedded scene to the scene it shows. */
-function RelationLayer({ rels, selected }: { rels: { geo: SegueGeometry; node: string }[]; selected: string[] }) {
+function RelationLayer({ rels, selected }: { rels: { geo: ConnectorGeometry; node: string }[]; selected: string[] }) {
   const { zoom: z } = useCanvas();
   return (
     <svg aria-hidden="true" className="pointer-events-none absolute top-0 left-0 overflow-visible" width="1" height="1">
       {rels.map(({ geo: g, node }) => {
         const on = selected.includes(node);
         const ink = on ? 'var(--primary)' : SEGUE_INK;
-        const head = 9 / z, a = g.angle;
         return (
           <g key={node}>
             <path d={g.d} fill="none" stroke={ink} strokeWidth={(on ? 2.6 : 2) / z} strokeOpacity={0.9} />
-            <path d={`M ${g.end.x} ${g.end.y} L ${g.end.x - head * Math.cos(a - 0.45)} ${g.end.y - head * Math.sin(a - 0.45)} L ${g.end.x - head * Math.cos(a + 0.45)} ${g.end.y - head * Math.sin(a + 0.45)} Z`} fill={ink} />
+            <path d={closedD(arrowHead(g.end, dirOf(g.angle), 9 / z, ARROW_SLIM))} fill={ink} />
             <rect x={g.mid.x - 10 / z} y={g.mid.y - 10 / z} width={20 / z} height={20 / z} rx={5 / z} fill="var(--background)" stroke={ink} strokeWidth={1.6 / z} />
             <foreignObject x={g.mid.x - 7 / z} y={g.mid.y - 7 / z} width={14 / z} height={14 / z} style={{ overflow: 'visible' }}>
               <div style={{ color: ink, width: 14 / z, height: 14 / z }}>

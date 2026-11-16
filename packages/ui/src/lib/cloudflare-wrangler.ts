@@ -111,7 +111,7 @@ function looksLikeToml(text: string): boolean {
 }
 
 function parse(text: string): Parsed {
-  const bom = text.startsWith('﻿') ? '﻿' : '';
+  const bom = text.startsWith('\uFEFF') ? '\uFEFF' : '';
   const body = text.slice(bom.length);
   const errors: ParseError[] = [];
   const root = parseTree(body, errors, { allowTrailingComma: true, disallowComments: false, allowEmptyContent: false });

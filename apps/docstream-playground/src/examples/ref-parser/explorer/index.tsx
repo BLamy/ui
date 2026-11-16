@@ -21,7 +21,7 @@ Hints, tabs and steppers are **real nodes**.
 
 {% tabs title="Install" sync="pm" %}
 {% tab title="npm" %}
-{% command %}npm install @brett_lamy/ui/docstream{% endcommand %}
+{% command %}npm install @brett_lamy/ui{% endcommand %}
 {% endtab %}
 {% endtabs %}
 

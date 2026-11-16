@@ -5,7 +5,7 @@
    shared chrome), a part an update changed and the chrome itself are cropped the same way, on the page's own
    background. Frames mount a few at a time (each is a Replayer of its own). */
 import { useEffect, useRef, useState } from 'react';
-import { ReplayStage, type ReplayStageHandle } from '@brett_lamy/docstream/replay';
+import { ReplayStage, type ReplayStageHandle } from '@brett_lamy/ui/docstream/replay';
 import type { ReplayEvent } from '@/components/ui/replay-preview';
 import type { Rect } from '@/lib/canvas-math';
 import { cn } from '@/lib/utils';

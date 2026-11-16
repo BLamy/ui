@@ -1,15 +1,19 @@
 {
   "name": "diagram",
   "title": "Diagram",
-  "description": "Nodes, edges, labels and regions on a Canvas, as plain data. Lines keep their thickness at any zoom, text hides when it's too small to read, and only what's near the view is drawn. With editable: selecting, dragging, deleting and undo as one gesture, named ports, and connecting with validation. Every node and edge can be reached by keyboard, and says what it connects to.",
+  "description": "Nodes, edges, labels and regions on a Canvas, as plain data, on one primitive (data, selection, history) with a controller and agent actions. Lines keep their thickness at any zoom, text hides when it's too small to read, and above 200 items only what's near the view is drawn. With editable: selecting, dragging, deleting and undo as one gesture, named ports, and connecting with validation; every change goes through onDataChange(data, details) and can be refused. One tab stop: every node and edge is reached by keyboard and says what it connects to. DiagramToolbar adds zoom, fit, undo and redo.",
   "page": "diagram",
   "exports": [
     "Diagram",
     "DiagramNodeBody",
+    "DiagramToolbar",
+    "useDiagram",
+    "createDiagramController",
     "diagramNodeVariants",
     "diagramEdgeVariants"
   ],
   "imports": [
-    "Diagram"
+    "Diagram",
+    "DiagramToolbar"
   ]
 }

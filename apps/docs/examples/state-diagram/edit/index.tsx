@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { StateDiagram } from '@/components/ui/state-diagram'
-import { TextField } from '@/components/ui/text-field'
 import { Textarea } from '@/components/ui/textarea'
 
 const DOOR = {
@@ -35,13 +34,11 @@ export default function Edit() {
       </div>
       <div className="flex flex-col gap-2 border-t border-border p-3">
         <div className="flex flex-wrap gap-2">
-          <Button variant="secondary" size="sm" onPress={() => setSaved(JSON.stringify(config, null, 2))}>Save as JSON</Button>
-          <Button variant="secondary" size="sm" isDisabled={!saved} onPress={load}>Load it</Button>
-          <Button variant="secondary" size="sm" onPress={() => setConfig(DOOR)}>Start again</Button>
+          <Button variant="secondary" size="sm" onClick={() => setSaved(JSON.stringify(config, null, 2))}>Save as JSON</Button>
+          <Button variant="secondary" size="sm" disabled={!saved} onClick={load}>Load it</Button>
+          <Button variant="secondary" size="sm" onClick={() => setConfig(DOOR)}>Start again</Button>
         </div>
-        <TextField aria-label="The config, as JSON" value={saved} onChange={setSaved}>
-          <Textarea rows={3} className="font-mono text-footnote" />
-        </TextField>
+        <Textarea aria-label="The config, as JSON" rows={3} className="font-mono text-footnote" value={saved} onValueChange={(value) => setSaved(value)} />
         {problem ? <div role="alert" className="text-footnote text-destructive">{problem}</div> : null}
       </div>
     </div>

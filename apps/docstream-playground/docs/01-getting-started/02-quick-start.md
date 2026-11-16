@@ -14,7 +14,7 @@ This page takes you from nothing to the three things docstream is built for: ren
 {% step %}
 ### Install the package
 
-{% command %}npm install @brett_lamy/ui/docstream{% endcommand %}
+{% command %}npm install @brett_lamy/ui{% endcommand %}
 
 React and React DOM are peers and come from your app. Optional extras (the almost-node playground, the viz engine) are covered in [Installation](01-installation.md).
 {% endstep %}

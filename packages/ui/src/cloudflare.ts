@@ -2,8 +2,11 @@
 
 /* The Cloudflare parts, with the catalog, on an entry of their own: it's about 150 KB, and an app that doesn't draw Cloudflare's
    services shouldn't get it. */
-export { CloudflareDiagram } from './components/cloudflare-diagram';
-export type { CloudflareDiagramChange, CloudflareDiagramProps } from './components/cloudflare-diagram';
+export { CloudflareDiagram, CloudflareServiceNode, CloudflareServiceSearch, cloudflareServiceVariants, serviceNode } from './components/cloudflare-diagram';
+export type {
+  CloudflareDiagramChangeDetails, CloudflareDiagramChangeReason, CloudflareDiagramProps, CloudflareMachineChangeReason, CloudflareServiceNodeData, CloudflareServiceNodeProps,
+  CloudflareServiceSearchProps,
+} from './components/cloudflare-diagram';
 export { CLOUDFLARE_CATALOG } from './lib/cloudflare-catalog.generated';
 export type {
   CatalogBinding, CatalogClass, CatalogContextType, CatalogField, CatalogHandlers, CatalogMethod, CatalogOtherKey, CatalogProduct, CatalogProperty, CatalogReceive, CatalogRunner, CatalogSurface, CloudflareCatalog,

@@ -69,7 +69,7 @@ async function run({ n, cull, zoom, minimap, editable }) {
     // nothing there, and then there's nothing to draw.
     const middle = large.nodes().filter((n) => !n.kind)[large.nodes().filter((n) => !n.kind).length >> 1];
     const on = zoom === 'fit' ? { x: b.x + b.w / 2, y: b.y + b.h / 2 } : { x: middle.x, y: middle.y };
-    large.setCamera({ z, x: w / 2 - on.x * z, y: h / 2 - on.y * z });
+    large.setViewport({ zoom: z, x: w / 2 - on.x * z, y: h / 2 - on.y * z });
     await raf();
     const t0 = performance.now();
     large.show(true);
@@ -85,7 +85,7 @@ async function run({ n, cull, zoom, minimap, editable }) {
   const cadence = (kind) => page.evaluate(async ({ kind }) => {
     const raf = () => new Promise((r) => requestAnimationFrame(r));
     const large = window.__diagramLarge;
-    const c0 = large.camera();
+    const c0 = large.viewport();
     const cx = innerWidth / 2, cy = innerHeight / 2;
     const frames = 120, gaps = [];
     let last = performance.now();
@@ -97,11 +97,11 @@ async function run({ n, cull, zoom, minimap, editable }) {
       gaps.push(now - last);
       last = now;
       const t = i / frames;
-      if (kind === 'pan') large.setCamera({ ...c0, x: c0.x + 200 * Math.sin(2 * Math.PI * t), y: c0.y + 120 * Math.sin(4 * Math.PI * t) });
-      else { const k = 1 + 0.6 * Math.sin(2 * Math.PI * t); large.setCamera({ z: c0.z * k, x: cx - (cx - c0.x) * k, y: cy - (cy - c0.y) * k }); }
+      if (kind === 'pan') large.setViewport({ ...c0, x: c0.x + 200 * Math.sin(2 * Math.PI * t), y: c0.y + 120 * Math.sin(4 * Math.PI * t) });
+      else { const k = 1 + 0.6 * Math.sin(2 * Math.PI * t); large.setViewport({ zoom: c0.zoom * k, x: cx - (cx - c0.x) * k, y: cy - (cy - c0.y) * k }); }
     }
     await raf();
-    large.setCamera(c0);
+    large.setViewport(c0);
     await raf();
     const s = gaps.slice(1).sort((a, b) => a - b);
     return { median: s[s.length >> 1], p95: s[Math.floor(s.length * 0.95)], max: s[s.length - 1], over33: s.filter((d) => d > 33.4).length, frames: s.length };

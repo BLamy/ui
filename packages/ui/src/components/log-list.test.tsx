@@ -2,7 +2,7 @@
 import { useState, type ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
-import { getReplayDevtools, replayDevtoolsAt } from '@brett_lamy/docstream/replay';
+import { getReplayDevtools, replayDevtoolsAt } from '@brett_lamy/ui/docstream/replay';
 import { LogList, LogListRowContent, createLogListController, type LogRowState } from '@/components/ui/log-list';
 import { RequestTable } from '@/components/ui/request-table';
 import type { LogRow } from '@/lib/log-list-model';

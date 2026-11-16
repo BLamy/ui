@@ -9,13 +9,13 @@
     "skipLibCheck": true,
     "noEmit": true,
     "types": ["vite/client", "node", "@tiptap/starter-kit"],
-    "paths": {
-      "@brett_lamy/ui/docstream-editor": [
-        "../../packages/ui/src/docstream-editor/index.ts"
-      ]
-    }
+    "customConditions": ["@org/source"]
   },
-  "include": ["src"],
+  "include": [
+    "src",
+    "docs.test.ts",
+    "../../packages/ui/src/docstream/env.d.ts"
+  ],
   "references": [
     {
       "path": "../../packages/ui"

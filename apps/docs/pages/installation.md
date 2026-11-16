@@ -131,7 +131,7 @@ export default function App() {
 
 {% command %}npm run dev{% endcommand %}
 
-Some parts wrap libraries that ship CommonJS-only dependencies. If Vite reports a missing export from `@brett_lamy/docstream` or `@brett_lamy/docstream-editor`, add them to `optimizeDeps.include` (see [Optimization](https://blamy.github.io/ui/#/optimization)).
+Some parts are built on docstream, whose dependencies include CommonJS-only packages. If Vite reports a missing export from `@brett_lamy/ui/docstream` or `@brett_lamy/ui/docstream-editor`, add those entries to `optimizeDeps.include` (see [Optimization](https://blamy.github.io/ui/#/optimization)).
 {% endstep %}
 {% endstepper %}
 {% endtab %}
@@ -311,7 +311,7 @@ import { SplitView } from '@brett_lamy/ui/split-view'
 
 Every module has its own entry, at the registry's path under the package name: `@/components/ui/split-view` is `@brett_lamy/ui/split-view`, `@/lib/theme` is `@brett_lamy/ui/lib/theme`, and each component page shows its import. The components, their parts and the documented hooks are also on the package root, `import { BLProvider, NavigationStack, SplitView } from '@brett_lamy/ui'`. Both tree-shake the same in a production build; a module entry also keeps the dev server and your editor from loading the whole index to resolve one name, and switching to or from the registry changes only the prefix.
 
-Vite pre-bundles the docstream packages on first use. If it reports a missing export from `@brett_lamy/docstream` or `@brett_lamy/docstream-editor`, add them to `optimizeDeps.include` ([Optimization](https://blamy.github.io/ui/#/optimization)).
+Vite pre-bundles the docstream entries on first use. If it reports a missing export from `@brett_lamy/ui/docstream` or `@brett_lamy/ui/docstream-editor`, add them to `optimizeDeps.include` ([Optimization](https://blamy.github.io/ui/#/optimization)).
 {% endstep %}
 {% endstepper %}
 {% endtab %}

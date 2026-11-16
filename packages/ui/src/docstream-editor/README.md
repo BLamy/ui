@@ -27,7 +27,7 @@ TipTap editor components for Docstream GitBook-style markdown documents.
 ## Installation
 
 ```sh
-pnpm add @brett_lamy/ui/docstream-editor @tiptap/core @tiptap/extension-code @tiptap/extension-code-block \
+pnpm add @brett_lamy/ui @tiptap/core @tiptap/extension-code @tiptap/extension-code-block \
   @tiptap/extension-list @tiptap/extension-placeholder @tiptap/extension-table @tiptap/pm \
   @tiptap/react @tiptap/starter-kit @tiptap/suggestion react react-dom
 ```

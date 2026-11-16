@@ -44,13 +44,13 @@ const TABS = `# Tabs
 {% tabs %}
 {% tab title="npm" %}
 \`\`\`sh
-npm install @brett_lamy/ui/docstream-editor
+npm install @brett_lamy/ui
 \`\`\`
 {% endtab %}
 
 {% tab title="pnpm" %}
 \`\`\`sh
-pnpm add @brett_lamy/ui/docstream-editor
+pnpm add @brett_lamy/ui
 \`\`\`
 {% endtab %}
 {% endtabs %}

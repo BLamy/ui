@@ -7,7 +7,7 @@ import { Swap } from '@/components/ui/swap';
 import { Button } from '@/components/ui/button';
 import { MarkdownView } from '@/components/ui/markdown-view';
 import { ProgressRing } from '@/components/ui/progress-ring';
-import { formatReplayTime } from '@brett_lamy/docstream/replay';
+import { formatReplayTime } from '@brett_lamy/ui/docstream/replay';
 import { ReplayPreview, type ReplayPreviewHandle } from '@/components/ui/replay-preview';
 import { Icon } from '@/lib/icon';
 import { useDirection } from '@/lib/motion';

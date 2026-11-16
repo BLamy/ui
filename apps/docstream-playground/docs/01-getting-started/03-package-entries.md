@@ -1,16 +1,16 @@
 ---
-description: Every subpath export of @brett_lamy/docstream — what it contains, what it pulls into your bundle, and when to reach for it.
+description: Every subpath export of @brett_lamy/ui/docstream — what it contains, what it pulls into your bundle, and when to reach for it.
 ---
 
 # Package entries
 
-`@brett_lamy/docstream` is one package with 23 exports: the root and 22 subpaths. The root has nearly everything; the narrower entries let a host import only the layer it needs — a server that only parses, an answer pane that only streams, a page that only plays a replay. Two entries are behind **optional** peer dependencies, and nothing else in the package ever imports them.
+docstream is part of `@brett_lamy/ui`: its entries are `@brett_lamy/ui/docstream` (the root) and the subpaths under it, the same ones the standalone `@brett_lamy/docstream` published at 2.0.1, plus the xstate fence's machine and the capnp fence. The root has nearly everything; the narrower entries let a host import only the layer it needs — a server that only parses, an answer pane that only streams, a page that only plays a replay. Three entries are behind **optional** peer dependencies, and nothing else in the package loads them straight away.
 
 ```mermaid
 graph TD
   G["/gitbook — parser, serializer, AST (no React)"]
   S["/streamdown — GitbookStreamdown"]
-  R["@brett_lamy/docstream (root)"]
+  R["@brett_lamy/ui/docstream (root)"]
   O["/openapi"]
   P["/playground"]
   V["/viz"]
@@ -33,7 +33,7 @@ Arrows point from a layer to the entries built on it; dotted arrows are optional
 
 | Import | What you get | Imports eagerly | Loads on demand |
 | --- | --- | --- | --- |
-| `@brett_lamy/docstream` | Most of the API: renderers, embeds, demos, parser. Not `/playground`, `/viz`, `/vite`, the replay stage/timeline helpers or the Strudel studio internals | react, react-dom, framer-motion, lucide-react, gpu-lexer, yaml | pele, katex, rrweb, @strudel/web, acorn |
+| `@brett_lamy/ui/docstream` | Most of the API: renderers, embeds, demos, parser. Not `/playground`, `/viz`, `/vite`, the replay stage/timeline helpers or the Strudel studio internals | react, react-dom, framer-motion, lucide-react, gpu-lexer, yaml | pele, katex, rrweb, @strudel/web, acorn |
 | `/gitbook` | Parser, serializer, AST types, pure helpers | yaml | — |
 | `/streamdown` | `GitbookStreamdown` + the context/actions it needs | same as root | pele, katex, rrweb, @strudel/web, acorn |
 | `/properties` | `DocumentProperties` | react, lucide-react, yaml | — |
@@ -55,24 +55,29 @@ Arrows point from a layer to the entries built on it; dotted arrows are optional
 | `/site` | `DocsSite`, `buildDocsTree`, docs search — a site from a folder of Markdown ([Docs sites](../02-docs-site/README.md)) | same as root, plus yaml | same as root |
 | `/site/styles.css` | Site chrome styles alone (already inside `/styles.css`) | — | — |
 | `/vite` | `docstreamSources` Vite plugin (Node-only) | vite, node:fs, node:path | — |
+| `/xstate` | `XStateDiagram`, the ` ```xstate ` fence's preview | react | its machine (`/xstate/machine`) |
+| `/xstate/machine` | `parseXState`, `xstateToMermaid`: an XState machine read from code | @babel/parser, **xstate** | — |
+| `/capnp` | `CapnpDiagram`, the ` ```capnp ` fence: a workerd config drawn as Cloudflare services | react | `@brett_lamy/ui/cloudflare` |
+| `/tscircuit` | `TsCircuit`, the ` ```tscircuit ` fence's preview | react | its compiler worker |
 | `/styles.css` | The full stylesheet | — | — |
 
 The "imports" columns are third-party packages reachable from each entry's module graph (React's JSX runtime aside). Everything ships as one ES module per source file in `dist/`, so a bundler tree-shakes within an entry as well.
 
 ## Bundle boundaries
 
-These aren't conventions — `src/entry-boundary.test.ts` checks them on every test run, against both the TypeScript sources and the published `dist/`:
+These aren't conventions — `packages/ui/src/docstream/entry-boundary.test.ts` checks them on every test run, against both the TypeScript sources and the published `dist/`:
 
 - **almost-node stays in `/playground`.** For every other entry, the test walks static, type-only and dynamic imports and fails if `@agent-wasm/*` — or any `playground/` module other than the plain-data `playground/project` — is reachable.
-- **Optional peers only from their own entry.** `@brett_lamy/viz-engine` may be imported only by `/viz`; every bare import must be a declared dependency or peer.
+- **Optional peers only from their own entry.** `@brett_lamy/viz-engine` may be imported only by `/viz`, and `xstate` only by `/xstate/machine` (the fence loads it lazily); every bare import must be a declared dependency or peer of `@brett_lamy/ui`.
+- **The Cloudflare catalog stays lazy.** `/capnp` loads `@brett_lamy/ui/cloudflare` (about 150 KB) only when there's a config to draw.
 - **rrweb is lazy everywhere.** No entry may import `rrweb` statically. It stays a regular dependency (not a peer), because the root's `ReplayPreview` plays event lists and every bundler must be able to resolve its lazy import.
 - **acorn is lazy outside `/strudel`.** The Strudel rack's parser loads when a reader opens the rack.
 - **Plain Node can load `dist/`.** Every entry except `/playground` and `/viz` is imported in a bare `node` process — fully specified relative imports, no stylesheet imports on the eager path — so SSR, a host's vitest and the `/vite` plugin work without a bundler.
-- **`dist/` mirrors `src/`.** Each export resolves `import` to `./dist/….js` and `types` to `./dist/….d.ts`, with the TypeScript source behind a `source` condition.
+- **`dist/` mirrors `src/`.** Each export resolves `import` to `./dist/docstream/….js` and `types` to `./dist/docstream/….d.ts`, with the TypeScript source behind a `source` condition (and the BL UI workspace's `@org/source`).
 
 ## The entries
 
-### `@brett_lamy/docstream`
+### `@brett_lamy/ui/docstream`
 
 The renderers (`GitbookStreamdown`, `MarkdownContent`, `DocsRenderer`, `MathFormula`), page actions, code/copy primitives, task and property components, citations and chips, every embed component (replay, video, STL, Strudel player, OpenAPI), Mermaid/Pele and split cards, thumbnails, the demo system, source clients, asset resolution, and the full parser/serializer API. It also re-exports `createInlineDemoProject` and `createReactDemoFiles` — plain-data helpers that never touch almost-node.
 

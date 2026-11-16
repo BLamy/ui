@@ -1,0 +1,10 @@
+{
+  "title": "DiagramFrame · a board and its inspector: column, drawer or pushed page",
+  "status": "Live",
+  "variants": [
+    { "id": "wide", "label": "Wide" },
+    { "id": "tablet", "label": "Tablet" },
+    { "id": "phone", "label": "Phone" }
+  ],
+  "variantsWidth": 260
+}

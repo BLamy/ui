@@ -4,7 +4,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { HoverCardHeader } from '@/components/ui/hover-card';
 import { Button as SdkButton } from '@ui-sdk/react/button';
-import { getReplayMarkers, ReplayStage } from '@brett_lamy/docstream/replay';
+import { getReplayMarkers, ReplayStage } from '@brett_lamy/ui/docstream/replay';
 import { ReplayPreview, type ReplayEvent } from '@/components/ui/replay-preview';
 import { Spinner } from '@/components/ui/spinner';
 import { Icon } from '@/lib/icon';

@@ -18,10 +18,10 @@ export default function Hidden() {
   const laid = useDiagramLayout(draft, { host })
   return (
     <div className="grid h-full min-h-[520px] w-full grid-rows-[auto_1fr]">
-      <div className="p-3"><Button variant="secondary" onPress={() => setShown(!shown)}>{shown ? 'Hide the tab' : 'Show the tab'}</Button></div>
+      <div className="p-3"><Button variant="secondary" onClick={() => setShown(!shown)}>{shown ? 'Hide the tab' : 'Show the tab'}</Button></div>
       <div className="grid grid-rows-2 gap-2" style={{ display: shown ? undefined : 'none' }}>
         <div data-demo="sized" className="relative"><Diagram nodes={NODES} edges={EDGES} autoSize aria-label="Sized to its words" /></div>
-        <div ref={host} data-demo="laid" className="relative"><Diagram nodes={laid.nodes} edges={laid.edges} aria-label="Laid out" /></div>
+        <div ref={host} data-demo="laid" className="relative"><Diagram nodes={laid.nodes} edges={laid.edges} loading={laid.status === 'pending'} aria-label="Laid out" /></div>
       </div>
     </div>
   )

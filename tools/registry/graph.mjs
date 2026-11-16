@@ -6,7 +6,8 @@
  *   - every other module is its own item, named after the file (or the folder it sits in).
  * An item's dependencies are computed from real imports, never listed by hand:
  *   - `@/components/ui/<x>` and `@/lib/<x>` (and the relative equivalents) → registryDependencies on the item that owns the file;
- *   - any other bare specifier → an npm dependency, versioned from packages/ui/package.json or the workspace root.
+ *   - any other bare specifier → an npm dependency, versioned from packages/ui/package.json or the workspace root;
+ *     `@brett_lamy/ui/docstream…` (docstream is part of the library, but not a registry module) → `@brett_lamy/ui`.
  */
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { dirname, join, posix, relative, resolve } from 'node:path';
@@ -52,17 +53,27 @@ const pkgVersions = (() => {
   // The ui package's optional peers (the PGlite engine) are installed as ordinary dependencies by a registry item, at the peer range.
   return { ...registry.dependencies, ...ui.peerDependencies, ...ui.dependencies, ...root.devDependencies, ...root.dependencies };
 })();
-/** The version a consumer installs. A workspace alias (the UI SDK fork, imported under upstream's names) becomes the
- *  npm alias pnpm publishes it as: `workspace:@brett_lamy/ui-sdk-core@*` → `npm:@brett_lamy/ui-sdk-core@<version>`. */
+/** The version of the workspace package called `name` (packages/<dir>/package.json). */
+const workspaceVersion = (name) => {
+  const dir = readdirSync(abs('packages')).find((d) => {
+    try { return readJson(`packages/${d}/package.json`).name === name; } catch { return false; }
+  });
+  if (!dir) throw new Error(`${name} is a workspace: dependency, and no package in packages/ is called that`);
+  return readJson(`packages/${dir}/package.json`).version;
+};
+/** The version a consumer installs. A package from this workspace is installed by its version, as `pnpm pack` writes
+ *  it (`workspace:*` means nothing to npm), and a workspace alias (the UI SDK fork, imported under upstream's names)
+ *  becomes the npm alias pnpm publishes it as: `workspace:@brett_lamy/ui-sdk-core@*` → `npm:@brett_lamy/ui-sdk-core@<version>`. */
 export const npmVersion = (name) => {
   const spec = pkgVersions[name];
-  const alias = /^workspace:(@?[^@]+)@/.exec(spec ?? '');
-  if (!alias) return spec;
-  const dir = readdirSync(abs('packages')).find((d) => {
-    try { return readJson(`packages/${d}/package.json`).name === alias[1]; } catch { return false; }
-  });
-  return `npm:${alias[1]}@${readJson(`packages/${dir}/package.json`).version}`;
+  if (!spec?.startsWith('workspace:')) return spec;
+  const alias = /^workspace:(@?[^@]+)@/.exec(spec);
+  return alias ? `npm:${alias[1]}@${workspaceVersion(alias[1])}` : workspaceVersion(name);
 };
+/** Docstream and its editor are part of the library but not copied by the registry (src/docstream, src/docstream-editor
+ *  aren't registry modules): code that uses them imports `@brett_lamy/ui/docstream…` by the package's name, and its item
+ *  installs the library at this version, as it once installed `@brett_lamy/docstream`. */
+export const isDocstreamSpecifier = (spec) => /^@brett_lamy\/ui\/docstream(-editor)?(\/|$)/.test(spec);
 
 /** Real import specifiers of a file (TypeScript's scanner, so strings in sample data don't count). */
 export function importsOf(path) {
@@ -168,7 +179,9 @@ export function buildGraph({ errors = [] } = {}) {
           if (!/\.(css|json)$/.test(spec)) errors.push(`${SRC}/${f}: cannot resolve "${spec}"`);
         } else if (!(spec === 'react' || spec.startsWith('react/') || spec === 'react-dom' || spec.startsWith('react-dom/'))) {
           const pkg = spec.startsWith('@') ? spec.split('/').slice(0, 2).join('/') : spec.split('/')[0];
-          if (pkg === '@brett_lamy/ui') errors.push(`${SRC}/${f}: the library must not import itself ("${spec}")`);
+          // Anything else of the library's is copied, so it's imported by its alias, never by name.
+          if (pkg === '@brett_lamy/ui' && isDocstreamSpecifier(spec)) npm.set(pkg, workspaceVersion(pkg));
+          else if (pkg === '@brett_lamy/ui') errors.push(`${SRC}/${f}: the library must not import itself ("${spec}"), but for its docstream entries`);
           else npm.set(pkg, npmVersion(pkg));
         }
       }

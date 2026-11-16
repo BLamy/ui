@@ -5,7 +5,8 @@ import { existsSync, readFileSync, readdirSync } from "node:fs"
 import { join, relative } from "node:path"
 import { describe, expect, it } from "vitest"
 import { parseMarkdown, serializeMarkdown } from "@brett_lamy/ui/docstream/gitbook"
-import { buildDocsTree, findLinkedAsset, findLinkedPage } from "@brett_lamy/ui/docstream/site"
+// findLinkedAsset is the site tree's own helper, not on the /site entry.
+import { buildDocsTree, findLinkedAsset, findLinkedPage } from "../../packages/ui/src/docstream/site/tree"
 
 const docsRoot = join(__dirname, "docs")
 const examplesRoot = join(__dirname, "src/examples")

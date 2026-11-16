@@ -32,6 +32,12 @@
       "import": "./dist/opencode.js",
       "default": "./dist/opencode.js"
     },
+    "./cloudflare": {
+      "@org/source": "./src/cloudflare.ts",
+      "types": "./dist/cloudflare.d.ts",
+      "import": "./dist/cloudflare.js",
+      "default": "./dist/cloudflare.js"
+    },
     "./tailscale-sw.js": {
       "@org/source": "./src/lib/tailscale-router/tailscale-sw.js",
       "default": "./dist/tailscale-sw.js"
@@ -110,6 +116,11 @@
       "types": "./dist/components/checkbox.d.ts",
       "default": "./dist/components/checkbox.js"
     },
+    "./cloudflare-diagram": {
+      "@org/source": "./src/components/cloudflare-diagram.tsx",
+      "types": "./dist/components/cloudflare-diagram.d.ts",
+      "default": "./dist/components/cloudflare-diagram.js"
+    },
     "./code-editor": {
       "@org/source": "./src/components/code-editor.tsx",
       "types": "./dist/components/code-editor.d.ts",
@@ -169,6 +180,16 @@
       "@org/source": "./src/components/debug-toolbar.tsx",
       "types": "./dist/components/debug-toolbar.d.ts",
       "default": "./dist/components/debug-toolbar.js"
+    },
+    "./diagram": {
+      "@org/source": "./src/components/diagram.tsx",
+      "types": "./dist/components/diagram.d.ts",
+      "default": "./dist/components/diagram.js"
+    },
+    "./diagram-frame": {
+      "@org/source": "./src/components/diagram-frame.tsx",
+      "types": "./dist/components/diagram-frame.d.ts",
+      "default": "./dist/components/diagram-frame.js"
     },
     "./dialog": {
       "@org/source": "./src/components/dialog.tsx",
@@ -284,6 +305,16 @@
       "@org/source": "./src/lib/data-table-model.ts",
       "types": "./dist/lib/data-table-model.d.ts",
       "default": "./dist/lib/data-table-model.js"
+    },
+    "./lib/diagram-layout": {
+      "@org/source": "./src/lib/diagram-layout/index.ts",
+      "types": "./dist/lib/diagram-layout/index.d.ts",
+      "default": "./dist/lib/diagram-layout/index.js"
+    },
+    "./lib/diagram-layout/react": {
+      "@org/source": "./src/lib/diagram-layout/react.ts",
+      "types": "./dist/lib/diagram-layout/react.d.ts",
+      "default": "./dist/lib/diagram-layout/react.js"
     },
     "./lib/ffmpeg": {
       "@org/source": "./src/lib/ffmpeg/index.ts",
@@ -785,6 +816,11 @@
       "types": "./dist/components/sql-console.d.ts",
       "default": "./dist/components/sql-console.js"
     },
+    "./state-diagram": {
+      "@org/source": "./src/components/state-diagram.tsx",
+      "types": "./dist/components/state-diagram.d.ts",
+      "default": "./dist/components/state-diagram.js"
+    },
     "./stl-viewer": {
       "@org/source": "./src/components/stl-viewer.tsx",
       "types": "./dist/components/stl-viewer.d.ts",
@@ -889,11 +925,220 @@
       "@org/source": "./src/components/workspace.tsx",
       "types": "./dist/components/workspace.d.ts",
       "default": "./dist/components/workspace.js"
+    },
+    "./docstream": {
+      "@org/source": "./src/docstream/index.ts",
+      "source": "./src/docstream/index.ts",
+      "types": "./dist/docstream/index.d.ts",
+      "import": "./dist/docstream/index.js",
+      "default": "./dist/docstream/index.js"
+    },
+    "./docstream/gitbook": {
+      "@org/source": "./src/docstream/gitbook/index.ts",
+      "source": "./src/docstream/gitbook/index.ts",
+      "types": "./dist/docstream/gitbook/index.d.ts",
+      "import": "./dist/docstream/gitbook/index.js",
+      "default": "./dist/docstream/gitbook/index.js"
+    },
+    "./docstream/properties": {
+      "@org/source": "./src/docstream/docs/DocumentProperties.tsx",
+      "source": "./src/docstream/docs/DocumentProperties.tsx",
+      "types": "./dist/docstream/docs/DocumentProperties.d.ts",
+      "import": "./dist/docstream/docs/DocumentProperties.js",
+      "default": "./dist/docstream/docs/DocumentProperties.js"
+    },
+    "./docstream/properties/styles.css": {
+      "@org/source": "./src/docstream/docs/properties.css",
+      "default": "./dist/docstream/docs/properties.css"
+    },
+    "./docstream/tasks": {
+      "@org/source": "./src/docstream/docs/TaskCheckbox.tsx",
+      "source": "./src/docstream/docs/TaskCheckbox.tsx",
+      "types": "./dist/docstream/docs/TaskCheckbox.d.ts",
+      "import": "./dist/docstream/docs/TaskCheckbox.js",
+      "default": "./dist/docstream/docs/TaskCheckbox.js"
+    },
+    "./docstream/tasks/styles.css": {
+      "@org/source": "./src/docstream/docs/tasks.css",
+      "default": "./dist/docstream/docs/tasks.css"
+    },
+    "./docstream/streamdown": {
+      "@org/source": "./src/docstream/streamdown.tsx",
+      "source": "./src/docstream/streamdown.tsx",
+      "types": "./dist/docstream/streamdown.d.ts",
+      "import": "./dist/docstream/streamdown.js",
+      "default": "./dist/docstream/streamdown.js"
+    },
+    "./docstream/reference": {
+      "@org/source": "./src/docstream/docs/reference.tsx",
+      "source": "./src/docstream/docs/reference.tsx",
+      "types": "./dist/docstream/docs/reference.d.ts",
+      "import": "./dist/docstream/docs/reference.js",
+      "default": "./dist/docstream/docs/reference.js"
+    },
+    "./docstream/assets": {
+      "@org/source": "./src/docstream/assets.ts",
+      "source": "./src/docstream/assets.ts",
+      "types": "./dist/docstream/assets.d.ts",
+      "import": "./dist/docstream/assets.js",
+      "default": "./dist/docstream/assets.js"
+    },
+    "./docstream/openapi": {
+      "@org/source": "./src/docstream/openapi/OpenApiOperation.tsx",
+      "source": "./src/docstream/openapi/OpenApiOperation.tsx",
+      "types": "./dist/docstream/openapi/OpenApiOperation.d.ts",
+      "import": "./dist/docstream/openapi/OpenApiOperation.js",
+      "default": "./dist/docstream/openapi/OpenApiOperation.js"
+    },
+    "./docstream/replay": {
+      "@org/source": "./src/docstream/replay/index.ts",
+      "source": "./src/docstream/replay/index.ts",
+      "types": "./dist/docstream/replay/index.d.ts",
+      "import": "./dist/docstream/replay/index.js",
+      "default": "./dist/docstream/replay/index.js"
+    },
+    "./docstream/replay/demo": {
+      "@org/source": "./src/docstream/replay/demo/index.ts",
+      "source": "./src/docstream/replay/demo/index.ts",
+      "types": "./dist/docstream/replay/demo/index.d.ts",
+      "import": "./dist/docstream/replay/demo/index.js",
+      "default": "./dist/docstream/replay/demo/index.js"
+    },
+    "./docstream/video": {
+      "@org/source": "./src/docstream/video/index.ts",
+      "source": "./src/docstream/video/index.ts",
+      "types": "./dist/docstream/video/index.d.ts",
+      "import": "./dist/docstream/video/index.js",
+      "default": "./dist/docstream/video/index.js"
+    },
+    "./docstream/stl": {
+      "@org/source": "./src/docstream/stl/index.ts",
+      "source": "./src/docstream/stl/index.ts",
+      "types": "./dist/docstream/stl/index.d.ts",
+      "import": "./dist/docstream/stl/index.js",
+      "default": "./dist/docstream/stl/index.js"
+    },
+    "./docstream/strudel": {
+      "@org/source": "./src/docstream/strudel/index.ts",
+      "source": "./src/docstream/strudel/index.ts",
+      "types": "./dist/docstream/strudel/index.d.ts",
+      "import": "./dist/docstream/strudel/index.js",
+      "default": "./dist/docstream/strudel/index.js"
+    },
+    "./docstream/tui": {
+      "@org/source": "./src/docstream/tui/index.ts",
+      "source": "./src/docstream/tui/index.ts",
+      "types": "./dist/docstream/tui/index.d.ts",
+      "import": "./dist/docstream/tui/index.js",
+      "default": "./dist/docstream/tui/index.js"
+    },
+    "./docstream/viz": {
+      "@org/source": "./src/docstream/viz/index.ts",
+      "source": "./src/docstream/viz/index.ts",
+      "types": "./dist/docstream/viz/index.d.ts",
+      "import": "./dist/docstream/viz/index.js",
+      "default": "./dist/docstream/viz/index.js"
+    },
+    "./docstream/playground": {
+      "@org/source": "./src/docstream/playground/index.ts",
+      "source": "./src/docstream/playground/index.ts",
+      "types": "./dist/docstream/playground/index.d.ts",
+      "import": "./dist/docstream/playground/index.js",
+      "default": "./dist/docstream/playground/index.js"
+    },
+    "./docstream/source": {
+      "@org/source": "./src/docstream/source/index.ts",
+      "source": "./src/docstream/source/index.ts",
+      "types": "./dist/docstream/source/index.d.ts",
+      "import": "./dist/docstream/source/index.js",
+      "default": "./dist/docstream/source/index.js"
+    },
+    "./docstream/demo": {
+      "@org/source": "./src/docstream/demo/index.ts",
+      "source": "./src/docstream/demo/index.ts",
+      "types": "./dist/docstream/demo/index.d.ts",
+      "import": "./dist/docstream/demo/index.js",
+      "default": "./dist/docstream/demo/index.js"
+    },
+    "./docstream/vite": {
+      "@org/source": "./src/docstream/vite/index.ts",
+      "source": "./src/docstream/vite/index.ts",
+      "types": "./dist/docstream/vite/index.d.ts",
+      "import": "./dist/docstream/vite/index.js",
+      "default": "./dist/docstream/vite/index.js"
+    },
+    "./docstream/site": {
+      "@org/source": "./src/docstream/site/index.ts",
+      "source": "./src/docstream/site/index.ts",
+      "types": "./dist/docstream/site/index.d.ts",
+      "import": "./dist/docstream/site/index.js",
+      "default": "./dist/docstream/site/index.js"
+    },
+    "./docstream/site/styles.css": {
+      "@org/source": "./src/docstream/site/site.css",
+      "default": "./dist/docstream/site/site.css"
+    },
+    "./docstream/styles.css": {
+      "@org/source": "./src/docstream/styles.css",
+      "default": "./dist/docstream/styles.css"
+    },
+    "./docstream/xstate": {
+      "@org/source": "./src/docstream/xstate/index.ts",
+      "source": "./src/docstream/xstate/index.ts",
+      "types": "./dist/docstream/xstate/index.d.ts",
+      "import": "./dist/docstream/xstate/index.js",
+      "default": "./dist/docstream/xstate/index.js"
+    },
+    "./docstream/xstate/machine": {
+      "@org/source": "./src/docstream/xstate/machine.ts",
+      "source": "./src/docstream/xstate/machine.ts",
+      "types": "./dist/docstream/xstate/machine.d.ts",
+      "import": "./dist/docstream/xstate/machine.js",
+      "default": "./dist/docstream/xstate/machine.js"
+    },
+    "./docstream/capnp": {
+      "@org/source": "./src/docstream/capnp/index.ts",
+      "source": "./src/docstream/capnp/index.ts",
+      "types": "./dist/docstream/capnp/index.d.ts",
+      "import": "./dist/docstream/capnp/index.js",
+      "default": "./dist/docstream/capnp/index.js"
+    },
+    "./docstream/tscircuit": {
+      "@org/source": "./src/docstream/tscircuit/index.ts",
+      "source": "./src/docstream/tscircuit/index.ts",
+      "types": "./dist/docstream/tscircuit/index.d.ts",
+      "import": "./dist/docstream/tscircuit/index.js",
+      "default": "./dist/docstream/tscircuit/index.js"
+    },
+    "./docstream-editor": {
+      "@org/source": "./src/docstream-editor/index.ts",
+      "source": "./src/docstream-editor/index.ts",
+      "types": "./dist/docstream-editor/index.d.ts",
+      "import": "./dist/docstream-editor/index.js",
+      "default": "./dist/docstream-editor/index.js"
+    },
+    "./docstream-editor/editor": {
+      "@org/source": "./src/docstream-editor/editor/Editor.tsx",
+      "source": "./src/docstream-editor/editor/Editor.tsx",
+      "types": "./dist/docstream-editor/editor/Editor.d.ts",
+      "import": "./dist/docstream-editor/editor/Editor.js",
+      "default": "./dist/docstream-editor/editor/Editor.js"
+    },
+    "./docstream-editor/convert": {
+      "@org/source": "./src/docstream-editor/editor/convert.ts",
+      "source": "./src/docstream-editor/editor/convert.ts",
+      "types": "./dist/docstream-editor/editor/convert.d.ts",
+      "import": "./dist/docstream-editor/editor/convert.js",
+      "default": "./dist/docstream-editor/editor/convert.js"
+    },
+    "./docstream-editor/styles.css": {
+      "@org/source": "./src/docstream-editor/styles.css",
+      "default": "./dist/docstream-editor/styles.css"
     }
   },
   "dependencies": {
-    "@brett_lamy/docstream": "2.0.1",
-    "@brett_lamy/docstream-editor": "2.0.1",
+    "@babel/parser": "7.29.12",
+    "@strudel/web": "1.3.0",
     "@tiptap/core": "3.30.5",
     "@tiptap/extension-code": "3.30.5",
     "@tiptap/extension-code-block": "3.30.5",
@@ -909,26 +1154,43 @@
     "@wterm/dom": "0.5.8",
     "@wterm/ghostty": "0.5.8",
     "@wterm/react": "0.5.8",
+    "acorn": "^8.15.0",
     "class-variance-authority": "^0.7",
     "clsx": "^2",
     "cronstrue": "^3.27.0",
-    "framer-motion": "^12 || ^13",
+    "framer-motion": "^13.1.1",
     "gpu-cron": "0.1.1",
     "gpu-lexer": "0.0.3",
     "gpu-time": "0.5.0",
+    "jsonc-parser": "3.3.1",
+    "katex": "^0.18.5",
+    "lucide-react": "^1.17.0",
+    "pele": "1.6.0",
     "perfect-freehand": "^1.2.2",
     "rrweb": "2.0.0-alpha.20",
-    "tailwind-merge": "^3"
+    "tailwind-merge": "^3",
+    "yaml": "^2.9.0"
   },
   "peerDependencies": {
+    "@agent-wasm/core": ">=0.4.0",
     "@agent-wasm/tailscale-connect": "^1.39.98-t02582083d",
+    "@brett_lamy/viz-engine": ">=0.2.0",
     "@electric-sql/pglite": "^0.5.8",
     "@electric-sql/pglite-tools": "^0.4.8",
+    "elkjs": "^0.12.1",
     "react": "^19",
-    "react-dom": "^19"
+    "react-dom": "^19",
+    "vite": ">=5",
+    "xstate": "^5.33.3"
   },
   "peerDependenciesMeta": {
+    "@agent-wasm/core": {
+      "optional": true
+    },
     "@agent-wasm/tailscale-connect": {
+      "optional": true
+    },
+    "@brett_lamy/viz-engine": {
       "optional": true
     },
     "@electric-sql/pglite": {
@@ -936,9 +1198,18 @@
     },
     "@electric-sql/pglite-tools": {
       "optional": true
+    },
+    "elkjs": {
+      "optional": true
+    },
+    "vite": {
+      "optional": true
+    },
+    "xstate": {
+      "optional": true
     }
   },
-  "description": "iOS-flavored React components on UI SDK, Tailwind v4 and cva: adaptive containers (SplitView, NavigationStack, Credenza), lists, tokens, Composer, PencilKit. Also a shadcn registry (source-copy items and app blocks).",
+  "description": "iOS-flavored React components on UI SDK, Tailwind v4 and cva: adaptive containers (SplitView, NavigationStack, Credenza), lists, tokens, Composer, PencilKit, and Docstream (a GitBook-flavored Markdown and AI-stream renderer, @brett_lamy/ui/docstream) with its editor (@brett_lamy/ui/docstream-editor). Also a shadcn registry (source-copy items and app blocks).",
   "license": "MIT",
   "sideEffects": [
     "*.css"
@@ -959,17 +1230,34 @@
     "ios",
     "ui-sdk",
     "shadcn",
-    "components"
+    "components",
+    "docstream",
+    "markdown",
+    "gitbook"
   ],
   "devDependencies": {
+    "@agent-wasm/core": "0.4.0",
     "@agent-wasm/tailscale-connect": "1.39.98-t02582083d",
+    "@brett_lamy/viz-engine": "0.2.1",
     "@electric-sql/pglite": "0.5.8",
     "@electric-sql/pglite-tools": "0.4.8",
     "@testing-library/dom": "^10.4.2",
     "@testing-library/react": "^16.3.3",
+    "elkjs": "0.12.1",
     "fake-indexeddb": "^6.2.5",
     "happy-dom": "^20.14.5",
     "react": "19.2.3",
-    "react-dom": "19.2.3"
+    "react-dom": "19.2.3",
+    "vite": "^8.0.0",
+    "xstate": "5.33.3"
+  },
+  "nx": {
+    "targets": {
+      "test": {
+        "dependsOn": [
+          "build"
+        ]
+      }
+    }
   }
 }

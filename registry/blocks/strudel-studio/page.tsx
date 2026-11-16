@@ -12,7 +12,7 @@ import { Tabs, TabsList, TabsPanel, TabsTab } from '@/components/ui/tabs';
 import { Icon } from '@/lib/icon';
 import { BLProvider } from '@/lib/theme';
 import { cn } from '@/lib/utils';
-import { parseStrudel, StrudelRack, StrudelSyntaxError, type StrudelSong } from '@brett_lamy/docstream/strudel';
+import { parseStrudel, StrudelRack, StrudelSyntaxError, type StrudelSong } from '@brett_lamy/ui/docstream/strudel';
 import { Textarea } from '@ui-sdk/react/textarea';
 import { SONGS, type StudioSong } from './songs';
 import { SyntaxTree } from './syntax-tree';

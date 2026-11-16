@@ -1,160 +1,142 @@
 /* The site's front page: what BL is, every library by category, how they layer, a live app, and how to install. */
-import { GitbookStreamdown } from '@brett_lamy/docstream';
-import { libraryPages } from 'virtual:bl-site-files';
+import { libraryPages, uiUnits } from 'virtual:bl-site-files';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { MarkdownView } from '@/components/ui/markdown-view';
 import { Icon } from '@/lib/icon';
-import { BLOCK_COUNT, demoResolver } from '../demos';
-import { PAGE_LIST } from '../pages';
-import { CATEGORIES, LIBRARIES, LIBRARY, byCategory, libraryRoute, type Library } from './libraries';
-import { REPO_URL } from './site-header';
+import { BLOCK_PAGES, PAGE_LIST } from '../pages';
+import { demoResolver } from '../demos';
+import { LIBRARIES, LIBRARY, packageNames, packageOf, reach, type Library } from './libraries';
+import { LibraryChip, LibraryGroups, SitePage, SiteSection } from './site-parts';
 
-// Pages, counted without loading them: the ui docs, plus each library's docs folder.
-const LIBRARY_PAGES = libraryPages;
-
-const tone = (lib: Library) => CATEGORIES.find((c) => c.id === lib.category)!.tone;
-
-export function LibraryCard({ lib }: { lib: Library }) {
-  return (
-    <a className="site-card" href={`#/${libraryRoute(lib)}`} data-tone={tone(lib)}>
-      <div className="site-card-head">
-        <span className="site-tile"><Icon name={lib.icon} size={21} /></span>
-        <span className="site-card-title">{lib.name}</span>
-        <span className="site-status" data-status={lib.status}>{lib.status === 'live' ? 'On npm' : 'Planned'}</span>
-      </div>
-      <p>{lib.tagline}</p>
-      <code>{lib.npm}</code>
-    </a>
-  );
-}
-
-export function LibraryGroups() {
-  return (
-    <>
-      {CATEGORIES.map((c) => (
-        <div key={c.id} className="site-group" data-tone={c.tone}>
-          <h3 className="site-kicker">{c.label}</h3>
-          <div className="site-cards">
-            {byCategory(c.id).map((lib) => <LibraryCard key={lib.id} lib={lib} />)}
-          </div>
-        </div>
-      ))}
-    </>
-  );
-}
-
-/* Tiers, top to bottom; each builds only on the ones below it (libraries.test.ts holds the plan to that). */
-const LAYERS: Array<{ name: string; note: string; ids: string[] }> = [
-  { name: 'Features', note: 'Built on the core', ids: ['time', 'canvas', 'media', 'composer', 'sql', 'filter', 'vault', 'tailscale'] },
-  { name: 'Core', note: 'Primitives and containers', ids: ['ui', 'markdown'] },
-  { name: 'Foundation', note: 'No UI of their own', ids: ['tokens', 'icons', 'motion'] },
-  { name: 'Standalone', note: 'Depend on no BL package', ids: ['docstream', 'docstream-editor', 'pglite', 'sync', 'registry'] },
+/* How the libraries stack, computed from the plan so it can't drift: the npm package that holds the core, what the core
+   builds on, what builds on the core, and what needs neither. */
+const inCore = (l: Library) => packageOf(l).id === 'ui';
+const coreReach = new Set(LIBRARIES.filter(inCore).flatMap((l) => [...reach(l.id)]));
+const LAYERS: Array<{ name: string; note: string; libs: Library[] }> = [
+  { name: 'Built on the core', note: 'Planned packages: in @brett_lamy/ui today', libs: LIBRARIES.filter((l) => !inCore(l) && reach(l.id).has('ui')) },
+  { name: 'The core', note: '@brett_lamy/ui, with docstream and its editor', libs: LIBRARIES.filter(inCore) },
+  { name: 'Foundation', note: 'What the core builds on', libs: LIBRARIES.filter((l) => !inCore(l) && coreReach.has(l.id)) },
+  { name: 'Beside it', note: 'Need no BL library, or only the foundation', libs: LIBRARIES.filter((l) => !inCore(l) && !coreReach.has(l.id) && !reach(l.id).has('ui')) },
 ];
 
 const INSTALL_SOURCE = '{% command %}npx shadcn@latest add https://blamy.github.io/ui/r/navigation-stack.json{% endcommand %}';
-const INSTALL_PACKAGE = '{% command %}npm install @brett_lamy/ui @brett_lamy/docstream{% endcommand %}';
+const INSTALL_PACKAGE = [
+  '{% command %}npm install @brett_lamy/ui{% endcommand %}',
+  '```tsx',
+  "import '@brett_lamy/ui/styles.css';",
+  "import { Dialog, DialogContent } from '@brett_lamy/ui/dialog';",
+  "import { MarkdownView } from '@brett_lamy/ui/markdown-view';",
+  '```',
+].join('\n');
 const DEMO = '{% demo src="introduction/first-app" %}';
 
-export function Landing() {
-  const live = LIBRARIES.filter((l) => l.status === 'live').length;
+function Stat({ value, label }: { value: number; label: string }) {
   return (
-    <div className="site-scroll dk-scroll" id="site-scroll">
-      <section className="site-hero">
-        <div className="site-hero-inner">
-          <h1>React libraries for apps that feel <em>native</em></h1>
-          <div>
-            <p className="site-hero-lede">
-              Components, motion, Markdown and data tools that compose like UIKit — accessible on React Aria, themed with CSS
-              variables, and yours to copy as source or install from npm.
-            </p>
-            <div className="site-ctas">
-              <a className="site-btn" href="#/libraries">Browse the libraries</a>
-              <a className="site-text-link" href="#/roadmap">Read the plan <Icon name="arrow-right" size={15} /></a>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <div className="site-stats">
-        <div className="site-stat"><strong>{LIBRARIES.length}</strong><span>Libraries</span></div>
-        <div className="site-stat"><strong>{live}</strong><span>On npm today</span></div>
-        <div className="site-stat"><strong>{BLOCK_COUNT}</strong><span>App blocks</span></div>
-        <div className="site-stat"><strong>{PAGE_LIST.length + LIBRARY_PAGES}</strong><span>Docs pages</span></div>
-      </div>
-
-      <section className="site-section">
-        <h2>The libraries</h2>
-        <p>
-          {live} are on npm today. The rest live inside <code>@brett_lamy/ui</code> and are next in line to become packages
-          of their own — each one is mapped, module by module, in the <a href="#/roadmap">plan</a>.
-        </p>
-        <LibraryGroups />
-      </section>
-
-      <section className="site-section">
-        <h2>Built in layers</h2>
-        <p>Each tier builds only on the tiers below it, so an app installs the parts it uses and nothing above them.</p>
-        <div className="site-layers">
-          {LAYERS.map((layer) => (
-            <div key={layer.name} className="site-layer">
-              <div className="site-layer-name"><strong>{layer.name}</strong><span>{layer.note}</span></div>
-              <div className="site-chips">
-                {layer.ids.map((id) => {
-                  const lib = LIBRARY[id];
-                  return (
-                    <a key={id} className="site-chip" href={`#/${libraryRoute(lib)}`} data-tone={tone(lib)} data-status={lib.status}>
-                      <Icon name={lib.icon} size={16} />
-                      {lib.name}
-                    </a>
-                  );
-                })}
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section className="site-section">
-        <h2>Not screenshots</h2>
-        <p>
-          Every example on this site is the real component, running. This one is a TabView with a NavigationStack inside,
-          inset Lists and a Credenza tray — swipe back from the left edge.
-        </p>
-        <div className="site-md wb-md">
-          <GitbookStreamdown markdown={DEMO} demoResolver={demoResolver} />
-        </div>
-      </section>
-
-      <section className="site-section">
-        <h2>Two ways in</h2>
-        <p>The same source, two ways: copy what you need into your project, or install the packages.</p>
-        <div className="site-split">
-          <div className="site-panel">
-            <h3>Copy the source</h3>
-            <p>The shadcn registry copies a component and the parts it's built from into your project. You own the code, and you only ship what you add.</p>
-            <div className="site-md wb-md"><GitbookStreamdown markdown={INSTALL_SOURCE} /></div>
-          </div>
-          <div className="site-panel">
-            <h3>Install the packages</h3>
-            <p>Everything, bundled and typed, from npm. Import the stylesheet once and the parts from the package root.</p>
-            <div className="site-md wb-md"><GitbookStreamdown markdown={INSTALL_PACKAGE} /></div>
-          </div>
-        </div>
-      </section>
-
-      <SiteFooter />
+    <div className="flex flex-col gap-0.5 rounded-panel bg-card p-4 shadow-hairline">
+      <strong className="text-large-title leading-none font-bold tabular-nums">{value}</strong>
+      <span className="text-footnote text-muted-foreground">{label}</span>
     </div>
   );
 }
 
-export function SiteFooter() {
+export function Landing() {
+  const packages = LIBRARIES.filter((l) => l.status !== 'planned').flatMap(packageNames);
+  const components = uiUnits.filter((u) => u.startsWith('components/')).length;
   return (
-    <footer className="site-footer">
-      <span>BL — open source, MIT.</span>
-      <a href="#/libraries">Libraries</a>
-      <a href="#/blocks">Blocks</a>
-      <a href="#/roadmap">Roadmap</a>
-      <a href="#/introduction">UI docs</a>
-      <a href="#/docstream">Docstream docs</a>
-      <a className="site-footer-end" href={REPO_URL} target="_blank" rel="noreferrer">github.com/BLamy/ui</a>
-    </footer>
+    <SitePage label="BL">
+      <section aria-labelledby="hero" className="grid gap-8 @4xl/page:grid-cols-[3fr_2fr] @4xl/page:items-end">
+        <h1 id="hero" className="m-0 text-[clamp(2.25rem,4cqi+1.25rem,4rem)] leading-[1.05] font-bold tracking-tight text-balance">
+          React libraries for apps that feel <span className="text-primary">native</span>
+        </h1>
+        <div className="flex flex-col gap-5">
+          <p className="m-0 text-body text-muted-foreground">
+            Components, motion, Markdown and data tools that compose like UIKit: behavior from UI SDK, looks from tokens,
+            responsive by container. Copy them into your project as source, or install them from npm.
+          </p>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button size="lg" render={<a href="#/libraries" />} className="no-underline">Browse the libraries</Button>
+            <Button size="lg" variant="ghost" render={<a href="#/introduction" />} className="no-underline">
+              Read the docs <Icon name="arrow-right" size={16} />
+            </Button>
+          </div>
+        </div>
+      </section>
+
+      <div className="grid grid-cols-2 gap-3 @3xl/page:grid-cols-4">
+        <Stat value={LIBRARIES.length} label="Libraries" />
+        <Stat value={packages.length} label="npm packages in 6.0" />
+        <Stat value={components} label="Component modules" />
+        <Stat value={PAGE_LIST.length + libraryPages} label="Docs pages" />
+      </div>
+
+      <Card variant="elevated">
+        <CardHeader>
+          <CardTitle render={<h2 />}>Docstream moved in</CardTitle>
+          <CardDescription>
+            Docstream and its editor are part of <code>@brett_lamy/ui</code> from 6.0. The packages{' '}
+            <code>{LIBRARY.docstream.formerly?.[0].npm}</code> and <code>{LIBRARY['docstream-editor'].formerly?.[0].npm}</code> stop at
+            {' '}{LIBRARY.docstream.formerly?.[0].last}: import <code>{LIBRARY.docstream.npm}</code> and <code>{LIBRARY['docstream-editor'].npm}</code> instead.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-wrap gap-2 pt-1">
+          <Button variant="secondary" size="sm" render={<a href="#/roadmap/migration" />} className="no-underline">How to migrate</Button>
+          <Button variant="ghost" size="sm" render={<a href="#/docstream" />} className="no-underline">Docstream's docs</Button>
+        </CardContent>
+      </Card>
+
+      <SiteSection
+        title="The libraries"
+        lede={<>
+          <code>@brett_lamy/ui</code> carries the kit, docstream and its editor; UI SDK publishes beside it. The planned
+          libraries ship inside <code>@brett_lamy/ui</code> today and are next in line for packages of their own — each is
+          mapped, module by module, in <a href="#/roadmap/module-map">the plan</a>.
+        </>}
+      >
+        <LibraryGroups />
+      </SiteSection>
+
+      <SiteSection title="Built in layers" lede="Each layer builds only on the ones below it, so an app installs the parts it uses and nothing above them. A test holds the plan to the real imports.">
+        <ol className="m-0 flex list-none flex-col gap-2 p-0">
+          {LAYERS.filter((layer) => layer.libs.length).map((layer) => (
+            <li key={layer.name} className="grid gap-3 rounded-panel bg-card p-4 shadow-hairline @3xl/page:grid-cols-[12rem_1fr] @3xl/page:items-center">
+              <div className="flex flex-col">
+                <strong className="text-subhead">{layer.name}</strong>
+                <span className="text-footnote text-muted-foreground">{layer.note}</span>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {layer.libs.map((lib) => <LibraryChip key={lib.id} lib={lib} />)}
+              </div>
+            </li>
+          ))}
+        </ol>
+      </SiteSection>
+
+      <SiteSection title="Not screenshots" lede="Every example on this site is the real component, running. This one is Tabs with a NavigationStack in each, inset Lists, and a Dialog shown as a tray: open a friend, then swipe back from the leading edge.">
+        <MarkdownView markdown={DEMO} demoResolver={demoResolver} className="dk-md" />
+      </SiteSection>
+
+      <SiteSection title="Two ways in" lede="The same source, two ways: copy what you need into your project, or install the package.">
+        <div className="grid gap-3 @3xl/page:grid-cols-2">
+          <Card variant="outline">
+            <CardHeader>
+              <CardTitle>Copy the source</CardTitle>
+              <CardDescription>The shadcn registry copies a component and the parts it's built from into your project. You own the code, and you ship only what you add.</CardDescription>
+            </CardHeader>
+            <CardContent><MarkdownView markdown={INSTALL_SOURCE} /></CardContent>
+          </Card>
+          <Card variant="outline">
+            <CardHeader>
+              <CardTitle>Install the package</CardTitle>
+              <CardDescription>Every module is its own entry, so a bundler takes only the ones you import. Import the stylesheet once.</CardDescription>
+            </CardHeader>
+            <CardContent><MarkdownView markdown={INSTALL_PACKAGE} /></CardContent>
+          </Card>
+        </div>
+        <p className="m-0 text-footnote text-muted-foreground">
+          {BLOCK_PAGES.length} app blocks show the parts working together — <a href="#/blocks">see them all</a>.
+        </p>
+      </SiteSection>
+    </SitePage>
   );
 }

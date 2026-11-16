@@ -16,7 +16,7 @@ export const Machine: Story = {
 };
 
 export const MachineDark: Story = {
-  render: () => <Phone w={1360} h={560} dark><StateDiagram machine={uploadMachine as never} aria-label="File upload" /></Phone>,
+  render: () => <Phone w={1360} h={560} appearance="dark"><StateDiagram machine={uploadMachine as never} aria-label="File upload" /></Phone>,
 };
 
 const DOOR = {
@@ -36,7 +36,7 @@ export const FromConfig: Story = {
 };
 
 export const FromConfigDark: Story = {
-  render: () => <Phone w={900} h={360} dark><StateDiagram config={DOOR} /></Phone>,
+  render: () => <Phone w={900} h={360} appearance="dark"><StateDiagram config={DOOR} /></Phone>,
 };
 
 const HISTORY = {
@@ -68,7 +68,7 @@ export const Simulating: Story = {
 };
 
 export const SimulatingDark: Story = {
-  render: () => <Phone w={1360} h={560} dark><StateDiagram machine={uploadMachine as never} simulate aria-label="File upload" /></Phone>,
+  render: () => <Phone w={1360} h={560} appearance="dark"><StateDiagram machine={uploadMachine as never} simulate aria-label="File upload" /></Phone>,
 };
 
 const IN_PROCESSING = { ...(uploadMachine as unknown as { config: object }).config, initial: 'processing' };
@@ -78,17 +78,28 @@ export const SimulatingRegions: Story = {
   render: () => <Phone w={1360} h={560}><StateDiagram config={IN_PROCESSING} simulate aria-label="File upload" /></Phone>,
 };
 
-/** At a phone's size, the panel's out of the way until it's asked for. */
+/** At a phone's size, the panel's out of the way until it's asked for: a bar says where the machine is, and opens it. */
 export const SimulatingPhone: Story = {
-  render: () => <Phone w={390} h={700}><StateDiagram config={DOOR} direction="DOWN" simulate /></Phone>,
+  render: () => <Phone w={390} h={700}><StateDiagram config={DOOR} direction="down" simulate /></Phone>,
 };
 
-export const SimulatingPhoneTray: Story = {
-  render: () => <Phone w={390} h={700}><StateDiagram config={DOOR} direction="DOWN" simulate defaultPanelOpen /></Phone>,
+/** Open on a phone, the panel is a page pushed over the board, with a back button to it. */
+export const SimulatingPhonePanel: Story = {
+  render: () => <Phone w={390} h={700}><StateDiagram config={DOOR} direction="down" simulate defaultPanelOpen /></Phone>,
 };
 
-export const SimulatingPhoneTrayDark: Story = {
-  render: () => <Phone w={390} h={700} dark><StateDiagram config={DOOR} direction="DOWN" simulate defaultPanelOpen /></Phone>,
+export const SimulatingPhonePanelDark: Story = {
+  render: () => <Phone w={390} h={700} appearance="dark"><StateDiagram config={DOOR} direction="down" simulate defaultPanelOpen /></Phone>,
+};
+
+/** At a tablet's size, a drawer over the board that doesn't dim it, so the machine stays in sight. */
+export const SimulatingTablet: Story = {
+  render: () => <Phone w={640} h={560}><StateDiagram config={DOOR} direction="down" simulate defaultPanelOpen /></Phone>,
+};
+
+/** While ELK lays it out: a status says so, and there's no empty state. */
+export const LayingOut: Story = {
+  render: () => <Phone w={700} h={300}><StateDiagram config={DOOR} layout={undefined} /></Phone>,
 };
 
 const SPIN = { id: 'spin', initial: 'tick', states: { tick: { always: 'tock' }, tock: { always: 'tick' } } };
@@ -104,7 +115,7 @@ export const Editing: Story = {
 };
 
 export const EditingDark: Story = {
-  render: () => <Phone w={1100} h={520} dark><StateDiagram config={DOOR} editable /></Phone>,
+  render: () => <Phone w={1100} h={520} appearance="dark"><StateDiagram config={DOOR} editable /></Phone>,
 };
 
 export const EditingAState: Story = {
@@ -121,5 +132,5 @@ export const EditingAndRunning: Story = {
 };
 
 export const EditingPhone: Story = {
-  render: () => <Phone w={390} h={700}><StateDiagram config={DOOR} direction="DOWN" editable defaultPanelOpen defaultSelection={{ nodes: ['door.open'], edges: [] }} /></Phone>,
+  render: () => <Phone w={390} h={700}><StateDiagram config={DOOR} direction="down" editable defaultPanelOpen defaultSelection={{ nodes: ['door.open'], edges: [] }} /></Phone>,
 };

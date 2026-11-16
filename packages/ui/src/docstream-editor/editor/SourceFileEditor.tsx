@@ -4,8 +4,8 @@ import { useCallback, useEffect, useRef, useState } from "react"
 import { FileCode2, Save } from "lucide-react"
 import { Button } from "@ui-sdk/react/button"
 import { Textarea } from "@ui-sdk/react/textarea"
-import { SourcePreview, type SourceFileSnapshot, type SourceReferenceClient } from "@brett_lamy/docstream/source"
-import type { SourceRefNode } from "@brett_lamy/docstream/gitbook"
+import { SourcePreview, type SourceFileSnapshot, type SourceReferenceClient } from "@brett_lamy/ui/docstream/source"
+import type { SourceRefNode } from "@brett_lamy/ui/docstream/gitbook"
 
 export interface SourceFileEditorProps {
   reference: SourceRefNode

@@ -99,16 +99,18 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
   -webkit-font-smoothing: antialiased;
 }
-a {
+/* The docs pages' links and focus ring. The BL site's own chrome (`[data-bl-site]`: its header, menus and pages) is the
+   kit's parts with the kit's utilities, which sit in a cascade layer: these unlayered rules would outrank them. */
+a:not(:where([data-bl-site] *)) {
   color: var(--dk-link);
 }
-a:hover {
+a:not(:where([data-bl-site] *)):hover {
   color: var(--dk-link-hover);
 }
 *:focus {
   outline: none;
 }
-*:focus-visible {
+*:focus-visible:not(:where([data-bl-site], [data-bl-site] *)) {
   outline: 2.5px solid #0A84FF;
   outline-offset: 2px;
   border-radius: 4px;

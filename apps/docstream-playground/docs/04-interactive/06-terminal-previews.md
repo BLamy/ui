@@ -30,7 +30,7 @@ renderer.keyInput.on("keypress", (key) => {
 Ask the model for a `typescript tui`, `tsx tui`, `javascript tui`, or `jsx tui` fence. A plain `tui` fence uses TypeScript. The regular streaming renderer handles the preview:
 
 ```tsx title="Answer.tsx"
-import { GitbookStreamdown } from "@brett_lamy/docstream"
+import { GitbookStreamdown } from "@brett_lamy/ui/docstream"
 
 export function Answer({ text, isStreaming }) {
   return <GitbookStreamdown markdown={text} isStreaming={isStreaming} />
@@ -43,10 +43,10 @@ Run stays disabled while `isStreaming` is true or the code fence is unclosed. Wh
 
 ## Use the component directly
 
-`TuiPreview` (and `TuiEmbed`, a deprecated alias) is exported from the root and the small `@brett_lamy/docstream/tui` entry. This entry uses no almost-node dependency. It runs without a stylesheet; `@brett_lamy/docstream/styles.css` styles its toolbar, buttons, status line and source panel, from your `--card`, `--border`, `--primary`, `--ring` and `--font-mono` tokens when it sits outside a docstream article.
+`TuiPreview` (and `TuiEmbed`, a deprecated alias) is exported from the root and the small `@brett_lamy/ui/docstream/tui` entry. This entry uses no almost-node dependency. It runs without a stylesheet; `@brett_lamy/ui/docstream/styles.css` styles its toolbar, buttons, status line and source panel, from your `--card`, `--border`, `--primary`, `--ring` and `--font-mono` tokens when it sits outside a docstream article.
 
 ```tsx title="TerminalAttachment.tsx"
-import { TuiPreview } from "@brett_lamy/docstream/tui"
+import { TuiPreview } from "@brett_lamy/ui/docstream/tui"
 
 <TuiPreview
   code={source}

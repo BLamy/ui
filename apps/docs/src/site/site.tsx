@@ -1,15 +1,16 @@
 /* The BL site: one header over every page, and a hash router that picks what sits under it — the landing page, the
-   libraries, a library's docs site, the roadmap, or the ui docs (every other `#/<page>`, as before). */
+   libraries, a docs site of its own (docstream, the editor, the roadmap), or the ui docs (every other `#/<page>`, as
+   before, including `#/blocks/<slug>`). `?demo=`, `?render` and `?harness=` never get here: main.tsx serves them bare. */
 import { useEffect, useState, type MouseEvent } from 'react';
-import { AppearanceProvider, type Appearance } from '@/lib/theme';
+import { AppearanceProvider, BLProvider, type Appearance } from '@/lib/theme';
 import App from '../app/app';
 import { SITE_URL } from '../pages';
 import { Landing } from './landing';
-import { LibrariesIndex, LibraryPage } from './library-pages';
 import { DOCS_SITES, LibraryDocs, type DocsSiteId } from './library-docs';
+import { LibrariesIndex, LibraryPage } from './library-pages';
 import { LIBRARY } from './libraries';
-import { SiteHeader } from './site-header';
-import './site.css';
+import { SiteHeader, type SiteArea } from './site-header';
+import { UNDER_HEADER } from './embedded';
 
 const THEME_KEY = 'bldocs-theme';
 
@@ -42,7 +43,25 @@ function viewOf(route: string): View {
   return { kind: 'ui' };
 }
 
-const TITLES: Record<string, string> = { home: 'BL — React libraries for apps that feel native', libraries: 'Libraries — BL' };
+const AREA: Record<View['kind'], SiteArea> = { home: 'home', libraries: 'libraries', library: 'libraries', docs: 'library-docs', ui: 'docs' };
+
+function titleOf(view: View): string | null {
+  if (view.kind === 'home') return 'BL — React libraries for apps that feel native';
+  if (view.kind === 'libraries') return 'Libraries — BL';
+  if (view.kind === 'library') return `${LIBRARY[view.id]?.name ?? 'Library'} — BL`;
+  return null; // A docs site keeps the title in step with its page.
+}
+
+/* The pages link to each other by absolute URL (https://blamy.github.io/ui/#/<route>, so the Markdown works anywhere);
+   on another host serving the site (a dev server, a preview) a plain click navigates in place instead. */
+function followSiteLinks(e: MouseEvent) {
+  if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+  const a = (e.target as HTMLElement).closest('a');
+  const href = a?.getAttribute('href') ?? '';
+  if (!a || a.target === '_blank' || !href.startsWith(`${SITE_URL}/#/`) || window.location.origin === new URL(SITE_URL).origin) return;
+  e.preventDefault();
+  window.location.hash = href.slice(SITE_URL.length + 1);
+}
 
 export default function Site() {
   const [route, setRoute] = useState(routeFromHash);
@@ -55,9 +74,12 @@ export default function Site() {
       window.removeEventListener('popstate', onHash);
     };
   }, []);
+
   const [appearance, setAppearance] = useState<Appearance>(initialAppearance);
-  useEffect(() => { document.documentElement.dataset.theme = appearance; }, [appearance]);
-  const toggleTheme = () => setAppearance((a) => {
+  useEffect(() => {
+    document.documentElement.dataset.theme = appearance;
+  }, [appearance]);
+  const toggleAppearance = () => setAppearance((a) => {
     const next = a === 'dark' ? 'light' : 'dark';
     window.localStorage.setItem(THEME_KEY, next);
     return next;
@@ -65,33 +87,24 @@ export default function Site() {
 
   const view = viewOf(route);
   useEffect(() => {
-    if (view.kind === 'home' || view.kind === 'libraries') document.title = TITLES[view.kind];
-    else if (view.kind === 'library') document.title = `${LIBRARY[view.id]?.name ?? 'Library'} — BL`;
-    // Pages scroll from the top when the route changes (a docs site and the ui docs manage their own scroll).
-    if (view.kind !== 'docs' && view.kind !== 'ui') document.getElementById('site-scroll')?.scrollTo(0, 0);
-  }, [route]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  /* The pages link to each other by absolute URL (https://blamy.github.io/ui/#/<route>, so the Markdown works
-     anywhere); on the site itself they navigate in place, on whichever host is serving it. */
-  const onClickCapture = (e: MouseEvent) => {
-    if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
-    const a = (e.target as HTMLElement).closest('a');
-    const href = a?.getAttribute('href') ?? '';
-    if (!a || a.target === '_blank' || !href.startsWith(`${SITE_URL}/#/`) || window.location.origin === new URL(SITE_URL).origin) return;
-    e.preventDefault();
-    window.location.hash = href.slice(SITE_URL.length + 1);
-  };
+    const title = titleOf(viewOf(route));
+    if (title) document.title = title;
+    // A page of the site starts at its top (the docs sites keep their own scroll).
+    document.getElementById('site-scroll')?.scrollTo(0, 0);
+  }, [route]);
 
   return (
     <AppearanceProvider value={appearance}>
-      <div className="site" onClickCapture={onClickCapture}>
-        <SiteHeader current={route} appearance={appearance} onToggleTheme={toggleTheme} />
-        <div className="site-body">
-          {view.kind === 'home' ? <Landing />
-            : view.kind === 'libraries' ? <LibrariesIndex />
-            : view.kind === 'library' ? <LibraryPage id={view.id} />
-            : view.kind === 'docs' ? <LibraryDocs id={view.id} appearance={appearance} />
-            : <App />}
+      <div className="flex h-dvh flex-col overflow-hidden" onClickCapture={followSiteLinks}>
+        <SiteHeader route={route} area={AREA[view.kind]} appearance={appearance} onToggleAppearance={toggleAppearance} />
+        <div className="min-h-0 flex-1">
+          {view.kind === 'docs' ? <LibraryDocs id={view.id} appearance={appearance} />
+            : view.kind === 'ui' ? <App appearance={appearance} height={UNDER_HEADER} />
+            : (
+              <BLProvider appearance={appearance} className="bg-background select-text">
+                {view.kind === 'home' ? <Landing /> : view.kind === 'libraries' ? <LibrariesIndex /> : <LibraryPage id={view.id} />}
+              </BLProvider>
+            )}
         </div>
       </div>
     </AppearanceProvider>

@@ -28,7 +28,7 @@ import { StrudelPlayer } from '@brett_lamy/ui/strudel-player'
 {% endtabs %}
 
 {% hint style="info" %}
-The player lives in [`@brett_lamy/docstream`](https://github.com/BLamy/docstream) (`@brett_lamy/docstream/strudel`), where a ` ```strudel ` fence or a `{% embed url="song.strudel" %}` renders it. The registry item adds that package and a one-line module that re-exports the player and the playback functions below. The rack, its hardware and the syntax tree come straight from `@brett_lamy/docstream/strudel`.
+The player lives in docstream, the library's Markdown renderer (`@brett_lamy/ui/docstream/strudel`), where a ` ```strudel ` fence or a `{% embed url="song.strudel" %}` renders it. Docstream isn't copied by the registry: the registry item adds `@brett_lamy/ui` for it, and a one-line module that re-exports the player and the playback functions below. The rack, its hardware and the syntax tree come straight from `@brett_lamy/ui/docstream/strudel`.
 {% endhint %}
 
 ## Inline code
@@ -101,7 +101,7 @@ const [rackOpen, setRackOpen] = useState(false)
 The player's sliders button opens `StrudelRack`: studio hardware generated from the code's syntax tree. A master strip carries a BPM readout and tempo and output knobs; then comes a module per track, with a status LED, backlit mute and solo pads, a channel fader for its gain, LCDs for its synth and key, TR-style step keys for its mini-notation and an LED-ring knob for every effect it uses, with a socket to add more. Every control rewrites only the characters it owns, so the code stays the source of truth: what you turn is what you would have typed. Render it on its own (as the [Strudel Studio block](https://blamy.github.io/ui/#/blocks) does) from docstream:
 
 ```tsx
-import { StrudelRack } from '@brett_lamy/docstream/strudel'
+import { StrudelRack } from '@brett_lamy/ui/docstream/strudel'
 ```
 
 The master strip's **Rack | Grid** switch moves the modules onto a masonry grid: drag a module by its title to move it, drag its corner to resize it. On the keyboard, the move handle takes arrows and Home/End and the corner takes arrows. `layout="grid"` starts there, and `persistKey` remembers the arrangement.
@@ -138,16 +138,16 @@ The rack is controlled: `value` in, the edited code out through `onValueChange(c
 
 ### The hardware on its own
 
-`Knob`, `Fader` and `StepGrid` (also from `@brett_lamy/docstream/strudel`) are ARIA sliders and buttons you can use anywhere inside a `.strudel-rack` panel: drag, arrow keys (Shift for a large step, Alt for a fine one), Page Up/Down, Home/End, and double-click to reset. `Knob` and `Fader` report `onValueChange(value, details)`, where `details.reason` is `drag`, `step-key`, `track-press` or `reset-press`.
+`Knob`, `Fader` and `StepGrid` (also from `@brett_lamy/ui/docstream/strudel`) are ARIA sliders and buttons you can use anywhere inside a `.strudel-rack` panel: drag, arrow keys (Shift for a large step, Alt for a fine one), Page Up/Down, Home/End, and double-click to reset. `Knob` and `Fader` report `onValueChange(value, details)`, where `details.reason` is `drag`, `step-key`, `track-press` or `reset-press`.
 
 {% demo src="strudel/hardware" %}
 
 ## The syntax tree
 
-Strudel code as data, from `@brett_lamy/docstream/strudel`. `parseStrudel` parses the JavaScript with acorn (the parser Strudel's own transpiler uses) and reads it the way the Strudel REPL runs it: `setcps`/`setcpm` set the tempo, the tracks are a top-level `stack(…)`'s arguments or `$:` / `name:` lines, and each track is a method chain whose calls carry typed arguments: numbers (constant arithmetic folded), mini-notation strings, plain strings, nested patterns and functions. Every double-quoted string is parsed as mini-notation by `parseMini`, which covers the whole grammar. Every node keeps its source range, so edits rewrite only the characters they touch. It is what the rack is generated from.
+Strudel code as data, from `@brett_lamy/ui/docstream/strudel`. `parseStrudel` parses the JavaScript with acorn (the parser Strudel's own transpiler uses) and reads it the way the Strudel REPL runs it: `setcps`/`setcpm` set the tempo, the tracks are a top-level `stack(…)`'s arguments or `$:` / `name:` lines, and each track is a method chain whose calls carry typed arguments: numbers (constant arithmetic folded), mini-notation strings, plain strings, nested patterns and functions. Every double-quoted string is parsed as mini-notation by `parseMini`, which covers the whole grammar. Every node keeps its source range, so edits rewrite only the characters they touch. It is what the rack is generated from.
 
 ```tsx
-import { parseStrudel, parseMini, setMethod, mixCode } from '@brett_lamy/docstream/strudel'
+import { parseStrudel, parseMini, setMethod, mixCode } from '@brett_lamy/ui/docstream/strudel'
 ```
 
 {% demo src="strudel/syntax-tree" %}

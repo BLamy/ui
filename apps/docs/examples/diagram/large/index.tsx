@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Diagram } from '@/components/ui/diagram'
-import type { Camera } from '@/lib/canvas-math'
+import { Diagram, DiagramToolbar } from '@/components/ui/diagram'
+import type { Viewport } from '@/components/ui/canvas'
 import { useDiagramLayout } from '@/lib/diagram-layout/react'
 import { generateDraft } from '../layout/generate'
 
@@ -8,8 +8,8 @@ declare global {
   interface Window {
     /** What tools/e2e/diagram-perf.mjs drives this with. */
     __diagramLarge?: {
-      setCamera: (c: Camera) => void
-      camera: () => Camera | null
+      setViewport: (v: Viewport) => void
+      viewport: () => Viewport | null
       show: (shown: boolean) => void
       bounds: () => { x: number; y: number; w: number; h: number } | undefined
       status: () => string
@@ -25,17 +25,17 @@ export default function Large() {
   const draft = useMemo(() => generateDraft(n), [n])
   const host = useRef<HTMLDivElement>(null)
   const laid = useDiagramLayout(draft, { host })
-  const [camera, setCamera] = useState<Camera | null>(null)
+  const [viewport, setViewport] = useState<Viewport | null>(null)
   const [shown, setShown] = useState(!params.has('hidden'))
   // What's laid out is where it starts: from there, an edit's the data.
   const [data, setData] = useState({ nodes: laid.nodes, edges: laid.edges })
   useEffect(() => setData({ nodes: laid.nodes, edges: laid.edges }), [laid.nodes, laid.edges])
-  const latest = useRef({ camera, laid })
-  latest.current = { camera, laid }
+  const latest = useRef({ viewport, laid })
+  latest.current = { viewport, laid }
   useEffect(() => {
     window.__diagramLarge = {
-      setCamera,
-      camera: () => latest.current.camera,
+      setViewport,
+      viewport: () => latest.current.viewport,
       show: setShown,
       bounds: () => latest.current.laid.bounds,
       status: () => latest.current.laid.status,
@@ -49,16 +49,18 @@ export default function Large() {
         <Diagram
           nodes={data.nodes}
           edges={data.edges}
-          onChange={(change) => setData({ nodes: change.nodes, edges: change.edges })}
+          onDataChange={(next) => setData({ nodes: [...next.nodes], edges: [...next.edges] })}
           editable={params.has('editable')}
           cull={params.get('cull') === 'off' ? false : undefined}
           minimap={params.has('minimap')}
-          camera={camera ?? undefined}
-          onCameraChange={setCamera}
+          viewport={viewport ?? undefined}
+          onViewportChange={setViewport}
+          loading={laid.status === 'pending'}
+          overlay={<DiagramToolbar side="top" align="end" />}
           aria-label={`A generated graph of ${n} nodes`}
         />
       ) : null}
-      <div data-demo-status={laid.status} className="absolute top-3 left-3 rounded-ctl bg-popover px-3 py-2 text-footnote text-foreground shadow-hairline">
+      <div data-demo-status={laid.status} className="absolute start-3 top-3 z-20 rounded-ctl bg-popover px-3 py-2 text-footnote text-popover-foreground shadow-hairline">
         {laid.status === 'ready' ? `${laid.nodes.length} nodes, ${laid.edges.length} edges` : 'Laying out…'}
       </div>
     </div>

@@ -1,4 +1,4 @@
-import { slugify } from '@brett_lamy/docstream';
+import { slugify } from '@brett_lamy/ui/docstream/gitbook';
 import type { Library } from './libraries';
 
 /** A library's section on the roadmap's package map (`### <name>`). */

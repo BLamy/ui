@@ -68,7 +68,7 @@ Columns shine for code beside its explanation, and for before / after:
 {% column %}
 **Result**
 
-{% command %}npm install @brett_lamy/ui/docstream{% endcommand %}
+{% command %}npm install @brett_lamy/ui{% endcommand %}
 {% endcolumn %}
 {% endcolumns %}
 {% endtab %}
@@ -95,7 +95,7 @@ Columns shine for code beside its explanation, and for before / after:
 {% column %}
 **Result**
 
-{% command %}npm install @brett_lamy/ui/docstream{% endcommand %}
+{% command %}npm install @brett_lamy/ui{% endcommand %}
 {% endcolumn %}
 {% endcolumns %}
 `````

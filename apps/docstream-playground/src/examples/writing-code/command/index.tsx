@@ -2,7 +2,7 @@ import { useMemo, useState } from "react"
 import { PACKAGE_MANAGERS, packageManagerCommands } from "@brett_lamy/ui/docstream"
 
 const EXAMPLES = [
-  "npm install @brett_lamy/ui/docstream react",
+  "npm install @brett_lamy/ui react",
   "npm install -D -E vitest",
   "npm install -g serve",
   "npx shadcn@latest add button",

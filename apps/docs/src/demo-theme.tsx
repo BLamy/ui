@@ -1,4 +1,4 @@
-import type { DemoComponent, DemoComponentProps } from '@brett_lamy/docstream';
+import type { DemoComponent, DemoComponentProps } from '@brett_lamy/ui/docstream';
 import { themeScopeProps, useAppearance } from '@/lib/theme';
 import { ThemeScopeContext } from '@/lib/theme-context';
 

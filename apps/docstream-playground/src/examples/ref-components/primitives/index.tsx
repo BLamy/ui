@@ -68,8 +68,8 @@ export default function Primitives({ variant = "code" }: { variant?: string }) {
     <div style={{ display: "grid", gap: 12 }}>
       <CollapsibleCode code={SNIPPET} language="tsx" collapsedLines={3} />
       <span style={{ display: "inline-flex", alignItems: "center", gap: 8, fontSize: 13 }}>
-        <CopyButton text="npm install @brett_lamy/ui/docstream" label="Copy install command" />
-        <code>npm install @brett_lamy/ui/docstream</code>
+        <CopyButton text="npm install @brett_lamy/ui" label="Copy install command" />
+        <code>npm install @brett_lamy/ui</code>
       </span>
     </div>
   )

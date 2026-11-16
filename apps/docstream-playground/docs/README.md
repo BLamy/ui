@@ -28,7 +28,7 @@ Everything on this site is rendered by docstream itself: the sidebar and search 
 
 ## Install
 
-{% command %}npm install @brett_lamy/ui/docstream react react-dom{% endcommand %}
+{% command %}npm install @brett_lamy/ui react react-dom{% endcommand %}
 
 {% tabs title="Start with" sync="home-start" %}
 {% tab title="A page" %}

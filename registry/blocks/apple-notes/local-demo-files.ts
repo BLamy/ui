@@ -1,4 +1,4 @@
-import type { DemoFile, DemoMeta } from '@brett_lamy/docstream/demo';
+import type { DemoFile, DemoMeta } from '@brett_lamy/ui/docstream/demo';
 
 export interface DemoDirectory { path: string; handle: FileSystemDirectoryHandle }
 const extensions = ['.tsx', '.ts', '.jsx', '.js', '.mjs', '.json', '.css', '.svg'];

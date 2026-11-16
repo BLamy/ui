@@ -4,7 +4,7 @@ description: A WYSIWYG editor for GitBook-flavored Markdown on Tiptap, with docs
 
 # docstream-editor
 
-`@brett_lamy/docstream-editor` edits the Markdown that [docstream](https://blamy.github.io/docstream/) renders. Hints, tabs, steppers, install boxes, live demos, Mermaid, math, task states and frontmatter all show up as real blocks you can edit. When you're done, it hands back GitBook-flavored Markdown: the parts you edited are re-serialized, and everything else comes back byte for byte.
+`@brett_lamy/ui/docstream-editor` edits the Markdown that [docstream](https://blamy.github.io/docstream/) renders. Hints, tabs, steppers, install boxes, live demos, Mermaid, math, task states and frontmatter all show up as real blocks you can edit. When you're done, it hands back GitBook-flavored Markdown: the parts you edited are re-serialized, and everything else comes back byte for byte.
 
 {% hint style="info" %}
 This site is itself a folder of Markdown, published with docstream's [`DocsSite`](https://blamy.github.io/docstream/#/docs-site). Every editor on these pages is a real, mounted `GitbookEditor`. Open **Copy page ▾** on any page and paste the result into the playground below: the editor shows the same page.
@@ -31,17 +31,17 @@ This site is itself a folder of Markdown, published with docstream's [`DocsSite`
 
 ## Install
 
-{% command %}npm install @brett_lamy/docstream-editor @tiptap/core @tiptap/extension-code @tiptap/extension-code-block @tiptap/extension-list @tiptap/extension-placeholder @tiptap/extension-table @tiptap/pm @tiptap/react @tiptap/starter-kit @ui-sdk/core @ui-sdk/react react react-dom{% endcommand %}
+{% command %}npm install @brett_lamy/ui react react-dom{% endcommand %}
 
-React and the ten Tiptap packages are peer dependencies. docstream comes along as a regular dependency, pinned to the editor's own version. See [Installation](01-getting-started/01-installation.md).
+The editor is part of BL UI (`@brett_lamy/ui/docstream-editor`), with docstream beside it (`@brett_lamy/ui/docstream`). React is the peer; Tiptap and UI SDK come with the library. See [Installation](01-getting-started/01-installation.md).
 
 {% tabs title="Start with" sync="home-start" %}
 {% tab title="An editor" %}
 ```tsx title="EditorPage.tsx"
 import { useState } from "react"
-import { GitbookEditor } from "@brett_lamy/docstream-editor"
-import "@brett_lamy/docstream/styles.css"
-import "@brett_lamy/docstream-editor/styles.css"
+import { GitbookEditor } from "@brett_lamy/ui/docstream-editor"
+import "@brett_lamy/ui/docstream/styles.css"
+import "@brett_lamy/ui/docstream-editor/styles.css"
 
 export function EditorPage({ initial }: { initial: string }) {
   const [markdown, setMarkdown] = useState(initial)
@@ -53,8 +53,8 @@ export function EditorPage({ initial }: { initial: string }) {
 {% tab title="Editor + preview" %}
 ```tsx title="SplitView.tsx"
 import { useState } from "react"
-import { MarkdownContent } from "@brett_lamy/docstream"
-import { GitbookEditor } from "@brett_lamy/docstream-editor"
+import { MarkdownContent } from "@brett_lamy/ui/docstream"
+import { GitbookEditor } from "@brett_lamy/ui/docstream-editor"
 
 export function SplitView({ initial }: { initial: string }) {
   const [markdown, setMarkdown] = useState(initial)
@@ -70,7 +70,7 @@ export function SplitView({ initial }: { initial: string }) {
 
 {% tab title="A read-only view" %}
 ```tsx title="Review.tsx"
-import { GitbookEditor } from "@brett_lamy/docstream-editor"
+import { GitbookEditor } from "@brett_lamy/ui/docstream-editor"
 
 export function Review({ markdown }: { markdown: string }) {
   return <GitbookEditor markdown={markdown} toolbar={false} editable={false} />

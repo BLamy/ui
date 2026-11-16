@@ -125,7 +125,7 @@ Takes [MessageScroller](https://blamy.github.io/ui/#/message-scroller)'s props: 
 | --- | --- | --- |
 | `ConversationUserMessage` | `attachments`, `anchor` (default `true`), `value`, `div` props | Right-aligned bubble up to 78% wide, its attachments above it. No text means no bubble. |
 | `ConversationAssistantMessage` | `anchor` (default `false`), `value`, `div` props | The reply: work log and markdown. |
-| `ConversationMarkdown` | `markdown`, `streaming`, [MarkdownView](https://blamy.github.io/ui/#/docstream)'s props (`className`, `ref`, `onReferenceClick`…) | Streaming Markdown, and the typing dots until the first token. |
+| `ConversationMarkdown` | `markdown`, `streaming`, [MarkdownView](https://blamy.github.io/ui/#/markdown-view)'s props (`className`, `ref`, `onReferenceClick`…) | Streaming Markdown, and the typing dots until the first token. |
 | `ConversationTyping` | `div` props | The three-dot wave. |
 | `ConversationWorkLog` | `summary`, `defaultOpen`, `open`, `onOpenChange(open, details)`, `div` props | Children are `ConversationToolCall`s; with none the row is static. |
 | `ConversationToolCall` | `title`, `description`, `code`, `icon`, `status`, `div` props | `status`: `done` (default, the `icon` or a check), `running`, `error`. |

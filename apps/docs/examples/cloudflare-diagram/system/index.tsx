@@ -48,11 +48,11 @@ export default function System() {
   return (
     <div className="grid h-full min-h-[820px] w-full grid-rows-[1fr_auto]">
       <div className="relative min-h-0">
-        <CloudflareDiagram editable services={system.services} edges={system.edges} onChange={(c) => change({ services: c.services, edges: c.edges })} aria-label="A file upload, as a system" />
+        <CloudflareDiagram editable services={system.services} edges={system.edges} onDataChange={change} aria-label="A file upload, as a system" />
       </div>
       <div className="flex flex-col gap-2 border-t border-border p-3 text-footnote text-foreground">
-        <Textarea aria-label="The system, as JSON" data-demo-json rows={6} value={text} onChange={(e) => setText(e.target.value)} className="font-mono" />
-        <div><Button data-demo-load variant="secondary" size="sm" onPress={load}>Load this</Button></div>
+        <Textarea aria-label="The system, as JSON" data-demo-json rows={6} value={text} onValueChange={setText} className="font-mono" />
+        <div><Button data-demo-load variant="secondary" size="sm" onClick={load}>Load this</Button></div>
         {loaded.length ? (
           <ul data-demo-load-issues className="m-0 flex list-none flex-col gap-1 p-0">
             {loaded.map((i, n) => <li key={n} data-code={i.code} className={i.severity === 'error' ? 'text-destructive' : ''}>{i.message}</li>)}

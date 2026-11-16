@@ -6,8 +6,8 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { MarkdownView } from '@/components/ui/markdown-view';
-import { replayDemoEvents } from '@brett_lamy/docstream/replay/demo';
-import { formatReplayTime } from '@brett_lamy/docstream/replay';
+import { replayDemoEvents } from '@brett_lamy/ui/docstream/replay/demo';
+import { formatReplayTime } from '@brett_lamy/ui/docstream/replay';
 import { ReplayPreview, type ReplayPreviewHandle } from '@/components/ui/replay-preview';
 import {
   NavigationStackBar, NavigationStackContent, NavigationStackPage, NavigationStackTitle, NavigationStackTrailing,

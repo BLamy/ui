@@ -10,7 +10,7 @@
   "dependencies": [
     "use-fs",
     "@ui-sdk/react",
-    "@brett_lamy/docstream",
+    "@brett_lamy/ui",
     "@visual-json/react",
     "@visual-json/yaml"
   ],

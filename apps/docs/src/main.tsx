@@ -1,15 +1,16 @@
 import { lazy, StrictMode, Suspense } from 'react';
 import * as ReactDOM from 'react-dom/client';
 import '@brett_lamy/ui/styles.css';
-// ui's sheet compiled with the registry blocks' Tailwind classes (loaded last, so it's the superset that wins).
-import '@brett_lamy/registry/styles.css';
+// ui's sheet compiled with the registry blocks' and the BL site's Tailwind classes (loaded last, so it's the superset
+// that wins): `@brett_lamy/registry/styles.css` plus `@source` for src/site.
+import './site/site.css';
 // Docstream's renderer sheet, in the same order dev loads it (after ui's). Imported here, not only through
 // lazily-loaded modules, so the production build ships it in the entry CSS. (The editor's sheet comes layered
 // inside ui's stylesheet — an unlayered copy here would outrank the kit's editor rules and every utility.)
-import '@brett_lamy/docstream/styles.css';
-import { DemoFullscreen, demoFromSearch } from '@brett_lamy/docstream';
+import '@brett_lamy/ui/docstream/styles.css';
+import { DemoFullscreen, demoFromSearch } from '@brett_lamy/ui/docstream';
 import { AppearanceProvider } from '@/lib/theme';
-import App from './app/app';
+import Site from './site/site';
 import RenderPage from './app/render-page';
 import { demoResolver } from './demos';
 import MotionTools, { initMotionTools } from './motion-tools';
@@ -24,6 +25,13 @@ const root = ReactDOM.createRoot(
 /* `?demo=<page>/<example>` (or `blocks/<slug>`, with `&variant=`) renders one demo full screen — the demo viewer's
    "Open in new tab" link. `&theme=dark|light`, else the docs' saved / OS appearance. */
 const demo = demoFromSearch();
+/* docstream's and the editor's demos, from their docs inside the site, are namespaced: `?demo=docstream:<page>/<example>`. */
+const LibraryDemo = demo && /^docstream(-editor)?:/.test(demo.src)
+  ? lazy(() => import('./site/library-demos').then(({ libraryDemo }) => {
+    const found = libraryDemo(demo.src);
+    return { default: () => (found ? <DemoFullscreen src={found.src} variant={demo.variant} resolver={found.resolver} style={{ width: '100vw', height: '100dvh' }} /> : null) };
+  }))
+  : null;
 const search = new URLSearchParams(window.location.search);
 /* `?render[&resolver=0]` renders arbitrary docstream Markdown like a page (the Copy page round-trip check). */
 const render = search.has('render');
@@ -41,6 +49,10 @@ root.render(
       <AppearanceProvider value={appearance}>
         <Suspense fallback={null}><E2eHarness name={harness} /></Suspense>
       </AppearanceProvider>
+    ) : LibraryDemo ? (
+      <AppearanceProvider value={appearance}>
+        <div data-docstream=""><Suspense fallback={null}><LibraryDemo /></Suspense></div>
+      </AppearanceProvider>
     ) : demo ? (
       <AppearanceProvider value={appearance}>
         <DemoFullscreen src={demo.src} variant={demo.variant} resolver={demoResolver} style={{ width: '100vw', height: '100dvh' }} />
@@ -49,7 +61,7 @@ root.render(
       <AppearanceProvider value={appearance}>
         <RenderPage resolver={search.get('resolver') !== '0'} />
       </AppearanceProvider>
-    ) : <App />}
+    ) : <Site />}
     <MotionTools initiallyOpen={motionParams} />
   </StrictMode>,
 );

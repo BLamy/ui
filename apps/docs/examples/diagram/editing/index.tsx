@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Diagram, type DiagramChange } from '@/components/ui/diagram'
+import { Diagram, DiagramToolbar, type DiagramData, type DiagramDataChangeDetails, type DiagramDataChangeReason } from '@/components/ui/diagram'
 import { Switch } from '@/components/ui/switch'
 import type { DiagramEdge, DiagramNode, DiagramSelection } from '@/lib/diagram-model'
 
@@ -26,26 +26,28 @@ const EDGES: DiagramEdge[] = [
 export default function Editing() {
   const params = new URLSearchParams(location.search)
   const controlled = !params.has('uncontrolled')
-  // Left out, the diagram fits what's on it until the camera's moved.
-  const defaultCamera = params.has('fit') ? undefined : { x: 20, y: 20, z: 1 }
+  // Left out, the diagram fits what's on it until the view's moved.
+  const defaultViewport = params.has('fit') ? undefined : { x: 20, y: 20, zoom: 1 }
   const [data, setData] = useState({ nodes: NODES, edges: EDGES })
   const [refuse, setRefuse] = useState(false)
-  const [changes, setChanges] = useState<DiagramChange['reason'][]>([])
+  const [changes, setChanges] = useState<DiagramDataChangeReason[]>([])
   const [selection, setSelection] = useState<DiagramSelection>({ nodes: [], edges: [] })
   const [activated, setActivated] = useState('')
-  const onChange = (change: DiagramChange) => {
-    setChanges((c) => [...c, change.reason])
-    if (!refuse) setData({ nodes: change.nodes, edges: change.edges })
+  // Refusing a change is `details.cancel()`: the node goes back where it was, and there's nothing to undo.
+  const onDataChange = (next: DiagramData, details: DiagramDataChangeDetails) => {
+    setChanges((c) => [...c, details.reason])
+    if (refuse) details.cancel()
+    else setData({ nodes: [...next.nodes], edges: [...next.edges] })
   }
   return (
     <div className="grid h-full min-h-[560px] w-full grid-rows-[1fr_auto]">
       <div className="relative">
         {controlled
-          ? <Diagram editable nodes={data.nodes} edges={data.edges} onChange={onChange} onSelectionChange={setSelection} onActivate={(item) => setActivated(item.id)} defaultCamera={defaultCamera} aria-label="A small workflow" />
-          : <Diagram editable={!params.has('readonly')} defaultNodes={NODES} defaultEdges={EDGES} onChange={onChange} onSelectionChange={setSelection} onActivate={(item) => setActivated(item.id)} defaultCamera={defaultCamera} aria-label="A small workflow" />}
+          ? <Diagram editable nodes={data.nodes} edges={data.edges} onDataChange={onDataChange} onSelectionChange={setSelection} onAction={(item) => setActivated(item.id)} defaultViewport={defaultViewport} overlay={<DiagramToolbar />} aria-label="A small workflow" />
+          : <Diagram editable={!params.has('readonly')} defaultNodes={NODES} defaultEdges={EDGES} onDataChange={onDataChange} onSelectionChange={setSelection} onAction={(item) => setActivated(item.id)} defaultViewport={defaultViewport} overlay={<DiagramToolbar />} aria-label="A small workflow" />}
       </div>
       <div className="flex items-center gap-3 border-t border-border p-3 text-footnote text-foreground">
-        <Switch checked={refuse} onChange={setRefuse} aria-label="Refuse changes" />
+        <Switch checked={refuse} onCheckedChange={setRefuse} aria-label="Refuse changes" />
         <span>Refuse changes</span>
         <span data-demo-changes={changes.join(' ')}>{changes.length} changes</span>
         <span data-demo-activated={activated}>{activated ? `Opened ${activated}` : 'Enter opens'}</span>

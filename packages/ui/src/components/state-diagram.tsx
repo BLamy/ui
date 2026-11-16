@@ -1,12 +1,12 @@
 'use client';
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties } from 'react';
 import { Button } from '@/components/ui/button';
-import { Diagram, type DiagramChange, type DiagramProps } from '@/components/ui/diagram';
-import { DiagramFrame, DiagramPanelField, DiagramPanelSection } from '@/components/ui/diagram-frame';
-import { Segmented } from '@/components/ui/segmented';
+import { Diagram, DiagramToolbar, type DiagramData, type DiagramDataChangeDetails, type DiagramProps } from '@/components/ui/diagram';
+import { DiagramFrame, DiagramFrameBar, DiagramFrameBoard, DiagramFrameInput, DiagramFramePanel, DiagramFrameSection, type DiagramFrameProps } from '@/components/ui/diagram-frame';
 import { Switch } from '@/components/ui/switch';
-import { useContainerSize } from '@/lib/container';
-import type { DiagramLayoutResult } from '@/lib/diagram-layout';
+import { Tabs, TabsList, TabsPanel, TabsTab } from '@/components/ui/tabs';
+import { Toolbar, ToolbarButton } from '@/components/ui/toolbar';
+import type { DiagramDirection, DiagramLayoutResult } from '@/lib/diagram-layout';
 import { useDiagramLayout } from '@/lib/diagram-layout/react';
 import { NOTHING_SELECTED, type DiagramConnection, type DiagramSelection } from '@/lib/diagram-model';
 import {
@@ -22,21 +22,21 @@ import { createSimulation, type Simulation, type SimulationStandIns } from '@/li
    needs `elkjs`.
 
    With `simulate`, it also runs a copy of it, with stand-ins for everything it names, so none of an app's code runs here
-   either. Where it is gets lit, and a panel offers what it can do next: in a column beside the board, or in a tray when
-   there isn't the room.
+   either. Where it is is `current` on the board, and a panel offers what it can do next: a `DiagramFramePanel`, so a
+   column beside the board when there's the room, a drawer over it at medium sizes, and a pushed page on a phone.
 
    With `editable`, what's drawn can be changed, and that writes to its config, which is plain data. A machine's implementations
    stay out of it, by name, so an edit never touches code. Whatever XState won't have is refused, with what it said. */
 
-export interface StateDiagramProps extends Pick<DiagramProps, 'minimap' | 'background' | 'fitPadding' | 'aria-label' | 'camera' | 'defaultCamera' | 'onCameraChange'> {
+export interface StateDiagramProps extends Pick<DiagramProps, 'minimap' | 'background' | 'fitPadding' | 'aria-label' | 'viewport' | 'defaultViewport' | 'onViewportChange'> {
   /** A machine, from `createMachine` or `setup(...).createMachine`. */
   machine?: MachineLike;
   /** Or a machine's config, as JSON. */
   config?: Record<string, unknown>;
-  /** Which way the layers run (default `RIGHT`). */
-  direction?: 'RIGHT' | 'DOWN' | 'LEFT' | 'UP';
-  /** A layout done ahead of time, on a server perhaps. */
-  initial?: DiagramLayoutResult<StateNodeData, StateEdgeData>;
+  /** Which way the layers run (default `right`). */
+  direction?: DiagramDirection;
+  /** A layout done ahead of time, on a server perhaps, shown until this one's ready. */
+  layout?: DiagramLayoutResult<StateNodeData, StateEdgeData>;
   /** Run it here, with a panel to drive it. Pass stand-ins to say how guards answer, how long delays take, and which actors
    *  really run, which are read when it starts. */
   simulate?: boolean | SimulationStandIns;
@@ -48,8 +48,13 @@ export interface StateDiagramProps extends Pick<DiagramProps, 'minimap' | 'backg
   implementations?: MachineImplementations;
   /** What's selected to begin with, while editing. */
   defaultSelection?: DiagramSelection;
-  /** Whether the panel starts open. By default it does if it fits beside the board, and it doesn't if it'd go over it. */
+  /** Whether the panel shows, to control it. */
+  panelOpen?: boolean;
+  /** Whether the panel starts open. By default it does where it's a column beside the board, and not where it'd go over it. */
   defaultPanelOpen?: boolean;
+  onPanelOpenChange?: DiagramFrameProps['onOpenChange'];
+  /** How the panel shows (default `auto`: column, drawer or pushed page, by the frame's size class). */
+  panelPresentation?: DiagramFrameProps['presentation'];
   className?: string;
   style?: CSSProperties;
 }
@@ -155,7 +160,7 @@ function SimulationPanel({ sim }: { sim: Simulation }) {
   useEffect(() => { setRunning(false); }, [sim]);
   const guards = Object.keys(state.guards);
   return (
-    <div data-slot="simulation-panel" data-status={state.status} tabIndex={-1} className="flex flex-col gap-3.5 px-3.5 pt-1 pb-3.5 outline-none">
+    <div data-slot="simulation-panel" data-status={state.status} className="flex flex-col gap-3.5">
       <div>
         <div data-slot="simulation-now" role="status" className="text-subhead font-semibold [overflow-wrap:anywhere]">
           {state.now.join(', ')}{state.status === 'done' ? ' (finished)' : ''}
@@ -163,43 +168,43 @@ function SimulationPanel({ sim }: { sim: Simulation }) {
         {state.error ? <div data-slot="simulation-error" role="alert" className="mt-1 text-footnote text-destructive">{state.error}</div> : null}
       </div>
       {state.events.length ? (
-        <DiagramPanelSection title="Events it can take">
+        <DiagramFrameSection title="Events it can take">
           <div className="flex flex-wrap gap-1.5">
-            {state.events.map((event) => <Button key={event} data-slot="simulation-event" data-event={event} variant="secondary" size="sm" onPress={() => sim.send(event)}>{event}</Button>)}
+            {state.events.map((event) => <Button key={event} data-action="send" data-event={event} variant="secondary" size="sm" onClick={() => sim.send(event)}>{event}</Button>)}
           </div>
-        </DiagramPanelSection>
+        </DiagramFrameSection>
       ) : null}
       {state.finishes.length ? (
-        <DiagramPanelSection title="Waiting on">
+        <DiagramFrameSection title="Waiting on">
           <div className="flex flex-wrap gap-1.5">
-            {state.finishes.map((f) => <Button key={f.event} data-slot="simulation-finish" data-event={f.event} variant="secondary" size="sm" onPress={() => sim.send(f.event)}>{f.label}</Button>)}
+            {state.finishes.map((f) => <Button key={f.event} data-action="finish" data-event={f.event} variant="secondary" size="sm" onClick={() => sim.send(f.event)}>{f.label}</Button>)}
           </div>
-        </DiagramPanelSection>
+        </DiagramFrameSection>
       ) : null}
-      <DiagramPanelSection title="Time">
-        <div className="flex flex-wrap items-center gap-1.5">
-          <Button data-slot="simulation-next" variant="secondary" size="sm" isDisabled={!canRun} onPress={() => sim.stepTime()}>Next timer</Button>
-          <Button data-slot="simulation-run" variant="secondary" size="sm" isDisabled={!canRun} onPress={() => setRunning(!running)}>{run ? 'Pause' : 'Run'}</Button>
-        </div>
+      <DiagramFrameSection title="Time">
+        <Toolbar aria-label="Time" size="sm" className="flex-wrap">
+          <ToolbarButton data-action="next-timer" variant="secondary" disabled={!canRun} onClick={() => sim.stepTime()}>Next timer</ToolbarButton>
+          <ToolbarButton data-action="run" variant="secondary" disabled={!canRun} onClick={() => setRunning(!running)}>{run ? 'Pause' : 'Run'}</ToolbarButton>
+        </Toolbar>
         <div data-slot="simulation-time" className="text-footnote text-foreground/70 tabular-nums">
           {ms(state.time)}{state.next !== null ? `, next at ${ms(state.next)}` : ', nothing waiting'}
         </div>
-      </DiagramPanelSection>
+      </DiagramFrameSection>
       {guards.length ? (
-        <DiagramPanelSection title="Guards">
+        <DiagramFrameSection title="Guards">
           <ul className="m-0 flex list-none flex-col gap-1.5 p-0">
             {guards.map((g) => (
               <li key={g} data-slot="simulation-guard" data-guard={g} className="flex items-center justify-between gap-2 text-footnote">
                 <span className="min-w-0 [overflow-wrap:anywhere]">{g}</span>
-                <Switch aria-label={`${g} answers yes`} checked={state.guards[g]} onChange={(v) => sim.setGuard(g, v)} />
+                <Switch size="sm" aria-label={`${g} answers yes`} checked={state.guards[g]} onCheckedChange={(v) => sim.setGuard(g, v)} />
               </li>
             ))}
           </ul>
-        </DiagramPanelSection>
+        </DiagramFrameSection>
       ) : null}
-      <DiagramPanelSection title="What happened">
+      <DiagramFrameSection title="What happened">
         <div>
-          <Button data-slot="simulation-reset" variant="secondary" size="sm" onPress={() => { setRunning(false); sim.reset(); }}>Reset</Button>
+          <Button data-action="reset" variant="secondary" size="sm" onClick={() => { setRunning(false); sim.reset(); }}>Reset</Button>
         </div>
         <ol data-slot="simulation-log" className="m-0 flex list-none flex-col-reverse gap-1 p-0 text-footnote">
           {state.log.map((entry) => (
@@ -209,7 +214,7 @@ function SimulationPanel({ sim }: { sim: Simulation }) {
             </li>
           ))}
         </ol>
-      </DiagramPanelSection>
+      </DiagramFrameSection>
     </div>
   );
 }
@@ -237,44 +242,44 @@ interface EditPanelProps {
 
 function EditPanel({ refusal, canUndo, canRedo, undo, redo, addStateHere, node, edge, renameNode, makeStart, addInside, removeSelected, renameEvent, setGuard, missing, inline }: EditPanelProps) {
   return (
-    <div data-slot="edit-panel" tabIndex={-1} className="flex flex-col gap-3.5 px-3.5 pt-1 pb-3.5 outline-none">
+    <div data-slot="edit-panel" className="flex flex-col gap-3.5">
       {refusal ? <div data-slot="edit-refusal" role="alert" className="text-footnote text-destructive [overflow-wrap:anywhere]">{refusal}</div> : null}
-      <div className="flex flex-wrap items-center gap-1.5">
-        <Button data-slot="edit-add-state" variant="secondary" size="sm" onPress={addStateHere}>Add state</Button>
-        <Button data-slot="edit-undo" variant="secondary" size="sm" isDisabled={!canUndo} onPress={undo}>Undo</Button>
-        <Button data-slot="edit-redo" variant="secondary" size="sm" isDisabled={!canRedo} onPress={redo}>Redo</Button>
-      </div>
+      <Toolbar aria-label="Edit" size="sm" className="flex-wrap">
+        <ToolbarButton data-action="add-state" variant="secondary" onClick={addStateHere}>Add state</ToolbarButton>
+        <ToolbarButton data-action="undo" variant="secondary" disabled={!canUndo} onClick={undo}>Undo</ToolbarButton>
+        <ToolbarButton data-action="redo" variant="secondary" disabled={!canRedo} onClick={redo}>Redo</ToolbarButton>
+      </Toolbar>
       {node ? (
-        <DiagramPanelSection title="This state">
-          <DiagramPanelField label="Name" slot="edit-name" value={node.label} onCommit={renameNode} />
+        <DiagramFrameSection title="This state">
+          <DiagramFrameInput data-field="name" label="Name" value={node.label} onValueCommit={renameNode} />
           <div className="flex flex-wrap gap-1.5 pt-1">
-            {node.canStart ? <Button data-slot="edit-make-start" variant="secondary" size="sm" isDisabled={node.isStart} onPress={makeStart}>{node.isStart ? 'It starts here' : 'Start here'}</Button> : null}
-            <Button data-slot="edit-add-inside" variant="secondary" size="sm" onPress={addInside}>Add one inside</Button>
-            <Button data-slot="edit-delete" variant="secondary" size="sm" onPress={removeSelected}>Delete</Button>
+            {node.canStart ? <Button data-action="make-start" variant="secondary" size="sm" disabled={node.isStart} onClick={makeStart}>{node.isStart ? 'It starts here' : 'Start here'}</Button> : null}
+            <Button data-action="add-inside" variant="secondary" size="sm" onClick={addInside}>Add one inside</Button>
+            <Button data-action="delete" variant="secondary" size="sm" onClick={removeSelected}>Delete</Button>
           </div>
-        </DiagramPanelSection>
+        </DiagramFrameSection>
       ) : edge ? (
-        <DiagramPanelSection title="This transition">
-          {edge.event !== null ? <DiagramPanelField label="Event" slot="edit-event" value={edge.event} onCommit={renameEvent} /> : <div className="text-footnote">{edge.label}</div>}
-          <DiagramPanelField label="Guard" slot="edit-guard" value={edge.guard} placeholder="None" onCommit={setGuard} />
-          <div className="pt-1"><Button data-slot="edit-delete" variant="secondary" size="sm" onPress={removeSelected}>Delete</Button></div>
-        </DiagramPanelSection>
+        <DiagramFrameSection title="This transition">
+          {edge.event !== null ? <DiagramFrameInput data-field="event" label="Event" value={edge.event} onValueCommit={renameEvent} /> : <div className="text-footnote">{edge.label}</div>}
+          <DiagramFrameInput data-field="guard" label="Guard" value={edge.guard} placeholder="None" onValueCommit={setGuard} />
+          <div className="pt-1"><Button data-action="delete" variant="secondary" size="sm" onClick={removeSelected}>Delete</Button></div>
+        </DiagramFrameSection>
       ) : (
         <p data-slot="edit-hint" className="m-0 text-footnote text-foreground/70">Select a state or a transition to change it. To connect two states, select one and drag from a dot on its edge, or press C.</p>
       )}
       {missing.length ? (
-        <DiagramPanelSection title="Named, with nothing behind them">
+        <DiagramFrameSection title="Named, with nothing behind them">
           <ul data-slot="edit-missing" className="m-0 flex list-none flex-col gap-1 p-0 text-footnote">
             {missing.map((m) => <li key={m.kind} data-kind={m.kind} className="[overflow-wrap:anywhere]"><span className="text-foreground/70">{m.kind}:</span> {m.names.join(', ')}</li>)}
           </ul>
-        </DiagramPanelSection>
+        </DiagramFrameSection>
       ) : null}
       {inline.length ? (
-        <DiagramPanelSection title="Code in the config, which JSON can’t hold">
+        <DiagramFrameSection title="Code in the config, which JSON can’t hold">
           <ul data-slot="edit-inline" className="m-0 flex list-none flex-col gap-1 p-0 text-footnote [overflow-wrap:anywhere]">
             {inline.map((path) => <li key={path}>{path}</li>)}
           </ul>
-        </DiagramPanelSection>
+        </DiagramFrameSection>
       ) : null}
     </div>
   );
@@ -288,7 +293,7 @@ const isOwnEvent = (place: TransitionPlace | undefined, state: MachineConfig | n
 const eventsOf = (state: MachineConfig | null) => Object.keys((state?.on as Record<string, unknown> | undefined) ?? {});
 const statesOf = (state: MachineConfig | null) => Object.keys((state?.states as Record<string, unknown> | undefined) ?? {});
 
-export function StateDiagram({ machine: given, config, direction, initial, simulate, editable = false, onConfigChange, implementations, defaultSelection = NOTHING_SELECTED, defaultPanelOpen, className, style, 'aria-label': ariaLabel, ...diagram }: StateDiagramProps) {
+export function StateDiagram({ machine: given, config, direction, layout: initialLayout, simulate, editable = false, onConfigChange, implementations, defaultSelection = NOTHING_SELECTED, panelOpen, defaultPanelOpen, onPanelOpenChange, panelPresentation, className, style, 'aria-label': ariaLabel, ...diagram }: StateDiagramProps) {
   /* ── What's being shown: what was given, until there's an edit to show instead ── */
   const known = useRef(new WeakMap<object, MachineLike>()).current;
   const outside = config ?? given;
@@ -307,8 +312,8 @@ export function StateDiagram({ machine: given, config, direction, initial, simul
       return { ...nothing, draftError: e instanceof Error ? e.message : String(e) };
     }
   }, [machine]);
-  const [host, size] = useContainerSize();
-  const laid = useDiagramLayout(draft, { host, direction, initial });
+  const board = useRef<HTMLDivElement>(null);
+  const laid = useDiagramLayout(draft, { host: board, direction, initial: initialLayout });
   const behind = implementations ?? given?.implementations;
   const { sim, error: simError } = useSimulation(machine, simulate, behind?.delays);
 
@@ -375,9 +380,11 @@ export function StateDiagram({ machine: given, config, direction, initial, simul
     for (const [id, place] of machineEdgePlaces(made)) if (place.state.join('\0') === path.join('\0') && place.event === event && place.index === index) { setSelection({ nodes: [], edges: [id] }); return; }
   };
 
-  /** What's on the board has changed, and what that means is an edit. */
-  const onDiagramChange = (change: DiagramChange<StateNodeData, StateEdgeData>) => {
-    if (change.reason === 'connect') {
+  /** What's on the board has changed, and what that means is an edit. The board's data is the layout of the config, so
+   *  the change itself is refused, and the config's edit is what redraws it. */
+  const onDiagramChange = (change: DiagramData<StateNodeData, StateEdgeData>, details: DiagramDataChangeDetails) => {
+    details.cancel();
+    if (details.reason === 'connect') {
       const had = new Set(laid.edges.map((e) => e.id));
       const edge = change.edges.find((e) => !had.has(e.id));
       const from = edge && paths.get(edge.from), to = edge && paths.get(edge.to);
@@ -385,7 +392,7 @@ export function StateDiagram({ machine: given, config, direction, initial, simul
       const event = uniqueName('EVENT', eventsOf(stateAt(base, from)));
       const made = commit((c) => addTransition(c, from, event, to));
       if (made) selectTransition(made, from, event, 0);
-    } else if (change.reason === 'reconnect') {
+    } else if (details.reason === 'reconnect') {
       const before = new Map(laid.edges.map((e) => [e.id, e]));
       const edge = change.edges.find((e) => { const was = before.get(e.id); return was && (was.from !== e.from || was.to !== e.to); });
       const was = edge && before.get(edge.id);
@@ -395,7 +402,7 @@ export function StateDiagram({ machine: given, config, direction, initial, simul
       if (!from || !to) return;
       const made = commit((c) => (was.from !== edge.from ? setTransitionSource(c, place, from) : setTransitionTarget(c, place, to)));
       if (made) setSelection(NOTHING_SELECTED);
-    } else if (change.reason === 'delete') {
+    } else if (details.reason === 'delete') {
       const nodesLeft = new Set(change.nodes.map((n) => n.id));
       const edgesLeft = new Set(change.edges.map((e) => e.id));
       const goneNodes = laid.nodes.filter((n) => !nodesLeft.has(n.id));
@@ -483,7 +490,7 @@ export function StateDiagram({ machine: given, config, direction, initial, simul
   const taken = useSyncExternalStore(sim ? sim.subscribe : noSubscribe, () => sim?.get().taken ?? NOTHING_YET, () => NOTHING_YET);
   const now = useSyncExternalStore(sim ? sim.subscribe : noSubscribe, () => sim?.get().now ?? NOTHING_YET, () => NOTHING_YET);
   const rootId = machine?.root.id;
-  const lit = useMemo(() => ({ nodes: active.filter((id) => id !== rootId), edges: [...taken] }), [active, taken, rootId]);
+  const where = useMemo(() => ({ nodes: active.filter((id) => id !== rootId), edges: [...taken] }), [active, taken, rootId]);
 
   const [tab, setTab] = useState<'run' | 'edit'>('edit');
   const showEdit = editable && !!xstate && !!base;
@@ -518,54 +525,59 @@ export function StateDiagram({ machine: given, config, direction, initial, simul
     />
   ) : null;
   const simulationPanel = sim ? <SimulationPanel key="run" sim={sim} /> : null;
-  // Running goes on while you're looking at something else, so it's only hidden.
+  // Running goes on while you're looking at something else, so its panel stays mounted, hidden.
   const panel = both ? (
-    <>
-      <div className="px-3.5 pb-2"><Segmented aria-label="What the panel shows" options={[{ id: 'edit', label: 'Edit' }, { id: 'run', label: 'Run' }]} value={tab} onChange={(id) => setTab(id as 'run' | 'edit')} /></div>
-      <div hidden={tab !== 'run'}>{simulationPanel}</div>
-      <div hidden={tab !== 'edit'}>{editPanel}</div>
-    </>
+    <Tabs value={tab} onValueChange={(id) => setTab(id as 'run' | 'edit')} size="sm">
+      <TabsList aria-label="What the panel shows">
+        <TabsTab value="edit">Edit</TabsTab>
+        <TabsTab value="run">Run</TabsTab>
+      </TabsList>
+      <TabsPanel value="edit" keepMounted className="pt-3">{editPanel}</TabsPanel>
+      <TabsPanel value="run" keepMounted className="pt-3">{simulationPanel}</TabsPanel>
+    </Tabs>
   ) : simulationPanel ?? editPanel;
+  const status = now.length ? `In ${now.join(', ')}` : selectedNode?.label ?? (laid.status === 'pending' ? 'Laying out…' : name);
   return (
     <DiagramFrame
-      slot="state-diagram"
-      host={host}
-      size={size}
-      title={title}
-      panel={panel}
-      status={now.length ? now.join(', ') : selectedNode?.label}
+      data-state-diagram=""
+      open={panelOpen}
       defaultOpen={defaultPanelOpen}
-      focusSelector={showEdit && (!sim || tab === 'edit') ? '[data-slot=edit-panel]' : '[data-slot=simulation-panel]'}
+      onOpenChange={onPanelOpenChange}
+      presentation={panelPresentation}
       className={className}
       style={style}
-      // The keys for undoing come here, from the board, and a field in the panel keeps its own.
-      onBoardKeyDown={!editable ? undefined : (e) => {
-        if (!(e.metaKey || e.ctrlKey)) return;
-        const key = e.key.toLowerCase();
-        if (key === 'z') { e.preventDefault(); if (e.shiftKey) redo(); else undo(); }
-        else if (key === 'y') { e.preventDefault(); redo(); }
-      }}
     >
-      {(bar) => (
+      <DiagramFrameBoard
+        ref={board}
+        // The keys for undoing come here, from the board, and a field in the panel keeps its own.
+        onKeyDown={!editable ? undefined : (e) => {
+          if (!(e.metaKey || e.ctrlKey)) return;
+          const key = e.key.toLowerCase();
+          if (key === 'z') { e.preventDefault(); if (e.shiftKey) redo(); else undo(); }
+          else if (key === 'y') { e.preventDefault(); redo(); }
+        }}
+      >
         <Diagram<StateNodeData, StateEdgeData>
           nodes={laid.nodes}
           edges={laid.edges}
-          lit={lit}
+          current={where}
           aria-label={name}
           noun="state"
+          loading={laid.status === 'pending' && !problem}
+          emptyState={problem ? null : undefined}
           {...(editable ? {
-            editable: true, movable: false, selection, onSelectionChange: setSelection, onChange: onDiagramChange, isValidConnection: validConnection,
+            editable: true, movable: false, undoable: false, selection, onSelectionChange: (next: DiagramSelection) => setSelection(next), onDataChange: onDiagramChange, isValidConnection: validConnection,
           } : null)}
           overlay={problem ? (
-            <div data-slot="state-diagram-error" role="alert" className="absolute inset-x-4 top-4 rounded-ctl bg-popover p-3 text-footnote text-destructive shadow-hairline">
+            <div data-slot="state-diagram-error" role="alert" className="absolute inset-x-4 top-4 rounded-ctl bg-popover p-3 text-footnote text-destructive shadow-raised">
               {problem}
             </div>
-          ) : laid.status === 'pending' ? (
-            <div data-slot="state-diagram-status" role="status" className="absolute top-3 left-3 rounded-ctl bg-popover px-3 py-2 text-footnote text-foreground shadow-hairline">Laying out…</div>
-          ) : bar}
+          ) : <DiagramToolbar side="top" align="start" />}
           {...diagram}
         />
-      )}
+        {panel ? <DiagramFrameBar>{status}</DiagramFrameBar> : null}
+      </DiagramFrameBoard>
+      {panel ? <DiagramFramePanel title={title}>{panel}</DiagramFramePanel> : null}
     </DiagramFrame>
   );
 }

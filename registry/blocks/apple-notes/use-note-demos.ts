@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
-import { collectDemoNodes, createDemoVFS, useDemoResolver, type DemoResolver, type InlineDemoRuntime } from '@brett_lamy/docstream/demo';
-import { parseMarkdown } from '@brett_lamy/docstream/gitbook';
+import { collectDemoNodes, createDemoVFS, useDemoResolver, type DemoResolver, type InlineDemoRuntime } from '@brett_lamy/ui/docstream/demo';
+import { parseMarkdown } from '@brett_lamy/ui/docstream/gitbook';
 import { createLocalDemoReader, type DemoDirectory } from './local-demo-files';
 
 /** Added folders supply code and metadata to Docstream's live demo VFS, including updates from other editors. */
@@ -30,7 +30,7 @@ export function useNoteDemos(body: string, path: string, roots: DemoDirectory[])
     let active = true; let timer: ReturnType<typeof setTimeout>;
     vfs.clear(); setError(undefined);
     if (!nodes.length) return;
-    void import('@brett_lamy/docstream/playground').then((module) => {
+    void import('@brett_lamy/ui/docstream/playground').then((module) => {
       const basePath = new URL('.', document.baseURI).pathname.replace(/\/$/, '');
       if (active) setRuntime(() => module.createAlmostNodeDemoRuntime({ workspaceOptions: { basePath } }));
     }).catch((cause) => { if (active) setError(String(cause)); });

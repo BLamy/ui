@@ -5,7 +5,7 @@
 import type { ReactNode } from 'react';
 import { Button as SdkButton } from '@ui-sdk/react/button';
 import { Toggle as SdkToggle } from '@ui-sdk/react/toggle';
-import { formatReplayTime } from '@brett_lamy/docstream/replay';
+import { formatReplayTime } from '@brett_lamy/ui/docstream/replay';
 import { ReplayPreview } from '@/components/ui/replay-preview';
 import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';

@@ -1,4 +1,4 @@
-import { replayDemoEvents } from '@brett_lamy/docstream/replay/demo'
+import { replayDemoEvents } from '@brett_lamy/ui/docstream/replay/demo'
 import { ReplayPreview } from '@/components/ui/replay-preview'
 
 // DevTools open on the Network tab just after checkout failed: 8 requests, 1 failed in red. Select a row for its

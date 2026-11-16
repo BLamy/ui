@@ -79,14 +79,15 @@
     "apps/docs": {
       "entry": [
         "src/page-export.ts",
-        "examples/*/*/index.tsx"
+        "examples/*/*/index.tsx",
+        // The BL site's `virtual:bl-site-files` module (vite.config.mts): an ambient declaration nothing imports.
+        "src/site/virtual.d.ts"
       ],
       "project": [
         "src/**/*.{ts,tsx}",
         "examples/**/*.{ts,tsx}"
       ],
       "ignoreDependencies": [
-        "@brett_lamy/docstream-editor",
         "@tiptap/.+",
         "highlight.js",
         "lowlight"

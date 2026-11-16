@@ -11,7 +11,7 @@
         "cwd": "{projectRoot}"
       },
       "dependsOn": [
-        "^build"
+        "^typecheck"
       ]
     },
     "dev": {

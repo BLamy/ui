@@ -121,9 +121,13 @@
         { "id": "adaptive-pane", "title": "AdaptivePane" },
         { "id": "breadcrumb", "title": "Breadcrumb" },
         { "id": "canvas", "title": "Canvas" },
+        { "id": "cloudflare-diagram", "title": "CloudflareDiagram" },
+        { "id": "diagram", "title": "Diagram" },
+        { "id": "diagram-frame", "title": "DiagramFrame" },
         { "id": "navigation-stack", "title": "NavigationStack" },
         { "id": "sidebar", "title": "Sidebar" },
         { "id": "split-view", "title": "SplitView" },
+        { "id": "state-diagram", "title": "StateDiagram" },
         { "id": "tabs", "title": "Tabs" },
         { "id": "toolbar", "title": "Toolbar" },
         { "id": "debug-toolbar", "title": "DebugToolbar" }

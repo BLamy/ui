@@ -30,7 +30,7 @@ Ask @brett to sign off on the #seasonal push, and loop in @dana for the $acme/fo
 {% step %}
 ### Install
 
-{% command %}npm install @brett_lamy/ui/docstream react{% endcommand %}
+{% command %}npm install @brett_lamy/ui react{% endcommand %}
 {% endstep %}
 {% step %}
 ### Render it

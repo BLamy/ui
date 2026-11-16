@@ -38,7 +38,7 @@ When this tab is signed in to Tailscale (in the [Safari](#/blocks/safari) block,
 docstream does the gating; the host only supplies the values:
 
 ```tsx
-import { GitbookStreamdown, type DocstreamEnvHost } from '@brett_lamy/docstream'
+import { GitbookStreamdown, type DocstreamEnvHost } from '@brett_lamy/ui/docstream'
 
 const envHost: DocstreamEnvHost = {
   label: 'Load from Keychain',

@@ -21,8 +21,8 @@ export default function Config() {
     <div className="grid h-full min-h-[420px] w-full grid-rows-[1fr_auto]">
       <div className="relative"><StateDiagram config={config} /></div>
       <div className="flex gap-2 border-t border-border p-3">
-        <Button variant="secondary" onPress={() => setConfig(GOOD)}>A good one</Button>
-        <Button variant="secondary" onPress={() => setConfig(BAD)}>One XState won’t have</Button>
+        <Button variant="secondary" onClick={() => setConfig(GOOD)}>A good one</Button>
+        <Button variant="secondary" onClick={() => setConfig(BAD)}>One XState won’t have</Button>
       </div>
     </div>
   )

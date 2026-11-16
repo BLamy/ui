@@ -1,10 +1,10 @@
 # Migrating to 6.0
 
-BL UI 6.0 changes two things. Every interactive part is now built on [UI SDK](https://ui-sdk.dev) instead of react-aria-components, and its API is UI SDK's: `onClick` instead of `onPress`, `disabled` instead of `isDisabled`, `value` and `onValueChange(value, details)` instead of keys and selections, and roots with named parts instead of wrappers that take "the first child". And the library is smaller: components that did the same job as another one were merged into it (117 modules became 99), and every concept has one prop name across the kit. This page lists every change, with the before and after, so you can move a 5.x app to 6.0 from here.
+BL UI 6.0 changes two things, and moves one. Every interactive part is now built on [UI SDK](https://ui-sdk.dev) instead of react-aria-components, and its API is UI SDK's: `onClick` instead of `onPress`, `disabled` instead of `isDisabled`, `value` and `onValueChange(value, details)` instead of keys and selections, and roots with named parts instead of wrappers that take "the first child". And the library is smaller: components that did the same job as another one were merged into it (117 modules became 99), and every concept has one prop name across the kit. And Docstream, the Markdown renderer and editor behind MarkdownView, MarkdownEditor and the Composer, is part of the package now: `@brett_lamy/docstream` and `@brett_lamy/docstream-editor` stop at 2.0.1 (see [Docstream is part of the library](#docstream-is-part-of-the-library)). This page lists every change, with the before and after, so you can move a 5.x app to 6.0 from here.
 
 Read it in this order:
 
-1. [Changes that apply everywhere](#changes-that-apply-everywhere): the UI SDK vocabulary, which is most of a migration.
+1. [Changes that apply everywhere](#changes-that-apply-everywhere): the UI SDK vocabulary, which is most of a migration, and [where Docstream went](#docstream-is-part-of-the-library).
 2. [One spelling per concept](#one-spelling-per-concept): the prop names every component now shares.
 3. [Components that merged, moved or were renamed](#components-that-merged-moved-or-were-renamed): one table from every removed or renamed module, export and prop to what you write now.
 4. The family sections, from [Buttons and toggles](#buttons-and-toggles) on: what changed inside each component that kept its name.
@@ -57,7 +57,24 @@ which writes:
 }
 ```
 
-Pin both to the same version: `@ui-sdk/react` depends on `@ui-sdk/core`, and the app, the kit and any UI SDK component of your own must share one copy of the core. A package that declares `@ui-sdk/core` as a peer dependency resolves it to your aliased copy: Docstream 2.0 and the Docstream editor 2.0 (behind `MarkdownView`, `MarkdownEditor`, `Composer` and the replay, STL and Strudel parts) do, so they run on the same core as the kit. Your own code imports UI SDK the usual way: `import { Menu } from '@ui-sdk/react/menu'`.
+Pin both to the same version: `@ui-sdk/react` depends on `@ui-sdk/core`, and the app, the kit and any UI SDK component of your own must share one copy of the core. A package that declares `@ui-sdk/core` as a peer dependency resolves it to your aliased copy. Docstream and its editor (behind `MarkdownView`, `MarkdownEditor`, `Composer` and the replay, STL and Strudel parts) are part of `@brett_lamy/ui` now, so they run on the kit's core with nothing to set up. Your own code imports UI SDK the usual way: `import { Menu } from '@ui-sdk/react/menu'`.
+
+### Docstream is part of the library
+
+Docstream (the GitBook-flavored Markdown and AI-stream renderer, with its docs sites, demos, replays, 3D models and Strudel player) and the Docstream editor (the Tiptap editor for the same Markdown) were two packages of their own, `@brett_lamy/docstream` and `@brett_lamy/docstream-editor`, which BL UI depended on. In 6.0 they are part of `@brett_lamy/ui`, built and published with it: every entry they had is the same module under the library's name. The two npm packages stop at 2.0.1, the version 6.0 was built with; nothing is published under those names again.
+
+| 5.x | 6.0 |
+| --- | --- |
+| `npm install @brett_lamy/docstream @brett_lamy/docstream-editor` | nothing: `npm install @brett_lamy/ui` brings both |
+| `@brett_lamy/docstream` | `@brett_lamy/ui/docstream` |
+| `@brett_lamy/docstream/<entry>`: `/gitbook`, `/streamdown`, `/reference`, `/properties`, `/tasks`, `/assets`, `/openapi`, `/replay`, `/replay/demo`, `/video`, `/stl`, `/strudel`, `/tui`, `/viz`, `/playground`, `/source`, `/demo`, `/vite`, `/site`, `/xstate`, `/tscircuit` | `@brett_lamy/ui/docstream/<entry>`, the same entries (and `/xstate/machine`, `/capnp`, new) |
+| `@brett_lamy/docstream/styles.css`, `/site/styles.css`, `/properties/styles.css`, `/tasks/styles.css` | `@brett_lamy/ui/docstream/styles.css`, `/site/styles.css`, `/properties/styles.css`, `/tasks/styles.css` |
+| `@brett_lamy/docstream-editor`, `/editor`, `/convert` | `@brett_lamy/ui/docstream-editor`, `/editor`, `/convert` |
+| `@brett_lamy/docstream-editor/styles.css` | already inside `@brett_lamy/ui/styles.css` (in a layer); import `@brett_lamy/ui/docstream-editor/styles.css` only in an app that doesn't load BL UI's stylesheet |
+
+Remove the two packages from your `package.json` and rename the imports; a search and replace of `@brett_lamy/docstream` with `@brett_lamy/ui/docstream` does all of it (it turns `@brett_lamy/docstream-editor` into `@brett_lamy/ui/docstream-editor` too). Keep importing docstream's stylesheet once at your app's entry if you render Markdown, replays or Strudel: `import '@brett_lamy/ui/docstream/styles.css'`. Docstream's optional peers are the library's optional peers now: `@agent-wasm/core` (the `/playground` entry), `@brett_lamy/viz-engine` (`/viz`), `vite` (`/vite`) and `xstate` (the ` ```xstate ` fence, loaded when one is drawn).
+
+With the registry, docstream isn't copied: an item built on it (`markdown-view`, `markdown-editor`, `composer`, `replay-preview`, `tui-preview`, `stl-viewer`, `strudel-player`, and blocks such as Apple Notes or Replay Canvas) imports `@brett_lamy/ui/docstream…` and adds `@brett_lamy/ui` to your dependencies, where it used to add `@brett_lamy/docstream`.
 
 ## Changes that apply everywhere
 
@@ -426,14 +443,14 @@ Where two components did one job, 6.0 keeps one and folds the other into it as a
 | `useWorkbenchAppearance()`, `WorkbenchAppearanceProvider` | `useScopeAppearance('workbench')` or `useThemeScope()?.appearance`; a `ThemeScope` publishes its scope | |
 | `code-editor-window` (component) | `lib/code-editor-window` | CodeEditor's private renderer |
 | `FbMd`, `HlPre`, `hlTokens`, `DocstreamRefContext`, `DocstreamRefContextValue` (in `markdown-view`) | removed | |
-| `replay-preview`: `formatReplayTime`, `ReplayStage`, `preloadReplayStage`, `getReplayMarkers`, `getReplayMeta`, `getReplayPointerTrack`, `replayPointerAt`, `getReplayDevtools`, `replayDevtoolsAt`, `getReplayInspections`, `resolveReplayInspections`, `replayInspectionAt`, `replayDemoEvents` and their types | `@brett_lamy/docstream/replay` (`replayDemoEvents` from `@brett_lamy/docstream/replay/demo`) | the kit keeps `ReplayPreview` and the props, handle and data types |
-| `tui-preview`: `TuiEmbed`, `DEFAULT_TUI_RUNTIME_URL`, `isTuiCodeBlock` | `@brett_lamy/docstream/tui` | the kit keeps `TuiPreview` |
+| `replay-preview`: `formatReplayTime`, `ReplayStage`, `preloadReplayStage`, `getReplayMarkers`, `getReplayMeta`, `getReplayPointerTrack`, `replayPointerAt`, `getReplayDevtools`, `replayDevtoolsAt`, `getReplayInspections`, `resolveReplayInspections`, `replayInspectionAt`, `replayDemoEvents` and their types | `@brett_lamy/ui/docstream/replay` (`replayDemoEvents` from `@brett_lamy/ui/docstream/replay/demo`) | the kit keeps `ReplayPreview` and the props, handle and data types |
+| `tui-preview`: `TuiEmbed`, `DEFAULT_TUI_RUNTIME_URL`, `isTuiCodeBlock` | `@brett_lamy/ui/docstream/tui` | the kit keeps `TuiPreview` |
 | `TuiPreview` `isStreaming`, `onStatusChange`, `theme={{ mode: 'light', … }}` for a light terminal | `streaming`, `onStateChange`, `appearance` (`auto` by default: the terminal follows the page or ThemeScope; `theme` only overrides colors) | Docstream 2.0.1; the old names still work there, deprecated. **The default look changes on light pages**: pass `appearance="dark"` for the black terminal |
 | `StrudelPlayer` `showCode`, `showRack`; `onCodeChange(code)`; `StrudelRack` `code` / `onChange`; `Knob` / `Fader` `onChange` | `defaultCodeOpen` / `codeOpen` / `onCodeOpenChange`, `defaultRackOpen` / `rackOpen` / `onRackOpenChange`; `onCodeChange(code, details)`; `value` / `onValueChange(code, details)`; `onValueChange(value, details)` | Docstream 2.0.1; the old names still work there, deprecated |
-| `strudel-rack`: `StrudelRack`, `RackGrid`, `StepGrid`, `Knob`, `Fader`, `STRUDEL_PARAMS`, `trackName` (+ types) | `@brett_lamy/docstream/strudel` | one page, [Strudel](https://blamy.github.io/ui/#/strudel) |
-| `strudel-syntax`: `parseStrudel`, `parseMini`, `miniAtoms`, `miniLayers`, `chainCalls`, `findCall`, `applyEdits`, `formatNumber`, `setArg`, `setMethod`, `removeMethod`, `setTempo`, `setMiniAtom`, `setMiniSource`, `mixCode`, `isAudible`, `StrudelSyntaxError`, `MiniSyntaxError`, `CodeEdit`, the `Strudel*` and `Mini*` syntax types | `@brett_lamy/docstream/strudel` | `StrudelTrackKind` is docstream's `TrackKind` |
-| `strudel-player`: `DEFAULT_SAMPLES`, `strudelNow`, `StrudelPattern`, `StrudelHap` | `@brett_lamy/docstream/strudel` | the kit keeps `StrudelPlayer`, `playStrudel`, `stopStrudel`, `updateStrudel`, `subscribeStrudel`, `getStrudelSnapshot` |
-| `stl-viewer`: `parseStl`, `isStlUrl`, `StlMesh` | `@brett_lamy/docstream/stl` | the kit keeps `StlViewer` |
+| `strudel-rack`: `StrudelRack`, `RackGrid`, `StepGrid`, `Knob`, `Fader`, `STRUDEL_PARAMS`, `trackName` (+ types) | `@brett_lamy/ui/docstream/strudel` | one page, [Strudel](https://blamy.github.io/ui/#/strudel) |
+| `strudel-syntax`: `parseStrudel`, `parseMini`, `miniAtoms`, `miniLayers`, `chainCalls`, `findCall`, `applyEdits`, `formatNumber`, `setArg`, `setMethod`, `removeMethod`, `setTempo`, `setMiniAtom`, `setMiniSource`, `mixCode`, `isAudible`, `StrudelSyntaxError`, `MiniSyntaxError`, `CodeEdit`, the `Strudel*` and `Mini*` syntax types | `@brett_lamy/ui/docstream/strudel` | `StrudelTrackKind` is docstream's `TrackKind` |
+| `strudel-player`: `DEFAULT_SAMPLES`, `strudelNow`, `StrudelPattern`, `StrudelHap` | `@brett_lamy/ui/docstream/strudel` | the kit keeps `StrudelPlayer`, `playStrudel`, `stopStrudel`, `updateStrudel`, `subscribeStrudel`, `getStrudelSnapshot` |
+| `stl-viewer`: `parseStl`, `isStlUrl`, `StlMesh` | `@brett_lamy/ui/docstream/stl` | the kit keeps `StlViewer` |
 | Terminal `size="md"` | `size="default"` | |
 | MarkdownEditor `invalid`; `onKeyDown`, `onPaste`; `contentClassName` | a `Field`; `handleKeyDown`, `handlePaste` (ProseMirror's); `classNames.content` | `onFocus` / `onBlur` get the event |
 | CodeEditor `contentClassName`; `onLineNumberClick`, `lineNumberClickable`, `lineNumberLabel`, `lineNumberTitle`; `scrollToLine` prop | `<CodeEditorContent className>`; `lineNumbers={{ onClick, clickable, label, title, side }}` (`CodeEditorLineNumbers`); `revealLine` | **care**. The handle keeps `scrollToLine()` |
@@ -524,7 +541,7 @@ Where two components did one job, 6.0 keeps one and folds the other into it as a
 | `chromeStore.set(hidden)` | `setChromeHidden(hidden)` | on the root, beside `useChromeHidden` |
 | `@brett_lamy/ui/composer/composer-files`; `useComposerInternals`, `ComposerOutlet` from `@brett_lamy/ui/composer/composer`; `CalendarMonthsContext` (calendar), `useInMessageScroller` (message-scroller), `useImageAnnotatorEngine` (pencilkit/image-annotator) | internal: no npm entry (`@/components/ui/composer/composer-files`, `composer/composer-context`, `@/lib/calendar-months`, `@/lib/message-scroller-context`, `@/components/ui/pencilkit/annotator-engine` in a registry install) | the kit's wiring between its own modules |
 
-A component's props and data types follow it: `ComboBoxProps`, `ComboBoxInputProps` and `ComboBoxContentProps` are `ComboboxProps`, `ComboboxInputGroupProps` and `ComboboxContentProps`; `ListBoxSectionProps` and `DropdownMenuSectionProps` have no counterpart (a group takes UI SDK's props); `DateRangePickerProps` and `DateRangePickerContentProps` are `DatePickerProps` and `DatePickerContentProps`; `CalendarCellProps`, `ColorAreaProps`, `ColorSliderProps`, `ColorThumbProps`, `ColorSwatchPickerProps` and `ColorSwatchPickerItemProps` are the props of the parts that replace them (`ComponentProps<typeof CalendarDay>` and so on); `ColorFieldGroupProps` is `ColorPickerInputGroupProps`; `CommandInputProps`, `CommandListProps`, `CommandGroupProps`, `CommandItemProps`, `CommandPageProps` and `CommandFooterProps` are the `CommandMenu…Props` of the same part; `FileItemProps` and `FileListProps` are `FileUploadItemProps` and `FileUploadListProps`; `ToolPickerProps`, `InkPickerProps` and `WidthPickerProps` are `PencilToolPickerProps`, `PencilInkPickerProps` and `PencilWidthPickerProps`; `PencilToolButtonProps` is `ToolbarButtonProps`; `PlaybackControlsProps` and `PlaybackTimecodeProps` are `VideoPreviewControlsProps` and `VideoPreviewTimecodeProps`; `ComposerFabProps` and `ComposerOutletProps` are not public; `SyntaxHighlightingProps`, `SyntaxHighlightingTitle`, `SyntaxHighlightingContent`, `SyntaxHighlightingContentProps`, `SyntaxHighlightingCopyButton` and `SyntaxHighlightingCopyButtonProps` are CodeEditor's (see [Other components](#other-components)). The Docstream types the kit no longer re-exports come from `@brett_lamy/docstream`: `ReplayMeta`, `ReplayPointerTrack`, `ReplayConsoleEntry`, `ReplayConsoleLevel`, `ReplayDevtoolsState`, `ReplayRequest`, `ReplayStageHandle`, `ReplayStageLayout`, `ReplayStageProps` from `/replay`; `StrudelRackProps`, `RackGridProps`, `StepGridProps`, `ControlProps`, `GridItem`, `GridLayout`, `StrudelArg`, `StrudelCall`, `StrudelChain`, `StrudelMix`, `StrudelSong`, `StrudelTempo`, `StrudelTrack`, `MiniNode`, `MiniAtom`, `MiniGroup`, `MiniLayers`, `MiniAlternation`, `MiniPolymeter`, `MiniSequence`, `MiniSlice`, `MiniStep`, `MiniSubcycle`, `MiniOp` from `/strudel`.
+A component's props and data types follow it: `ComboBoxProps`, `ComboBoxInputProps` and `ComboBoxContentProps` are `ComboboxProps`, `ComboboxInputGroupProps` and `ComboboxContentProps`; `ListBoxSectionProps` and `DropdownMenuSectionProps` have no counterpart (a group takes UI SDK's props); `DateRangePickerProps` and `DateRangePickerContentProps` are `DatePickerProps` and `DatePickerContentProps`; `CalendarCellProps`, `ColorAreaProps`, `ColorSliderProps`, `ColorThumbProps`, `ColorSwatchPickerProps` and `ColorSwatchPickerItemProps` are the props of the parts that replace them (`ComponentProps<typeof CalendarDay>` and so on); `ColorFieldGroupProps` is `ColorPickerInputGroupProps`; `CommandInputProps`, `CommandListProps`, `CommandGroupProps`, `CommandItemProps`, `CommandPageProps` and `CommandFooterProps` are the `CommandMenu…Props` of the same part; `FileItemProps` and `FileListProps` are `FileUploadItemProps` and `FileUploadListProps`; `ToolPickerProps`, `InkPickerProps` and `WidthPickerProps` are `PencilToolPickerProps`, `PencilInkPickerProps` and `PencilWidthPickerProps`; `PencilToolButtonProps` is `ToolbarButtonProps`; `PlaybackControlsProps` and `PlaybackTimecodeProps` are `VideoPreviewControlsProps` and `VideoPreviewTimecodeProps`; `ComposerFabProps` and `ComposerOutletProps` are not public; `SyntaxHighlightingProps`, `SyntaxHighlightingTitle`, `SyntaxHighlightingContent`, `SyntaxHighlightingContentProps`, `SyntaxHighlightingCopyButton` and `SyntaxHighlightingCopyButtonProps` are CodeEditor's (see [Other components](#other-components)). The Docstream types the kit no longer re-exports come from `@brett_lamy/ui/docstream`: `ReplayMeta`, `ReplayPointerTrack`, `ReplayConsoleEntry`, `ReplayConsoleLevel`, `ReplayDevtoolsState`, `ReplayRequest`, `ReplayStageHandle`, `ReplayStageLayout`, `ReplayStageProps` from `/replay`; `StrudelRackProps`, `RackGridProps`, `StepGridProps`, `ControlProps`, `GridItem`, `GridLayout`, `StrudelArg`, `StrudelCall`, `StrudelChain`, `StrudelMix`, `StrudelSong`, `StrudelTempo`, `StrudelTrack`, `MiniNode`, `MiniAtom`, `MiniGroup`, `MiniLayers`, `MiniAlternation`, `MiniPolymeter`, `MiniSequence`, `MiniSlice`, `MiniStep`, `MiniSubcycle`, `MiniOp` from `/strudel`.
 
 ### Before and after for the ones that need care
 
@@ -2415,7 +2432,7 @@ The Composer's parts are the kit's own now: its buttons are the kit's `Button`, 
 | `open-code` | `height` (a number), `theme: 'light' \| 'dark'`, `rounded-none border-0` to drop the card | size it with a class (`className="h-[620px]"`), `appearance` (default: the nearest ThemeScope's), `variant="plain"` (`openCodeVariants`) |
 | `workbench-theme` | `<WorkbenchTheme appearance tint>`, `useWorkbenchAppearance()`, `WorkbenchAppearanceProvider` | `<ThemeScope scope="workbench" appearance tint>` (its popups wear the scope too), `useScopeAppearance('workbench')` or `useThemeScope()?.appearance` |
 | `markdown-view` | `FbMd`, `HlPre`, `hlTokens`, `DocstreamRefContext` | removed. `MarkdownView` takes its root's `div` props and `ref`, and writes `data-streaming` |
-| `replay-preview`, `tui-preview`, `stl-viewer`, `strudel-player` | the parsers, helpers and demo data of each Docstream widget, re-exported by the kit (`parseStl`, `isTuiCodeBlock`, `getReplayMarkers`, `parseStrudel`…), and the `strudel-rack` and `strudel-syntax` modules | one thin module per widget that re-exports the component, its props and handle types and the functions that drive it; import the rest from `@brett_lamy/docstream/replay`, `/tui`, `/stl` and `/strudel` (see [the table above](#components-that-merged-moved-or-were-renamed)) |
+| `replay-preview`, `tui-preview`, `stl-viewer`, `strudel-player` | the parsers, helpers and demo data of each Docstream widget, re-exported by the kit (`parseStl`, `isTuiCodeBlock`, `getReplayMarkers`, `parseStrudel`…), and the `strudel-rack` and `strudel-syntax` modules | one thin module per widget that re-exports the component, its props and handle types and the functions that drive it; import the rest from `@brett_lamy/ui/docstream/replay`, `/tui`, `/stl` and `/strudel` (see [the table above](#components-that-merged-moved-or-were-renamed)) |
 
 ```tsx
 // 5.x
@@ -2499,3 +2516,55 @@ const [canvas] = useState(() => createCanvasController())
 | Video timeline, Waveform, PencilKit | Red playhead (`destructive`); `muted` waveform barely lighter; black and white inks fixed | The `--color-playhead` token (still red by default); a compact 56px track header in a narrow container; `muted` is visibly lighter; Black and White inks follow the theme |
 
 Popups opened inside a `BLProvider` (or any layer host) stay inside it, as before, and a popup presented as a sheet now dims only that host.
+
+## Diagram, DiagramFrame and StateDiagram
+
+Diagram, DiagramFrame and StateDiagram are new in 6.0. An app built on the preview branch (5.17) changes these:
+
+| Before | After |
+| --- | --- |
+| Diagram `onChange({ nodes, edges, reason })` | `onDataChange(data, details)`: `data` is `{ nodes, edges }`, `details.reason` the same reasons, and `details.cancel()` refuses a change (not passing it back still works when controlled) |
+| type `DiagramChange` | `DiagramData`, `DiagramDataChangeDetails`, `DiagramDataChangeReason` |
+| `onSelectionChange(selection)` | `onSelectionChange(selection, details)` |
+| `lit` | `current` (writes `aria-current` and `data-current`; the ring is `diagram-current`, was `diagram-lit`) |
+| `onActivate(item)` | `onAction(item, details)`, `details.reason` `enter-key` or `double-click` |
+| type `DiagramFocus`, `DiagramFocusContext`, `DiagramFocusStep` | `DiagramItem`, `DiagramStepContext`, `DiagramStep` |
+| `camera` / `defaultCamera` / `onCameraChange`, `{ x, y, z }` | `viewport` / `defaultViewport` / `onViewportChange(viewport, details)`, `{ x, y, zoom }` |
+| `cameraToShow` | `viewportToShow`, and `fitViewport` |
+| `cursor` | `className="cursor-…"` |
+| `minimap={{ position }}` | `minimap={{ side, align }}` |
+| The canvas named by `aria-label` | The diagram is a `group` named by `aria-label`; its board is "<name> board" |
+| — | `controller` (`createDiagramController`), `useDiagram`, `DiagramToolbar`, `emptyState`, `loading`, `undoable` |
+| `direction: 'RIGHT' \| 'DOWN' \| …` (useDiagramLayout, StateDiagram) | `'right' \| 'down' \| 'left' \| 'up'` |
+| `<DiagramFrame host size title panel status cover onBoardKeyDown>{(bar) => …}</DiagramFrame>` | Flat parts: `DiagramFrame`, `DiagramFrameBoard` (takes `onKeyDown`, and a `ref` for a layout's `host`), `DiagramFrameBar` (the status), `DiagramFramePanel` (`title`), `DiagramFrameCover`, `DiagramFrameTrigger`, `useDiagramFrame` |
+| `DiagramPanelSection`, `DiagramPanelField({ slot, onCommit })` | `DiagramFrameSection`, `DiagramFrameInput({ onValueCommit })` |
+| `PANEL_BESIDE_FROM` (560) | `breakpoints` (`{ medium: 440, regular: 720 }`) |
+| A Credenza tray under the board at a phone's size | AdaptivePane: a column, a drawer that doesn't dim the board, or a page pushed over it |
+| StateDiagram `initial` | `layout` |
+| StateDiagram `defaultPanelOpen` | `panelOpen` / `defaultPanelOpen` / `onPanelOpenChange`, and `panelPresentation` |
+| StateDiagram `data-slot="simulation-event"`, `edit-undo`… on buttons | `data-action="send"`, `undo`…; fields `data-field="name"`, `event`, `guard` |
+| The panel's Segmented between Edit and Run | Tabs (`TabsList`, `TabsTab`, `TabsPanel keepMounted`) |
+
+## CloudflareDiagram and Cloudflare Studio
+
+CloudflareDiagram, its catalog and the Cloudflare Studio block are new in 6.0. An app built on the preview branch (`@brett_lamy/ui/cloudflare` at 5.17) changes these:
+
+| Before | After |
+| --- | --- |
+| `onChange({ services, edges, reason })` | `onDataChange(system, details)`: the system is `{ services, edges }`, `details.reason` adds `add` (the search) beside `edit`, and `details.cancel()` refuses a change |
+| `services` required, controlled only | `services` / `edges` (controlled) or `defaultServices` / `defaultEdges` |
+| `defaultSelection` only | `selection` / `defaultSelection` / `onSelectionChange(selection, details)` |
+| `defaultPanelOpen` | `panelOpen` / `defaultPanelOpen` / `onPanelOpenChange`, and `panelPresentation` (`column`, `drawer`, `push`, from the frame's own size class) |
+| `defaultMachine` | `openMachine` / `defaultOpenMachine` / `onOpenMachineChange(id, details)` |
+| `direction: 'RIGHT' \| 'DOWN' \| …` | `direction: 'right' \| 'down' \| 'left' \| 'up'` |
+| `camera` / `defaultCamera` / `onCameraChange` | `viewport` / `defaultViewport` / `onViewportChange`, as on Diagram |
+| `panelExtra` | `children`: what's at the top of the panel |
+| — | `emptyState` (an `EmptyState` by default) |
+| The panel's Undo / Redo buttons | Undo and redo in the toolbar over the board, beside zoom and fit |
+| A tray under the board at a phone's size | A page pushed over the board, with a back button (DiagramFrame on AdaptivePane) |
+| The catalog search, a SearchField and a ListBox | A Combobox; also exported as `CloudflareServiceSearch` (`onAction(product, details)`) |
+| `data-slot="cloudflare-delete"`, `cloudflare-undo`, `cloudflare-machine-open`… on buttons | `data-action="delete"`, `undo`, `open-machine`…: kit parts keep their own `data-slot` |
+| `[data-slot=cloudflare-label] input` and the other panel fields | `[data-field=label]`, `binding-name`, `events` |
+| `data-slot="cloudflare-service-machine"` | `data-part="machine"` (a Badge) |
+
+The block's export is a Dialog (a sheet at a phone's size), and its buttons are `data-action="new"`, `open`, `export`, `download`, `download-all`.

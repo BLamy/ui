@@ -26,7 +26,7 @@ import { StlViewer } from '@brett_lamy/ui/stl-viewer'
 {% endtabs %}
 
 {% hint style="info" %}
-`StlViewer` lives in [`@brett_lamy/docstream`](https://github.com/BLamy/docstream) (`@brett_lamy/docstream/stl`), where `{% embed url="part.stl" %}` renders it. The registry item adds that package and a one-line module that re-exports the viewer and its props type. The mesh reader below comes straight from `@brett_lamy/docstream/stl`.
+`StlViewer` lives in docstream, the library's Markdown renderer (`@brett_lamy/ui/docstream/stl`), where `{% embed url="part.stl" %}` renders it. Docstream isn't copied by the registry: the registry item adds `@brett_lamy/ui` for it, and a one-line module that re-exports the viewer and its props type. The mesh reader below comes straight from `@brett_lamy/ui/docstream/stl`.
 {% endhint %}
 
 ## A model by URL
@@ -57,7 +57,7 @@ Any docstream page embeds a model the same way. A relative path resolves against
 ```
 
 ```tsx
-import { AssetResolverProvider } from '@brett_lamy/docstream'
+import { AssetResolverProvider } from '@brett_lamy/ui/docstream'
 
 <AssetResolverProvider resolve={(url) => blobUrlFor(url)}>{document}</AssetResolverProvider>
 ```
@@ -71,7 +71,7 @@ import { AssetResolverProvider } from '@brett_lamy/docstream'
 {% demo src="stl-viewer/mesh" %}
 
 ```tsx
-import { parseStl, isStlUrl } from '@brett_lamy/docstream/stl'
+import { parseStl, isStlUrl } from '@brett_lamy/ui/docstream/stl'
 
 const mesh = parseStl(await (await fetch(url)).arrayBuffer())
 mesh.triangles        // 5040

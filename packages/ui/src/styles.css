@@ -10,10 +10,14 @@
 /* The Docstream editor's sheet (MarkdownEditor, Composer), layered under the kit's own editor rules and every
    utility, so a host restyles the editor with plain classes — no !important. Imported here rather than from
    JavaScript: an unlayered copy anywhere would outrank every layer. */
-@import "@brett_lamy/docstream-editor/styles.css" layer(components.bl-editor);
+@import "./docstream-editor/styles.css" layer(components.bl-editor);
 /* wterm's sheet, for the same reason: Terminal themes it from its recipe, with wterm's custom properties and plain classes. */
 @import "@wterm/dom/css" layer(components.bl-terminal);
 @source "./";
+/* Docstream and its editor style themselves with their own sheets (.docs-*, .gb-*), and their test fixtures hold whole
+   docs pages of sample class names: none of it is utilities. */
+@source not "./docstream";
+@source not "./docstream-editor";
 
 /* Box sizing, scoped to the kit. There is no preflight (see above), so a host without Tailwind's would leave
    every part content-box and padded full-width parts would overflow (a 46px ListRow grew to 60px). Every part

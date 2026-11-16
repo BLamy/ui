@@ -25,7 +25,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join, relative, resolve } from 'node:path';
 import postcss from 'postcss';
 import ts from 'typescript';
-import { ROOT, SRC, buildGraph, importsOf, resolveModule, npmVersion, moduleExports } from './graph.mjs';
+import { ROOT, SRC, buildGraph, importsOf, isDocstreamSpecifier, resolveModule, npmVersion, moduleExports } from './graph.mjs';
 import { packageModules, withPackageExports } from './package-exports.mjs';
 
 const args = process.argv.slice(2);
@@ -272,6 +272,8 @@ const blockItems = readdirSync(join(ROOT, BLOCKS_DIR), { withFileTypes: true })
           }
           else if (spec.startsWith('@/components/ui/') || spec.startsWith('@/lib/')) errors.push(`${path}: "${spec}" is not a library module`);
           else if (spec.startsWith('@/')) errors.push(`${path}: "${spec}" — blocks import library parts by @/components/ui/… or @/lib/…, and other blocks' entries by ../<slug>/page`);
+          // Docstream is part of the library but not copied: a block imports it by the package's name, `@brett_lamy/ui` in its meta.json.
+          else if ((spec === '@brett_lamy/ui' || spec.startsWith('@brett_lamy/ui/')) && !isDocstreamSpecifier(spec)) errors.push(`${path}: "${spec}" — blocks import the library's parts by @/components/ui/… or @/lib/…; only its docstream entries (@brett_lamy/ui/docstream…) by name`);
           else if (!(spec === 'react' || spec.startsWith('react/') || isOwnFile(f, spec) || (meta.dependencies || []).some((d) => spec === d || spec.startsWith(d + '/')))) {
             errors.push(`${path}: imports "${spec}" — blocks may import only react, @/components/ui/…, @/lib/…, their own files, other blocks' entries (../<slug>/page) and meta.dependencies`);
           }

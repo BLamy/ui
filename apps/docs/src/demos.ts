@@ -1,7 +1,7 @@
 /* The demo resolver: `{% demo src="<page>/<example>" %}` → apps/docs/examples/<page>/<example>/ (entry index.tsx),
    `{% demo src="blocks/<slug>" %}` → registry/blocks/<slug>/ (entry page.tsx). What renders and what readers see are
    the same files. `?demo=<src>` renders one demo alone (main.tsx). */
-import { createGlobDemoResolver, demoHref, type DemoMeta, type DemoResolver } from '@brett_lamy/docstream';
+import { createGlobDemoResolver, demoHref, type DemoMeta, type DemoResolver } from '@brett_lamy/ui/docstream';
 import { themed } from './demo-theme';
 
 const href: DemoResolver['href'] = (src, options) =>

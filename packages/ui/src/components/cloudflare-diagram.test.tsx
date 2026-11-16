@@ -9,7 +9,7 @@ describe('CloudflareDiagram, on a server', () => {
   it('says which have a machine, and draws what’s wrong as wrong', () => {
     const machine = { initial: 'a', states: { a: { on: { HELLO: 'a' } } } };
     const html = renderToString(<CloudflareDiagram services={[placed[0]!, { ...placed[1]!, machine }, { id: 'gone-to', kind: 'not-in-the-catalog', at: { x: 0, y: 300 } }]} edges={[{ id: 'bad', from: 'r', to: 'w', via: 'r2_buckets' }, { id: 'dangling', from: 'w', to: 'nowhere', via: 'r2_buckets', binding: 'X' }]} />);
-    expect(html.match(/data-slot="cloudflare-service-machine"/g)).toHaveLength(1);
+    expect(html.match(/data-part="machine"/g)).toHaveLength(1);
     expect(html).toContain('data-slot="diagram-edge" data-edge="bad" data-kind="problem"');
     // It has nowhere to go, so it isn't drawn, and it's said.
     expect(html).not.toContain('data-slot="diagram-edge" data-edge="dangling"');

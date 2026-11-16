@@ -3,7 +3,7 @@
 BL UI is built on other people's open-source work. This page lists the third-party libraries the components, blocks and docs use, what each one does here, and its license. Versions are the ones this release pins. Each project's own license text ships with its npm package, and the links go to the projects.
 
 {% hint style="info" %}
-Most of these are MIT, ISC, BSD or Apache-2.0. Two need a closer look before you ship them in a closed-source app. **Strudel** (`@strudel/web`, used by docstream's Strudel player and the Strudel Studio and Apple Music blocks) is **AGPL-3.0-or-later**. **FFmpeg** (the video tools' WebAssembly build) is **LGPL-2.1+**.
+Most of these are MIT, ISC, BSD or Apache-2.0. Three need a closer look before you ship them in a closed-source app. **Strudel** (`@strudel/web`, used by docstream's Strudel player and the Strudel Studio and Apple Music blocks) is **AGPL-3.0-or-later**. **FFmpeg** (the video tools' WebAssembly build) is **LGPL-2.1+**. **ELK** (`elkjs`, which lays out diagrams, and is only installed if you ask for that) is **EPL-2.0 OR GPL-3.0-or-later**.
 {% endhint %}
 
 ## Foundations
@@ -35,8 +35,10 @@ UI SDK is licensed under the [Apache License 2.0](https://www.apache.org/license
 
 | Library | Used for | License |
 | --- | --- | --- |
-| [Docstream](https://github.com/BLamy/docstream) and Docstream Editor (`@brett_lamy/docstream`, `@brett_lamy/docstream-editor`) | MarkdownView, MarkdownEditor and the docs site itself. These are BL UI's sibling projects, and they bring the libraries below. | — |
+| Docstream and Docstream Editor (`@brett_lamy/ui/docstream`, `@brett_lamy/ui/docstream-editor`) | MarkdownView, MarkdownEditor and the docs site itself. Part of BL UI since 6.0 (before, the packages `@brett_lamy/docstream` and `@brett_lamy/docstream-editor`, from [BLamy/docstream](https://github.com/BLamy/docstream) and [BLamy/docstream-editor](https://github.com/BLamy/docstream-editor)); they bring the libraries below. | — |
 | [Pele](https://pele.run) by Obsidian | Mermaid diagrams, drawn as SVG | MIT |
+| [XState](https://stately.ai/docs/xstate) by Stately, an optional peer | Reading, simulating and editing state machines in StateDiagram | MIT |
+| [ELK](https://eclipse.dev/elk/) (`elkjs`) by the Eclipse Foundation, an optional peer | Laying out Diagram and StateDiagram, in a worker, when a layout's first asked for. An app with fixed positions never loads it | **EPL-2.0 OR GPL-3.0-or-later** |
 | [KaTeX](https://katex.org) | Math blocks | MIT |
 | [Tiptap](https://tiptap.dev) and [ProseMirror](https://prosemirror.net) | The rich-text editors | MIT |
 | [highlight.js](https://highlightjs.org) and [lowlight](https://github.com/wooorm/lowlight) | Code-block highlighting in the docs site's editor setup | BSD-3-Clause, MIT |
@@ -71,6 +73,19 @@ The STL viewer is Docstream's own WebGL code and has no third-party dependencies
 | [perfect-freehand](https://github.com/steveruizok/perfect-freehand) by Steve Ruiz | Pressure-sensitive strokes in the PencilKit sketch pad | MIT |
 | [agent-wasm](https://github.com/BLamy/agent-wasm) (`@agent-wasm/core`, `@agent-wasm/tailscale-connect`) | The in-browser Node sandbox behind live React demos (Docstream's playground), and the optional Tailscale connection in the Safari block | MIT, BSD-3-Clause |
 | [Google Fonts](https://fonts.google.com) | The font picker's catalog. Fonts load from Google's servers under each font's own license, mostly the SIL Open Font License. | Per font |
+| [jsonc-parser](https://github.com/microsoft/node-jsonc-parser) by Microsoft | Reading `wrangler.jsonc` with its comments, so writing to it changes only what changed. Only `@brett_lamy/ui/cloudflare` reaches it | MIT |
+
+## Data
+
+The Cloudflare catalog, in `@brett_lamy/ui/cloudflare`, is generated from these by `tools/cloudflare/catalog.mjs`, each pinned to an exact version. It's about 150 KB, or 26 KB gzipped, and only an app that imports that entry gets it.
+
+| Source | Used for | License |
+| --- | --- | --- |
+| [Cloudflare's docs](https://github.com/cloudflare/cloudflare-docs) (`cloudflare/cloudflare-docs` at `5c2ac2bf064c`), © Cloudflare, Inc. and contributors | Product names, URLs, groups and descriptions, copied unchanged, and event names. Each product's class and parent are added here | [CC-BY-4.0](https://creativecommons.org/licenses/by/4.0/) |
+| [Wrangler](https://github.com/cloudflare/workers-sdk) 4.157.0's `config-schema.json` and type generator | Binding keys, their fields, and which runtime type each has | MIT OR Apache-2.0 |
+| [`@cloudflare/workers-types`](https://github.com/cloudflare/workerd) 5.20261104.1 | Each runtime type's methods, and the handlers a Worker can export | MIT OR Apache-2.0 |
+
+Cloudflare's names are used in words, to say which of their products a thing is. Cloudflare is a trademark of Cloudflare, Inc., which doesn't endorse this library, and none of its logos are in it.
 
 ## Design references
 

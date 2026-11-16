@@ -11,7 +11,8 @@ import { PencilCanvas } from '@/components/ui/pencilkit/pencil-canvas';
 import { Canvas, CanvasFrame, CanvasGuides, CanvasHandles, CanvasMarquee, CanvasMiniMap, type CanvasController, type CanvasPointerInfo, type CanvasViewportChangeDetails } from '@/components/ui/canvas';
 import { HoverCard, HoverCardContent, createHoverCardController } from '@/components/ui/hover-card';
 import { dist, handleCursor, intersects, rectOf, resizeFrame, rotateFrame, snapMove, toScreen, unionRect, type Guide, type Viewport, type HandleId, type Pt, type Rect } from '@/lib/canvas-math';
-import { anchorPoint, boundsOf, connectorGeometry, hitItem, nearestAnchor, strokeFrame } from './geometry';
+import { anchorPoint, nearestAnchor } from '@/lib/diagram-model';
+import { boundsOf, connectorGeometry, hitItem, strokeFrame } from './geometry';
 import { moveItem, scaleItem, selectionFrame } from './handles';
 import { Connector, ItemPreview, ItemView } from './items';
 import { hasFrame, isAttached, isBox, makeConnector, type ConnectorEnd, type ConnectorItem, type Item, type StrokeItem } from './model';
@@ -118,7 +119,7 @@ export function BoardSurface({ viewport, onViewportChange, controller, tool, set
   };
 
   const endAt = (p: Pt, exclude?: string): { end: ConnectorEnd; anchor: ReturnType<typeof nearestAnchor> } => {
-    const a = nearestAnchor(p, items, 30 / z, exclude);
+    const a = nearestAnchor(p, items.filter(isBox), 30 / z, exclude);
     return { end: a ? { id: a.id, side: a.side } : { x: p.x, y: p.y }, anchor: a };
   };
 
@@ -183,7 +184,7 @@ export function BoardSurface({ viewport, onViewportChange, controller, tool, set
         if (h) cursor = handleCursor(h.id, sel.frame?.rot ?? 0);
         else { const it = hitAt(p); if (it && selection.includes(it.id)) cursor = 'move'; }
       }
-      const anchors = tool === 'connector' ? nearestAnchor(p, items, 30 / z) : null;
+      const anchors = tool === 'connector' ? nearestAnchor(p, items.filter(isBox), 30 / z) : null;
       setUi((u) => (u.cursor === cursor && u.anchors?.id === anchors?.id ? u : { ...u, cursor, anchors: anchors ? { id: anchors.id, side: anchors.side } : null }));
       const over = tool === 'select' && !editing ? hitAt(p) : null;
       const peekable = over && (over.kind === 'image' || over.kind === 'link') ? over.id : null;
