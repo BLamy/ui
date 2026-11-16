@@ -14,17 +14,17 @@ By the end of this page you'll have the editor writing Markdown and docstream re
 {% step %}
 ### Install the editor and its peers
 
-{% command %}npm install @brett_lamy/ui/docstream-editor @tiptap/core @tiptap/extension-code @tiptap/extension-code-block @tiptap/extension-list @tiptap/extension-placeholder @tiptap/extension-table @tiptap/pm @tiptap/react @tiptap/starter-kit @tiptap/suggestion{% endcommand %}
+{% command %}npm install @brett_lamy/docstream-editor @tiptap/core @tiptap/extension-code @tiptap/extension-code-block @tiptap/extension-list @tiptap/extension-placeholder @tiptap/extension-table @tiptap/pm @tiptap/react @tiptap/starter-kit @ui-sdk/core @ui-sdk/react{% endcommand %}
 
-React and the Tiptap packages are peers. `@brett_lamy/ui/docstream` installs with the editor, at the same version. The peer table is in [Installation](01-installation.md).
+React and the Tiptap packages are peers. `@brett_lamy/docstream` installs with the editor, at the same version. The peer table is in [Installation](01-installation.md).
 {% endstep %}
 
 {% step %}
 ### Import both stylesheets once
 
 ```tsx title="main.tsx" lineNumbers="false"
-import "@brett_lamy/ui/docstream/styles.css"
-import "@brett_lamy/ui/docstream-editor/styles.css"
+import "@brett_lamy/docstream/styles.css"
+import "@brett_lamy/docstream-editor/styles.css"
 ```
 
 docstream's stylesheet covers the renderer pieces the editor reuses (demo previews, command boxes, diagrams). The editor's covers its own chrome. Both read your theme's `--card` / `--border` / `--primary` tokens when you have them.
@@ -37,7 +37,7 @@ docstream's stylesheet covers the renderer pieces the editor reuses (demo previe
 
 ```tsx title="EditorPage.tsx"
 import { useState } from "react"
-import { GitbookEditor } from "@brett_lamy/ui/docstream-editor"
+import { GitbookEditor } from "@brett_lamy/docstream-editor"
 
 const initial = `# Getting started
 
@@ -63,7 +63,7 @@ You can also leave out `markdown` for an uncontrolled editor that starts empty. 
 The renderer takes the same string. No conversion step in between:
 
 ```tsx title="EditorPage.tsx"
-import { MarkdownContent } from "@brett_lamy/ui/docstream"
+import { MarkdownContent } from "@brett_lamy/docstream"
 
 export function EditorPage() {
   const [markdown, setMarkdown] = useState(initial)

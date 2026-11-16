@@ -17,7 +17,7 @@ describe("native task state editing", () => {
     const element = document.createElement("div"); document.body.append(element)
     let editor: Editor
     await act(async () => { editor = new Editor({ element, extensions: createGitbookExtensions({ slashMenu: false, references: false }), content: astToTiptap(parseMarkdown("- [~] Review\n")) }) })
-    const checkbox = () => element.querySelector<HTMLInputElement>('input[type="checkbox"]')!
+    const checkbox = () => element.querySelector<HTMLElement>('[role="checkbox"]')!
     const markdown = () => serializeEditorMarkdown(tiptapToAst(editor!.getJSON() as PMNode))
     await act(async () => { checkbox().click() })
     expect(markdown()).toBe("- [ ] Review\n")
@@ -25,7 +25,7 @@ describe("native task state editing", () => {
     expect(markdown()).toBe("- [x] Review\n")
     await act(async () => { checkbox().dispatchEvent(new MouseEvent("contextmenu", { bubbles: true, cancelable: true })) })
     expect(document.querySelectorAll('[role="menuitemradio"] [data-state-icon]')).toHaveLength(8)
-    await act(async () => { document.querySelector<HTMLButtonElement>('[role="menuitemradio"][data-state="blocked"]')!.click() })
+    await act(async () => { document.querySelector<HTMLElement>('[role="menuitemradio"][data-state="blocked"]')!.click() })
     expect(markdown()).toBe("- [b] Review\n")
     await act(async () => { editor!.commands.undo() })
     expect(markdown()).toBe("- [x] Review\n")

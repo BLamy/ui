@@ -37,7 +37,9 @@ export const GbTaskItem = TaskItem.extend({
     return ({ node: initial, getPos, editor, HTMLAttributes }) => {
       let node = initial
       const dom = document.createElement("li")
-      const label = document.createElement("label"); label.contentEditable = "false"
+      // A span, not TipTap's <label>: the checkbox is a UI SDK button and its state menu renders in
+      // place, so a label would turn every click in the menu into a checkbox toggle.
+      const label = document.createElement("span"); label.className = "gb-task-control"; label.contentEditable = "false"
       const content = document.createElement("div")
       dom.append(label, content)
       const root = createRoot(label)

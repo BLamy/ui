@@ -4,9 +4,9 @@ description: Install the editor with its Tiptap and React peers, import both sty
 
 # Installation
 
-The editor is one package, `@brett_lamy/ui/docstream-editor`. You install Tiptap and React yourself as peers, so your app keeps a single copy of each. docstream comes with it.
+The editor is one package, `@brett_lamy/docstream-editor`. You install Tiptap, UI SDK and React yourself as peers, so your app keeps a single copy of each. docstream comes with it.
 
-{% command %}npm install @brett_lamy/ui/docstream-editor @tiptap/core @tiptap/extension-code @tiptap/extension-code-block @tiptap/extension-list @tiptap/extension-placeholder @tiptap/extension-table @tiptap/pm @tiptap/react @tiptap/starter-kit @tiptap/suggestion react react-dom{% endcommand %}
+{% command %}npm install @brett_lamy/docstream-editor @tiptap/core @tiptap/extension-code @tiptap/extension-code-block @tiptap/extension-list @tiptap/extension-placeholder @tiptap/extension-table @tiptap/pm @tiptap/react @tiptap/starter-kit @ui-sdk/core @ui-sdk/react react react-dom{% endcommand %}
 
 {% hint style="info" %}
 The install runs no build or postinstall scripts, so `pnpm add` finishes without asking to approve any. The package ships compiled ES modules and `.d.ts` files, and needs no bundler configuration.
@@ -18,7 +18,8 @@ Every Tiptap peer is `^3.26.1`. All of them are required: `createGitbookExtensio
 
 | Peer | Range | What the editor uses it for |
 | --- | --- | --- |
-| `react`, `react-dom` | `>=18` | Everything that renders: the editor, its node views, its menus. |
+| `react`, `react-dom` | `>=19` | Everything that renders: the editor, its node views, its menus. |
+| `@ui-sdk/core`, `@ui-sdk/react` | `^0.1.0-beta.2` | The toolbar, the `/ @ # $` trigger menus, selects, tabs, checkboxes, popovers and dialogs. |
 | `@tiptap/core` | `^3.26.1` | `Node`, `Mark`, `Extension`, `getSchema`: the GitBook nodes and marks are built on it. |
 | `@tiptap/react` | `^3.26.1` | `useEditor`, `EditorContent` and the React node views (`ReactNodeViewRenderer`). |
 | `@tiptap/pm` | `^3.26.1` | ProseMirror: the schema, plugins, history (task-state changes close an undo step). |
@@ -28,15 +29,13 @@ Every Tiptap peer is `^3.26.1`. All of them are required: `createGitbookExtensio
 | `@tiptap/extension-list` | `^3.26.1` | `TaskList` and the base of `GbTaskItem` (eight task states). |
 | `@tiptap/extension-table` | `^3.26.1` | Tables; `GbTable` adds GitBook's `data-view` and GFM column alignment. |
 | `@tiptap/extension-placeholder` | `^3.26.1` | The empty-document placeholder. |
-| `@tiptap/suggestion` | `^3.26.1` | The `/` slash menu and the `@` / `#` / `$` reference pickers. |
 
 ### What installs with it
 
 | Dependency | Version | Why |
 | --- | --- | --- |
-| `@brett_lamy/ui/docstream` | `1.19.0` (exact) | The parser, the serializer, and every read-only piece the editor reuses: demo viewer, command box, Mermaid, KaTeX, OpenAPI, replays, 3D models, property sheet, task icons. |
+| `@brett_lamy/docstream` | `2.0.1` (exact) | The parser, the serializer, and every read-only piece the editor reuses: demo viewer, command box, Mermaid, KaTeX, OpenAPI, replays, 3D models, property sheet, task icons. |
 | `gpu-lexer` | `0.0.2` | Code-block highlighting, language-agnostic, on WebGPU. Without WebGPU, blocks stay plain text. |
-| `react-aria` | `^3.52.1` | `useClipboard`: copying and pasting demo blocks with their files. |
 | `lucide-react` | `^1.17.0` | Toolbar, menu and block icons. |
 
 docstream is pinned exactly, to the editor's own version. The editor converts docstream's AST node by node, so it is only correct against the docstream version it was built with. A test (`pins docstream to its own version`) fails the build if the two numbers ever differ. If your app also depends on docstream directly, use the same version so both resolve to one copy. See [With docstream](03-with-docstream.md).
@@ -46,12 +45,12 @@ docstream is pinned exactly, to the editor's own version. The editor converts do
 Import both, once, at your app's entry, docstream's first:
 
 ```ts title="main.tsx" lineNumbers="false"
-import "@brett_lamy/ui/docstream/styles.css"
-import "@brett_lamy/ui/docstream-editor/styles.css"
+import "@brett_lamy/docstream/styles.css"
+import "@brett_lamy/docstream-editor/styles.css"
 ```
 
-- `@brett_lamy/ui/docstream/styles.css` styles the renderer pieces that appear inside the editor: demo previews, command boxes, Mermaid and math cards, OpenAPI operations, replays.
-- `@brett_lamy/ui/docstream-editor/styles.css` styles the editor's own chrome: the `.gb` wrapper, toolbar, block node views, slash and reference menus, attachment chips. It already `@import`s docstream's property-sheet and task-checkbox styles.
+- `@brett_lamy/docstream/styles.css` styles the renderer pieces that appear inside the editor: demo previews, command boxes, Mermaid and math cards, OpenAPI operations, replays.
+- `@brett_lamy/docstream-editor/styles.css` styles the editor's own chrome: the `.gb` wrapper, toolbar, block node views, slash and reference menus, attachment chips. It already `@import`s docstream's property-sheet and task-checkbox styles.
 
 Both read shadcn-style host tokens (`--card`, `--border`, `--primary`, …) and fall back to neutral defaults, so they need no setup and follow your theme if you have one. See [Theming](../04-reference/03-theming.md).
 
@@ -84,7 +83,7 @@ The editor itself never loads a code runtime, and never touches the file system.
 {% command %}npm install @agent-wasm/core{% endcommand %}
 
 ```tsx title="Editor.tsx"
-import { almostNodeLiveRenderer, createAlmostNodeDemoRuntime } from "@brett_lamy/ui/docstream/playground"
+import { almostNodeLiveRenderer, createAlmostNodeDemoRuntime } from "@brett_lamy/docstream/playground"
 
 const demoRuntime = createAlmostNodeDemoRuntime()
 
@@ -99,7 +98,7 @@ Without them, live fences are edited as plain code, and inline-file demos open o
 
 ```ts title="vite.config.ts"
 import { defineConfig } from "vite"
-import { docstreamSources } from "@brett_lamy/ui/docstream/vite"
+import { docstreamSources } from "@brett_lamy/docstream/vite"
 
 export default defineConfig({
   plugins: [docstreamSources({ mounts: [{ name: "ui", root: "src/components" }] })],
@@ -110,7 +109,7 @@ export default defineConfig({
 <GitbookEditor markdown={md} onChange={setMd} sourceClient={createViteSourceClient()} />
 ```
 
-`createViteSourceClient` comes from `@brett_lamy/ui/docstream`. Any object with `read`, `write` and `importModule` works too: the playground on the home page uses an in-memory one. See [Source files](../03-files-and-demos/03-source-files.md).
+`createViteSourceClient` comes from `@brett_lamy/docstream`. Any object with `read`, `write` and `importModule` works too: the playground on the home page uses an in-memory one. See [Source files](../03-files-and-demos/03-source-files.md).
 {% endtab %}
 {% endtabs %}
 
@@ -130,7 +129,7 @@ The editor is plain ESM, so it needs no `transpilePackages` entry. Its modules c
 "use client"
 
 import { useState } from "react"
-import { GitbookEditor } from "@brett_lamy/ui/docstream-editor"
+import { GitbookEditor } from "@brett_lamy/docstream-editor"
 
 export function Editor({ initial }: { initial: string }) {
   const [markdown, setMarkdown] = useState(initial)
@@ -144,7 +143,7 @@ Import both stylesheets from your root layout.
 {% tab title="SSR" %}
 On the server, Tiptap's `useEditor` doesn't create an editor (it turns `immediatelyRender` off when it detects SSR), so `GitbookEditor` renders nothing there and mounts after hydration. For a server-rendered view of the same page, render the Markdown with docstream's `MarkdownContent`. It looks the same (see [Editing and reading look the same](../README.md)).
 
-The conversion helpers (`astToTiptap`, `tiptapToAst`, `serializeEditorMarkdown`, `markdownPasteContent`) are plain functions over JSON and run anywhere. Import them from `@brett_lamy/ui/docstream-editor/convert`.
+The conversion helpers (`astToTiptap`, `tiptapToAst`, `serializeEditorMarkdown`, `markdownPasteContent`) are plain functions over JSON and run anywhere. Import them from `@brett_lamy/docstream-editor/convert`.
 {% endtab %}
 {% endtabs %}
 
@@ -152,10 +151,10 @@ The conversion helpers (`astToTiptap`, `tiptapToAst`, `serializeEditorMarkdown`,
 
 | Import | What it is |
 | --- | --- |
-| `@brett_lamy/ui/docstream-editor` | Everything: the editor, `SourceFileEditor`, `ReactDemoEditor`, extensions, conversion, clipboard helpers. |
-| `@brett_lamy/ui/docstream-editor/editor` | `GitbookEditor` and `embedBlockFor` (plus their types). |
-| `@brett_lamy/ui/docstream-editor/convert` | The Markdown ⇄ Tiptap conversion functions. |
-| `@brett_lamy/ui/docstream-editor/styles.css` | The editor stylesheet. |
+| `@brett_lamy/docstream-editor` | Everything: the editor, `SourceFileEditor`, `ReactDemoEditor`, extensions, conversion, clipboard helpers. |
+| `@brett_lamy/docstream-editor/editor` | `GitbookEditor` and `embedBlockFor` (plus their types). |
+| `@brett_lamy/docstream-editor/convert` | The Markdown ⇄ Tiptap conversion functions. |
+| `@brett_lamy/docstream-editor/styles.css` | The editor stylesheet. |
 
 The full export list is in [Props](../04-reference/01-props.md#every-export). Bundling details are in [Bundling and migration](../04-reference/04-bundling-and-migration.md).
 

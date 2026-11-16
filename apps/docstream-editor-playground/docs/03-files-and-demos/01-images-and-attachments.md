@@ -30,7 +30,7 @@ The block serializes as GitBook figure HTML with the image inline:
 <figure><img src="data:image/png;base64,iVBORw0KGgo…" alt="screenshot-1.png"><figcaption></figcaption></figure>
 ```
 
-That Markdown renders anywhere, with no server, but it is large: a 100 KB screenshot adds about 130 KB of base64 text. Choose chips, or [upload the file](02-host-files.md#uploadfile-files-the-user-adds), once documents get images regularly.
+That Markdown renders anywhere, with no server, but it is large: a 100 kB screenshot adds about 130 kB of base64 text. Choose chips, or [upload the file](02-host-files.md#uploadfile-files-the-user-adds), once documents get images regularly.
 
 {% hint style="info" %}
 A paste whose clipboard also has plain text, such as a selection copied from Word or Excel (which put a rendered PNG beside the text), pastes as text, not as an image. Drops don't have this rule.
@@ -82,7 +82,7 @@ The document holds only the id and the name. Everything else comes from `attachm
 | `id` | `string` | The id in the Markdown (`attachment:<id>`). |
 | `name` | `string` | Shown on the chip. The name in the store wins over the one in the document. |
 | `src` | `string` | Thumbnail and full image: a data URL, an uploaded URL, a `blob:` URL. Without it the chip shows an image icon. |
-| `size` | `number` | Bytes, shown as "84 KB" (`formatBytes`, exported). |
+| `size` | `number` | Bytes, shown as "84 kB" or "1.3 MB" (`formatBytes`, exported). |
 | `type` | `string` | MIME type. |
 
 The chip props:

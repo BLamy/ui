@@ -177,7 +177,7 @@ describe("rrweb recordings and uploads", () => {
     const uploadFile = vi.fn(async (file: File) => `./${file.name}`)
     const { markdown } = await mount({ markdown: '{% embed url="" %}\n', uploadFile })
     const input = container.querySelector<HTMLInputElement>('.gb-embed-fields input[type="file"]')!
-    expect(input.closest("label")?.textContent).toContain("Upload")
+    expect(input.closest('[data-slot="file-input"]')?.querySelector("button")?.textContent).toContain("Upload")
     Object.defineProperty(input, "files", { value: [rrweb("cart.rrweb")], configurable: true })
     await act(async () => {
       input.dispatchEvent(new Event("change", { bubbles: true }))

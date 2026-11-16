@@ -1,5 +1,4 @@
-import { Extension, type Editor, type Range } from "@tiptap/core"
-import Suggestion from "@tiptap/suggestion"
+import { Extension, type Editor } from "@tiptap/core"
 import {
   AppWindow,
   Columns2,
@@ -31,7 +30,7 @@ import {
 } from "lucide-react"
 
 import type { PMNode } from "./convert"
-import { createSuggestionRender } from "./suggestion-menu"
+import { editorTriggerPlugin, type EditorTrigger } from "./trigger-menu"
 
 const para = (text = ""): PMNode =>
   text ? { type: "paragraph", content: [{ type: "text", text }] } : { type: "paragraph" }
@@ -275,6 +274,30 @@ export const SLASH_ITEMS: SlashItem[] = [
 
 export type { SlashItem }
 
+/** The "/" trigger for `items`: each is matched by its title and keywords, and choosing one replaces the typed command with it. */
+function slashTrigger(items: SlashItem[]): EditorTrigger {
+  return {
+    char: "/",
+    label: "Blocks",
+    empty: "No matching blocks",
+    items: items.map((item, index) => ({
+      value: String(index),
+      label: item.title,
+      keywords: item.keywords.split(/\s+/).filter(Boolean),
+    })),
+    entry: (value) => {
+      const item = items[Number(value)]
+      return item && { title: item.title, icon: item.icon }
+    },
+    onSelect: (value, details, editor) => {
+      const item = items[Number(value)]
+      if (!item) return
+      details.insert("")
+      item.run(editor)
+    },
+  }
+}
+
 /**
  * Build a slash-command extension. Pass a custom `items` list to override the
  * default GitBook blocks. The default instance is exported as `SlashMenu`.
@@ -283,22 +306,7 @@ export function createSlashMenu(items: SlashItem[] = SLASH_ITEMS) {
   return Extension.create({
     name: "slashMenu",
     addProseMirrorPlugins() {
-      return [
-        Suggestion<SlashItem>({
-          editor: this.editor,
-          char: "/",
-          startOfLine: false,
-          items: ({ query }) =>
-            items.filter((item) =>
-              `${item.title} ${item.keywords}`.toLowerCase().includes(query.toLowerCase())
-            ),
-          command: ({ editor, range, props }) => {
-            editor.chain().focus().deleteRange(range as Range).run()
-            props.run(editor as Editor)
-          },
-          render: createSuggestionRender<SlashItem>("No matching blocks"),
-        }),
-      ]
+      return [editorTriggerPlugin("slashMenu", this.editor as Editor, () => slashTrigger(items))]
     },
   })
 }

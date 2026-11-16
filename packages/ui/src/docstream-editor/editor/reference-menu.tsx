@@ -1,9 +1,8 @@
-import { Extension, type Editor, type Range } from "@tiptap/core"
-import Suggestion from "@tiptap/suggestion"
-import { PluginKey } from "@tiptap/pm/state"
+import { Extension, type Editor } from "@tiptap/core"
 import { AtSign, FolderGit2, Hash, type LucideIcon } from "lucide-react"
+import type { TriggerMenuData, TriggerMenuDataItem } from "@ui-sdk/react/trigger-menu"
 
-import { createSuggestionRender, type SuggestionMenuItem } from "./suggestion-menu"
+import { editorTriggerPlugin, matchesQuery, type EditorTrigger, type TriggerMenuEntry } from "./trigger-menu"
 
 export type ReferenceTrigger = "@" | "#" | "$"
 
@@ -34,10 +33,6 @@ export interface ReferenceSuggestionOptions {
   allowFreeForm?: boolean
 }
 
-interface ReferenceItem extends SuggestionMenuItem {
-  id: string
-}
-
 const KIND: Record<ReferenceTrigger, "mention" | "tag" | "codebase"> = {
   "@": "mention",
   "#": "tag",
@@ -49,15 +44,11 @@ const EMPTY: Record<ReferenceTrigger, string> = {
   "#": "Type a channel or tag",
   $: "Type a codebase",
 }
+const LABEL: Record<ReferenceTrigger, string> = { "@": "Mentions", "#": "Tags", $: "Codebases" }
 const MAX_OPTIONS = 50
 
 function normalize(option: string | ReferenceOption): ReferenceOption {
   return typeof option === "string" ? { id: option } : option
-}
-
-function matches(option: ReferenceOption, query: string): boolean {
-  if (!query) return true
-  return [option.id, option.label ?? ""].some((value) => value.toLowerCase().includes(query))
 }
 
 /** Resolve a source for a query into options (exported for hosts' tests). */
@@ -67,69 +58,70 @@ export async function resolveReferenceOptions(
 ): Promise<ReferenceOption[]> {
   if (source === undefined) return []
   if (typeof source === "function") return [...(await source(query))].slice(0, MAX_OPTIONS)
-  const q = query.toLowerCase()
-  return source.map(normalize).filter((option) => matches(option, q)).slice(0, MAX_OPTIONS)
+  return source.map(normalize).filter((option) => matchesQuery(query, option.id, option.label)).slice(0, MAX_OPTIONS)
+}
+
+/** The trigger for `char`: options load for each query (from the host's source), grouped as the host groups them, with the raw query last. */
+function referenceTrigger({ char, items, allowFreeForm = true }: ReferenceSuggestionOptions): EditorTrigger {
+  const icon = ICON[char]
+  // What the last load listed, by id, for rendering.
+  let entries = new Map<string, TriggerMenuEntry>()
+  return {
+    char,
+    label: LABEL[char],
+    empty: EMPTY[char],
+    type: KIND[char],
+    items: async (query, context) => {
+      let options: ReferenceOption[]
+      try {
+        options = await resolveReferenceOptions(items, query)
+      } catch {
+        options = []
+      }
+      const next = new Map<string, TriggerMenuEntry>()
+      const data: TriggerMenuData = []
+      type Group = { type: "group"; label: string; items: TriggerMenuDataItem[] }
+      let group = null as Group | null
+      for (const option of options) {
+        if (next.has(option.id)) continue
+        const description = [option.label, option.description].filter(Boolean).join(" · ")
+        next.set(option.id, { title: `${char}${option.id}`, icon, ...(description ? { description } : {}) })
+        const entry: TriggerMenuDataItem = { value: option.id, label: option.label ? `${option.id} ${option.label}` : option.id }
+        if (!option.group) {
+          group = null
+          data.push(entry)
+        } else if (group && group.label === option.group) group.items.push(entry)
+        else {
+          group = { type: "group", label: option.group, items: [entry] }
+          data.push(group)
+        }
+      }
+      const exact = options.some((option) => option.id.toLowerCase() === query.toLowerCase())
+      if (allowFreeForm && query && !exact && !next.has(query)) {
+        next.set(query, { title: `${char}${query}`, icon })
+        data.push({ value: query, label: query })
+      }
+      // A newer query replaced this load: the menu drops its result, so it mustn't replace the map
+      // the newer list renders from.
+      if (context?.signal?.aborted) return []
+      entries = next
+      return data
+    },
+    entry: (value) => entries.get(value),
+  }
 }
 
 /**
- * An `@mention` / `#tag` / `$codebase` picker built on @tiptap/suggestion. Options come
- * from the host (static or async) and the raw query is offered as a free-form entry,
- * so `@anything⏎` works with no source configured.
+ * An `@mention` / `#tag` / `$codebase` picker. Options come from the host (static or async) and the
+ * raw query is offered as a free-form entry, so `@anything⏎` works with no source configured.
+ * Choosing one inserts a reference chip.
  */
-export function createReferenceSuggestion({
-  char,
-  items,
-  allowFreeForm = true,
-}: ReferenceSuggestionOptions) {
-  const kind = KIND[char]
-  const icon = ICON[char]
+export function createReferenceSuggestion(options: ReferenceSuggestionOptions) {
+  const kind = KIND[options.char]
   return Extension.create({
     name: `${kind}Suggestion`,
     addProseMirrorPlugins() {
-      return [
-        Suggestion<ReferenceItem>({
-          editor: this.editor,
-          char,
-          startOfLine: false,
-          allowSpaces: false,
-          // Each Suggestion plugin needs its own key — the default is shared
-          // with the slash menu and would collide.
-          pluginKey: new PluginKey(`${kind}Suggestion`),
-          items: async ({ query }) => {
-            let options: ReferenceOption[]
-            try {
-              options = await resolveReferenceOptions(items, query)
-            } catch {
-              options = []
-            }
-            const menu: ReferenceItem[] = options.map((option) => ({
-              id: option.id,
-              title: `${char}${option.id}`,
-              icon,
-              ...(option.label || option.description
-                ? { description: [option.label, option.description].filter(Boolean).join(" · ") }
-                : {}),
-              ...(option.group ? { group: option.group } : {}),
-            }))
-            const exact = options.some((option) => option.id.toLowerCase() === query.toLowerCase())
-            return allowFreeForm && query && !exact
-              ? [...menu, { id: query, title: `${char}${query}`, icon }]
-              : menu
-          },
-          command: ({ editor, range, props }) => {
-            ;(editor as Editor)
-              .chain()
-              .focus()
-              .deleteRange(range as Range)
-              .insertContent([
-                { type: "gbReference", attrs: { kind, id: props.id } },
-                { type: "text", text: " " },
-              ])
-              .run()
-          },
-          render: createSuggestionRender<ReferenceItem>(EMPTY[char]),
-        }),
-      ]
+      return [editorTriggerPlugin(`${kind}Suggestion`, this.editor as Editor, () => referenceTrigger(options))]
     },
   })
 }

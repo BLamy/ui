@@ -145,8 +145,8 @@ describe("demo copy → paste between two editors", () => {
     expect(text).toContain('{% demo src="button/basic" title="Basic button" height="240" %}')
     expect(text).toContain('```css title="styles.css"')
     expect(data.getData("text/markdown")).toBe(text)
-    // Written by react-aria's useClipboard (its multi-representation marker is there too).
-    expect(Array.from(data.types)).toContain("application/vnd.react-aria.items+json")
+    // One clipboard item, written straight onto the copy event: no react-aria marker.
+    expect(Array.from(data.types).sort()).toEqual([DOCSTREAM_CLIPBOARD_TYPE, "text/markdown", "text/plain"].sort())
 
     await pasteInto(b.editor, data)
     // B has no resolver: the block carries the files inline, and the VFS holds them.

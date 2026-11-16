@@ -1,4 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from "react"
+"use client"
+
+import { useEffect, useId, useMemo, useRef, useState } from "react"
 import { EditorContent, useEditor, useEditorState, type Editor as TiptapEditor } from "@tiptap/react"
 import type { AnyExtension } from "@tiptap/core"
 import {
@@ -10,7 +12,13 @@ import {
   Strikethrough,
 } from "lucide-react"
 
-import { parseMarkdown, type CitationDef } from "@brett_lamy/ui/docstream/gitbook"
+import { Button } from "@ui-sdk/react/button"
+import { Input } from "@ui-sdk/react/input"
+import { Popover, PopoverContent, PopoverTrigger } from "@ui-sdk/react/popover"
+import { Toggle, ToggleIcon } from "@ui-sdk/react/toggle"
+import { Toolbar, ToolbarButton } from "@ui-sdk/react/toolbar"
+
+import { parseMarkdown, type CitationDef } from "@brett_lamy/docstream/gitbook"
 import {
   DocstreamDemoVFSContext,
   createDemoVFS,
@@ -24,9 +32,9 @@ import {
   type DemoVFSChange,
   type DocstreamClipboardPayload,
   type InlineDemoRuntime,
-} from "@brett_lamy/ui/docstream/demo"
-import type { LivePreviewRenderer } from "@brett_lamy/ui/docstream"
-import type { SourceFileSnapshot, SourceReferenceClient } from "@brett_lamy/ui/docstream/source"
+} from "@brett_lamy/docstream/demo"
+import type { LivePreviewRenderer } from "@brett_lamy/docstream"
+import type { SourceFileSnapshot, SourceReferenceClient } from "@brett_lamy/docstream/source"
 import {
   attachmentName,
   collectAttachmentIds,
@@ -47,14 +55,14 @@ import {
 } from "./demo-clipboard"
 import { createGitbookExtensions, type ReferenceSources } from "./extensions"
 import { EditorRuntimeProvider, type FilePicker, type FileUploader } from "./runtime"
-import { AssetResolverProvider, type AssetResolver } from "@brett_lamy/ui/docstream/assets"
+import { AssetResolverProvider, type AssetResolver } from "@brett_lamy/docstream/assets"
 import type { SlashItem } from "./slash-menu"
 import { DocumentEnvScope, DocumentPropertiesEditor } from "./document-properties"
-import type { DocstreamEnvHost } from "@brett_lamy/ui/docstream"
+import type { DocstreamEnvHost } from "@brett_lamy/docstream"
 
 export type { EditorAttachment } from "./attachments"
 export type { FilePicker, FilePickKind, FileUploader } from "./runtime"
-export type { AssetResolver } from "@brett_lamy/ui/docstream/assets"
+export type { AssetResolver } from "@brett_lamy/docstream/assets"
 
 export interface GitbookEditorProps {
   /** Editable YAML frontmatter, shown as document properties above the body (default true). */
@@ -131,12 +139,12 @@ export interface GitbookEditorProps {
   /**
    * Runs the Preview of demos that carry their files inline and have no resolver behind them
    * (as `DocRenderOptions.demoRuntime`), e.g. `createAlmostNodeDemoRuntime()` from
-   * `@brett_lamy/ui/docstream/playground`. Without one, such demos show their code with a note.
+   * `@brett_lamy/docstream/playground`. Without one, such demos show their code with a note.
    */
   demoRuntime?: InlineDemoRuntime
   /**
    * Renders the preview above `live` jsx/tsx code blocks (as `DocRenderOptions`' `liveRenderer`),
-   * e.g. `almostNodeLiveRenderer` from `@brett_lamy/ui/docstream/playground`. The editor never
+   * e.g. `almostNodeLiveRenderer` from `@brett_lamy/docstream/playground`. The editor never
    * loads a runtime itself; without one, live code blocks are edited as plain code.
    */
   liveRenderer?: LivePreviewRenderer
@@ -207,33 +215,83 @@ export function embedBlockFor(url: string): PMNode {
     : { type: "gbEmbed", attrs: { url } }
 }
 
-function ToolbarButton({
-  onClick,
-  active,
-  title,
-  children,
-}: {
-  onClick: () => void
-  active?: boolean
-  title: string
-  children: React.ReactNode
-}) {
+const keepSelection = (event: React.MouseEvent) => event.preventDefault()
+
+function MarkToggle({ label, pressed, onToggle, children }: { label: string; pressed: boolean; onToggle: () => void; children: React.ReactNode }) {
   return (
-    <button
-      type="button"
-      title={title}
-      className={`gb-tool ${active ? "gb-tool-active" : ""}`}
-      onMouseDown={(e) => {
-        e.preventDefault()
-        onClick()
-      }}
+    <Toggle
+      aria-label={label}
+      title={label}
+      className={(state) => (state.pressed ? "gb-tool gb-tool-active" : "gb-tool")}
+      pressed={pressed}
+      onPressedChange={onToggle}
+      // A pointer press leaves the caret and the selection in the document.
+      onMouseDown={keepSelection}
     >
-      {children}
-    </button>
+      <ToggleIcon>{children}</ToggleIcon>
+    </Toggle>
   )
 }
 
-function Toolbar({ editor }: { editor: TiptapEditor }) {
+function LinkTool({ editor, active }: { editor: TiptapEditor; active: boolean }) {
+  const [open, setOpen] = useState(false)
+  const [url, setUrl] = useState("")
+  const linkedId = useId()
+  const close = () => setOpen(false)
+  return (
+    <Popover
+      open={open}
+      onOpenChange={(next) => {
+        if (next) setUrl(String(editor.getAttributes("link").href ?? ""))
+        setOpen(next)
+      }}
+    >
+      <ToolbarButton
+        render={<PopoverTrigger />}
+        aria-label="Link"
+        title="Link"
+        className={active ? "gb-tool gb-tool-active" : "gb-tool"}
+        data-active={active ? "" : undefined}
+        // Bold and the others say they're on with aria-pressed; a popup trigger can't, so it says so in its description.
+        aria-describedby={active ? linkedId : undefined}
+      >
+        <Link2 className="size-4" aria-hidden="true" />
+        <span id={linkedId} hidden>
+          In a link
+        </span>
+      </ToolbarButton>
+      <PopoverContent className="gb-link-popover" aria-label="Link" sideOffset={6}>
+        <form
+          className="gb-link-form"
+          onSubmit={(event) => {
+            event.preventDefault()
+            const href = url.trim()
+            const chain = editor.chain().focus()
+            ;(href ? chain.setLink({ href }) : chain.unsetLink()).run()
+            close()
+          }}
+        >
+          <Input className="gb-inline-input gb-link-input" aria-label="URL" placeholder="https://…" value={url} onValueChange={setUrl} />
+          <Button type="submit" className="gb-pick-file">
+            Apply
+          </Button>
+          <Button
+            className="gb-pick-file"
+            disabled={!active}
+            onClick={() => {
+              editor.chain().focus().unsetLink().run()
+              close()
+            }}
+          >
+            Remove
+          </Button>
+        </form>
+      </PopoverContent>
+    </Popover>
+  )
+}
+
+function FormattingToolbar({ editor }: { editor: TiptapEditor }) {
   const chain = () => editor.chain().focus()
   // Tiptap 3 doesn't re-render on every transaction, so read the marks under the selection
   // through useEditorState — the buttons light up as the caret moves into bold text.
@@ -245,37 +303,28 @@ function Toolbar({ editor }: { editor: TiptapEditor }) {
       strike: e.isActive("strike"),
       code: e.isActive("code"),
       link: e.isActive("link"),
+      editable: e.isEditable,
     }),
   })
   return (
-    <div className="gb-toolbar">
-      <ToolbarButton title="Bold" active={active.bold} onClick={() => chain().toggleBold().run()}>
+    <Toolbar className="gb-toolbar" aria-label="Formatting" disabled={!active.editable}>
+      <MarkToggle label="Bold" pressed={active.bold} onToggle={() => chain().toggleBold().run()}>
         <Bold className="size-4" />
-      </ToolbarButton>
-      <ToolbarButton title="Italic" active={active.italic} onClick={() => chain().toggleItalic().run()}>
+      </MarkToggle>
+      <MarkToggle label="Italic" pressed={active.italic} onToggle={() => chain().toggleItalic().run()}>
         <Italic className="size-4" />
-      </ToolbarButton>
-      <ToolbarButton title="Strike" active={active.strike} onClick={() => chain().toggleStrike().run()}>
+      </MarkToggle>
+      <MarkToggle label="Strike" pressed={active.strike} onToggle={() => chain().toggleStrike().run()}>
         <Strikethrough className="size-4" />
-      </ToolbarButton>
-      <ToolbarButton title="Inline code" active={active.code} onClick={() => chain().toggleCode().run()}>
+      </MarkToggle>
+      <MarkToggle label="Inline code" pressed={active.code} onToggle={() => chain().toggleCode().run()}>
         <CodeIcon className="size-4" />
-      </ToolbarButton>
-      <ToolbarButton
-        title="Link"
-        active={active.link}
-        onClick={() => {
-          const url = window.prompt("URL")
-          if (url) chain().setLink({ href: url }).run()
-          else chain().unsetLink().run()
-        }}
-      >
-        <Link2 className="size-4" />
-      </ToolbarButton>
+      </MarkToggle>
+      <LinkTool editor={editor} active={active.link} />
       <span className="gb-toolbar-hint">
-        <SlashSquare className="size-3.5" /> Type <kbd>/</kbd> for blocks
+        <SlashSquare className="size-3.5" aria-hidden="true" /> Type <kbd>/</kbd> for blocks
       </span>
-    </div>
+    </Toolbar>
   )
 }
 
@@ -435,8 +484,8 @@ export function GitbookEditor({
 
   const sources = () => ({ vfs: latest.current.vfs, ...(latest.current.demoResolver ? { resolver: latest.current.demoResolver } : {}) })
 
-  // Copy / cut of a selection with demo blocks: react-aria's useClipboard writes the
-  // docstream clipboard; ProseMirror keeps every other copy.
+  // Copy / cut of a selection with demo blocks: the clipboard bridge writes the docstream
+  // clipboard; ProseMirror keeps every other copy.
   const onClipboardEvent = (event: ClipboardEvent, cut: boolean): boolean => {
     const ed = editorRef.current
     if (!ed || !latest.current.demoClipboard) return false
@@ -481,7 +530,7 @@ export function GitbookEditor({
         if (!view.editable || view.state.selection.$from.parent.type.spec.code) return false
         if (latest.current.demoClipboard && hasDocstreamClipboard(event.clipboardData)) {
           if (clipboard.focused()) {
-            // react-aria's useClipboard reads it (onPaste); ProseMirror stays out.
+            // The clipboard bridge reads it; ProseMirror stays out.
             clipboard.armPaste()
             return true
           }
@@ -641,7 +690,7 @@ export function GitbookEditor({
   return (
     <div className={className ? `gb ${className}` : "gb"}>
       {documentProperties ? <DocumentPropertiesEditor editor={editor} defaultOpen={typeof documentProperties === "object" && documentProperties.defaultOpen} /> : null}
-      {toolbar && <Toolbar editor={editor} />}
+      {toolbar && <FormattingToolbar editor={editor} />}
       <EditorRuntimeProvider value={runtime}>
         <AssetResolverProvider resolve={resolveAsset}>
           <DocstreamDemoVFSContext.Provider value={vfs}>
