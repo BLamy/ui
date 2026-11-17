@@ -57,7 +57,7 @@ const dialog = () => element.querySelector<HTMLElement>('[role="dialog"]');
 const albumTitle = () => [...element.querySelectorAll('h1, h2, [data-slot$="title"]')].map((n) => n.textContent).join('|');
 
 it('Now Playing is a modal Dialog: focus moves in, Escape closes it and focus returns to the mini player', async () => {
-  await act(async () => root.render(<AppleMusic initialAlbum="velvet-static" />));
+  await act(async () => root.render(<AppleMusic defaultAlbum="velvet-static" />));
   await settle();
   const open = element.querySelector<HTMLElement>('[data-now-playing-open]')!;
   expect(open).toBeTruthy();
@@ -80,7 +80,7 @@ it('Now Playing is a modal Dialog: focus moves in, Escape closes it and focus re
 });
 
 it('an Escape outside the player (another layer has it) does not close Now Playing', async () => {
-  await act(async () => root.render(<AppleMusic initialAlbum="velvet-static" nowPlaying />));
+  await act(async () => root.render(<AppleMusic defaultAlbum="velvet-static" nowPlaying />));
   await settle();
   expect(dialog()).toBeTruthy();
   const outside = document.createElement('input');
@@ -94,7 +94,7 @@ it('an Escape outside the player (another layer has it) does not close Now Playi
 });
 
 it('keeps the open album across the compact boundary, both ways', async () => {
-  await act(async () => root.render(<AppleMusic initialSection="albums" initialAlbum="neon-tidewater" />));
+  await act(async () => root.render(<AppleMusic defaultSection="albums" defaultAlbum="neon-tidewater" />));
   await settle();
   // Wide: the SplitView, with the album pushed over Albums on the detail column's NavigationStack.
   const detailPages = () => [...element.querySelectorAll('[data-slot="split-view-detail"] [data-slot="navigation-stack-page"]')];
@@ -120,7 +120,7 @@ it('keeps the open album across the compact boundary, both ways', async () => {
 
 it('on a phone the Library tab is the Library rows, and pressing it again comes back to them', async () => {
   size = { width: 390, height: 844 };
-  await act(async () => root.render(<AppleMusic initialSection="listen" />));
+  await act(async () => root.render(<AppleMusic defaultSection="listen" />));
   await settle();
   const sidebar = () => element.querySelector<HTMLElement>('[data-slot="split-view-sidebar"]')!;
   const tab = (name: string) => [...element.querySelectorAll<HTMLElement>('[role="tab"]')].find((t) => t.textContent?.includes(name))!;
@@ -145,7 +145,7 @@ it('on a phone the Library tab is the Library rows, and pressing it again comes 
 
 it('on a phone each tab keeps its place: back to Library lands on the album you left', async () => {
   size = { width: 390, height: 844 };
-  await act(async () => root.render(<AppleMusic initialSection="albums" initialAlbum="neon-tidewater" />));
+  await act(async () => root.render(<AppleMusic defaultSection="albums" defaultAlbum="neon-tidewater" />));
   await settle();
   const tab = (name: string) => [...element.querySelectorAll<HTMLElement>('[role="tab"]')].find((t) => t.textContent?.includes(name))!;
   const detailPages = () => [...element.querySelectorAll('[data-slot="split-view-detail"] [data-slot="navigation-stack-page"]')];

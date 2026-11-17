@@ -1078,24 +1078,28 @@ import { ReactDemo } from "@brett_lamy/ui/docstream/playground"
 
 ## Bundler Notes
 
-Since 1.4 the package ships compiled ES modules (ES2022, `react-jsx`) with type
-declarations and declaration maps — one file per source module in `dist/`,
+Docstream ships inside `@brett_lamy/ui` as compiled ES modules (ES2022, `react-jsx`) with type
+declarations and declaration maps — one file per source module in `dist/docstream/`,
 dependencies left as imports, lazy features (Pele, KaTeX, rrweb, the
-playground's almost-node) still behind dynamic `import()`:
+playground's almost-node, the diagrams the fences draw) still behind dynamic `import()`.
+Each of its entries is an entry of the library's `exports`:
 
 ```json
 {
   "exports": {
-    ".": {
-      "source": "./src/index.ts",
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "default": "./dist/index.js"
+    "./docstream": {
+      "source": "./src/docstream/index.ts",
+      "types": "./dist/docstream/index.d.ts",
+      "import": "./dist/docstream/index.js",
+      "default": "./dist/docstream/index.js"
     },
-    "./styles.css": "./dist/styles.css"
+    "./docstream/styles.css": "./dist/docstream/styles.css"
   }
 }
 ```
+
+No JavaScript module imports CSS, so every entry loads in plain Node; import
+`@brett_lamy/ui/docstream/styles.css` yourself.
 
 No bundler configuration is needed: Vite pre-bundles docstream like any other
 dependency (no `optimizeDeps` entries), Next.js and webpack consume it as plain
@@ -1147,9 +1151,9 @@ Use `@brett_lamy/ui/docstream-editor` when you need the editable TipTap experien
 
 ### XState and tscircuit fences
 
-Use an `xstate` fence for a JSON machine config or static TypeScript `createMachine({...})` source, and a `tscircuit` fence for circuit TSX (`circuit.add(<board>...</board>)`). Both render the source beside its preview, like Mermaid. XState actions and guards are never executed. Circuit code runs in the hosted cross-origin [RunFrame](https://github.com/tscircuit/runframe), which requires a network connection. Its compiler starts in an isolated worker using a tested, pinned release; circuit source never executes in the host page. Runtime failures have a retry control.
+Use an `xstate` fence for a JSON machine config or static TypeScript `createMachine({...})` source, and a `tscircuit` fence for circuit TSX (`circuit.add(<board>...</board>)`). An `xstate` fence draws the machine on a read-only [StateDiagram](https://blamy.github.io/ui/#/state-diagram) (`@brett_lamy/ui/state-diagram`, loaded when the fence is shown; install `xstate`, an optional peer) with its source; a `tscircuit` fence renders the source beside its preview, like Mermaid. XState actions and guards are never executed. Circuit code runs in the hosted cross-origin [RunFrame](https://github.com/tscircuit/runframe), which requires a network connection. Its compiler starts in an isolated worker using a tested, pinned release; circuit source never executes in the host page. Runtime failures have a retry control.
 
-An `xstate` fence draws `invoke` too: what's invoked goes on a second line of its state, and `onDone` and `onError` are `done` and `error` edges. None of it runs, including an actor written inline, which is called `actor`.
+An `xstate` fence draws what the machine says, as StateDiagram does: a state's entry and exit actions, `invoke`, tags and meta as sections of its card, the machine's context on its own card, and a transition's guard and actions as chips on its label; `onDone` and `onError` are edges named after the actor (`verifyToken: done`). None of it runs, including an actor written inline, which is called `actor`. If the diagram can't load, the fence shows the machine's text form (`xstateToMermaid`).
 
 `xstateToMermaid` is in `@brett_lamy/ui/docstream/xstate/machine`, on its own entry because it loads Babel and XState straight away, which the fence doesn't until it's displayed. It reads the source with the library's `parseXState` (`@brett_lamy/ui/lib/state-diagram-source`, which reads a config without running it) and draws from `machineToDraft`, so a fence and a [StateDiagram](https://blamy.github.io/ui/#/state-diagram) say the same about a machine.
 

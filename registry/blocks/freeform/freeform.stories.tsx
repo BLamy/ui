@@ -26,36 +26,36 @@ export const GalleryDark: Story = { render: (args) => dark(<Full><Freeform {...a
 
 /** A board: a flow of connectors glued to shapes, sticky notes, a hand-drawn ring. Drag anything; the arrows follow. */
 export const Board: Story = {
-  args: { initialBoard: 'board-launch' },
+  args: { defaultBoard: 'board-launch' },
   render: (args) => <Full><Freeform {...args} /></Full>,
 };
 
 export const BoardDark: Story = {
-  args: { initialBoard: 'board-launch' },
+  args: { defaultBoard: 'board-launch' },
   render: (args) => dark(<Full><Freeform {...args} /></Full>),
 };
 
 /** Photos, a link card, stickies and a route drawn with the marker. */
 export const Photos: Story = {
-  args: { initialBoard: 'board-tokyo' },
+  args: { defaultBoard: 'board-tokyo' },
   render: (args) => <Full><Freeform {...args} /></Full>,
 };
 
 /** The grid background, and two frames holding stickies. */
 export const Grid: Story = {
-  args: { initialBoard: 'board-ideas' },
+  args: { defaultBoard: 'board-ideas' },
   render: (args) => <Full><Freeform {...args} /></Full>,
 };
 
 /** An empty board: add a sticky, a shape or a drawing from the bar below. */
 export const Blank: Story = {
-  args: { defaultBoards: [{ id: 'blank', title: 'Untitled', items: [], favorite: false, edited: 'Just now', background: 'dots' }, ...SAMPLE_BOARDS], initialBoard: 'blank' },
+  args: { defaultBoards: [{ id: 'blank', title: 'Untitled', items: [], favorite: false, edited: 'Just now', background: 'dots' }, ...SAMPLE_BOARDS], defaultBoard: 'blank' },
   render: (args) => <Full><Freeform {...args} /></Full>,
 };
 
 /** A narrow container: a compact header, no zoom cluster, the same gestures. */
 export const Narrow: Story = {
-  args: { initialBoard: 'board-tokyo' },
+  args: { defaultBoard: 'board-tokyo' },
   render: (args) => (
     <div className="box-border grid h-screen w-full place-items-center p-4" style={{ background: '#e6e8eb' }}>
       <div className="relative h-[700px] w-[400px] overflow-hidden rounded-[18px] shadow-[0_12px_40px_black] shadow-black/18"><Freeform {...args} /></div>

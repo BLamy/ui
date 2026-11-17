@@ -50,11 +50,11 @@ const isPhone = (width: number) => sizeClassOf(width) === 'compact';
 
 export interface MacOSProps {
   /** Apps to have open on load, by id (see apps.ts): ['reminders'], ['mail', 'notes'] — the last is frontmost. */
-  initialApps?: string[];
+  defaultApps?: string[];
   /** Pages to open on, below the root (e.g. ['calc'], ['folder:~', 'folder:~/Projects']). */
-  initialPages?: string[];
+  defaultPages?: string[];
   /** Text in the input to start with. */
-  initialQuery?: string;
+  defaultQuery?: string;
   /** Show the bar on load (default true); ⌥Space toggles it. */
   defaultOpen?: boolean;
   /** Focus the input on load (default true). */
@@ -73,10 +73,10 @@ export interface MacOSProps {
   /** A controller you made yourself (and perhaps signed in). Takes precedence over `tailscale`. */
   controller?: Tailscale;
   /** Open one of the menu bar's menus on load. */
-  initialMenu?: StatusMenu;
+  defaultMenu?: StatusMenu;
 }
 
-export default function MacOS({ initialApps, initialPages, initialQuery = '', defaultOpen = true, autoFocus = true, record = true, dock, persist = false, tailscale, controller, initialMenu }: MacOSProps) {
+export default function MacOS({ defaultApps, defaultPages, defaultQuery = '', defaultOpen = true, autoFocus = true, record = true, dock, persist = false, tailscale, controller, defaultMenu }: MacOSProps) {
   useSessionRecording({ enabled: record });
   const ambient = useAppearance() === 'dark';
   const key = persist ? (typeof persist === 'string' ? persist : 'bl-macos') : null;
@@ -86,7 +86,7 @@ export default function MacOS({ initialApps, initialPages, initialQuery = '', de
   const [open, setOpen] = useState(defaultOpen);
   // The props seed the first opening; later ones start at the root, in a fresh bar (`opening` keys it, so showing it
   // again while it is still leaving mounts a new one inside the same, interrupted, animation).
-  const [boot, setBoot] = useState({ pages: initialPages, query: initialQuery, focus: autoFocus, opening: 0 });
+  const [boot, setBoot] = useState({ pages: defaultPages, query: defaultQuery, focus: autoFocus, opening: 0 });
   const [menu] = useState(createCommandMenuController);
   // The one Tailscale controller of this desktop, made once on first render; the real Tailscale unless told otherwise.
   const [real] = useState(() => (controller || tailscale ? null : desktopTailnet()));
@@ -104,7 +104,7 @@ export default function MacOS({ initialApps, initialPages, initialQuery = '', de
     <BLProvider appearance={dark ? 'dark' : 'light'} tint={ALFRED_TINT[dark ? 'dark' : 'light']} className="bg-transparent">
       <TailscaleProvider tailscale={controller} options={tailscale ?? real ?? undefined}>
         <AlfredProvider hud={hud} appearance={dark ? 'dark' : 'light'} toggleAppearance={() => setOverride(!dark)} reset={reset} close={close}>
-          <Desktop dark={dark} open={open} show={show} close={close} boot={boot} menu={menu} hud={hud} initialApps={initialApps} initialDock={dock} persistKey={key} initialMenu={initialMenu} />
+          <Desktop dark={dark} open={open} show={show} close={close} boot={boot} menu={menu} hud={hud} defaultApps={defaultApps} defaultDock={dock} persistKey={key} defaultMenu={defaultMenu} />
         </AlfredProvider>
       </TailscaleProvider>
     </BLProvider>
@@ -115,7 +115,7 @@ export default function MacOS({ initialApps, initialPages, initialQuery = '', de
 const MIN_DOCK_TILE = 28;
 const MAX_DOCK_TILE = 48;
 
-function Desktop({ initialApps, persistKey, ...rest }: ScreenProps & { initialApps?: string[] }) {
+function Desktop({ defaultApps, persistKey, ...rest }: ScreenProps & { defaultApps?: string[] }) {
   const [ref, size] = useContainerSize({ width: 900, height: 640 });
   // The room windows live in: everything under the menu bar.
   const area = useMemo(() => ({ width: size.width, height: Math.max(0, size.height - MENU_H) }), [size.width, size.height]);
@@ -124,7 +124,7 @@ function Desktop({ initialApps, persistKey, ...rest }: ScreenProps & { initialAp
   if (!isPhone(size.width) && (wide.width !== area.width || wide.height !== area.height)) setWide(area);
   return (
     <div ref={ref} data-slot="macos" className="relative h-full w-full">
-      <DesktopProvider area={area} openArea={!isPhone(size.width) ? area : wide} initialApps={initialApps} persistKey={persistKey ? `${persistKey}:desktop` : undefined}>
+      <DesktopProvider area={area} openArea={!isPhone(size.width) ? area : wide} defaultApps={defaultApps} persistKey={persistKey ? `${persistKey}:desktop` : undefined}>
         <Screen {...rest} persistKey={persistKey} size={size} />
       </DesktopProvider>
     </div>
@@ -135,12 +135,12 @@ interface ScreenProps {
   dark: boolean; open: boolean; show: () => void; close: () => void;
   boot: { pages?: string[]; query: string; focus: boolean; opening: number }; menu: CommandMenuController;
   hud: ToastHud;
-  initialDock?: Partial<DockPrefs>;
+  defaultDock?: Partial<DockPrefs>;
   persistKey?: string | null;
-  initialMenu?: StatusMenu;
+  defaultMenu?: StatusMenu;
 }
 
-function Screen({ dark, open, show, close, boot, menu, hud, initialDock, persistKey, initialMenu, size }: ScreenProps & { size: { width: number; height: number } }) {
+function Screen({ dark, open, show, close, boot, menu, hud, defaultDock, persistKey, defaultMenu, size }: ScreenProps & { size: { width: number; height: number } }) {
   const appearance = dark ? 'dark' : 'light';
   const { power, setPower } = useAlfred();
   const desktop = useDesktop();
@@ -171,7 +171,7 @@ function Screen({ dark, open, show, close, boot, menu, hud, initialDock, persist
   const items = APPS.length + 2;
   const tile = Math.min(MAX_DOCK_TILE, Math.floor((size.width - 32 - 12 - (items + 1) * 6 - 6) / items));
   const dock = !phone && size.height >= 480 && tile >= MIN_DOCK_TILE;
-  const [dockPrefs, setDockPrefs] = usePersistentState<DockPrefs>(persistKey ? `${persistKey}:dock` : null, () => ({ magnify: true, hide: false, ...initialDock }),
+  const [dockPrefs, setDockPrefs] = usePersistentState<DockPrefs>(persistKey ? `${persistKey}:dock` : null, () => ({ magnify: true, hide: false, ...defaultDock }),
     (v): v is DockPrefs => typeof (v as DockPrefs)?.magnify === 'boolean' && typeof (v as DockPrefs)?.hide === 'boolean');
   // A hidden dock sits off-screen, so windows, Alfred's list and the toasts get its room back.
   const reserve = dock && !dockPrefs.hide;
@@ -207,7 +207,7 @@ function Screen({ dark, open, show, close, boot, menu, hud, initialDock, persist
   return (
     <Wallpaper appearance={appearance}>
       <div className="flex h-full flex-col">
-        {phone ? <StatusBar appearance={appearance} inApp={foreground !== null && !switching} /> : <MenuBar appearance={appearance} onAlfred={toggle} initialMenu={initialMenu} />}
+        {phone ? <StatusBar appearance={appearance} inApp={foreground !== null && !switching} /> : <MenuBar appearance={appearance} onAlfred={toggle} defaultMenu={defaultMenu} />}
         {/* The desktop: pressing the bare wallpaper puts Finder frontmost, as on a Mac. */}
         <div className="relative min-h-0 flex-1" onPointerDown={(e) => { if (e.target === e.currentTarget) desktop.blur(); }}>
           {phone ? (
@@ -256,7 +256,7 @@ function Screen({ dark, open, show, close, boot, menu, hud, initialDock, persist
             >
               <Launcher
                 key={boot.opening}
-                controller={menu} initialPages={boot.pages} initialQuery={boot.query} autoFocus={boot.focus}
+                controller={menu} defaultPages={boot.pages} defaultQuery={boot.query} autoFocus={boot.focus}
                 width={width} listHeight={listHeight} onClose={close}
               />
             </div>

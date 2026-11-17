@@ -134,11 +134,11 @@ export const LargeTitleCompact: Story = {
  *  the stack's `resetKey`, so picking a section drops back to its first page; `renderPage` draws the album and
  *  credits pages from their keys. */
 export const NestedStack: Story = {
-  render: () => <Phone w={1080} h={640}><SplitViewLibraryDemo initialAlbum="static" /></Phone>,
+  render: () => <Phone w={1080} h={640}><SplitViewLibraryDemo defaultAlbum="static" /></Phone>,
 };
 
 export const NestedStackDark: Story = {
-  render: () => <Phone w={1080} h={640} appearance="dark"><SplitViewLibraryDemo initialAlbum="static" /></Phone>,
+  render: () => <Phone w={1080} h={640} appearance="dark"><SplitViewLibraryDemo defaultAlbum="static" /></Phone>,
 };
 
 /** At tablet width the sidebar floats over the stack (the toggle on the stack's first page opens it). */
@@ -151,7 +151,7 @@ export const NestedStackMedium: Story = {
  *  pops the album page first; only at the stack's first page does it pop the column, whose back button that
  *  page shows. */
 export const NestedStackCompact: Story = {
-  render: () => <Phone w={390} h={760} appearance="dark"><SplitViewLibraryDemo defaultCompactColumn="detail" initialAlbum="tidewater" /></Phone>,
+  render: () => <Phone w={390} h={760} appearance="dark"><SplitViewLibraryDemo defaultCompactColumn="detail" defaultAlbum="tidewater" /></Phone>,
 };
 
 /** Compact, at the stack's first page: the back button goes to the sidebar column, named by its title. */

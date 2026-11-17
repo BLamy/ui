@@ -6,22 +6,35 @@ Touch-first React components inspired by UIKit container patterns, built on [UI 
 
 Two ways, from the same source files. The docs explain both: [Installation](https://blamy.github.io/ui/#/installation) and [Optimization](https://blamy.github.io/ui/#/optimization).
 
-- **shadcn registry (recommended for products).** Install the two UI SDK aliases (below) and the base item, then `npx shadcn@latest add https://blamy.github.io/ui/r/split-view.json` copies the source of one component and what it imports into your app (`components/ui/…`, `lib/…`), so you own the files and only ship what you use.
-- **npm.** One dependency with everything in it. It depends on our fork of UI SDK under upstream's names; list the two aliases yourself too, so your own `@ui-sdk/react` imports share the kit's copy:
+**shadcn registry (recommended for products).** The copied source imports UI SDK as `@ui-sdk/core` and `@ui-sdk/react`, our fork under upstream's names. Add the two aliases, then the base item (`bl-ui`), then any part: `add` copies the source of one component and what it imports into your app (`components/ui/…`, `lib/…`), so you own the files and only ship what you use.
+
+```sh
+npm install @ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1 @ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1
+npx shadcn@latest add https://blamy.github.io/ui/r/bl-ui.json
+npx shadcn@latest add https://blamy.github.io/ui/r/navigation-stack.json
+```
+
+**npm.** One dependency with everything in it. It depends on the same two aliases; list them yourself too, so your own `@ui-sdk/react` imports share the kit's copy:
 
 ```sh
 npm install @brett_lamy/ui @ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1 @ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1
 ```
 
-Import the stylesheet once — and, for the iOS palette, the bl-theme (it sets shadcn's CSS variables; leave it out to use your own shadcn theme). `BLProvider` picks light/dark and a tint for a subtree, and `ThemeScope` scopes any set of variables to a subtree:
-
-```css
-@import '@brett_lamy/ui/styles.css';
-@import '@brett_lamy/ui/theme.css'; /* optional: the iOS palette */
-```
+No JavaScript module of the package imports CSS (so every entry loads in plain Node): import the stylesheets once, at your app's entry.
 
 ```tsx
-import { BLProvider, NavigationStack, NavigationStackPage, NavigationStackBar, NavigationStackTitle, NavigationStackContent } from '@brett_lamy/ui';
+import '@brett_lamy/ui/styles.css' // always: the kit, with the Markdown editor's sheet in a layer
+import '@brett_lamy/ui/theme.css' // optional: the iOS palette
+import '@brett_lamy/ui/docstream/styles.css' // only if you render Markdown (below)
+```
+
+`@brett_lamy/ui/docstream/styles.css` is docstream's sheet. MarkdownView, MarkdownEditor, Composer, Conversation, ReplayPreview, TuiPreview, StlViewer, StrudelPlayer and docstream's own components (`@brett_lamy/ui/docstream/…`, DocsSite included) need it, after the kit's sheet; nothing else does. The editor's sheet (`@brett_lamy/ui/docstream-editor/styles.css`) is already inside `@brett_lamy/ui/styles.css`: import it yourself only in an app that doesn't load the kit's sheet, never both. With the registry, an item that needs a sheet adds the `@import` to your CSS.
+
+The theme sets shadcn's CSS variables to the iOS palette; leave it out to use your own shadcn theme. `BLProvider` picks light or dark and a tint for a subtree, and `ThemeScope` scopes any set of variables to a subtree. Import each part from its module's entry, the registry's path under the package name (`@/components/ui/navigation-stack` is `@brett_lamy/ui/navigation-stack`):
+
+```tsx
+import { BLProvider } from '@brett_lamy/ui/lib/theme';
+import { NavigationStack, NavigationStackBar, NavigationStackContent, NavigationStackPage, NavigationStackTitle } from '@brett_lamy/ui/navigation-stack';
 
 export function App() {
   return (
@@ -37,15 +50,15 @@ export function App() {
 }
 ```
 
-The package is ESM with one output module per source module (`sideEffects` is limited to CSS), so bundlers drop what you don't import; component modules start with `'use client'` for Next.js. Every module also has its own entry at the registry's path: `@/components/ui/split-view` is `@brett_lamy/ui/split-view`, `@/lib/theme` is `@brett_lamy/ui/lib/theme`.
+The package is ESM with one output module per source module (`sideEffects` is limited to CSS), so bundlers drop what you don't import; component modules start with `'use client'` for Next.js. The components, their parts and the kit's hooks are also on the package root (`import { Button } from '@brett_lamy/ui'`); engines and models (`lib/cron`, `lib/diagram-model`…) are only on their own entries.
 
 React 19 is required (the components use `use(Context)`, `<Context value>` and `ref` as a prop).
 
-The package depends on our fork of UI SDK under upstream's names (`@ui-sdk/core` → `npm:@brett_lamy/ui-sdk-core`, `@ui-sdk/react` → `npm:@brett_lamy/ui-sdk-react`). A registry install copies source that imports `@ui-sdk/core` and `@ui-sdk/react`: add the two aliases to your app before the first `add` (see [Installation](https://blamy.github.io/ui/#/installation)). UI SDK puts a little runtime CSS in a cascade layer named `ui-sdk`; `styles.css` declares it first, and an app with its own Tailwind build should start its global CSS with `@layer ui-sdk;`. Coming from 5.x: [Migrating to 6.0](https://blamy.github.io/ui/#/migrating-to-6).
+UI SDK puts a little runtime CSS in a cascade layer named `ui-sdk`; `styles.css` declares it first, and an app with its own Tailwind build should start its global CSS with `@layer ui-sdk;`. Coming from 5.x: [Migrating to 6.0](https://blamy.github.io/ui/#/migrating-to-6).
 
 ## Docstream
 
-Docstream and its editor are part of this package: `@brett_lamy/ui/docstream` and its entries (`/site`, `/gitbook`, `/replay`, `/stl`, `/strudel`, `/xstate`, `/capnp`, `/playground`, `/viz`, `/vite`…), and `@brett_lamy/ui/docstream-editor` (`/editor`, `/convert`). They replace the npm packages `@brett_lamy/docstream` and `@brett_lamy/docstream-editor`, which stop at 2.0.1: rename `@brett_lamy/docstream` to `@brett_lamy/ui/docstream` in your imports. Docstream styles itself: import `@brett_lamy/ui/docstream/styles.css` once, after `@brett_lamy/ui/styles.css`, when you render Markdown (MarkdownView, Conversation, the docstream widgets) or its components directly: no JavaScript module imports CSS, so every entry loads in plain Node; the editor's sheet is already in `@brett_lamy/ui/styles.css`. Its optional peers are this package's: `@agent-wasm/core` (`/playground`), `@brett_lamy/viz-engine` (`/viz`), `vite` (`/vite`) and `xstate` (the xstate fence). Its own docs: [#/docstream](https://blamy.github.io/ui/#/docstream) and [#/docstream-editor](https://blamy.github.io/ui/#/docstream-editor).
+Docstream and its editor are part of this package: `@brett_lamy/ui/docstream` and its entries (`/site`, `/gitbook`, `/replay`, `/stl`, `/strudel`, `/xstate`, `/capnp`, `/playground`, `/viz`, `/vite`…), and `@brett_lamy/ui/docstream-editor` (`/editor`, `/convert`). They replace the npm packages `@brett_lamy/docstream` and `@brett_lamy/docstream-editor`, which stop at 2.0.1: rename `@brett_lamy/docstream` to `@brett_lamy/ui/docstream` in your imports. Docstream styles itself with `@brett_lamy/ui/docstream/styles.css` (see [Install](#install) for which components need it). It draws with the kit's `Icon` and colors code with the kit's lexer (`@brett_lamy/ui/lib/syntax`). Its optional peers are this package's: `@agent-wasm/core` (`/playground`), `@brett_lamy/viz-engine` (`/viz`), `vite` (`/vite`) and `xstate` (the xstate fence). Its own docs: [#/docstream](https://blamy.github.io/ui/#/docstream) and [#/docstream-editor](https://blamy.github.io/ui/#/docstream-editor).
 
 ## IndexBar
 
@@ -55,7 +68,7 @@ Docstream and its editor are part of this package: `@brett_lamy/ui/docstream` an
 import { IndexBar, type IndexBarItem } from '@brett_lamy/ui';
 
 const stops: IndexBarItem<number>[] = turns.map((turn, index) => ({
-  key: turn.sequence,
+  value: turn.sequence,
   label: index % 5 === 0 ? String(index + 1) : undefined,
   caption: turn.author,
   preview: <span>{turn.summary}</span>,
@@ -89,14 +102,14 @@ import { IndexBar, indexBarAlphabetItems } from '@brett_lamy/ui';
 - Chat: `Composer` and its parts, conversation parts (`Conversation`, `UserMessage`, `AssistantMessage`, `WorkLog`, `ToolCall`, …), `MessageScroller`, `MarkdownView`, `FloatingSheet`, `ArtifactChatContainer`
 - Editors and media: `CodeEditor`, `MarkdownEditor`, `Terminal`, `Workspace`, `DebugToolbar`, PencilKit (`PencilCanvas`, `PencilToolbar`, `ImageAnnotator`), the video parts
 - Canvas and diagrams: `Canvas`, `Diagram`, `DiagramFrame`, `StateDiagram` (XState, an optional peer; ELK lays diagrams out when asked, also optional); `CloudflareDiagram` and the Cloudflare catalog on their own entry, `@brett_lamy/ui/cloudflare`
-- Engines on their own entries (`@brett_lamy/ui/lib/<module>`): the passkey vault, PGlite, FFmpeg, Tailscale, the diagram layout (`lib/diagram-layout`, `lib/diagram-layout/react`), the file-upload and table models; OpenCode's runtime on `@brett_lamy/ui/opencode`
+- Engines and models on their own entries (`@brett_lamy/ui/lib/<module>`): the passkey vault, PGlite, FFmpeg, Tailscale, the cron and time parsers, the syntax lexer (`lib/syntax`, `lib/syntax-lexer`), the diagram model and layout (`lib/diagram-model`, `lib/diagram-layout`, `lib/diagram-layout/react`), the state-machine model (`lib/state-diagram-model`, `-source`, `-edit`, `-simulation`), the file-upload and table models; OpenCode's runtime on `@brett_lamy/ui/opencode`
 - Blocks, installed from the registry rather than this package: the team-chat shell (`discord-clone`: `ChatShell` and its regions, channels, messages, members), the IDE workbench (`t3-clone`: `WorkbenchShell` and its parts, `WorkbenchComposer`, `ModelPicker`, the terminal dock and surfaces), the demo apps (`map-chat`, `delivery-tracking`, `split-view-demos`, `pencilkit-sketch`) and the full apps (GitHub, Apple Mail, VS Code, …)
 
 Every component exports its props type from the package root. See the Storybook catalog for interaction and responsive examples.
 
 ## Team chat
 
-`ChatShell` is a thin layout root: it measures its own width, owns the compact navigation drawer and applies the chat palette. Everything inside is a part you place yourself — leave out what a layout doesn't need. Parts read shell state (`width`, `compact`, `navOpen`, `setNavOpen`) through `useChatShell()`. It ships with the `discord-clone` registry block (`npx shadcn add https://blamy.github.io/ui/r/discord-clone.json`), with its channel, message, member and composer parts, so you own and edit them; the library parts it composes come from the package.
+`ChatShell` is a thin layout root: it measures its own width, owns the compact navigation drawer and applies the chat palette. Everything inside is a part you place yourself — leave out what a layout doesn't need. Parts read shell state (`width`, `sizeClass`, `navOpen`, `setNavOpen`) through `useChatShell()`. It ships with the `discord-clone` registry block (`npx shadcn add https://blamy.github.io/ui/r/discord-clone.json`), with its channel, message, member and composer parts, so you own and edit them; the library parts it composes come from the package.
 
 ```tsx
 import {
@@ -111,7 +124,7 @@ import {
 export function Chat() {
   const [channel, setChannel] = useState('general');
   return (
-    <ChatShell breakpoint={880}>
+    <ChatShell breakpoints={{ medium: 880 }}>
       <ChatShellNav>
         <Tabs variant="switcher" defaultValue="hq" className="contents">
           <TabsBar>
@@ -182,15 +195,15 @@ export function Workbench() {
       </WorkbenchMain>
       <WorkbenchPanel><Surfaces /></WorkbenchPanel>
       <WorkbenchTabBar value={surface} onValueChange={setSurface}>
-        <WorkbenchTab id="chat" icon="msg">Chat</WorkbenchTab>
-        <WorkbenchTab id="diff" icon="diff">Diff</WorkbenchTab>
+        <WorkbenchTab value="chat" icon="msg">Chat</WorkbenchTab>
+        <WorkbenchTab value="diff" icon="diff">Diff</WorkbenchTab>
       </WorkbenchTabBar>
     </WorkbenchShell>
   );
 }
 ```
 
-Descendants read and drive the shell with `useWorkbenchShell()` (`sidebarOpen`, `dockOpen`, `panelOpen`, `panelFullscreen`, their setters and toggles, `widthClass`, `compact`).
+Descendants read and drive the shell with `useWorkbenchShell()` (`sizeClass`, `appearance`, `sidebarOpen`, `dockOpen`, `panelOpen`, `panelFullscreen`, their setters and toggles, and the two panes' controllers).
 
 `Composer` is compositional (like shadcn's InputGroup): `Composer` owns the draft, `ComposerCard` holds `ComposerInput` (the docstream editor, `@brett_lamy/ui/docstream-editor`, a WYSIWYG editor; pasted images become attachment chips) and addons (`ComposerFooter`, `ComposerSelect`, `ComposerPill`, `ComposerSend`, …), and `ComposerBump`s attach above or below the card. Its buttons, pills and menus are the kit's `Button` and `DropdownMenu`. The `t3-clone` block's `WorkbenchComposer` is a full composition (with its `ModelPicker`). `MarkdownView` renders replies with docstream (`@brett_lamy/ui/docstream`); `SurfaceFiles` and `SurfaceDiff` use `@pierre/trees` and `@pierre/diffs`.
 

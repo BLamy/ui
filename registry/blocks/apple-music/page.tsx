@@ -22,9 +22,9 @@ export type MusicSection = 'listen' | 'browse' | 'radio' | 'search' | 'library' 
 
 export interface AppleMusicProps {
   /** Where to open (a sidebar item; on phones, the tab that holds it). Defaults to Listen Now. */
-  initialSection?: MusicSection;
+  defaultSection?: MusicSection;
   /** An album to open on top of the section, e.g. 'neon-tidewater'. */
-  initialAlbum?: string;
+  defaultAlbum?: string;
   /** Start with the full Now Playing screen open. */
   nowPlaying?: boolean;
 }
@@ -41,18 +41,18 @@ const tabOf = (id: string) => (LIBRARY_ROWS.has(id) || id.startsWith('playlist:'
 /** Music's accent red (light / dark). */
 const MUSIC_TINT = { light: '#FA2D48', dark: '#FF375F' } as const;
 
-export default function AppleMusic({ initialSection = 'listen', initialAlbum, nowPlaying = false }: AppleMusicProps) {
+export default function AppleMusic({ defaultSection = 'listen', defaultAlbum, nowPlaying = false }: AppleMusicProps) {
   const dark = useAppearance() === 'dark';
   // The full player fits its artwork to the block's height.
   const [ref, box] = useContainerSize<HTMLDivElement>();
-  const player = usePlayer(initialAlbum ? { queue: albumSongs(ALBUM[initialAlbum]), index: 0, position: 48 } : undefined);
+  const player = usePlayer(defaultAlbum ? { queue: albumSongs(ALBUM[defaultAlbum]), index: 0, position: 48 } : undefined);
   const [expanded, setExpanded] = useState(nowPlaying);
   // Where you are: the sidebar section (on a phone, the tab that holds it) and the pages pushed over it. Each section
   // keeps its own pages and the Library tab its last row, so going back to a tab lands where you left it, as iOS
   // keeps each tab's stack.
-  const [section, setSection] = useState<string>(initialSection);
-  const [pagesBy, setPagesBy] = useState<Record<string, Page[]>>(() => (initialAlbum ? { [initialSection]: [{ kind: 'album', id: initialAlbum }] } : {}));
-  const lastInLibrary = useRef<string>(tabOf(initialSection) === 'library' ? initialSection : 'library');
+  const [section, setSection] = useState<string>(defaultSection);
+  const [pagesBy, setPagesBy] = useState<Record<string, Page[]>>(() => (defaultAlbum ? { [defaultSection]: [{ kind: 'album', id: defaultAlbum }] } : {}));
+  const lastInLibrary = useRef<string>(tabOf(defaultSection) === 'library' ? defaultSection : 'library');
   const pages = pagesBy[section] ?? [];
   const setPages = (change: (pages: Page[]) => Page[]) => setPagesBy((all) => ({ ...all, [section]: change(all[section] ?? []) }));
   const [split] = useState(createSplitViewController);

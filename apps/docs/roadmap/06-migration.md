@@ -17,7 +17,7 @@ They stop at **2.0.1**. From `@brett_lamy/ui` 6.0 they are part of the library: 
 | `@brett_lamy/docstream-editor` | `@brett_lamy/ui/docstream-editor` |
 | `@brett_lamy/docstream-editor/<entry>` (`editor`, `convert`, `styles.css`) | `@brett_lamy/ui/docstream-editor/<entry>` |
 
-The components, props and Markdown are 2.0.1's. Optional peers stay optional (`@brett_lamy/viz-engine` for the viz fence), and one of 2.0.1's dependencies becomes an optional peer: install `xstate` yourself if your pages draw `xstate` fences. The editor's stylesheet is already inside `@brett_lamy/ui/styles.css`; import `@brett_lamy/ui/docstream-editor/styles.css` only in an app that doesn't load the kit's. Two things come with the library that 2.0.1 didn't have: the `capnp` fence draws a workerd config on a CloudflareDiagram, and the `xstate` fence keeps a machine's `invoke`. The full list, with the stylesheet order, is in the 6.0 migration guide's [Docstream section](https://blamy.github.io/ui/#/migrating-to-6#docstream-is-part-of-the-library).
+The components and the Markdown are 2.0.1's; their props take the kit's spellings (`streaming`, `onValueChange(value, details)`, `defaultTime`…, with no aliases), and they draw with the kit's icons, so `lucide-react` is gone. Optional peers stay optional (`@brett_lamy/viz-engine` for the viz fence), and one of 2.0.1's dependencies becomes an optional peer: install `xstate` yourself if your pages draw `xstate` fences. Import `@brett_lamy/ui/docstream/styles.css` yourself, as with 2.0.1: no JavaScript module of the package imports CSS. The editor's stylesheet is already inside `@brett_lamy/ui/styles.css`; import `@brett_lamy/ui/docstream-editor/styles.css` only in an app that doesn't load the kit's. Two things come with the library that 2.0.1 didn't have: the `capnp` fence draws a workerd config on a CloudflareDiagram, and the `xstate` fence draws a machine on a read-only StateDiagram. The full list, with the stylesheet order, is in the 6.0 migration guide's [Docstream section](https://blamy.github.io/ui/#/migrating-to-6#docstream-is-part-of-the-library).
 
 {% hint style="info" %}
 The version of docstream you get is the library's: `@brett_lamy/ui@6.0.0` carries docstream as it was when 6.0 shipped. There is no separate version to keep in step any more.
@@ -55,7 +55,7 @@ The re-exports are removed. `@brett_lamy/ui` exports its primitives, containers,
 
 ## Stylesheets
 
-`@brett_lamy/ui/styles.css` keeps covering every BL package through 6.x. From 7.0 each package with styles ships its own `styles.css`, and `@brett_lamy/tokens/theme.css` carries the theme.
+`@brett_lamy/ui/styles.css` keeps covering every BL package through 6.x (docstream keeps its own sheet, `@brett_lamy/ui/docstream/styles.css`). From 7.0 each package with styles ships its own `styles.css`, and `@brett_lamy/tokens/theme.css` carries the theme.
 
 ## The docstream shims
 

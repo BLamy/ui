@@ -49,9 +49,9 @@ export interface TerminalRecord {
 
 export interface VSCodeStoreOptions {
   /** The file open to begin with, relative to the root. */
-  initialFile?: string;
+  defaultFile?: string;
   /** The rail's tab to start on. A wide window has no editor or terminal tab, so there that's the Explorer. */
-  initialView?: ViewId;
+  defaultView?: ViewId;
   /** The controller the store drives its Workspace with. Default: a new one. */
   workspace?: WorkspaceController<TabData>;
 }
@@ -69,17 +69,17 @@ const SEARCH_READS_AT_ONCE = 16;
 export class VSCodeStore {
   readonly runtime: VSCodeRuntime;
   readonly root: string;
-  private readonly initialFile: string | undefined;
+  private readonly defaultFile: string | undefined;
   private readonly listeners = new Set<() => void>();
   private version = 0;
 
   constructor(runtime: VSCodeRuntime, options: VSCodeStoreOptions = {}) {
     this.runtime = runtime;
     this.root = runtime.files.root;
-    this.initialFile = options.initialFile;
+    this.defaultFile = options.defaultFile;
     this.workspace = options.workspace ?? createWorkspaceController<TabData>();
-    if (options.initialView) this.view = options.initialView;
-    if (options.initialView && options.initialView !== 'editor' && options.initialView !== 'terminal') this.lastSideView = options.initialView;
+    if (options.defaultView) this.view = options.defaultView;
+    if (options.defaultView && options.defaultView !== 'editor' && options.defaultView !== 'terminal') this.lastSideView = options.defaultView;
     this.status = runtime.status.get();
     const terminal = this.makeTerminal(null);
     this.activeTerminal = terminal.id;
@@ -186,7 +186,7 @@ export class VSCodeStore {
   }
 
   private openInitialFile() {
-    const wanted = this.initialFile ? `${this.root}/${this.initialFile}` : `${this.root}/index.js`;
+    const wanted = this.defaultFile ? `${this.root}/${this.defaultFile}` : `${this.root}/index.js`;
     const first = this.entries.get(wanted) === 'file'
       ? wanted
       : [...this.entries].filter(([path, kind]) => kind === 'file' && dirname(path) === this.root).map(([path]) => path).sort()[0];

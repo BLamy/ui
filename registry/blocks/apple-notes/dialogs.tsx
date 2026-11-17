@@ -46,7 +46,7 @@ function CreateForm({ notes, kind }: { notes: NotesState; kind: 'file' | 'folder
   useEffect(() => {
     const frame = requestAnimationFrame(() => form.current?.querySelector('input')?.setSelectionRange(0, folder ? name.length : name.replace(/\.mdx?$/i, '').length));
     return () => cancelAnimationFrame(frame);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- selects the stem once, as the sheet opens; typing must not move the selection.
   }, []);
   return <form ref={form} className="px-4 pt-0.5 pb-4" onSubmit={(e) => {
     e.preventDefault();

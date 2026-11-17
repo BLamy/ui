@@ -286,15 +286,14 @@ interface SidebarContextValue {
   open: boolean
   setOpen: (open: boolean, options?: { reason?: SidebarOpenChangeReason; event?: Event }) => boolean
   toggle: (options?: { reason?: SidebarOpenChangeReason; event?: Event }) => boolean
-  sizeClass: 'compact' | 'medium' | 'regular' // measured on the provider (`bindSizeClass` from `@/lib/size-class`)
-  compact: boolean // sizeClass === 'compact': narrower than `breakpoint` (default 560px)
+  sizeClass: 'compact' | 'medium' | 'regular' // measured on the provider against `breakpoints` (default 640 / 1024); compact: a `presentation="auto"` Sidebar is a drawer
 }
 ```
 
 ```tsx
 function MenuButton() {
-  const { toggle, open, compact } = useSidebar()
-  return <Button onClick={() => toggle()} aria-expanded={open}>{compact ? 'Menu' : 'Sidebar'}</Button>
+  const { toggle, open, sizeClass } = useSidebar()
+  return <Button onClick={() => toggle()} aria-expanded={open}>{sizeClass === 'compact' ? 'Menu' : 'Sidebar'}</Button>
 }
 ```
 

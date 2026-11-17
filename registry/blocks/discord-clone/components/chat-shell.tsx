@@ -8,7 +8,7 @@ import { Button as SdkButton } from '@ui-sdk/react/button';
 import { Toggle as SdkToggle } from '@ui-sdk/react/toggle';
 import { changeDetails } from '@/lib/change-details';
 import { SizeClassProvider, useContainerWidth, useSizeClassScope } from '@/lib/container';
-import { sizeClassOf } from '@/lib/size-class';
+import { sizeClassOf, type SizeClassBreakpoints } from '@/lib/size-class';
 import { Icon } from '@/lib/icon';
 import { useAppearance, themeScopeProps, type Appearance } from '@/lib/theme';
 import { ThemeScopeContext } from '@/lib/theme-context';
@@ -34,8 +34,9 @@ export { useChatShell, useOptionalChatShell, type ChatShellContextValue, type Ch
    channel, message and member parts live in the discord-clone registry block. */
 
 export interface ChatShellProps extends Omit<ComponentProps<'div'>, 'ref'> {
-  /** container width below which the navigation moves into a drawer */
-  breakpoint?: number;
+  /** Where the shell's own size classes start: below `medium` (default 880) it is `compact` and the navigation moves
+   *  into a drawer; `regular` from 1024. */
+  breakpoints?: SizeClassBreakpoints;
   /** initial state of the compact navigation drawer */
   defaultNavOpen?: boolean;
   /** controlled compact navigation drawer */
@@ -49,7 +50,7 @@ export interface ChatShellProps extends Omit<ComponentProps<'div'>, 'ref'> {
 }
 
 export function ChatShell({
-  breakpoint = 880,
+  breakpoints,
   defaultNavOpen = false,
   navOpen: navOpenProp,
   onNavOpenChange,
@@ -77,9 +78,10 @@ export function ChatShell({
     setNavs((n) => n + 1);
     return () => setNavs((n) => n - 1);
   }, []);
-  // Compact below `breakpoint`; the shell is a size-class scope, so popups inside (dialogs, menus with
+  // Compact below `breakpoints.medium`; the shell is a size-class scope, so popups inside (dialogs, menus with
   // `presentation="auto"`) and its own navigation follow its box. Its pixel width answers the docking questions.
-  const sizeClass = sizeClassOf(width, { medium: breakpoint, regular: Math.max(breakpoint, 1024) });
+  const medium = breakpoints?.medium ?? 880;
+  const sizeClass = sizeClassOf(width, { medium, regular: breakpoints?.regular ?? Math.max(medium, 1024) });
   const [navPane] = useState(createAdaptivePaneController);
   const ctx: ChatShellContextValue = { width, sizeClass, navOpen, setNavOpen, hasNav: navs > 0, registerNav, navPane };
   const scope = themeScopeProps({ scope: 'chat', appearance, tint });

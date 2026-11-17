@@ -90,7 +90,7 @@ export function DocstreamEnvProvider({ declared = [], host, children }: Docstrea
   const declaredKey = declared.join(",")
   const allDeclared = useMemo(
     () => [...new Set([...outer.declared, ...declared])],
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `declaredKey` stands for `declared`, a new array each render.
     [outer.declared, declaredKey],
   )
   const provide = useCallback((next: Record<string, string>) => setOwn((v) => ({ ...v, ...next })), [])
@@ -113,7 +113,7 @@ export function DocstreamEnvProvider({ declared = [], host, children }: Docstrea
 export function useEnvGate(sources: readonly string[] | null) {
   const env = useDocstreamEnv()
   const key = sources ? sources.join("\u0000") : null
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- `key` stands for `sources`, a new array each render.
   const used = useMemo(() => (sources ? usedEnvNames(sources, env.declared) : null), [key, env.declared])
   // A page that declares nothing never waits for its examples' sources.
   const missing = !env.declared.length ? [] : used ? used.filter((n) => env.values[n] === undefined) : null

@@ -45,18 +45,18 @@ export const Phone: Story = {
 };
 
 export const PullRequest: Story = {
-  args: { initialPullRequest: 488 },
+  args: { defaultPullRequest: 488 },
   render: (args) => <Full><GithubClone {...args} /></Full>,
 };
 
 /** The Code tab's file viewer: CodeEditor with GitHub's gutter and Primer colors. */
 export const FileView: Story = {
-  args: { initialPath: 'src/queue.ts' },
+  args: { defaultPath: 'src/queue.ts' },
   render: (args) => <Full><GithubClone {...args} /></Full>,
 };
 
 export const FileViewDark: Story = {
-  args: { initialPath: 'src/queue.ts' },
+  args: { defaultPath: 'src/queue.ts' },
   render: (args) => (
     <AppearanceProvider value="dark">
       <Full><GithubClone {...args} /></Full>
@@ -66,12 +66,12 @@ export const FileViewDark: Story = {
 
 /** Files changed: +/- rows and gutters, syntax colors inside the lines. */
 export const FilesChanged: Story = {
-  args: { initialPullRequest: 488, initialPullRequestTab: 'files' },
+  args: { defaultPullRequest: 488, defaultPullRequestTab: 'files' },
   render: (args) => <Full><GithubClone {...args} /></Full>,
 };
 
 export const FilesChangedDark: Story = {
-  args: { initialPullRequest: 488, initialPullRequestTab: 'files' },
+  args: { defaultPullRequest: 488, defaultPullRequestTab: 'files' },
   render: (args) => (
     <AppearanceProvider value="dark">
       <Full><GithubClone {...args} /></Full>

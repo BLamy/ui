@@ -819,17 +819,53 @@ test.describe('the upload system, wrapped into columns', () => {
     const n = el.getTotalLength(), a = el.getPointAtLength(0), b = el.getPointAtLength(n);
     return { id: el.getAttribute('data-edge'), length: n, apart: Math.abs(b.x - a.x) + Math.abs(b.y - a.y) };
   }));
-  for (const [width, height] of [[1280, 800], [800, 1000]]) {
-    test(`at ${width} × ${height}, no connection goes round the drawing: each is no longer than half again the distance between its ends, and a bit`, async ({ page }) => {
+  /** Each connection's two ends, in screen px, and the boxes of the cards it joins. */
+  const UPLOAD_ENDS = { 'api-files': ['api', 'files'], 'api-jobs': ['api', 'jobs'], 'files-jobs': ['files', 'jobs'], 'jobs-consumer': ['jobs', 'consumer'], 'consumer-db': ['consumer', 'db'], 'consumer-room': ['consumer', 'room'] };
+  const ends = (page) => page.locator('[data-slot=diagram-edge]').evaluateAll((els, joins) => els.map((el) => {
+    const m = el.getScreenCTM(), n = el.getTotalLength();
+    const at = (t) => { const p = el.getPointAtLength(t); return { x: m.a * p.x + m.e, y: m.d * p.y + m.f }; };
+    const box = (id) => { const r = document.querySelector(`[data-slot=diagram-node][data-node="${CSS.escape(id ?? '')}"]`)?.getBoundingClientRect(); return r ? { x: r.x, y: r.y, w: r.width, h: r.height } : null; };
+    const [from, to] = joins[el.getAttribute('data-edge')] ?? [];
+    return { id: el.getAttribute('data-edge'), a: at(0), b: at(n), from: box(from), to: box(to) };
+  }), UPLOAD_ENDS);
+  /** How far a point is from a box (0 on or in it). */
+  const off = (p, r) => Math.hypot(Math.max(r.x - p.x, 0, p.x - r.x - r.w), Math.max(r.y - p.y, 0, p.y - r.y - r.h));
+  for (const demo of ['upload', 'editing']) for (const [width, height] of [[1280, 800], [800, 1000]]) {
+    test(`${demo}, at ${width} × ${height}: no connection goes round the drawing (each no longer than half again the distance between its ends, and a bit), and each starts and ends on its cards`, async ({ page }) => {
       await page.setViewportSize({ width, height });
-      await page.goto('/?demo=cloudflare-diagram/upload&theme=light', { waitUntil: 'load' });
+      await page.goto(`/?demo=cloudflare-diagram/${demo}&theme=light`, { waitUntil: 'load' });
       await cards(page).first().waitFor({ timeout: 30_000 });
       await settle(page);
       const all = await routes(page);
       expect(all.length).toBe(6);
       for (const r of all) expect(r.length, `${r.id}: ${Math.round(r.length)} long, ends ${Math.round(r.apart)} apart`).toBeLessThanOrEqual(1.5 * r.apart + 200);
+      for (const e of await ends(page)) {
+        expect(e.from && e.to, e.id).toBeTruthy();
+        // On (or, for a Worker's own binding to its class, inside, under its sections) the card it leaves, and on the card it goes to: within 2 px.
+        expect(off(e.a, e.from), `${e.id} starts on its card`).toBeLessThanOrEqual(2);
+        expect(off(e.b, e.to), `${e.id} ends on its card`).toBeLessThanOrEqual(2);
+        expect(Math.min(Math.abs(e.b.x - e.to.x), Math.abs(e.b.x - e.to.x - e.to.w), Math.abs(e.b.y - e.to.y), Math.abs(e.b.y - e.to.y - e.to.h)), `${e.id}'s arrowhead is on its card's border`).toBeLessThanOrEqual(2);
+      }
     });
   }
+
+  test('editable, the board is the read-only one: the same places, whole at 1280 × 800', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    const places = async (demo) => {
+      await page.goto(`/?demo=cloudflare-diagram/${demo}&theme=light`, { waitUntil: 'load' });
+      await cards(page).first().waitFor({ timeout: 30_000 });
+      await settle(page);
+      const board = await page.locator('[data-slot=canvas]').first().boundingBox();
+      const boxes = await cards(page).evaluateAll((els) => els.map((el) => { const r = el.getBoundingClientRect(); return [el.getAttribute('data-node'), Math.round(r.x), Math.round(r.y), Math.round(r.width), Math.round(r.height)]; }));
+      for (const [id, x, y, w, h] of boxes) {
+        expect(x, `${id} in view`).toBeGreaterThanOrEqual(board.x - 1);
+        expect(y + h, `${id} in view`).toBeLessThanOrEqual(board.y + board.height + 1);
+        expect(x + w, `${id} in view`).toBeLessThanOrEqual(board.x + board.width + 1);
+      }
+      return boxes.sort();
+    };
+    expect(await places('editing')).toEqual(await places('upload'));
+  });
 
   test('pressing a service opens the panel and keeps it where it was, wholly on the board, without laying out again', async ({ page }) => {
     await page.setViewportSize({ width: 800, height: 1000 });

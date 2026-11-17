@@ -55,6 +55,6 @@ export function TailscaleRouter({ onStateChange, ...options }: TailscaleRouterPr
   const cb = useRef(onStateChange);
   cb.current = onStateChange;
   const { status, detail, routed } = state;
-  useEffect(() => { cb.current?.(state); }, [status, detail, routed]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { cb.current?.(state); }, [status, detail, routed]); // eslint-disable-line react-hooks/exhaustive-deps -- reports when the state's fields change, not when the hook returns a new object.
   return null;
 }

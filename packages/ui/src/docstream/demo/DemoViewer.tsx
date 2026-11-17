@@ -188,7 +188,7 @@ function useResolved<T>(resolver: DemoResolver | undefined, key: string, active:
       live = false
     }
     // `run` closes over resolver + key only.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `run` is remade each render and closes over `resolver` and `key` only.
   }, [resolver, key, active])
   return state
 }

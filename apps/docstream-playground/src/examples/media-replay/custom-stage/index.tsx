@@ -86,7 +86,7 @@ const FramesStage = forwardRef<ReplayStageHandle, ReplayCustomStageProps>(functi
     onReady?.({ duration: DURATION, width: 1280, height: 800 })
     return () => cancelAnimationFrame(raf.current)
     // Once, when the stage is up.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- once, when the stage is up.
   }, [])
 
   return (

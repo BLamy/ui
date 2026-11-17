@@ -127,7 +127,7 @@ function useAsync<T>(make: (ffmpeg: Ffmpeg, blob: Blob) => Promise<T>, blob: Blo
     );
     return () => { live = false; };
     // `make` is rebuilt each render; `key` names what it computes.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `make` is rebuilt each render; `key` names what it computes.
   }, [ffmpeg, blob, key]);
   if (!blob) return { loading: false };
   // A result for another file or question is stale: loading until this one's arrives.

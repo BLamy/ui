@@ -32,13 +32,13 @@ type Story = StoryObj<Meta<Args>>;
 export const PlantPal: Story = {};
 
 /** A scene selected inside the TabsScreen that shows it, edited in place. */
-export const SelectedInPlace: Story = { args: { initialSelection: { kind: 'node', scene: 'garden', ids: ['plant-list'] } } };
+export const SelectedInPlace: Story = { args: { defaultSelection: { kind: 'node', scene: 'garden', ids: ['plant-list'] } } };
 
 /** The Mail sample on iPad: a three-column SplitView. */
 export const Mail: Story = { args: { defaultDocument: SPLIT_SAMPLE } };
 
 /** Running: the storyboard as a live prototype. */
-export const Running: Story = { args: { initialRunning: true } };
+export const Running: Story = { args: { defaultRunning: true } };
 
 /** In a narrow window (below 900px) the navigator and inspector are drawers over the canvas, which stays usable. */
 export const Narrow: Story = { args: { width: 820, height: 760 } };

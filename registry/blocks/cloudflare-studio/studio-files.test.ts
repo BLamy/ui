@@ -6,6 +6,8 @@ import { pathToFileURL } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { parseSystem } from '@/lib/cloudflare-system';
 import { readWrangler } from '@/lib/cloudflare-wrangler';
+import { placeInLayers } from '@/lib/cloudflare-board';
+import { STUDIO_EXAMPLE } from '../../../packages/ui/src/stories/cloudflare-systems';
 import { EXAMPLE } from './example';
 import { readSaved, sentBy, slugOf, studioFiles, writeSaved } from './studio-files';
 
@@ -76,5 +78,12 @@ describe('what’s kept in the browser', () => {
     expect(readSaved('[]')).toBeNull();
     expect(readSaved(JSON.stringify({ name: 'x', system: '{"services": 3}' }))).toBeNull();
     expect(readSaved(JSON.stringify({ name: '  ', system: '{"services":[],"edges":[]}' }))?.name).toBe('Untitled system');
+  });
+});
+
+describe('the example', () => {
+  // The diagram family's layout invariants check the studio's board from a copy of this example: they stay the same.
+  it('is the one the diagram family’s layout invariants check', () => {
+    expect(EXAMPLE.system).toEqual(placeInLayers(STUDIO_EXAMPLE, { editable: true }));
   });
 });

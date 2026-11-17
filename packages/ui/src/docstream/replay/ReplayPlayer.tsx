@@ -465,7 +465,7 @@ export function ReplayPlayer({
   // something in them has changed, as this runs on every frame of a recording that can be an hour long.
   const toolsCounts = replayDevtoolsCountsAt(tools, time)
   const toolsCut = replayDevtoolsCutAt(tools, time)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- the state at `time` changes only where `toolsCut` does, so the cut stands in for the time and the lists are not rebuilt every frame; `!panel` rebuilds them as the panel opens.
   const toolsState = useMemo(() => (panel ? replayDevtoolsAt(tools, time) : null), [tools, toolsCut, !panel])
   const openTools = (tab: ReplayDevtoolsTab) => { setAutoOpened(false); setPanel((p) => (p === tab ? null : tab)) }
   // Clicking, scrolling or typing in a panel an inspection opened makes it the user's: it won't close by itself.

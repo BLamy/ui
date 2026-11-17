@@ -25,7 +25,7 @@ export {
   diagramEdgeVariants, diagramNodeVariants, diagramItemVariants, diagramEdgeLabelVariants,
 } from './components/diagram';
 export type {
-  DiagramProps, DiagramNodeBodyProps, DiagramNodeHeaderProps, DiagramSectionsProps, DiagramToolbarProps, DiagramContextValue, DiagramController, DiagramData, DiagramItem, DiagramActionDetails,
+  DiagramProps, DiagramNodeBodyProps, DiagramNodeHeaderProps, DiagramSectionsProps, DiagramToolbarProps, DiagramContextValue, DiagramController, DiagramData, DiagramItem, DiagramNoun, DiagramActionDetails,
   DiagramDataChangeDetails, DiagramDataChangeReason, DiagramSelectionChangeDetails, DiagramSelectionChangeReason,
   DiagramHistory, DiagramHistoryChangeDetails, DiagramHistoryOptions, UseDiagramHistory,
 } from './components/diagram';

@@ -34,7 +34,7 @@ const STEP_ICONS = { plan: 'layers', account: 'person', payment: 'wallet' } as c
 
 export interface SaasCheckoutProps {
   /** Step to open on. `done` opens on the receipt (paid with the test card unless `initial` has a card). */
-  initialStep?: Step;
+  defaultStep?: Step;
   /** The order to start from: plan, cycle, seats, a promotion code, account, card and billing fields. */
   initial?: DraftInit;
   /** The billing date (default: now). Pass a fixed date for still frames. */
@@ -43,12 +43,12 @@ export interface SaasCheckoutProps {
   onDashboard?: (receipt: Receipt) => void;
 }
 
-export default function SaasCheckout({ initialStep, initial, today, onDashboard }: SaasCheckoutProps) {
+export default function SaasCheckout({ defaultStep, initial, today, onDashboard }: SaasCheckoutProps) {
   const dark = useAppearance() === 'dark';
   const tint = CHECKOUT_TINT[dark ? 'dark' : 'light'];
   const [ref, sizeClass] = useSizeClass<HTMLDivElement>({ breakpoints: SIZE_CLASSES });
   const wide = sizeClass === 'regular';
-  const checkout = useCheckout({ initialStep, initial, today });
+  const checkout = useCheckout({ defaultStep, initial, today });
   const { step, status } = checkout;
   const index = step === 'done' || status === 'paid' ? STEPS.length : STEPS.indexOf(step);
   const direction = useDirection(index);

@@ -109,9 +109,9 @@ function loadState(key: string): State | null {
 /** `openArea` is the room new windows are placed in (default: `area`) — a phone-sized desktop passes the last wide one,
     so apps opened on the phone are where a desktop would have put them when the width comes back. */
 /** With `persistKey` the layout (which windows, where, in what order, zoomed or minimized) is kept in localStorage and
-    comes back on the next visit — in place of `initialApps` when there is one saved. */
-export function DesktopProvider({ area, openArea = area, initialApps = [], persistKey, children }: { area: Area; openArea?: Area; initialApps?: string[]; persistKey?: string; children: ReactNode }) {
-  const [state, dispatch] = useReducer(reduce, { area: openArea, initialApps }, ({ area: a, initialApps: apps }) =>
+    comes back on the next visit — in place of `defaultApps` when there is one saved. */
+export function DesktopProvider({ area, openArea = area, defaultApps = [], persistKey, children }: { area: Area; openArea?: Area; defaultApps?: string[]; persistKey?: string; children: ReactNode }) {
+  const [state, dispatch] = useReducer(reduce, { area: openArea, defaultApps }, ({ area: a, defaultApps: apps }) =>
     (persistKey ? loadState(persistKey) : null)
     ?? apps.reduce<State>((s, app) => reduce(s, { type: 'open', app, area: a }), { windows: [], z: 0, front: null }));
   useEffect(() => {

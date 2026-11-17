@@ -43,19 +43,19 @@ export const Gate: Story = { render: (args) => <Full><Safari {...args} /></Full>
 export const StartPage: Story = { render: (args) => <Full><Connected {...args} /></Full> };
 
 /** A page fetched through the tailnet: its stylesheet and images were fetched the same way and inlined. */
-export const Browsing: Story = { render: (args) => <Full><Connected {...args} initialUrls={[`http://${HOME}/`]} /></Full> };
+export const Browsing: Story = { render: (args) => <Full><Connected {...args} defaultUrls={[`http://${HOME}/`]} /></Full> };
 
 /** Two tabs: the tab strip appears. */
-export const Tabs: Story = { render: (args) => <Full><Connected {...args} initialUrls={[`http://${HOME}/`, `http://${NOTES}/`]} /></Full> };
+export const Tabs: Story = { render: (args) => <Full><Connected {...args} defaultUrls={[`http://${HOME}/`, `http://${NOTES}/`]} /></Full> };
 
 /** A public address with no exit node set: Safari picks the online one itself, then loads the page through it. */
-export const ThroughAnExitNode: Story = { render: (args) => <Full><Connected {...args} initialUrls={[`http://${PUBLIC_SITE}/`]} /></Full> };
+export const ThroughAnExitNode: Story = { render: (args) => <Full><Connected {...args} defaultUrls={[`http://${PUBLIC_SITE}/`]} /></Full> };
 
 /** A tailnet that offers no exit node: the public address fails, and the page says why. Nothing is requested from the public internet. */
-export const NotOnTheTailnet: Story = { render: (args) => <Full><Connected {...args} exitNode="none" initialUrls={[`http://${PUBLIC_SITE}/`]} /></Full> };
+export const NotOnTheTailnet: Story = { render: (args) => <Full><Connected {...args} exitNode="none" defaultUrls={[`http://${PUBLIC_SITE}/`]} /></Full> };
 
 /** The only exit node is offline: nothing is picked, and the page says so. */
-export const ExitNodeOffline: Story = { render: (args) => <Full><Connected {...args} exitNode="offline" initialUrls={[`http://${PUBLIC_SITE}/`]} /></Full> };
+export const ExitNodeOffline: Story = { render: (args) => <Full><Connected {...args} exitNode="offline" defaultUrls={[`http://${PUBLIC_SITE}/`]} /></Full> };
 
 export const Dark: Story = {
   render: (args) => (
@@ -74,4 +74,4 @@ export const GateDark: Story = {
 };
 
 /** Narrow: the tab strip steps aside for the overview button. */
-export const Phone: Story = { render: (args) => <Device width={390} height={720}><Connected {...args} initialUrls={[`http://${NOTES}/`]} /></Device> };
+export const Phone: Story = { render: (args) => <Device width={390} height={720}><Connected {...args} defaultUrls={[`http://${NOTES}/`]} /></Device> };

@@ -11,7 +11,7 @@ export interface CodexCloneProps {
   /** accent for your messages and links */
   tint?: string;
   /** chat open at mount */
-  initialChat?: string;
+  defaultChat?: string;
   /**
    * The sidebar with the inbox on (default): Priority for chats with replies waiting, then the rest. Off: Projects —
    * folders of threads — and Recents.
@@ -29,10 +29,10 @@ const DEFAULT_TINT = '#6E88B8';
  * switches the pane to that chat's documents, back on the section you left. Three columns on desktop; on a
  * phone the same columns stack — chats, then the chat, then its document.
  */
-export default function CodexClone({ appearance, tint = DEFAULT_TINT, initialChat = 'dot', inbox = true }: CodexCloneProps) {
+export default function CodexClone({ appearance, tint = DEFAULT_TINT, defaultChat = 'dot', inbox = true }: CodexCloneProps) {
   const ambient = useAppearance();
   const look = appearance ?? (ambient === 'light' ? 'light' : 'dark');
-  const codex = useCodex(initialChat);
+  const codex = useCodex(defaultChat);
   return (
     <AppearanceProvider value={look}>
       <BLProvider tint={tint} className="bg-background">

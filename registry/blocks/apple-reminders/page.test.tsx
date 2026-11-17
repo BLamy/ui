@@ -37,7 +37,7 @@ const settle = () => act(async () => { await new Promise((r) => setTimeout(r, 30
 const buttons = (scope: ParentNode, text: string) => [...scope.querySelectorAll<HTMLElement>('button')].filter((b) => (b.getAttribute('aria-label') ?? b.textContent ?? '').includes(text));
 
 it('a reminder’s subtasks open from a Collapsible trigger', async () => {
-  await act(async () => root.render(<AppleReminders initialList="family" />));
+  await act(async () => root.render(<AppleReminders defaultList="family" />));
   await settle();
   const trigger = buttons(element, 'of 3 subtasks')[0];
   expect(trigger.getAttribute('data-slot')).toBe('collapsible-trigger');
@@ -51,7 +51,7 @@ it('a reminder’s subtasks open from a Collapsible trigger', async () => {
 });
 
 it('Details: the Status menu is named by its trigger, and the date picks fold open with the Date switch', async () => {
-  await act(async () => root.render(<AppleReminders initialList="family" />));
+  await act(async () => root.render(<AppleReminders defaultList="family" />));
   await settle();
   await act(async () => buttons(element, 'Details for “Book pumpkin patch tickets”')[0].click());
   await settle();

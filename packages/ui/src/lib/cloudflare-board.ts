@@ -9,7 +9,8 @@
      R2 event notification and a service binding's entrypoint each say what they are;
    - ports are only there to connect by: with `editable`, a handler's is a dot on its row, and the rest are dots at either end
      of the header strip (what reaches it at its start, what it reaches with at its end), so an editable card is the same
-     card as a read-only one.
+     card as a read-only one. A connection doesn't claim them: it's drawn from card to card, as read-only, so an editable
+     board is laid out and routed exactly as a read-only one, with dots on it.
    Nothing here renders, so a server, a layout and a test read it as it is. */
 import type { CatalogProduct } from '@/lib/cloudflare-catalog';
 import {
@@ -173,11 +174,8 @@ function serviceNode(system: CloudflareSystem, service: CloudflareService, byId:
   return holds ? withPorts : placeItemPorts(withPorts, a, a.h);
 }
 
-/** Whether `inner` is held by `outer`: a Worker's Durable Object class, or one held by one of those. */
-function holdsService(outer: string, inner: string, byId: ReadonlyMap<string, CloudflareService>): boolean {
-  for (let s = byId.get(inner), guard = 0; s?.host !== undefined && s.host !== s.id && guard < byId.size; s = byId.get(s.host), guard++) if (s.host === outer) return true;
-  return false;
-}
+/** What a screen reader calls each node of a system's board: its services, its environments and the system itself. */
+export const cloudflareNoun = (node: Pick<DiagramNode<unknown>, 'id' | 'data'>): string => (node.id === CLOUDFLARE_SYSTEM_NODE ? 'system' : (node.data as CloudflareServiceNodeData | undefined)?.service ? 'service' : 'environment');
 
 /** Only what isn't so is drawn as wrong: a service, or a connection, with an error. */
 export function cloudflareProblems(issues: readonly SystemIssue[]) {
@@ -219,9 +217,6 @@ export function cloudflareBoardData(system: CloudflareSystem, { editable = false
       id: e.id,
       from: e.from,
       to: e.to,
-      // A box's own connection to what it holds starts under its sections, as it does read-only: not out of its header
-      // and back in through its wall.
-      ...(editable && link && !holdsService(e.from, e.to, byId) && !holdsService(e.to, e.from, byId) ? { fromPort: link.fromPort, toPort: link.toPort } : null),
       ...cloudflareEdgeLabel(e, to, link),
       ...(link?.kind === 'events' ? { variant: 'dashed' as const } : null),
       ...(wrong.edges.has(e.id) ? { tone: 'destructive' as const } : null),

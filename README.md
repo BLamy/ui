@@ -6,7 +6,7 @@ BL UI is an iOS-flavored React component library built on [UI SDK](https://ui-sd
 
 Two ways, from the same source files. [Installation](https://blamy.github.io/ui/#/installation) has every step for Vite and Next.js.
 
-**shadcn registry (recommended).** The copied source imports UI SDK as `@ui-sdk/core` and `@ui-sdk/react`, which are our fork under upstream's names. Add the two aliases, then the base item, then any part or block:
+**shadcn registry (recommended).** The copied source imports UI SDK as `@ui-sdk/core` and `@ui-sdk/react`, which are our fork under upstream's names. Add the two aliases, then the base item (`bl-ui`), then any part or block:
 
 ```sh
 npm install @ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1 @ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1
@@ -22,10 +22,22 @@ Each item copies one component and only what it imports into `components/ui/` an
 npm install @brett_lamy/ui @ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1 @ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1
 ```
 
+No JavaScript module of the package imports CSS (so every entry loads in plain Node): import the stylesheets once, at your app's entry.
+
 ```tsx
-import '@brett_lamy/ui/styles.css'
+import '@brett_lamy/ui/styles.css' // always: the kit, with the Markdown editor's sheet in a layer
 import '@brett_lamy/ui/theme.css' // optional: the iOS palette
-import { BLProvider, Button, NavigationStack, NavigationStackPage, NavigationStackBar, NavigationStackTitle, NavigationStackContent } from '@brett_lamy/ui'
+import '@brett_lamy/ui/docstream/styles.css' // only if you render Markdown (below)
+```
+
+`@brett_lamy/ui/docstream/styles.css` is docstream's sheet. MarkdownView, MarkdownEditor, Composer, Conversation, ReplayPreview, TuiPreview, StlViewer, StrudelPlayer and docstream's own components (`@brett_lamy/ui/docstream/…`, DocsSite included) need it, after the kit's sheet; nothing else does. The editor's sheet (`@brett_lamy/ui/docstream-editor/styles.css`) is already inside `@brett_lamy/ui/styles.css`: import it yourself only in an app that doesn't load the kit's sheet, never both. With the registry, an item that needs a sheet adds the `@import` to your CSS.
+
+Import each part from its module's entry, the registry's path under the package name (`@/components/ui/navigation-stack` is `@brett_lamy/ui/navigation-stack`):
+
+```tsx
+import { Button } from '@brett_lamy/ui/button'
+import { BLProvider } from '@brett_lamy/ui/lib/theme'
+import { NavigationStack, NavigationStackBar, NavigationStackContent, NavigationStackPage, NavigationStackTitle } from '@brett_lamy/ui/navigation-stack'
 
 export function App() {
   return (
@@ -43,7 +55,7 @@ export function App() {
 }
 ```
 
-React 19 is required. Coming from 5.x, or from `@brett_lamy/docstream` / `@brett_lamy/docstream-editor` (frozen at 2.0.1, now `@brett_lamy/ui/docstream…`): [Migrating to 6.0](https://blamy.github.io/ui/#/migrating-to-6).
+The components, their parts and the kit's hooks are also on the package root (`import { Button } from '@brett_lamy/ui'`); engines and models (`lib/cron`, `lib/diagram-model`…) are only on their own entries. React 19 is required. Coming from 5.x, or from `@brett_lamy/docstream` / `@brett_lamy/docstream-editor` (frozen at 2.0.1, now `@brett_lamy/ui/docstream…`): [Migrating to 6.0](https://blamy.github.io/ui/#/migrating-to-6).
 
 ## Workspace layout
 
@@ -53,8 +65,8 @@ React 19 is required. Coming from 5.x, or from `@brett_lamy/docstream` / `@brett
 - `apps/docs` — the BL site: the landing, library and roadmap pages (`src/site/`, with the split plan in `src/site/libraries.ts`, which `libraries.test.ts` checks against the real imports), the roadmap (`roadmap/*.md`), and the kit's docs (`pages/*.md` ordered by `pages/nav.json`, live examples in `examples/<page>/<example>`).
 - `apps/docstream-playground`, `apps/docstream-editor-playground` — docstream's and the editor's own docs and examples (`docs/`), which the site mounts at [#/docstream](https://blamy.github.io/ui/#/docstream) and [#/docstream-editor](https://blamy.github.io/ui/#/docstream-editor).
 - `apps/catalog` — the Storybook catalog (stories from `packages/ui`, the blocks and `apps/catalog/stories`).
-- `tools` — workspace scripts: `registry` (the registry and the package's `exports`), `tokens` (token generator and lint), `docs` (install sections, variant tables, Markdown export, copy-page check), `cloudflare` (the Cloudflare catalog and the package check), `e2e` (Playwright behavior and accessibility tests), `vr` (visual regression), `ui-sdk` (builds the wrappers from the fork), `release`, `codemod`.
-- `docs` — design notes (the 2.0 plan and decision log).
+- `tools` — workspace scripts: `registry` (the registry and the package's `exports`), `tokens` (token generator and lint), `docs` (install sections, variant tables, Markdown export, copy-page check), `cloudflare` (the Cloudflare catalog and the package check), `e2e` (Playwright behavior and accessibility tests), `vr` (visual regression), `ui-sdk` (builds the wrappers from the fork), `release`, `codemod`, and helpers for some blocks (the desktop wrappers, the FFmpeg and Tailscale builds).
+- `docs` — design notes (the 2.0 plan).
 
 ## Development
 

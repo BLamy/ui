@@ -43,9 +43,9 @@ export const trailOf = (path: string[]) => (path.length ? path : ['wifi']);
 
 interface Nav { path: string[]; dir: -1 | 0 | 1; fwd: string[] }
 
-export function useSettingsState(initialPath: string[], dark: boolean, setAppearance: (a: Appearance) => void, windowControls = true): SettingsApi {
+export function useSettingsState(defaultPath: string[], dark: boolean, setAppearance: (a: Appearance) => void, windowControls = true): SettingsApi {
   const [values, setValues] = useState<Values>(DEFAULTS);
-  const [nav, setNav] = useState<Nav>({ path: initialPath, dir: 0, fwd: [] });
+  const [nav, setNav] = useState<Nav>({ path: defaultPath, dir: 0, fwd: [] });
   const [query, setQuery] = useState('');
   return useMemo<SettingsApi>(() => ({
     values,

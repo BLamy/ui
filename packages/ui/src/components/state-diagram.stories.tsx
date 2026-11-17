@@ -1,9 +1,9 @@
 import type { ReactNode } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { and, not } from 'xstate';
 import { StateDiagram } from '@/components/ui/state-diagram';
 import { BLProvider, type AppearancePreference } from '@/lib/theme';
 import { AUDIO_PLAYER_SOURCE } from '../stories/audio-player-machine';
+import { SEVERAL_TARGETS, TRANSITION_FORMS } from '../stories/state-machines';
 import { uploadMachine } from '../stories/upload-machine';
 
 const meta: Meta<typeof StateDiagram> = {
@@ -219,33 +219,6 @@ export const StateKinds: Story = {
 /** Each form of transition: an event alone (a pill); with a guard (with params, and composed), actions, both; `after` a
  *  number and a named delay (a clock); `always`; `reenter`; a targetless one that only runs actions; the wildcard; several
  *  targets; and `on` at the machine's root. */
-const TRANSITION_FORMS = {
-  id: 'forms',
-  initial: 'idle',
-  on: { RESET: { target: '.idle', actions: 'clearAll' } },
-  states: {
-    idle: {
-      on: {
-        GO: 'busy',
-        TRY: { target: 'busy', guard: 'canTry' },
-        SAVE: { target: 'busy', guard: { type: 'isAbove', params: { min: 3 } }, actions: ['save', 'notify'] },
-        PING: { actions: 'pong' },
-        '*': 'unknown',
-      },
-      after: { 500: 'busy', IDLE_TIMEOUT: 'away' },
-    },
-    busy: {
-      on: { AGAIN: { target: 'busy', reenter: true, actions: 'restart' }, SPLIT: { target: ['#forms.both.left.on', '#forms.both.right.on'] } },
-      always: { guard: and(['isDone', not('isLocked')]), target: 'idle' },
-    },
-    both: {
-      type: 'parallel',
-      states: { left: { initial: 'off', states: { off: {}, on: {} } }, right: { initial: 'off', states: { off: {}, on: {} } } },
-    },
-    away: {},
-    unknown: {},
-  },
-};
 
 export const TransitionForms: Story = {
   render: () => <Page><StateDiagram config={TRANSITION_FORMS} aria-label="Each form of transition" /></Page>,
@@ -257,21 +230,6 @@ export const TransitionFormsDark: Story = {
 
 /** A transition to several targets at once (one in each region of a parallel state): one label, and the line out of it
  *  splits to each, entering the parallel state through its side, under its header. */
-const SEVERAL_TARGETS = {
-  id: 'player',
-  initial: 'stopped',
-  states: {
-    stopped: { on: { PLAY: { target: ['#player.playing.audio.on', '#player.playing.video.on'], actions: 'startClock' } } },
-    playing: {
-      type: 'parallel',
-      on: { STOP: 'stopped' },
-      states: {
-        audio: { initial: 'off', states: { off: { on: { UNMUTE: 'on' } }, on: { on: { MUTE: 'off' } } } },
-        video: { initial: 'off', states: { off: { on: { SHOW: 'on' } }, on: { on: { HIDE: 'off' } } } },
-      },
-    },
-  },
-};
 
 export const SeveralTargets: Story = {
   render: () => <Page><StateDiagram config={SEVERAL_TARGETS} aria-label="A transition to several targets" /></Page>,

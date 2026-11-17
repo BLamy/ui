@@ -30,9 +30,9 @@ export interface WorktreeAtlasProps {
   /** Where worktrees come from. Default: folders opened in this browser (sample data where that isn't supported). */
   source?: WorktreeSource;
   /** Worktree open at mount (wide layouts). */
-  initialWorktree?: string | null;
+  defaultWorktree?: string | null;
   /** What the rail shows at mount: the checkout's files, or its changes against main (default). */
-  initialView?: AtlasView;
+  defaultView?: AtlasView;
 }
 
 /** An accent that reads as "developer tool": iOS indigo. */
@@ -69,14 +69,14 @@ function Welcome({ onAdd, onSample }: { onAdd: () => void; onSample: () => void 
   );
 }
 
-function Atlas({ source, initialWorktree, initialView, onSample, onLeaveSample }: Omit<WorktreeAtlasProps, 'appearance' | 'source'> & {
+function Atlas({ source, defaultWorktree, defaultView, onSample, onLeaveSample }: Omit<WorktreeAtlasProps, 'appearance' | 'source'> & {
   source: WorktreeSource; onSample?: () => void; onLeaveSample?: () => void;
 }) {
-  const atlas = useAtlas(source, { worktree: initialWorktree, view: initialView });
+  const atlas = useAtlas(source, { worktree: defaultWorktree, view: defaultView });
   const welcome = onSample && atlas.scanned && atlas.locations.length === 0;
   return (
     <>
-      <SplitView aria-label="Worktree Atlas" defaultCompactColumn={initialWorktree ? 'supplementary' : 'sidebar'}
+      <SplitView aria-label="Worktree Atlas" defaultCompactColumn={defaultWorktree ? 'supplementary' : 'sidebar'}
         value={{ sidebar: atlas.worktreeId, supplementary: atlas.filePath }}
         onValueChange={(next, { column }) => {
           const id = next[column];
@@ -93,7 +93,7 @@ function Atlas({ source, initialWorktree, initialView, onSample, onLeaveSample }
   );
 }
 
-export default function WorktreeAtlas({ appearance, source, initialWorktree = null, initialView = 'changes' }: WorktreeAtlasProps) {
+export default function WorktreeAtlas({ appearance, source, defaultWorktree = null, defaultView = 'changes' }: WorktreeAtlasProps) {
   const ambient = useAppearance();
   const dark = (appearance ?? ambient) === 'dark';
   const browser = useBrowserSource(!source && browserFoldersSupported());
@@ -103,7 +103,7 @@ export default function WorktreeAtlas({ appearance, source, initialWorktree = nu
   return (
     <AppearanceProvider value={dark ? 'dark' : 'light'}>
       <BLProvider tint={ATLAS_TINT[dark ? 'dark' : 'light']} className="bg-background">
-        <Atlas key={active === browser ? 'browser' : 'other'} source={active} initialWorktree={initialWorktree} initialView={initialView}
+        <Atlas key={active === browser ? 'browser' : 'other'} source={active} defaultWorktree={defaultWorktree} defaultView={defaultView}
           onSample={active === browser ? () => setSample(true) : undefined}
           onLeaveSample={browser && sample && !source ? () => setSample(false) : undefined} />
       </BLProvider>

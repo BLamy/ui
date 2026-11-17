@@ -16,8 +16,8 @@ import { useAlfred } from './state';
 
 export interface LauncherProps {
   /** Pages to open on (below the root). */
-  initialPages?: string[];
-  initialQuery?: string;
+  defaultPages?: string[];
+  defaultQuery?: string;
   /** The bar's width, for the preview pane and the emoji grid. */
   width: number;
   /** The list's max height (the room the desktop leaves). */
@@ -40,8 +40,8 @@ function pageApp(page: string) {
   return APPS.find((a) => a.page === page) ?? null;
 }
 
-export function Launcher({ initialPages, initialQuery = '', width, listHeight, autoFocus = true, onClose, controller }: LauncherProps) {
-  const [query, setQuery] = useState(initialQuery);
+export function Launcher({ defaultPages, defaultQuery = '', width, listHeight, autoFocus = true, onClose, controller }: LauncherProps) {
+  const [query, setQuery] = useState(defaultQuery);
   const dark = useAlfred().appearance === 'dark';
   const wide = width >= 600;
   return (
@@ -49,7 +49,7 @@ export function Launcher({ initialPages, initialQuery = '', width, listHeight, a
       aria-label="Alfred"
       query={query}
       onQueryChange={setQuery}
-      defaultPages={initialPages}
+      defaultPages={defaultPages}
       controller={controller}
       className={cn(
         // A translucent card over the wallpaper: the surface var feeds the card and the sticky headings alike.

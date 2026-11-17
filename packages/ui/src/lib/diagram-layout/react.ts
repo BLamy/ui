@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import { diagramTextRuns, type DiagramNode } from '@/lib/diagram-model';
-import { createDiagramLayoutEngine, routeForks, routePortEdges, runLayout, toElkGraph, wrapDiagram, type DiagramBoardSize, type DiagramDraft, type DiagramLayoutEngine, type DiagramLayoutError, type DiagramLayoutOptions, type DiagramLayoutResult } from '@/lib/diagram-layout';
+import { createDiagramLayoutEngine, finishLayout, runLayout, toElkGraph, type DiagramBoardSize, type DiagramDraft, type DiagramLayoutEngine, type DiagramLayoutError, type DiagramLayoutOptions, type DiagramLayoutResult } from '@/lib/diagram-layout';
 import { estimateText, measureTextGently, nextFrame, type TextMeasurer } from '@/lib/diagram-text';
 import { useFontVersion, useShownVersion } from '@/lib/use-font-version';
 
@@ -120,7 +120,7 @@ export function useDiagramLayout<N = unknown, E = unknown>(draft: DiagramDraft<N
   // Wrapped to fill the board, which is quick: only a new size brings it, not a new layout. Then the routes between ports,
   // in lanes of their own, from where things ended up, and those that fork from another's label.
   const text = state.text;
-  const shaped = useMemo(() => (result ? { ...result, ...routeForks(routePortEdges(board ? wrapDiagram(result, board, direction) : result, text), text) } : result), [result, board, direction, text]);
+  const shaped = useMemo(() => (result ? { ...result, ...finishLayout(result, { board, direction, text }) } : result), [result, board, direction, text]);
   const now = useMemo(() => (shaped && showing ? onLayout(showing, shaped) : null), [showing?.nodes, showing?.edges, shaped]);
   return {
     nodes: now?.nodes ?? NOTHING, edges: now?.edges ?? NOTHING,

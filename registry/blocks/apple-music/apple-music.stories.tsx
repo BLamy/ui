@@ -33,13 +33,13 @@ export const Dark: Story = { render: (args) => dark(<Full><AppleMusic {...args} 
 
 /** An album page tints its buttons and links from the artwork. */
 export const Album: Story = {
-  args: { initialSection: 'albums', initialAlbum: 'neon-tidewater' },
+  args: { defaultSection: 'albums', defaultAlbum: 'neon-tidewater' },
   render: (args) => <Full><AppleMusic {...args} /></Full>,
 };
 
 /** The mini player, expanded: the same element, grown to the whole window in the album's colors. */
 export const NowPlaying: Story = {
-  args: { initialAlbum: 'velvet-static', nowPlaying: true },
+  args: { defaultAlbum: 'velvet-static', nowPlaying: true },
   render: (args) => <Full><AppleMusic {...args} /></Full>,
 };
 
@@ -50,17 +50,17 @@ export const Phone: Story = { render: (args) => <Frame width={390} height={844}>
 
 /** The Library tab's first page: the sidebar's Library section (its playlists included) under a large title. */
 export const PhoneDark: Story = {
-  args: { initialSection: 'library' },
+  args: { defaultSection: 'library' },
   render: (args) => dark(<Frame width={390} height={844}><AppleMusic {...args} /></Frame>),
 };
 
 /** An album pushed from Albums under the Library tab: "‹ Albums", then "‹ Library" back to the Library rows. */
 export const PhoneAlbum: Story = {
-  args: { initialSection: 'albums', initialAlbum: 'copperline' },
+  args: { defaultSection: 'albums', defaultAlbum: 'copperline' },
   render: (args) => <Frame width={390} height={844}><AppleMusic {...args} /></Frame>,
 };
 
 export const PhoneNowPlaying: Story = {
-  args: { initialAlbum: 'soft-machinery', nowPlaying: true },
+  args: { defaultAlbum: 'soft-machinery', nowPlaying: true },
   render: (args) => dark(<Frame width={390} height={844}><AppleMusic {...args} /></Frame>),
 };

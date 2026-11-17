@@ -44,16 +44,16 @@ function draftFrom(init: DraftInit | undefined, step: Step): Draft {
 /** Which card field each payment-form field edits. */
 const CARD_FIELD = { cardNumber: 'number', expiry: 'expiry', cvc: 'cvc' } as const;
 
-export function useCheckout({ initialStep = 'plan', initial, today: todayProp }: { initialStep?: Step; initial?: DraftInit; today?: Date }) {
+export function useCheckout({ defaultStep = 'plan', initial, today: todayProp }: { defaultStep?: Step; initial?: DraftInit; today?: Date }) {
   const [today] = useState(() => todayProp ?? new Date());
-  const [step, setStep] = useState<Step>(initialStep);
+  const [step, setStep] = useState<Step>(defaultStep);
   // Whether the open step was reached by moving through the flow (its heading takes focus) or opened on.
   const [moved, setMoved] = useState(false);
-  const [draft, setDraft] = useState<Draft>(() => draftFrom(initial, initialStep));
+  const [draft, setDraft] = useState<Draft>(() => draftFrom(initial, defaultStep));
   const [status, setStatus] = useState<'idle' | 'processing' | 'paid'>('idle');
   const [decline, setDecline] = useState<Decline | null>(null);
   const [receipt, setReceipt] = useState<Receipt | null>(() =>
-    initialStep === 'done' ? receiptFor(draft, receiptIdFor(draft), today) : null);
+    defaultStep === 'done' ? receiptFor(draft, receiptIdFor(draft), today) : null);
 
   const inflight = useRef<AbortController | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);

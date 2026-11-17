@@ -39,17 +39,17 @@ function Scope() {
 
 describe('ChatShell', () => {
   it('is a size-class scope: compact below its breakpoint', async () => {
-    await show(<ChatShell breakpoint={880}><Scope /></ChatShell>, 600);
+    await show(<ChatShell breakpoints={{ medium: 880 }}><Scope /></ChatShell>, 600);
     expect(document.querySelector('[data-slot="chat-shell"]')?.getAttribute('data-size-class')).toBe('compact');
     expect(document.querySelector('[data-testid="scope"]')?.textContent).toBe('compact');
   });
 
   it('is medium from its breakpoint, regular from 1024px', async () => {
-    await show(<ChatShell breakpoint={880}><Scope /></ChatShell>, 900);
+    await show(<ChatShell breakpoints={{ medium: 880 }}><Scope /></ChatShell>, 900);
     expect(document.querySelector('[data-testid="scope"]')?.textContent).toBe('medium');
     await act(async () => root?.unmount());
     root = null;
-    await show(<ChatShell breakpoint={880}><Scope /></ChatShell>, 1200);
+    await show(<ChatShell breakpoints={{ medium: 880 }}><Scope /></ChatShell>, 1200);
     expect(document.querySelector('[data-testid="scope"]')?.textContent).toBe('regular');
   });
 });

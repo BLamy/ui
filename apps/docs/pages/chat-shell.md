@@ -39,7 +39,7 @@ import {
 export function Chat() {
   const [channel, setChannel] = useState('general')
   return (
-    <ChatShell breakpoint={880} tint="#0A84FF">
+    <ChatShell breakpoints={{ medium: 880 }} tint="#0A84FF">
       <ChatShellNav>
         <Tabs variant="switcher" defaultValue="hq" className="contents">
           <TabsBar>
@@ -102,7 +102,7 @@ The full Discord layout is a registry block — `npx shadcn add` copies `page.ts
 
 | Part | What it is |
 | --- | --- |
-| `ChatShell` | Root. Measures itself (`breakpoint`, default 880) and is a size-class scope (compact below `breakpoint`, so `presentation="auto"` popups inside are trays there; `data-size-class` on the root), holds the compact drawer (`defaultNavOpen` / `navOpen` / `onNavOpenChange(open, details)`, with the drawer's `details.reason` and `cancel()`), opens the `chat` theme scope for `appearance` (default: the ambient `AppearanceProvider`, else dark) and the `tint` accent. |
+| `ChatShell` | Root. Measures itself and is a size-class scope on its own box (`breakpoints`, as on SidebarProvider and SplitView: `compact` below `breakpoints.medium`, default 880, `regular` from `breakpoints.regular`, default 1024; `presentation="auto"` popups inside are trays while compact, and `data-size-class` is on the root), holds the compact drawer (`defaultNavOpen` / `navOpen` / `onNavOpenChange(open, details)`, with the drawer's `details.reason` and `cancel()`), opens the `chat` theme scope for `appearance` (default: the ambient `AppearanceProvider`, else dark) and the `tint` accent. |
 | `ChatShellNav` | Rail + sidebar. A docked column when wide; one left drawer over a scrim when compact. |
 | `ChatShellNavTrigger` | The hamburger that opens the drawer. Renders nothing while the navigation is docked. |
 | `ChatShellSidebar` | The 222px channel column (a header, the channel list, the signed-in user). |
@@ -119,7 +119,7 @@ Anything inside the shell can call `useChatShell()`:
 | Field | Meaning |
 | --- | --- |
 | `width` | Measured shell width |
-| `compact` | `width < breakpoint` (the shell's size class is `compact`) |
+| `sizeClass` | The shell's size class on its own box: `compact` below `breakpoints.medium`, where the navigation is a drawer |
 | `navOpen` / `setNavOpen` | The compact drawer — call `setNavOpen(false)` when a channel is picked |
 
 `useOptionalChatShell()` returns the same, or `null` outside a shell — for parts that also render standalone.

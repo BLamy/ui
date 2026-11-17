@@ -11,7 +11,7 @@ import { SettingsCtx, trailOf, useSettingsState } from './state';
 
 export interface AppleSettingsProps {
   /** Panes to open, top level first — e.g. ['general', 'about']. */
-  initialPath?: string[];
+  defaultPath?: string[];
   /** Draw the macOS close / minimize / zoom dots in the sidebar (default true). Off when the app sits in a window that has its own. */
   windowControls?: boolean;
 }
@@ -19,17 +19,17 @@ export interface AppleSettingsProps {
 /** Settings' accent: iOS system blue (light #007AFF, dark #0A84FF). */
 const SETTINGS_TINT = { light: '#007AFF', dark: '#0A84FF' } as const;
 
-export default function AppleSettings({ initialPath = [], windowControls = true }: AppleSettingsProps) {
+export default function AppleSettings({ defaultPath = [], windowControls = true }: AppleSettingsProps) {
   const ambient = useAppearance();
   const [appearance, setAppearance] = useState<Appearance | null>(null);
   const dark = (appearance ?? ambient) === 'dark';
-  const settings = useSettingsState(initialPath, dark, setAppearance, windowControls);
+  const settings = useSettingsState(defaultPath, dark, setAppearance, windowControls);
 
   return (
     <BLProvider appearance={appearance ?? ambient} tint={SETTINGS_TINT[dark ? 'dark' : 'light']}>
       <SettingsCtx.Provider value={settings}>
         <SplitView aria-label="Settings" sidebarBehavior="tile" defaultSidebarOpen={{ medium: true }}
-          defaultCompactColumn={initialPath.length ? 'detail' : 'sidebar'}
+          defaultCompactColumn={defaultPath.length ? 'detail' : 'sidebar'}
           value={{ sidebar: trailOf(settings.path)[0] }} onValueChange={(next) => { if (next.sidebar) settings.openPath([next.sidebar]); }}>
           <SettingsSidebar />
           <SettingsDetail />

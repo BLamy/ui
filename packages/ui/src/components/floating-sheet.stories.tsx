@@ -100,7 +100,7 @@ function Demo(args: Args) {
 }
 
 const meta: Meta<Args> = {
-  title: 'Containers/FloatingSheet',
+  title: 'Organisms/FloatingSheet',
   render: (args) => <Demo {...args} />,
   args: {
     variant: 'glass',

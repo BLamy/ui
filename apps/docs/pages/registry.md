@@ -55,7 +55,7 @@ export { StlViewer } from '@brett_lamy/ui/docstream/stl';
 export type { StlViewerProps } from '@brett_lamy/ui/docstream/stl';
 ```
 
-and its item lists `"dependencies": ["@brett_lamy/ui@6.0.0"]`. Blocks that use docstream (Apple Music, Apple Notes, Apple Reminders, Loop QA, Replay Canvas, Strudel Studio, Time Machine) do the same.
+and its item lists `"dependencies": ["@brett_lamy/ui@6.0.0"]`. Since no module of the package imports CSS, these items (and `conversation`, which renders MarkdownView) also add docstream's stylesheet to your CSS through shadcn's `css` field, `@import "@brett_lamy/ui/docstream/styles.css" layer(docstream)`; `markdown-editor` adds the editor's sheet as well, in the `components.bl-editor` layer. Blocks that use docstream (Apple Music, Apple Notes, Apple Reminders, Loop QA, Replay Canvas, Strudel Studio, Time Machine) do the same.
 
 ## Item types
 

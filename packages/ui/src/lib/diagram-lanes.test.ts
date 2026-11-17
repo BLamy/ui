@@ -4,6 +4,7 @@ import type { CloudflareSystem } from '@/lib/cloudflare-system';
 import type { Pt, Rect } from '@/lib/canvas-math';
 import { layoutDiagram, routePortEdges } from '@/lib/diagram-layout';
 import { DIAGRAM_CARD, edgeGeometries, edgeLabelSize, facePorts, indexDiagram, nodeAnatomy, sizeNodesToText, type DiagramEdge, type DiagramNode } from '@/lib/diagram-model';
+import { drawDiagram } from '@/lib/diagram-drawing';
 import { estimateText } from '@/lib/diagram-text';
 
 /* Edges in lanes of their own (`routeInLanes`, through `edgeGeometries` and the layout's `routePortEdges`): every edge has a
@@ -62,9 +63,16 @@ const UPLOAD: CloudflareSystem = {
 };
 
 describe('a hand-placed editable system (the studio)', () => {
-  const board = cloudflareBoardData(placeInLayers(UPLOAD, { editable: true }), { editable: true });
-  const { nodes, geometries, labels } = routed(board.nodes, board.edges);
-  const ids = board.edges.map((e) => e.id);
+  // As the Diagram draws it: the studio's board is placed, its routes and labels the Diagram's own.
+  const drawingOf = (editable: boolean) => {
+    const board = cloudflareBoardData(placeInLayers(UPLOAD, { editable }), { editable });
+    return drawDiagram(sizeNodesToText(board.nodes, estimateText), board.edges, estimateText);
+  };
+  const drawing = drawingOf(true);
+  const nodes = drawing.index.nodes;
+  const geometries = drawing.geometries;
+  const labels = new Map(drawing.labels.map((l) => [l.edge.id, l.box]));
+  const ids = drawing.edges.map((e) => e.edge.id);
 
   it('gives every edge a lane of its own: no two run along each other for more than a crossing', () => {
     for (const a of ids) for (const b of ids) if (a < b) expect(sharedRun(geometries.get(a)!.pts, geometries.get(b)!.pts), `${a} and ${b}`).toBeLessThanOrEqual(4);
@@ -82,16 +90,16 @@ describe('a hand-placed editable system (the studio)', () => {
   });
 
   it('never runs a route through a card', () => {
-    for (const e of board.edges) for (const n of nodes) {
+    for (const { edge: e } of drawing.edges) for (const n of nodes) {
       if (n.kind === 'root' || n.kind === 'group' || n.id === e.from || n.id === e.to) continue;
       expect(through(geometries.get(e.id)!.pts, n), `${e.id} through ${n.id}`).toBe(false);
     }
   });
 
-  it('leaves the API’s one env dot side by side, a few units apart', () => {
-    const files = geometries.get('api-files')!.pts[0], jobs = geometries.get('api-jobs')!.pts[0];
-    expect(files.x).toBe(jobs.x);
-    expect(Math.abs(files.y - jobs.y)).toBeGreaterThanOrEqual(3);
+  it('draws the routes the read-only board does: the dots are only there to connect by', () => {
+    const reading = drawingOf(false);
+    for (const id of ids) expect(geometries.get(id)!.pts, id).toEqual(reading.geometries.get(id)!.pts);
+    expect(nodes.some((n) => n.ports?.length)).toBe(true);
   });
 });
 

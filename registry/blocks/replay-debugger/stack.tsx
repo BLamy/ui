@@ -43,7 +43,6 @@ export function DebuggerStack({
           kind: model.isFrameworkSource(loc?.sourceId) ? 'framework' : 'app',
         };
         // What's in it can change with anything that moves or has been pretty printed.
-        // eslint-disable-next-line react-hooks/exhaustive-deps
       }),
     [model, version],
   );
@@ -237,7 +236,7 @@ export function DebuggerScopes({
       tooEarly: false,
     };
     // The scopes say when they've something new.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `version` is the model saying its scopes have something new.
   }, [model, version, selected]);
   // The previous scopes stay, dimmed, so dragging doesn't make them flicker.
   const kept = useRef<ValueNode[]>([]);

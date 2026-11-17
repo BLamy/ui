@@ -154,7 +154,7 @@ The rows, sections, search and account also work outside a `Sidebar` (a shell's 
 
 ### Hooks
 
-- `useSidebar()`: `{ open, setOpen, toggle, sizeClass, compact }` of the nearest provider (it throws outside one).
+- `useSidebar()`: `{ open, setOpen, toggle, sizeClass }` of the nearest provider (it throws outside one).
 - `useSidebarCollapsed()`: whether the sidebar around is a collapsed rail, for your own parts that hide their text (`false` outside a `Sidebar`).
 
 ## Built from

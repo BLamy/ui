@@ -35,109 +35,109 @@ export const ProjectsDark: Story = { args: { askOpen: true }, render: (args) => 
 
 /** A project's Overview: tiles, the exploration replay and the latest findings. */
 export const Overview: Story = {
-  args: { initialProject: 'northwind', askOpen: false },
+  args: { defaultProject: 'northwind', askOpen: false },
   render: (args) => <Full><LoopQA {...args} /></Full>,
 };
 
 /** A run in progress: its card on the Overview and in Ask QA, frozen after three journeys. */
 export const RunInProgress: Story = {
-  args: { initialProject: 'northwind', liveRunAt: 3, askOpen: true },
+  args: { defaultProject: 'northwind', liveRunAt: 3, askOpen: true },
   render: (args) => dark(<Full><LoopQA {...args} /></Full>),
 };
 
 export const Bugs: Story = {
-  args: { initialProject: 'northwind', initialTab: 'bugs', askOpen: false },
+  args: { defaultProject: 'northwind', defaultTab: 'bugs', askOpen: false },
   render: (args) => <Full><LoopQA {...args} /></Full>,
 };
 
 export const SiteMap: Story = {
-  args: { initialProject: 'northwind', initialTab: 'sitemap', askOpen: false },
+  args: { defaultProject: 'northwind', defaultTab: 'sitemap', askOpen: false },
   render: (args) => dark(<Full><LoopQA {...args} /></Full>),
 };
 
 export const TestRuns: Story = {
-  args: { initialProject: 'northwind', initialTab: 'runs', askOpen: false },
+  args: { defaultProject: 'northwind', defaultTab: 'runs', askOpen: false },
   render: (args) => <Full><LoopQA {...args} /></Full>,
 };
 
 /** Generated Playwright tests with the selected test's source. */
 export const PlaywrightTests: Story = {
-  args: { initialProject: 'northwind', initialTab: 'tests', askOpen: false },
+  args: { defaultProject: 'northwind', defaultTab: 'tests', askOpen: false },
   render: (args) => dark(<Full><LoopQA {...args} /></Full>),
 };
 
 /** A run: findings, coverage, the exploration and its journeys. */
 export const RunDetail: Story = {
-  args: { initialProject: 'northwind', initialPage: { kind: 'run', id: 'run-2419' }, askOpen: false },
+  args: { defaultProject: 'northwind', defaultPage: { kind: 'run', id: 'run-2419' }, askOpen: false },
   render: (args) => <Full><LoopQA {...args} /></Full>,
 };
 
 /** A bug: the replay at the failure, logs, chronology, root cause and details. */
 export const BugDetail: Story = {
-  args: { initialProject: 'northwind', initialTab: 'bugs', initialPage: { kind: 'bug', id: 'NW-142' }, askOpen: false },
+  args: { defaultProject: 'northwind', defaultTab: 'bugs', defaultPage: { kind: 'bug', id: 'NW-142' }, askOpen: false },
   render: (args) => <Full><LoopQA {...args} /></Full>,
 };
 
 export const BugDetailDark: Story = {
-  args: { initialProject: 'northwind', initialTab: 'bugs', initialPage: { kind: 'bug', id: 'NW-142' }, askOpen: true },
+  args: { defaultProject: 'northwind', defaultTab: 'bugs', defaultPage: { kind: 'bug', id: 'NW-142' }, askOpen: true },
   render: (args) => dark(<Full><LoopQA {...args} /></Full>),
 };
 
 /** Ask QA with an empty thread: the greeting over a centred composer and suggestions. */
 export const AskQAEmpty: Story = {
-  args: { initialProject: 'northwind', askOpen: true, emptyChat: true },
+  args: { defaultProject: 'northwind', askOpen: true, emptyChat: true },
   render: (args) => <Full><LoopQA {...args} /></Full>,
 };
 
 /** ⌘K at the root, on a bug — its status and severity commands lead. */
 export const CommandMenu: Story = {
-  args: { initialProject: 'northwind', initialPage: { kind: 'bug', id: 'NW-142' }, palette: true, askOpen: false },
+  args: { defaultProject: 'northwind', defaultPage: { kind: 'bug', id: 'NW-142' }, palette: true, askOpen: false },
   render: (args) => dark(<Full><LoopQA {...args} /></Full>),
 };
 
 /** ⌘K's Bugs page, with the preview pane. */
 export const CommandMenuBugs: Story = {
-  args: { initialProject: 'northwind', palette: ['bugs'], askOpen: false },
+  args: { defaultProject: 'northwind', palette: ['bugs'], askOpen: false },
   render: (args) => <Full><LoopQA {...args} /></Full>,
 };
 
 /** iPad: the sidebar floats in from its button; Ask QA waits as a FAB. */
 export const Tablet: Story = {
-  args: { initialProject: 'northwind', askOpen: false },
+  args: { defaultProject: 'northwind', askOpen: false },
   render: (args) => <Device width={834} height={860}><LoopQA {...args} /></Device>,
 };
 
 export const Phone: Story = { args: { askOpen: false }, render: (args) => <Device width={390} height={844}><LoopQA {...args} /></Device> };
 
 export const PhoneBug: Story = {
-  args: { initialProject: 'northwind', initialPage: { kind: 'bug', id: 'NW-142' }, askOpen: false },
+  args: { defaultProject: 'northwind', defaultPage: { kind: 'bug', id: 'NW-142' }, askOpen: false },
   render: (args) => dark(<Device width={390} height={844}><LoopQA {...args} /></Device>),
 };
 
 /** iPad: Ask QA floats over the page as the composer, with the newest reply (the run card) peeking above it. */
 export const TabletAskQA: Story = {
-  args: { initialProject: 'northwind', askOpen: true, chatExpanded: false },
+  args: { defaultProject: 'northwind', askOpen: true, chatExpanded: false },
   render: (args) => <Device width={834} height={860}><LoopQA {...args} /></Device>,
 };
 
 export const TabletAskQADark: Story = {
-  args: { initialProject: 'northwind', askOpen: true, chatExpanded: false },
+  args: { defaultProject: 'northwind', askOpen: true, chatExpanded: false },
   render: (args) => dark(<Device width={834} height={860}><LoopQA {...args} /></Device>),
 };
 
 /** Phone, dark: the whole transcript grown over a bug, the composer under it. */
 export const PhoneAskQADark: Story = {
-  args: { initialProject: 'northwind', initialPage: { kind: 'bug', id: 'NW-142' }, askOpen: true },
+  args: { defaultProject: 'northwind', defaultPage: { kind: 'bug', id: 'NW-142' }, askOpen: true },
   render: (args) => dark(<Device width={390} height={844}><LoopQA {...args} /></Device>),
 };
 
 /** Phone: the composer floats over the page (no peek on a phone); drag its grip up for the transcript. */
 export const PhoneAskQAComposer: Story = {
-  args: { initialProject: 'northwind', askOpen: true, chatExpanded: false },
+  args: { defaultProject: 'northwind', askOpen: true, chatExpanded: false },
   render: (args) => <Device width={390} height={844}><LoopQA {...args} /></Device>,
 };
 
 export const PhoneAskQA: Story = {
-  args: { initialProject: 'northwind', askOpen: true },
+  args: { defaultProject: 'northwind', askOpen: true },
   render: (args) => <Device width={390} height={844}><LoopQA {...args} /></Device>,
 };

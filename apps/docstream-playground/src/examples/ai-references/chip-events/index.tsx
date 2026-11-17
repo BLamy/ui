@@ -59,7 +59,6 @@ export default function ChipEvents({ variant = "default" }: { variant?: string }
       onReferenceClick: record,
       ...(variant === "custom" ? { renderReference: (ref) => renderPerson(ref, record) } : {}),
     }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [outer, variant],
   )
 

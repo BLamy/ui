@@ -106,7 +106,6 @@ function DebuggerEditor({
         },
       },
       // Marks change what's in the rows, and this says so.
-      // eslint-disable-next-line react-hooks/exhaustive-deps
     ],
     [model, sourceId, breakable, hitsOn, marks],
   );

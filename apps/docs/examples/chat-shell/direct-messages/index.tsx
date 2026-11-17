@@ -117,7 +117,7 @@ export default function DirectMessages() {
   return (
     <Window>
       <div style={{ height: 420, display: 'flex' }}>
-        <ChatShell breakpoint={640}>
+        <ChatShell breakpoints={{ medium: 640 }}>
           <ChatShellNav>
             <Conversations who={who} onPick={setWho} />
           </ChatShellNav>

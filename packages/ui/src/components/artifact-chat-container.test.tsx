@@ -84,6 +84,18 @@ describe('ArtifactChatContainer', () => {
     expect(screen.getByRole('complementary', { name: 'Chat' }).contains(screen.getByText('Transcript'))).toBe(true);
   });
 
+  it('floats by default below 760px, so the artifact beside the 400px docked chat is never narrower than a phone', () => {
+    width = 700;
+    const { unmount } = render(<App />);
+    expect(root().getAttribute('data-size-class')).toBe('compact');
+    expect(root().getAttribute('data-presentation')).toBe('floating');
+    unmount();
+    width = 760;
+    render(<App />);
+    expect(root().getAttribute('data-size-class')).toBe('medium');
+    expect(root().getAttribute('data-presentation')).toBe('split');
+  });
+
   it('switches to the floating chat below its breakpoint without remounting the composer or the content', async () => {
     width = 700;
     const { rerender } = render(<App breakpoints={{ medium: 600 }} />);

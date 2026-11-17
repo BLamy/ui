@@ -236,7 +236,7 @@ export function useEncryptedState<T>(name: string, initial: T | (() => T), vault
     const off = v.watch(name, () => { if (writing.current === 0) void load(); });
     return () => { alive = false; off(); };
     // `resolveInitial` reads a ref, so it is stable by construction.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `resolveInitial` reads a ref, so it is stable by construction.
   }, [v, name, unlocked, commit]);
 
   const set = useCallback<EncryptedStateSetter<T>>(async (next) => {

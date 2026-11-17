@@ -32,9 +32,9 @@ function Frame({ width, height, dark, ...props }: VSCodeProps & { width: number;
 
 export const Wide: Story = { render: () => <Frame width={1280} height={800} /> };
 export const WideDark: Story = { render: () => <Frame width={1280} height={800} dark /> };
-export const WideSearch: Story = { render: () => <Frame width={1280} height={800} initialView="search" /> };
-export const WideRun: Story = { render: () => <Frame width={1280} height={800} initialView="run" /> };
+export const WideSearch: Story = { render: () => <Frame width={1280} height={800} defaultView="search" /> };
+export const WideRun: Story = { render: () => <Frame width={1280} height={800} defaultView="run" /> };
 export const PhoneExplorer: Story = { render: () => <Frame width={390} height={720} /> };
-export const PhoneEditor: Story = { render: () => <Frame width={390} height={720} initialView="editor" /> };
-export const PhoneTerminal: Story = { render: () => <Frame width={390} height={720} initialView="terminal" /> };
-export const PhoneTerminalDark: Story = { render: () => <Frame width={390} height={720} initialView="terminal" dark /> };
+export const PhoneEditor: Story = { render: () => <Frame width={390} height={720} defaultView="editor" /> };
+export const PhoneTerminal: Story = { render: () => <Frame width={390} height={720} defaultView="terminal" /> };
+export const PhoneTerminalDark: Story = { render: () => <Frame width={390} height={720} defaultView="terminal" dark /> };

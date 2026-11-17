@@ -39,18 +39,18 @@ export const Dark: Story = { render: (args) => dark(<Full><ApplePasswords {...ar
 
 /** A verification code beside its countdown ring. */
 export const Codes: Story = {
-  args: { initialCategory: 'codes', initialItem: 'aurora' },
+  args: { defaultCategory: 'codes', defaultItem: 'aurora' },
   render: (args) => <Full><ApplePasswords {...args} /></Full>,
 };
 
 /** Security recommendations, highest severity first. */
 export const Security: Story = {
-  args: { initialCategory: 'security' },
+  args: { defaultCategory: 'security' },
   render: (args) => dark(<Full><ApplePasswords {...args} /></Full>),
 };
 
 export const WiFi: Story = {
-  args: { initialCategory: 'wifi' },
+  args: { defaultCategory: 'wifi' },
   render: (args) => <Full><ApplePasswords {...args} /></Full>,
 };
 
@@ -67,12 +67,12 @@ export const PhoneDark: Story = { render: (args) => dark(<Frame width={390} heig
 const demoVault = createVault({ id: 'apple-passwords-demo', rp: { name: 'Passwords' } });
 
 export const SignIn: Story = {
-  args: { initialSignIn: 'github', auth: createDemoDeviceAuth({ promptDelay: 0 }), passkeyVault: demoVault },
+  args: { defaultSignIn: 'github', auth: createDemoDeviceAuth({ promptDelay: 0 }), passkeyVault: demoVault },
   render: (args) => <Full><ApplePasswords {...args} /></Full>,
 };
 
 export const SignInPhone: Story = {
-  args: { initialSignIn: 'github', auth: createDemoDeviceAuth({ promptDelay: 0 }), passkeyVault: demoVault },
+  args: { defaultSignIn: 'github', auth: createDemoDeviceAuth({ promptDelay: 0 }), passkeyVault: demoVault },
   render: (args) => <Frame width={390} height={844}><ApplePasswords {...args} /></Frame>,
 };
 

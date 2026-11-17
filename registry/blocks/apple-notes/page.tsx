@@ -12,10 +12,10 @@ export interface AppleNotesProps {
   /** Light or dark. Defaults to the ambient AppearanceProvider, else light. */
   appearance?: Appearance;
   /** Folder to open on. Defaults to the root list of added folders. */
-  initialFolder?: string;
+  defaultFolder?: string;
   /** A file id to select at mount. No note is selected by default. */
-  initialNote?: string | null;
-  initialView?: NotesView;
+  defaultNote?: string | null;
+  defaultView?: NotesView;
 }
 
 /** Notes' yellow accent (light / dark) … */
@@ -24,10 +24,10 @@ const NOTES_TINT = { light: '#E0A500', dark: '#FFD60A' } as const;
     primary-foreground on the block's root. */
 const NOTES_ON_TINT = { '--primary-foreground': '#1C1C1E' } as CSSProperties;
 
-export default function AppleNotes({ appearance, initialFolder = 'folders', initialNote = null, initialView = 'list' }: AppleNotesProps) {
+export default function AppleNotes({ appearance, defaultFolder = 'folders', defaultNote = null, defaultView = 'list' }: AppleNotesProps) {
   const ambient = useAppearance();
   const dark = (appearance ?? ambient) === 'dark';
-  const notes = useNotes({ folder: initialFolder, note: initialNote, view: initialView });
+  const notes = useNotes({ folder: defaultFolder, note: defaultNote, view: defaultView });
 
   return (
     <AppearanceProvider value={dark ? 'dark' : 'light'}>

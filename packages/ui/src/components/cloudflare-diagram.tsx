@@ -8,7 +8,7 @@ import { Checkbox, CheckboxGroup } from '@/components/ui/checkbox';
 import {
   Combobox, ComboboxContent, ComboboxEmpty, ComboboxInput, ComboboxInputGroup, ComboboxItem, ComboboxList,
 } from '@/components/ui/combobox';
-import { Diagram, DiagramNodeBody, DiagramToolbar, type DiagramItem, type DiagramProps } from '@/components/ui/diagram';
+import { Diagram, DiagramNodeBody, DiagramToolbar, type DiagramItem, type DiagramNoun, type DiagramProps } from '@/components/ui/diagram';
 import {
   DiagramFrame, DiagramFrameBar, DiagramFrameBoard, DiagramFrameCover, DiagramFrameCoverHeader, DiagramFramePanel, DiagramFrameSection,
   DiagramFrameTrigger, useDiagramFrame, type DiagramFrameProps,
@@ -19,7 +19,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { StateDiagram } from '@/components/ui/state-diagram';
 import {
-  cloudflareBoardData, cloudflareProblems, placeInLayers,
+  cloudflareBoardData, cloudflareNoun, cloudflareProblems, placeInLayers,
   type CloudflareServiceEdgeData, type CloudflareServiceNodeData,
 } from '@/lib/cloudflare-board';
 import { CLOUDFLARE_CATALOG } from '@/lib/cloudflare-catalog.generated';
@@ -171,7 +171,7 @@ export interface CloudflareBoardProps {
   portsOnly: true;
   autoSize: true;
   background: 'grid';
-  noun: string;
+  noun: DiagramNoun;
   renderNode?: (node: DiagramNode<CloudflareServiceNodeData>) => ReactNode;
 }
 
@@ -188,7 +188,7 @@ export function cloudflareBoardProps(system: CloudflareSystem, { icon, issues, e
     portsOnly: true,
     autoSize: true,
     background: 'grid',
-    noun: 'service',
+    noun: cloudflareNoun,
     ...(icon ? { renderNode: (node: DiagramNode<CloudflareServiceNodeData>) => (node.data ? <ServiceWithOwnIcon node={node} icon={icon} /> : <DiagramNodeBody node={node} />) } : null),
   };
 }
@@ -425,6 +425,8 @@ export function CloudflareDiagram({
       <DiagramFrameBoard ref={boardRef}>
         <Diagram<CloudflareServiceNodeData, CloudflareServiceEdgeData>
           {...board}
+          // A laid-out board is sized to its measured words already (and a card a layout widened for its edges stays so).
+          autoSize={anyPlaced}
           nodes={nodes}
           edges={shownEdges}
           isValidConnection={isValidConnection}

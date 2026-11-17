@@ -13,20 +13,20 @@ export interface AppleMailProps {
   /** Light or dark. Defaults to the ambient AppearanceProvider, else light. */
   appearance?: Appearance;
   /** Mailbox to open on (e.g. 'inbox', 'flagged', 'unread'). */
-  initialMailbox?: string;
+  defaultMailbox?: string;
   /** Message selected at mount (wide layouts), e.g. 'm2'. */
-  initialMessage?: string | null;
+  defaultMessage?: string | null;
   /** Open the compose sheet at mount. */
-  initialDraft?: Draft | null;
+  defaultDraft?: Draft | null;
 }
 
 /** Mail's accent: iOS system blue (light #007AFF, dark #0A84FF). */
 const MAIL_TINT = { light: '#007AFF', dark: '#0A84FF' } as const;
 
-export default function AppleMail({ appearance, initialMailbox = 'inbox', initialMessage = 'm2', initialDraft = null }: AppleMailProps) {
+export default function AppleMail({ appearance, defaultMailbox = 'inbox', defaultMessage = 'm2', defaultDraft = null }: AppleMailProps) {
   const ambient = useAppearance();
   const dark = (appearance ?? ambient) === 'dark';
-  const mail = useMail({ mailbox: initialMailbox, message: initialMessage, draft: initialDraft });
+  const mail = useMail({ mailbox: defaultMailbox, message: defaultMessage, draft: defaultDraft });
 
   return (
     <AppearanceProvider value={dark ? 'dark' : 'light'}>

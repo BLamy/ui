@@ -11,7 +11,9 @@ app, and the app's own bundler tree-shakes. The full explanation, with examples,
   (named after its file or folder); `registry/components/<name>.json` groups several modules into one and carries the docs
   metadata (`{ name, title, description, page, exports, files?, … }`, see `components/types.ts`). `registryDependencies` and npm
   `dependencies` are derived from the real imports (`@/components/ui/<x>`, `@/lib/<x>`, bare specifiers); dependencies on our
-  own items are full URLs, so the shadcn CLI never substitutes its stock `button`.
+  own items are full URLs, so the shadcn CLI never substitutes its stock `button`. Docstream isn't copied: an item that imports
+  `@brett_lamy/ui/docstream…` gets the npm dependency `@brett_lamy/ui` at the library's version, and its manifest's `css` adds
+  docstream's stylesheet to the app's CSS (`@import "@brett_lamy/ui/docstream/styles.css" layer(docstream)`).
 - **Blocks** are `blocks/<slug>/` (e.g. `github-clone`, `discord-clone`, `t3-clone`, `map-chat`). Each has `meta.json`
   (`{ name, title, description, categories, files, dependencies? }`, see `blocks/types.ts`) and a `page.tsx` whose default export
   is the whole block. A block imports only `react`, `@/components/ui/*`, `@/lib/*`, its own files and the npm packages in
@@ -29,15 +31,20 @@ app, and the app's own bundler tree-shakes. The full explanation, with examples,
 
 ## Commands (repo root)
 
-- `pnpm registry` — regenerate `registry.json` (validates the import graph, the barrel and block imports).
+- `pnpm registry` — regenerate `registry.json` and `packages/ui/package.json` `exports` (validates the import graph, the
+  barrel, block imports, and that no two package entries export one name).
 - `pnpm registry:static` — also run `shadcn build` into `apps/docs/public/r` (the docs build does this via
   `nx run @brett_lamy/registry:registry`).
 - `node tools/registry/build.mjs --static --url http://localhost:4501/r --out /tmp/reg-root/r` — a static registry for another
   host, for testing `npx shadcn add http://localhost:4501/r/<item>.json` locally (`cd /tmp/reg-root && python3 -m http.server 4501`).
-- `node tools/registry/build.mjs --check` — fail if the committed files are stale, or a manifest exports a name that neither the
-  npm barrel (`packages/ui/src/index.ts`) nor the module's own entry does (CI).
+- `node tools/registry/build.mjs --check` — fail if the committed files (`registry.json`, the package's `exports`) are stale, a
+  manifest exports a name that neither the npm barrel (`packages/ui/src/index.ts`) nor the module's own entry does, or two
+  entries export one name (`tools/registry/one-path.mjs`) (CI).
 
 ## The npm package
 
 `@brett_lamy/ui` is built from the same modules (`vite build` with `preserveModules`, `sideEffects: ["*.css"]`, `'use client'` on
-client modules), and its barrel is the list of manifest exports. Blocks are registry-only; they are not part of the npm package.
+client modules). Every module with an API has its own entry at its registry path (`@/components/ui/dialog` ↔
+`@brett_lamy/ui/dialog`, `@/lib/cron` ↔ `@brett_lamy/ui/lib/cron`), written into `exports` from the same import graph, and the
+root barrel re-exports the components, their parts and the kit's hooks. Blocks are registry-only; they are not part of the npm
+package.

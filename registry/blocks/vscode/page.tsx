@@ -26,9 +26,9 @@ export interface VSCodeProps {
    *  the browser on a small starter project. A runtime you pass stays yours to dispose of. */
   runtime?: VSCodeRuntime;
   /** The file open to begin with, relative to the runtime's root. */
-  initialFile?: string;
+  defaultFile?: string;
   /** The rail's tab to start on: a side panel, or in a narrow window also the editor or the terminal. */
-  initialView?: ViewId;
+  defaultView?: ViewId;
   className?: string;
   style?: CSSProperties;
 }
@@ -73,9 +73,9 @@ export default function VSCode({ controller, tailscale, ...props }: VSCodeProps)
   return <TailscaleProvider tailscale={shared ?? undefined} options={options}><VSCodeWindow {...props} /></TailscaleProvider>;
 }
 
-function VSCodeWindow({ runtime, initialFile, initialView, className, style }: VSCodeProps) {
+function VSCodeWindow({ runtime, defaultFile, defaultView, className, style }: VSCodeProps) {
   const tailscale = useTailscale();
-  const [store] = useState(() => new VSCodeStore(runtime ?? createAlmostnodeRuntime({ tailscale }), { initialFile, initialView }));
+  const [store] = useState(() => new VSCodeStore(runtime ?? createAlmostnodeRuntime({ tailscale }), { defaultFile, defaultView }));
   // Only a runtime made here is this window's to end. Like the store, it's chosen when the window mounts.
   const [owned] = useState(() => !runtime);
   useEffect(() => {
@@ -91,7 +91,7 @@ function VSCodeWindow({ runtime, initialFile, initialView, className, style }: V
     // Where it starts is read once. The rail has no editor or terminal tab in a wide window.
     if (started.current) return;
     started.current = true;
-    if (initialView && (narrow || (initialView !== 'editor' && initialView !== 'terminal'))) store.setView(initialView);
+    if (defaultView && (narrow || (defaultView !== 'editor' && defaultView !== 'terminal'))) store.setView(defaultView);
   }, [store, narrow]);
   useSyncExternalStore(store.subscribe, store.getVersion);
   const view = store.view;

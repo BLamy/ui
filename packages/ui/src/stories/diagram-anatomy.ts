@@ -1,4 +1,5 @@
 import type { DiagramDraft } from '@/lib/diagram-layout';
+import type { DiagramEdge, DiagramNode } from '@/lib/diagram-model';
 
 /* Story data: two diagrams drawn with nothing but Diagram's generic parts (header strips, sections of items, containers,
    the entry marker, glyphs, edge labels that are pills or cards, self-loops). The first is the XState visualizer's
@@ -69,3 +70,64 @@ export const SYSTEM_LIKE: DiagramDraft = {
     { id: 'consumer-db', from: 'room', to: 'db', title: 'DB', sections: [{ items: [{ title: 'prepare' }, { title: 'batch', tone: 'warning' }] }] },
   ],
 };
+
+/** Every kind of node, hand-placed (the NodeKinds story). */
+export const KINDS: DiagramNode[] = [
+  { id: 'root', kind: 'root', title: 'A root, which holds everything', x: 0, y: 0, w: 900, h: 420 },
+  { id: 'plain', kind: 'node', parent: 'root', title: 'A node', x: 40, y: 56, w: 120, h: 36 },
+  { id: 'detail', kind: 'node', parent: 'root', title: 'With a detail', description: 'invoke fetchUser', x: 200, y: 50, w: 150, h: 50 },
+  { id: 'final', variant: 'double', parent: 'root', title: 'Double', x: 400, y: 56, w: 110, h: 36 },
+  { id: 'initial', kind: 'marker', parent: 'root', title: 'Start', x: 560, y: 66, w: 12, h: 12 },
+  { id: 'compound', kind: 'group', parent: 'root', title: 'A group', x: 40, y: 140, w: 320, h: 240 },
+  { id: 'inner', kind: 'node', parent: 'compound', title: 'Inside', x: 90, y: 200, w: 110, h: 36 },
+  { id: 'parallel', kind: 'group', variant: 'dashed', parent: 'root', title: 'A dashed group', description: 'of regions', x: 400, y: 140, w: 460, h: 240 },
+  { id: 'r1', kind: 'region', parent: 'parallel', title: 'A region', x: 412, y: 204, w: 436, h: 80 },
+  { id: 'r2', kind: 'region', parent: 'parallel', title: 'Another', x: 412, y: 292, w: 436, h: 80 },
+  { id: 'r1a', kind: 'node', parent: 'r1', title: 'One', x: 560, y: 228, w: 100, h: 36 },
+  { id: 'r2a', kind: 'node', parent: 'r2', title: 'Two', x: 560, y: 316, w: 100, h: 36 },
+];
+
+/** Every kind of edge between hand-placed nodes (the EdgeKinds story). */
+export const EDGE_NODES: DiagramNode[] = [
+  { id: 'a', title: 'default', x: 0, y: 0, w: 110, h: 36 },
+  { id: 'a2', title: 'target', x: 300, y: 0, w: 110, h: 36 },
+  { id: 'b', title: 'dashed', x: 0, y: 70, w: 110, h: 36 },
+  { id: 'b2', title: 'target', x: 300, y: 70, w: 110, h: 36 },
+  { id: 'c', title: 'dotted', x: 0, y: 140, w: 110, h: 36 },
+  { id: 'c2', title: 'target', x: 300, y: 140, w: 110, h: 36 },
+  { id: 'd', title: 'strong', x: 0, y: 210, w: 110, h: 36 },
+  { id: 'd2', title: 'target', x: 300, y: 210, w: 110, h: 36 },
+  { id: 'e', title: 'destructive', x: 0, y: 280, w: 110, h: 36 },
+  { id: 'e2', title: 'target', x: 300, y: 280, w: 110, h: 36 },
+  { id: 'dot', kind: 'marker', x: 49, y: 350, w: 12, h: 12 },
+  { id: 'f2', title: 'from a marker', x: 300, y: 338, w: 110, h: 36 },
+  { id: 's', title: 'straight', x: 520, y: 0, w: 110, h: 36 },
+  { id: 's2', title: 'target', x: 800, y: 90, w: 110, h: 36 },
+  { id: 'el', title: 'elbow', x: 520, y: 100, w: 110, h: 36 },
+  { id: 'el2', title: 'target', x: 800, y: 190, w: 110, h: 36 },
+  { id: 'cu', title: 'curve', x: 520, y: 200, w: 110, h: 36 },
+  { id: 'cu2', title: 'target', x: 800, y: 290, w: 110, h: 36 },
+  { id: 'loop', title: 'self-loops', x: 600, y: 470, w: 130, h: 36 },
+  { id: 'p', title: 'parallel', x: 560, y: 340, w: 110, h: 90 },
+  { id: 'p2', title: 'edges', x: 850, y: 340, w: 110, h: 90 },
+  { id: 'box', kind: 'group', title: 'to and from its own child', x: 0, y: 420, w: 420, h: 120 },
+  { id: 'kid', parent: 'box', title: 'child', x: 120, y: 490, w: 110, h: 36 },
+];
+export const EDGES: DiagramEdge[] = [
+  { id: 'ev', from: 'a', to: 'a2', title: 'SUBMIT' },
+  { id: 'al', from: 'b', to: 'b2', variant: 'dashed', title: 'always [isValid]' },
+  { id: 'af', from: 'c', to: 'c2', variant: 'dotted', title: 'after 5000' },
+  { id: 'do', from: 'd', to: 'd2', variant: 'strong', title: 'strong' },
+  { id: 'in', from: 'e', to: 'e2', tone: 'destructive', title: 'can’t' },
+  { id: 'it', from: 'dot', to: 'f2', variant: 'strong' },
+  { id: 'r1', from: 's', to: 's2', route: 'straight', title: 'a straight route' },
+  { id: 'r2', from: 'el', to: 'el2', route: 'elbow', title: 'an elbow route' },
+  { id: 'r3', from: 'cu', to: 'cu2', route: 'curve', title: 'a curved route' },
+  { id: 'l1', from: 'loop', to: 'loop', title: 'RETRY' },
+  { id: 'l2', from: 'loop', to: 'loop', title: 'PING', variant: 'dotted' },
+  { id: 'p1', from: 'p', to: 'p2', title: 'one' },
+  { id: 'p2', from: 'p', to: 'p2', title: 'two' },
+  { id: 'p3', from: 'p', to: 'p2', title: 'three' },
+  { id: 'wall', from: 'box', to: 'kid', title: 'enter' },
+  { id: 'wall2', from: 'kid', to: 'box', route: 'curve' },
+];

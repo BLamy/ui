@@ -434,7 +434,7 @@ export interface SceneViewProps {
     container (NavigationStack, TabsScreen, SplitView) over the whole screen with the safe area as its inset. */
 export function SceneView({ scene, device, env, inst = null, appearance, rounded = true, chrome = true, simulateNav, nav, editing, className, children }: SceneViewProps) {
   // A replay is a new first render: its nodes take their stagger slots again.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- a replay (`env.play`) is a new first render: its nodes take their stagger slots again.
   const start = useMemo(() => performance.now(), [env.play]);
   const root = scene.root;
   const simulated = !env.live && root.type === 'Screen' && !!simulateNav?.inStack;

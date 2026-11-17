@@ -80,7 +80,7 @@ export default function NestedStack({
       <Scaled width={compact ? 390 : 1080} height={compact ? 640 : 560}>
         <SplitViewLibraryDemo
           defaultCompactColumn={compact ? 'detail' : undefined}
-          initialAlbum={compact ? 'tidewater' : undefined}
+          defaultAlbum={compact ? 'tidewater' : undefined}
         />
       </Scaled>
       <Caption>

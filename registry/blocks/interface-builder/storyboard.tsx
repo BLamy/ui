@@ -534,7 +534,7 @@ export function Storyboard({ viewport, onViewportChange, controller, appearance,
       for (const [k, v] of Object.entries(attrs)) { if (v == null) el.removeAttribute(k); else el.setAttribute(k, v); }
     };
     // finishEdit reads the latest edit from its ref.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- the editor is set up once per edit; `finishEdit` reads the latest edit from its ref.
   }, [editing]);
 
   /* ── Library drops ── */

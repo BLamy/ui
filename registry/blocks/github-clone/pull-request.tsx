@@ -23,11 +23,11 @@ export type PullRequestTab = 'conversation' | 'commits' | 'checks' | 'files';
 
 const openOnGitHub = (url?: string) => (url ? () => window.open(url, '_blank', 'noopener') : undefined);
 
-export function PullRequestView({ ui, number, nav, initialTab = 'conversation' }: { ui: Layout; number: number; nav: Nav; initialTab?: PullRequestTab }) {
+export function PullRequestView({ ui, number, nav, defaultTab = 'conversation' }: { ui: Layout; number: number; nav: Nav; defaultTab?: PullRequestTab }) {
   const { source } = useRepo();
   const pull = useLoad(`${source.id}:pull:${number}`, () => source.pull(number));
   const checks = useLoad(`${source.id}:checks:${number}`, () => source.pullChecks(number));
-  const [sub, setSub] = useState<string>(initialTab);
+  const [sub, setSub] = useState<string>(defaultTab);
   return (
     <div className={cn(ui.phone && 'px-4 py-4')}>
       {!ui.phone ? (

@@ -60,7 +60,7 @@ function ShellDemo({ width, height, defaultNavOpen }: FrameArgs) {
   const [cur, setCur] = useState('dev');
   return (
     <Frame width={width} height={height}>
-      <ChatShell breakpoint={880} defaultNavOpen={defaultNavOpen}>
+      <ChatShell breakpoints={{ medium: 880 }} defaultNavOpen={defaultNavOpen}>
         <ChatShellNav>
           <Tabs variant="switcher" defaultValue="blui" className="contents">
             <TabsBar>
@@ -168,7 +168,7 @@ export const DirectMessages: Story = {
     const [cur, setCur] = useState('miles');
     return (
       <Frame width={width} height={height}>
-        <ChatShell breakpoint={640}>
+        <ChatShell breakpoints={{ medium: 640 }}>
           <ChatShellNav>
             <ChatShellSidebar>
               <ServerHeader>Direct messages</ServerHeader>

@@ -37,10 +37,10 @@ export const Dark: Story = {
 };
 
 /** The same files in an accessible, keyboard-navigable folder tree. */
-export const TreeView: Story = { args: { initialView: 'tree' }, render: (args) => <Full><AppleNotes {...args} /></Full> };
+export const TreeView: Story = { args: { defaultView: 'tree' }, render: (args) => <Full><AppleNotes {...args} /></Full> };
 
 /** Personal notes in browser storage, with no sample content. */
-export const BrowserStorage: Story = { args: { initialFolder: 'folder:browser-notes', initialNote: null }, render: (args) => <Full><AppleNotes {...args} /></Full> };
+export const BrowserStorage: Story = { args: { defaultFolder: 'folder:browser-notes', defaultNote: null }, render: (args) => <Full><AppleNotes {...args} /></Full> };
 
 /** iPad: list and note tiled; the folders float in from the sidebar button. */
 export const Tablet: Story = {

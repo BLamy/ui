@@ -41,7 +41,7 @@ export function InlineDemoPreview({
         return { error: error instanceof Error ? error.message : String(error) }
       }
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `key` stands for the files, entry, dependencies and env.
     [key],
   )
   const { state, url, error } = useAlmostNodeServer({

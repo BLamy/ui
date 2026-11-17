@@ -28,7 +28,7 @@ Documented on [Layout hooks](https://blamy.github.io/ui/#/hooks-layout).
 | `useSplitViewColumn` | the column name | a split view column; `null` outside | public |
 | `useSplitViewBack` | `{ title, back }` | a bar of your own at the root of a column; `null` outside | public |
 | `useNavigationStack` | the stack's controller: `{ push, pop, popTo, replace, refresh, getPages }` | a `NavigationStack`; throws outside | public |
-| `useSidebar` | `{ open, setOpen, toggle, sizeClass, compact }` | `SidebarProvider`; throws outside | public |
+| `useSidebar` | `{ open, setOpen, toggle, sizeClass }` | `SidebarProvider`; throws outside | public |
 | `useSidebarCollapsed` | whether the enclosing sidebar is collapsed to its icon rail | a `Sidebar`; `false` outside | public |
 | `useTabs` | `{ variant, side, orientation }` | `Tabs`; `null` outside | public |
 | `useTabsTab` | the tab's UI SDK state, `{ selected, disabled }` | the content of a `TabsTab`; `null` outside | public |

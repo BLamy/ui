@@ -52,7 +52,7 @@ const chip = cn(
 );
 
 function Page({ page }: { page: string }) {
-  const { compact } = useSidebar();
+  const { sizeClass } = useSidebar();
   return (
     <SidebarInset>
       <div className="flex items-center gap-2 border-b border-border px-2 py-1.5">
@@ -62,7 +62,7 @@ function Page({ page }: { page: string }) {
       </div>
       <p className="m-0 p-4 text-footnote leading-relaxed text-muted-foreground">
         One sidebar, three looks and two presentations: the trigger toggles whichever shows, and with
-        presentation “auto” it becomes a drawer while its provider is compact{compact ? ' (as now)' : ''}. Try “narrow container”.
+        presentation “auto” it becomes a drawer while its provider is compact{sizeClass === 'compact' ? ' (as now)' : ''}. Try “narrow container”.
       </p>
     </SidebarInset>
   );

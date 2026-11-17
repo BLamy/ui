@@ -37,19 +37,19 @@ export const DesktopDark: Story = { render: (args) => dark(<Full><SaasCheckout {
 
 /** The payment step with a promotion applied and a California ZIP, so tax is in the total. */
 export const Payment: Story = {
-  args: { initialStep: 'payment', initial: { promo: 'LAUNCH20', account: ACCOUNT, card: { name: 'Jane Appleseed' }, billing: { country: 'US', postal: '94107' } } },
+  args: { defaultStep: 'payment', initial: { promo: 'LAUNCH20', account: ACCOUNT, card: { name: 'Jane Appleseed' }, billing: { country: 'US', postal: '94107' } } },
   render: (args) => <Full><SaasCheckout {...args} /></Full>,
 };
 
 /** Monthly billing on Business: the summary offers the yearly saving. */
 export const Monthly: Story = {
-  args: { initialStep: 'account', initial: { plan: 'business', cycle: 'monthly', seats: 12 } },
+  args: { defaultStep: 'account', initial: { plan: 'business', cycle: 'monthly', seats: 12 } },
   render: (args) => <Full><SaasCheckout {...args} /></Full>,
 };
 
 /** Paid: the receipt. */
 export const Receipt: Story = {
-  args: { initialStep: 'done', initial: { promo: 'LAUNCH20', account: ACCOUNT, billing: { country: 'GB', postal: 'EC1V 9HX' } } },
+  args: { defaultStep: 'done', initial: { promo: 'LAUNCH20', account: ACCOUNT, billing: { country: 'GB', postal: 'EC1V 9HX' } } },
   render: (args) => <Full><SaasCheckout {...args} /></Full>,
 };
 

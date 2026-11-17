@@ -45,7 +45,7 @@ describe('Codex rail', () => {
 
 describe('Codex document tools', () => {
   it('Format text is a toggle that says whether the formatting bar is on', async () => {
-    await render(<CodexClone initialChat="dot" />);
+    await render(<CodexClone defaultChat="dot" />);
     const format = named('Format text')!;
     expect(format.hasAttribute('data-disabled')).toBe(false);
     expect(format.getAttribute('aria-pressed')).toBe('false');

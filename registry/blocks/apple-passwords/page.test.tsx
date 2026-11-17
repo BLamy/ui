@@ -53,7 +53,7 @@ const byName = (role: string, name: string) =>
   [...document.querySelectorAll<HTMLElement>(`[role="${role}"], ${role === 'button' ? 'button' : 'x'}`)].find((el) => (el.getAttribute('aria-label') ?? el.textContent)?.includes(name));
 
 it('the Wi-Fi password reveal is a toggle, and the QR code is a Collapsible', async () => {
-  await mount({ initialCategory: 'wifi' });
+  await mount({ defaultCategory: 'wifi' });
   const eye = byName('button', 'Show password')!;
   expect(eye.getAttribute('aria-pressed')).toBe('false');
   await act(async () => eye.click());

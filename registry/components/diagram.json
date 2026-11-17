@@ -23,6 +23,7 @@
     "DiagramToolbar"
   ],
   "types": [
-    "DiagramActionDetails"
+    "DiagramActionDetails",
+    "DiagramNoun"
   ]
 }

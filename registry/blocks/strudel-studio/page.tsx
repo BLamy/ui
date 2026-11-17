@@ -21,7 +21,7 @@ const OWNER = 'strudel-studio';
 
 export interface StrudelStudioProps {
   /** The starter song to open (an id from songs.ts). */
-  initialSong?: string;
+  defaultSong?: string;
 }
 
 /** A song's tempo and tracks, read from its code as edited so far. */
@@ -47,8 +47,8 @@ function SongCard({ song, code }: { song: StudioSong; code: string }) {
   );
 }
 
-export default function StrudelStudio({ initialSong = 'night-drive' }: StrudelStudioProps) {
-  const [songId, setSongId] = useState(initialSong);
+export default function StrudelStudio({ defaultSong = 'night-drive' }: StrudelStudioProps) {
+  const [songId, setSongId] = useState(defaultSong);
   const [codes, setCodes] = useState<Record<string, string>>(() => Object.fromEntries(SONGS.map((s) => [s.id, s.code])));
   const code = codes[songId] ?? '';
   const setCode = (next: string) => setCodes((c) => ({ ...c, [songId]: next }));

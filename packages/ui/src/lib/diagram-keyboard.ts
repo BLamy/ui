@@ -185,14 +185,30 @@ export function nearestNode(index: DiagramIndex<any>, p: Pt): string | null {
 
 const nameOf = (n: DiagramNode<any> | undefined, fallback: string) => n?.title || fallback;
 
-function kindOf(n: DiagramNode<any>, index: DiagramIndex<any>, noun: string): string {
-  const count = index.children.get(n.id)?.length ?? 0;
-  const inside = count === 1 ? `holding 1 ${noun}` : `holding ${count} ${noun}s`;
+/** What a screen reader calls a node: one word for all of them, or a word for each (a system's environments and services). */
+export type DiagramNoun = string | ((node: DiagramNode<any>) => string);
+
+const plural = (count: number, word: string) => `${count} ${word}${count === 1 ? '' : 's'}`;
+
+/** What a node is, and for a box, what it holds by kind ("holding 2 environments and 1 service"), and of the commonest kind
+ *  under it, how many in all when that's more than it holds itself ("(12 services in all)"). */
+function kindOf(n: DiagramNode<any>, index: DiagramIndex<any>, noun: DiagramNoun): string {
+  const nounOf = typeof noun === 'string' ? () => noun : noun;
+  const kids = index.children.get(n.id) ?? [];
+  const counts = new Map<string, number>();
+  for (const k of kids) counts.set(nounOf(k), (counts.get(nounOf(k)) ?? 0) + 1);
+  const parts = [...counts].map(([word, count]) => plural(count, word));
+  const holding = `holding ${parts.length > 1 ? `${parts.slice(0, -1).join(', ')} and ${parts[parts.length - 1]}` : parts[0] ?? 'nothing'}`;
+  // The commonest kind of what's anywhere inside it, if there's more of it than it holds itself.
+  const all = new Map<string, number>();
+  for (const d of descendantsOf(index, n.id)) all.set(nounOf(index.byId.get(d)!), (all.get(nounOf(index.byId.get(d)!)) ?? 0) + 1);
+  const [most, total] = [...all].sort((p, q) => q[1] - p[1])[0] ?? ['', 0];
+  const inside = total > (counts.get(most) ?? 0) && counts.size ? `${holding} (${plural(total, most)} in all)` : holding;
   switch (n.kind) {
     case 'group': return `group, ${inside}`;
     case 'region': return `region, ${inside}`;
     case 'root': return `diagram, ${inside}`;
-    default: return noun;
+    default: return nounOf(n);
   }
 }
 
@@ -206,7 +222,7 @@ function listEdges(edges: readonly DiagramEdge<any>[], name: (e: DiagramEdge<any
 }
 
 /** What a node is, what it's in, and what it connects to, as a sentence or two. */
-export function describeNode(node: DiagramNode<any>, index: DiagramIndex<any>, at: { out: readonly DiagramEdge<any>[]; into: readonly DiagramEdge<any>[] } | undefined, noun = 'node'): string {
+export function describeNode(node: DiagramNode<any>, index: DiagramIndex<any>, at: { out: readonly DiagramEdge<any>[]; into: readonly DiagramEdge<any>[] } | undefined, noun: DiagramNoun = 'node'): string {
   const parent = index.parent.get(node.id);
   const parentNode = parent ? index.byId.get(parent) : undefined;
   const where = parentNode && parentNode.kind !== 'root' ? `, in ${nameOf(parentNode, parentNode.id)}` : '';

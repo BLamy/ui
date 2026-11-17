@@ -2,7 +2,7 @@
 
 BL UI is built on [UI SDK](https://ui-sdk.dev) (keyboard, focus, selection, popups, ARIA) and Tailwind CSS v4, and needs React 19. It uses our fork of UI SDK under upstream's package names (see [Built on UI SDK](https://blamy.github.io/ui/#/ui-sdk)). You can take it two ways from one source of truth:
 
-- **shadcn registry (recommended).** `npx shadcn@latest add …` copies the source of the parts you pick into your project, with only what each part imports (`@ui-sdk/core`, `@ui-sdk/react`, `framer-motion`, …). You own the files, so you can edit variants and defaults, and you ship exactly what you added. The one exception is docstream, the Markdown renderer and editor inside `@brett_lamy/ui`: it isn't copied, so a part built on it (MarkdownView, MarkdownEditor, the Composer, ReplayPreview, StlViewer, StrudelPlayer, TuiPreview) adds `@brett_lamy/ui` to your dependencies and imports `@brett_lamy/ui/docstream…`.
+- **shadcn registry (recommended).** `npx shadcn@latest add …` copies the source of the parts you pick into your project, with only what each part imports (`@ui-sdk/core`, `@ui-sdk/react`, `framer-motion`, …). You own the files, so you can edit variants and defaults, and you ship exactly what you added. The one exception is docstream, the Markdown renderer and editor inside `@brett_lamy/ui`: it isn't copied, so a part built on it (MarkdownView, MarkdownEditor, the Composer, ReplayPreview, StlViewer, StrudelPlayer, TuiPreview) adds `@brett_lamy/ui` to your dependencies, imports `@brett_lamy/ui/docstream…`, and adds docstream's stylesheet to your CSS.
 - **npm package.** `npm install @brett_lamy/ui` gives you everything, packaged together, docstream included. It is generated from the same sources: ESM, one output module per source module so bundlers tree-shake, an entry per module at the registry's path (`@brett_lamy/ui/dialog` for `@/components/ui/dialog`), and `'use client'` on component modules for Next.js.
 
 | | Registry | npm |
@@ -291,13 +291,18 @@ BL UI needs React 19. `@brett_lamy/ui` depends on our fork of UI SDK under upstr
 {% step %}
 ### Import the styles
 
-Import the stylesheet once at your app's entry, before your own CSS: it declares the cascade layers, `ui-sdk` first, so UI SDK's runtime rules stay below everything else. (With a Tailwind build of your own, also put `@layer ui-sdk;` at the top of your global CSS.) Add the theme if you want the iOS palette; without it, define shadcn's CSS variables (`--background`, `--primary`, …) yourself or from a shadcn preset.
+No JavaScript module of the package imports CSS (so every entry loads in plain Node): import the stylesheets once, at your app's entry, before your own CSS. The kit's sheet declares the cascade layers, `ui-sdk` first, so UI SDK's runtime rules stay below everything else. (With a Tailwind build of your own, also put `@layer ui-sdk;` at the top of your global CSS.)
 
 ```tsx
 // src/main.tsx
-import '@brett_lamy/ui/styles.css'
+import '@brett_lamy/ui/styles.css' // always: the kit, with the Markdown editor's sheet in a layer
 import '@brett_lamy/ui/theme.css' // optional: the iOS palette
+import '@brett_lamy/ui/docstream/styles.css' // only if you render Markdown (below)
 ```
+
+`@brett_lamy/ui/docstream/styles.css` is docstream's sheet. MarkdownView, MarkdownEditor, Composer, Conversation, ReplayPreview, TuiPreview, StlViewer, StrudelPlayer and docstream's own components (`@brett_lamy/ui/docstream/…`, DocsSite included) need it, after the kit's sheet; nothing else does. The editor's sheet (`@brett_lamy/ui/docstream-editor/styles.css`) is already inside `@brett_lamy/ui/styles.css`: import it yourself only in an app that doesn't load the kit's sheet, never both. With the registry, an item that needs a sheet adds the `@import` to your CSS. To let your classes beat docstream's rules without `!important`, import its sheet from your CSS into the layer the kit declares for it instead: `@import "@brett_lamy/ui/docstream/styles.css" layer(docstream);`.
+
+Without the theme, define shadcn's CSS variables (`--background`, `--primary`, …) yourself or from a shadcn preset.
 {% endstep %}
 
 {% step %}
@@ -309,9 +314,9 @@ import { NavigationStack } from '@brett_lamy/ui/navigation-stack'
 import { SplitView } from '@brett_lamy/ui/split-view'
 ```
 
-Every module has its own entry, at the registry's path under the package name: `@/components/ui/split-view` is `@brett_lamy/ui/split-view`, `@/lib/theme` is `@brett_lamy/ui/lib/theme`, and each component page shows its import. The components, their parts and the documented hooks are also on the package root, `import { BLProvider, NavigationStack, SplitView } from '@brett_lamy/ui'`; the engines and models (`lib/session-recorder`, `lib/cron`, `lib/diagram-model`, `lib/syntax`…) are only on their own entries, and a folder is one entry (`@brett_lamy/ui/composer`, `@brett_lamy/ui/pencilkit`). Both tree-shake the same in a production build; a module entry also keeps the dev server and your editor from loading the whole index to resolve one name, and switching to or from the registry changes only the prefix.
+Import each part from its module's entry, the registry's path under the package name: `@/components/ui/split-view` is `@brett_lamy/ui/split-view`, `@/lib/theme` is `@brett_lamy/ui/lib/theme`, and each component page shows its import. A folder is one entry (`@brett_lamy/ui/composer`, `@brett_lamy/ui/pencilkit`). The components, their parts and the kit's hooks are also on the package root (`import { Button } from '@brett_lamy/ui'`); engines and models (`lib/session-recorder`, `lib/cron`, `lib/diagram-model`, `lib/syntax`…) are only on their own entries. Both tree-shake the same in a production build, but a module entry keeps the dev server and your editor from loading the whole index to resolve one name, and switching to or from the registry changes only the prefix.
 
-Docstream, the Markdown renderer and editor inside the package, has entries of its own (`@brett_lamy/ui/docstream/site`, `@brett_lamy/ui/docstream-editor`…) and needs no bundler configuration. Its stylesheet is separate: import `@brett_lamy/ui/docstream/styles.css` after `@brett_lamy/ui/styles.css` when you use MarkdownView, Conversation, ReplayPreview, StlViewer, StrudelPlayer, TuiPreview or docstream's components directly (with the registry, those items add the `@import` to your CSS). The editor's sheet is already inside `@brett_lamy/ui/styles.css`. No JavaScript module of the package imports CSS, so every entry loads in plain Node.
+Docstream, the Markdown renderer and editor inside the package, has entries of its own (`@brett_lamy/ui/docstream/site`, `@brett_lamy/ui/docstream-editor`…) and needs no bundler configuration; its stylesheet is the one in the step above.
 {% endstep %}
 {% endstepper %}
 {% endtab %}
@@ -329,10 +334,13 @@ The package and the same two UI SDK aliases as on Vite:
 {% step %}
 ### Import the styles in the root layout
 
+The same stylesheets as on Vite, in the root layout:
+
 ```tsx
 // app/layout.tsx
-import '@brett_lamy/ui/styles.css'
+import '@brett_lamy/ui/styles.css' // always: the kit, with the Markdown editor's sheet in a layer
 import '@brett_lamy/ui/theme.css' // optional: the iOS palette
+import '@brett_lamy/ui/docstream/styles.css' // only if you render Markdown
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -377,7 +385,7 @@ The npm package contains the library only (every component and lib, docstream an
 | `button`, `dialog`, `select`, `tabs`, … | shadcn-style primitives, one item each, in `components/ui/<name>.tsx` |
 | `list`, `split-view`, `navigation-stack`, `composer`, … | Containers and larger parts, grouped with the modules that belong together |
 | `icon`, `motion`, `theme`, `utils`, … | Libraries in `lib/<name>.ts` |
-| `markdown-view`, `markdown-editor`, `composer`, `replay-preview`, … | Parts built on docstream: their own module is copied, and docstream comes from `@brett_lamy/ui`, which the item adds to your dependencies |
+| `markdown-view`, `markdown-editor`, `composer`, `replay-preview`, … | Parts built on docstream: their own module is copied, and docstream comes from `@brett_lamy/ui`, which the item adds to your dependencies; the item also adds `@import "@brett_lamy/ui/docstream/styles.css" layer(docstream)` to your CSS (`markdown-editor`, and through it `composer`, the editor's sheet too, in the `components.bl-editor` layer) |
 | `github-clone`, `apple-mail`, … | A whole app in `components/blocks/<name>/`, see [Blocks](https://blamy.github.io/ui/#/blocks) |
 
 ## Provider
@@ -396,7 +404,7 @@ The npm package contains the library only (every component and lib, docstream an
 
 - React and React DOM 19 (and `@types/react` 19.2.10 or newer with TypeScript)
 - `@ui-sdk/core` and `@ui-sdk/react`, as the aliases `npm:@brett_lamy/ui-sdk-core` and `npm:@brett_lamy/ui-sdk-react`, both at the same version (the npm package depends on them; list them in your app either way)
-- Only for the parts that use them: `xstate` (StateDiagram, the xstate fence), `elkjs` (automatic diagram layout), `@electric-sql/pglite` (the PGlite parts), `@agent-wasm/core` (docstream's live playground), optional peers of the package
+- Only for the parts that use them, optional peers of the package: `xstate` (StateDiagram, a CloudflareDiagram service's machine, the xstate fence), `elkjs` (automatic diagram layout), `@electric-sql/pglite` and `@electric-sql/pglite-tools` (the PGlite parts, and their export and import), `@agent-wasm/tailscale-connect` (the Tailscale client), `@agent-wasm/core` (docstream's live playground), `@brett_lamy/viz-engine` (docstream's VizEngine scenes) and `vite` (docstream's Vite plugin)
 - `@layer ui-sdk;` declared before your other CSS when you have your own Tailwind build
 - Tailwind CSS v4 (for the registry path, and for any Tailwind classes of your own)
 - shadcn's CSS variables, from your shadcn theme or the bl-theme

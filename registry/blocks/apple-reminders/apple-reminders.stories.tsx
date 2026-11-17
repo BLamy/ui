@@ -30,14 +30,14 @@ const dark = (node: ReactNode) => <AppearanceProvider value="dark">{node}</Appea
 /** Sidebar with smart lists and My Lists, Today open. */
 export const Desktop: Story = { render: (args) => <Full><AppleReminders {...args} /></Full> };
 /** A list with sections, tinted green. */
-export const DesktopDark: Story = { args: { initialList: 'groceries' }, render: (args) => dark(<Full><AppleReminders {...args} /></Full>) };
+export const DesktopDark: Story = { args: { defaultList: 'groceries' }, render: (args) => dark(<Full><AppleReminders {...args} /></Full>) };
 
-export const Tablet: Story = { args: { initialList: 'work' }, render: (args) => <Device width={834} height={760}><AppleReminders {...args} /></Device> };
-export const TabletDark: Story = { args: { initialList: 'scheduled' }, render: (args) => dark(<Device width={834} height={760}><AppleReminders {...args} /></Device>) };
+export const Tablet: Story = { args: { defaultList: 'work' }, render: (args) => <Device width={834} height={760}><AppleReminders {...args} /></Device> };
+export const TabletDark: Story = { args: { defaultList: 'scheduled' }, render: (args) => dark(<Device width={834} height={760}><AppleReminders {...args} /></Device>) };
 
 /** iPhone: the lists screen. */
 export const Phone: Story = { render: (args) => <Device width={390} height={844}><AppleReminders {...args} /></Device> };
 export const PhoneDark: Story = { render: (args) => dark(<Device width={390} height={844}><AppleReminders {...args} /></Device>) };
 
 /** iPhone, pushed into a list. */
-export const PhoneList: Story = { args: { initialList: 'family', openList: true }, render: (args) => <Device width={390} height={844}><AppleReminders {...args} /></Device> };
+export const PhoneList: Story = { args: { defaultList: 'family', openList: true }, render: (args) => <Device width={390} height={844}><AppleReminders {...args} /></Device> };

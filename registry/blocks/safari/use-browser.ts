@@ -152,7 +152,7 @@ export interface UseBrowserOptions {
       goes when this turns true; one that failed for being offline tries again. Default true. */
   enabled?: boolean;
   /** Addresses to open in tabs at the start; none: one tab on the start page. */
-  initialUrls?: readonly string[];
+  defaultUrls?: readonly string[];
   /** Awaited before each page is fetched (the tab shows loading meanwhile): Safari selects an exit node here. A rejection is ignored; the load goes on. */
   prepare?: (entry: Entry) => Promise<unknown> | void;
   /** Run pages: see `LoadOptions.proxy`. Without it pages are sealed documents. */
@@ -178,8 +178,8 @@ export interface Browser {
 
 const asEntry = (e: Entry | string): Entry => (typeof e === 'string' ? { url: e } : e);
 
-export function useBrowser({ fetcher, initialUrls, enabled = true, prepare, proxy }: UseBrowserOptions): Browser {
-  const [state, dispatch] = useReducer(reducer, initialUrls, initialState);
+export function useBrowser({ fetcher, defaultUrls, enabled = true, prepare, proxy }: UseBrowserOptions): Browser {
+  const [state, dispatch] = useReducer(reducer, defaultUrls, initialState);
   const prepareRef = useRef(prepare);
   prepareRef.current = prepare;
   const inflight = useRef(new Map<number, { seq: number; ctrl: AbortController }>());

@@ -10,15 +10,16 @@ import { renderEmptyState } from '@/components/ui/empty-state';
 import { Spinner } from '@/components/ui/spinner';
 import { Toolbar, ToolbarButton, ToolbarSeparator, type ToolbarProps } from '@/components/ui/toolbar';
 import { Tooltip, TooltipContent, TooltipShortcut, TooltipTrigger } from '@/components/ui/tooltip';
-import { centerOf, intersects, rectOf, toBoard, type Guide, type Pt, type Rect } from '@/lib/canvas-math';
+import { centerOf, intersects, rectOf, toBoard, unionRect, type Guide, type Pt, type Rect } from '@/lib/canvas-math';
 import { useContainerSize } from '@/lib/container';
 import { connectionOf, connectionTargetAt, hitTestDiagram, movableNodes, offerConnection, stepDiagramGesture, type DiagramConnectionEnd, type DiagramGesture, type DiagramGestureEvent, type DiagramHit } from '@/lib/diagram-gesture';
+import { AVOID_UP_TO, drawDiagram, drawingCorner, firstView, keepInView, type DiagramDrawing, type DiagramEye } from '@/lib/diagram-drawing';
 import { DiagramChromeProvider, useDiagramChrome, useDiagramChromeInset, useDiagramChromeScope, type DiagramInsets } from '@/lib/diagram-chrome';
 import type { DiagramHistory } from '@/lib/diagram-history';
-import { describeEdge, describeItem, describeNode, edgesByNode, fitViewport, nearestNode, stepFocus, viewportToKeep, viewportToShow, type DiagramItem, type DiagramStep } from '@/lib/diagram-keyboard';
+import { describeEdge, describeItem, describeNode, fitViewport, type DiagramNoun, nearestNode, stepFocus, viewportToShow, type DiagramItem, type DiagramStep } from '@/lib/diagram-keyboard';
 import {
-  DIAGRAM_CARD, DIAGRAM_LEGIBLE_ZOOM, DIAGRAM_SIDES, NOTHING_SELECTED, anchorNormal, codeKey, anchorPoint, connectorPath, diagramBounds, diagramTextRuns, edgeGeometries, edgeGeometry, edgeLabelSize, facePorts, hasEdgeLabel, holdsNodes, indexDiagram, isInside, itemKey, labelBoxAvoiding, moveNodes, nearestSide, nodeAnatomy, portPoint, rectIndex, regionDividers, renderWindow, roundedPolylineD, sectionKey, sizeNodesToText, growNodesToText, loopsBeside,
-  type ConnectorEnd, type ConnectorGeometry, type DiagramConnection, type DiagramDivider, type DiagramEdge, type DiagramEdgeTone, type DiagramEdgeVariant, type DiagramGlyph, type DiagramIndex, type DiagramNode, type DiagramNodeKind, type DiagramNodeVariant, type DiagramPort, type DiagramSection, type DiagramSelection, type DiagramSide, type DiagramTone,
+  DIAGRAM_CARD, DIAGRAM_LEGIBLE_ZOOM, DIAGRAM_SIDES, NOTHING_SELECTED, anchorNormal, codeKey, anchorPoint, connectorPath, diagramTextRuns, edgeGeometry, hasEdgeLabel, holdsNodes, indexDiagram, itemKey, moveNodes, nearestSide, portPoint, renderWindow, sectionKey, sizeNodesToText, growNodesToText,
+  type ConnectorEnd, type ConnectorGeometry, type DiagramConnection, type DiagramEdge, type DiagramEdgeTone, type DiagramEdgeVariant, type DiagramGlyph, type DiagramNode, type DiagramNodeKind, type DiagramNodeVariant, type DiagramPort, type DiagramSection, type DiagramSelection, type DiagramSide, type DiagramTone,
 } from '@/lib/diagram-model';
 import {
   diagram, type DiagramController, type DiagramData, type DiagramDataChangeDetails, type DiagramDataChangeReason, type DiagramOptions, type DiagramSelectionChangeDetails, type DiagramSelectionChangeReason,
@@ -33,7 +34,7 @@ export { createDiagramController } from '@/lib/diagram-primitive';
 export { useDiagramHistory } from '@/lib/diagram-history';
 export type { DiagramHistory, DiagramHistoryChangeDetails, DiagramHistoryOptions, UseDiagramHistory } from '@/lib/diagram-history';
 export type { DiagramController, DiagramData, DiagramDataChangeDetails, DiagramDataChangeReason, DiagramSelectionChangeDetails, DiagramSelectionChangeReason } from '@/lib/diagram-primitive';
-export type { DiagramItem } from '@/lib/diagram-keyboard';
+export type { DiagramItem, DiagramNoun } from '@/lib/diagram-keyboard';
 
 /** Why `onAction` was called, and for a press, on what: an edge's whole `label`, or an `item` (a chip). */
 export interface DiagramActionDetails {
@@ -143,10 +144,6 @@ const nodeWrapClass = once((radius: string) => cn('absolute outline-none', radiu
 /** The zoom below which each kind of text hides: under about 3 px for a node's, and 4.4 px for an edge label's. */
 const NODE_TEXT_ZOOM = 0.25;
 const EDGE_LABEL_ZOOM = 0.4;
-/** The strip along a group's top that its title takes, which an edge label keeps off, when it has nothing measured. */
-const GROUP_TITLE_ROOM = 30;
-/** How far a route's corners are rounded, in board units. */
-const ROUTE_RADIUS = 8;
 
 const FAR_HIDDEN = 'group-data-[zoom=far]/diagram:invisible';
 
@@ -609,127 +606,13 @@ function ConnectionPreview({ d, valid }: { d: string; valid: boolean }) {
 
 /* ── The board ── */
 
-interface Laid<N, E> {
-  index: DiagramIndex<N>;
-  geometries: Map<string, ConnectorGeometry>;
-  edgesAt: ReturnType<typeof edgesByNode>;
-  containers: DiagramNode<N>[];
-  leaves: DiagramNode<N>[];
-  /** Each edge with its route, the route's bounds, and its path data (corners rounded). */
-  edges: { edge: DiagramEdge<E>; geometry: ConnectorGeometry; box: Rect; d: string }[];
-  labels: { edge: DiagramEdge<E>; box: Rect }[];
-  dividers: DiagramDivider[];
-  /** Edges from a box to what it holds that start inside it, under its sections: drawn with a dot where they start. */
-  origins: Set<string>;
-  bounds: Rect | null;
-}
-
-/** A route's path data: a curve as it is, and anything square with its corners rounded. */
-const routeD = (edge: DiagramEdge<unknown>, g: ConnectorGeometry) => ((edge.route === 'curve' && !edge.points) ? g.d : roundedPolylineD(g.pts, ROUTE_RADIUS));
-
-/** Up to this many nodes and edges, hand-placed edges go round the cards in their way (not while something's dragged). */
-const AVOID_UP_TO = 200;
-/** Up to this many, edges between ports, and any that would run along another, get lanes of their own (`routeInLanes`). */
-const LANES_UP_TO = 120;
-
-function layOut<N, E>(given: readonly DiagramNode<N>[], givenEdges: readonly DiagramEdge<E>[], text: TextMeasurer, moving = false): Laid<N, E> {
-  const edges = placeLoops(given, givenEdges, text);
-  // A port on a card's row sits at the end of the row that faces where its edges go.
-  const nodes = facePorts(given, edges);
-  const index = indexDiagram(nodes);
-  const headOf = (n: DiagramNode<N>) => (n.title || n.sections?.length ? Math.max(GROUP_TITLE_ROOM, nodeAnatomy(n, text).top) : GROUP_TITLE_ROOM);
-  // Edges in lanes of their own come with their labels, on runs of their own.
-  const laned = new Map<string, Rect>();
-  const geometries = edgeGeometries(edges, index, {
-    avoid: !moving && nodes.length + edges.length <= AVOID_UP_TO,
-    ...(nodes.length + edges.length <= LANES_UP_TO ? { headOf, labelSize: (e: DiagramEdge<E>) => edgeLabelSize(e, text), labels: laned } : null),
-  });
-  const drawn: Laid<N, E>['edges'] = [];
-  const labels: Laid<N, E>['labels'] = [];
-  // A label sits on its route, the edge running into it and out of it: where a layout put it if that's clear, or else
-  // the first clear place along the route, then beside it, or else where it covers least. It keeps off the nodes, off
-  // the labels already placed (two edges on one route) and off the other routes, so it isn't read as theirs. A group is
-  // only in the way along its header and sections.
-  for (const edge of edges) {
-    const geometry = geometries.get(edge.id);
-    if (geometry) drawn.push({ edge, geometry, box: rectOf(geometry.pts), d: routeD(edge, geometry) });
-  }
-  // A label a layout placed with its route (or a lane's) stays where it is: only one with no place yet looks for one, and
-  // only then is everything it keeps off indexed (every card and every run of every route: at 2,000 nodes, most of a
-  // drag's frame, for nothing).
-  const placedBy = (edge: DiagramEdge<E>) => laned.get(edge.id) ?? (edge.labelBox && edge.points && edge.points.length >= 2 ? edge.labelBox : null);
-  const unplaced = drawn.some((d) => hasEdgeLabel(d.edge) && !placedBy(d.edge));
-  if (!unplaced) {
-    for (const { edge } of drawn) if (hasEdgeLabel(edge)) labels.push({ edge, box: placedBy(edge)! });
-  } else {
-    const room = rectIndex(nodes.flatMap((n) => (n.kind === 'root' || n.kind === 'region' || n.kind === 'marker' ? []
-      : holdsNodes(n) ? [{ x: n.x, y: n.y, w: n.w, h: headOf(n) }] : [n])));
-    const routes = new Map<string, Set<Rect>>();
-    for (const { edge, geometry } of drawn) {
-      const own = new Set<Rect>();
-      for (let i = 1; i < geometry.pts.length; i++) {
-        const a = geometry.pts[i - 1], b = geometry.pts[i];
-        const r = { x: Math.min(a.x, b.x) - 1, y: Math.min(a.y, b.y) - 1, w: Math.abs(b.x - a.x) + 2, h: Math.abs(b.y - a.y) + 2 };
-        own.add(r);
-        room.add(r);
-      }
-      routes.set(edge.id, own);
-    }
-    for (const { edge } of drawn) {
-      const box = laned.get(edge.id);
-      if (box && hasEdgeLabel(edge)) room.add(box);
-    }
-    for (const { edge, geometry } of drawn) {
-      if (!hasEdgeLabel(edge)) continue;
-      const own = routes.get(edge.id)!;
-      const size = edge.labelBox ?? edgeLabelSize(edge, text)!;
-      // A route and a label a layout worked out together stay together: the route runs through the label. So do a lane's.
-      const lane = laned.get(edge.id);
-      const box = lane ?? (edge.labelBox && edge.points && edge.points.length >= 2 ? edge.labelBox : labelBoxAvoiding(geometry.pts, size, (b) => room.overlap(b, (r) => own.has(r)), edge.labelBox));
-      if (!lane) room.add(box);
-      labels.push({ edge, box });
-    }
-  }
-  // Outer containers first, so what's inside draws over them, however the nodes were listed.
-  const depth = (n: DiagramNode<N>) => index.depth.get(n.id) ?? 0;
-  const containers = nodes.filter(isContainer).map((n, i) => ({ n, i })).sort((a, b) => depth(a.n) - depth(b.n) || a.i - b.i).map(({ n }) => n);
-  const leaves = nodes.filter((n) => !isContainer(n));
-  // An entry marker stands out past its node's corner.
-  const entries = nodes.filter((n) => n.entry).map((n) => ({ x: n.x - 22, y: n.y - 16, w: 22, h: 16 }));
-  const origins = new Set<string>();
-  for (const { edge, geometry } of drawn) {
-    const box = index.byId.get(edge.from);
-    if (!box || !isInside(index, edge.to, edge.from)) continue;
-    const p = geometry.start;
-    if (p.x > box.x + 1 && p.x < box.x + box.w - 1 && p.y > box.y + 1 && p.y < box.y + box.h - 1) origins.add(edge.id);
-  }
-  return {
-    index, geometries, edgesAt: edgesByNode(drawn.map((d) => d.edge)), containers, leaves, edges: drawn, labels, dividers: regionDividers(index), origins,
-    bounds: diagramBounds([...nodes, ...entries], geometries.values(), labels.map((l) => l.box)),
-  };
-}
-
-/** A placed card's self-loops with no route of their own, each beside it with its label on it (`loopsBeside`). */
-function placeLoops<N, E>(nodes: readonly DiagramNode<N>[], edges: readonly DiagramEdge<E>[], text: TextMeasurer): readonly DiagramEdge<E>[] {
-  const loops = new Map<string, DiagramEdge<E>[]>();
-  for (const e of edges) if (e.from === e.to && !e.points) loops.set(e.from, [...(loops.get(e.from) ?? []), e]);
-  if (!loops.size) return edges;
-  const placed = new Map<string, { points: Pt[]; labelBox?: Rect }>();
-  for (const n of nodes) {
-    const list = loops.get(n.id);
-    if (!list || holdsNodes(n) || n.kind === 'marker') continue;
-    for (const [id, at] of loopsBeside(n, list.map((e) => ({ id: e.id, size: edgeLabelSize(e, text) })))) placed.set(id, at);
-  }
-  return placed.size ? edges.map((e) => { const at = placed.get(e.id); return at ? { ...e, ...at } : e; }) : edges;
-}
-
 /** How many nodes and edges a diagram can have before what's out of view stops being drawn. A small one's cheap to draw all
  *  of, which leaves everything for a screen reader to find and a browser to print. */
 const CULL_ABOVE = 200;
 
 /** Only what touches `win`, and whatever `keep` says has to stay. An edge goes by its route, not its ends, so one crossing
  *  the view with both ends far away still draws. */
-function within<N, E>(laid: Laid<N, E>, win: Rect, keep: DiagramItem | null): Laid<N, E> {
+function within<N, E>(laid: DiagramDrawing<N, E>, win: Rect, keep: DiagramItem | null): DiagramDrawing<N, E> {
   const keepNode = keep?.kind === 'node' ? keep.id : null, keepEdge = keep?.kind === 'edge' ? keep.id : null;
   const onNode = (n: DiagramNode<N>) => intersects(n, win) || n.id === keepNode;
   return {
@@ -808,8 +691,9 @@ export interface DiagramProps<N = unknown, E = unknown> extends Pick<CanvasProps
    *  the chips of those nodes and the labels of those edges (a simulation's transitions it can take now). A pressable label
    *  has a primary ring and a play badge. An `editable` diagram with `onAction` has pressable chips as well. */
   pressable?: boolean | DiagramSelection;
-  /** What a screen reader calls a node (default `node`): a state, a service. */
-  noun?: string;
+  /** What a screen reader calls a node (default `node`): a state, a service; or a word for each node, which a box's count of
+   *  what it holds goes by ("holding 2 environments and 1 service (12 services in all)"). */
+  noun?: DiagramNoun;
   /** What a screen reader says for a node. The default says what it is, what it's in and what it connects to. */
   describeNode?: (node: DiagramNode<N>) => string;
   describeEdge?: (edge: DiagramEdge<E>) => string;
@@ -866,34 +750,12 @@ function useDiagramText(host: RefObject<HTMLElement | null>, nodes: readonly Dia
   return text;
 }
 
-/** Where a diagram opens, until the view's moved: all of it, centered, when that can be read; otherwise at the least size
- *  that can be read, from its top-start corner (where a machine's name and context are, and a system's), across its width
- *  (centered) when that fits, to be scrolled. Only on a board too narrow for a column of cards (a phone's), where that
- *  corner would leave where it starts (its first entry marker) out of view, is that put in the middle instead. Never past
- *  100%, and always in the part of the board nothing covers (`pad`: the toolbar, the minimap, a frame's bar and drawer). */
-function firstView(box: Rect | null, size: { width: number; height: number }, pad: DiagramInsets, start?: Rect | null): Viewport {
-  const fit = fitViewport(box, size, pad);
-  if (!box || box.w <= 0 || box.h <= 0 || fit.zoom >= DIAGRAM_LEGIBLE_ZOOM) return fit;
-  const room = Math.max(1, size.width - pad.left - pad.right);
-  const zoom = DIAGRAM_LEGIBLE_ZOOM;
-  let x = box.w * zoom <= room ? pad.left + (room - box.w * zoom) / 2 - box.x * zoom : pad.left - box.x * zoom;
-  if (start && size.width < NARROW_BOARD && box.w * zoom > room && (start.x + start.w) * zoom + x > pad.left + room) {
-    const centered = pad.left + room / 2 - (start.x + start.w / 2) * zoom;
-    x = Math.min(pad.left - box.x * zoom, Math.max(centered, pad.left + room - (box.x + box.w) * zoom));
-  }
-  return { zoom, x, y: pad.top - box.y * zoom };
-}
-
 /** From this big, a board has room for `minimap="auto"`'s overview: smaller (a phone, a docs page's fence), the overview
  *  would cover a third of it, and Fit is a press away. */
 const MINIMAP_AUTO_FROM = { width: 720, height: 600 };
 /** `minimap="auto"` shows when a whole fit would be under this share of the readable size: a good part of it out of view at
  *  that size, not the last few units of a drawing that nearly fits. */
 const MINIMAP_AUTO_SHARE = 0.8;
-
-/** Narrower than this, a board can't show a container's header and sections and much else: a phone's. A regular frame's
- *  board beside its panel is wider (432 px at the least). */
-const NARROW_BOARD = 420;
 
 /** A diagram on a `Canvas`. Sits in its host like any BL UI container: it fills the nearest positioned box. */
 export function Diagram<N = unknown, E = unknown>({
@@ -955,7 +817,7 @@ export function Diagram<N = unknown, E = unknown>({
   const pressable = chipsEverywhere || !!pressSets?.nodes.size;
   // A card given a size is drawn that size, unless what it says needs more (a diagram this small: past it, as given).
   const nodes = useMemo(() => (autoSize ? sizeNodesToText(shown.nodes, text) : shown.nodes.length <= AVOID_UP_TO ? growNodesToText(shown.nodes, text) : shown.nodes), [autoSize, shown.nodes, text]);
-  const laid = useMemo(() => layOut(nodes, shown.edges, text, !!draft), [nodes, shown.edges, text, draft]);
+  const laid = useMemo(() => drawDiagram(nodes, shown.edges, text, !!draft), [nodes, shown.edges, text, draft]);
 
   /* ── The chrome over the board (its toolbar, its minimap, a frame's bar) and the room a fit leaves for it ── */
   // A frame's board around it is a scope too (its bar), and in one, the board's foot is the bar's.
@@ -982,26 +844,20 @@ export function Diagram<N = unknown, E = unknown>({
   // `fitKey` stands for `fitInsets`, a new object each render.
   const fitPad = useMemo(() => fitInsets, [fitKey]);
 
-  // Where it starts: the first entry marker, the highest of the shallowest.
-  const start = useMemo(() => {
-    let best: DiagramNode<N> | null = null;
-    for (const n of laid.index.nodes) {
-      if (!n.entry) continue;
-      const d = laid.index.depth.get(n.id) ?? 0, bd = best ? laid.index.depth.get(best.id) ?? 0 : Infinity;
-      if (!best || d < bd || (d === bd && n.y < best.y)) best = n;
-    }
-    return best ? { x: best.x - 22, y: best.y - 16, w: best.w + 22, h: best.h + 16 } : null;
-  }, [laid.index]);
-  // What has the eye: what's selected, or else what's current (a machine's state), whichever changed last. It's kept in the
+  // Where it opens: its top-start corner (a machine's name and context, a system's account).
+  const corner = useMemo(() => drawingCorner(laid, text), [laid, text]);
+  // What has the eye: what's selected, or else what's current (a machine's state), whichever changed last; with it, when
+  // it's what's current, the labels of what can be pressed from there (the transitions it can take now). It's kept in the
   // part of the board nothing covers: in the first view, and from then on as the board's room changes (a panel opening beside
-  // or over it), as it changes, and as it moves; by as little a pan as does that, never a new fit.
+  // or over it), as it changes, and as it moves; by as little as does that, and with the corner when that's in view.
   const selectionKey = `${selection.nodes.join('\0')}\0\0${selection.edges.join('\0')}`;
   const currentKey = `${current.nodes.join('\0')}\0\0${current.edges.join('\0')}`;
   const watch = useRef<{ selection: string; current: string; on: 'selection' | 'current' }>({ selection: selectionKey, current: currentKey, on: selection.nodes.length || selection.edges.length ? 'selection' : 'current' });
   if (watch.current.selection !== selectionKey) watch.current = { ...watch.current, selection: selectionKey, on: selection.nodes.length || selection.edges.length ? 'selection' : 'current' };
   if (watch.current.current !== currentKey) watch.current = { ...watch.current, current: currentKey, on: 'current' };
-  const eyeOn = watch.current.on === 'selection' && (selection.nodes.length || selection.edges.length) ? selection : current;
-  const eye = useMemo(() => {
+  const onCurrent = !(watch.current.on === 'selection' && (selection.nodes.length || selection.edges.length));
+  const eyeOn = onCurrent ? current : selection;
+  const eye = useMemo((): DiagramEye | null => {
     const rects: Rect[] = [];
     // The innermost of them: a state, not the box around it that's current as well.
     const set = new Set(eyeOn.nodes);
@@ -1014,12 +870,13 @@ export function Diagram<N = unknown, E = unknown>({
       if (l) rects.push(l);
       else if (g) rects.push({ x: g.mid.x - 1, y: g.mid.y - 1, w: 2, h: 2 });
     }
-    if (!rects.length) return null;
-    const x = Math.min(...rects.map((r) => r.x)), y = Math.min(...rects.map((r) => r.y));
-    return { x, y, w: Math.max(...rects.map((r) => r.x + r.w)) - x, h: Math.max(...rects.map((r) => r.y + r.h)) - y };
-  }, [eyeOn, laid]);
-  const opening = firstView(laid.bounds, size, fitPad, start);
-  const viewport = controlled ?? own ?? (eye ? viewportToKeep(opening, eye, size, fitPad) : opening);
+    const must = unionRect(rects);
+    if (!must) return null;
+    const want = onCurrent && pressSets?.edges.size ? unionRect(laid.labels.filter((l) => pressSets.edges.has(l.edge.id)).map((l) => l.box)) : null;
+    return { must, want };
+  }, [eyeOn, onCurrent, pressSets, laid]);
+  const opening = firstView(laid.bounds, size, fitPad);
+  const viewport = controlled ?? own ?? (eye ? keepInView(opening, eye, corner, size, fitPad) : opening);
   const viewportRef = useRef(viewport);
   viewportRef.current = viewport;
   /** Every move of the view comes through the canvas, ours included (the keys following focus go through its
@@ -1030,7 +887,8 @@ export function Diagram<N = unknown, E = unknown>({
   };
 
   // After the first view, what has the eye is kept in view by a pan, once the board has settled after a change to it.
-  const eyeKey = eye ? `${Math.round(eye.x)},${Math.round(eye.y)},${Math.round(eye.w)},${Math.round(eye.h)}|${size.width}x${size.height}|${fitKey}` : null;
+  const rectKey = (r: Rect | null | undefined) => (r ? `${Math.round(r.x)},${Math.round(r.y)},${Math.round(r.w)},${Math.round(r.h)}` : '');
+  const eyeKey = eye ? `${rectKey(eye.must)}|${rectKey(eye.want)}|${size.width}x${size.height}|${fitKey}` : null;
   const keptFor = useRef<string | null>(null);
   useEffect(() => {
     if (!eyeKey || keptFor.current === eyeKey) return;
@@ -1038,7 +896,7 @@ export function Diagram<N = unknown, E = unknown>({
     // Not while something's dragged (it's under the pointer), nor in the first view, which keeps it itself.
     if (!eye || draft || gesture.current.k !== 'idle' || (!controlled && !own)) return;
     const v = viewportRef.current;
-    const next = viewportToKeep(v, eye, size, fitPad);
+    const next = keepInView(v, eye, corner, size, fitPad);
     if (next !== v) canvas.setViewport(next, { reason: 'imperative' });
     // `eyeKey` stands for `eye`, `size` and `fitPad`.
   }, [eyeKey, draft]);

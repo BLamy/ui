@@ -34,12 +34,12 @@ function Sample(props: WorktreeAtlasProps) {
 }
 
 export const Light: Story = {
-  args: { initialWorktree: `${UI}#worktree-atlas` },
+  args: { defaultWorktree: `${UI}#worktree-atlas` },
   render: (args) => <Full><Sample {...args} /></Full>,
 };
 
 export const Dark: Story = {
-  args: { initialWorktree: `${UI}#segmented-hit-target` },
+  args: { defaultWorktree: `${UI}#segmented-hit-target` },
   render: (args) => (
     <AppearanceProvider value="dark">
       <Full><Sample {...args} /></Full>
@@ -49,12 +49,12 @@ export const Dark: Story = {
 
 /** The Files view: the checkout's tree, and the picked file. */
 export const Files: Story = {
-  args: { initialWorktree: `${UI}#worktree-atlas`, initialView: 'files' },
+  args: { defaultWorktree: `${UI}#worktree-atlas`, defaultView: 'files' },
   render: (args) => <Full><Sample {...args} /></Full>,
 };
 
 export const Tablet: Story = {
-  args: { initialWorktree: `${UI}#pierre-trees` },
+  args: { defaultWorktree: `${UI}#pierre-trees` },
   render: (args) => <Device width={834} height={860}><Sample {...args} /></Device>,
 };
 

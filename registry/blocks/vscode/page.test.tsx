@@ -34,7 +34,7 @@ async function openNewFolder(outer: 'compact' | 'regular') {
   const tree = (
     <BLProvider>
       <SizeClassProvider value={outer}>
-        <VSCode runtime={runtime} initialView="explorer" />
+        <VSCode runtime={runtime} defaultView="explorer" />
       </SizeClassProvider>
     </BLProvider>
   );

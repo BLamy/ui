@@ -17,7 +17,7 @@ Most of these are MIT, ISC, BSD or Apache-2.0. Three need a closer look before y
 | [class-variance-authority](https://cva.style) | Variant recipes | Apache-2.0 |
 | [clsx](https://github.com/lukeed/clsx) and [tailwind-merge](https://github.com/dcastil/tailwind-merge) | Class names (`cn`) | MIT |
 | [Motion](https://motion.dev) (`framer-motion`) | Springs, layout and gesture animation | MIT |
-| [Codicons](https://github.com/microsoft/vscode-codicons) (`@vscode/codicons`) | Debugger control icons in `DebugToolbar` | MIT |
+| [Codicons](https://github.com/microsoft/vscode-codicons) (`@vscode/codicons`) | Debugger control icons in `DebugToolbar` | CC-BY-4.0 (the icons, as the package declares), MIT (its code) |
 
 UI SDK is licensed under the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0). Our fork keeps that license and its copyright notice: `@brett_lamy/ui-sdk-core` and `@brett_lamy/ui-sdk-react` ship UI SDK's `LICENSE`, and every file the fork changes from upstream says so at its top. A registry install copies BL UI's own source, not UI SDK's; UI SDK reaches your app, with its license, as those two npm packages.
 
@@ -37,10 +37,10 @@ UI SDK is licensed under the [Apache License 2.0](https://www.apache.org/license
 | --- | --- | --- |
 | Docstream and Docstream Editor (`@brett_lamy/ui/docstream`, `@brett_lamy/ui/docstream-editor`) | MarkdownView, MarkdownEditor and the docs site itself. Part of BL UI since 6.0 (before, the packages `@brett_lamy/docstream` and `@brett_lamy/docstream-editor`, from [BLamy/docstream](https://github.com/BLamy/docstream) and [BLamy/docstream-editor](https://github.com/BLamy/docstream-editor)); they bring the libraries below. | — |
 | [Pele](https://pele.run) by Obsidian | Mermaid diagrams, drawn as SVG | MIT |
-| [XState](https://stately.ai/docs/xstate) by Stately, an optional peer | Reading, simulating and editing state machines in StateDiagram and CloudflareDiagram, and docstream's ` ```xstate ` fence (loaded when one is shown; docstream 2.0.1 had it as a dependency) | MIT |
-| [Babel's parser](https://babeljs.io/docs/babel-parser) (`@babel/parser`) | Reading a TypeScript `createMachine({…})` in docstream's xstate fence, without running it (`@brett_lamy/ui/docstream/xstate/machine`) | MIT |
-| [ELK](https://eclipse.dev/elk/) (`elkjs`) by the Eclipse Foundation, an optional peer | Laying out Diagram and StateDiagram, in a worker, when a layout's first asked for. An app with fixed positions never loads it | **EPL-2.0 OR GPL-3.0-or-later** |
-| [KaTeX](https://katex.org) | Math blocks | MIT |
+| [XState](https://stately.ai/docs/xstate) by Stately, an optional peer | Running, simulating and editing state machines in StateDiagram, a CloudflareDiagram service's machine, and docstream's ` ```xstate ` fence (each loads it when it's shown; docstream 2.0.1 had it as a dependency) | MIT |
+| [Babel's parser](https://babeljs.io/docs/babel-parser) (`@babel/parser`) | Reading a machine's source text (`createMachine({…})`, `setup(…)`) without running it: `parseXState` (`@brett_lamy/ui/lib/state-diagram-source`), behind StateDiagram's `source` and the xstate fence; loaded with them | MIT |
+| [ELK](https://eclipse.dev/elk/) (`elkjs`) by the Eclipse Foundation, an optional peer | Laying out Diagram, StateDiagram and an unplaced CloudflareDiagram system, in a worker, when a layout's first asked for. An app with fixed positions never loads it | **EPL-2.0 OR GPL-3.0-or-later** |
+| [KaTeX](https://katex.org) | Math blocks, with KaTeX's own fonts (loaded with the first math block) | MIT |
 | [Tiptap](https://tiptap.dev) and [ProseMirror](https://prosemirror.net) | The rich-text editors | MIT |
 | [highlight.js](https://highlightjs.org) and [lowlight](https://github.com/wooorm/lowlight) | Code-block highlighting in the docs site's editor setup | BSD-3-Clause, MIT |
 | [yaml](https://eemeli.org/yaml/) | Front matter and YAML parsing | ISC |
@@ -73,6 +73,8 @@ The STL viewer is Docstream's own WebGL code and has no third-party dependencies
 | Library | Used for | License |
 | --- | --- | --- |
 | [cronstrue](https://github.com/bradymholt/cronstrue) | Describing cron expressions in words | MIT |
+| [wterm](https://github.com/vercel-labs/wterm) (`@wterm/dom`, `@wterm/react`, `@wterm/ghostty`) by Vercel Labs | The terminal emulator inside `Terminal` | Apache-2.0 |
+| [isomorphic-git](https://isomorphic-git.org) and [buffer](https://github.com/feross/buffer) | Reading git worktrees in the browser, in the Worktree Atlas block | MIT |
 | [perfect-freehand](https://github.com/steveruizok/perfect-freehand) by Steve Ruiz | Pressure-sensitive strokes in the PencilKit sketch pad | MIT |
 | [agent-wasm](https://github.com/BLamy/agent-wasm) (`@agent-wasm/core`, `@agent-wasm/tailscale-connect`) | The in-browser Node sandbox behind live React demos (Docstream's playground), and the optional Tailscale connection in the Safari block | MIT, BSD-3-Clause |
 | [Google Fonts](https://fonts.google.com) | The font picker's catalog. Fonts load from Google's servers under each font's own license, mostly the SIL Open Font License. | Per font |
@@ -92,7 +94,9 @@ Cloudflare's names are used in words, to say which of their products a thing is.
 
 ## Design references
 
-The icon set is drawn for BL UI. Its names follow the SF Symbols vocabulary, and several components and blocks follow Apple's Human Interface Guidelines and apps (Notes, Reminders, Music, Mail, Settings). No Apple artwork or fonts are included. The system font stack only names fonts that are already on the device.
+The icon set is drawn for BL UI, and since 6.0 it is the only one: docstream and its editor draw with it too (2.0.1's Lucide icons are gone). Its names follow the SF Symbols vocabulary, and several components and blocks follow Apple's Human Interface Guidelines and apps (Notes, Reminders, Music, Mail, Settings). No Apple artwork or fonts are included. The system font stack only names fonts that are already on the device; the only font files in the package are KaTeX's, and the font picker loads Google Fonts from Google.
+
+StateDiagram and CloudflareDiagram draw the way [XState's visualizer](https://stately.ai/docs/visualizer) by Stately does (cards with sections of chips, labels on the routes). That is a design reference only: none of the visualizer's code or artwork is in the library (XState itself is the optional peer above).
 
 ## Building and testing
 

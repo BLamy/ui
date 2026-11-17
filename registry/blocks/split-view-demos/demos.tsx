@@ -633,11 +633,11 @@ function LibraryRoot({ value }: { value: string }) {
 /** The detail column pushes pages, so it holds a NavigationStack: the column is its parent (collapsed, the first
  *  page goes back to the sidebar), `resetKey` pops it when the sidebar picks another section, and `renderPage` draws
  *  the album and credits pages from their keys. */
-function LibraryDetail({ initialAlbum }: { initialAlbum?: string }) {
+function LibraryDetail({ defaultAlbum }: { defaultAlbum?: string }) {
   const s = useSplitView();
   return (
     <SplitViewDetail aria-label="Albums">
-      <NavigationStack defaultPages={initialAlbum ? ['root', `album:${initialAlbum}`] : ['root']} resetKey={s.value.sidebar}
+      <NavigationStack defaultPages={defaultAlbum ? ['root', `album:${defaultAlbum}`] : ['root']} resetKey={s.value.sidebar}
         renderPage={(page) => <LibraryPage page={page} />}>
         <LibraryRoot value="root" />
       </NavigationStack>
@@ -647,7 +647,7 @@ function LibraryDetail({ initialAlbum }: { initialAlbum?: string }) {
 
 /** Library: the sidebar picks a section; albums push onto a NavigationStack inside the detail column (album →
  *  credits). A pushed page's back button names the page below: its title, "Back", or the chevron alone. */
-export function SplitViewLibraryDemo({ defaultValue, initialAlbum, ...props }: DemoProps & { initialAlbum?: string }) {
+export function SplitViewLibraryDemo({ defaultValue, defaultAlbum, ...props }: DemoProps & { defaultAlbum?: string }) {
   return (
     <SplitView aria-label="Library" defaultValue={defaultValue ?? { sidebar: 'recent' }} defaultCompactColumn="sidebar" {...props}>
       <SplitViewSidebar aria-label="Library" width={250}>
@@ -658,7 +658,7 @@ export function SplitViewLibraryDemo({ defaultValue, initialAlbum, ...props }: D
           </SplitViewSection>
         </SplitViewContent>
       </SplitViewSidebar>
-      <LibraryDetail initialAlbum={initialAlbum} />
+      <LibraryDetail defaultAlbum={defaultAlbum} />
     </SplitView>
   );
 }

@@ -18,14 +18,14 @@ export interface FreeformProps {
   /** The boards to start with. */
   defaultBoards?: Board[];
   /** A board to open on, by id ('board-launch', 'board-tokyo', 'board-ideas'); else the gallery. */
-  initialBoard?: string | null;
+  defaultBoard?: string | null;
 }
 
-export default function Freeform({ defaultBoards = SAMPLE_BOARDS, initialBoard = null }: FreeformProps) {
+export default function Freeform({ defaultBoards = SAMPLE_BOARDS, defaultBoard = null }: FreeformProps) {
   const dark = useAppearance() === 'dark';
   return (
     <BLProvider tint={FREEFORM_TINT[dark ? 'dark' : 'light']}>
-      <FreeformProvider boards={defaultBoards} openId={initialBoard}>
+      <FreeformProvider boards={defaultBoards} openId={defaultBoard}>
         <Shell />
       </FreeformProvider>
     </BLProvider>

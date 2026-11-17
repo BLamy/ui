@@ -51,7 +51,7 @@ export interface SafariProps {
   /** A controller you made (and perhaps signed in) yourself. Takes precedence over `tailscale`. */
   controller?: Tailscale;
   /** Addresses to open in tabs at the start. Default: one tab on the start page. */
-  initialUrls?: string[];
+  defaultUrls?: string[];
 }
 
 /** The default: the real Tailscale. The WebAssembly client loads on the first sign-in; the sign-in page is Tailscale's own (a popup);
@@ -70,13 +70,13 @@ export { exitNodesFor };
 /** Where pages run, under the router's scope: `<scope>__tailnet/https/example.com/`. */
 const PROXY_PATH = '__tailnet/';
 
-function Browser({ initialUrls }: { initialUrls?: string[] }) {
+function Browser({ defaultUrls }: { defaultUrls?: string[] }) {
   // Subscribes to the connection: the gate is shown whenever it is not `connected`.
   const tailscale = useTailscale();
   const snapshot = tailscale.getSnapshot();
   const connected = snapshot.status === 'connected';
   const fetcher = useMemo(() => tailnetFetcher(tailscale), [tailscale]);
-  const urls = useMemo(() => initialUrls?.map((u) => parseAddress(u) ?? u), [initialUrls]);
+  const urls = useMemo(() => defaultUrls?.map((u) => parseAddress(u) ?? u), [defaultUrls]);
   // The exit node is chosen for you when a public site needs one (see exit-node.ts); the menu can still change or clear it.
   const exitNodes = useMemo(() => exitNodesFor(tailscale), [tailscale]);
   const prepare = useCallback((entry: { url: string }) => exitNodes.prepare(entry.url), [exitNodes]);
@@ -91,7 +91,7 @@ function Browser({ initialUrls }: { initialUrls?: string[] }) {
   }, []);
   const router = useTailscaleRouter({ policy: { proxyPath: PROXY_PATH }, respond, unregisterOnDispose: true });
   const proxy = useMemo(() => (router.status === 'active' && typeof document !== 'undefined' ? { scope: new URL('./', document.baseURI).href, path: PROXY_PATH } : undefined), [router.status]);
-  const browser = useBrowser({ fetcher, initialUrls: urls, enabled: connected, prepare, proxy });
+  const browser = useBrowser({ fetcher, defaultUrls: urls, enabled: connected, prepare, proxy });
   // Hand each newly loaded document over once (a page object is new per load), before its frame asks for it.
   const handedOver = useRef(new WeakSet<object>());
   for (const t of browser.state.tabs) {
@@ -167,7 +167,7 @@ function Browser({ initialUrls }: { initialUrls?: string[] }) {
   );
 }
 
-export default function Safari({ appearance, tailscale, controller, initialUrls }: SafariProps) {
+export default function Safari({ appearance, tailscale, controller, defaultUrls }: SafariProps) {
   const ambient = useAppearance();
   const dark = (appearance ?? ambient) === 'dark';
   // The real tailnet is the default, made once per mount; pass `tailscale` or `controller` to use your own.
@@ -176,7 +176,7 @@ export default function Safari({ appearance, tailscale, controller, initialUrls 
     <AppearanceProvider value={dark ? 'dark' : 'light'}>
       <BLProvider className="bg-background">
         <TailscaleProvider tailscale={controller} options={tailscale ?? real ?? undefined}>
-          <Browser initialUrls={initialUrls} />
+          <Browser defaultUrls={defaultUrls} />
         </TailscaleProvider>
       </BLProvider>
     </AppearanceProvider>

@@ -54,10 +54,9 @@ export interface SidebarContextValue {
   open: boolean;
   setOpen: (open: boolean, options?: ChangeOptions<SidebarOpenChangeReason>) => boolean;
   toggle: (options?: ChangeOptions<SidebarOpenChangeReason>) => boolean;
-  /** The provider's size class, measured from its own width against `breakpoints`. */
+  /** The provider's size class, measured from its own width against `breakpoints`: while it is `compact`, a Sidebar
+   *  with `presentation="auto"` is a drawer. */
   sizeClass: SizeClass;
-  /** `sizeClass === 'compact'`: a Sidebar with `presentation="auto"` is a drawer. */
-  compact: boolean;
 }
 const SidebarContext = createContext<SidebarContextValue | null>(null);
 
@@ -85,7 +84,7 @@ export function SidebarProvider({ open, defaultOpen, onOpenChange, breakpoints, 
 /** The provider's state as context, and its size class as the scope of what it holds, popups included. */
 function SidebarScope({ open, sizeClass, api, children }: { open: boolean; sizeClass: SizeClass; api: SidebarApi; children?: ReactNode }) {
   const value = useMemo<SidebarContextValue>(
-    () => ({ open, sizeClass, compact: sizeClass === 'compact', setOpen: api.setOpen, toggle: api.toggle }),
+    () => ({ open, sizeClass, setOpen: api.setOpen, toggle: api.toggle }),
     [open, sizeClass, api],
   );
   return (
@@ -157,7 +156,8 @@ export function Sidebar({
   const boxWidth = collapsed ? railWidth : c.open ? width : 0;
   const hidden = column && boxWidth === 0;
   const [tooltip] = useState(() => createTooltipController<ReactNode>());
-  const { setOpen, compact } = c;
+  const { setOpen } = c;
+  const compact = c.sizeClass === 'compact';
   const panel = useMemo<SidebarPanel>(() => ({
     collapsed, compact, tooltip,
     dismiss: (event) => { if (shown === 'drawer') setOpen(false, { reason: 'action', event }); },
@@ -438,7 +438,7 @@ export interface SidebarTriggerProps extends PartProps<'button'> {
 
 /** The sidebar button: toggles the sidebar in whichever presentation shows (opens the drawer, collapses the rail). */
 export function SidebarTrigger({ className, shortcut, 'aria-label': label = 'Toggle sidebar', children, ...props }: SidebarTriggerProps) {
-  const { toggle, compact } = useSidebar();
+  const { toggle, sizeClass } = useSidebar();
   const keyshortcuts = useKeyshortcuts(shortcut);
   useShortcut(shortcut, (event) => { toggle({ reason: 'shortcut', event }); });
   return (
@@ -450,7 +450,7 @@ export function SidebarTrigger({ className, shortcut, 'aria-label': label = 'Tog
         cn(
           'grid shrink-0 cursor-pointer place-items-center rounded-lg border-0 bg-transparent p-0 text-muted-foreground transition-colors duration-150',
           'outline-none hover:bg-secondary hover:text-foreground active:bg-secondary-strong focus-visible:ring-2 focus-visible:ring-ring',
-          compact ? 'size-11' : 'size-8',
+          sizeClass === 'compact' ? 'size-11' : 'size-8',
         ),
         className,
       )}

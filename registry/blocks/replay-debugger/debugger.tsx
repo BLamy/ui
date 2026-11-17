@@ -70,7 +70,7 @@ function useConsoleRows(model: DebuggerModel, logged: readonly LogRow[] = []) {
     }
     return [...logged, ...hits].sort((a, b) => (a.time ?? 0) - (b.time ?? 0));
     // The model says when its logpoints have more.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `version` is the model saying its logpoints have more.
   }, [model, logged, version]);
 }
 function ConsolePart({

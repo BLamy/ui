@@ -776,15 +776,15 @@ function TuiProvider({ options, streaming, children }: { options?: TuiPreviewOpt
 /** Merges runtime options over the inherited ones, keeping a stable context value. */
 function DemoRuntimeProvider({ runtime, dependencies, children }: { runtime?: InlineDemoRuntime; dependencies?: Record<string, string>; children: ReactNode }) {
   const inherited = useContext(DocstreamDemoRuntimeContext)
+  // The map's contents, not its identity: a caller's inline `dependencies={{ … }}` is a new object each render.
   const depsKey = dependencies ? JSON.stringify(dependencies) : ""
-  const value = useMemo(
-    () => ({
+  const value = useMemo(() => {
+    const own = depsKey ? (JSON.parse(depsKey) as Record<string, string>) : undefined
+    return {
       runtime: runtime ?? inherited.runtime,
-      dependencies: dependencies || inherited.dependencies ? { ...inherited.dependencies, ...dependencies } : undefined,
-    }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [runtime, inherited, depsKey],
-  )
+      dependencies: own || inherited.dependencies ? { ...inherited.dependencies, ...own } : undefined,
+    }
+  }, [runtime, inherited, depsKey])
   return <DocstreamDemoRuntimeContext.Provider value={value}>{children}</DocstreamDemoRuntimeContext.Provider>
 }
 

@@ -830,6 +830,11 @@ const LANE_THROUGH = 20000;
 const LABEL_CORNER = 8;
 /** How far a route keeps off a card's side (its way out of an end is further). */
 const LANE_CLEAR = 6;
+/** Past twice the square distance between its ends, how much more a route may cost to have a clear run for its label:
+ *  enough to go out of a box and back in (two walls) for it. */
+const LABEL_DETOUR = 12000;
+/** Closer than this along a box's wall, a route reads as the wall. */
+const WALL_CLEAR = 8;
 
 interface LaneSegment { a: Pt; b: Pt; edge: string; key?: string }
 
@@ -926,6 +931,8 @@ function routeInOrder(requests: readonly LaneRequest[], obstacles: readonly Lane
   const blocks = obstacles.filter((o) => o.kind === 'block');
   // What a label keeps off: every block, the routes made, and the labels placed (which the routes after it go round).
   const room = rectIndex(blocks.map((b) => b.r));
+  // A label never straddles a box's wall.
+  for (const { r } of obstacles.filter((o) => o.kind === 'wall')) for (const side of [{ x: r.x - 1, y: r.y, w: 2, h: r.h }, { x: r.x + r.w - 1, y: r.y, w: 2, h: r.h }, { x: r.x, y: r.y - 1, w: r.w, h: 2 }, { x: r.x, y: r.y + r.h - 1, w: r.w, h: 2 }]) room.add(side);
   const segmentRect = (a: Pt, b: Pt): Rect => ({ x: Math.min(a.x, b.x) - 1, y: Math.min(a.y, b.y) - 1, w: Math.abs(b.x - a.x) + 2, h: Math.abs(b.y - a.y) + 2 });
   for (const pts of around) for (let i = 1; i < pts.length; i++) room.add(segmentRect(pts[i - 1], pts[i]));
   // Every edge's way out of each end is known before any is routed: a label keeps off the others', so one routed after it
@@ -952,8 +959,8 @@ function routeInOrder(requests: readonly LaneRequest[], obstacles: readonly Lane
   const fixedX: number[] = [], fixedY: number[] = [];
   for (const { r } of blocks) { fixedX.push(r.x - AROUND_GAP, r.x + r.w + AROUND_GAP); fixedY.push(r.y - AROUND_GAP, r.y + r.h + AROUND_GAP); }
   for (const { r } of walls) {
-    fixedX.push(r.x - AROUND_GAP, r.x + AROUND_GAP, r.x + r.w - AROUND_GAP, r.x + r.w + AROUND_GAP);
-    fixedY.push(r.y - AROUND_GAP, r.y + AROUND_GAP, r.y + r.h - AROUND_GAP, r.y + r.h + AROUND_GAP);
+    fixedX.push(r.x - AROUND_GAP, r.x + AROUND_GAP, r.x + r.w - AROUND_GAP, r.x + r.w + AROUND_GAP, r.x + DIAGRAM_LANE, r.x + r.w - DIAGRAM_LANE);
+    fixedY.push(r.y - AROUND_GAP, r.y + AROUND_GAP, r.y + r.h - AROUND_GAP, r.y + r.h + AROUND_GAP, r.y + r.h - DIAGRAM_LANE);
   }
   const middles = (edges: number[][]) => {
     const sorted = [...new Set(edges.flat())].sort((p, q) => p - q);
@@ -997,7 +1004,7 @@ function routeInOrder(requests: readonly LaneRequest[], obstacles: readonly Lane
      * enough for it, with a clear place on it, places it there, and the route has to have placed it by its end. So a route
      * that has no room for its label goes the way that has, and a label is always on a run that's only its own edge's.
      */
-    const find = (labelled: boolean, soft: boolean): { pts: Pt[]; label: Rect | null } | null => {
+    const find = (labelled: boolean, soft: boolean, lo: Pt, hi: Pt, limit = Infinity): { pts: Pt[]; label: Rect | null; cost: number } | null => {
       const want = labelled ? wanted : null;
       // A little off every side, so no run hugs a card.
       const own = [...blocks, ...placed].filter((b) => !req.through.has(b.id))
@@ -1031,17 +1038,44 @@ function routeInOrder(requests: readonly LaneRequest[], obstacles: readonly Lane
       if (si < 0 || sj < 0 || ti < 0 || tj < 0) return null;
       const inBlock = (p: Pt) => own.some(({ r }) => p.x > r.x && p.x < r.x + r.w && p.y > r.y && p.y < r.y + r.h);
       /** What a run from `p` to `q` costs past its length: Infinity through a block (or, `soft`, a great deal). */
+      // Where the blocks and the routes made are, in cells, so that a run only looks at what's near it.
+      const CELL = 64;
+      const cellsOf = (r: Rect, pad: number, put: (key: number) => void) => {
+        for (let cx = Math.floor((r.x - pad) / CELL); cx <= Math.floor((r.x + r.w + pad) / CELL); cx++) for (let cy = Math.floor((r.y - pad) / CELL); cy <= Math.floor((r.y + r.h + pad) / CELL); cy++) put(cx * 100003 + cy);
+      };
+      const bucket = <T,>(items: readonly T[], box: (t: T) => Rect, pad: number) => {
+        const map = new Map<number, number[]>();
+        items.forEach((t, i) => cellsOf(box(t), pad, (k) => { const l = map.get(k); if (l) l.push(i); else map.set(k, [i]); }));
+        return map;
+      };
+      const ownCells = bucket(own, (o) => o.r, 0);
+      const madeCells = bucket(made, (sg) => rectOf([sg.a, sg.b]), DIAGRAM_LANE);
+      let stamp = 0;
+      const seenOwn = new Int32Array(own.length), seenMade = new Int32Array(made.length);
+      const near = (r: Rect, cells: Map<number, number[]>, seen: Int32Array): number[] => {
+        stamp++;
+        const out: number[] = [];
+        cellsOf(r, 0, (k) => { for (const i of cells.get(k) ?? []) if (seen[i] !== stamp) { seen[i] = stamp; out.push(i); } });
+        return out;
+      };
       const extra = (p: Pt, q: Pt): number => {
         let c = 0;
-        for (const { r } of own) if (runHits(p, q, r)) { if (!soft) return Infinity; c += LANE_THROUGH; }
+        const run = rectOf([p, q]);
+        for (const i of near(run, ownCells, seenOwn)) if (runHits(p, q, own[i].r)) { if (!soft) return Infinity; c += LANE_THROUGH; }
         const level = Math.abs(p.y - q.y) < 0.5;
         const x0 = Math.min(p.x, q.x), x1 = Math.max(p.x, q.x), y0 = Math.min(p.y, q.y), y1 = Math.max(p.y, q.y);
         for (const [k, { r }] of walls.entries()) {
           const w = wallCost[k];
           if (level) { if (p.y > r.y && p.y < r.y + r.h) { if (r.x > x0 && r.x < x1) c += w; if (r.x + r.w > x0 && r.x + r.w < x1) c += w; } }
           else if (p.x > r.x && p.x < r.x + r.w) { if (r.y > y0 && r.y < y1) c += w; if (r.y + r.h > y0 && r.y + r.h < y1) c += w; }
+          // Along a wall, it would read as the wall: as much as along another route.
+          const along = level
+            ? (Math.abs(p.y - r.y) < WALL_CLEAR || Math.abs(p.y - r.y - r.h) < WALL_CLEAR ? Math.min(x1, r.x + r.w) - Math.max(x0, r.x) : 0)
+            : (Math.abs(p.x - r.x) < WALL_CLEAR || Math.abs(p.x - r.x - r.w) < WALL_CLEAR ? Math.min(y1, r.y + r.h) - Math.max(y0, r.y) : 0);
+          if (along > 0.5) c += LANE_ALONG + along * 20;
         }
-        for (const sg of made) {
+        for (const mi of near(run, madeCells, seenMade)) {
+          const sg = made[mi];
           const sLevel = Math.abs(sg.a.y - sg.b.y) < 0.5;
           const sx0 = Math.min(sg.a.x, sg.b.x), sx1 = Math.max(sg.a.x, sg.b.x), sy0 = Math.min(sg.a.y, sg.b.y), sy1 = Math.max(sg.a.y, sg.b.y);
           if (level && sLevel) {
@@ -1076,6 +1110,8 @@ function routeInOrder(requests: readonly LaneRequest[], obstacles: readonly Lane
         }
         return top;
       };
+      const runCost = new Float64Array(W * H * 4).fill(NaN);
+      const blockedAt = new Int8Array(W * H).fill(-1);
       const startDir = dirIndex(na), endDir = dirIndex({ x: -nb.x, y: -nb.y });
       const s0 = id(si, sj, startDir, want ? 0 : 1);
       cost[s0] = 0;
@@ -1100,7 +1136,7 @@ function routeInOrder(requests: readonly LaneRequest[], obstacles: readonly Lane
         if (box === undefined) { box = onRun(a, b); runs.set(key, box); }
         return box;
       };
-      let end = -1, best = Infinity, endLabel: Rect | null = null;
+      let end = -1, best = limit, endLabel: Rect | null = null;
       while (heap.length) {
         const [f, k] = pop();
         // Nothing left can come in under the best way to the end found so far.
@@ -1121,8 +1157,15 @@ function routeInOrder(requests: readonly LaneRequest[], obstacles: readonly Lane
           const ni = i + DIRS[nd].x, nj = j + DIRS[nd].y;
           if (ni < 0 || nj < 0 || ni >= W || nj >= H) continue;
           const p = { x: X[i], y: Y[j] }, q = { x: X[ni], y: Y[nj] };
-          if (inBlock(q) && !soft) continue;
-          const more = extra(p, q);
+          // What a cell is and what a run costs don't depend on how the search got there: each is worked out once.
+          const qc = nj * W + ni;
+          if (!soft) {
+            if (blockedAt[qc] < 0) blockedAt[qc] = inBlock(q) ? 1 : 0;
+            if (blockedAt[qc]) continue;
+          }
+          const rk = (j * W + i) * 4 + nd;
+          let more = runCost[rk];
+          if (Number.isNaN(more)) { more = extra(p, q); runCost[rk] = more; }
           if (more === Infinity) continue;
           // Of ways as long, one that parts from the row it left by sooner leaves the room beside that row to the edges that
           // leave the same port after it.
@@ -1141,11 +1184,15 @@ function routeInOrder(requests: readonly LaneRequest[], obstacles: readonly Lane
       const path: Pt[] = [];
       for (let k = end; k >= 0; k = prev[k]) { const cell = ((k - (k % 2)) / 2 - (((k - (k % 2)) / 2) % 4)) / 4; path.push({ x: X[cell % W], y: Y[(cell - (cell % W)) / W] }); }
       path.reverse();
-      return { pts: simplifyRoute([from.p, ...path, to.p]), label: labelAt.get(end) ?? endLabel };
+      return { pts: simplifyRoute([from.p, ...path, to.p]), label: labelAt.get(end) ?? endLabel, cost: best };
     };
     // With its label on a run of its own; or, with no room for that, without; or, when an end's way out is shut in (a card
     // dragged against another), through what's in the way, still in a lane of its own; or, failing all, the plain elbow.
-    const found = (wanted ? find(true, false) : null) ?? find(false, false) ?? find(false, true);
+    // With a label to place, the way with room for it, if there's one not much longer than the way straight there (a search
+    // that can't place it would otherwise go over the whole board first); else the plain way.
+    const reach = 2 * (Math.abs(a1.x - b1.x) + Math.abs(a1.y - b1.y)) + LABEL_DETOUR;
+    const search = (w: { lo: Pt; hi: Pt }) => (wanted ? find(true, false, w.lo, w.hi, reach) : null) ?? find(false, false, w.lo, w.hi);
+    const found = search({ lo, hi }) ?? find(false, true, lo, hi);
     const pts = found?.pts ?? connectorPath('elbow', from, to).pts;
     let label = found?.label ?? undefined;
     const clear = !!label;
@@ -1193,9 +1240,12 @@ export function laneRoutes<N, E>(index: DiagramIndex<N>, edges: readonly Diagram
     if (n.kind === 'marker') continue;
     if (holdsNodes(n)) {
       obstacles.push({ id: n.id, r: rectOf2(n), kind: 'wall' });
-      if (n.kind !== 'root' && n.kind !== 'region') obstacles.push({ id: `${n.id}\0head`, r: { x: n.x, y: n.y, w: n.w, h: Math.min(n.h, headOf(n)) }, kind: 'block' });
+      // A box's header and sections, the root's too (a machine's context, a system's account): nothing runs through them.
+      if (n.kind !== 'region') obstacles.push({ id: `${n.id}\0head`, r: { x: n.x, y: n.y, w: n.w, h: Math.min(n.h, headOf(n)) }, kind: 'block' });
       else if (n.kind === 'region' && n.title && captionOf) obstacles.push({ id: `${n.id}\0head`, r: { x: n.x, y: n.y, w: Math.min(n.w, captionOf(n)), h: Math.min(n.h, headOf(n)) }, kind: 'block' });
     } else obstacles.push({ id: n.id, r: rectOf2(n), kind: 'block' });
+    // An entry marker: a dot above the start corner, its arrow into the start side beside the header.
+    if (n.entry) obstacles.push({ id: `${n.id}\0entry`, r: { x: n.x - 22, y: n.y - 16, w: 21, h: 33 }, kind: 'block' });
   }
   labels.forEach((r, i) => obstacles.push({ id: `\0label${i}`, r, kind: 'block' }));
   const none = new Set<string>();

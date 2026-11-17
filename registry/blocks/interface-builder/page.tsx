@@ -17,18 +17,18 @@ export interface InterfaceBuilderProps {
   /** The storyboard to open (the Plant Pal sample by default). */
   defaultDocument?: Doc;
   /** What to select at first, e.g. `{ kind: 'scene', scene: 'garden' }`. */
-  initialSelection?: Selection;
+  defaultSelection?: Selection;
   /** Light or dark chrome; defaults to the ambient appearance. */
   appearance?: 'light' | 'dark';
   /** Start in the preview. */
-  initialRunning?: boolean;
+  defaultRunning?: boolean;
 }
 
-export default function InterfaceBuilder({ defaultDocument = SAMPLE_DOC, initialSelection, appearance, initialRunning = false }: InterfaceBuilderProps) {
+export default function InterfaceBuilder({ defaultDocument = SAMPLE_DOC, defaultSelection, appearance, defaultRunning = false }: InterfaceBuilderProps) {
   const ambient = useAppearance();
   return (
-    <BuilderProvider doc={defaultDocument} selection={initialSelection}>
-      <Editor appearance={appearance ?? (ambient === 'dark' ? 'dark' : 'light')} initialRunning={initialRunning} />
+    <BuilderProvider doc={defaultDocument} selection={defaultSelection}>
+      <Editor appearance={appearance ?? (ambient === 'dark' ? 'dark' : 'light')} defaultRunning={defaultRunning} />
     </BuilderProvider>
   );
 }

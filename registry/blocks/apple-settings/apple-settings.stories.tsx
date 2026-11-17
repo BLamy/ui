@@ -28,16 +28,16 @@ function Device({ width, height, children }: { width: number; height: number; ch
 const dark = (node: ReactNode) => <AppearanceProvider value="dark">{node}</AppearanceProvider>;
 
 /** macOS System Settings: sidebar and toolbar detail. */
-export const Desktop: Story = { args: { initialPath: ['wifi'] }, render: (args) => <Full><AppleSettings {...args} /></Full> };
-export const DesktopDark: Story = { args: { initialPath: ['display'] }, render: (args) => dark(<Full><AppleSettings {...args} /></Full>) };
+export const Desktop: Story = { args: { defaultPath: ['wifi'] }, render: (args) => <Full><AppleSettings {...args} /></Full> };
+export const DesktopDark: Story = { args: { defaultPath: ['display'] }, render: (args) => dark(<Full><AppleSettings {...args} /></Full>) };
 
 /** iPad: sidebar and a navigation stack in the detail column. */
-export const Tablet: Story = { args: { initialPath: ['notifications'] }, render: (args) => <Device width={834} height={760}><AppleSettings {...args} /></Device> };
-export const TabletDark: Story = { args: { initialPath: ['screentime'] }, render: (args) => dark(<Device width={834} height={760}><AppleSettings {...args} /></Device>) };
+export const Tablet: Story = { args: { defaultPath: ['notifications'] }, render: (args) => <Device width={834} height={760}><AppleSettings {...args} /></Device> };
+export const TabletDark: Story = { args: { defaultPath: ['screentime'] }, render: (args) => dark(<Device width={834} height={760}><AppleSettings {...args} /></Device>) };
 
 /** iPhone: the large-title root list. */
 export const Phone: Story = { render: (args) => <Device width={390} height={844}><AppleSettings {...args} /></Device> };
 export const PhoneDark: Story = { render: (args) => dark(<Device width={390} height={844}><AppleSettings {...args} /></Device>) };
 
 /** iPhone, drilled into General › About. */
-export const PhoneDrillDown: Story = { args: { initialPath: ['general', 'about'] }, render: (args) => <Device width={390} height={844}><AppleSettings {...args} /></Device> };
+export const PhoneDrillDown: Story = { args: { defaultPath: ['general', 'about'] }, render: (args) => <Device width={390} height={844}><AppleSettings {...args} /></Device> };

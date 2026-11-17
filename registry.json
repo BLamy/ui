@@ -4599,6 +4599,7 @@
         "https://blamy.github.io/ui/r/canvas-math.json",
         "https://blamy.github.io/ui/r/container.json",
         "https://blamy.github.io/ui/r/diagram-chrome.json",
+        "https://blamy.github.io/ui/r/diagram-drawing.json",
         "https://blamy.github.io/ui/r/diagram-gesture.json",
         "https://blamy.github.io/ui/r/diagram-history.json",
         "https://blamy.github.io/ui/r/diagram-keyboard.json",
@@ -9067,6 +9068,28 @@
           "path": "packages/ui/src/lib/diagram-chrome.ts",
           "type": "registry:lib",
           "target": "lib/diagram-chrome.ts"
+        }
+      ]
+    },
+    {
+      "name": "diagram-drawing",
+      "type": "registry:lib",
+      "title": "Diagram Drawing",
+      "description": "Diagram Drawing — part of BL UI's library (lib/diagram-drawing.ts).",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/canvas-math.json",
+        "https://blamy.github.io/ui/r/diagram-chrome.json",
+        "https://blamy.github.io/ui/r/diagram-keyboard.json",
+        "https://blamy.github.io/ui/r/diagram-model.json",
+        "https://blamy.github.io/ui/r/diagram-text.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/diagram-drawing.ts",
+          "type": "registry:lib",
+          "target": "lib/diagram-drawing.ts"
         }
       ]
     },

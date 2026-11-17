@@ -59,7 +59,7 @@ import VSCode from '@/components/blocks/vscode/page';
 import { createAlmostnodeRuntime } from '@/components/blocks/vscode/almostnode';
 
 <VSCode />; // a starter project
-<VSCode runtime={createAlmostnodeRuntime({ project: { 'index.js': 'console.log("hi")' } })} initialFile="index.js" />;
+<VSCode runtime={createAlmostnodeRuntime({ project: { 'index.js': 'console.log("hi")' } })} defaultFile="index.js" />;
 <VSCode runtime={yourRuntime} />; // anything that implements VSCodeRuntime
 <VSCode controller={yourTailscale} />; // share an existing Tailscale connection
 ```
@@ -111,7 +111,7 @@ The summary's optional `engineLabel` is display text supplied by the host. An em
 
 {% demo src="blocks/cloudflare-studio" layout="multi" %}
 
-The Cloudflare Studio block is a system of Cloudflare's services as an app, on a [CloudflareDiagram](https://blamy.github.io/ui/#/cloudflare-diagram). Search the catalog to add a service, drag from a Worker's `env` to what it binds and choose the operations it uses, and give anything that runs code an XState machine, edited in a [StateDiagram](https://blamy.github.io/ui/#/state-diagram), with what crosses each connection checked against what the machine receives. Select anything to inspect it in the diagram's panel: a column beside the board, or a page pushed over it at a phone's width. It's kept in the browser as it changes, so a reload carries on where it was, and Open reads a `system.json` back; a file that isn't a system changes nothing and says why.
+The Cloudflare Studio block is a system of Cloudflare's services as an app, on a [CloudflareDiagram](https://blamy.github.io/ui/#/cloudflare-diagram). Search the catalog to add a service, drag from the dot at the end of a Worker's header to what it binds and choose the operations it uses, and give anything that runs code an XState machine, edited in a [StateDiagram](https://blamy.github.io/ui/#/state-diagram), with what crosses each connection checked against what the machine receives. Select anything to inspect it in the diagram's panel: a column beside the board, or a page pushed over it at a phone's width. It's kept in the browser as it changes, so a reload carries on where it was, and Open reads a `system.json` back; a file that isn't a system changes nothing and says why.
 
 Export lists what it makes, each file with what it still needs that a system doesn't say: the system's `system.json`, a `wrangler.jsonc` for each Worker, written by `writeWrangler`, and a module for each machine, with its config, the machine and `sentBy`, who sends each event. They're files only: nothing's deployed, and there's no account. A browser won't make folders, so a download has its folder in its name, as `api-wrangler.jsonc`. No Cloudflare logos: services are in words, with the library's own icons.
 

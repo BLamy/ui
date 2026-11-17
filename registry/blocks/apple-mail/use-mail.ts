@@ -18,15 +18,15 @@ let written = 0;
 
 const matches = (box: Mailbox, m: Message) => (box.match ? box.match(m) : m.box === box.id);
 
-export function useMail({ mailbox: initialBox = 'inbox', message: initialMessage = null as string | null, draft: initialDraft = null as Draft | null } = {}) {
-  const [messages, setMessages] = useState<Message[]>(() => MESSAGES.map((m) => (m.id === initialMessage ? { ...m, unread: false } : m)));
+export function useMail({ mailbox: initialBox = 'inbox', message: defaultMessage = null as string | null, draft: defaultDraft = null as Draft | null } = {}) {
+  const [messages, setMessages] = useState<Message[]>(() => MESSAGES.map((m) => (m.id === defaultMessage ? { ...m, unread: false } : m)));
   const [boxId, setBoxId] = useState(initialBox);
-  const [selectedId, setSelectedId] = useState<string | null>(initialMessage);
+  const [selectedId, setSelectedId] = useState<string | null>(defaultMessage);
   const [query, setQuery] = useState('');
   const [unreadOnly, setUnreadOnly] = useState(false);
   const [editing, setEditing] = useState(false);
   const [checked, setChecked] = useState<Set<string>>(() => new Set());
-  const [draft, setDraft] = useState<Draft | null>(initialDraft);
+  const [draft, setDraft] = useState<Draft | null>(defaultDraft);
 
   const box = MAILBOXES.find((b) => b.id === boxId) ?? MAILBOXES[0];
   const list = useMemo(() => {

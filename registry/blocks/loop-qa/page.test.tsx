@@ -28,7 +28,7 @@ async function mount(px: number) {
   width = px;
   host = document.body.appendChild(document.createElement('div'));
   root = createRoot(host);
-  await act(async () => { root!.render(<LoopQA initialProject="northwind" initialTab="bugs" askOpen={false} />); await new Promise((r) => setTimeout(r, 0)); });
+  await act(async () => { root!.render(<LoopQA defaultProject="northwind" defaultTab="bugs" askOpen={false} />); await new Promise((r) => setTimeout(r, 0)); });
 }
 
 async function share() {

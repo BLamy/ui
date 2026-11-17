@@ -91,7 +91,7 @@ function GithubDialog({ pending, onDone }: { pending: Pending; onDone: () => voi
       if (!ctl.signal.aborted) setError(e instanceof Error ? e.message : String(e));
     });
     return () => ctl.abort();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- one device flow per attempt; `finish` is remade each render.
   }, [attempt]);
 
   const submit = (e: FormEvent) => {

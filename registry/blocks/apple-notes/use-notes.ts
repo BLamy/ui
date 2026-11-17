@@ -19,7 +19,7 @@ export interface Transfer { paths: string[]; to: Folder }
 export type RenamePlace = 'list' | 'title' | 'tree';
 interface Draft { note: Note; body: string; base: string; saving?: boolean; error?: string; conflict?: string | null }
 
-export function useNotes({ folder: initialFolder = ROOT_FOLDER.id, note: initialNote = null as string | null, view: initialView = 'list' as NotesView } = {}) {
+export function useNotes({ folder: defaultFolder = ROOT_FOLDER.id, note: defaultNote = null as string | null, view: defaultView = 'list' as NotesView } = {}) {
   const files = useNoteFiles();
   const [drafts, setDrafts] = useState<Record<string, Draft>>({});
   const draftsRef = useRef(drafts);
@@ -68,10 +68,10 @@ export function useNotes({ folder: initialFolder = ROOT_FOLDER.id, note: initial
     return result;
   }, [files.notes, drafts]);
   const folders = useMemo(() => [ROOT_FOLDER, ...files.folders], [files.folders]);
-  const [folderId, setFolderId] = useState(initialFolder);
-  const [selectedId, setSelectedId] = useState<string | null>(initialNote);
+  const [folderId, setFolderId] = useState(defaultFolder);
+  const [selectedId, setSelectedId] = useState<string | null>(defaultNote);
   const [query, setQuery] = useState('');
-  const [view, setView] = useState<NotesView>(initialView);
+  const [view, setView] = useState<NotesView>(defaultView);
   const [filter, setFilter] = useState<FileFilter>('markdown');
   const [creating, setCreating] = useState<'file' | 'folder' | null>(null);
   const [renaming, setRenaming] = useState<{ id: string; in: RenamePlace } | null>(null);

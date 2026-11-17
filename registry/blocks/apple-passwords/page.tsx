@@ -37,9 +37,9 @@ const NEW_ITEM_GRAY = '#8E8E93';
 
 export interface ApplePasswordsProps {
   /** Sidebar category (or `group:family`) to open on. Defaults to All. */
-  initialCategory?: CategoryId | `group:${string}`;
+  defaultCategory?: CategoryId | `group:${string}`;
   /** Item to show in the detail; defaults to the category's first item. */
-  initialItem?: string;
+  defaultItem?: string;
   /** Advance the verification-code clock (with Date.now). Pass false for still frames (screenshots). Default true. */
   live?: boolean;
   /** Runs the Developer Sign-In buttons' device flows and checks their tokens. Defaults to the real flows: through the
@@ -50,7 +50,7 @@ export interface ApplePasswordsProps {
       a prompt when there is one). `false`: always the CORS proxy. */
   tailscale?: Tailscale | false;
   /** Open the sign-in sheet for this service on load. */
-  initialSignIn?: ServiceId;
+  defaultSignIn?: ServiceId;
   /** The passkey vault the sign-ins are encrypted in. Defaults to one named `apple-passwords-sign-ins` in IndexedDB. */
   passkeyVault?: PasskeyVault;
 }
@@ -70,7 +70,7 @@ export default function ApplePasswords({ passkeyVault, tailscale, ...props }: Ap
 
 const formatDay = (ms: number) => new Date(ms).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 
-function Passwords({ initialCategory = 'all', initialItem, live = true, auth: authProp, initialSignIn }: Omit<ApplePasswordsProps, 'passkeyVault' | 'tailscale'>) {
+function Passwords({ defaultCategory = 'all', defaultItem, live = true, auth: authProp, defaultSignIn }: Omit<ApplePasswordsProps, 'passkeyVault' | 'tailscale'>) {
   const tailnet = useOptionalTailscale();
   const auth = useMemo(() => authProp ?? createDeviceAuth({ fetch: tailnetOrProxy(tailnet) }), [authProp, tailnet]);
   const dark = useAppearance() === 'dark';
@@ -79,12 +79,12 @@ function Passwords({ initialCategory = 'all', initialItem, live = true, auth: au
   const [hud] = useState(() => createHud());
   const [query, setQuery] = useState('');
   const [editing, setEditing] = useState(false);
-  const [signIn, setSignIn] = useState<ServiceId | null>(initialSignIn ?? null);
+  const [signIn, setSignIn] = useState<ServiceId | null>(defaultSignIn ?? null);
   const [enrolling, setEnrolling] = useState(false);
   const signIns = useSignInStore(auth);
   const [selection, setSelection] = useState<SplitViewValue>(() => ({
-    sidebar: initialCategory,
-    supplementary: initialItem ?? firstEntry(sectionsFor(initialCategory, vault, '')),
+    sidebar: defaultCategory,
+    supplementary: defaultItem ?? firstEntry(sectionsFor(defaultCategory, vault, '')),
   }));
 
   const category = (selection.sidebar ?? 'all') as Selection;
@@ -123,7 +123,7 @@ function Passwords({ initialCategory = 'all', initialItem, live = true, auth: au
         modified: formatDay(g.createdAt), notes: `Signed in with a device code${g.scope ? ` · scopes: ${g.scope}` : ''}.`,
       });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `itemKey` stands for the grants; `vault` is the same store for the page's life.
   }, [itemKey]);
 
   const show = (service: ServiceId) => {

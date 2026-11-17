@@ -151,8 +151,10 @@ export interface ArtifactChatContainerProps extends Omit<ComponentProps<'div'>, 
   presentation?: 'auto' | ArtifactChatContainerPresentation;
   /** Where the container's own size classes start, px, as on SplitView and Sidebar: below `medium` it is `compact`
       and `auto` floats the chat (`data-size-class` on the root, and the size-class scope popups inside follow).
-      Default `{ medium: 640, regular: 1024 }`, every scope's; pass `{ medium: 760 }` to keep a phone's width beside
-      a docked 400px chat. */
+      Default `{ medium: 760, regular: 1024 }`: wider than other scopes' 640, because the docked chat is 400px and
+      below 760 the artifact beside it would be narrower than a phone (at 640 it is 240px: headings wrap a word a line
+      and charts and rows clip). With a narrower `chatWidth`, lower `medium` to match (`chatWidth={280}` and
+      `{ medium: 620 }`). */
   breakpoints?: SizeClassBreakpoints;
   /** Width of the docked chat column. Default 400. */
   chatWidth?: number | string;
@@ -234,7 +236,7 @@ export function ArtifactChatContainer({
 }: ArtifactChatContainerProps) {
   // Its own box's size class, starting from the enclosing scope's until measured.
   const [rootRef, sizeClass] = useSizeClass<HTMLDivElement>({
-    breakpoints: { medium: breakpoints?.medium ?? 640, regular: breakpoints?.regular ?? 1024 },
+    breakpoints: { medium: breakpoints?.medium ?? 760, regular: breakpoints?.regular ?? 1024 },
   });
   // The first layout has painted: a layout before it is where the container starts, not a switch to animate.
   const [ready, setReady] = useState(false);

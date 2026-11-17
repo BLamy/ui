@@ -32,7 +32,7 @@ it('a sender’s name is a mailto link that previews the contact card', async ()
 });
 
 it('the compose fields are UI SDK Inputs that write the draft', async () => {
-  await act(async () => root.render(<AppleMail initialDraft={{ to: '', cc: '', subject: '', body: '' }} />));
+  await act(async () => root.render(<AppleMail defaultDraft={{ to: '', cc: '', subject: '', body: '' }} />));
   await settle();
   const subject = document.querySelector<HTMLInputElement>('input[aria-label="Subject"]')!;
   expect(subject.getAttribute('data-slot')).toBe('input');

@@ -221,7 +221,7 @@ function DeviceScreen({ device, appearance, speed, onLog, onActive, onTick }: {
     };
     return runtime;
     // One runtime per run.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- one runtime per run (a new run remounts the screen); `onLog`, `onActive` and `onTick` are the player's stable callbacks and `hud` is made once.
   }, []);
 
   // The first layer: the storyboard's entry scene.

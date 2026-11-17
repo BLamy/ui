@@ -153,7 +153,7 @@ export function useGoogleFontStatus(family: string | readonly string[] | null | 
     void Promise.all(names.map((n) => loadGoogleFont(n, { weights, italic, text }))).then((oks) => { if (live) setDone({ key, ok: oks.every(Boolean) }); });
     return () => { live = false; };
     // `key` stands for the families and the options.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `key` stands for the families and the options.
   }, [key]);
   if (!key) return 'idle';
   return done?.key === key ? (done.ok ? 'ready' : 'missing') : 'loading';

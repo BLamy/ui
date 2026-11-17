@@ -33,7 +33,7 @@ const BREAKPOINTS = { medium: 720, regular: 900 } as const;
 /** Whether focus is in a text field, where ⌘Z is the field's own. */
 const typing = () => !!(document.activeElement as Element | null)?.closest?.('input, textarea, [contenteditable]');
 
-export function Editor({ appearance, initialRunning }: { appearance: 'light' | 'dark'; initialRunning: boolean }) {
+export function Editor({ appearance, defaultRunning }: { appearance: 'light' | 'dark'; defaultRunning: boolean }) {
   const b = useBuilder();
   const ref = useRef<HTMLDivElement | null>(null);
   const [measure, sizeClass] = useSizeClass<HTMLDivElement>({ breakpoints: BREAKPOINTS, initial: 'regular' });
@@ -45,7 +45,7 @@ export function Editor({ appearance, initialRunning }: { appearance: 'light' | '
   const [navPane] = useState(createAdaptivePaneController);
   const [inspectorPane] = useState(createAdaptivePaneController);
   const [timelineOpen, setTimelineOpen] = useState(false);
-  const [running, setRunning] = useState(initialRunning);
+  const [running, setRunning] = useState(defaultRunning);
   const [player] = useState(() => createDialogController());
   const [sceneLook, setSceneLook] = useState<'light' | 'dark'>(appearance);
   const [viewport, setViewport] = useState<Viewport>({ x: 0, y: 0, zoom: 0.4 });

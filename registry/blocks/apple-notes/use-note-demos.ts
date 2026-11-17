@@ -24,7 +24,7 @@ export function useNoteDemos(body: string, path: string, roots: DemoDirectory[])
   const sources = [...new Set(nodes.filter((node) => node.src && !node.files?.length).map((node) => node.src))].sort().join('\n');
   const rootKey = roots.map((root) => root.path).join('\n');
   // Directory handles are stable for each mounted path; do not restart polling on every note render.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- `rootKey` stands for `roots`; directory handles are stable for each mounted path, so polling does not restart on every note render.
   const read = useMemo(() => createLocalDemoReader(roots, path), [rootKey, path]);
   useEffect(() => {
     let active = true; let timer: ReturnType<typeof setTimeout>;
@@ -49,7 +49,7 @@ export function useNoteDemos(body: string, path: string, roots: DemoDirectory[])
     void poll();
     return () => { active = false; clearTimeout(timer); };
     // The source ids, document path and mounted roots govern file watching; typing prose doesn't restart it.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- the source ids, document path and mounted roots govern file watching; typing prose doesn't restart it.
   }, [sources, read, vfs, inherited, !!nodes.length]);
   return { vfs, runtime, resolver, error };
 }

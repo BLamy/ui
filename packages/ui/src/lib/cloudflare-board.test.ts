@@ -92,12 +92,10 @@ describe('a service, drawn', () => {
       expect(p.offset, p.id).toBe(Math.round(header));
       expect(p.side, p.id).toBe(p.direction === 'in' ? 'left' : 'right');
     }
+    // A connection claims no dots: it's the read-only edge, so the board is laid out and routed as the read-only one is.
     const board = cloudflareBoard(UPLOAD, { editable: true });
-    expect(board.edges.find((e) => e.id === 'consumer-db')).toMatchObject({ fromPort: 'env', toPort: 'binding:d1_databases' });
-    // A Worker's own binding to its class starts under its sections, as read-only, not out of its header and back in.
-    const own = cloudflareBoard({ ...UPLOAD, edges: [...UPLOAD.edges, { id: 'api-room', from: 'api', to: 'room', via: 'durable_objects', binding: 'ROOM' }] }, { editable: true });
-    expect(own.edges.find((e) => e.id === 'api-room')?.fromPort).toBeUndefined();
-    expect(own.edges.find((e) => e.id === 'consumer-room')?.fromPort).toBe('env');
+    expect(board.edges).toEqual(cloudflareBoard(UPLOAD).edges);
+    expect(board.edges.every((e) => !e.fromPort && !e.toPort)).toBe(true);
   });
 
   it('a kind the catalog doesn’t know says so, and one with an error is drawn as wrong', () => {

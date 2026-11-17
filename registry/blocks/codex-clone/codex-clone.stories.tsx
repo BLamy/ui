@@ -26,10 +26,10 @@ export const Desktop: Story = { render: (args) => <Frame width={1600} height={76
 export const NoInbox: Story = { args: { inbox: false }, render: (args) => <Frame width={1600} height={760}><CodexClone {...args} /></Frame> };
 
 /** A project thread: a wide transcript with the turn rail (hover a dash for the message), and the thread's panel. */
-export const Thread: Story = { args: { inbox: false, initialChat: 'stack-merge' }, render: (args) => <Frame width={1600} height={760}><CodexClone {...args} /></Frame> };
+export const Thread: Story = { args: { inbox: false, defaultChat: 'stack-merge' }, render: (args) => <Frame width={1600} height={760}><CodexClone {...args} /></Frame> };
 
 /** Another chat: its own document, its own outline. */
-export const LoopQa: Story = { args: { initialChat: 'loopqa' }, render: (args) => <Frame width={1600} height={760}><CodexClone {...args} /></Frame> };
+export const LoopQa: Story = { args: { defaultChat: 'loopqa' }, render: (args) => <Frame width={1600} height={760}><CodexClone {...args} /></Frame> };
 
 export const Tablet: Story = { render: (args) => <Frame width={834} height={760}><CodexClone {...args} /></Frame> };
 

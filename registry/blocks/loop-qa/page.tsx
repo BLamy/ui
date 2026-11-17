@@ -29,11 +29,11 @@ export interface LoopQAProps {
   /** Light or dark. Defaults to the ambient AppearanceProvider (or the page's `.dark`), else light. */
   appearance?: Appearance;
   /** Project to open on (e.g. 'northwind'); omit for All projects. */
-  initialProject?: string;
+  defaultProject?: string;
   /** The project's tab. */
-  initialTab?: ProjectTab;
+  defaultTab?: ProjectTab;
   /** Open a bug, run or test page on top of its project (e.g. `{ kind: 'bug', id: 'NW-142' }`). */
-  initialPage?: PushTarget;
+  defaultPage?: PushTarget;
   /** Ask QA open or closed; by default it opens where it can dock beside the page. */
   askOpen?: boolean;
   /** Open ⌘K on mount, optionally on a page (['bugs'], ['status']). */
@@ -50,9 +50,9 @@ export interface LoopQAProps {
 /** Block widths (px) where the medium (tablet) and regular (desktop, Ask QA docked) classes start. */
 const SIZE_CLASSES = { medium: 640, regular: 1180 };
 
-export default function LoopQA({ appearance, initialProject, initialTab, initialPage, askOpen, palette, liveRunAt, emptyChat, chatExpanded }: LoopQAProps) {
+export default function LoopQA({ appearance, defaultProject, defaultTab, defaultPage, askOpen, palette, liveRunAt, emptyChat, chatExpanded }: LoopQAProps) {
   const ambient = useAppearance();
-  const qa = useLoopQAState({ appearance, project: initialProject, tab: initialTab, push: initialPage, askOpen, palette, liveRunAt, emptyChat, chatExpanded });
+  const qa = useLoopQAState({ appearance, project: defaultProject, tab: defaultTab, push: defaultPage, askOpen, palette, liveRunAt, emptyChat, chatExpanded });
   const dark = (qa.look ?? appearance ?? ambient) === 'dark';
   const mode = dark ? 'dark' : 'light';
   // Compact is a phone; regular is wide enough to dock Ask QA beside the page.
@@ -88,7 +88,7 @@ export default function LoopQA({ appearance, initialProject, initialTab, initial
                       aria-label="Loop QA"
                       value={{ sidebar: qa.section }}
                       onValueChange={(v) => { if (v.sidebar) qa.setSection(v.sidebar); }}
-                      defaultCompactColumn={initialProject || initialPage ? 'detail' : 'sidebar'}
+                      defaultCompactColumn={defaultProject || defaultPage ? 'detail' : 'sidebar'}
                     >
                       <SplitBridge />
                       <AppSidebar />

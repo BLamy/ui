@@ -110,7 +110,7 @@ export function RenameField({ notes, id, name, className }: { notes: NotesState;
     const el = input.current;
     if (!el) return;
     el.focus(); el.setSelectionRange(0, /\.mdx?$/i.exec(name)?.index ?? name.length);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- focuses and selects once, as the field mounts; typing must not move the selection.
   }, []);
   const finish = (keep: boolean) => {
     if (done.current) return;

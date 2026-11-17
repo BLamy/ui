@@ -39,7 +39,7 @@ export const MAX_DEPTH = 5;
 export function useSceneRender(scene: Scene, outer: RenderEnv, inst: Instance | null): { env: RenderEnv; scope: Scope } {
   // Live: re-render when the instance's state, props or contexts change.
   const version = useSyncExternalStore(inst?.subscribe ?? noopSubscribe, inst?.getVersion ?? zero, zero);
-  const scope = useMemo(() => (inst ? inst.scope() : designScope(outer.doc, scene)), [inst, version, outer.doc, scene]); // eslint-disable-line react-hooks/exhaustive-deps
+  const scope = useMemo(() => (inst ? inst.scope() : designScope(outer.doc, scene)), [inst, version, outer.doc, scene]); // eslint-disable-line react-hooks/exhaustive-deps -- `version` is the live instance saying its scope changed.
   const schedule = useMemo(() => appearSchedule(scene.root, (n) => {
     const list = n.repeat ? valueOf<unknown>(n.repeat.each, scope, []) : [];
     return Array.isArray(list) ? Math.max(outer.live ? 0 : 1, list.length) : 1;

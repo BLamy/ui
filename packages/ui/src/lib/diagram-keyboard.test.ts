@@ -163,8 +163,8 @@ describe('what a screen reader hears', () => {
     ];
     const index = indexDiagram(list);
     const text = (id: string) => describeNode(index.byId.get(id)!, index, undefined);
-    expect(text('r')).toBe('r, diagram, holding 2 nodes. Not connected to anything.');
-    expect(text('p')).toBe('p, group, holding 1 node. Not connected to anything.');
+    expect(text('r')).toBe('r, diagram, holding 2 nodes (5 nodes in all). Not connected to anything.');
+    expect(text('p')).toBe('p, group, holding 1 node (3 nodes in all). Not connected to anything.');
     expect(text('g')).toBe('g, region, holding 2 nodes, in p. Not connected to anything.');
     // A border's a look, and says nothing; a marker goes by its label, if it has one.
     expect(text('f')).toBe('f, node, in g. Not connected to anything.');
@@ -172,6 +172,17 @@ describe('what a screen reader hears', () => {
     const started = indexDiagram([node('s', 0, 0, { kind: 'marker', title: 'Start' })]);
     expect(describeNode(started.byId.get('s')!, started, undefined)).toBe('Start, marker. Not connected to anything.');
     expect(text('d')).toBe('d, node. invoke verifyToken. Not connected to anything.');
+  });
+
+  it('counts what a box holds by what each is, when it’s told', () => {
+    const list: DiagramNode[] = [
+      node('sys', 0, 0, { kind: 'root', title: 'Docs search' }), node('prod', 0, 0, { kind: 'group', parent: 'sys' }), node('stage', 0, 0, { kind: 'group', parent: 'sys' }),
+      node('ai', 0, 0, { parent: 'sys' }), node('a', 0, 0, { parent: 'prod' }), node('b', 0, 0, { parent: 'prod' }), node('c', 0, 0, { parent: 'stage' }),
+    ];
+    const index = indexDiagram(list);
+    const noun = (n: DiagramNode) => (n.kind === 'root' ? 'system' : n.kind === 'group' ? 'environment' : 'service');
+    expect(describeNode(index.byId.get('sys')!, index, undefined, noun)).toBe('Docs search, diagram, holding 2 environments and 1 service (4 services in all). Not connected to anything.');
+    expect(describeNode(index.byId.get('prod')!, index, undefined, noun)).toBe('prod, group, holding 2 services. Not connected to anything.');
   });
 
   it('keeps a long list short', () => {

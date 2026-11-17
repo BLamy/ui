@@ -11,15 +11,15 @@ import { RemindersCtx, useRemindersState } from './store';
 
 export interface AppleRemindersProps {
   /** List or smart list to open: 'today', 'scheduled', 'all', 'flagged', 'completed', or a list id ('groceries'). */
-  initialList?: string;
+  defaultList?: string;
   /** Phone only: open on the list instead of the lists screen. */
   openList?: boolean;
 }
 
-export default function AppleReminders({ initialList = 'today', openList = false }: AppleRemindersProps) {
+export default function AppleReminders({ defaultList = 'today', openList = false }: AppleRemindersProps) {
   const dark = useAppearance() === 'dark';
   const reminders = useRemindersState();
-  const [selection, setSelection] = useState<SplitViewValue>({ sidebar: initialList });
+  const [selection, setSelection] = useState<SplitViewValue>({ sidebar: defaultList });
   const id = selection.sidebar ?? 'today';
   const tint = SMART.find((s) => s.id === id)?.color ?? reminders.lists.find((l) => l.id === id)?.color ?? SYSTEM.blue;
 

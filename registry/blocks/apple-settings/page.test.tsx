@@ -36,7 +36,7 @@ afterEach(async () => {
 const settle = () => act(async () => { await new Promise((r) => setTimeout(r, 30)); });
 
 it('the macOS pop-up button is a Select named by its row, holding the value', async () => {
-  await act(async () => root.render(<AppleSettings initialPath={['wifi']} />));
+  await act(async () => root.render(<AppleSettings defaultPath={['wifi']} />));
   await settle();
   const trigger = element.querySelector<HTMLElement>('[role="combobox"][aria-label="Ask to Join Networks"]')!;
   expect(trigger).toBeTruthy();
@@ -57,7 +57,7 @@ it('the macOS pop-up button is a Select named by its row, holding the value', as
 });
 
 it('turning Wi-Fi off folds the network sections away (a Collapsible the switch drives)', async () => {
-  await act(async () => root.render(<AppleSettings initialPath={['wifi']} />));
+  await act(async () => root.render(<AppleSettings defaultPath={['wifi']} />));
   await settle();
   expect(element.textContent).toContain('NETGEAR-4F2C');
   const wifi = [...element.querySelectorAll<HTMLElement>('[role="switch"]')].find((s) => (s.getAttribute('aria-label') ?? s.closest('[data-slot]')?.textContent ?? '').includes('Wi-Fi'))!;

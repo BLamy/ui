@@ -86,23 +86,30 @@ describe('toElkGraph', () => {
   });
 
   it('puts a node’s ports where they’re drawn, and leaves those of what holds others for ELK to place', () => {
+    const claim = (node: string, ports: string[]) => ports.map((p) => ({ id: `${node}-${p}`, from: node, fromPort: p, to: 'z' }));
     const fixed = toElkGraph({ nodes: [{ id: 'a', w: 100, h: 50, ports: [
       { id: 'l', side: 'left', at: 0.2 }, { id: 'r', side: 'right', at: 0.8 }, { id: 't', side: 'top', at: 0.25 }, { id: 'b', side: 'bottom' },
-    ] }] });
+    ] }, { id: 'z' }], edges: claim('a', ['l', 'r', 't', 'b']) });
     const node = fixed.children![0];
     expect(node.layoutOptions!['elk.portConstraints']).toBe('FIXED_POS');
     expect(node.ports!.map((p) => [p.x, p.y])).toEqual([[0, 10], [100, 40], [25, 0], [50, 50]]);
-    const holding = toElkGraph({ nodes: [{ id: 'c', kind: 'group', ports: [{ id: 'in', side: 'left' }] }, { id: 'kid', parent: 'c' }] });
+    const holding = toElkGraph({ nodes: [{ id: 'c', kind: 'group', ports: [{ id: 'in', side: 'left' }] }, { id: 'kid', parent: 'c' }, { id: 'z' }], edges: claim('c', ['in']) });
     const compound = holding.children![0];
     expect(compound.layoutOptions!['elk.portConstraints']).toBe('FIXED_SIDE');
     expect(compound.ports![0].x).toBeUndefined();
   });
 
+  it('leaves out a port no edge claims (a dot to connect by), so that it changes nothing in the layout', () => {
+    const dots = toElkGraph({ nodes: [{ id: 'a', w: 100, h: 50, ports: [{ id: 'l', side: 'left' }, { id: 'r', side: 'right' }] }, { id: 'b' }], edges: [{ id: 'e', from: 'a', to: 'b' }] });
+    const none = toElkGraph({ nodes: [{ id: 'a', w: 100, h: 50 }, { id: 'b' }], edges: [{ id: 'e', from: 'a', to: 'b' }] });
+    expect(dots).toEqual(none);
+  });
+
   it('reads back where ELK put a port it was left to place, and leaves one that had a place alone', () => {
     const draft = { nodes: [
       { id: 'c', kind: 'group' as const, ports: [{ id: 'in', side: 'left' as const }, { id: 'out', side: 'right' as const, at: 0.25 }] },
-      { id: 'kid', parent: 'c' },
-    ] };
+      { id: 'kid', parent: 'c' }, { id: 'z' },
+    ], edges: [{ id: 'i', from: 'z', to: 'c', toPort: 'in' }, { id: 'o', from: 'c', fromPort: 'out', to: 'z' }] };
     const graph = toElkGraph(draft);
     const out = JSON.parse(JSON.stringify(graph));
     out.children[0] = { ...out.children[0], x: 0, y: 0, width: 200, height: 100, children: [{ ...out.children[0].children[0], x: 10, y: 10, width: 50, height: 20 }] };
@@ -117,7 +124,8 @@ describe('toElkGraph', () => {
       edges: [{ id: 'e', from: 'a', fromPort: 'out', to: 'b', toPort: 'in' }, { id: 'f', from: 'a', fromPort: 'nope', to: 'b' }],
     });
     const a = g.children![0];
-    expect(a.ports!.map((p) => p.layoutOptions!['elk.port.side'])).toEqual(['EAST', 'NORTH']);
+    // `up` is claimed by no edge, so ELK isn't told of it.
+    expect(a.ports!.map((p) => p.layoutOptions!['elk.port.side'])).toEqual(['EAST']);
     expect(g.edges![0].sources[0]).toBe(a.ports![0].id);
     expect(g.edges![0].targets[0]).toBe(g.children![1].ports![0].id);
     // A port that doesn't exist falls back to the node.

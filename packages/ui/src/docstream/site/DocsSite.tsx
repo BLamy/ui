@@ -200,7 +200,7 @@ function useDocsRouter(tree: DocsTree, routing: DocsSiteRouting, basePath: strin
       return { slug: slug ?? "", hash }
     }
     return routing === "history" ? readHistoryLocation(basePath) : readHashLocation(tree, basePath)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `defaultPath` is where memory routing starts, read once; changing it later does not navigate.
   }, [routing, basePath, tree])
   const [location, setLocation] = useState<Location>(() => ({ ...read(), key: 0 }))
 
@@ -504,7 +504,7 @@ export function DocsSite(props: DocsSiteProps) {
     if (target) target.scrollIntoView?.({ block: "start" })
     else el.scrollTop = 0
     if (shown) onNavigate?.(shown, location.hash)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- runs once per navigation (`location.key`) or page change, not when the callback or the hash object is remade.
   }, [location.key, shown?.slug])
 
   const siteTitle = title

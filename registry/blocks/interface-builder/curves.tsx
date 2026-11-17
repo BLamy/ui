@@ -303,7 +303,7 @@ export function usePreviewClock(spec: TransitionSpec) {
     void play();
     return () => { stop = true; live.forEach((c) => c.stop()); };
     // `key` stands for the spec's contents.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `key` stands for the spec's contents; `value` and `ms` are what the loop writes.
   }, [key, run, reduced]);
   return { value, ms, replay: () => setRun((n) => n + 1) };
 }

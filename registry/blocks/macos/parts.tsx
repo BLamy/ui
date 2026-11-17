@@ -189,8 +189,8 @@ function useCountdown(timer: RunningTimer | null) {
 }
 
 /** The menu bar: the frontmost app's name and menus, and the status items. The clock is fixed (9:41). Tailscale and Wi-Fi are
-    working items (status-items.tsx); `initialMenu` opens one of them on load. */
-export function MenuBar({ appearance, onAlfred, initialMenu }: { appearance: Appearance; onAlfred: () => void; initialMenu?: StatusMenu }) {
+    working items (status-items.tsx); `defaultMenu` opens one of them on load. */
+export function MenuBar({ appearance, onAlfred, defaultMenu }: { appearance: Appearance; onAlfred: () => void; defaultMenu?: StatusMenu }) {
   const dark = appearance === 'dark';
   const { timer } = useAlfred();
   const { front } = useDesktop();
@@ -223,8 +223,8 @@ export function MenuBar({ appearance, onAlfred, initialMenu }: { appearance: App
           <Hat size={16} />
         </SdkButton>
         <Icon name="battery-full" size={20} sw={1.6} />
-        <TailscaleStatusItem defaultOpen={initialMenu === 'tailscale'} />
-        <WifiStatusItem defaultOpen={initialMenu === 'wifi'} />
+        <TailscaleStatusItem defaultOpen={defaultMenu === 'tailscale'} />
+        <WifiStatusItem defaultOpen={defaultMenu === 'wifi'} />
         <Icon name="magnifyingglass" size={14} sw={2.2} />
         <span className="font-medium tabular-nums">Tue Sep 29  9:41 AM</span>
       </span>

@@ -33,14 +33,14 @@ Twenty-odd lines of composition: a `Tabs` bar, a `NavigationStack` inside the fi
 | Tab bar controller | `Tabs` with `variant="bar"`: composable tab navigation |
 | Table view | `List`, `ListSection`, `ListRow` |
 | Section index titles | `IndexBar` — the A–Z rail (`indexBarAlphabetItems`) or application-defined keyed stops |
-| Sheets and trays | `Dialog` (`variant="tray"`), `Sheet` |
+| Sheets and trays | `Dialog` (a tray in a compact container, `DialogContent variant="tray"`), `Sheet` |
 | Inspector column | `AdaptivePane` |
 | Sidebar | `Sidebar` — docked, rail or float, as a column or a drawer (`presentation`) |
 | Canvas view | `PencilCanvas` |
 
 ## How the docs are organized
 
-The sidebar groups pages by what a part does, not by how big it is. **Foundations** covers theming, styling, variants, motion and icons. Then come the parts: **Controls**, **Forms and fields**, **Menus and overlays**, **Feedback and status**, **Content**, **Lists, trees and tables**, **Navigation and layout**, **Canvas and diagrams**, **Motion components**, **Chat**, **Editors and workbench**, **Media**, and **Storage and security**. Within a section, pages are in alphabetical order. **Hooks** documents every hook the library exports, and **Behaviors** the UI SDK behaviors the containers are built from, for building parts of your own.
+The sidebar groups pages by what a part does, not by how big it is. **Foundations** covers theming, styling, variants, motion and icons. Then come the parts: **Controls**, **Forms and fields**, **Menus and overlays**, **Feedback and status**, **Content**, **Lists, trees and tables**, **Navigation and layout**, **Canvas and diagrams**, **Motion components**, **Chat**, **Editors and workbench**, **Media**, and **Storage and security**. Within each of these, pages are in alphabetical order, after a guide page where the section has one (Forms). **Hooks** documents every hook the library exports, and **Behaviors** the UI SDK behaviors the containers are built from, for building parts of your own.
 
 The shells that belong to one product (the Discord-style `ChatShell`, the T3-style `WorkbenchShell`) live in [blocks](https://blamy.github.io/ui/#/blocks). Every one is built from the parts documented here, so a shell that does not fit can be recomposed from them.
 
@@ -56,7 +56,9 @@ Start from the job; each page opens with when to use a sibling instead.
 | Rows of data | [List](https://blamy.github.io/ui/#/lists), [Tree](https://blamy.github.io/ui/#/tree), [DataTable](https://blamy.github.io/ui/#/data-table), [Spreadsheet](https://blamy.github.io/ui/#/spreadsheet) |
 | An app's frame | [NavigationStack](https://blamy.github.io/ui/#/navigation-stack), [SplitView](https://blamy.github.io/ui/#/split-view), [Sidebar](https://blamy.github.io/ui/#/sidebar), [Tabs](https://blamy.github.io/ui/#/tabs), [AdaptivePane](https://blamy.github.io/ui/#/adaptive-pane), [Toolbar](https://blamy.github.io/ui/#/toolbar) |
 | Chat around a model | [Composer](https://blamy.github.io/ui/#/composer), [Conversation](https://blamy.github.io/ui/#/conversation), [ArtifactChatContainer](https://blamy.github.io/ui/#/artifact-chat-container) |
-| Code, Markdown, a canvas | [CodeEditor](https://blamy.github.io/ui/#/code-editor), [MarkdownView](https://blamy.github.io/ui/#/markdown-view), [MarkdownEditor](https://blamy.github.io/ui/#/markdown-editor), [Canvas](https://blamy.github.io/ui/#/canvas), [Diagram](https://blamy.github.io/ui/#/diagram) |
+| Code, Markdown, a canvas | [CodeEditor](https://blamy.github.io/ui/#/code-editor), [MarkdownView](https://blamy.github.io/ui/#/markdown-view), [MarkdownEditor](https://blamy.github.io/ui/#/markdown-editor), [Canvas](https://blamy.github.io/ui/#/canvas) |
+| Boxes and arrows: a graph, a state machine, a Cloudflare system | [Diagram](https://blamy.github.io/ui/#/diagram), [DiagramFrame](https://blamy.github.io/ui/#/diagram-frame) (a board with a panel), [StateDiagram](https://blamy.github.io/ui/#/state-diagram), [CloudflareDiagram](https://blamy.github.io/ui/#/cloudflare-diagram) |
+| Nothing to show yet, or content that changes in place | [EmptyState](https://blamy.github.io/ui/#/empty-state), [Skeleton](https://blamy.github.io/ui/#/skeleton), [Swap](https://blamy.github.io/ui/#/swap) |
 | Media | [VideoPreview](https://blamy.github.io/ui/#/video-preview), [VideoTimeline](https://blamy.github.io/ui/#/video-timeline), [ReplayPreview](https://blamy.github.io/ui/#/replay-preview) |
 
 ## Where to go next

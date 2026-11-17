@@ -52,7 +52,7 @@ export const PhoneDark: Story = {
 /** A reply in the compose sheet, the original quoted below. */
 export const Compose: Story = {
   args: {
-    initialDraft: {
+    defaultDraft: {
       to: 'sam@okafor.studio', cc: '', subject: 'Re: Cabin weekend — final headcount', replyTo: 'm1',
       body: 'Count us in! I’ll bring the camp stove and the good kettle.\n\n> On Sep 27, 2026, Sam Okafor wrote:\n>\n> Booking closes tonight so I need a yes or no by 6.',
     },

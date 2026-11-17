@@ -39,13 +39,13 @@ export const DEFAULT_REPO = 'BLamy/ui';
 
 export interface GithubCloneProps {
   /** Repository tab to open on. Defaults to Code. */
-  initialTab?: GithubTab;
+  defaultTab?: GithubTab;
   /** Open this pull request's detail view (e.g. 488) — implies the Pull requests tab. */
-  initialPullRequest?: number;
+  defaultPullRequest?: number;
   /** Open a file or folder in the Code tab (e.g. 'src/queue.ts'). */
-  initialPath?: string;
-  /** The pull request's sub-tab to open on (with `initialPullRequest`), e.g. 'files' for Files changed. */
-  initialPullRequestTab?: PullRequestTab;
+  defaultPath?: string;
+  /** The pull request's sub-tab to open on (with `defaultPullRequest`), e.g. 'files' for Files changed. */
+  defaultPullRequestTab?: PullRequestTab;
   /** The repository (owner/name) to show once there's a GitHub token. Default BLamy/ui. */
   repo?: string;
   /** A GitHub token to use instead of the keychain's (never hardcode one). */
@@ -110,12 +110,12 @@ function GithubApp({ appearance, repo: initialRepo, token, github, ...initial }:
   );
 }
 
-function RepoScreens({ ui, source, keychain, openPicker, initialTab, initialPullRequest, initialPath = '', initialPullRequestTab }: {
+function RepoScreens({ ui, source, keychain, openPicker, defaultTab, defaultPullRequest, defaultPath = '', defaultPullRequestTab }: {
   ui: Layout; source: RepoSource; keychain: ReturnType<typeof useKeychainSignIn>; openPicker: () => void;
-} & Pick<GithubCloneProps, 'initialTab' | 'initialPullRequest' | 'initialPath' | 'initialPullRequestTab'>) {
-  const [tab, setTab] = useState<GithubTab>(initialTab ?? (initialPullRequest ? 'pulls' : 'code'));
-  const [path, setPath] = useState(initialPath);
-  const [pr, setPr] = useState<number | null>(initialPullRequest ?? null);
+} & Pick<GithubCloneProps, 'defaultTab' | 'defaultPullRequest' | 'defaultPath' | 'defaultPullRequestTab'>) {
+  const [tab, setTab] = useState<GithubTab>(defaultTab ?? (defaultPullRequest ? 'pulls' : 'code'));
+  const [path, setPath] = useState(defaultPath);
+  const [pr, setPr] = useState<number | null>(defaultPullRequest ?? null);
   const [issue, setIssue] = useState<number | null>(null);
   const [ref, setRef] = useState('');
   const [cloneOpen, setCloneOpen] = useState(false);
@@ -135,7 +135,7 @@ function RepoScreens({ ui, source, keychain, openPicker, initialTab, initialPull
   const state = { source, keychain, openPicker, repo: repo.data, viewer: viewer.data, ref, setRef };
   const page = repo.data ? (
     <RepoPage ui={ui} tab={tab} onTab={setTab} path={ui.phone ? '' : path} pr={ui.phone ? null : pr} issue={ui.phone ? null : issue}
-      nav={nav} labelFilter={labelFilter} prTab={initialPullRequestTab} />
+      nav={nav} labelFilter={labelFilter} prTab={defaultPullRequestTab} />
   ) : (
     <div className="mx-auto w-full max-w-[1280px] px-4 py-6 @3xl/gh:px-6">
       {repo.error ? <Failed error={repo.error} retry={repo.retry} /> : <Pending label={`Opening ${source.full}…`} />}
@@ -150,7 +150,7 @@ function RepoScreens({ ui, source, keychain, openPicker, initialTab, initialPull
           return { key: 'path:' + p, title: parts[i], content: <PathView ui={ui} path={p} nav={nav} /> };
         })
       : []),
-    ...(repo.data && tab === 'pulls' && pr ? [{ key: 'pr', title: '#' + pr, content: <PullRequestView ui={ui} number={pr} nav={nav} initialTab={initialPullRequestTab} /> }] : []),
+    ...(repo.data && tab === 'pulls' && pr ? [{ key: 'pr', title: '#' + pr, content: <PullRequestView ui={ui} number={pr} nav={nav} defaultTab={defaultPullRequestTab} /> }] : []),
     ...(repo.data && tab === 'issues' && issue ? [{ key: 'issue', title: '#' + issue, content: <IssueView ui={ui} number={issue} nav={nav} /> }] : []),
   ];
   const pages = ['repo', ...pushed.map((page) => page.key)];
@@ -226,7 +226,7 @@ function RepoPage({ ui, tab, onTab, path, pr, issue, nav, labelFilter, prTab }: 
       <div className="mx-auto w-full max-w-[1280px] px-4 py-6 @3xl/gh:px-6">
         <FlowPanel value="code">{path ? <PathView ui={ui} path={path} nav={nav} /> : <CodeHome ui={ui} nav={nav} />}</FlowPanel>
         <FlowPanel value="issues">{issue ? <IssueView ui={ui} number={issue} nav={nav} /> : <IssueList ui={ui} nav={nav} labelFilter={labelFilter} />}</FlowPanel>
-        <FlowPanel value="pulls">{pr ? <PullRequestView ui={ui} number={pr} nav={nav} initialTab={prTab} /> : <PullList ui={ui} nav={nav} />}</FlowPanel>
+        <FlowPanel value="pulls">{pr ? <PullRequestView ui={ui} number={pr} nav={nav} defaultTab={prTab} /> : <PullList ui={ui} nav={nav} />}</FlowPanel>
         <FlowPanel value="actions"><ActionsView ui={ui} /></FlowPanel>
         <FlowPanel value="insights"><Placeholder icon="pulse" title="Insights" text="Pulse, contributors, traffic and dependency graphs." /></FlowPanel>
         <FlowPanel value="settings"><Placeholder icon="gear" title="Settings" text="Only repository admins can change settings." /></FlowPanel>

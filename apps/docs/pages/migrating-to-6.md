@@ -41,9 +41,11 @@ A CSS Module loads too late to come first, so keep the line in the global styles
 
 BL UI uses its fork of UI SDK, published as `@brett_lamy/ui-sdk-core` and `@brett_lamy/ui-sdk-react` and installed under upstream's names through npm aliases. The fork is upstream plus layer hosts (popups contained in an element such as `BLProvider`'s root), a `when` option on `bindLayer`, and the kernel type `SlotProps` exported from `@ui-sdk/core/renderer`; the other behaviors the containers need (size classes, the navigation stack, edge swipes, the platform back, pull to refresh) are BL UI's own, in `@/lib` (see [Built on UI SDK](https://blamy.github.io/ui/#/ui-sdk)). Every import, in the kit and in your code, is `@ui-sdk/core/…` and `@ui-sdk/react/…`.
 
-With the npm package, `@brett_lamy/ui` depends on the two aliases. List them in your app too, at the version it pins, so your own `@ui-sdk/react` imports share the kit's copy (with React 19):
+With the npm package, `@brett_lamy/ui` depends on the two aliases. List them in your app too, at the version it pins, so your own `@ui-sdk/react` imports share the kit's copy (and update `react` and `react-dom` to 19 first):
 
-{% command %}npm install @brett_lamy/ui@6 @ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1 @ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1 react@19 react-dom@19{% endcommand %}
+{% command %}npm install @brett_lamy/ui @ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1 @ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1{% endcommand %}
+
+Then import `@brett_lamy/ui/styles.css` once, and `@brett_lamy/ui/docstream/styles.css` too if you render Markdown ([Installation](https://blamy.github.io/ui/#/installation) says which components need it); no JavaScript module of the package imports CSS.
 
 With the registry, the copied source imports `@ui-sdk/core` and `@ui-sdk/react`, so your app needs the same two aliased dependencies. Add them before the first `shadcn add`:
 
@@ -64,7 +66,7 @@ Pin both to the same version: `@ui-sdk/react` depends on `@ui-sdk/core`, and the
 
 ## Docstream is part of the library
 
-Docstream (the GitBook-flavored Markdown and AI-stream renderer, with its docs sites, demos, replays, 3D models and Strudel player) and the Docstream editor (the Tiptap editor for the same Markdown) were two packages of their own, `@brett_lamy/docstream` and `@brett_lamy/docstream-editor`, which BL UI depended on. In 6.0 they are part of `@brett_lamy/ui`, built, tested and published with it: every entry they had is the same module under the library's name, and their components, props and Markdown are 2.0.1's. The two npm packages stop at 2.0.1, the version 6.0 was built with; nothing is published under those names again, and docstream's version is the library's from here on.
+Docstream (the GitBook-flavored Markdown and AI-stream renderer, with its docs sites, demos, replays, 3D models and Strudel player) and the Docstream editor (the Tiptap editor for the same Markdown) were two packages of their own, `@brett_lamy/docstream` and `@brett_lamy/docstream-editor`, which BL UI depended on. In 6.0 they are part of `@brett_lamy/ui`, built, tested and published with it: every entry they had is the same module under the library's name, their components and Markdown are 2.0.1's, and their props take the kit's spellings (the second table below). The two npm packages stop at 2.0.1, the version 6.0 was built with; nothing is published under those names again, and docstream's version is the library's from here on.
 
 | 5.x (docstream 2.0.1) | 6.0 |
 | --- | --- |
@@ -86,14 +88,15 @@ Docstream's props follow the kit's spellings now (the "One spelling per concept"
 | docstream 2.0.1 | 6.0 |
 | --- | --- |
 | `GitbookStreamdown`, `MarkdownContent`, `DocsRenderer`, `DocsSite` `isStreaming`; `GitbookStreamdown` `isAnimating` | `streaming`; `animating` |
-| `TuiPreview` `isStreaming`, `onStatusChange`; `theme={{ mode }}`; `TuiEmbed` | `streaming`, `onStateChange`; `appearance` (`theme` is `{ background, foreground }` only); `TuiPreview`. The root also takes `ref` and the `<section>`'s props |
+| `TuiPreview` `isStreaming`, `onStatusChange`; `theme={{ mode }}`; `TuiEmbed` | `streaming`, `onStateChange`; `appearance` (`auto` by default: the terminal follows the page or its ThemeScope, so **on a light page it is light now**: pass `appearance="dark"` for the black terminal; `theme` is `{ background, foreground }` only); `TuiPreview`. The root also takes `ref` and the `<section>`'s props |
 | `ReplayPreview` `playerRef`; `disableDevtools`; `active={false}`; `lazy`; `onMarkerPress(marker)`; `ReplayEmbed` | `ref` (the handle); `devtools={false}`; `mounted={false}`; `mounted` (`'visible'` by default, `true` at once); `onMarkerAction(marker, details)`; `ReplayPreview`. The root also takes its `<div>`'s props |
+| `requestName` from `/replay` | `@brett_lamy/ui/lib/request-table-model`, the same function RequestTable uses |
 | `ReplayPreview` and `ReplayStage` `autoplay` | `autoPlay`, React's spelling (as on `<video>`). The `{% embed … autoplay="true" %}` attribute in Markdown is unchanged |
 | `StlViewer` `color` | `tint` |
 | `DocsSite` `theme` / `defaultTheme` (`'system'`) / `onThemeChange` / `themeToggle` / `themeStorageKey` / `applyThemeTo`; `accentColor`; type `DocsSiteTheme` | `appearance` / `defaultAppearance` (`'auto'`) / `onAppearanceChange` / `appearanceToggle` / `appearanceStorageKey` / `applyAppearanceTo`; `tint`; `DocsSiteAppearance` |
-| `StrudelPlayer` `showCode`, `showRack`; `onCodeChange(code, { reason, event?, rack? })` | `defaultCodeOpen`, `defaultRackOpen`; `onCodeChange(code, details)` with UI SDK's `ChangeDetails` (`cancel()` keeps the code) and `details.rack` |
+| `StrudelPlayer` `showCode`, `showRack`; `onCodeChange(code, { reason, event?, rack? })` | `defaultCodeOpen` (or `codeOpen` / `onCodeOpenChange`), `defaultRackOpen` (or `rackOpen` / `onRackOpenChange`); `onCodeChange(code, details)` with UI SDK's `ChangeDetails` (`cancel()` keeps the code) and `details.rack` |
 | `StrudelRack` `code`, `onChange`, `layout`; `Knob` / `Fader` `onChange`, `size="md"` | `value`, `onValueChange`, `defaultVariant`; `onValueChange`, `size="default"` |
-| `StrudelRack`, `RackGrid`, `StepGrid`, `Knob`, `Fader`, `STRUDEL_PARAMS`, `trackName` and the syntax tree (`parseStrudel`, `parseMini`, …) from `/strudel` | from `/strudel/rack`, the entry that brings the parser (acorn); `/strudel` keeps the player and the runtime |
+| `StrudelRack`, `RackGrid`, `StepGrid`, `Knob`, `Fader`, `STRUDEL_PARAMS`, `trackName`, their types (`ControlValueChangeDetails`, `ControlValueChangeReason`, `Range`, …) and the syntax tree (`parseStrudel`, `parseMini`, …) from `/strudel` | from `/strudel/rack`, the entry that brings the parser (acorn); `/strudel` keeps the player and the runtime |
 | `GitbookEditor` `onChange(markdown)`, `autofocus`; `ReactDemoEditor` `onChange(files)` | `onValueChange(markdown, details)`, `autoFocus`; `onValueChange(files, details)`: UI SDK's `ChangeDetails` (reason `input-change`, the DOM `event` behind the edit, `cancel()` puts it back), as MarkdownEditor's `onValueChange` |
 | `TaskCheckbox` `onChange(state)`; `DocumentProperties` `onChange(properties)` | `onValueChange(state, details)` (reason `press` or `item-press`); `onValueChange(properties, details)` (reason `property-change`, `property-add`, `property-remove` or `yaml-change`) |
 | `ReplayPreview` and `ReplayStage` `initialTime`; `ReplayStage` `showMouse`; `DocsSite` `initialPath` | `defaultTime`; `cursor`, as the player's; `defaultPath` |
@@ -400,10 +403,10 @@ Where two components did one job, 6.0 keeps one and folds the other into it as a
 | ProgressRing / CountdownRing `size="md"` | `size="default"` (`ProgressRingSize`) | `showValue` needs 40px (`lg`) or more |
 | CountdownRing `warnAt`, `warnColor`, `data-warning`, `--ring-warn`; `labelSize`, `CountdownRingLabelSize` | `urgentAt`, `urgentTint`, `data-urgent`, `--ring-urgent`; removed (the value sizes with the ring) | |
 | ProgressRing `color`, `trackColor`; CountdownRing `color`, `urgentColor`, `trackColor`, `showLabel`; `countdownRingLabelVariants` | `tint`, `trackTint`; `tint`, `urgentTint`, `trackTint`, `showValue`; `countdownRingValueVariants` | caller colors are `tint` kit-wide, as on Avatar |
-| ProgressStepper data type `ProgressStep`; states `done`, `active`, `todo`; `--ck-stepper-accent`, `--ck-stepper-idle` | `ProgressStepperStep` (the part is `ProgressStepperItem`); `complete`, `current`, `upcoming`; `--stepper-accent`, `--stepper-track` | new parts `ProgressStepperItem`, `ProgressStepperItemIcon`, `ProgressStepperItemTrack`, `ProgressStepperItemLabel`, `ProgressStepperItemDescription` |
+| ProgressStepper data type `ProgressStep`; `ProgressStepState` `done`, `active`, `todo`; `--ck-stepper-accent`, `--ck-stepper-idle` | `ProgressStepperStep` (the part is `ProgressStepperItem`); `ProgressStepperItemState` `complete`, `current`, `upcoming`; `--stepper-accent`, `--stepper-track` | new parts `ProgressStepperItem`, `ProgressStepperItemIcon`, `ProgressStepperItemTrack`, `ProgressStepperItemLabel`, `ProgressStepperItemDescription` |
 | NumberMorph `locales`; Morph `id` | `locale`; `layoutId` (`id` is the DOM id again) | |
 | `qr-svg`: `QRSvg`, `QRSvgProps` | `@/components/ui/qr-code`: `QRCode`, `QRCodeProps` | **care**. `value` is required |
-| QRSvg `title`, `color`; `lib/qr` type `QRCode` | `aria-label`, a `text-*` class (the modules are `currentColor`); `QRMatrix` | encode errors go to `onError` |
+| QRSvg `title`, `color`; `lib/qr` type `QRCode` | `aria-label`, a `text-*` class (the modules are `currentColor`); `QRMatrix` (from `@brett_lamy/ui/lib/qr`) | encode errors go to `onError` |
 | QRSvg / QRCode `rounded`, `rounded={false}` | `shape="rounded"` (the default), `shape="square"` | a boolean that picked a look is a variant |
 | Avatar `c={{ f, l }}`, `color` | `name="F L"`, `tint` | |
 | `AvatarGroup`, `avatarGroupVariants`, `AvatarGroupProps` from `avatar` | the same from `@/components/ui/avatar-group` | **care**. `menu` defaults to `false`; `onSelect(index)` → `onAction(value, details)`; `label` → `aria-label` |
@@ -421,7 +424,7 @@ Where two components did one job, 6.0 keeps one and folds the other into it as a
 | ListRow `onDelete` | `endActions={[{ label: 'Delete', destructive: true, onAction }]}` | **care** |
 | ListRow `leadingActions`, `trailingActions`; `fullSwipe: 'leading' \| 'trailing'`; `createListRowController().show('leading' \| 'trailing')` | `startActions`, `endActions`; `fullSwipe: 'start' \| 'end'`; `show('start' \| 'end')` | Logical sides: in right-to-left text the start actions are on the right |
 | TreeNode `detail`, `detailTitle` (Tree `items`, `schemaTreeItems`) | `trailing` (any node), `description` (its words: tooltip and `aria-description`; default `trailing` when it's a string) | Row anatomy |
-| ObjectTree `ValueTint` (type) | `ValueTokenType` | It names a syntax token class, not a color |
+| ObjectTree `ValueTint` (type) | `ValueTokenType` (from `@brett_lamy/ui/lib/object-tree-value`) | It names a syntax token class, not a color |
 | `LogRowContent`, `LogRowContentProps` | `LogListRowContent`, `LogListRowContentProps` | Parts carry their root's prefix |
 | LogList `onRowCopy(row, text)` | `onRowCopy(text, row)` | Text first, as ObjectTree's and ObjectValue's `onValueCopy` |
 | TraceTimeline `label`; `top`, `bottom`, `railWidth`; `renderPreview`, `previewLines`, `previewWidth` | `aria-label`; classes on the rail (`className="inset-y-2 w-14"`); `<TraceTimelinePreview lines width>{(time) => …}</TraceTimelinePreview>` (a part that draws the card where it sits) | **care** |
@@ -494,10 +497,7 @@ Where two components did one job, 6.0 keeps one and folds the other into it as a
 | `FbMd`, `HlPre`, `hlTokens`, `DocstreamRefContext`, `DocstreamRefContextValue` (in `markdown-view`) | removed | |
 | `replay-preview`: `formatReplayTime`, `ReplayStage`, `preloadReplayStage`, `getReplayMarkers`, `getReplayMeta`, `getReplayPointerTrack`, `replayPointerAt`, `getReplayDevtools`, `replayDevtoolsAt`, `getReplayInspections`, `resolveReplayInspections`, `replayInspectionAt`, `replayDemoEvents` and their types | `@brett_lamy/ui/docstream/replay` (`replayDemoEvents` from `@brett_lamy/ui/docstream/replay/demo`) | the kit keeps `ReplayPreview` and the props, handle and data types |
 | `tui-preview`: `TuiEmbed`, `DEFAULT_TUI_RUNTIME_URL`, `isTuiCodeBlock` | `TuiPreview`; `DEFAULT_TUI_RUNTIME_URL` and `isTuiCodeBlock` from `@brett_lamy/ui/docstream/tui` | the kit keeps `TuiPreview` |
-| `TuiPreview` `isStreaming`, `onStatusChange`, `theme={{ mode: 'light', … }}` for a light terminal | `streaming`, `onStateChange`, `appearance` (`auto` by default: the terminal follows the page or ThemeScope; `theme` is `{ background, foreground }`) | **The default look changes on light pages**: pass `appearance="dark"` for the black terminal |
-| `StrudelPlayer` `showCode`, `showRack`; `onCodeChange(code)`; `StrudelRack` `code` / `onChange` / `layout`; `Knob` / `Fader` `onChange`, `size="md"` | `defaultCodeOpen` / `codeOpen` / `onCodeOpenChange`, `defaultRackOpen` / `rackOpen` / `onRackOpenChange`; `onCodeChange(code, details)` (UI SDK's `ChangeDetails`); `value` / `onValueChange(code, details)` / `defaultVariant`; `onValueChange(value, details)`, `size="default"` | |
-| `ReplayPreview` `playerRef`, `disableDevtools`, `active`, `lazy`, `onMarkerPress` | `ref`, `devtools={false}`, `mounted` (`false`, `true` or `'visible'`), `onMarkerAction(marker, details)` | |
-| `StlViewer` `color` | `tint` | |
+| the props of `TuiPreview`, `ReplayPreview`, `ReplayStage`, `StlViewer`, `StrudelPlayer`, `StrudelRack`, `Knob` and `Fader` (`isStreaming`, `playerRef`, `color`, `showCode`…) | the [docstream table](#docstream-is-part-of-the-library) above: the kit's modules re-export those components, so their props changed there | **care** for TuiPreview: on a light page its terminal is light now |
 | `strudel-rack`: `StrudelRack`, `RackGrid`, `StepGrid`, `Knob`, `Fader`, `STRUDEL_PARAMS`, `trackName` (+ types) | `@brett_lamy/ui/docstream/strudel/rack` | one page, [StrudelPlayer](https://blamy.github.io/ui/#/strudel-player) |
 | `strudel-syntax`: `parseStrudel`, `parseMini`, `miniAtoms`, `miniLayers`, `chainCalls`, `findCall`, `applyEdits`, `formatNumber`, `setArg`, `setMethod`, `removeMethod`, `setTempo`, `setMiniAtom`, `setMiniSource`, `mixCode`, `isAudible`, `StrudelSyntaxError`, `MiniSyntaxError`, `CodeEdit`, the `Strudel*` and `Mini*` syntax types | `@brett_lamy/ui/docstream/strudel/rack` | `StrudelTrackKind` is docstream's `TrackKind` |
 | `strudel-player`: `DEFAULT_SAMPLES`, `strudelNow`, `StrudelPattern`, `StrudelHap` | `@brett_lamy/ui/docstream/strudel` | the kit keeps `StrudelPlayer`, `playStrudel`, `stopStrudel`, `updateStrudel`, `subscribeStrudel`, `getStrudelSnapshot` |
@@ -524,13 +524,13 @@ Where two components did one job, 6.0 keeps one and folds the other into it as a
 | ComposerBump `bounds`, `boundsInset`, `minimizable`, `minimized`, `onMinimizedChange`, `onProgressChange`; `ComposerBumpMinimizedChangeDetails`, `ComposerBumpMinimizedChangeReason` | removed | the fold-into-a-FAB engine of the old floating chat; a chat that floats, peeks and folds is ArtifactChatContainer on FloatingSheet. `maxReveal` is a number |
 | ComposerAdd, ComposerSend, ComposerStop `size`, `variant` | removed (ComposerStop keeps `variant: 'ring' \| 'solid'`) | |
 | `AnnotateLightbox`, `AnnotateLightboxProps` | `ImageAnnotator`, `ImageAnnotatorProps` (PencilKit) | its `annotator` prop is `engine` |
-| `ComposerAnnotatorProvider` (`annotator`); `ComposerAnnotator`, `ComposerAnnotatorProps`, `ComposerAnnotatorSurface`; `useComposerAnnotator` | `ImageAnnotatorProvider` (`engine`); `ImageAnnotatorEngine`, `ImageAnnotatorEngineProps`, `ImageAnnotatorSurface`; `useImageAnnotatorEngine` from `@/components/ui/pencilkit/image-annotator` | `Composer annotator` takes an `ImageAnnotatorEngine` or `null` |
+| `ComposerAnnotatorProvider` (`annotator`); `ComposerAnnotator`, `ComposerAnnotatorProps`, `ComposerAnnotatorSurface`; `useComposerAnnotator` | `ImageAnnotatorProvider` (`engine`); `ImageAnnotatorEngine`, `ImageAnnotatorEngineProps`, `ImageAnnotatorSurface` from `@/components/ui/pencilkit` (`@brett_lamy/ui/pencilkit`); the hook is internal | `Composer annotator` takes an `ImageAnnotatorEngine` or `null` |
 | Composer `annotateCanvas`, `fabPosition`; ComposerBump `inset` | an engine (`annotator={MyEngine}`); `fabAlign`; `gutter` | `data-fab-position` → `data-fab-align` |
 | `ComposerOutlet`, `ComposerFab`, `composerFabVariants`, `ComposerBumpProgress`; `useComposerBump()` `startDrag`, `toggle`, `windowRef`, `handleProps` | not public | style `ComposerBumpHandle` for a handle of your own |
 | MessageScroller `items: { id, anchor, node }[]`, type `MessageScrollerItem` | `<MessageScrollerItem value anchor>` children (a component), `MessageScrollerItemProps` | **care** |
 | `ConversationGreeting`, `ConversationGreetingProps` | `<ConversationEmpty title description icon action headingLevel>` (it renders `EmptyState`) | |
 | UserMessage `images: string[]`; ToolCall `detail` | `attachments: ComposerAttachment[]`; `description` | |
-| `Suggestion`, `UserMessage`, `AssistantMessage`, `MessageMarkdown`, `WorkLog`, `ToolCall` (and their `…Props`); `MessageProps` | `ConversationSuggestion`, `ConversationUserMessage`, `ConversationAssistantMessage`, `ConversationMarkdown`, `ConversationWorkLog`, `ConversationToolCall` (`Conversation…Props`); `ConversationAssistantMessageProps` | every part carries its root's prefix; data-slots are unchanged |
+| `Suggestion`, `UserMessage`, `AssistantMessage`, `MessageMarkdown`, `WorkLog`, `ToolCall`; `UserMessageProps`, `WorkLogProps`, `ToolCallProps` (and the others' `…Props`); `MessageProps` | `ConversationSuggestion`, `ConversationUserMessage`, `ConversationAssistantMessage`, `ConversationMarkdown`, `ConversationWorkLog`, `ConversationToolCall`; `ConversationUserMessageProps`, `ConversationWorkLogProps`, `ConversationToolCallProps` (`Conversation…Props`); `ConversationAssistantMessageProps` | every part carries its root's prefix, and so does its slot (next rows) |
 | `SettledBanner`, `SettledBannerProps` | removed (it lives in the `t3-clone` block) | ConversationSuggestion is the kit's `Button variant="outline" size="sm"` (`ConversationSuggestionProps` are Button's) |
 | `floating-chat`: `FloatingChat`, `useFloatingChat`, `FloatingChatProps`, `FloatingChatContextValue`, `FloatingChatFabPosition`, `floatingChatVariants`, `glassScopeProps` | `<ArtifactChatContainer presentation="floating">`, or a `FloatingSheet` | **care** |
 | `chat-column`: `ChatColumn`, `ChatColumnTranscript`, `ChatColumnComposer`, `ChatColumnProps` | `ArtifactChatContainer`'s docked layout, or `Conversation` for a column of your own | |
@@ -563,7 +563,8 @@ Where two components did one job, 6.0 keeps one and folds the other into it as a
 | `ArtifactChatComposingChangeDetails`, `ArtifactChatComposingChangeReason`, `ArtifactChatPresentation`, `ArtifactChatSide`; `onMinimizedChange` typed with `FloatingSheetMinimizedChangeDetails` | `ArtifactChatContainerComposingChangeDetails`, `ArtifactChatContainerComposingChangeReason`, `ArtifactChatContainerPresentation`, `ArtifactChatContainerSide`; `ArtifactChatContainerMinimizedChangeDetails` | every type carries the root's prefix; `useArtifactChatContainer().setOpen / setComposing / setMinimized` return `false` when the change was canceled |
 | Conversation slots `user-message`, `assistant-message`, `typing-indicator`, `work-log`, `tool-call` | `conversation-user-message`, `conversation-assistant-message`, `conversation-typing`, `conversation-work-log`, `conversation-tool-call` | a part's slot is its name; a work log's steps are a list (`ul` / `li`) |
 | SidebarProvider `breakpoint={560}` (one number, default 560) | `breakpoints={{ medium: 560 }}` (default `{ medium: 640, regular: 1024 }`) | the same spelling and default as SplitView's `breakpoints`; a provider that relied on 560 passes it |
-| ArtifactChatContainer `breakpoint={760}` (one number, default 760; 6.0 previews) | `breakpoints={{ medium: 760 }}` (`SizeClassBreakpoints`, default `{ medium: 640, regular: 1024 }`) | the same spelling and default as every size-class scope; a container that relied on 760 passes it |
+| ArtifactChatContainer `breakpoint={760}` (one number, default 760) | `breakpoints={{ medium: 760 }}` (`SizeClassBreakpoints`, default `{ medium: 760, regular: 1024 }`) | the same spelling as every size-class scope; the default keeps 760 (not 640) so the artifact beside the 400px docked chat is never narrower than a phone, and a container that relied on 760 needs no change |
+| discord-clone `ChatShell breakpoint={880}` (one number, default 880) | `breakpoints={{ medium: 880 }}` (`SizeClassBreakpoints`, default `{ medium: 880, regular: 1024 }`) | the same spelling as every size-class scope; the shell keeps its wider default so the navigation docks only beside a usable conversation |
 | VideoPreview's `PreviewMedia` (`{ url, kind }`), VideoTimeline's `TimelineMediaInfo` (`{ duration, kind, name? }`) | one `VideoTimelineMedia` (`{ kind, url?, duration?, name? }`), exported with VideoTimeline and `lib/video-timeline-model` | build one map for both |
 | `PlaybackControls`, `PlaybackTimecode` (+ props), slot `playback-timecode` | `VideoPreviewControls`, `VideoPreviewTimecode`, slot `video-preview-timecode` | the controls are a kit `Toolbar` |
 | `rulerSteps`; Waveform `tone="primary"` | private; `className="text-primary"` (tones `default`, `muted`, `success`, `warning`, `destructive`) | |
@@ -575,7 +576,7 @@ Where two components did one job, 6.0 keeps one and folds the other into it as a
 | `defineSlot`, `collectSlots`, `SlotComponent`, `SlotProps` (`lib/container`) | removed | nothing used marker slots once the dotted statics became flat parts |
 | `useMountPresentationKey`, `isLightSurface`, `flipSnapshot`, `flipPlay`, `FlipSnapshot` from `@brett_lamy/ui` | internal: `@/lib/container`; `isLightSurface` is private to `@/lib/trigger-palette`; `flipSnapshot`, `flipPlay`, `FlipSnapshot` from `@brett_lamy/ui/lib/motion` | plumbing of the popups and the motion helpers |
 | from `@brett_lamy/ui`: `rotatePt`, `centerOf`, `HANDLE_DIR`, `ALL_HANDLES`, `EDGE_HANDLES`; `StreamFullError`, `pack`, `unpack`; `FONT_CATEGORIES`, `googleFontsUrl`; `sqlSpans`, `splitStatements`, `positionToLineColumn`, `SqlSpan`, `SqlSpanType`, `SqlStatement`; `formatCell`, `toCsv`, `toJson`, `pgTypeName`, `formatDuration`, `pluralRows`, `PG_TYPE`, `FormattedCell`, `CellKind`, `TabularResult` | `@brett_lamy/ui/lib/canvas-math` (the canvas helpers), `@brett_lamy/ui/lib/append-stream`, `@brett_lamy/ui/lib/google-fonts`; registry only: `@/lib/sql-lex`, `@/lib/sql-format` | the session recorder's store, FontPicker's catalog, the SQL console's internals |
-| from `@brett_lamy/ui`: `treeFromPaths`, `visibleTreeRows`; `useFileUploadContext`; `workspaceTabsets`; `timelineZoomRange` | `@brett_lamy/ui/tree`, `/file-upload`, `/workspace`, `/video-timeline` | the module's own entry |
+| from `@brett_lamy/ui`: `treeFromPaths`, `visibleTreeRows`; `useFileUploadContext`; `workspaceTabsets`; `timelineZoomRange` | `@brett_lamy/ui/tree`, `/file-upload`, `/workspace`; `videoTimelineZoomRange` from `/video-timeline` | the module's own entry |
 | from `@brett_lamy/ui`: the engine helpers no page documents: `parseDataDir`, `readServerInfo`, `runtimePostgresMajor`, `identifier`, `quoteIdent`, `quoteLiteral` (pglite-core), `detectImportFormat`, `readArchiveVersion`, `dumpVersion` (pglite-transfer), `detectPersistenceSupport` (pglite-storage), `inferColumnType`, `sortTextPermutation`, `histogramCpu`, `binScale`, `GPU_MIN_ROWS`, `MAX_BINS` (spreadsheet-model), `csvField`, `detectDelimiter` (csv), `DATE_PRESETS`, `FILTER_OPERATORS`, `RELATIVE_UNITS`, `createFilterId`, `emptyValue`, `isDateValue`, `isFilterComplete` (filter-model), `createTailscaleFetch`, `toTailscaleRequest`, `toResponse`, `isSafeLoginUrl` (tailscale), `encodeTailscalePolicy`, `decodeTailscalePolicy`, `describeTailscalePolicy`, `isTailnetHost`, `isTailnetAddress` (tailscale-policy), `tailscaleServiceWorkerUrl`, `tailscaleRouterUnsupportedReason` (tailscale-router/bridge), `parseRate` (ffmpeg), `wavPeaks` (ffmpeg/media), `probeMedia`, `mediaFrames`, `mediaPeaks` (ffmpeg/react), `trackDuration`, `findClip`, `timelineId`, `magneticIndex`, `timelineLooks`, `lookCss`, `lookFfmpeg` (video-timeline-model), `renderMime` (video-render), `createLineState`, `eraseLine`, `wordAtCursor`, `formatColumns`, `cellWidth`, `textWidth`, `stripAnsi`, `advance`, `toTerminalNewlines`, `trimTranscript`, `MAX_HISTORY`, `LineState`, `LineEvent`, `LineStep`, `RenderedLine`, `CellPosition`, `CompletionStep` (terminal-line), `fileBaseName`, `fullLocation`, `shortLocation` (call-stack-model), `requestDisplayName`, `requestTone` (request-table-model), `TRACE_SCRUB_SPEEDS` (trace-timeline-model), `childrenOfValue` (object-tree-model) | `@brett_lamy/ui/lib/<module>` (the registry's `@/lib/<module>`) | the root keeps the components, their parts, cvas, controllers and the kit's own hooks; every engine module is on its own entry (next rows) |
 | `DEFAULT_OPENCODE_PREVIEW_URL`, `DEFAULT_OPENCODE_RUNTIME_URL`, `loadOpenCodeRuntime`, `createVaultOpenCodeCredentialStore`, `createVaultOpenCodeConnectionStore`, `OPENCODE_CREDENTIAL_SLOT`, `OPENCODE_CONNECTION_SLOT` from `@brett_lamy/ui` | `@brett_lamy/ui/opencode` | the OpenCode entry |
 | `BLProvider dark` (`dark`, `dark={false}`) | `appearance: 'auto' \| 'light' \| 'dark'` (`appearance="dark"`, `appearance="light"`); `'auto'`, the default, follows the ambient appearance | mechanical. `ThemeScope` and `OpenCode` take `'auto'` too; the type is `AppearancePreference` (`Appearance` is the resolved `'light' \| 'dark'`) |
@@ -588,13 +589,13 @@ Where two components did one job, 6.0 keeps one and folds the other into it as a
 | TailscaleSummary `detail` | `description` | mechanical |
 | `useQuery`, `useLiveQuery`, `useSchema` result `isLoading` | `loading` | mechanical |
 | `ValueToken.tint` (`previewTokens`) | `ValueToken.type`, as `CodeToken.type` | mechanical |
-| ProgressStepper parts `ProgressStep`, `ProgressStepIcon`, `ProgressStepTrack`, `ProgressStepLabel`, `ProgressStepDescription`, `ProgressStepProps`, `ProgressStepState`; data type `ProgressStepItem`; slots `progress-step*` (6.0 previews) | `ProgressStepperItem`, `ProgressStepperItemIcon`, `ProgressStepperItemTrack`, `ProgressStepperItemLabel`, `ProgressStepperItemDescription`, `ProgressStepperItemProps`, `ProgressStepperItemState`; `ProgressStepperStep`; `progress-stepper-item*` | mechanical |
+| ProgressStepper parts `ProgressStep`, `ProgressStepIcon`, `ProgressStepTrack`, `ProgressStepLabel`, `ProgressStepDescription`, `ProgressStepProps`, and `ProgressStepState` as their state; data type `ProgressStepItem`; slots `progress-step*` (6.0 previews, but `ProgressStepState`: see the row above) | `ProgressStepperItem`, `ProgressStepperItemIcon`, `ProgressStepperItemTrack`, `ProgressStepperItemLabel`, `ProgressStepperItemDescription`, `ProgressStepperItemProps`, `ProgressStepperItemState`; `ProgressStepperStep`; `progress-stepper-item*` | mechanical |
 | `unsupportedMessage` (vault-gate) | `vaultUnsupportedMessage` | mechanical |
 | `direction`, `fades` (`lib/motion`) | `motionDirection`, `motionFades` | mechanical |
-| `deviceId` (`lib/durable-streams`) | `cloudDeviceId` | mechanical |
+| `deviceId` (`lib/durable-streams`) | `cloudDeviceId`, on `@brett_lamy/ui/lib/durable-streams` | mechanical |
 | `createStack`, `Stack`, `StackExit`, `StackOptions`, `StackReason`, `StackChangeOptions` (`lib/stack`, 6.0 previews) | `createPageStack`, `PageStack`, `PageStackExit`, `PageStackOptions`, `PageStackReason`, `PageStackChangeOptions` | mechanical: a root name says what it is without its module |
 | `PageStackOptions.active` (`createPageStack`, 6.0 previews) | `when` | mechanical: the fork's name for the same idea on `bindLayer` |
-| `TimelineMedia`, `TimelineDrop`, `TimelineDropDetails`, `timelineMediaType`, `fitTimelineZoom`, `timelineZoomRange` (video-timeline, 6.0 previews) | `VideoTimelineMedia`, `VideoTimelineDrop`, `VideoTimelineDropDetails`, `videoTimelineMediaType`, `fitVideoTimelineZoom`, `videoTimelineZoomRange` | mechanical: the kit has two timelines (TraceTimeline's names are `Trace…`) |
+| `TimelineDrop`, `timelineMediaType`, `fitTimelineZoom`, `timelineZoomRange` (video-timeline); `TimelineMedia`, `TimelineDropDetails` (6.0 previews); `TrackKind` (`lib/video-timeline-model`) | `VideoTimelineMedia`, `VideoTimelineDrop`, `VideoTimelineDropDetails`, `videoTimelineMediaType`, `fitVideoTimelineZoom`, `videoTimelineZoomRange` (on `@brett_lamy/ui/video-timeline`); `TimelineTrackKind` (on `@brett_lamy/ui/lib/video-timeline-model`) | mechanical: the kit has two timelines (TraceTimeline's names are `Trace…`) |
 | FileUpload / `useFileUpload` / `useFileUploadContext()` `busy`; the root's `data-busy` (6.0 previews) | `pending`; `data-pending` | mechanical: an action in flight is `pending` |
 | `SizeClass`, `SizeClassBreakpoints` from `@/lib/container` | from `@/lib/size-class` (`@brett_lamy/ui/lib/size-class`), or the root | one import path per name |
 | `@brett_lamy/ui/lib/icon-shapes/chat`, `/docs`, `/pencilkit`, `/workbench` (`CHAT_SHAPES`…); `@brett_lamy/ui/lib/spreadsheet-gpu`; `@brett_lamy/ui/lib/trace-timeline-draw` (6.0 previews) | no entry: draw the shapes with `<Icon name>`; Spreadsheet and TraceTimeline use the other two themselves | implementation files, now `@internal` |
@@ -602,6 +603,7 @@ Where two components did one job, 6.0 keeps one and folds the other into it as a
 | map-chat block: `MapPin.color`, `MapRoute.color`; `MapPin.badge` | `tint`; `icon`, which takes a map icon's name or your own content (a stop's number) | |
 | replay-debugger block: `DebuggerToolbar` / `DevToolsControl` `compact` | `sizeClass`; left out, the nearest size-class scope (ReplayDebugger is one) | |
 | macos block: `Tile tone` (a name or two gradient stops), `dark`; `DesktopApp.tile`, `darkGlyph` | `variant` (a named tile) or `tint` (your two stops); `foreground="dark"`; `DesktopApp.tint`, `foreground` | |
+| The blocks' starting-value props `initial…`: apple-settings `initialPath`; github-clone `initialTab`, `initialPullRequest`, `initialPullRequestTab`, `initialPath`; loop-qa `initialProject`, `initialTab`, `initialPage`; apple-mail `initialMailbox`, `initialMessage`, `initialDraft`; apple-music `initialSection`, `initialAlbum`; apple-notes `initialFolder`, `initialNote`, `initialView`; apple-passwords `initialCategory`, `initialItem`, `initialSignIn`; apple-reminders `initialList`; codex-clone `initialChat`; freeform `initialBoard`; interface-builder `initialSelection`, `initialRunning`; macos `initialApps`, `initialPages`, `initialQuery`, `initialMenu`, `initialDock`; saas-checkout `initialStep`; safari `initialUrls`; strudel-studio `initialSong`; vscode `initialFile`, `initialView`; worktree-atlas `initialWorktree`, `initialView`; split-view-demos `SplitViewLibraryDemo initialAlbum` | `default…` with the same suffix (`defaultPath`, `defaultTab`, `defaultPullRequest`, `defaultPullRequestTab`, …) | an uncontrolled starting value is `default…` everywhere, as `defaultOpen` and `defaultValue`. map-chat's `initialPrompt` stays: it sends a message on mount, it is not a starting value |
 | discord-clone `useChatShell().compact`; t3-clone `useWorkbenchShell().compact` | `.sizeClass === 'compact'` | the shells' context carries the size class only |
 | `alphabetItems` (index-bar, 6.0 previews); `LogRowState` (log-list); `REQUEST_COLUMNS`, `RequestColumnId` (request-table) | `indexBarAlphabetItems`; `LogListRowState`; `REQUEST_TABLE_COLUMNS`, `RequestTableColumnId` | mechanical: the component's prefix |
 | `Countdown` (what `useCountdown` returns) | `UseCountdown` | mechanical |
@@ -2261,7 +2263,7 @@ The sheet is a bottom UI SDK Drawer in its own layer host, with snap points at t
 
 | 5.x | 6.0 |
 | --- | --- |
-| `useSidebar().narrow` | `.compact` (and `.sizeClass`) |
+| `useSidebar().narrow` | `.sizeClass === 'compact'` (the context carries the size class only, as the shells' do) |
 | `setOpen((o) => !o)` | `toggle()`, or `setOpen(!open)`: `setOpen` takes a boolean and returns whether it happened |
 | `onClick={toggle}` | `onClick={() => toggle()}` (`toggle` takes options, not an event) |
 | `SBCtx`, `SBCollapsedCtx` | removed; `useSidebarCollapsed()` |
@@ -2548,7 +2550,7 @@ Nothing here replaces something you have; each page says what it is for and when
 | [StateDiagram](https://blamy.github.io/ui/#/state-diagram): an XState machine drawn, simulated and edited (`xstate`, an optional peer) | `@brett_lamy/ui/state-diagram`, root |
 | [CloudflareDiagram](https://blamy.github.io/ui/#/cloudflare-diagram): a system of Cloudflare's services, from a catalog, `wrangler.jsonc` or a workerd config; and the [Cloudflare Studio](https://blamy.github.io/ui/#/blocks) block | `@brett_lamy/ui/cloudflare` only (not the root, so no other import reaches the catalog) |
 | [DataTable](https://blamy.github.io/ui/#/data-table): the virtualized table under RequestTable and the SQL console's results | `@brett_lamy/ui/data-table`, root |
-| [Toolbar](https://blamy.github.io/ui/#/toolbar): one tab stop for a row of controls, floating or as the iOS bottom bar | `@brett_lamy/ui/toolbar`, root |
+| [Toolbar](https://blamy.github.io/ui/#/toolbar): one tab stop for a row of controls, floating or as the iOS bottom bar; `ToolbarToggle` for a tool that stays on (MarkdownEditor's format buttons) | `@brett_lamy/ui/toolbar`, root |
 | [EmptyState](https://blamy.github.io/ui/#/empty-state): what every `emptyState` shows by default | `@brett_lamy/ui/empty-state`, root |
 | [Swap](https://blamy.github.io/ui/#/swap): content that changes in place, by sliding or popping | `@brett_lamy/ui/swap`, root |
 | [Field](https://blamy.github.io/ui/#/field), [Listbox](https://blamy.github.io/ui/#/listbox), [SearchInput](https://blamy.github.io/ui/#/search-input), [DateInput](https://blamy.github.io/ui/#/date-input), [NaturalTimeInput](https://blamy.github.io/ui/#/natural-time-input), [QRCode](https://blamy.github.io/ui/#/qr-code): the modules that replace TextField, ListBox, SearchField, DateField, TimeInput and QRSvg, with new APIs | their own entries, root |
@@ -2616,137 +2618,149 @@ Popups opened inside a `BLProvider` (or any layer host) stay inside it, as befor
 
 ## Diagrams from the preview
 
-Diagram, DiagramFrame, StateDiagram, CloudflareDiagram and docstream's capnp fence were never in a 5.x release or in docstream 2.0.1: a 5.x app starts from their pages. They were developed on an unpublished branch (its package said 5.17.0, but the 5.17.0 on npm doesn't have them), and an app built on that branch changes what follows.
+Diagram, DiagramFrame, StateDiagram, CloudflareDiagram and docstream's capnp fence were never in a 5.x release or in docstream 2.0.1: a 5.x app starts from their pages. They were developed on an unpublished branch (its package said 5.17.0, but the 5.17.0 on npm doesn't have them). This section is for an app built on that branch: first what a diagram is in 6.0, then every name the branch had and what you write now.
 
-### Diagram, DiagramFrame and StateDiagram
+### What a diagram is in 6.0
 
-| Before | After |
+A diagram is plain data drawn on a Canvas: nodes and edges, with nothing in them that knows statecharts or Cloudflare. It draws the way XState's visualizer does.
+
+- **A node is a card.** A header strip (`title`, an `icon`, a quiet `trailing` badge), a `description` under it, then `sections`: each a quiet caption (`title`) over its items (`{ title, description?, icon?, tone?, port? }`), drawn as chips (`variant: 'default'`), a row of chips that wraps (`'inline'`), plain rows (`'list'`) or rows in the mono face (`'code'`). `kind` says what it holds (`node`, `group`, `region`, `root`, `marker`), `variant` draws its border (`default`, `dashed`, `double`), `tone` an accent, and `entry: true` the marker of where things start.
+- **An edge's label is a card too.** A `title` alone is a pill on the route; with `sections` it is a small card of chips; an `icon` goes before the title. The edges past the first target of one transition share its label: `forkOf: '<first edge id>'`. `variant` (`default`, `dashed`, `dotted`, `strong`) and `tone` (`default`, `destructive`) draw the line.
+- **Ports are only for connecting.** A node's `ports` are dots to drag a new edge from; a read-only drawing needs none (CloudflareDiagram adds them only when `editable`), and its edges meet the cards.
+- **Pressing.** `onAction(item, details)` hears Enter, a double-click, and a press on what `pressable` names: `true` for every chip and label, or `{ nodes, edges }` for some, read-only too. `item.section` and `item.item` address a chip; `details.part` says whether a `label` or an `item` was pressed.
+- **Selection and history.** `selection` / `defaultSelection` / `onSelectionChange(selection, details)` work read-only too (`selectable={false}` makes a picture with no selection), and `current` marks where something is. An `editable` diagram keeps its own undo history, or drives yours, passed as `history` (`useDiagramHistory(value, onChange)`): ⌘Z, ⇧⌘Z, the `DiagramToolbar`, the controller and agents all go through it.
+- **Layout.** `useDiagramLayout` lays a draft out with ELK in a worker, top to bottom by default, at a `density` (`compact`, `default`, `comfortable`), and wraps a long run into columns to fill its `host`. The first view fits everything when that can be read (87.5% or more), else opens readable from the top-start corner, clear of the toolbar, the minimap and a frame's bar and drawer; after that, what has the eye (the selection, else `current`) is kept in view by the least pan.
+- **The compositions.** StateDiagram draws an XState machine that way (a state's actions, invokes and tags as sections, a transition's guard and actions as chips on its label, the machine's context on its own card), simulates it (the transitions it can take are pressable labels) and edits it. CloudflareDiagram draws a system (a service's Handlers, Bindings, Triggers, Settings and Machine as sections, a binding as a label card), and `cloudflareBoardProps(system)` gives a plain Diagram the same board. Both take `density`, and open with `minimap="auto"`.
+
+```tsx
+import { useRef } from 'react'
+import { Diagram, DiagramToolbar } from '@brett_lamy/ui/diagram'
+import type { DiagramDraft } from '@brett_lamy/ui/lib/diagram-layout'
+import { useDiagramLayout } from '@brett_lamy/ui/lib/diagram-layout/react'
+
+const draft: DiagramDraft = {
+  nodes: [
+    { id: 'idle', title: 'Idle', entry: true },
+    { id: 'loading', title: 'Loading', sections: [{ title: 'Invoke', items: [{ title: 'fetchUser', icon: 'play-circle' }] }] },
+    { id: 'done', title: 'Done', icon: 'stop', variant: 'double' },
+  ],
+  edges: [
+    { id: 'fetch', from: 'idle', to: 'loading', title: 'FETCH', sections: [{ items: [{ title: 'if online', icon: 'question-circle' }] }] },
+    { id: 'loaded', from: 'loading', to: 'done', title: 'loaded' },
+  ],
+}
+
+export function Fetching() {
+  const host = useRef<HTMLDivElement>(null)
+  const laid = useDiagramLayout(draft, { host, density: 'comfortable' })
+  return (
+    <div ref={host} className="h-[480px]">
+      <Diagram aria-label="Fetching" nodes={laid.nodes} edges={laid.edges} overlay={<DiagramToolbar />} pressable onAction={(item) => console.log(item)} />
+    </div>
+  )
+}
+```
+
+### Diagram and DiagramFrame
+
+| On the branch | 6.0 |
 | --- | --- |
-| Diagram `onChange({ nodes, edges, reason })` | `onDataChange(data, details)`: `data` is `{ nodes, edges }`, `details.reason` the same reasons, and `details.cancel()` refuses a change (not passing it back still works when controlled) |
-| type `DiagramChange` | `DiagramData`, `DiagramDataChangeDetails`, `DiagramDataChangeReason` |
-| `onSelectionChange(selection)` | `onSelectionChange(selection, details)` |
+| `onChange({ nodes, edges, reason })`, type `DiagramChange` | `onDataChange(data, details)`: `data` is `{ nodes, edges }` (`DiagramData`), `details.reason` the same reasons, and `details.cancel()` refuses a change (not passing it back still works when controlled); types `DiagramDataChangeDetails`, `DiagramDataChangeReason` |
+| `onSelectionChange(selection)`; `selectable` defaulting to `editable` | `onSelectionChange(selection, details)`; `selectable` defaults to `true`: a read-only diagram selects and reads |
 | `lit` | `current` (writes `aria-current` and `data-current`; the ring is `diagram-current`, was `diagram-lit`) |
-| `onActivate(item)` | `onAction(item, details)`, `details.reason` `enter-key` or `double-click` |
-| type `DiagramFocus`, `DiagramFocusContext`, `DiagramFocusStep` | `DiagramItem`, `DiagramStepContext`, `DiagramStep` |
-| `camera` / `defaultCamera` / `onCameraChange`, `{ x, y, z }` | `viewport` / `defaultViewport` / `onViewportChange(viewport, details)`, `{ x, y, zoom }` |
-| `cameraToShow` | `viewportToShow`, and `fitViewport` |
+| `onActivate(item)`; types `DiagramFocus`, `DiagramFocusContext`, `DiagramFocusStep` | `onAction(item, details)` (`DiagramActionDetails`: `reason` `enter-key`, `double-click` or `press`, and `part`); `DiagramItem`, with `section` and `item` for a chip; the stepping types are internal |
+| `camera` / `defaultCamera` / `onCameraChange`, `{ x, y, z }`; `cameraToShow` | `viewport` / `defaultViewport` / `onViewportChange(viewport, details)`, `{ x, y, zoom }`; to show something, `useDiagram().canvas` (`fit`, `reveal`) |
 | `cursor` | `className="cursor-…"` |
-| `minimap={{ position }}` | `minimap={{ side, align }}` |
+| `minimap={{ position }}` | `minimap={{ side, align }}`, or `'auto'`: only while much of the diagram is out of view, on a board of 720 × 600 px or more |
+| `fitPadding: number` | `number \| { top, right, bottom, left }`; the toolbar, the minimap and a frame's bar and drawer are kept clear on top of it |
 | The canvas named by `aria-label` | The diagram is a `group` named by `aria-label`; its board is "<name> board" |
-| — | `controller` (`createDiagramController`), `useDiagram`, `DiagramToolbar`, `emptyState`, `loading`, `error` |
-| The branch's `undoable` (off for data with a history of its own) | `history`: hand it the other history (`useDiagramHistory(value, onChange)`, or any `{ canUndo, canRedo, undo, redo }`), and ⌘Z, ⇧⌘Z, ⌘Y, `DiagramToolbar`, the controller and agents drive it; an `editable` diagram without one keeps its own |
-| `useDiagram()` → `{ diagram, canvas, canUndo, canRedo, undoable, zoom }` (`diagram` was the primitive's API, its internals included) | `{ diagram, canvas, history, zoom }`: `diagram` has only the controller's methods, `history` is the history in charge or null |
-| `selectable` default `editable` (a read-only diagram couldn't be selected in) | `selectable` default `true`: read-only means select and read; `selectable={false}` for a picture with no selection |
-| Node `kind`: `compound`, `parallel`, `final`, `initial` | `kind`: `node`, `group`, `region`, `root`, `marker`, and `variant` (`default`, `dashed`, `double`) for the border: a compound is a `group`, a parallel state a `group` with `variant: 'dashed'`, a final state a node with `variant: 'double'`, an initial marker a `marker` |
-| Edge `kind`: `event`, `done`, `invoke`, `always`, `after`, `initial`, `problem` | `variant` (`default`, `dashed`, `dotted`, `strong`) and `tone` (`default`, `destructive`): `always` is `dashed`, `after` `dotted`, `initial` `strong`, `problem` `tone: 'destructive'`; the edge's `data-kind` is `data-variant` / `data-tone` |
-| `diagramNodeVariants({ kind })`, `diagramEdgeVariants({ kind })` | `diagramNodeVariants({ kind, variant })`, `diagramEdgeVariants({ variant, tone })` |
-| `DiagramSide` `'t' \| 'r' \| 'b' \| 'l'` (a port's `side`, `anchorPoint`, `facingSides`…) | `'top' \| 'right' \| 'bottom' \| 'left'` (physical: a board doesn't mirror); `INITIAL_SIZE` is `MARKER_SIZE` |
-| type `DiagramModel` | `DiagramData` (the same `{ nodes, edges }`) |
-| `fitPadding: number` | `number \| { top, right, bottom, left }`; the toolbar, minimap and a DiagramFrameBar are added to it, and `DiagramToolbar` defaults to `top` in a DiagramFrame |
-| `direction: 'RIGHT' \| 'DOWN' \| …` (useDiagramLayout, StateDiagram) | `'right' \| 'down' \| 'left' \| 'up'` |
-| `DiagramNode.label`, `DiagramNode.detail` | `title`, `description` (the kit's row anatomy); a node also takes `icon`, `trailing`, `sections`, `entry`, `tone` |
-| `DiagramEdge.label` (text beside the line) | `title`: the label is a pill on the route, or with `sections` a card of chips; `icon` before the title |
-| `nodeTextSize(node, text)`, `NODE_PADDING`, `NODE_MIN_SIZE` | `nodeSize(node, text)` and `edgeLabelSize(edge, text)`, which measure the whole card (`DIAGRAM_CARD` has its measures) |
-| `DiagramTextKind` `'label' \| 'detail' \| 'title' \| 'edge'` | `'title' \| 'description' \| 'caption' \| 'item' \| 'code' \| 'trailing' \| 'edge'` |
-| useDiagramLayout / `layoutDiagram` `direction` default `right` | default `down`; pass `direction: 'right'` for the old run; new `density` |
-| A self-loop over the node's top | beside it: out of its right side (no layout); in a layout, out of its side into its label beside it, the first on its start side and the next on its end side |
-| `onAction(item, details)`, `details.reason` `enter-key` \| `double-click` | also `press`, with `details.part` `label` or `item` (type `DiagramActionDetails`); `item` has `section` and `item` for a pressed item (an `editable` diagram with `onAction`) |
-| Only an editable diagram's chips could be pressed | `pressable`: `true`, or `{ nodes, edges }` for those nodes' chips and those edges' labels, read-only too; a pressable label has a ring and a play badge |
-| The first view fitted everything, at any zoom | it fits everything when that can be read (87.5% or more), else opens at 87.5% from the top; `useDiagramLayout` wraps a long run into columns, and arranges parts nothing joins, to fill its `host` (`board` for a size of your own, `null` for none; `wrapDiagram` without React) |
-| `variant: 'double'`: a thick double border in the foreground color | a hairline inside the border, in the border's color |
-| `NOTHING_SELECTED`, `addConnection`, `checkConnection`, `deleteItems`, `diagramBounds`, `indexDiagram`, `moveEdgeEnd`, `moveNodes`, types `ConnectorRoute`, `DiagramIndex` from `@brett_lamy/ui` | `@brett_lamy/ui/lib/diagram-model` (`@/lib/diagram-model`), the same names; the data types Diagram's props take (`DiagramNode`, `DiagramEdge`, `DiagramSelection`…) stay on the root |
-| `layoutDiagram`, `useDiagramLayout`, `createDiagramLayoutEngine`, `DIAGRAM_ELK_OPTIONS`… and their types from `@brett_lamy/ui` | from the engine's own entries only: `@brett_lamy/ui/lib/diagram-layout` (`@/lib/diagram-layout`) and `@brett_lamy/ui/lib/diagram-layout/react` for `useDiagramLayout` |
-| `<DiagramFrame host size title panel status cover onBoardKeyDown>{(bar) => …}</DiagramFrame>` | Flat parts: `DiagramFrame`, `DiagramFrameBoard` (takes `onKeyDown`, and a `ref` for a layout's `host`), `DiagramFrameBar` (the status), `DiagramFramePanel` (`title`), `DiagramFrameCover`, `DiagramFrameTrigger`, `useDiagramFrame` |
-| `DiagramPanelSection`, `DiagramPanelField({ slot, onCommit })` | `DiagramFrameSection`; the field is the kit's `<Field><FieldLabel/><Input onValueCommit/><FieldError/></Field>` (Input's `onValueCommit(value, details)`: Enter or blur commits, Escape reverts) |
-| A cover's own "back" row | `DiagramFrameCoverHeader` (`title`, `backLabel`, `onBack`): the bar's back button and a centred title, focused on open |
-| `DiagramFramePanel` `title: string`, no element props | `title: ReactNode` (+ `aria-label`), and `ref` / `id` / `data-*` on its element (`diagram-frame-panel`) |
+| — | `controller` (`createDiagramController`), `useDiagram()` (`{ diagram, canvas, history, zoom }`), `DiagramToolbar` (zoom, fit, undo and redo; at the top in a DiagramFrame), `history` with `useDiagramHistory`, `pressable`, `emptyState`, `loading`, `error`, `overlay` |
+| `DiagramNodeKind` `compound`, `parallel`, `final`, `initial` | `kind` `node`, `group`, `region`, `root` or `marker`, and `variant` `default`, `dashed` or `double` for the border: a compound is a `group`, a parallel one also `dashed`, a final node `double` (a hairline inside its border), and an initial marker is `entry: true` on the node it pointed at |
+| Edge `kind` (`event`, `done`, `invoke`, `always`, `after`, `initial`, `problem`) | `variant` (`default`, `dashed`, `dotted`, `strong`) and `tone` (`default`, `destructive`), written as `data-variant` and `data-tone` |
+| `diagramNodeVariants({ kind })`, `diagramEdgeVariants({ kind })` | `diagramNodeVariants({ kind, variant })`, `diagramEdgeVariants({ variant, tone })`; new `diagramItemVariants` (a chip) and `diagramEdgeLabelVariants({ variant: 'pill' \| 'card' })` |
+| `DiagramNode.label`, `.detail` | `title`, `description`; and `icon`, `trailing`, `sections`, `entry`, `tone` |
+| `DiagramEdge.label`, drawn beside the line | `title`, a pill on the route; `sections` make it a card; `icon`; `forkOf` |
+| `DiagramPort.side` `'t' \| 'r' \| 'b' \| 'l'` (`DiagramSide`) | `'top' \| 'right' \| 'bottom' \| 'left'` (physical: a board doesn't mirror); a port also takes `offset`, in board units along its side; a drop on a card connects through the first of its ports the rule allows |
+| `DiagramModel` | `DiagramData` (the same `{ nodes, edges }`) |
+| `DiagramNodeBody` drew a label and a detail | It draws the whole card; `DiagramNodeHeader`, `DiagramSections` and `DiagramEntryMarker` are its pieces, for a `renderNode` of your own |
+| `nodeTextSize`, `NODE_PADDING`, `NODE_MIN_SIZE`, `INITIAL_SIZE` | `nodeSize` and `edgeLabelSize` (the whole card, measured), `nodeAnatomy`, `DIAGRAM_CARD`, `MARKER_SIZE`; a hand-placed card too small for its words is grown (`growNodesToText`) |
+| `noun: string` | `noun: DiagramNoun` (`string` or `(node) => string`): a box counts what it holds by kind, "holding 2 environments and 1 service (12 services in all)" |
+| A box's own edge to a child (no sections) from its nearest wall; one each way on one line | from the line under its header, with an origin dot, straight to the child's top; one each way in two lanes, each with its label |
+| On a board under 420 px, the first view centered the first entry marker | every board opens on its top-start corner; what's selected or current is brought in by `keepInView` (`lib/diagram-drawing`, with `firstView` and `drawDiagram`) |
+| What has the eye: the current state and the edge just taken | also the labels `pressable` names (a simulation's sendable events) when they fit, and the top-start corner when it's in view and both can be read |
+| A port no edge claims was given to ELK | it isn't: a dot to connect by changes nothing in the layout |
+| The model's functions and types from `@brett_lamy/ui` (`addConnection`, `deleteItems`, `edgeGeometries`, `indexDiagram`, `rerouteOrthogonal`, `NOTHING_SELECTED`, `ConnectorRoute`, `DiagramIndex`…) | `@brett_lamy/ui/lib/diagram-model` (`@/lib/diagram-model`), the same names; the types Diagram's props take (`DiagramNode`, `DiagramEdge`, `DiagramPort`, `DiagramSelection`, `DiagramConnection`…) are on the root too |
+| `layoutDiagram`, `useDiagramLayout`, `createDiagramLayoutEngine`, `DIAGRAM_ELK_OPTIONS`… and their types from `@brett_lamy/ui` | `@brett_lamy/ui/lib/diagram-layout` (`@/lib/diagram-layout`), and `@brett_lamy/ui/lib/diagram-layout/react` for `useDiagramLayout` |
+| Layout `direction: 'RIGHT' \| 'DOWN' \| 'LEFT' \| 'UP'`, default `RIGHT` | `'down' \| 'right' \| 'up' \| 'left'`, default `down` (pass `'right'` for the old run); `density` (`diagramElkOptions(density)`); `board` and `wrapDiagram` to wrap a long run into columns |
+| From `@brett_lamy/ui`: the text measuring (`measureText`, `estimateText`, `DIAGRAM_TEXT_CLASS`, `DiagramTextKind`…), the gestures (`hitTestDiagram`, `stepDiagramGesture`, `DRAG_THRESHOLD`…) and the keyboard's helpers (`describeNode`, `focusOrder`, `stepFocus`…) | internal (`@/lib/diagram-text`, `@/lib/diagram-gesture`, `@/lib/diagram-keyboard` in a registry install); pass `describeNode` / `describeEdge` to change what a screen reader hears |
+| Labels beside their line; a self-loop over the node; edges between the same ports on one line | Labels on their route, the route running into and out of them; a self-loop beside the card with its label on it; each edge between ports, and each hand-placed one that would run along another, in a lane of its own |
+| `<DiagramFrame host size title panel status cover onBoardKeyDown>{(bar) => …}</DiagramFrame>` | Flat parts: `DiagramFrame` (`open` / `defaultOpen` / `onOpenChange`, `presentation`, `side`, `breakpoints`), `DiagramFrameBoard` (takes `onKeyDown`; its `ref` is a layout's `host`), `DiagramFrameBar` (the status), `DiagramFramePanel` (`title`, `aria-label`, its element's props), `DiagramFrameCover`, `DiagramFrameCoverHeader` (`title`, `backLabel`, `onBack`), `DiagramFrameTrigger`, `useDiagramFrame()` (`open`, `setOpen(open, { focus })`, `presentation`, `sizeClass`, `covered`) |
+| `DiagramPanelSection`, `DiagramPanelField({ slot, onCommit })` | `DiagramFrameSection`; a field is the kit's `<Field><FieldLabel/><Input onValueCommit/><FieldError/></Field>` (Input's `onValueCommit(value, details)`: Enter or blur commits, Escape reverts) |
 | `PANEL_BESIDE_FROM` (560) | `breakpoints` (`{ medium: 440, regular: 720 }`) |
-| A Credenza tray under the board at a phone's size | AdaptivePane: a column, a drawer that doesn't dim the board, or a page pushed over it |
-| StateDiagram `initial` | `layout` |
-| StateDiagram `defaultPanelOpen` | `panelOpen` / `defaultPanelOpen` / `onPanelOpenChange`, and `panelPresentation` |
-| StateDiagram `data-slot="simulation-event"`… on buttons | `data-action="send"`…; fields `data-field="name"`, `event`, `guard`, each a `Field` with its refusal as a `FieldError` |
-| StateDiagram's send buttons on the board, `data-action="send-on-board"` (named "Send <event>") | The labels themselves, pressable (Diagram's `pressable`): `diagram-edge-label[data-pressable]`; a press, or Enter on the edge, sends |
-| A transition's `reenters`, `no target`, `N targets` chips | A quiet line under its chips: a `list` section `how` |
-| StateDiagram's Undo / Redo in the panel, `edit-undo` / `edit-redo`, and ⌘Z on the board | The `DiagramToolbar`'s undo and redo and the Diagram's ⌘Z, driving the config's history through `<Diagram history>` |
-| StateDiagram `config` without `onConfigChange` (held edits until `config` changed) | `defaultConfig` for a config the diagram keeps; `config` is always controlled |
-| StateDiagram `onConfigChange(config)` | `onConfigChange(config, details)`, `details.reason` `edit`, `undo` or `redo`, `details.cancel()` when uncontrolled |
-| StateDiagram `defaultSelection`, while editing only | `selection` / `defaultSelection` / `onSelectionChange(selection, details)`, read-only too; and `onAction` |
-| — | StateDiagram `source`: a machine's source text, read by `parseXState` without running it |
-| `data-slot="state-diagram-error"` | The Diagram's `error`, `data-slot="diagram-error"` |
-| `machineToDraft` and types `MachineLike`, `StateEdgeData`, `StateNodeData` from `@brett_lamy/ui` | `@brett_lamy/ui/lib/state-diagram-model`; `MachineLike` is `StateMachineLike` (on the root and `@brett_lamy/ui/state-diagram` too, with StateDiagram's props) |
-| types `MachineConfig`, `MachineImplementations` | `StateMachineConfig`, `StateMachineImplementations` (`MachineConfig` was XState's own type's name) |
-| `machineToDraft` node `kind` `compound`, `parallel`, `final`, `initial`; edge `kind` `event`, `always`, `after`, `done`, `invoke`, `initial` | Diagram's generic looks, the `STATE_NODE_LOOK` / `STATE_EDGE_LOOK` preset; what a state or a way out is, as XState has it, is `data.type` / `data.transition` |
-| `parseXState` from `@brett_lamy/ui/docstream/xstate/machine` | `@brett_lamy/ui/lib/state-diagram-source`; the xstate fence draws with it and `machineToDraft` |
+| A Credenza tray under the board at a phone's size | AdaptivePane: a column, a drawer that doesn't dim the board, or a page pushed over it; `defaultOpen` applies again when the frame changes size class |
+
+### StateDiagram
+
+| On the branch | 6.0 |
+| --- | --- |
+| `machine: MachineLike`; types `MachineConfig`, `MachineImplementations`, `MachineStateNode`, `MachineTransition` | `StateMachineLike`, `StateMachineConfig`, `StateMachineImplementations` (the root and `@brett_lamy/ui/state-diagram`); `StateMachineNode`, `StateMachineTransition` (`@brett_lamy/ui/lib/state-diagram-model`) |
+| `config` without `onConfigChange` (edits held until `config` changed) | `config` is always controlled; `defaultConfig` for one the diagram keeps; `source` for a machine's source text, read without running it |
+| `onConfigChange(config)` | `onConfigChange(config, details)`: `details.reason` `edit`, `undo` or `redo`, and `details.cancel()` when uncontrolled |
+| `direction: 'RIGHT' \| …`, default `RIGHT` | `'down' \| 'right' \| 'up' \| 'left'`, default `down`; `density`; `background` defaults to `grid` and `minimap` to `'auto'` |
+| `initial` (a layout to start from) | `layout` |
+| `camera` / `defaultCamera` / `onCameraChange` | `viewport` / `defaultViewport` / `onViewportChange`, as on Diagram |
+| `defaultSelection`, while editing only | `selection` / `defaultSelection` / `onSelectionChange(selection, details)`, read-only too; and `onAction` |
+| `defaultPanelOpen` | `panelOpen` / `defaultPanelOpen` / `onPanelOpenChange`, and `panelPresentation` |
 | The panel's Segmented between Edit and Run | Tabs (`TabsList`, `TabsTab`, `TabsPanel keepMounted`) |
-| `machineToDraft`: an initial marker node (`<id>.__initial`, `kind: 'marker'`) and its `strong` edge; `data.type` `initial`, `data.transition` `initial`; `STATE_NODE_LOOK.initial`, `STATE_EDGE_LOOK.initial` | `entry: true` on the state it starts in (Diagram's entry marker); the parent's `data.initial` names it |
-| `machineToDraft` node `label` / `detail` (`invoke x`, `parallel`, `history`), edge `label` (`EVENT [guard]`) | Diagram's `title`, `icon`, `trailing`, `description`, `sections`: Invoke, Entry actions, Exit actions, Tags, Meta, and the root's Context, as sections; `parallel` as `trailing`; history as `icon` `H` / `H*`; final as `icon: 'stop'`; an edge's `title` is its event, its guard and actions are chips; `transitionNotation(edge.data)` writes `EVENT [guard] / action` |
-| `StateNodeData.invokes: string[]` | `StateNodeData.invoke: StateInvoke[]` (`src`, `id`, `input`), and `entry`, `exit`, `tags`, `description`, `meta`, `history`, `initial`, `context` |
-| `StateEdgeData.guard: string` | `StateEdgeData.guard: StateGuard` (`name`, `text`, `params`, `composed`), and `name`, `actions`, `delay`, `actor`, `reenter`, `targets` |
+| The panel's send buttons, `data-slot="simulation-event"`… | `data-action="send"`…; and on the board, the transitions it can take are pressable labels (`diagram-edge-label[data-pressable]`): a press, or Enter on the edge, sends |
+| Undo and Redo in the panel (`edit-undo`, `edit-redo`), ⌘Z on the board | The `DiagramToolbar`'s and the Diagram's ⌘Z, driving the config's history through `<Diagram history>` |
+| `data-slot="state-diagram-error"` | The Diagram's `error`, `data-slot="diagram-error"` |
+| The panel's fields with their own error text | Each a `Field` (`data-field="name"`, `event`, `guard`…) with its refusal as a `FieldError` |
+| From `@brett_lamy/ui`: `machineToDraft`, `describeEvent`, the edits (`addState`, `tryEdit`…), the simulation (`createSimulation`…), types `StateNodeData`, `StateEdgeData` | `@brett_lamy/ui/lib/state-diagram-model`, `-edit` and `-simulation`; the root keeps StateDiagram, its props' types and `SimulationStandIns` |
+| What `machineToDraft` drew: `label` / `detail`; node kinds `compound`, `parallel`, `final`, and `initial` (a marker node and its edge); edge kinds; `EVENT [guard]` labels | Diagram's anatomy, through the `STATE_NODE_LOOK` / `STATE_EDGE_LOOK` preset: a state's card has Entry actions, Exit actions, Invoke, Tags and Meta sections, and the machine's card its Context; parallel is `trailing`, history an `H` / `H*` glyph, final a `stop` glyph; the initial state has `entry: true` (its parent's `data.initial` names it); a transition's label is its event, with its guard and actions as chips and a quiet line for `reenters` or `2 targets`; the targets past the first fork from that label (`forkOf`). What a state or a transition is in XState's terms is `data.type` / `data.transition`; `transitionNotation(edge.data)` writes `EVENT [guard] / action` |
+| `StateNodeData.invokes: string[]`; `StateEdgeData.guard: string` | `invoke: StateInvoke[]` (`src`, `id`, `input`), and `entry`, `exit`, `tags`, `description`, `meta`, `history`, `initial`, `context`; `guard: StateGuard` (`name`, `text`, `params`, `composed`), and `name`, `actions`, `delay`, `actor`, `reenter`, `targets` |
 | Edge names `after 5000`, `done` / `error` for an actor | `after 5,000 ms`; `verifyToken: done` / `verifyToken: error` |
-| StateDiagram `direction` default `right` | `down`; `background` defaults to `grid` |
-| `parseXState` leaving out actions, `context`, `tags`, `meta`, `description`, `input` | kept, as data: inline code is `{ type: 'xstate.inline' }`, built-ins `{ type: 'xstate.assign' \| … , params }`, composed guards `{ type: 'xstate.and' \| 'xstate.or' \| 'xstate.not' \| 'xstate.stateIn', params }`; `types.context` as `types: { context: { key: 'type' } }` |
-| The xstate fence drawn by Pele from `xstateToMermaid` | A read-only StateDiagram (`@brett_lamy/ui/state-diagram`, loaded when shown); `xstateToMermaid` is its text form and fallback, in UML notation |
-| `diagramEdgeLabelVariants({ shape })`, `diagram-edge-label[data-shape]` | `diagramEdgeLabelVariants({ variant })` (`pill`, `card`), `[data-variant]`: a look is a `variant`, as on the node, edge and item recipes beside it |
-| A transition with several targets: an edge to each, each with its own label | One label that forks: edges past the first have `forkOf` (the first's id) and no label of their own; new `DiagramEdge.forkOf` |
-| `DiagramPort.at` only | + `offset` (board units along the side, kept however big the node grows) |
-| A drop on a port that refuses, beside one that would take it at the same place, refused; a drop on a node with ports refused | The first port at that place (or of that node) the rule takes |
-| Hand-placed self-loops: a nub at the card's right, labels above | Beside the card, each with its label on it (`loopsBeside`, `sideLoopRoute` on `lib/diagram-model`) |
-| A hand-placed card smaller than its words: text clipped | Drawn as big as its words need, around its middle (`growNodesToText`), up to 200 nodes |
-| Wrapped columns: edges between them down the foot, along the gap, over the head | Routed again across, foot to head, side to side or side to foot, whichever is shortest |
-| The view refit (or a layout re-wrapped) when a panel opened; StateDiagram revealed a selection by centering it | What has the eye (the selection, else `current`) is kept in the board's free part by the least pan; CloudflareDiagram wraps for its frame, not the board its panel leaves |
-| CloudflareDiagram editable card: a Connect section with a row per port | The read-only card, with dots on its header ends and handler rows |
-| A section's `variant`: `default`, `list`, `code` | also `inline`: the same chips in a row that wraps (at `DIAGRAM_CARD.inlineMax`), measured as drawn |
-| `minimap`: `boolean` or its props | also `'auto'`: only while a good part of the diagram is out of view at a readable size, on a board of 720 × 600 px or more; StateDiagram's and CloudflareDiagram's default |
-| A first view too wide for the board opened from its start edge, or centered on the first entry marker when that was past the other edge | from its top-start corner (the entry-marker rule only on a board under 420 px), in the part of the board the toolbar, the minimap, a frame's bar and drawer leave, following a frame's panel opening and closing until the view's moved |
-| Edges from one port shared a lane, and a label could sit on a shared run; a row's port on its declared side | each edge between ports (and any hand-placed one that would run along another) in a lane of its own, its label on a run only it uses; a row's port at the end of its row facing its edges (`facePorts`); after a layout, `routePortEdges` (`useDiagramLayout` does it) |
-| A box's edge to what it holds started as a stub under its sections | at a dot on a hairline under its sections; an edge out of a box with sections leaves from its side, beside them |
-| DiagramFrame `defaultOpen` at first only | at first, and again when the frame changes size class; `useDiagramFrame().setOpen(open, { focus: false })` opens it without moving focus |
-| StateDiagram: the layout's `density` not reachable | `density` |
+| `parseXState` from `@brett_lamy/ui/docstream/xstate/machine`, leaving out actions, `context`, `tags`, `meta`, `description` and `input` | `@brett_lamy/ui/lib/state-diagram-source`, keeping them as data: inline code is `{ type: 'xstate.inline' }`, built-ins `{ type: 'xstate.assign' \| …, params }`, composed guards `{ type: 'xstate.and' \| 'xstate.or' \| 'xstate.not' \| 'xstate.stateIn', params }`, and `types.context` as `types: { context: { key: 'type' } }` |
+| The xstate fence drawn by Pele from `xstateToMermaid` | A read-only StateDiagram (`@brett_lamy/ui/state-diagram`, loaded when shown); `xstateToMermaid`, still on `/xstate/machine`, is its text form and fallback, in UML notation |
 
 ### CloudflareDiagram and Cloudflare Studio
 
-| Before | After |
+| On the branch | 6.0 |
 | --- | --- |
-| `onChange({ services, edges, reason })` | `onDataChange(system, details)`: the system is `{ services, edges }`, `details.reason` adds `add` (the search) beside `edit`, and `details.cancel()` refuses a change |
-| `services` required, controlled only | `services` / `edges` (controlled) or `defaultServices` / `defaultEdges` |
-| `defaultSelection` only | `selection` / `defaultSelection` / `onSelectionChange(selection, details)` |
-| `defaultPanelOpen` | `panelOpen` / `defaultPanelOpen` / `onPanelOpenChange`, and `panelPresentation` (`column`, `drawer`, `push`, from the frame's own size class) |
+| `onChange({ services, edges, reason })`, type `CloudflareDiagramChange` | `onDataChange(system, details)` (`CloudflareSystem`, `CloudflareDiagramChangeDetails`): `details.reason` adds `add` (the search) beside `edit`, `undo` and `redo`, and `details.cancel()` refuses a change |
+| `services` required, controlled only | `services` / `edges` (controlled) or `defaultServices` / `defaultEdges`; and `title`, `accountId` (the system's name and account, in its card; `onDataChange` gives them back as `name`, `accountId`) |
+| `defaultSelection` only | `selection` / `defaultSelection` / `onSelectionChange(selection, details)`, and `onAction` |
+| `defaultPanelOpen`; the panel open from the start as a column titled "Services" | `panelOpen` / `defaultPanelOpen` / `onPanelOpenChange`, and `panelPresentation` (`column`, `drawer`, `push`, from the frame's own size class). The panel stays closed until something's selected (open from the start only when editable and empty); it is titled and named by the selection ("Room · Durable Objects", "FILES · API → Files"), and the bar's button says "Services", "Add a service" or "Details" |
 | `defaultMachine` | `openMachine` / `defaultOpenMachine` / `onOpenMachineChange(id, details)` |
-| `direction: 'RIGHT' \| 'DOWN' \| …`, default `RIGHT` | `direction: 'down' \| 'right' \| 'up' \| 'left'`, default `down`: a system runs top to bottom |
-| `camera` / `defaultCamera` / `onCameraChange` | `viewport` / `defaultViewport` / `onViewportChange`, as on Diagram |
-| The panel open by default as a column, always titled "Services" | closed until something's selected, then open beside or over the board (a phone's pushed page waits for its button); titled and named by what's selected ("Room · Durable Objects", "FILES · API → Files"); the bar's button says "Services", "Add a service" or "Details" |
-| The Account section a column of chips | a row that wraps (`variant: 'inline'`) |
-| — | `density`; `minimap` defaults to `'auto'` |
 | `panelExtra` | `panelHeader`: what's at the top of the panel |
+| `direction: 'RIGHT' \| …`, default `RIGHT` | `'down' \| 'right' \| 'up' \| 'left'`, default `down`: a system runs top to bottom, and wraps for its frame; `density`; `minimap` defaults to `'auto'` |
+| `camera` / `defaultCamera` / `onCameraChange` | `viewport` / `defaultViewport` / `onViewportChange`, as on Diagram |
 | — | `emptyState` (an `EmptyState` by default) |
-| The panel's Undo / Redo buttons | The `DiagramToolbar`'s undo and redo, beside zoom and fit, and the Diagram's ⌘Z, driving the system's history through `<Diagram history>` |
-| `serviceNode(service)` | `cloudflareBoardData(system, { editable?, issues?, title? })`: the whole system as Diagram nodes and edges, in Diagram's anatomy |
-| `CloudflareServiceNode`, `cloudflareServiceVariants`, `CloudflareServiceNodeProps` | Gone: a service's card is Diagram's own `DiagramNodeBody` (header, sections of chips, entry marker), filled in from the system. An app's own icons are still `icon` |
-| A card that listed every port, with its name, always | A card with sections (Handlers, Bindings, Triggers, Settings, Machine). Ports only with `editable`, as dots on the card itself: a handler's on its Handlers row, the rest at either end of its header strip (no Connect section); read-only, there are none |
-| `SERVICE_NODE`, `serviceNodeHeight`, a port's `at` from `servicePorts` | Gone: a card is as big as what it says (Diagram's `nodeSize`), and the card places its ports (a handler's on its row, the rest on its header, by `offset`) |
-| Edge labels as text, `FILES: put, get +1` | A label card: `FILES`, then a chip per operation; a pill with none. Consumers, producers, event notifications, entrypoints and machine events say what they are |
-| `placeInLayers(system)`, left to right, from `lib/cloudflare-system` | `placeInLayers(system, { editable? })`, top to bottom, inside what holds what, from `@brett_lamy/ui/cloudflare` (`lib/cloudflare-board`) |
-| — | `cloudflareBoardProps(system, { icon, issues, editable, title })`: the board as a Diagram preset, `<Diagram {...cloudflareBoardProps(system)} />`, with the lined board |
-| — | `title`, `accountId`: the system's name and account, in its header (`onDataChange` gives them back as `name`, `accountId`) |
-| A service: `id`, `kind`, `label`, `at`, `binding`, `resource`, `machine` | And `handlers`, `triggers`, `settings`, `vars`, `migrations`, `host` (the Worker a class is drawn in), `environment`; an edge also `entrypoint`, `deliveryDelay`, `consumer`; a system `name`, `accountId`. All read from and written to `wrangler.jsonc` |
-| `readWrangler` drew bindings only | It reads the Worker's settings, triggers, vars, migrations, consumer and binding settings and the account too, and writes them back; `readWranglerEnvironments(text)` reads every env section into one system; a difference can be `kind: 'setting'` |
-| `@brett_lamy/ui/cloudflare-diagram` | `@brett_lamy/ui/cloudflare`, the one path for the diagram, its parts and the catalog |
+| The panel's Undo and Redo buttons (`cloudflare-undo`) | The `DiagramToolbar`'s undo and redo, beside zoom and fit, and the Diagram's ⌘Z, driving the system's history through `<Diagram history>` |
+| A service card that listed every port by name, always; `SERVICE_NODE`, `serviceNodeHeight`, a port's `at` from `servicePorts` | A card as big as what it says (Diagram's `nodeSize`): the product as `trailing`, the resource as `description`, then Handlers, Bindings, Triggers, Settings and Machine sections, and an entry marker where requests, schedules or messages come in. Ports only with `editable`, as dots on the card itself: a handler's on its Handlers row, the rest at either end of the header (`offset`); read-only, there are none |
+| Edge labels as text, `FILES: put, get +1` | A label card: `FILES`, then a chip per operation; a pill with none. Consumers, producers, dead-letter queues, event notifications, entrypoints and machine events say what they are |
+| `placeInLayers(system)`, left to right, from `lib/cloudflare-system` | `placeInLayers(system, { editable? })`, top to bottom, inside what holds what, on `@brett_lamy/ui/cloudflare` |
+| — | `cloudflareBoardProps(system, { icon, issues, editable, title })`: the board as a Diagram preset, `<Diagram {...cloudflareBoardProps(system)} />`; `cloudflareBoardData(system, options)` for the nodes and edges alone |
+| A service: `id`, `kind`, `label`, `at`, `binding`, `resource`, `machine` | Also `handlers`, `triggers`, `settings`, `vars`, `migrations`, `host` (the Worker a class is drawn in) and `environment`; an edge also `entrypoint`, `deliveryDelay`, `consumer`; a system `name`, `accountId`. All read from and written to `wrangler.jsonc` |
+| `readWrangler` read the bindings only | It reads the Worker's settings, triggers, vars, migrations, consumer and binding settings and the account too, and writes them back; `readWranglerEnvironments(text)` reads every env section into one system; a difference can be `kind: 'setting'` |
 | Edge `kind: 'problem'` on what's wrong | `tone: 'destructive'` |
 | `data-slot="cloudflare-refusal"` under a binding name | The field's `FieldError` (`data-part="refusal"`), and the field is invalid |
 | `data-slot="cloudflare-diagram-error"` | The Diagram's `error`, `data-slot="diagram-error"` |
-| The machine's bar, `data-action="machine-back"` | `DiagramFrameCoverHeader` (`data-part="machine-bar"`): the bar's back button, "Services", and a centred title |
+| The machine's bar, `data-slot="cloudflare-machine-bar"`, `data-action="machine-back"` | `DiagramFrameCoverHeader` (`data-part="machine-bar"`): the bar's back button, "Services", and a centred title |
 | A tray under the board at a phone's size | A page pushed over the board, with a back button (DiagramFrame on AdaptivePane) |
 | The catalog search, a SearchField and a ListBox | A Combobox; also exported as `CloudflareServiceSearch` (`onAction(product, details)`, `details.reason` `item-press` or `enter-key`) |
 | `data-slot="cloudflare-delete"`, `cloudflare-undo`, `cloudflare-machine-open`… on buttons | `data-action="delete"`, `undo`, `open-machine`…: kit parts keep their own `data-slot` |
 | `[data-slot=cloudflare-label] input` and the other panel fields | `[data-field=label]`, `binding-name`, `events` |
 | `data-slot="cloudflare-service-machine"` | The card's Machine section, `[data-slot=diagram-section][data-section=machine]` |
 | `data-slot="cloudflare-service"` (`data-kind`, `data-problem`), `cloudflare-service-name`, `cloudflare-port-label` | Diagram's node, `[data-slot=diagram-node][data-node=<id>]`; `diagram-node-title`; a problem is `[data-slot=diagram-node-header][data-tone=destructive]`; ports are `diagram-port`, editable only |
+| Editable: a connection was drawn from its ports (`fromPort` / `toPort` on its edge) | a connection claims no dots: it's the read-only edge, so an editable board is laid out, wrapped and routed exactly as the read-only one, with dots to connect by |
+| `cloudflareBoardProps(...).noun: 'service'` | `noun: cloudflareNoun` (services, environments and the system each by their name), exported from `@brett_lamy/ui/cloudflare` |
 
 The block's export is a Dialog (a sheet at a phone's size), and its buttons are `data-action="new"`, `open`, `export`, `download`, `download-all`.
 
 ### The capnp fence (`@brett_lamy/ui/docstream/capnp`)
 
-| Before | After |
+| On the branch | 6.0 |
 | --- | --- |
 | `section.docs-capnp`, with a Source / Diagram button (`.docs-capnp-toggle`, `aria-pressed`) that swapped the board for the source | A split card like the other diagram fences (`.docs-split-card.docs-capnp-preview`, still `[data-docstream-capnp]`): the board and its notes stay, the header has a copy button, and the source is a disclosure under them (`.docs-capnp-source`: a `<details>` before hydration, UI SDK's Collapsible after) |
 | `pre.docs-capnp-source` | `.docs-capnp-source-body > pre.docs-split-source` |
