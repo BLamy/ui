@@ -64,7 +64,15 @@ const port = async (page, node, name) => {
   return { x: b.x + b.width / 2, y: b.y + b.height / 2 };
 };
 const edges = (page) => page.locator('[data-demo-edges]').getAttribute('data-demo-edges');
-/** The catalog search: its combobox, by name (the Combobox also renders a hidden form input). */
+/** The panel opened by the bar's button, as a person does: it's closed until something's selected. */
+const openPanel = async (page) => {
+  if (await panel(page).isVisible()) return;
+  await page.locator('[data-diagram-frame-trigger]').first().click();
+  await expect(panel(page)).toBeVisible();
+  // Its column narrows the board, and a board nobody's moved fits itself again: what's pressed next is where it ends up.
+  await settle(page);
+};
+/** The catalog search: its combobox, by name (the Combobox also renders a hidden form input), in the panel, opened. */
 const catalogSearch = (page) => page.getByRole('combobox', { name: 'Search Cloudflare’s services' });
 /** Opens a demo. A board opens at a readable size, from its top, so a system that doesn't fit is partly past the board's
  *  edge: these tests work on all of it, so they show all of it, with the board's Fit (`whole: false` to leave it). */
@@ -96,7 +104,58 @@ const connect = async (page, a, ap, b, bp, whileOver) => {
   // Bringing the second into view can move the first: where each is is read once both are in view.
   await port(page, a, ap);
   const to = await port(page, b, bp), from = await port(page, a, ap);
-  return drag(page, from, to, whileOver);
+  const seen = await drag(page, from, to, whileOver);
+  // The new connection is selected, which opens the panel, which narrows the board: wait for it to come to rest.
+  await settle(page);
+  return seen;
+};
+/** No two edges run along each other for more than a crossing: each route sampled every 2 px, and no stretch of one longer
+ *  than 24 px within a pixel of another's. */
+const sharedRuns = (page) => page.locator('[data-slot=diagram-edge]').evaluateAll((els) => {
+  const lines = els.map((el) => {
+    const n = el.getTotalLength(), pts = [];
+    for (let t = 0; t <= n; t += 2) { const p = el.getPointAtLength(t); pts.push([p.x, p.y]); }
+    return { id: el.getAttribute('data-edge'), pts };
+  });
+  const out = [];
+  for (const a of lines) for (const b of lines) {
+    if (a.id >= b.id) continue;
+    let run = 0, longest = 0;
+    for (const [x, y] of a.pts) {
+      const near = b.pts.some(([u, v]) => Math.abs(u - x) < 1 && Math.abs(v - y) < 1);
+      run = near ? run + 2 : 0;
+      longest = Math.max(longest, run);
+    }
+    if (longest > 24) out.push(`${a.id} and ${b.id}: ${longest} px`);
+  }
+  return out;
+});
+/** Each label is on a run of its own edge's route: its route passes through the label, and no other route does. In board
+ *  units (a label's place is its style; a route's points are the board's), so it holds at any zoom, words drawn or not. */
+const labelsOnTheirOwn = (page) => page.evaluate(() => {
+  const out = [];
+  const paths = [...document.querySelectorAll('[data-slot=diagram-edge]')];
+  for (const label of document.querySelectorAll('[data-slot=diagram-edge-label]')) {
+    const st = label.style, r = { left: parseFloat(st.left), top: parseFloat(st.top), right: parseFloat(st.left) + parseFloat(st.width), bottom: parseFloat(st.top) + parseFloat(st.height) };
+    const through = paths.filter((p) => {
+      const n = p.getTotalLength();
+      for (let t = 0; t <= n; t += 2) {
+        const q = p.getPointAtLength(t);
+        if (q.x > r.left + 2 && q.x < r.right - 2 && q.y > r.top + 2 && q.y < r.bottom - 2) return true;
+      }
+      return false;
+    }).map((p) => p.getAttribute('data-edge'));
+    if (through.length !== 1 || through[0] !== label.getAttribute('data-edge')) out.push(`${label.getAttribute('data-edge')}: ${through.join(', ') || 'no route'}`);
+  }
+  return out;
+});
+/** Where to take hold of a service: the middle of its name, once the board's at rest (a panel that's just opened narrows it,
+ *  and a board nobody's moved fits itself again). */
+const grip = async (page, id) => {
+  await settle(page);
+  await inView(page, nameOf(page, id));
+  const b = await nameOf(page, id).boundingBox();
+  return { x: b.x + b.width / 2, y: b.y + b.height / 2 };
 };
 /** A press on the middle of an edge's line. */
 const pressOnEdge = async (page, id) => {
@@ -193,42 +252,41 @@ test.describe('connecting', () => {
   });
 
   // Every service here has a place, so both bindings' routes come from the same two ports, and they're one line.
-  test('connections on one line can each be pressed, on the line and on their labels', async ({ page }) => {
+  test('connections between the same two ports each have a lane and a label of their own, and each is pressed on either', async ({ page }) => {
     for (let i = 0; i < 3; i++) await connect(page, 'worker', 'env', 'r2', 'binding:r2_buckets');
     await expect.poll(() => edges(page)).toBe('worker>r2:r2_buckets:R2_BUCKET worker>r2:r2_buckets:R2_BUCKET_2 worker>r2:r2_buckets:R2_BUCKET_3');
     const lines = page.locator('[data-slot=diagram-edge]');
-    expect(new Set(await lines.evaluateAll((els) => els.map((el) => el.getAttribute('d')))).size).toBe(1);
+    // Three routes, side by side out of the one dot, none along another, each label on its own.
+    expect(new Set(await lines.evaluateAll((els) => els.map((el) => el.getAttribute('d')))).size).toBe(3);
+    expect(await sharedRuns(page)).toEqual([]);
+    expect(await labelsOnTheirOwn(page)).toEqual([]);
     const name = page.locator('[data-field="binding-name"]');
     const selectedEdges = () => page.locator('[data-slot=diagram-edge][data-selected]').evaluateAll((els) => els.map((el) => el.getAttribute('data-edge')));
-    // Pressing the same place on the line goes to each in turn, and back round.
+    // A press on each line selects that one.
     const ids = await lines.evaluateAll((els) => els.map((el) => el.getAttribute('data-edge')));
     const seen = [];
-    for (let i = 0; i < 4; i++) {
-      await pressOnEdge(page, ids[0]);
-      await expect(name).toHaveCount(1);
+    for (const id of ids) {
+      await pressOnEdge(page, id);
+      await expect.poll(selectedEdges).toEqual([id]);
       seen.push(await name.inputValue());
-      expect(await selectedEdges()).toHaveLength(1);
     }
-    expect(new Set(seen.slice(0, 3)).size).toBe(3);
-    expect(seen[3]).toBe(seen[0]);
+    expect(new Set(seen).size).toBe(3);
     // Each label selects its own.
     for (const binding of ['R2_BUCKET', 'R2_BUCKET_2', 'R2_BUCKET_3']) {
       const label = await page.locator('[data-slot=diagram-edge-label]', { hasText: new RegExp(`^${binding}$`) }).boundingBox();
       await page.mouse.click(label.x + label.width / 2, label.y + label.height / 2);
       await expect(name).toHaveValue(binding);
     }
-    // Moving a service with one selected, they're still one line after, and a press still goes from one to the next.
-    const r2 = await service(page, 'r2').boundingBox();
-    await page.mouse.move(r2.x + 60, r2.y + 14);
+    // Moved (to the right, clear of D1 under it), they still each have a lane and a label of their own.
+    const r2 = await grip(page, 'r2');
+    await page.mouse.move(r2.x, r2.y);
     await page.mouse.down();
-    await page.mouse.move(r2.x + 120, r2.y + 74, { steps: 8 });
+    await page.mouse.move(r2.x + 60, r2.y - 8, { steps: 8 });
     await page.mouse.up();
-    await pressOnEdge(page, ids[0]);
-    await expect(name).toHaveCount(1);
-    const first = await name.inputValue();
-    await pressOnEdge(page, ids[0]);
-    await expect(name).not.toHaveValue(first);
-    expect(new Set(await lines.evaluateAll((els) => els.map((el) => el.getAttribute('d')))).size).toBe(1);
+    await settle(page);
+    expect(new Set(await lines.evaluateAll((els) => els.map((el) => el.getAttribute('d')))).size).toBe(3);
+    expect(await sharedRuns(page)).toEqual([]);
+    expect(await labelsOnTheirOwn(page)).toEqual([]);
   });
 
   test('a service with no binding, like a dashboard feature, is there, and can’t be connected', async ({ page }) => {
@@ -258,9 +316,10 @@ test.describe('connecting', () => {
     await connect(page, 'worker', 'env', 'r2', 'binding:r2_buckets');
     await expect.poll(() => edges(page)).toContain('worker>r2');
     const before = await service(page, 'r2').boundingBox();
-    await page.mouse.move(before.x + 60, before.y + 14);
+    const at = await grip(page, 'r2');
+    await page.mouse.move(at.x, at.y);
     await page.mouse.down();
-    await page.mouse.move(before.x + 160, before.y + 94, { steps: 8 });
+    await page.mouse.move(at.x + 100, at.y + 80, { steps: 8 });
     await page.mouse.up();
     await expect.poll(async () => (await service(page, 'r2').boundingBox()).x).toBeGreaterThan(before.x + 50);
     const moved = await service(page, 'r2').boundingBox();
@@ -269,8 +328,8 @@ test.describe('connecting', () => {
     await page.keyboard.press('ControlOrMeta+z');
     await expect.poll(async () => (await service(page, 'r2').boundingBox()).x).toBeLessThan(moved.x);
     // Deleting takes what's connected to it, and undoes too.
-    const r2 = await service(page, 'r2').boundingBox();
-    await page.mouse.click(r2.x + 60, r2.y + 14);
+    const r2 = await grip(page, 'r2');
+    await page.mouse.click(r2.x, r2.y);
     await page.keyboard.press('Delete');
     await expect(service(page, 'r2')).toHaveCount(0);
     expect(await edges(page)).toBe('');
@@ -284,8 +343,8 @@ test.describe('connecting', () => {
     await expect.poll(() => edges(page)).toContain('worker>d1');
     await panel(page).locator('[data-action=delete]').click();
     await expect.poll(() => edges(page)).toBe('');
-    const r2 = await service(page, 'r2').boundingBox();
-    await page.mouse.click(r2.x + 60, r2.y + 14);
+    const r2 = await grip(page, 'r2');
+    await page.mouse.click(r2.x, r2.y);
     const label = page.locator('[data-field="label"]');
     await label.fill('Uploads');
     await label.press('Enter');
@@ -316,9 +375,12 @@ test.describe('drawing', () => {
     // Where requests come in, the entry marker; the consumer holds its class, Room; and the layers run down.
     await expect(service(page, 'api').locator('[data-slot=diagram-entry]')).toHaveCount(1);
     await expect(service(page, 'consumer')).toHaveAttribute('data-kind', 'group');
-    const y = async (id) => (await service(page, id).boundingBox()).y;
-    expect(await y('files')).toBeGreaterThan(await y('api'));
-    expect(await y('db')).toBeGreaterThan(await y('jobs'));
+    // Each connection runs down, unless it's to the next column of a run wrapped to fill the board.
+    const boxOf = async (id) => service(page, id).boundingBox();
+    for (const [a, b] of [['api', 'files'], ['files', 'jobs'], ['jobs', 'consumer'], ['consumer', 'db'], ['consumer', 'room']]) {
+      const from = await boxOf(a), to = await boxOf(b);
+      expect(to.y > from.y || to.x >= from.x + from.width, `${a} to ${b} runs down, or on to the next column`).toBe(true);
+    }
     // Read-only, there are no ports to connect by.
     await expect(page.locator('[data-slot=diagram-port]')).toHaveCount(0);
     await pressOnEdge(page, 'api-files');
@@ -410,6 +472,7 @@ test.describe('a system', () => {
   test.beforeEach(async ({ page }) => { await open(page, 'system', { whole: false }); });
 
   test('a search of the catalog adds a service', async ({ page }) => {
+    await openPanel(page);
     const search = catalogSearch(page);
     await search.fill('zzzzzz');
     await expect(page.getByText('Nothing matches')).toBeVisible();
@@ -448,6 +511,7 @@ test.describe('a system', () => {
     await page.mouse.move(board.x + board.width - 20, board.y + 200, { steps: 6 });
     await page.mouse.up();
     await page.keyboard.up('Space');
+    await openPanel(page);
     const search = catalogSearch(page);
     await search.fill('d1');
     await search.press('Enter');
@@ -515,10 +579,10 @@ test.describe('a system', () => {
     await expect(page.locator('[data-slot=diagram-edge][data-edge=tell-room]')).toHaveCount(0);
     expect((await json(page)).edges.map((e) => e.id)).toContain('tell-room');
     // Moving something else leaves it there, as it isn't the board's to lose.
-    const box = await service(page, 'api').boundingBox();
-    await page.mouse.move(box.x + 40, box.y + 12);
+    const api = await grip(page, 'api');
+    await page.mouse.move(api.x, api.y);
     await page.mouse.down();
-    await page.mouse.move(box.x + 40, box.y + 50, { steps: 4 });
+    await page.mouse.move(api.x, api.y + 40, { steps: 4 });
     await page.mouse.up();
     await expect.poll(async () => (await json(page)).services.find((s) => s.id === 'api').at.y).toBeGreaterThan(40);
     expect((await json(page)).edges.map((e) => e.id)).toContain('tell-room');
@@ -647,6 +711,7 @@ test.describe('a system', () => {
     await expect.poll(() => issueCodes(page)).toEqual(expect.arrayContaining(['unknown-kind', 'edge-not-real', 'operation', 'binding-name', 'edge-end', 'machine']));
     await expect(page.locator('[data-slot=diagram-edge][data-edge=a-made_up]')).toHaveAttribute('data-tone', 'destructive');
     // What's wrong with a service gets you to it too, and it's drawn as wrong.
+    await openPanel(page);
     await panel(page).locator('[data-slot=cloudflare-issue][data-code=machine] [data-action=show-issue]').click();
     await expect(service(page, 'broken').locator('[data-slot=diagram-node-header]').first()).toHaveAttribute('data-tone', 'destructive');
     await expect(service(page, 'a').locator('[data-slot=diagram-node-header]').first()).not.toHaveAttribute('data-tone', 'destructive');
@@ -659,10 +724,10 @@ test.describe('a system', () => {
     // What can't be drawn isn't the board's to lose, carrying events or not.
     const before = await issues(page).filter({ hasText: 'ghost' }).count();
     expect(before).toBe(2);
-    const box = await service(page, 'a').boundingBox();
-    await page.mouse.move(box.x + 40, box.y + 12);
+    const a = await grip(page, 'a');
+    await page.mouse.move(a.x, a.y);
     await page.mouse.down();
-    await page.mouse.move(box.x + 40, box.y + 60, { steps: 4 });
+    await page.mouse.move(a.x, a.y + 48, { steps: 4 });
     await page.mouse.up();
     await expect.poll(async () => (await json(page)).services.find((s) => s.id === 'a').at.y).toBeGreaterThan(0);
     await expect(issues(page).filter({ hasText: 'ghost' })).toHaveCount(2);
@@ -782,6 +847,7 @@ test.describe('a system and wrangler.jsonc', () => {
   });
 
   test('something new on the board goes in the file, and reading it back is the same', async ({ page }) => {
+    await openPanel(page);
     const search = catalogSearch(page);
     await search.fill('d1');
     await search.press('Enter');

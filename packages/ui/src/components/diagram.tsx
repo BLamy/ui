@@ -17,7 +17,7 @@ import { DiagramChromeProvider, useDiagramChrome, useDiagramChromeInset, useDiag
 import type { DiagramHistory } from '@/lib/diagram-history';
 import { describeEdge, describeItem, describeNode, edgesByNode, fitViewport, nearestNode, stepFocus, viewportToShow, type DiagramItem, type DiagramStep } from '@/lib/diagram-keyboard';
 import {
-  DIAGRAM_LEGIBLE_ZOOM, DIAGRAM_SIDES, NOTHING_SELECTED, anchorNormal, codeKey, anchorPoint, connectorPath, diagramBounds, diagramTextRuns, edgeGeometries, edgeGeometry, edgeLabelSize, hasEdgeLabel, holdsNodes, indexDiagram, itemKey, labelBoxAvoiding, moveNodes, nearestSide, nodeAnatomy, portPoint, rectIndex, regionDividers, renderWindow, roundedPolylineD, sectionKey, sizeNodesToText,
+  DIAGRAM_CARD, DIAGRAM_LEGIBLE_ZOOM, DIAGRAM_SIDES, NOTHING_SELECTED, anchorNormal, codeKey, anchorPoint, connectorPath, diagramBounds, diagramTextRuns, edgeGeometries, edgeGeometry, edgeLabelSize, facePorts, hasEdgeLabel, holdsNodes, indexDiagram, isInside, itemKey, labelBoxAvoiding, moveNodes, nearestSide, nodeAnatomy, portPoint, rectIndex, regionDividers, renderWindow, roundedPolylineD, sectionKey, sizeNodesToText,
   type ConnectorEnd, type ConnectorGeometry, type DiagramConnection, type DiagramDivider, type DiagramEdge, type DiagramEdgeTone, type DiagramEdgeVariant, type DiagramGlyph, type DiagramIndex, type DiagramNode, type DiagramNodeKind, type DiagramNodeVariant, type DiagramPort, type DiagramSection, type DiagramSelection, type DiagramSide, type DiagramTone,
 } from '@/lib/diagram-model';
 import {
@@ -180,12 +180,12 @@ export const diagramItemVariants = cva('flex max-w-full min-w-0 items-center gap
 /** An edge's label: a fully rounded `pill` for a title alone, or a small `card` with its items under the title. */
 export const diagramEdgeLabelVariants = cva('absolute border border-border bg-card text-card-foreground shadow-hairline', {
   variants: {
-    shape: {
+    variant: {
       pill: 'flex items-center justify-center gap-1 rounded-full px-2.5 py-1 whitespace-nowrap',
       card: 'flex flex-col items-start gap-1.5 rounded-ctl px-2.5 pt-1.5 pb-2',
     },
   },
-  defaultVariants: { shape: 'pill' },
+  defaultVariants: { variant: 'pill' },
 });
 
 const TONE_ACCENT: Record<DiagramTone, string> = {
@@ -256,10 +256,17 @@ export function DiagramSections({ sections, owner, pressable = false, focused, c
         if (!s.items.length && !s.title) return null;
         const key = sectionKey(s, si);
         const variant = s.variant ?? 'default';
+        const inline = variant === 'inline';
+        // An inline section's chips are the default chips, in a row.
+        const look = inline ? 'default' : variant;
         return (
           <div key={key} data-slot="diagram-section" data-section={key} data-variant={variant} className="flex min-w-0 flex-col items-start">
             {s.title ? <div data-slot="diagram-section-title" className={cn('text-muted-foreground', s.items.length && 'mb-1', DIAGRAM_TEXT_CLASS.caption, FAR_HIDDEN)}>{s.title}</div> : null}
-            <div className={cn('flex min-w-0 flex-col items-start', variant === 'default' ? 'gap-1' : 'gap-0.5')}>
+            <div
+              className={cn('flex min-w-0', inline ? 'flex-row flex-wrap items-center gap-1' : 'flex-col items-start', variant === 'default' ? 'gap-1' : !inline && 'gap-0.5')}
+              // Where it wraps is where it's measured to (a little over, so a pixel of rounding never wraps it sooner).
+              style={inline ? { maxWidth: DIAGRAM_CARD.inlineMax + 8 } : undefined}
+            >
               {s.items.map((it) => {
                 const k = itemKey(it);
                 const tone = it.tone ?? 'default';
@@ -274,7 +281,7 @@ export function DiagramSections({ sections, owner, pressable = false, focused, c
                     data-pressable={pressable ? '' : undefined}
                     data-focused={focused === `${key}\0${k}` ? '' : undefined}
                     aria-hidden="true"
-                    className={cn(diagramItemVariants({ variant, tone, pressable }), ITEM_FOCUS, FAR_HIDDEN)}
+                    className={cn(diagramItemVariants({ variant: look, tone, pressable }), ITEM_FOCUS, FAR_HIDDEN)}
                   >
                     {it.icon ? <span data-part="glyph" className="flex min-w-3 shrink-0 items-center justify-center"><Glyph glyph={it.icon} size={12} /></span> : null}
                     <span className={cn('min-w-0 [overflow-wrap:anywhere]', variant === 'code' ? DIAGRAM_TEXT_CLASS.code : DIAGRAM_TEXT_CLASS.item)}>{codeKey(it, variant === 'code')}</span>
@@ -347,7 +354,8 @@ export function DiagramNodeBody({ node, pressable: pressableProp, focusedItem: f
         />
       ) : null}
       {body ? (
-        <div data-slot="diagram-node-content" className="flex min-w-0 flex-col gap-2 px-2.5 pt-2 pb-2.5">
+        // A box's sections end on a hairline (where its own edges to what it holds start), as its header does.
+        <div data-slot="diagram-node-content" className={cn('flex min-w-0 flex-col gap-2 px-2.5 pt-2 pb-2.5', container && kind !== 'region' && '[box-shadow:inset_0_-1px_0_var(--border)]')}>
           {node.description ? <div data-slot="diagram-node-description" className={cn('[overflow-wrap:anywhere] text-muted-foreground', DIAGRAM_TEXT_CLASS.description, FAR_HIDDEN)}>{node.description}</div> : null}
           {sections ? <DiagramSections sections={sections} owner={{ kind: 'node', id: node.id }} pressable={pressable} focused={focusedItem} /> : null}
         </div>
@@ -436,15 +444,20 @@ const NodeView = memo(function NodeView({ node, selected, selectable, current, l
 
 /* ── An edge ── */
 
-interface EdgeViewProps { edge: DiagramEdge<unknown>; d: string; arrow: string; selected?: boolean; selectable?: boolean; current?: boolean; label: string }
+interface EdgeViewProps {
+  edge: DiagramEdge<unknown>; d: string; arrow: string; selected?: boolean; selectable?: boolean; current?: boolean; label: string;
+  /** It starts inside the box it's from (a box's own edge to what it holds): a dot there says where. */
+  origin?: boolean;
+}
 
 /** An edge is drawn from its route, its kind and its name, which are all that's compared. */
 const sameEdgeView = (a: EdgeViewProps, b: EdgeViewProps) =>
-  a.d === b.d && a.arrow === b.arrow && a.selected === b.selected && a.selectable === b.selectable && a.current === b.current && a.label === b.label
+  a.d === b.d && a.arrow === b.arrow && a.selected === b.selected && a.selectable === b.selectable && a.current === b.current && a.label === b.label && a.origin === b.origin
   && a.edge.id === b.edge.id && a.edge.variant === b.edge.variant && a.edge.tone === b.edge.tone;
 
-const EdgeView = memo(function EdgeView({ edge, d, arrow, selected, selectable, current, label }: EdgeViewProps) {
+const EdgeView = memo(function EdgeView({ edge, d, arrow, selected, selectable, current, label, origin }: EdgeViewProps) {
   const variant = edgeVariant(edge.variant), tone = edgeTone(edge.tone);
+  const look = selected || current ? '-selected' : tone === 'destructive' ? '-problem' : variant === 'strong' ? '-strong' : '';
   return (
     <path
       data-slot="diagram-edge"
@@ -459,7 +472,8 @@ const EdgeView = memo(function EdgeView({ edge, d, arrow, selected, selectable, 
       aria-pressed={selectable ? !!selected : undefined}
       aria-current={current || undefined}
       d={d}
-      markerEnd={`url(#${arrow}${selected || current ? '-selected' : tone === 'destructive' ? '-problem' : variant === 'strong' ? '-strong' : ''})`}
+      markerEnd={`url(#${arrow}${look})`}
+      markerStart={origin ? `url(#${arrow}-origin${look})` : undefined}
       className={edgeClass(`${variant}:${tone}:${selected ? '1' : ''}:${current ? '1' : ''}`)}
     />
   );
@@ -494,12 +508,12 @@ const LABEL_FOCUSED_SELECTED = 'border-primary [box-shadow:0_0_0_1px_var(--prima
  *  name says what it says. */
 const EdgeLabel = memo(function EdgeLabel({ edge, box, selected, focused, current, pressable = false, pressableLabel = false, focusedItem }: EdgeLabelProps) {
   const sections = edge.sections?.some((s) => s.items.length || s.title) ? edge.sections : undefined;
-  const shape = sections ? 'card' : 'pill';
+  const variant = sections ? 'card' : 'pill';
   return (
     <div
       data-slot="diagram-edge-label"
       data-edge={edge.id}
-      data-shape={shape}
+      data-variant={variant}
       data-tone={edge.tone}
       data-selected={selected ? '' : undefined}
       data-focused={focused ? '' : undefined}
@@ -508,7 +522,7 @@ const EdgeLabel = memo(function EdgeLabel({ edge, box, selected, focused, curren
       // The edge's own name says this, along with what it joins, and Enter on the edge presses it.
       aria-hidden="true"
       className={cn(
-        diagramEdgeLabelVariants({ shape }),
+        diagramEdgeLabelVariants({ variant }),
         pressableLabel && LABEL_PRESSABLE,
         'group-data-[zoom=far]/diagram:hidden group-data-[zoom=mid]/diagram:hidden',
         edge.tone === 'destructive' && 'border-dashed border-destructive/60',
@@ -539,6 +553,15 @@ function ArrowMarker({ id, className }: { id: string; className: string }) {
   return (
     <marker id={id} viewBox="0 0 7 7.7" refX="7" refY="3.85" markerWidth="5.6" markerHeight="6.16" markerUnits="strokeWidth" orient="auto" overflow="visible">
       <path d="M0 0L7 3.85L0 7.7Z" className={cn('origin-[7px_3.85px] [transform:scale(clamp(0.4,var(--diagram-z),1))]', className)} />
+    </marker>
+  );
+}
+
+/** Where a box's own edge to what it holds leaves it: a dot on the edge under its sections, the size of a port's. */
+function OriginMarker({ id, className }: { id: string; className: string }) {
+  return (
+    <marker id={id} viewBox="-4 -4 8 8" refX="0" refY="0" markerWidth="4.4" markerHeight="4.4" markerUnits="strokeWidth" orient="auto" overflow="visible">
+      <circle r="4" className={cn('[transform:scale(clamp(0.4,var(--diagram-z),1))]', className)} />
     </marker>
   );
 }
@@ -596,6 +619,8 @@ interface Laid<N, E> {
   edges: { edge: DiagramEdge<E>; geometry: ConnectorGeometry; box: Rect; d: string }[];
   labels: { edge: DiagramEdge<E>; box: Rect }[];
   dividers: DiagramDivider[];
+  /** Edges from a box to what it holds that start inside it, under its sections: drawn with a dot where they start. */
+  origins: Set<string>;
   bounds: Rect | null;
 }
 
@@ -604,10 +629,20 @@ const routeD = (edge: DiagramEdge<unknown>, g: ConnectorGeometry) => ((edge.rout
 
 /** Up to this many nodes and edges, hand-placed edges go round the cards in their way (not while something's dragged). */
 const AVOID_UP_TO = 200;
+/** Up to this many, edges between ports, and any that would run along another, get lanes of their own (`routeInLanes`). */
+const LANES_UP_TO = 120;
 
-function layOut<N, E>(nodes: readonly DiagramNode<N>[], edges: readonly DiagramEdge<E>[], text: TextMeasurer, moving = false): Laid<N, E> {
+function layOut<N, E>(given: readonly DiagramNode<N>[], edges: readonly DiagramEdge<E>[], text: TextMeasurer, moving = false): Laid<N, E> {
+  // A port on a card's row sits at the end of the row that faces where its edges go.
+  const nodes = facePorts(given, edges);
   const index = indexDiagram(nodes);
-  const geometries = edgeGeometries(edges, index, { avoid: !moving && nodes.length + edges.length <= AVOID_UP_TO });
+  const headOf = (n: DiagramNode<N>) => (n.title || n.sections?.length ? Math.max(GROUP_TITLE_ROOM, nodeAnatomy(n, text).top) : GROUP_TITLE_ROOM);
+  // Edges in lanes of their own come with their labels, on runs of their own.
+  const laned = new Map<string, Rect>();
+  const geometries = edgeGeometries(edges, index, {
+    avoid: !moving && nodes.length + edges.length <= AVOID_UP_TO,
+    ...(nodes.length + edges.length <= LANES_UP_TO ? { headOf, labelSize: (e: DiagramEdge<E>) => edgeLabelSize(e, text), labels: laned } : null),
+  });
   const drawn: Laid<N, E>['edges'] = [];
   const labels: Laid<N, E>['labels'] = [];
   // A label sits on its route, the edge running into it and out of it: where a layout put it if that's clear, or else
@@ -618,9 +653,16 @@ function layOut<N, E>(nodes: readonly DiagramNode<N>[], edges: readonly DiagramE
     const geometry = geometries.get(edge.id);
     if (geometry) drawn.push({ edge, geometry, box: rectOf(geometry.pts), d: routeD(edge, geometry) });
   }
-  if (drawn.some((d) => hasEdgeLabel(d.edge))) {
+  // A label a layout placed with its route (or a lane's) stays where it is: only one with no place yet looks for one, and
+  // only then is everything it keeps off indexed (every card and every run of every route: at 2,000 nodes, most of a
+  // drag's frame, for nothing).
+  const placedBy = (edge: DiagramEdge<E>) => laned.get(edge.id) ?? (edge.labelBox && edge.points && edge.points.length >= 2 ? edge.labelBox : null);
+  const unplaced = drawn.some((d) => hasEdgeLabel(d.edge) && !placedBy(d.edge));
+  if (!unplaced) {
+    for (const { edge } of drawn) if (hasEdgeLabel(edge)) labels.push({ edge, box: placedBy(edge)! });
+  } else {
     const room = rectIndex(nodes.flatMap((n) => (n.kind === 'root' || n.kind === 'region' || n.kind === 'marker' ? []
-      : holdsNodes(n) ? [{ x: n.x, y: n.y, w: n.w, h: n.title || n.sections?.length ? Math.max(GROUP_TITLE_ROOM, nodeAnatomy(n, text).top) : GROUP_TITLE_ROOM }] : [n])));
+      : holdsNodes(n) ? [{ x: n.x, y: n.y, w: n.w, h: headOf(n) }] : [n])));
     const routes = new Map<string, Set<Rect>>();
     for (const { edge, geometry } of drawn) {
       const own = new Set<Rect>();
@@ -632,13 +674,18 @@ function layOut<N, E>(nodes: readonly DiagramNode<N>[], edges: readonly DiagramE
       }
       routes.set(edge.id, own);
     }
+    for (const { edge } of drawn) {
+      const box = laned.get(edge.id);
+      if (box && hasEdgeLabel(edge)) room.add(box);
+    }
     for (const { edge, geometry } of drawn) {
       if (!hasEdgeLabel(edge)) continue;
       const own = routes.get(edge.id)!;
       const size = edge.labelBox ?? edgeLabelSize(edge, text)!;
-      // A route and a label a layout worked out together stay together: the route runs through the label.
-      const box = edge.labelBox && edge.points && edge.points.length >= 2 ? edge.labelBox : labelBoxAvoiding(geometry.pts, size, (b) => room.overlap(b, (r) => own.has(r)), edge.labelBox);
-      room.add(box);
+      // A route and a label a layout worked out together stay together: the route runs through the label. So do a lane's.
+      const lane = laned.get(edge.id);
+      const box = lane ?? (edge.labelBox && edge.points && edge.points.length >= 2 ? edge.labelBox : labelBoxAvoiding(geometry.pts, size, (b) => room.overlap(b, (r) => own.has(r)), edge.labelBox));
+      if (!lane) room.add(box);
       labels.push({ edge, box });
     }
   }
@@ -648,8 +695,15 @@ function layOut<N, E>(nodes: readonly DiagramNode<N>[], edges: readonly DiagramE
   const leaves = nodes.filter((n) => !isContainer(n));
   // An entry marker stands out past its node's corner.
   const entries = nodes.filter((n) => n.entry).map((n) => ({ x: n.x - 22, y: n.y - 16, w: 22, h: 16 }));
+  const origins = new Set<string>();
+  for (const { edge, geometry } of drawn) {
+    const box = index.byId.get(edge.from);
+    if (!box || !isInside(index, edge.to, edge.from)) continue;
+    const p = geometry.start;
+    if (p.x > box.x + 1 && p.x < box.x + box.w - 1 && p.y > box.y + 1 && p.y < box.y + box.h - 1) origins.add(edge.id);
+  }
   return {
-    index, geometries, edgesAt: edgesByNode(drawn.map((d) => d.edge)), containers, leaves, edges: drawn, labels, dividers: regionDividers(index),
+    index, geometries, edgesAt: edgesByNode(drawn.map((d) => d.edge)), containers, leaves, edges: drawn, labels, dividers: regionDividers(index), origins,
     bounds: diagramBounds([...nodes, ...entries], geometries.values(), labels.map((l) => l.box)),
   };
 }
@@ -755,8 +809,9 @@ export interface DiagramProps<N = unknown, E = unknown> extends Pick<CanvasProps
   autoSize?: boolean;
   /** Draw only what's near the view. By default that's on above 200 nodes and edges. */
   cull?: boolean;
-  /** An overview in a corner, on `CanvasMiniMap` (`side`, `align`). */
-  minimap?: boolean | Omit<CanvasMiniMapProps, 'items'>;
+  /** An overview in a corner, on `CanvasMiniMap` (`side`, `align`). `auto`: only while the diagram can't be seen whole at a
+   *  readable size (a good part of it out of view) on a board that has room for it (720 × 600 px or more), above a frame's bar. */
+  minimap?: boolean | 'auto' | Omit<CanvasMiniMapProps, 'items'>;
   /** Draws a node's insides, within a box it's placed in. Keep the function stable, as it's what the nodes memoize on. */
   renderNode?: (node: DiagramNode<N>) => ReactNode;
   /** What shows with no nodes (and not `loading`). Default an `EmptyState`; `null` for nothing. */
@@ -797,22 +852,33 @@ function useDiagramText(host: RefObject<HTMLElement | null>, nodes: readonly Dia
 }
 
 /** Where a diagram opens, until the view's moved: all of it, centered, when that can be read; otherwise at the least size
- *  that can be read, from its top, across its width (centered) when that fits, to be scrolled. Never past 100%, and always
- *  clear of the chrome. */
+ *  that can be read, from its top-start corner (where a machine's name and context are, and a system's), across its width
+ *  (centered) when that fits, to be scrolled. Only on a board too narrow for a column of cards (a phone's), where that
+ *  corner would leave where it starts (its first entry marker) out of view, is that put in the middle instead. Never past
+ *  100%, and always in the part of the board nothing covers (`pad`: the toolbar, the minimap, a frame's bar and drawer). */
 function firstView(box: Rect | null, size: { width: number; height: number }, pad: DiagramInsets, start?: Rect | null): Viewport {
   const fit = fitViewport(box, size, pad);
   if (!box || box.w <= 0 || box.h <= 0 || fit.zoom >= DIAGRAM_LEGIBLE_ZOOM) return fit;
   const room = Math.max(1, size.width - pad.left - pad.right);
   const zoom = DIAGRAM_LEGIBLE_ZOOM;
   let x = box.w * zoom <= room ? pad.left + (room - box.w * zoom) / 2 - box.x * zoom : pad.left - box.x * zoom;
-  // Wider than the board: from its start edge, unless where it starts (its first entry marker) would be past the other,
-  // and then with that in the middle, as far as the drawing goes.
-  if (start && box.w * zoom > room && (start.x + start.w) * zoom + x > pad.left + room) {
+  if (start && size.width < NARROW_BOARD && box.w * zoom > room && (start.x + start.w) * zoom + x > pad.left + room) {
     const centered = pad.left + room / 2 - (start.x + start.w / 2) * zoom;
     x = Math.min(pad.left - box.x * zoom, Math.max(centered, pad.left + room - (box.x + box.w) * zoom));
   }
   return { zoom, x, y: pad.top - box.y * zoom };
 }
+
+/** From this big, a board has room for `minimap="auto"`'s overview: smaller (a phone, a docs page's fence), the overview
+ *  would cover a third of it, and Fit is a press away. */
+const MINIMAP_AUTO_FROM = { width: 720, height: 600 };
+/** `minimap="auto"` shows when a whole fit would be under this share of the readable size: a good part of it out of view at
+ *  that size, not the last few units of a drawing that nearly fits. */
+const MINIMAP_AUTO_SHARE = 0.8;
+
+/** Narrower than this, a board can't show a container's header and sections and much else: a phone's. A regular frame's
+ *  board beside its panel is wider (432 px at the least). */
+const NARROW_BOARD = 420;
 
 /** A diagram on a `Canvas`. Sits in its host like any BL UI container: it fills the nearest positioned box. */
 export function Diagram<N = unknown, E = unknown>({
@@ -879,15 +945,23 @@ export function Diagram<N = unknown, E = unknown>({
   // A frame's board around it is a scope too (its bar), and in one, the board's foot is the bar's.
   const around = useDiagramChrome();
   const chrome = useDiagramChromeScope(ref, { frame: !!around?.frame });
-  const miniInset = minimap ? (typeof minimap === 'object' ? minimap.height ?? 120 : 120) + 12 : 0;
-  const miniSide = typeof minimap === 'object' && minimap.side === 'top' ? 'top' : 'bottom';
   const pad = typeof fitPadding === 'number' ? { top: fitPadding, right: fitPadding, bottom: fitPadding, left: fitPadding } : { top: 24, right: 24, bottom: 24, left: 24, ...fitPadding };
-  const inset = (side: keyof DiagramInsets) => {
-    const over = Math.max(chrome.insets[side], around?.insets[side] ?? 0, side === miniSide ? miniInset : 0);
+  const miniSide = typeof minimap === 'object' && minimap.side === 'top' ? 'top' : 'bottom';
+  const miniHeight = (typeof minimap === 'object' ? minimap.height ?? 120 : 120) + 12;
+  // A frame's bar along the same edge: the map sits above it.
+  const under = miniSide === 'bottom' ? around?.insets.bottom ?? 0 : 0;
+  const inset = (side: keyof DiagramInsets, withMap: boolean) => {
+    const map = withMap && side === miniSide ? miniHeight + under : 0;
+    const over = Math.max(chrome.insets[side], around?.insets[side] ?? 0, map);
     // Past the chrome, a little air: less than the padding asked for, as the chrome already has its own margin.
     return over ? Math.max(pad[side], over + 12) : pad[side];
   };
-  const fitInsets: DiagramInsets = { top: inset('top'), right: inset('right'), bottom: inset('bottom'), left: inset('left') };
+  const insetsWith = (withMap: boolean): DiagramInsets => ({ top: inset('top', withMap), right: inset('right', withMap), bottom: inset('bottom', withMap), left: inset('left', withMap) });
+  // `auto`: shown while what's drawn can't be seen whole at a size that can be read, and there's room for an overview.
+  const showMap = minimap === 'auto'
+    ? !!laid.bounds && size.width >= MINIMAP_AUTO_FROM.width && size.height >= MINIMAP_AUTO_FROM.height && fitViewport(laid.bounds, size, insetsWith(false)).zoom < DIAGRAM_LEGIBLE_ZOOM * MINIMAP_AUTO_SHARE
+    : !!minimap;
+  const fitInsets = insetsWith(showMap);
   const fitKey = `${fitInsets.top},${fitInsets.right},${fitInsets.bottom},${fitInsets.left}`;
   // `fitKey` stands for `fitInsets`, a new object each render.
   const fitPad = useMemo(() => fitInsets, [fitKey]);
@@ -1250,6 +1324,10 @@ export function Diagram<N = unknown, E = unknown>({
         <ArrowMarker id={`${arrow}-strong`} className="fill-foreground" />
         <ArrowMarker id={`${arrow}-selected`} className="fill-primary" />
         <ArrowMarker id={`${arrow}-problem`} className="fill-destructive" />
+        <OriginMarker id={`${arrow}-origin`} className="fill-muted-foreground" />
+        <OriginMarker id={`${arrow}-origin-strong`} className="fill-foreground" />
+        <OriginMarker id={`${arrow}-origin-selected`} className="fill-primary" />
+        <OriginMarker id={`${arrow}-origin-problem`} className="fill-destructive" />
       </defs>
       {drawn.dividers.map((d) => (
         <line
@@ -1260,9 +1338,9 @@ export function Diagram<N = unknown, E = unknown>({
           className="stroke-border [stroke-dasharray:calc(6px/var(--diagram-z))_calc(4px/var(--diagram-z))] [stroke-width:calc(1px/var(--diagram-z))]"
         />
       ))}
-      {drawn.edges.map(({ edge, d }) => <EdgeView key={edge.id} edge={edge} d={d} arrow={arrow} selected={selectedSets.edges.has(edge.id)} selectable={selectable} current={currentSets.edges.has(edge.id)} label={(edgeLabel as DiagramProps<any, any>['describeEdge'])?.(edge) ?? describeEdge(edge, laid.index)} />)}
+      {drawn.edges.map(({ edge, d }) => <EdgeView key={edge.id} edge={edge} d={d} arrow={arrow} origin={laid.origins.has(edge.id)} selected={selectedSets.edges.has(edge.id)} selectable={selectable} current={currentSets.edges.has(edge.id)} label={(edgeLabel as DiagramProps<any, any>['describeEdge'])?.(edge) ?? describeEdge(edge, laid.index)} />)}
     </>
-  ), [drawn.dividers, drawn.edges, arrow, selectedSets.edges, currentSets.edges, selectable, edgeLabel, laid.index]);
+  ), [drawn.dividers, drawn.edges, arrow, selectedSets.edges, currentSets.edges, selectable, edgeLabel, laid.index, laid.origins]);
   const labelViews = useMemo(() => drawn.labels.map(({ edge, box }) => {
     const on = ringOn?.kind === 'edge' && ringOn.id === edge.id ? ringOn : null;
     return (
@@ -1301,7 +1379,7 @@ export function Diagram<N = unknown, E = unknown>({
     )));
   }, [drawn.containers, drawn.leaves, selectedSets.nodes, currentSets.nodes, ringOn]);
   const focusedEdge = ringOn?.kind === 'edge' && ringOn.item === undefined ? laid.edges.find((d) => d.edge.id === ringOn.id)?.d ?? null : null;
-  const marks = useMemo<CanvasMiniMapItem[]>(() => (minimap ? nodes.filter((n) => n.kind !== 'root').map((n) => ({ id: n.id, x: n.x, y: n.y, w: n.w, h: n.h })) : []), [minimap, nodes]);
+  const marks = useMemo<CanvasMiniMapItem[]>(() => (showMap ? nodes.filter((n) => n.kind !== 'root').map((n) => ({ id: n.id, x: n.x, y: n.y, w: n.w, h: n.h })) : []), [showMap, nodes]);
   const zoom = viewport.zoom < NODE_TEXT_ZOOM ? 'far' : viewport.zoom < EDGE_LABEL_ZOOM ? 'mid' : 'near';
   // Changing this restyles every line drawn, so it moves in steps of about 9%, a few frames apart, which keeps a line of
   // 1.25 px within 0.06 px of that. At 2,000 nodes, a change every frame cost 25 ms a frame while zooming.
@@ -1412,7 +1490,7 @@ export function Diagram<N = unknown, E = unknown>({
           onCanvasKeyDown={onKeyDown}
           onCanvasDoubleClick={onAction ? (e, { board: at }) => { const hit = hitAt(at); if (hit?.kind === 'node' || hit?.kind === 'edge') onAction({ kind: hit.kind, id: hit.id }, { reason: 'double-click', event: e }); } : undefined}
           {...pointerProps}
-          overlay={minimap ? <CanvasMiniMap items={marks} {...(minimap === true ? null : minimap)} /> : null}
+          overlay={showMap ? <CanvasMiniMap items={marks} {...(typeof minimap === 'object' ? minimap : null)} {...(under ? { style: { bottom: under + 8, ...(typeof minimap === 'object' ? minimap.style : null) } } : null)} /> : null}
         >
           <div data-slot="diagram-layer" data-zoom={zoom} className="group/diagram pointer-events-none absolute top-0 left-0">
             {containers}

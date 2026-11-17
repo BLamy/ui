@@ -47,6 +47,8 @@ A larger one: two environments, each a box of its own; a gateway on a route and 
 
 {% demo src="cloudflare-diagram/platform" %}
 
+**Where a bigger system opens.** A system opens readable (87.5% or more) from its top-start corner: its name, what's account-wide (a row of chips), and its entry points with what they're bound to, the place a system's story starts, as a machine's starts at its initial state. The larger one above can't be read whole in a 1280 × 800 frame, even with the panel closed and the account's facts in a row: its production environment alone is 1,349 × 989 units (four layers: the two entry Workers, about 230 tall with their triggers and settings; what they bind; the Search Worker; and what it binds, with the dead-letter queue under its queue), which is 865 px tall at 87.5%, where the frame has 668 between its toolbar and its bar. Shown whole it would be 67%, where a chip's words are under 8 px, so it isn't. It opens instead on Gateway and Indexer with all they bind and the Search Worker, readable; the minimap (shown by itself while a good part of a system is out of view, on a board with room for it) and Fit are each one press from the rest.
+
 ## What is drawn
 
 Everything a system says has one drawn form. Each fact is drawn once: a binding is its edge's label, not a chip on its Worker too.
@@ -54,7 +56,7 @@ Everything a system says has one drawn form. Each fact is drawn once: a binding 
 | What a system says | How it's drawn |
 | --- | --- |
 | The system, `title` / `name` | The root container: a header strip with a cloud glyph and the name ("Cloudflare" by default) |
-| What's account-wide: `accountId`, the zones its routes are on, its environments | The root's **Account** section, a chip each |
+| What's account-wide: `accountId`, the zones its routes are on, its environments | The root's **Account** section: a row of chips that wraps, under the system's name |
 | An environment, `environment` on a service | A dashed box in the system, headed with its name and "environment", holding its services |
 | A service | A card: its header has the product's glyph (the library's own icons), its name, and its product as a quiet badge when the name isn't the product's |
 | What's behind it, `resource` (a bucket, a database, a queue, an index) | A quiet line under the header: "bucket uploads". Left out when it's what the service is called |
@@ -127,7 +129,7 @@ const [system, setSystem] = useState({ services, edges })
 <CloudflareDiagram editable services={system.services} edges={system.edges} onDataChange={setSystem} />
 ```
 
-With `editable`, the panel has a search of the catalog (a Combobox: type, then pick, or press Enter for the first), and the board's `DiagramToolbar` has undo and redo, with ⌘Z and ⇧⌘Z on the board: the system's history, handed to the Diagram as its `history`, so it's the same toolbar and keys as every diagram. Each card has a Connect section: drag from the dot of an "out" row of one (like `env`) to the dot of an "in" row of another to connect them. `onDataChange(system, details)` has the whole system and `details.reason`: Diagram's `move`, `delete`, `connect`, `reconnect`, `undo` and `redo`, or `edit` for the panel and a machine, and `add` for the search. `details.cancel()` refuses a change when uncontrolled. Undo covers the board, the panel and the machines together; a new system from outside starts its history over.
+With `editable`, the panel has a search of the catalog (a Combobox: type, then pick, or press Enter for the first; the bar's "Add a service" opens it), and the board's `DiagramToolbar` has undo and redo, with ⌘Z and ⇧⌘Z on the board: the system's history, handed to the Diagram as its `history`, so it's the same toolbar and keys as every diagram. Each card has a Connect section: drag from the dot of an "out" row of one (like `env`) to the dot of an "in" row of another to connect them. A row's dot sits at the end of the row that faces where its connections go, and every connection has a lane of its own from end to end, its label on a stretch only its line has: several from one dot (FILES and JOBS from `env`) leave it side by side and part at once, and none runs along another or round its own card (Diagram's [lanes](#/diagram), on a placed board and a laid-out one alike). `onDataChange(system, details)` has the whole system and `details.reason`: Diagram's `move`, `delete`, `connect`, `reconnect`, `undo` and `redo`, or `edit` for the panel and a machine, and `add` for the search. `details.cancel()` refuses a change when uncontrolled. Undo covers the board, the panel and the machines together; a new system from outside starts its history over.
 
 | What's joined | How it says so | What's on offer |
 | --- | --- | --- |
@@ -305,14 +307,16 @@ Any product can go on a diagram. What has no binding or handler, like Data Loss 
 | `onAction` | — | `(item, details)` when a service, a connection or (editable) a chip is activated, as on Diagram. A Machine chip opens its machine first |
 | `editable` | `false` | Moving, adding, connecting and deleting services, and changing connections and machines. Without it, it's read-only: you can still select in it |
 | `selection`, `defaultSelection`, `onSelectionChange(selection, details)` | nothing | What's selected, `{ nodes, edges }`, as on Diagram |
-| `panelOpen`, `defaultPanelOpen`, `onPanelOpenChange` | open when it's a column | The panel, as on DiagramFrame |
+| `panelOpen`, `defaultPanelOpen`, `onPanelOpenChange` | closed, until something's selected | The panel, as on DiagramFrame. Left to itself it's closed, with its button on the bar ("Services", "Add a service" when editable, "Details" with something selected), and opens when something's selected, beside the board or over it, once the press is over and without taking the keys from the board (on a phone, a pushed page waits for its button); editable with nothing in it yet, it's open, for the search. Its title is what it shows: a service's name and product ("Room · Durable Objects"), a connection's name and its two ends ("FILES · API → Files"), which names the panel and is said as it changes |
 | `panelPresentation` | `auto` | `column` beside the board when there's room, a `drawer` at medium, a `push`ed page at a phone's size |
 | `openMachine`, `defaultOpenMachine`, `onOpenMachineChange` | none | Whose machine is open over the board, by the service's id, or `null` |
 | `direction` | `down` | Which way a layout runs: `down`, `right`, `up` or `left` |
+| `density` | `default` | How much room a layout leaves between things: `compact` for a big system, `default`, `comfortable`. For what's laid out (no service has a place) |
 | `icon` | the library's own | What to draw for a product, for an app with permission to use Cloudflare's |
 | `emptyState` | an `EmptyState` | What an empty system shows. Editable, it says to search the catalog |
 | `panelHeader` | — | At the top of the panel: a name field, an app's own actions |
-| `minimap`, `background`, `fitPadding`, `viewport`, `defaultViewport`, `onViewportChange` | as on Diagram | Passed to it |
+| `minimap` | `auto` | Diagram's: `auto` shows it while a good part of the system is out of view at a readable size, on a board with room for it |
+| `background`, `fitPadding`, `viewport`, `defaultViewport`, `onViewportChange` | as on Diagram | Passed to it |
 | `aria-label` | `Cloudflare services` | The diagram's name |
 | `className`, `style` | — | Merged onto the frame |
 
@@ -395,9 +399,9 @@ The frame carries `data-cloudflare-diagram` beside DiagramFrame's own. Elements 
 | --- | --- |
 | A service | Diagram's node, `data-node` its id (`data-kind="group"` when it holds its classes), with Diagram's anatomy: `diagram-node-header` (`data-tone="destructive"` when something's wrong), `diagram-node-title`, `diagram-node-trailing` (its product), `diagram-node-description` (its resource), `diagram-entry`, and `diagram-section` / `diagram-item` with `data-section` `handlers`, `bindings`, `triggers`, `settings`, `machine` or `connect` |
 | The system and an environment | Diagram nodes `data-node="cloudflare:system"` (`data-kind="root"`, section `account`) and `cloudflare:env:<name>` |
-| A connection's label | `diagram-edge-label` (`data-shape="pill"` or `"card"`), its chips `diagram-item` with `data-section="uses"`; a dead-letter queue's edge is `data-edge="dead-letter:<consumer edge>"` |
+| A connection's label | `diagram-edge-label` (`data-variant="pill"` or `"card"`), its chips `diagram-item` with `data-section="uses"`; a dead-letter queue's edge is `data-edge="dead-letter:<consumer edge>"` |
 | The bar | `cloudflare-status` |
-| The panel | `cloudflare-panel`, with `cloudflare-search`, `cloudflare-hint`, `cloudflare-issues` and `cloudflare-issue` (`data-severity`, `data-code`, `data-edge`, `data-service`), `cloudflare-description`, `cloudflare-reached-by`, `cloudflare-reaches-with`, `cloudflare-no-ports`, `cloudflare-unknown`, `cloudflare-binding-name`, `cloudflare-edge-problem`, `cloudflare-events`, `cloudflare-event-problem`, `cloudflare-receivable`, `cloudflare-machine-receives`, `cloudflare-machine-problem`, `cloudflare-attribution`; a field's refusal is its `FieldError`, `data-part="refusal"` |
+| The panel | `cloudflare-panel` (named, and titled, by what it shows; `cloudflare-panel-status` says it as it changes), with `cloudflare-search`, `cloudflare-hint`, `cloudflare-issues` and `cloudflare-issue` (`data-severity`, `data-code`, `data-edge`, `data-service`), `cloudflare-description`, `cloudflare-reached-by`, `cloudflare-reaches-with`, `cloudflare-no-ports`, `cloudflare-unknown`, `cloudflare-binding-name`, `cloudflare-edge-problem`, `cloudflare-events`, `cloudflare-event-problem`, `cloudflare-receivable`, `cloudflare-machine-receives`, `cloudflare-machine-problem`, `cloudflare-attribution`; a field's refusal is its `FieldError`, `data-part="refusal"` |
 | Operations | `data-part="operations"` (editable) or `cloudflare-operations` (read-only); each row has `data-operation`, and `data-used` when read-only |
 | Fields | `data-field`: `label`, `binding-name`, `events` |
 | Buttons | `data-action`: `delete`, `show-issue`, `remove-edge`, `add-machine`, `open-machine`, `remove-machine`; undo and redo are the `DiagramToolbar`'s |

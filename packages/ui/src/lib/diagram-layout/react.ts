@@ -1,8 +1,8 @@
 'use client';
 import { useEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import { diagramTextRuns, type DiagramNode } from '@/lib/diagram-model';
-import { createDiagramLayoutEngine, runLayout, toElkGraph, wrapDiagram, type DiagramBoardSize, type DiagramDraft, type DiagramLayoutEngine, type DiagramLayoutError, type DiagramLayoutOptions, type DiagramLayoutResult } from '@/lib/diagram-layout';
-import { measureTextGently, nextFrame } from '@/lib/diagram-text';
+import { createDiagramLayoutEngine, routePortEdges, runLayout, toElkGraph, wrapDiagram, type DiagramBoardSize, type DiagramDraft, type DiagramLayoutEngine, type DiagramLayoutError, type DiagramLayoutOptions, type DiagramLayoutResult } from '@/lib/diagram-layout';
+import { estimateText, measureTextGently, nextFrame, type TextMeasurer } from '@/lib/diagram-text';
 import { useFontVersion, useShownVersion } from '@/lib/use-font-version';
 
 export interface UseDiagramLayoutOptions<N = unknown, E = unknown> extends Pick<DiagramLayoutOptions, 'direction' | 'density' | 'elk' | 'worker'> {
@@ -37,8 +37,10 @@ export function useDiagramLayout<N = unknown, E = unknown>(draft: DiagramDraft<N
     result: DiagramLayoutResult<N, E> | null; status: UseDiagramLayout['status']; error: UseDiagramLayout['error'];
     /** The graph the result is a layout of (`key`), and whether nothing's run since (`null`: the `initial` one). */
     of: string | null;
+    /** What its words measured, for routing its ports again once it's wrapped. */
+    text: TextMeasurer;
   }>(
-    () => ({ result: initial ?? null, status: initial ? 'working' : 'pending', error: null, of: null }),
+    () => ({ result: initial ?? null, status: initial ? 'working' : 'pending', error: null, of: null, text: estimateText }),
   );
   const engine = useRef<DiagramLayoutEngine | null>(null);
   const started = useRef<DiagramLayoutOptions['worker'] | undefined>(undefined);
@@ -57,7 +59,7 @@ export function useDiagramLayout<N = unknown, E = unknown>(draft: DiagramDraft<N
     const current = latest.current;
     // Nothing to lay out (a diagram whose nodes all have places hands over an empty draft): no engine, so no ELK and no worker.
     if (!current.nodes.length) {
-      setState({ result: { nodes: [], edges: [], bounds: { x: 0, y: 0, w: 0, h: 0 }, engine: 'main-thread', ms: 0 }, status: 'ready', error: null, of: key });
+      setState({ result: { nodes: [], edges: [], bounds: { x: 0, y: 0, w: 0, h: 0 }, engine: 'main-thread', ms: 0 }, status: 'ready', error: null, of: key, text: estimateText });
       lastGraph.current = null;
       return;
     }
@@ -88,10 +90,11 @@ export function useDiagramLayout<N = unknown, E = unknown>(draft: DiagramDraft<N
       engine.current ??= createDiagramLayoutEngine({ worker });
       if (large) await nextFrame();
       if (stop.signal.aborted) return;
-      const result = await runLayout(current, { signal: stop.signal }, engine.current, graph);
+      // Its ports are routed here, once it's wrapped to the board.
+      const result = await runLayout(current, { signal: stop.signal, text }, engine.current, graph, false);
       if (stop.signal.aborted) return;
       lastGraph.current = signature;
-      setState({ result, status: 'ready', error: null, of: key });
+      setState({ result, status: 'ready', error: null, of: key, text });
     })().catch((error: DiagramLayoutError | Error) => {
       if (!stop.signal.aborted) setState((s) => ({ ...s, status: 'error', error }));
     });
@@ -114,8 +117,10 @@ export function useDiagramLayout<N = unknown, E = unknown>(draft: DiagramDraft<N
   const fresh = state.of === null || state.of === key;
   if (result && (fresh || shownDraft.current?.result !== result)) shownDraft.current = { draft, result };
   const showing = shownDraft.current?.draft;
-  // Wrapped to fill the board, which is quick: only a new size brings it, not a new layout.
-  const shaped = useMemo(() => (result && board ? { ...result, ...wrapDiagram(result, board, direction) } : result), [result, board, direction]);
+  // Wrapped to fill the board, which is quick: only a new size brings it, not a new layout. Then the routes between ports,
+  // in lanes of their own, from where things ended up.
+  const text = state.text;
+  const shaped = useMemo(() => (result ? { ...result, ...routePortEdges(board ? wrapDiagram(result, board, direction) : result, text) } : result), [result, board, direction, text]);
   const now = useMemo(() => (shaped && showing ? onLayout(showing, shaped) : null), [showing?.nodes, showing?.edges, shaped]);
   return {
     nodes: now?.nodes ?? NOTHING, edges: now?.edges ?? NOTHING,

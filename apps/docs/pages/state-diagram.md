@@ -92,9 +92,9 @@ Every part of an XState v5 machine has a drawn form. The machine runs top to bot
 | The state's own `onDone` | An edge labelled `done` |
 | `*` | An edge labelled `*` |
 | `reenter: true` | A quiet `reenters` line under its chips; to itself, a loop |
-| A transition with no target | A loop on its state with a `no target` chip: it stays and only runs its actions |
-| Several targets | An edge to each, each with a `2 targets` chip |
-| `on` at the machine's root | Edges from the machine's container |
+| A transition with no target | A loop on its state with a quiet `no target` line under its chips: it stays and only runs its actions |
+| Several targets | An edge to each, each with a quiet `2 targets` line under its chips |
+| `on` at the machine's root | Edges from the machine's container: each starts at a dot on the line under its Context, where its sections end |
 
 {% demo src="state-diagram/anatomy" %}
 
@@ -169,6 +169,8 @@ With `simulate`, a copy of the machine runs in the page, with stand-ins for ever
 
 {% demo src="state-diagram/simulate-awkward" %}
 
+It opens readable from its top-start corner, where the machine's name and Context are, in the part of the board the panel and the bar leave, and follows the panel opening and closing until the view's moved. A state or a transition selected from outside the board (the panel's Add state, `selection`, `defaultSelection`) is brought into view, clear of the toolbar, the bar and a drawer; one selected on the board is in view already, and stays where it is. In the panel, a context key's field is over its value's, each as wide as the panel, so a key reads whole.
+
 The panel is a [DiagramFrame](#/diagram-frame)'s: a column beside the board from 720 px wide, a drawer over the board that doesn't dim it from 440 px, so the machine stays in sight while you press its events, and on a phone a page pushed over the board with a back button to it. While it's closed, a bar on the board says where the machine is and opens it. `panelPresentation` forces one, and `panelOpen` / `onPanelOpenChange` control it. The drawer and the push keep to reduced motion. Editing and running at once, the panel has two tabs, **Edit** and **Run**; the run goes on while you look at Edit.
 
 ## Editing
@@ -233,6 +235,7 @@ In Markdown, an ```` ```xstate ```` fence draws its machine with this component,
 | `config` | — | Or its config, as JSON, controlled. |
 | `defaultConfig` | — | Or a config to start from, kept by the diagram. |
 | `direction` | `down` | Which way the layers run: `down`, `right`, `up`, `left`. |
+| `density` | `default` | How much room the layout leaves between things: `compact` for a big machine (the 33 states below), `default`, `comfortable`. |
 | `layout` | — | A layout done ahead of time, on a server perhaps, shown until this one's ready. |
 | `simulate` | `false` | Run a copy of it, with a panel. Pass `{ guards, delays, actors }` to say how some of it goes, read when it starts. |
 | `editable` | `false` | Let its states and transitions be added, removed and changed. |
@@ -243,7 +246,8 @@ In Markdown, an ```` ```xstate ```` fence draws its machine with this component,
 | `panelOpen`, `defaultPanelOpen`, `onPanelOpenChange(open, details)` | open where it's a column | Whether the panel shows. |
 | `panelPresentation` | `auto` | `auto`, `column`, `drawer` or `push`: as on `DiagramFrame`. |
 | `background` | `grid` | The board: `grid` (lines), `dots`, `none`. |
-| `minimap`, `fitPadding`, `viewport`, `defaultViewport`, `onViewportChange` | as on `Diagram` | Passed to it. |
+| `minimap` | `auto` | Diagram's: `auto` shows it while a good part of the machine is out of view at a readable size, on a board with room for it. |
+| `fitPadding`, `viewport`, `defaultViewport`, `onViewportChange` | as on `Diagram` | Passed to it. |
 | `aria-label` | the machine's name | The diagram's name. |
 | `className`, `style` | — | Merged onto the frame. |
 

@@ -7,7 +7,7 @@
    a layout's first asked for, and an app with fixed positions never loads it. Nothing at module scope touches a browser
    API, so this is safe to import on a server. `lib/diagram-layout/react` has the hook. */
 import type { Pt, Rect } from '@/lib/canvas-math';
-import { CONTAINER_PADDING, DIAGRAM_LEGIBLE_ZOOM, ancestorsOf, descendantsOf, diagramBounds, edgeLabelSize, hasEdgeLabel, holdsNodes, indexDiagram, isInside, itemKey, nodeAnatomy, placeItemPorts, rerouteOrthogonal, sectionKey, simplifyRoute, type DiagramEdge, type DiagramNode, type DiagramSide } from '@/lib/diagram-model';
+import { CONTAINER_PADDING, DIAGRAM_LEGIBLE_ZOOM, ancestorsOf, descendantsOf, diagramBounds, edgeLabelSize, facePorts, hasEdgeLabel, holdsNodes, indexDiagram, isInside, itemKey, laneRoutes, nodeAnatomy, placeItemPorts, rerouteOrthogonal, sectionKey, simplifyRoute, type ConnectorEnd, type DiagramEdge, type DiagramNode, type DiagramSide } from '@/lib/diagram-model';
 import { estimateText, type TextMeasurer } from '@/lib/diagram-text';
 
 /* ── What goes in and what comes out ── */
@@ -866,6 +866,95 @@ function packParts<N, E>(laid: Pick<DiagramLayoutResult<N, E>, 'nodes' | 'edges'
   return { nodes: out, edges, bounds };
 }
 
+/* ── Routes between ports, again ── */
+
+/**
+ * Edges between ports that items name (a card's rows: an editable system's Connect section), routed again once ELK has placed
+ * everything: each port on the end of its row that faces where its edges go, each edge in a lane of its own from end to end,
+ * those that share a port side by side out of it, and each label on a straight run only its edge uses, which the routes after
+ * it keep clear of (`routeInLanes`). ELK can only route a port on a box's side from where it put it, and in a layered layout
+ * a port on a side isn't the way the layers run, so its routes went round and shared lanes. Everything else stays where ELK
+ * put it, and those routes keep a lane from what's there.
+ */
+export function routePortEdges<N, E>(laid: Pick<DiagramLayoutResult<N, E>, 'nodes' | 'edges' | 'bounds'>, text: TextMeasurer = estimateText): Pick<DiagramLayoutResult<N, E>, 'nodes' | 'edges' | 'bounds'> {
+  const ported = (e: DiagramEdge<E>) => (!!e.fromPort || !!e.toPort) && e.from !== e.to;
+  const index0 = indexDiagram(laid.nodes);
+  const tops = new Map<string, { header: number; top: number }>();
+  const headOf = (n: DiagramNode<N>) => { let t = tops.get(n.id); if (!t) { const a = nodeAnatomy(n, text); t = { header: a.header, top: a.top }; tops.set(n.id, t); } return t; };
+  // A box with something under its header (a Worker's bindings, a state's actions) whose edge out ELK took from its foot,
+  // under what it holds, where it reads as the last thing in it's: from its side, beside its sections, instead.
+  const fromFoot = (e: DiagramEdge<E>) => {
+    const a = index0.byId.get(e.from);
+    if (!a || e.fromPort || e.from === e.to || !holdsNodes(a) || a.kind === 'root' || a.kind === 'region' || !(e.points?.length ?? 0)) return false;
+    if (!a.description && !a.sections?.some((sec) => sec.items.length)) return false;
+    if (isInside(index0, e.to, e.from)) return false;
+    return e.points![0].y > a.y + headOf(a).top + 1;
+  };
+  // A graph this big is explored rather than read, and routing each edge round all the rest would hold the main thread.
+  if (laid.nodes.length + laid.edges.length > ROUTE_AGAIN_UP_TO || !laid.edges.some((e) => ported(e) || fromFoot(e))) return laid;
+  const nodes = facePorts(laid.nodes, laid.edges);
+  const index = indexDiagram(nodes);
+  // Such an edge keeps the rest of ELK's route (and its label, where it still is on it): it starts beside the box's sections
+  // and goes straight out to where ELK's route passes by, outside the box, and on from there.
+  const cards = nodes.filter((n) => !holdsNodes(n) && n.kind !== 'marker');
+  const spliced = new Map<string, { points: Pt[]; labelBox?: DiagramEdge<E>['labelBox'] }>();
+  for (const e of laid.edges) {
+    if (!fromFoot(e)) continue;
+    const a = index.byId.get(e.from)!, t = headOf(a), pts = e.points!;
+    const y = round(a.y + (t.header + t.top) / 2);
+    for (let i = 1; i < pts.length; i++) {
+      const p = pts[i - 1], q = pts[i];
+      const side = p.x >= a.x + a.w + 4 ? a.x + a.w : p.x <= a.x - 4 ? a.x : null;
+      if (side === null || Math.abs(p.x - q.x) > 0.5 || y < Math.min(p.y, q.y) || y > Math.max(p.y, q.y)) continue;
+      const start = { x: side, y }, join = { x: p.x, y };
+      if (cards.some((c) => c.id !== e.to && runCrosses(start, join, c))) break;
+      const points = simplifyRoute([start, join, ...pts.slice(i)]);
+      const l = e.labelBox, mid = l ? { x: l.x + l.w / 2, y: l.y + l.h / 2 } : null;
+      const still = mid && points.some((u, k) => k > 0 && onRun(points[k - 1], u, mid));
+      spliced.set(e.id, { points, ...(still ? { labelBox: l } : null) });
+      break;
+    }
+  }
+  const lane = laid.edges.filter((e) => (ported(e) || (fromFoot(e) && !spliced.get(e.id)?.labelBox)) && index.byId.has(e.from) && index.byId.has(e.to) && (e.points?.length ?? 0) >= 2);
+  const ids = new Set(lane.map((e) => e.id));
+  const others = laid.edges.filter((e) => !ids.has(e.id));
+  // An end that isn't a port leaves the way ELK had it leave.
+  const way = (a: { x: number; y: number }, b: { x: number; y: number }) => (Math.abs(b.x - a.x) >= Math.abs(b.y - a.y) ? { x: Math.sign(b.x - a.x) || 1, y: 0 } : { x: 0, y: Math.sign(b.y - a.y) || 1 });
+  const ends = new Map<string, { from: ConnectorEnd; to: ConnectorEnd }>(lane.map((e) => {
+    const pts = e.points!, n = pts.length;
+    const to = { p: pts[n - 1], n: way(pts[n - 1], pts[n - 2]) };
+    if (!fromFoot(e)) return [e.id, { from: { p: pts[0], n: way(pts[0], pts[1]) }, to }];
+    // Out of the side that faces where it goes, halfway down its sections.
+    const a = index.byId.get(e.from)!, t = headOf(a);
+    const right = to.p.x >= a.x + a.w / 2;
+    return [e.id, { from: { p: { x: right ? a.x + a.w : a.x, y: round(a.y + (t.header + t.top) / 2) }, n: { x: right ? 1 : -1, y: 0 } }, to }];
+  }));
+  const routed = laneRoutes(index, lane, {
+    headOf: (n) => headOf(n).top,
+    around: others.map((e) => e.points ?? []),
+    labels: others.flatMap((e) => (e.labelBox ? [e.labelBox] : [])),
+    labelSize: (e) => edgeLabelSize(e, text),
+  }, ends);
+  const edges = laid.edges.map((e) => {
+    const r = routed.get(e.id);
+    const s0 = spliced.get(e.id);
+    if (!r && s0) return { ...e, points: s0.points, labelBox: s0.labelBox };
+    if (!r) return e;
+    const { labelBox: _was, ...rest } = e;
+    return { ...rest, points: r.pts, ...(r.label ? { labelBox: r.label } : null) };
+  });
+  const bounds = diagramBounds(nodes, edges.map((e) => ({ pts: e.points ?? [] })), edges.flatMap((e) => (e.labelBox ? [e.labelBox] : []))) ?? laid.bounds;
+  return { nodes, edges, bounds };
+}
+
+/** Up to this many nodes and edges, `routePortEdges` routes again. */
+const ROUTE_AGAIN_UP_TO = 300;
+
+/** Whether a level or upright run goes through a card. */
+const runCrosses = (a: Pt, b: Pt, r: Rect) => Math.max(a.x, b.x) > r.x + 0.5 && Math.min(a.x, b.x) < r.x + r.w - 0.5 && Math.max(a.y, b.y) > r.y + 0.5 && Math.min(a.y, b.y) < r.y + r.h - 0.5;
+/** Whether `p` is on the run from `a` to `b`. */
+const onRun = (a: Pt, b: Pt, p: Pt) => (Math.abs(a.x - b.x) < 0.5 ? Math.abs(p.x - a.x) < 2 && p.y >= Math.min(a.y, b.y) - 1 && p.y <= Math.max(a.y, b.y) + 1 : Math.abs(p.y - a.y) < 2 && p.x >= Math.min(a.x, b.x) - 1 && p.x <= Math.max(a.x, b.x) + 1);
+
 /* ── Running ELK ── */
 
 type Elk = { layout: (graph: ElkGraph) => Promise<ElkGraph> };
@@ -987,8 +1076,9 @@ function withoutSimplex(graph: ElkGraph): ElkGraph {
   return strip(graph);
 }
 
-/** One layout, on an engine that outlives it. */
-export async function runLayout<N, E>(draft: DiagramDraft<N, E>, options: DiagramLayoutOptions, engine: DiagramLayoutEngine, graph = toElkGraph(draft, options)): Promise<DiagramLayoutResult<N, E>> {
+/** One layout, on an engine that outlives it. `routePorts: false` leaves the routes between ports as ELK has them, for a
+ *  caller that wraps the result first (`routePortEdges` after that). */
+export async function runLayout<N, E>(draft: DiagramDraft<N, E>, options: DiagramLayoutOptions, engine: DiagramLayoutEngine, graph = toElkGraph(draft, options), routePorts = true): Promise<DiagramLayoutResult<N, E>> {
   const start = typeof performance !== 'undefined' ? performance.now() : Date.now();
   let ran: Awaited<ReturnType<DiagramLayoutEngine['run']>>;
   try {
@@ -1001,6 +1091,7 @@ export async function runLayout<N, E>(draft: DiagramDraft<N, E>, options: Diagra
   const { graph: out, engine: where } = ran;
   const ms = (typeof performance !== 'undefined' ? performance.now() : Date.now()) - start;
   const laid = fromElkGraph(draft, out);
-  return { ...(options.board ? wrapDiagram(laid, options.board, options.direction) : laid), engine: where, ms };
+  const wrapped = options.board ? wrapDiagram(laid, options.board, options.direction) : laid;
+  return { ...(routePorts ? routePortEdges(wrapped, options.text) : wrapped), engine: where, ms };
 }
 

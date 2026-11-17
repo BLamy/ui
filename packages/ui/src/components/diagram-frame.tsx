@@ -45,8 +45,9 @@ const PANEL_WIDTH = 288;
 
 interface DiagramFrameContextValue {
   open: boolean;
-  /** Opens or closes the panel, through its own change (`onOpenChange` hears it, and can refuse it). */
-  setOpen: (open: boolean, options?: { reason?: AdaptivePaneOpenChangeDetails['reason']; event?: Event }) => boolean;
+  /** Opens or closes the panel, through its own change (`onOpenChange` hears it, and can refuse it). Opened as a column,
+   *  focus goes into it, unless `focus: false` (opened by what's selected on the board, where the keys stay). */
+  setOpen: (open: boolean, options?: { reason?: AdaptivePaneOpenChangeDetails['reason']; event?: Event; focus?: boolean }) => boolean;
   /** The panel's `onOpenChange`. */
   changed: (open: boolean, details: AdaptivePaneOpenChangeDetails) => void;
   /** How the panel shows now. */
@@ -61,6 +62,9 @@ interface DiagramFrameContextValue {
   setCovered: (covered: boolean) => void;
   /** Focus goes into the panel when the trigger opens it as a column, and back to the trigger when it closes. */
   moved: { current: boolean };
+  /** The board's chrome scope, which a drawer over the board reports itself to, so a fit keeps clear of it. */
+  board: ReturnType<typeof useDiagramChromeScope> | null;
+  setBoard: (scope: ReturnType<typeof useDiagramChromeScope> | null) => void;
 }
 
 const DiagramFrameContext = createContext<DiagramFrameContextValue | null>(null);
@@ -87,7 +91,8 @@ const resolve = (presentation: AdaptivePanePresentation, side: 'start' | 'end', 
 export interface DiagramFrameProps extends Omit<ComponentProps<'div'>, 'ref'> {
   /** Whether the panel shows, to control it. */
   open?: boolean;
-  /** Whether it shows at first. Default: when it's a column, and not when it would go over the board. */
+  /** Whether it shows at first, and again when the frame changes size class (a choice is for the way the panel showed
+   *  when it was made). Default: when it's a column, and not when it would go over the board. */
   defaultOpen?: boolean;
   onOpenChange?: (open: boolean, details: AdaptivePaneOpenChangeDetails) => void;
   /** How the panel shows. Default `auto`: a column at regular, a drawer at medium, a pushed page at compact (an `end`
@@ -111,7 +116,7 @@ export function DiagramFrame({ open: openProp, defaultOpen, onOpenChange, presen
   const shown = resolve(presentation, side, sizeClass);
   const [controller] = useState(createAdaptivePaneController);
   // `null` until it's chosen: until then it follows the presentation, open as a column and closed over the board.
-  const [choice, setChoice] = useState<boolean | null>(defaultOpen ?? null);
+  const [choice, setChoice] = useState<boolean | null>(null);
   // A choice is for the way the panel shows when it was made: closing a pushed page is going back to the board, not
   // hiding the inspector, so when the frame widens into a column, the column shows again (as an iPad's split view does).
   const [chosenFor, setChosenFor] = useState(shown);
@@ -119,19 +124,24 @@ export function DiagramFrame({ open: openProp, defaultOpen, onOpenChange, presen
     setChosenFor(shown);
     if (choice !== null) setChoice(null);
   }
-  const open = openProp ?? choice ?? shown === 'column';
+  const open = openProp ?? choice ?? defaultOpen ?? shown === 'column';
   const [title, setTitle] = useState<ReactNode>('Details');
   const [covered, setCovered] = useState(false);
   const moved = useRef(false);
-  const setOpen = useCallback<DiagramFrameContextValue['setOpen']>((next, options) => controller.setOpen(next, options), [controller]);
+  const [board, setBoard] = useState<DiagramFrameContextValue['board']>(null);
+  const setOpen = useCallback<DiagramFrameContextValue['setOpen']>((next, { focus = true, ...options } = {}) => {
+    const done = controller.setOpen(next, options);
+    if (!focus) moved.current = false;
+    return done;
+  }, [controller]);
   const changed = useCallback<DiagramFrameContextValue['changed']>((next, details) => {
     moved.current = true;
     onOpenChange?.(next, details);
     if (!details.canceled && openProp === undefined) setChoice(next);
   }, [onOpenChange, openProp]);
   const value = useMemo<DiagramFrameContextValue>(() => ({
-    open, setOpen, changed, presentation: shown, sizeClass, side, controller, covered, title, setTitle, setCovered, moved,
-  }), [open, setOpen, changed, shown, sizeClass, side, controller, covered, title]);
+    open, setOpen, changed, presentation: shown, sizeClass, side, controller, covered, title, setTitle, setCovered, moved, board, setBoard,
+  }), [open, setOpen, changed, shown, sizeClass, side, controller, covered, title, board]);
   return (
     <DiagramFrameContext.Provider value={value}>
       <SizeClassProvider value={sizeClass}>
@@ -158,7 +168,7 @@ export type DiagramFrameBoardProps = ComponentProps<'div'>;
  *  it's inert under a cover. Its `ref` is a good `host` to measure a layout's text in. A Diagram in it fits its content
  *  clear of the bar, and puts its toolbar at the top. */
 export function DiagramFrameBoard({ className, children, ref: refProp, ...props }: DiagramFrameBoardProps) {
-  const { covered } = useFrame('DiagramFrameBoard');
+  const { covered, setBoard } = useFrame('DiagramFrameBoard');
   const own = useRef<HTMLDivElement | null>(null);
   const ref = useCallback((el: HTMLDivElement | null) => {
     own.current = el;
@@ -166,6 +176,10 @@ export function DiagramFrameBoard({ className, children, ref: refProp, ...props 
     else if (refProp) refProp.current = el;
   }, [refProp]);
   const chrome = useDiagramChromeScope(own, { frame: true });
+  useLayoutEffect(() => {
+    setBoard(chrome);
+    return () => setBoard(null);
+  }, [chrome, setBoard]);
   return (
     <div ref={ref} data-slot="diagram-frame-board" inert={covered || undefined} className={cn('relative min-h-0 min-w-0 flex-1', adaptivePanePageClass, className)} {...props}>
       <DiagramChromeProvider value={chrome}>{children}</DiagramChromeProvider>
@@ -246,10 +260,27 @@ export interface DiagramFramePanelProps extends Omit<ComponentProps<'div'>, 'tit
  *  `data-*` go to the panel's element (`data-slot="diagram-frame-panel"`, around the pane), and `aria-label` names the
  *  pane. */
 export function DiagramFramePanel({ title, backLabel = 'Board', width = PANEL_WIDTH, modal = false, actions, className, children, 'aria-label': ariaLabel, ...props }: DiagramFramePanelProps) {
-  const { open, changed, presentation, side, controller, covered, setTitle, moved } = useFrame('DiagramFramePanel');
+  const { open, changed, presentation, side, controller, covered, setTitle, moved, board } = useFrame('DiagramFramePanel');
   useLayoutEffect(() => { setTitle(title); }, [title, setTitle]);
   const body = useRef<HTMLDivElement>(null);
   const bodyId = useId();
+  // A drawer covers part of the board: a fit (the first view included) keeps what it shows in the part that's left.
+  const drawer = open && presentation === 'drawer' && !covered;
+  const report = board?.report, boardBox = board?.container;
+  useLayoutEffect(() => {
+    const el = body.current;
+    if (!report || !drawer || !el) return undefined;
+    const edge = side === 'end' ? 'right' : 'left';
+    // Never more than most of the board: a medium frame's drawer can be most of it, and a fit in the rest would be tiny.
+    const measure = () => report(bodyId, edge, Math.min(el.offsetWidth, (boardBox?.current?.clientWidth ?? Infinity) * 0.6));
+    measure();
+    const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(measure);
+    observer?.observe(el);
+    return () => {
+      observer?.disconnect();
+      report(bodyId, edge, null);
+    };
+  }, [report, boardBox, drawer, side, bodyId]);
   // Opened by its trigger as a column, focus goes in: the trigger's gone (the bar hides). A drawer and a push move it themselves.
   useEffect(() => {
     if (!open || presentation !== 'column' || !moved.current) return;
@@ -282,8 +313,12 @@ export function DiagramFramePanel({ title, backLabel = 'Board', width = PANEL_WI
           id={bodyId}
           data-slot="diagram-frame-panel-body"
           tabIndex={-1}
+          // A drawer and a pushed page are named by the pane; a column isn't, so its body is the region the name is on.
+          role={presentation === 'column' ? 'region' : undefined}
+          aria-label={presentation === 'column' ? ariaLabel ?? (typeof title === 'string' ? title : undefined) : undefined}
           // The body's edges line up with the header's title (the surface's inline padding).
-          className={cn(surfaceBodyVariants(), 'flex touch-pan-y flex-col gap-3.5 pt-1 pb-3.5 text-body outline-none')}
+          // A pushed page has no header row of its own above the body, only the bar: room under it, as AdaptivePane's own.
+          className={cn(surfaceBodyVariants(), 'flex touch-pan-y flex-col gap-3.5 pb-3.5 text-body outline-none', presentation === 'push' ? 'pt-3' : 'pt-1')}
         >
           {children}
         </div>

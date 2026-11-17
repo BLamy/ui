@@ -539,7 +539,7 @@ describe('Diagram, a card’s items', () => {
     expect(card.querySelector('[data-slot=diagram-section-title]')?.textContent).toBe('Entry actions');
     expect(card.querySelectorAll('[data-slot=diagram-item]')).toHaveLength(2);
     expect(card.querySelector('[data-slot=diagram-entry]')).not.toBeNull();
-    expect(document.querySelector('[data-slot=diagram-edge-label]')?.getAttribute('data-shape')).toBe('card');
+    expect(document.querySelector('[data-slot=diagram-edge-label]')?.getAttribute('data-variant')).toBe('card');
     // A screen reader hears the sections with the card, and the label's with its edge.
     expect(screen.getByRole('button', { name: /^Paused, node, where it starts\. Entry actions: onPause, log\./ })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'play, edge from Paused to Playing. onPlay.' })).toBeTruthy();

@@ -1229,8 +1229,8 @@ test.describe('StateDiagram', () => {
     await expect(page.locator('[data-node="Audio Player.Error"] [data-slot=diagram-node-icon]')).toHaveCount(1);
     // An event alone is a pill; one with actions a card.
     const label = (title) => page.locator('[data-slot=diagram-edge-label]', { has: page.locator('[data-slot=diagram-edge-label-title]', { hasText: new RegExp(`^${title}$`) }) });
-    for (const pill of ['loaded', 'play', 'pause', 'end']) await expect(label(pill)).toHaveAttribute('data-shape', 'pill');
-    for (const card of ['loading', 'init-error', 'error', 'time']) await expect(label(card)).toHaveAttribute('data-shape', 'card');
+    for (const pill of ['loaded', 'play', 'pause', 'end']) await expect(label(pill)).toHaveAttribute('data-variant', 'pill');
+    for (const card of ['loading', 'init-error', 'error', 'time']) await expect(label(card)).toHaveAttribute('data-variant', 'card');
     await expect(label('restart')).toHaveCount(2);
     // Playing's own: restart and time leave it and come back to it.
     for (const id of ['Audio Player.Active.Playing:restart->Audio Player.Active.Playing', 'Audio Player.Active.Playing:time->Audio Player.Active.Playing']) {
@@ -2042,7 +2042,7 @@ test.describe('the anatomy: a statechart and a system from the generic parts', (
           const p = path.getPointAtLength(at).matrixTransform(m);
           inside = p.x > r.left + 2 && p.x < r.right - 2 && p.y > r.top + 2 && p.y < r.bottom - 2;
         }
-        return { edge: label.dataset.edge, shape: label.dataset.shape, inside };
+        return { edge: label.dataset.edge, shape: label.dataset.variant, inside };
       });
       return { init: node('init'), loading: node('loading'), paused: node('paused'), playing: node('playing'), throughLabels, chips: document.querySelectorAll('[data-slot=diagram-item]').length };
     });

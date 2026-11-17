@@ -85,9 +85,62 @@ const rename = async (page, id, name) => {
   await field.press('Enter');
   await expect(service(page, id)).toContainText(name);
 };
+/** No two edges run along each other for more than a crossing: each route sampled every 2 px, and no stretch of one longer
+ *  than 24 px within a pixel of another's. */
+const sharedRuns = (page) => page.locator('[data-slot=diagram-edge]').evaluateAll((els) => {
+  const lines = els.map((el) => {
+    const n = el.getTotalLength(), pts = [];
+    for (let t = 0; t <= n; t += 2) { const p = el.getPointAtLength(t); pts.push([p.x, p.y]); }
+    return { id: el.getAttribute('data-edge'), pts };
+  });
+  const out = [];
+  for (const a of lines) for (const b of lines) {
+    if (a.id >= b.id) continue;
+    let run = 0, longest = 0;
+    for (const [x, y] of a.pts) {
+      const near = b.pts.some(([u, v]) => Math.abs(u - x) < 1 && Math.abs(v - y) < 1);
+      run = near ? run + 2 : 0;
+      longest = Math.max(longest, run);
+    }
+    if (longest > 24) out.push(`${a.id} and ${b.id}: ${longest} px`);
+  }
+  return out;
+});
+/** Each label is on a run of its own edge's route: its route passes through the label, and no other route does. In board
+ *  units (a label's place is its style; a route's points are the board's), so it holds at any zoom, words drawn or not. */
+const labelsOnTheirOwn = (page) => page.evaluate(() => {
+  const out = [];
+  const paths = [...document.querySelectorAll('[data-slot=diagram-edge]')];
+  for (const label of document.querySelectorAll('[data-slot=diagram-edge-label]')) {
+    const st = label.style, r = { left: parseFloat(st.left), top: parseFloat(st.top), right: parseFloat(st.left) + parseFloat(st.width), bottom: parseFloat(st.top) + parseFloat(st.height) };
+    const through = paths.filter((p) => {
+      const n = p.getTotalLength();
+      for (let t = 0; t <= n; t += 2) {
+        const q = p.getPointAtLength(t);
+        if (q.x > r.left + 2 && q.x < r.right - 2 && q.y > r.top + 2 && q.y < r.bottom - 2) return true;
+      }
+      return false;
+    }).map((p) => p.getAttribute('data-edge'));
+    if (through.length !== 1 || through[0] !== label.getAttribute('data-edge')) out.push(`${label.getAttribute('data-edge')}: ${through.join(', ') || 'no route'}`);
+  }
+  return out;
+});
 const saved = (page) => page.evaluate(() => JSON.parse(localStorage.getItem('cloudflare-studio') ?? 'null'));
 const files = (page) => page.locator('[data-slot=cloudflare-studio-file]').evaluateAll((els) => els.map((el) => el.getAttribute('data-path')));
 const fileText = (page, path) => page.locator(`[data-slot=cloudflare-studio-file][data-path="${path}"] [data-slot=cloudflare-studio-file-text]`).textContent();
+
+test('the example’s connections each have a lane of their own, and each label is on its own', async ({ page }) => {
+  await open(page);
+  await expect(services(page)).toHaveCount(6);
+  await page.locator('[data-slot=diagram-overlay] [data-action=fit]').first().click();
+  await settle(page);
+  await expect(page.locator('[data-slot=diagram-edge]')).toHaveCount(5);
+  expect(await sharedRuns(page)).toEqual([]);
+  expect(await labelsOnTheirOwn(page)).toEqual([]);
+  // Nothing selected, the panel's closed, with its button on the bar.
+  await expect(panel(page)).toBeHidden();
+  await expect(page.locator('[data-slot=diagram-frame-bar] [data-diagram-frame-trigger]')).toHaveText('Add a service');
+});
 
 test('the file upload, from nothing, by hand, kept through a reload, and exported', async ({ page }) => {
   test.setTimeout(120_000);
@@ -196,6 +249,7 @@ test.describe('at a phone’s width', () => {
     await expect(services(page)).toHaveCount(7);
     await page.setViewportSize({ width: 1100, height: 780 });
     await expect(services(page)).toHaveCount(7);
+    // What's added is selected, and with something selected the inspector's a column beside the board.
     await expect(page.locator('[data-slot=diagram-frame][data-presentation=column] [data-slot=cloudflare-panel]')).toBeVisible();
     await page.setViewportSize({ width: 390, height: 780 });
     await expect(services(page)).toHaveCount(7);

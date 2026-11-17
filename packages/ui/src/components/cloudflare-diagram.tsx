@@ -11,7 +11,7 @@ import {
 import { Diagram, DiagramNodeBody, DiagramToolbar, type DiagramItem, type DiagramProps } from '@/components/ui/diagram';
 import {
   DiagramFrame, DiagramFrameBar, DiagramFrameBoard, DiagramFrameCover, DiagramFrameCoverHeader, DiagramFramePanel, DiagramFrameSection,
-  type DiagramFrameProps,
+  DiagramFrameTrigger, useDiagramFrame, type DiagramFrameProps,
 } from '@/components/ui/diagram-frame';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Field, FieldError, FieldLabel } from '@/components/ui/field';
@@ -34,7 +34,7 @@ import {
 } from '@/lib/cloudflare-system';
 import { useControllableChange } from '@/lib/controllable-state';
 import { useDiagramHistory } from '@/lib/diagram-history';
-import type { DiagramDirection } from '@/lib/diagram-layout';
+import type { DiagramDirection, DiagramLayoutDensity } from '@/lib/diagram-layout';
 import { useDiagramLayout } from '@/lib/diagram-layout/react';
 import { NOTHING_SELECTED, type DiagramConnection, type DiagramEdge, type DiagramNode, type DiagramPort, type DiagramSelection } from '@/lib/diagram-model';
 import type { DiagramDataChangeReason, DiagramSelectionChangeDetails, DiagramSelectionChangeReason } from '@/lib/diagram-primitive';
@@ -86,7 +86,9 @@ export interface CloudflareDiagramProps
   selection?: DiagramSelection;
   defaultSelection?: DiagramSelection;
   onSelectionChange?: (selection: DiagramSelection, details: DiagramSelectionChangeDetails) => void;
-  /** The panel: open or not (default: open when it shows as a column beside the board), and how it shows. */
+  /** The panel: open or not, and how it shows. By default it's closed, with its button on the bar, until something's
+   *  selected (or, editable, while there's nothing yet to select): then it opens beside or over the board, and on a phone
+   *  its button says what's selected. */
   panelOpen?: boolean;
   defaultPanelOpen?: boolean;
   onPanelOpenChange?: DiagramFrameProps['onOpenChange'];
@@ -99,6 +101,9 @@ export interface CloudflareDiagramProps
   onOpenMachineChange?: (id: string | null, details: ChangeDetails<CloudflareMachineChangeReason>) => void;
   /** Which way a layout runs, when none of the services say where they are. Default `down`. */
   direction?: DiagramDirection;
+  /** How much room a layout leaves between things, when none of the services say where they are (`useDiagramLayout`'s):
+   *  `compact` for a big system, `default`, `comfortable`. */
+  density?: DiagramLayoutDensity;
   /** What to draw for a product, instead of the library's own icon, for an app with permission to use Cloudflare's. */
   icon?: (product: CatalogProduct) => ReactNode;
   /** What an empty system shows. Default: an `EmptyState` that says how to add a service. */
@@ -221,7 +226,7 @@ export function CloudflareDiagram({
   editable = false, selection: selectionProp, defaultSelection = NOTHING_SELECTED, onSelectionChange,
   panelOpen, defaultPanelOpen, onPanelOpenChange, panelPresentation, panelHeader,
   openMachine: openMachineProp, defaultOpenMachine = null, onOpenMachineChange, onAction,
-  direction = 'down', icon, emptyState, className, style, 'aria-label': ariaLabel = 'Cloudflare services', ...diagram
+  direction = 'down', density, minimap = 'auto', icon, emptyState, className, style, 'aria-label': ariaLabel = 'Cloudflare services', ...diagram
 }: CloudflareDiagramProps) {
   const boardRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -261,7 +266,7 @@ export function CloudflareDiagram({
   const anyPlaced = services.some((s) => s.at);
   const board = useMemo(() => cloudflareBoardProps(anyPlaced ? system : { ...system, services: [], edges: [] }, { icon, issues, editable }), [anyPlaced, system, icon, issues, editable]);
   const draft = useMemo(() => (anyPlaced ? { nodes: [], edges: [] } : cloudflareBoardData(system, { editable })), [anyPlaced, system, editable]);
-  const laid = useDiagramLayout<CloudflareServiceNodeData, CloudflareServiceEdgeData>(draft, { host: boardRef, direction });
+  const laid = useDiagramLayout<CloudflareServiceNodeData, CloudflareServiceEdgeData>(draft, { host: boardRef, direction, density });
   // What's wrong goes on after laying out, as it isn't anything to lay out again for.
   const laidBoard = useMemo(() => markProblems({ nodes: laid.nodes, edges: laid.edges }, issues), [laid.nodes, laid.edges, issues]);
   const nodes = anyPlaced ? board.nodes : laidBoard.nodes;
@@ -366,6 +371,8 @@ export function CloudflareDiagram({
   };
 
   const selectedLink = selectedEdge ? shownEdges.find((e) => e.id === selectedEdge.id)?.data : undefined;
+  // The panel's title is what it shows: a service by its name and its product, a connection by its name and its two ends.
+  const heading = selectedService ? serviceHeading(selectedService) : selectedEdge ? edgeHeading(selectedEdge, byId, selectedLink?.link ?? null) : null;
   const onBoard = new Set(shownEdges.map((e) => e.id));
   const count = `${services.length} ${services.length === 1 ? 'service' : 'services'}`;
   const status = `${selectedService ? serviceName(selectedService) : count}${issues.length ? `, ${issues.length} ${issues.length === 1 ? 'problem' : 'problems'}` : ''}`;
@@ -382,7 +389,8 @@ export function CloudflareDiagram({
     <DiagramFrame
       data-cloudflare-diagram=""
       open={panelOpen}
-      defaultOpen={defaultPanelOpen}
+      // Closed until there's something to show: a hint takes a quarter of the board and says nothing about the system.
+      defaultOpen={defaultPanelOpen ?? (defaultSelection.nodes.length + defaultSelection.edges.length > 0 || (editable && !services.length))}
       onOpenChange={onPanelOpenChange}
       presentation={panelPresentation}
       className={className}
@@ -403,16 +411,20 @@ export function CloudflareDiagram({
           error={!anyPlaced && laid.error ? laid.error.message : undefined}
           {...(editable ? { editable: true, history, onDataChange: onDiagramDataChange } : null)}
           overlay={<DiagramToolbar />}
+          minimap={minimap}
           {...diagram}
         >
           <RevealWhenPlaced nodes={nodes} placing={placing} want={toReveal} onDone={revealed} />
         </Diagram>
-        <DiagramFrameBar>
+        <DiagramFrameBar trigger={<DiagramFrameTrigger>{heading ? 'Details' : editable ? 'Add a service' : 'Services'}</DiagramFrameTrigger>}>
           <span data-slot="cloudflare-status" className="min-w-0 truncate">{status}</span>
         </DiagramFrameBar>
+        <OpenOnSelection selected={heading?.name ?? ''} />
       </DiagramFrameBoard>
-      <DiagramFramePanel title="Services">
+      <DiagramFramePanel title={heading?.title ?? 'Services'} aria-label={heading?.name ?? 'Services'}>
         <div ref={panelRef} data-slot="cloudflare-panel" className="flex flex-col gap-3.5">
+          {/* What the panel is about, said as it changes. */}
+          <span data-slot="cloudflare-panel-status" role="status" className="sr-only">{heading?.name ?? ''}</span>
           {panelHeader}
           {editable ? <CloudflareServiceSearch onAction={addFromCatalog} /> : null}
           {selectedEdge ? (
@@ -471,6 +483,70 @@ export function CloudflareDiagram({
       ) : null}
     </DiagramFrame>
   );
+}
+
+/* ── What the panel's about ── */
+
+interface PanelHeading {
+  /** What the panel's header shows. */
+  title: ReactNode;
+  /** The same in words, which names the panel and is announced. */
+  name: string;
+}
+
+const quiet = (text: string) => <span className="font-normal text-muted-foreground">{text}</span>;
+
+/** A service: its name, then its product where that's something else ("Room · Durable Objects"). */
+function serviceHeading(service: CloudflareService): PanelHeading {
+  const name = serviceName(service);
+  const product = catalogProduct(service.kind)?.name;
+  const other = product && product !== name ? product : null;
+  return { title: <>{name}{other ? <> {quiet(`· ${other}`)}</> : null}</>, name: other ? `${name}, ${other}` : name };
+}
+
+/** A connection: what it's called (its name on `env`, or what it is), then where it goes from and to. */
+function edgeHeading(edge: CloudflareEdge, byId: ReadonlyMap<string, CloudflareService>, link: ServiceLink | null): PanelHeading {
+  const from = byId.get(edge.from), to = byId.get(edge.to);
+  const called = edgeBinding(edge, to) ?? (edge.via === 'queue-consumer' ? 'consumer' : link?.label ?? viaLabel(edge.via));
+  const a = from ? serviceName(from) : edge.from, b = to ? serviceName(to) : edge.to;
+  return { title: <>{called} {quiet(`· ${a} → ${b}`)}</>, name: `${called}, from ${a} to ${b}` };
+}
+
+/** A wrangler key in the catalog's words ("D1 Database" for `d1_databases`), never the raw key where there are words. */
+const viaLabel = (via: string) => catalogBinding(via.split('.')[0] ?? '')?.friendlyName ?? via;
+
+/** Opens the panel when something's selected, beside the board or over it, once the press that selected it is over (a
+ *  column narrows the board, and nothing should move under a drag). A phone's pushed page waits for its button: a selection
+ *  there is often on the way to moving something. The keys stay on the board. */
+function OpenOnSelection({ selected }: { selected: string }) {
+  const { setOpen, presentation } = useDiagramFrame();
+  const was = useRef<string | null>(null);
+  const pressing = useRef(false);
+  useEffect(() => {
+    const down = () => { pressing.current = true; };
+    const up = () => { pressing.current = false; };
+    window.addEventListener('pointerdown', down, true);
+    window.addEventListener('pointerup', up, true);
+    window.addEventListener('pointercancel', up, true);
+    return () => {
+      window.removeEventListener('pointerdown', down, true);
+      window.removeEventListener('pointerup', up, true);
+      window.removeEventListener('pointercancel', up, true);
+    };
+  }, []);
+  // Again when the way it shows changes (a phone turned into a tablet): with something selected, beside the board.
+  const key = `${selected}\0${presentation}`;
+  useEffect(() => {
+    if (key === was.current) return undefined;
+    was.current = key;
+    if (!selected || presentation === 'push') return undefined;
+    const open = () => setOpen(true, { focus: false });
+    if (!pressing.current) { open(); return undefined; }
+    const after = () => { window.removeEventListener('pointerup', after); if (was.current === key) open(); };
+    window.addEventListener('pointerup', after);
+    return () => window.removeEventListener('pointerup', after);
+  }, [key, selected, presentation, setOpen]);
+  return null;
 }
 
 /* ── The catalog search ── */
@@ -636,7 +712,7 @@ function EdgePanel({ edge, to, link, problem, eventIssues, receivable, editable,
   const offered = link?.operations ?? [];
   return (
     <>
-      <DiagramFrameSection title={link?.label ?? edge.via}>
+      <DiagramFrameSection title={link?.label ?? viaLabel(edge.via)}>
         {problem ? <p data-slot="cloudflare-edge-problem" role="alert" className="m-0 text-footnote text-destructive">{problem}</p> : null}
         {binding?.description ? <p className="m-0 text-footnote text-foreground/70">{binding.description}</p> : null}
         {link?.kind === 'binding' ? (editable

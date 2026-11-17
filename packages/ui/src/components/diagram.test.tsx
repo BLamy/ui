@@ -77,7 +77,7 @@ describe('Diagram', () => {
     // On the line, which runs along y = 20, in the middle of the gap: a pill the edge runs into and out of.
     expect(Number(m[2]) + Number(m[4]) / 2).toBe(20);
     expect(Number(m[1]) + Number(m[3]) / 2).toBe(200);
-    expect(found).toContain('data-shape="pill"');
+    expect(found).toContain('data-variant="pill"');
   });
 
   it('draws custom nodes, gives children the canvas, and hides nothing in the data', () => {
@@ -152,6 +152,12 @@ describe('Diagram', () => {
     expect(out).toContain('data-slot="canvas-minimap"');
     expect(count(out, /fill-muted-foreground\/35/g)).toBe(2);
     expect(renderToString(<Diagram nodes={[]} />)).not.toContain('canvas-minimap');
+  });
+
+  it('shows minimap="auto" only while what’s drawn can’t be seen whole at a readable size, on a board with room for it', () => {
+    // The first size is 1000 x 700: 2,000 across can't be read whole there; 900 can.
+    expect(renderToString(<Diagram nodes={[{ id: 'a', x: 0, y: 0, w: 2000, h: 100 }]} minimap="auto" />)).toContain('data-slot="canvas-minimap"');
+    expect(renderToString(<Diagram nodes={[{ id: 'a', x: 0, y: 0, w: 900, h: 100 }]} minimap="auto" />)).not.toContain('canvas-minimap');
   });
 
   describe('drawing only what’s near the view', () => {

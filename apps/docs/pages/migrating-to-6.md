@@ -2686,6 +2686,14 @@ Diagram, DiagramFrame, StateDiagram, CloudflareDiagram and docstream's capnp fen
 | StateDiagram `direction` default `right` | `down`; `background` defaults to `grid` |
 | `parseXState` leaving out actions, `context`, `tags`, `meta`, `description`, `input` | kept, as data: inline code is `{ type: 'xstate.inline' }`, built-ins `{ type: 'xstate.assign' \| … , params }`, composed guards `{ type: 'xstate.and' \| 'xstate.or' \| 'xstate.not' \| 'xstate.stateIn', params }`; `types.context` as `types: { context: { key: 'type' } }` |
 | The xstate fence drawn by Pele from `xstateToMermaid` | A read-only StateDiagram (`@brett_lamy/ui/state-diagram`, loaded when shown); `xstateToMermaid` is its text form and fallback, in UML notation |
+| `diagramEdgeLabelVariants({ shape })`, `diagram-edge-label[data-shape]` | `diagramEdgeLabelVariants({ variant })` (`pill`, `card`), `[data-variant]`: a look is a `variant`, as on the node, edge and item recipes beside it |
+| A section's `variant`: `default`, `list`, `code` | also `inline`: the same chips in a row that wraps (at `DIAGRAM_CARD.inlineMax`), measured as drawn |
+| `minimap`: `boolean` or its props | also `'auto'`: only while a good part of the diagram is out of view at a readable size, on a board of 720 × 600 px or more; StateDiagram's and CloudflareDiagram's default |
+| A first view too wide for the board opened from its start edge, or centered on the first entry marker when that was past the other edge | from its top-start corner (the entry-marker rule only on a board under 420 px), in the part of the board the toolbar, the minimap, a frame's bar and drawer leave, following a frame's panel opening and closing until the view's moved |
+| Edges from one port shared a lane, and a label could sit on a shared run; a row's port on its declared side | each edge between ports (and any hand-placed one that would run along another) in a lane of its own, its label on a run only it uses; a row's port at the end of its row facing its edges (`facePorts`); after a layout, `routePortEdges` (`useDiagramLayout` does it) |
+| A box's edge to what it holds started as a stub under its sections | at a dot on a hairline under its sections; an edge out of a box with sections leaves from its side, beside them |
+| DiagramFrame `defaultOpen` at first only | at first, and again when the frame changes size class; `useDiagramFrame().setOpen(open, { focus: false })` opens it without moving focus |
+| StateDiagram: the layout's `density` not reachable | `density` |
 
 ### CloudflareDiagram and Cloudflare Studio
 
@@ -2698,6 +2706,9 @@ Diagram, DiagramFrame, StateDiagram, CloudflareDiagram and docstream's capnp fen
 | `defaultMachine` | `openMachine` / `defaultOpenMachine` / `onOpenMachineChange(id, details)` |
 | `direction: 'RIGHT' \| 'DOWN' \| …`, default `RIGHT` | `direction: 'down' \| 'right' \| 'up' \| 'left'`, default `down`: a system runs top to bottom |
 | `camera` / `defaultCamera` / `onCameraChange` | `viewport` / `defaultViewport` / `onViewportChange`, as on Diagram |
+| The panel open by default as a column, always titled "Services" | closed until something's selected, then open beside or over the board (a phone's pushed page waits for its button); titled and named by what's selected ("Room · Durable Objects", "FILES · API → Files"); the bar's button says "Services", "Add a service" or "Details" |
+| The Account section a column of chips | a row that wraps (`variant: 'inline'`) |
+| — | `density`; `minimap` defaults to `'auto'` |
 | `panelExtra` | `panelHeader`: what's at the top of the panel |
 | — | `emptyState` (an `EmptyState` by default) |
 | The panel's Undo / Redo buttons | The `DiagramToolbar`'s undo and redo, beside zoom and fit, and the Diagram's ⌘Z, driving the system's history through `<Diagram history>` |

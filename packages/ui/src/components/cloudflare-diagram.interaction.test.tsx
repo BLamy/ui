@@ -75,6 +75,49 @@ describe('CloudflareDiagram, read-only', () => {
   });
 });
 
+describe('CloudflareDiagram, its panel', () => {
+  /** A column panel left to its own default: closed until something's selected. */
+  const left = (props: Partial<CloudflareDiagramProps>) =>
+    render(<div style={{ position: 'relative', width: 1200, height: 600 }}><CloudflareDiagram panelPresentation="column" {...props} /></div>);
+  const pane = () => document.querySelector<HTMLElement>('[data-slot=diagram-frame][data-open]');
+
+  it('is closed with nothing selected, its button on the bar, and opens on a selection, named for it, with the keys left on the board', async () => {
+    left({ services: SERVICES, edges: EDGES });
+    await settle();
+    expect(pane()).toBeNull();
+    expect(screen.getByRole('button', { name: 'Services' })).toBeTruthy();
+    const board = screen.getByRole('application', { name: 'Cloudflare services board' });
+    act(() => { board.focus(); });
+    fireEvent.keyDown(document.activeElement!, { key: 'Home' });
+    fireEvent.keyDown(document.activeElement!, { key: 'Enter' });
+    await settle();
+    expect(pane()).toBeTruthy();
+    expect(board.contains(document.activeElement)).toBe(true);
+    // Titled by what's selected: its name and its product, which also names the panel and is said as it changes.
+    expect(document.querySelector('[data-slot=adaptive-pane-title]')?.textContent).toBe('API · Workers');
+    expect(screen.getByRole('region', { name: 'API, Workers' }).contains(panel())).toBe(true);
+    expect(document.querySelector('[data-slot=cloudflare-panel-status]')?.textContent).toBe('API, Workers');
+  });
+
+  it('names a connection by its name on env and its two ends, and a wrong one in the catalog’s words', async () => {
+    left({ services: SERVICES, edges: [...EDGES, { id: 'odd', from: 'files', to: 'api', via: 'd1_databases' }], defaultSelection: { nodes: [], edges: ['up'] } });
+    await settle();
+    expect(document.querySelector('[data-slot=adaptive-pane-title]')?.textContent).toBe('FILES · API → Files');
+    expect(document.querySelector('[data-slot=cloudflare-panel-status]')?.textContent).toBe('FILES, from API to Files');
+    cleanup();
+    left({ services: SERVICES, edges: [{ id: 'odd', from: 'files', to: 'api', via: 'd1_databases' }], defaultSelection: { nodes: [], edges: ['odd'] } });
+    await settle();
+    expect(panel().textContent).not.toContain('d1_databases');
+  });
+
+  it('is open from the start when it’s editable and there’s nothing yet: it has the search', async () => {
+    left({ services: [], editable: true });
+    await settle();
+    expect(pane()).toBeTruthy();
+    expect(within(panel()).getByRole('combobox')).toBeTruthy();
+  });
+});
+
 describe('CloudflareDiagram, editable', () => {
   it('renames a service in the panel, with onDataChange(system, details), and undoes it', async () => {
     const onDataChange = vi.fn();

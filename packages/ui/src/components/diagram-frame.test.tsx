@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
-import { DiagramFrame, DiagramFrameBar, DiagramFrameBoard, DiagramFrameCover, DiagramFrameCoverHeader, DiagramFramePanel, DiagramFrameSection } from '@/components/ui/diagram-frame';
+import { DiagramFrame, DiagramFrameBar, DiagramFrameBoard, DiagramFrameCover, DiagramFrameCoverHeader, DiagramFramePanel, DiagramFrameSection, useDiagramFrame } from '@/components/ui/diagram-frame';
 import { settle } from '../../test/agent-harness';
 
 /* DiagramFrame: the panel is an AdaptivePane (a column, a drawer or a pushed page), the bar's trigger opens it and focus
@@ -65,6 +65,28 @@ describe('DiagramFrame', () => {
     render(<Frame presentation="column" defaultOpen={false} />);
     await settle();
     expect(screen.getByRole('button', { name: 'Simulation' })).toBeTruthy();
+  });
+
+  it('opens without taking focus when asked to (from what’s selected on the board), and its column is a region with its name', async () => {
+    function Opener() {
+      const { setOpen } = useDiagramFrame();
+      return <button type="button" onClick={() => setOpen(true, { focus: false })}>Select something</button>;
+    }
+    render(
+      <div style={{ position: 'relative', width: 800, height: 500 }}>
+        <DiagramFrame presentation="column" defaultOpen={false}>
+          <DiagramFrameBoard><Opener /><DiagramFrameBar>In Idle</DiagramFrameBar></DiagramFrameBoard>
+          <DiagramFramePanel title="Simulation"><button type="button">SUBMIT</button></DiagramFramePanel>
+        </DiagramFrame>
+      </div>,
+    );
+    await settle();
+    const opener = screen.getByRole('button', { name: 'Select something' });
+    opener.focus();
+    fireEvent.click(opener);
+    await settle();
+    expect(screen.getByRole('region', { name: 'Simulation' })).toBeTruthy();
+    expect(document.activeElement).toBe(opener);
   });
 
   it('makes the board and the panel inert under a cover', async () => {

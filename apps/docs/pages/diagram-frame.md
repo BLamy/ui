@@ -75,7 +75,9 @@ The frame measures its own width (`breakpoints`, default 440 and 720 px) and is 
 
 `presentation` forces one (`column`, `drawer`, `push`, `cover`); `side="start"` puts it on the leading edge. `open` / `defaultOpen` / `onOpenChange(open, details)` control it: `details.reason` is AdaptivePane's (`trigger-press`, `close-press`, `escape-key`, `swipe`, `back`…), and `details.cancel()` keeps it as it is. `modal` on the panel makes a drawer dim and block the board.
 
-Left to itself, opening or closing the panel holds for the way it shows now. Going back from a pushed page on a phone is going back to the board, not hiding the inspector, so when the frame widens into a column, the column shows again (as an iPad's split view does), and a column open on a wide frame doesn't come back as a page pushed over the board on a narrow one.
+Left to itself, opening or closing the panel holds for the way it shows now. Going back from a pushed page on a phone is going back to the board, not hiding the inspector, so when the frame widens into a column, the column shows again (as an iPad's split view does), and a column open on a wide frame doesn't come back as a page pushed over the board on a narrow one. What it goes back to is `defaultOpen` when that's given (a panel that's only for something selected stays closed as the frame widens), and otherwise the presentation's own default.
+
+A drawer over the board says how much of it it covers, as the bar and the toolbar do, so a Diagram on the board fits (and opens) in the part that's left; a column narrows the board itself. Either way the view follows the panel opening and closing until it's been moved.
 
 ## The bar, the trigger and the cover
 
@@ -100,7 +102,7 @@ A field that changes something once you're done with it, rather than on every ke
 
 ## Accessibility
 
-- The panel is named by its title, in every presentation: a drawer is a non-modal dialog, a push a named region with a back button, and a column part of the page. Sections are regions named by their titles.
+- The panel is named by its title (or its `aria-label`, for a title that isn't words), in every presentation: a drawer is a non-modal dialog, a push a named region with a back button, and a column's body a named region. Sections are regions named by their titles.
 - The trigger says whether the panel shows and which element it controls (`aria-expanded`, `aria-controls`). Focus moves into the panel when the trigger opens it, and back to the trigger when it closes.
 - The bar's status is a polite live region, so a status that follows the board (where a machine is now) is heard without moving focus.
 - Under a cover, the board and the panel are inert: nothing there can be focused or pressed until it goes.
@@ -112,7 +114,7 @@ A field that changes something once you're done with it, rather than on every ke
 
 | Prop | Default | Effect |
 | --- | --- | --- |
-| `open` / `defaultOpen` / `onOpenChange(open, details)` | open where it's a column | Whether the panel shows. |
+| `open` / `defaultOpen` / `onOpenChange(open, details)` | open where it's a column | Whether the panel shows; `defaultOpen` at first, and again when the frame changes size class. |
 | `presentation` | `auto` | `auto` · `column` · `drawer` · `push` · `cover`. |
 | `side` | `end` | `start` · `end` (logical). |
 | `breakpoints` | `{ medium: 440, regular: 720 }` | The widths, px, the frame's size classes start at. |
@@ -146,7 +148,7 @@ A field that changes something once you're done with it, rather than on every ke
 | `backLabel` | `Back` | What it goes back to, beside the chevron while it fits; the button is named "Back to" it. |
 | `actions` | — | Things to do at the end of the bar. |
 
-`DiagramFrameBoard`, `DiagramFrameCover`, `DiagramFrameCoverHeader` and `DiagramFrameSection` (with its `title`) take their element's props. `useDiagramFrame()` gives a part inside the frame `{ open, setOpen, presentation, sizeClass, covered }`: `covered` is whether a cover is over it, for focus to wait on before it goes back to something under it.
+`DiagramFrameBoard`, `DiagramFrameCover`, `DiagramFrameCoverHeader` and `DiagramFrameSection` (with its `title`) take their element's props. `useDiagramFrame()` gives a part inside the frame `{ open, setOpen, presentation, sizeClass, covered }`: `covered` is whether a cover is over it, for focus to wait on before it goes back to something under it. `setOpen(open, { reason, event, focus })` opens or closes it through its own change; opened as a column, focus goes into it unless `focus: false` (a panel opened by what's selected on the board, where the keys stay).
 
 ## Styling
 

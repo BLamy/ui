@@ -13,7 +13,8 @@ import { Toolbar, ToolbarButton } from '@/components/ui/toolbar';
 import { changeDetails } from '@/lib/change-details';
 import { useControllableChange } from '@/lib/controllable-state';
 import { useDiagramHistory } from '@/lib/diagram-history';
-import type { DiagramDirection, DiagramLayoutResult } from '@/lib/diagram-layout';
+import type { DiagramDirection, DiagramLayoutDensity, DiagramLayoutResult } from '@/lib/diagram-layout';
+import type { Rect } from '@/lib/canvas-math';
 import { useDiagramLayout } from '@/lib/diagram-layout/react';
 import { NOTHING_SELECTED, type DiagramConnection, type DiagramEdge, type DiagramNode, type DiagramSelection } from '@/lib/diagram-model';
 import { Icon } from '@/lib/icon';
@@ -75,6 +76,9 @@ export interface StateDiagramProps extends Pick<DiagramProps, 'minimap' | 'backg
   onConfigChange?: (config: StateMachineConfig, details: StateDiagramConfigChangeDetails) => void;
   /** Which way the layers run (default `down`, as XState's visualizer draws: it reads on a portrait frame and a phone). */
   direction?: DiagramDirection;
+  /** How much room the layout leaves between things (`useDiagramLayout`'s): `compact` for a big machine, `default`,
+   *  `comfortable`. */
+  density?: DiagramLayoutDensity;
   /** A layout done ahead of time, on a server perhaps, shown until this one's ready. */
   layout?: DiagramLayoutResult<StateNodeData, StateEdgeData>;
   /** Run it here, with a panel to drive it. Pass stand-ins to say how guards answer, how long delays take, and which actors
@@ -248,6 +252,58 @@ function RevealCurrent({ nodes, ids, board }: { nodes: readonly DiagramNode<Stat
     const settled = setTimeout(reveal, DRAWER_SETTLES);
     return () => clearTimeout(settled);
   }, [key, board, setViewport]);
+  return null;
+}
+
+/** What's selected comes into view, in the part of the board nothing covers (the toolbar, the bar, a drawer), when it's
+ *  selected from outside the board (the panel, `selection`, `defaultSelection`): something selected on the board is in
+ *  view already, and stays where it is. */
+function RevealSelected({ nodes, edges, selection, board }: { nodes: readonly DiagramNode<StateNodeData>[]; edges: readonly DiagramEdge<StateEdgeData>[]; selection: DiagramSelection; board: RefObject<HTMLDivElement | null> }) {
+  const { viewport, setViewport } = useCanvas();
+  const key = [...selection.nodes, '', ...selection.edges].join('\0');
+  const now = useRef({ viewport, nodes, edges, selection });
+  now.current = { viewport, nodes, edges, selection };
+  // What was last brought into view (or was in view already), so that a new layout doesn't move the view again.
+  const done = useRef<string | null>(null);
+  const placed = nodes.length > 0;
+  useEffect(() => {
+    if (!placed || done.current === key) return undefined;
+    done.current = key;
+    if (key === '\0') return undefined;
+    // At once, unless a drawer's sliding in: then once it's where it's going.
+    const drawerOpen = !!board.current?.closest('[data-slot=diagram-frame][data-presentation=drawer][data-open]');
+    const settled = setTimeout(() => {
+      const host = board.current;
+      const { viewport: v, nodes: all, edges: lines, selection: sel } = now.current;
+      if (!host) return;
+      const rects: Rect[] = [
+        ...all.filter((n) => sel.nodes.includes(n.id)),
+        ...lines.filter((e) => sel.edges.includes(e.id)).flatMap((e) => (e.labelBox ? [e.labelBox] : [])),
+      ];
+      if (!rects.length) return;
+      const x0 = Math.min(...rects.map((r) => r.x)), y0 = Math.min(...rects.map((r) => r.y));
+      const x1 = Math.max(...rects.map((r) => r.x + r.w)), y1 = Math.max(...rects.map((r) => r.y + r.h));
+      // The part of the board nothing covers.
+      const b = host.getBoundingClientRect();
+      const free = { left: 24, top: 24, right: b.width - 24, bottom: b.height - 24 };
+      const tools = host.querySelector('[data-slot=diagram-overlay] [data-slot=toolbar]')?.getBoundingClientRect();
+      if (tools) free.top = Math.max(free.top, tools.bottom - b.top + 12);
+      const bar = host.querySelector('[data-slot=diagram-frame-bar]')?.getBoundingClientRect();
+      if (bar) free.bottom = Math.min(free.bottom, bar.top - b.top - 12);
+      const drawer = host.closest('[data-slot=diagram-frame][data-presentation=drawer][data-open]')?.querySelector('[data-slot=diagram-frame-panel-body]')?.getBoundingClientRect();
+      if (drawer && drawer.width) {
+        if (drawer.left - b.left > b.right - drawer.right) free.right = Math.min(free.right, drawer.left - b.left - 24);
+        else free.left = Math.max(free.left, drawer.right - b.left + 24);
+      }
+      const left = x0 * v.zoom + v.x, right = x1 * v.zoom + v.x, top = y0 * v.zoom + v.y, bottom = y1 * v.zoom + v.y;
+      if (left >= free.left && right <= free.right && top >= free.top && bottom <= free.bottom) return;
+      // In the middle of what's free, or from its top-start corner when it's bigger than that.
+      const x = right - left > free.right - free.left ? free.left - x0 * v.zoom : (free.left + free.right) / 2 - ((x0 + x1) / 2) * v.zoom;
+      const y = bottom - top > free.bottom - free.top ? free.top - y0 * v.zoom : (free.top + free.bottom) / 2 - ((y0 + y1) / 2) * v.zoom;
+      setViewport({ ...v, x, y }, { reason: 'imperative' });
+    }, drawerOpen ? DRAWER_SETTLES : 0);
+    return () => clearTimeout(settled);
+  }, [key, placed, board, setViewport]);
   return null;
 }
 
@@ -478,13 +534,16 @@ function EditPanel({ refusal, addStateHere, node, edge, context, renameNode, mak
             <DiagramFrameSection title="Context">
               <div data-slot="edit-context" className="flex flex-col gap-1.5">
                 {context.entries.map(([key, value]) => (
+                  // The key over its value, each the panel's width: a key is read whole, whatever its length.
                   <div key={key} data-key={key} className="flex items-start gap-1">
-                    <EditField field={`context:${key}`} label={`Context key ${key}`} hideLabel mono value={key} refusal={refusal} onCommit={(next) => contextEdits.rename(key, next)} />
-                    {typeof context.types[key] === 'string' && value === undefined ? (
-                      <span className="flex min-h-8 min-w-0 flex-1 items-center font-mono text-caption text-foreground/70">{String(context.types[key])}</span>
-                    ) : (
-                      <EditField field={`value:${key}`} label={`Value of ${key}`} hideLabel mono value={valueText(value)} refusal={refusal} onCommit={(text) => contextEdits.set(key, text)} />
-                    )}
+                    <div className="flex min-w-0 flex-1 flex-col gap-1">
+                      <EditField field={`context:${key}`} label={`Context key ${key}`} hideLabel mono value={key} refusal={refusal} onCommit={(next) => contextEdits.rename(key, next)} />
+                      {typeof context.types[key] === 'string' && value === undefined ? (
+                        <span className="flex min-h-8 min-w-0 items-center ps-2.5 font-mono text-caption text-foreground/70">{String(context.types[key])}</span>
+                      ) : (
+                        <EditField field={`value:${key}`} label={`Value of ${key}`} hideLabel mono value={valueText(value)} placeholder="No value" refusal={refusal} onCommit={(text) => contextEdits.set(key, text)} />
+                      )}
+                    </div>
                     <RemoveButton label={`Remove ${key} from the context`} onClick={() => contextEdits.remove(key)} />
                   </div>
                 ))}
@@ -544,9 +603,9 @@ const statesOf = (state: StateMachineConfig | null) => Object.keys((state?.state
 const isPlainObject = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
 
 export function StateDiagram({
-  machine: given, source, config, defaultConfig, onConfigChange, direction, layout: initialLayout, simulate, editable = false, implementations,
+  machine: given, source, config, defaultConfig, onConfigChange, direction, density, layout: initialLayout, simulate, editable = false, implementations,
   selection: selectionProp, defaultSelection = NOTHING_SELECTED, onSelectionChange, panelOpen, defaultPanelOpen, onPanelOpenChange, panelPresentation,
-  background = 'grid', onAction, className, style, 'aria-label': ariaLabel, ...diagram
+  background = 'grid', minimap = 'auto', onAction, className, style, 'aria-label': ariaLabel, ...diagram
 }: StateDiagramProps) {
   /* ── What's being shown: `config` when it's controlled; otherwise what it started from (`defaultConfig`, `source` or
         `machine`), until there's an edit to show instead ── */
@@ -571,7 +630,7 @@ export function StateDiagram({
     }
   }, [machine]);
   const board = useRef<HTMLDivElement>(null);
-  const laid = useDiagramLayout(draft, { host: board, direction, initial: initialLayout });
+  const laid = useDiagramLayout(draft, { host: board, direction, density, initial: initialLayout });
   const behind = implementations ?? given?.implementations;
   const { sim, error: simError } = useSimulation(machine, simulate, behind?.delays);
 
@@ -894,9 +953,11 @@ export function StateDiagram({
           pressable={sendable}
           {...(editable ? { editable: true, movable: false, history, onDataChange: onDiagramChange, isValidConnection: validConnection } : null)}
           overlay={<DiagramToolbar />}
+          minimap={minimap}
           {...diagram}
         >
           <RevealCurrent nodes={laid.nodes} ids={leaves} board={board} />
+          <RevealSelected nodes={laid.nodes} edges={laid.edges} selection={selection} board={board} />
         </Diagram>
         {panel ? <DiagramFrameBar>{status}</DiagramFrameBar> : null}
       </DiagramFrameBoard>

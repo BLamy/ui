@@ -66,9 +66,9 @@ describe('CloudflareDiagram, on a server', () => {
   it('a binding’s label is its name on env, then what it uses as chips; with nothing used, a pill', () => {
     const html = renderToString(<CloudflareDiagram services={placed} edges={edges} />);
     expect(labelOf(html, 'e')).toEqual(['FILES', 'get', 'put', 'list', 'head']);
-    expect(html).toMatch(/data-slot="diagram-edge-label" data-edge="e" data-shape="card"/);
+    expect(html).toMatch(/data-slot="diagram-edge-label" data-edge="e" data-variant="card"/);
     const bare = renderToString(<CloudflareDiagram services={placed} edges={[{ ...edges[0]!, operations: [] }]} />);
-    expect(bare).toMatch(/data-slot="diagram-edge-label" data-edge="e" data-shape="pill"/);
+    expect(bare).toMatch(/data-slot="diagram-edge-label" data-edge="e" data-variant="pill"/);
     expect(labelOf(renderToString(<CloudflareDiagram services={placed} edges={[{ ...edges[0]!, operations: undefined, binding: undefined }]} />), 'e')).toEqual(['R2 Bucket']);
   });
 

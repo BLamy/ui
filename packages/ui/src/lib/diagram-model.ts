@@ -73,8 +73,10 @@ export interface DiagramSection {
   id?: string;
   /** The caption. An edge label's chips usually go without one. */
   title?: string;
-  /** `default`: bordered chips. `list`: plain rows of text. `code`: plain rows in the mono face. */
-  variant?: 'default' | 'list' | 'code';
+  /** `default`: bordered chips. `inline`: the same chips in a row that wraps (at `DIAGRAM_CARD.inlineMax`), for facts
+   *  that sit side by side, like a system's account-wide ones. `list`: plain rows of text. `code`: plain rows in the mono
+   *  face. */
+  variant?: 'default' | 'inline' | 'list' | 'code';
   items: readonly DiagramSectionItem[];
 }
 
@@ -768,11 +770,500 @@ function routeAround(from: ConnectorEnd, to: ConnectorEnd, boxes: readonly Rect[
   return simplifyRoute([from.p, ...path, to.p]);
 }
 
+/* ── Routes in lanes of their own ── */
+
+/** What a route goes round: a `block` (a card, a box's header and sections) it never goes through, or a `wall` (a box's
+ *  border) it may cross, at a cost, to go in or out, and never runs along. */
+interface LaneObstacle {
+  id: string;
+  r: Rect;
+  kind: 'block' | 'wall';
+}
+
+/** One edge to route: its two ends, and what it may go through (its own ends' cards). An end at a port that other edges
+ *  share has a `key` (the node and the port): they leave or arrive side by side, in the order of where they go. */
+interface LaneRequest {
+  id: string;
+  from: ConnectorEnd;
+  to: ConnectorEnd;
+  through: ReadonlySet<string>;
+  fromKey?: string;
+  toKey?: string;
+  /** Its label's size: the label goes on a straight run of its own route, clear of everything, and the routes after it keep
+   *  clear of the label. */
+  label?: { w: number; h: number } | null;
+}
+
+/** A routed edge: its route, and where its label is. */
+export interface LaneRoute {
+  pts: Pt[];
+  label?: Rect;
+  /** Whether its label is on a straight run of its own, clear of everything (not only where it covers least). */
+  clear?: boolean;
+}
+
+/** Room between two routes side by side, and between those that leave one port together; how far a route goes straight out
+ *  of its end before it may turn; what a turn, a crossing, going through a box's border and running along another route cost
+ *  against length. */
+const DIAGRAM_LANE = 12;
+const LANE_SPREAD = 4;
+const LANE_STUB = 16;
+const LANE_TURN = 40;
+const LANE_CROSS = 30;
+const LANE_WALL = 60;
+const LANE_ALONG = 5000;
+const LABEL_AIR = 6;
+/** What running on along the row a route left its port by costs, a unit: enough to break a tie, no more. */
+const LANE_ROW = 0.05;
+/** What going through a card costs, when there's no other way. */
+const LANE_THROUGH = 20000;
+/** How far a label keeps from a turn on its run. */
+const LABEL_CORNER = 8;
+/** How far a route keeps off a card's side (its way out of an end is further). */
+const LANE_CLEAR = 6;
+
+interface LaneSegment { a: Pt; b: Pt; edge: string; key?: string }
+
+const DIRS: readonly Pt[] = [{ x: 1, y: 0 }, { x: 0, y: 1 }, { x: -1, y: 0 }, { x: 0, y: -1 }];
+const dirIndex = (n: Pt) => (n.x > 0.5 ? 0 : n.y > 0.5 ? 1 : n.x < -0.5 ? 2 : 3);
+
+/**
+ * Square routes for many edges, each in a lane of its own: in the order given, each the cheapest way from its end to the
+ * other (its length, its turns, the routes it crosses and the borders it goes through), round every block, never along a
+ * route already made (one beside it is a lane away), and out of each end the way the end faces. Edges that share an end
+ * (one port) leave it side by side, a few units apart, ordered by where they go, so that they don't cross there. What has
+ * no way through gets the plain elbow. `around` are routes already made, which these keep a lane from. The routes are by id,
+ * with their ends where the requests say, as moved apart.
+ */
+function routeInLanes(requests: readonly LaneRequest[], obstacles: readonly LaneObstacle[], around: readonly (readonly Pt[])[] = []): Map<string, LaneRoute> {
+  // In the order given, and then with each group of edges that share a port the other way round (which of them takes the
+  // inner lane decides whether they cross), and longest first: whichever has every label clear on its own line, then
+  // crosses least, then is shortest.
+  const firstTry = routeInOrder(requests, obstacles, around, false);
+  if (requests.length < 2 || requests.length > LANE_TRIES_UP_TO) return firstTry;
+  const keys = new Map<string, number>();
+  for (const r of requests) for (const k of [r.fromKey, r.toKey]) if (k) keys.set(k, (keys.get(k) ?? 0) + 1);
+  const groupOf = (r: LaneRequest) => [r.fromKey, r.toKey].find((k) => k && keys.get(k)! > 1);
+  const flipped = [...requests];
+  for (const key of new Set(requests.map(groupOf).filter(Boolean))) {
+    const at = flipped.flatMap((r, i) => (groupOf(r) === key ? [i] : []));
+    const members = at.map((i) => flipped[i]).reverse();
+    at.forEach((i, k) => { flipped[i] = members[k]; });
+  }
+  let best = firstTry, score = laneScore(firstTry);
+  // Each order with the edges that share a port side by side one way and the other: the one that turns first has to be on
+  // the side it turns to, or it crosses the others there.
+  const tries: [readonly LaneRequest[], boolean][] = [[requests, true], [flipped, false], [flipped, true], [[...requests].reverse(), false]];
+  for (const [order, mirror] of tries) {
+    // Nothing to gain on every label clear and nothing crossing.
+    if (!score.crowded && !score.crossings) break;
+    const tried = routeInOrder(order, obstacles, around, mirror);
+    const sc = laneScore(tried);
+    if (sc.crowded < score.crowded || (sc.crowded === score.crowded && (sc.crossings < score.crossings || (sc.crossings === score.crossings && sc.length < score.length - 1)))) { best = tried; score = sc; }
+  }
+  return best;
+}
+
+/** Up to this many edges at once, other orders are tried too. */
+const LANE_TRIES_UP_TO = 40;
+
+/** How many times routes cross one another, and how long they are in all. */
+function laneScore(routes: ReadonlyMap<string, LaneRoute>): { crowded: number; crossings: number; length: number } {
+  const all = [...routes.values()].map((r) => r.pts);
+  const crowded = [...routes.values()].filter((r) => r.label && !r.clear).length;
+  let crossings = 0, length = 0;
+  for (const pts of all) for (let i = 1; i < pts.length; i++) length += dist(pts[i - 1], pts[i]);
+  for (let p = 0; p < all.length; p++) for (let q = p + 1; q < all.length; q++) {
+    const A = all[p], B = all[q];
+    for (let i = 1; i < A.length; i++) for (let j = 1; j < B.length; j++) {
+      const a = A[i - 1], b = A[i], c = B[j - 1], d = B[j];
+      const aLevel = Math.abs(a.y - b.y) < 0.5, cLevel = Math.abs(c.y - d.y) < 0.5;
+      if (aLevel === cLevel) continue;
+      const [h0, h1, v0, v1] = aLevel ? [a, b, c, d] : [c, d, a, b];
+      if (v0.x > Math.min(h0.x, h1.x) + 0.5 && v0.x < Math.max(h0.x, h1.x) - 0.5 && h0.y > Math.min(v0.y, v1.y) + 0.5 && h0.y < Math.max(v0.y, v1.y) - 0.5) crossings++;
+    }
+  }
+  return { crowded, crossings, length };
+}
+
+function routeInOrder(requests: readonly LaneRequest[], obstacles: readonly LaneObstacle[], around: readonly (readonly Pt[])[], mirror: boolean): Map<string, LaneRoute> {
+  const out = new Map<string, LaneRoute>();
+  if (!requests.length) return out;
+  // Ends shared by several edges, side by side along the side they're on, in the order of where each goes.
+  const shared = new Map<string, { req: LaneRequest; end: 'from' | 'to' }[]>();
+  for (const req of requests) {
+    for (const end of ['from', 'to'] as const) {
+      const key = end === 'from' ? req.fromKey : req.toKey;
+      if (key) shared.set(key, [...(shared.get(key) ?? []), { req, end }]);
+    }
+  }
+  const moved = new Map<string, { from: ConnectorEnd; to: ConnectorEnd }>(requests.map((r) => [r.id, { from: r.from, to: r.to }]));
+  for (const list of shared.values()) {
+    if (list.length < 2) continue;
+    const end0 = list[0].end === 'from' ? list[0].req.from : list[0].req.to;
+    const n = end0.n ?? { x: 1, y: 0 };
+    // Along the side: across the way the end faces.
+    const along = { x: Math.abs(n.y), y: Math.abs(n.x) };
+    const other = (e: { req: LaneRequest; end: 'from' | 'to' }) => (e.end === 'from' ? e.req.to.p : e.req.from.p);
+    list.sort((p, q) => (other(p).x - other(q).x) * along.x + (other(p).y - other(q).y) * along.y || (p.req.id < q.req.id ? -1 : 1));
+    if (mirror) list.reverse();
+    list.forEach((e, i) => {
+      const off = (i - (list.length - 1) / 2) * LANE_SPREAD;
+      const m = moved.get(e.req.id)!;
+      const at = m[e.end];
+      m[e.end] = { ...at, p: { x: round2(at.p.x + along.x * off), y: round2(at.p.y + along.y * off) } };
+    });
+  }
+  const blocks = obstacles.filter((o) => o.kind === 'block');
+  // What a label keeps off: every block, the routes made, and the labels placed (which the routes after it go round).
+  const room = rectIndex(blocks.map((b) => b.r));
+  const segmentRect = (a: Pt, b: Pt): Rect => ({ x: Math.min(a.x, b.x) - 1, y: Math.min(a.y, b.y) - 1, w: Math.abs(b.x - a.x) + 2, h: Math.abs(b.y - a.y) + 2 });
+  for (const pts of around) for (let i = 1; i < pts.length; i++) room.add(segmentRect(pts[i - 1], pts[i]));
+  // Every edge's way out of each end is known before any is routed: a label keeps off the others', so one routed after it
+  // never has to come out of its port through it.
+  const stubOf = new Map<Rect, string>();
+  for (const req of requests) {
+    const { from, to } = moved.get(req.id)!;
+    for (const end of [from, to]) {
+      const n = end.n ?? { x: 0, y: 0 };
+      const r = segmentRect(end.p, { x: end.p.x + n.x * LANE_STUB, y: end.p.y + n.y * LANE_STUB });
+      stubOf.set(r, req.id);
+      room.add(r);
+    }
+  }
+  const placed: LaneObstacle[] = [];
+  const walls = obstacles.filter((o) => o.kind === 'wall');
+  // Routes that are already where they are (a layout's, or ones that needed no lane), which these keep a lane from.
+  const made: LaneSegment[] = around.flatMap((pts) => pts.slice(1).map((q, i) => ({ a: pts[i], b: q, edge: '' })));
+  // Where any of it is: the grid doesn't go further out than a little past it all.
+  const all = unionRect([...obstacles.map((o) => o.r), ...requests.flatMap((r) => [rectOf([r.from.p, r.to.p])])]) ?? { x: 0, y: 0, w: 0, h: 0 };
+  const lo = { x: all.x - 80, y: all.y - 80 }, hi = { x: all.x + all.w + 80, y: all.y + all.h + 80 };
+  // The lines a route can run on, from what's fixed: a little off each block's sides and each wall's, on both sides of it,
+  // and the middle of the room between blocks.
+  const fixedX: number[] = [], fixedY: number[] = [];
+  for (const { r } of blocks) { fixedX.push(r.x - AROUND_GAP, r.x + r.w + AROUND_GAP); fixedY.push(r.y - AROUND_GAP, r.y + r.h + AROUND_GAP); }
+  for (const { r } of walls) {
+    fixedX.push(r.x - AROUND_GAP, r.x + AROUND_GAP, r.x + r.w - AROUND_GAP, r.x + r.w + AROUND_GAP);
+    fixedY.push(r.y - AROUND_GAP, r.y + AROUND_GAP, r.y + r.h - AROUND_GAP, r.y + r.h + AROUND_GAP);
+  }
+  const middles = (edges: number[][]) => {
+    const sorted = [...new Set(edges.flat())].sort((p, q) => p - q);
+    const mids: number[] = [];
+    for (let i = 1; i < sorted.length; i++) if (sorted[i] - sorted[i - 1] > AROUND_GAP * 4) mids.push((sorted[i] + sorted[i - 1]) / 2);
+    return mids;
+  };
+  fixedX.push(...middles(blocks.map(({ r }) => [r.x, r.x + r.w])));
+  fixedY.push(...middles(blocks.map(({ r }) => [r.y, r.y + r.h])));
+
+  for (const req of requests) {
+    const { from, to } = moved.get(req.id)!;
+    const na = from.n ?? dominantSide(from.p, to.p), nb = to.n ?? dominantSide(to.p, from.p);
+    const a1 = { x: round2(from.p.x + na.x * LANE_STUB), y: round2(from.p.y + na.y * LANE_STUB) };
+    const b1 = { x: round2(to.p.x + nb.x * LANE_STUB), y: round2(to.p.y + nb.y * LANE_STUB) };
+    // Going through a box's border: once is how into or out of it, for a box around one end; out of a box around both and
+    // back is going round outside what holds it, which it all but never should; through one around neither is going over it.
+    const inBox = (r: Rect, p: Pt) => p.x >= r.x && p.x <= r.x + r.w && p.y >= r.y && p.y <= r.y + r.h;
+    const wallCost = walls.map(({ r }) => { const n = Number(inBox(r, from.p)) + Number(inBox(r, to.p)); return n === 2 ? LANE_WALL * 50 : n === 1 ? LANE_WALL : LANE_WALL * 3; });
+    // A label a little off the cards and the other routes, so it reads as on its own line.
+    const wanted = req.label ?? null;
+    const covered = (box: Rect) => room.overlap({ x: box.x - LABEL_AIR, y: box.y - LABEL_AIR, w: box.w + LABEL_AIR * 2, h: box.h + LABEL_AIR * 2 }, (r) => stubOf.get(r) === req.id);
+    /** Where on a straight run from `a` to `b` its label goes, clear, nearest the run's middle; null if nowhere. */
+    const onRun = (a: Pt, b: Pt): Rect | null => {
+      const want = wanted;
+      if (!want) return null;
+      const l = dist(a, b), along = Math.abs(a.x - b.x) < 0.5 ? want.h : want.w;
+      const free = l - along - LABEL_CORNER * 2;
+      if (free < 0) return null;
+      const d = { x: (b.x - a.x) / l, y: (b.y - a.y) / l }, mid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+      for (let k = 0; k <= free / 2; k += 8) {
+        for (const sign of k ? [1, -1] : [1]) {
+          const box = { x: round2(mid.x + d.x * k * sign - want.w / 2), y: round2(mid.y + d.y * k * sign - want.h / 2), w: want.w, h: want.h };
+          if (covered(box) <= 0) return box;
+        }
+      }
+      return null;
+    };
+    /**
+     * The cheapest route, and its label. With a label to place, the search carries whether it has been: a straight run long
+     * enough for it, with a clear place on it, places it there, and the route has to have placed it by its end. So a route
+     * that has no room for its label goes the way that has, and a label is always on a run that's only its own edge's.
+     */
+    const find = (labelled: boolean, soft: boolean): { pts: Pt[]; label: Rect | null } | null => {
+      const want = labelled ? wanted : null;
+      // A little off every side, so no run hugs a card.
+      const own = [...blocks, ...placed].filter((b) => !req.through.has(b.id))
+        .map((o) => ({ ...o, r: { x: o.r.x - LANE_CLEAR, y: o.r.y - LANE_CLEAR, w: o.r.w + LANE_CLEAR * 2, h: o.r.h + LANE_CLEAR * 2 } }));
+      const xs = new Set([a1.x, b1.x, ...fixedX]), ys = new Set([a1.y, b1.y, ...fixedY]);
+      for (const { r } of placed) { xs.add(r.x - AROUND_GAP); xs.add(r.x + r.w + AROUND_GAP); ys.add(r.y - AROUND_GAP); ys.add(r.y + r.h + AROUND_GAP); }
+      if (want) {
+        // Lines just far enough from what's there for this label to sit on them beside it.
+        const hx = want.w / 2 + LABEL_AIR + 1, hy = want.h / 2 + LABEL_AIR + 1;
+        for (const { r } of [...blocks, ...placed]) { xs.add(r.x - hx); xs.add(r.x + r.w + hx); ys.add(r.y - hy); ys.add(r.y + r.h + hy); }
+      }
+      for (const sg of made) {
+        if (Math.abs(sg.a.x - sg.b.x) < 0.5) { xs.add(sg.a.x - DIAGRAM_LANE); xs.add(sg.a.x + DIAGRAM_LANE); if (want) { xs.add(sg.a.x - want.w / 2 - LABEL_AIR - 1); xs.add(sg.a.x + want.w / 2 + LABEL_AIR + 1); } }
+        else { ys.add(sg.a.y - DIAGRAM_LANE); ys.add(sg.a.y + DIAGRAM_LANE); if (want) { ys.add(sg.a.y - want.h / 2 - LABEL_AIR - 1); ys.add(sg.a.y + want.h / 2 + LABEL_AIR + 1); } }
+      }
+      // Lines closer than 2 units are one line (the ends' own kept), which keeps the grid, and the search, small.
+      const thin = (values: Iterable<number>, keep: number[], from: number, to: number) => {
+        const sorted = [...values].filter((v) => v >= from && v <= to).map(round2).sort((p, q) => p - q);
+        const out: number[] = [];
+        for (const v of sorted) {
+          const last = out[out.length - 1];
+          if (last === undefined || v - last >= 2) out.push(v);
+          else if (keep.includes(v)) out[out.length - 1] = v;
+        }
+        for (const v of keep) if (!out.includes(v)) out.push(v);
+        return out.sort((p, q) => p - q);
+      };
+      const X = thin(xs, [a1.x, b1.x], lo.x, hi.x), Y = thin(ys, [a1.y, b1.y], lo.y, hi.y);
+      const W = X.length, H = Y.length;
+      const si = X.indexOf(a1.x), sj = Y.indexOf(a1.y), ti = X.indexOf(b1.x), tj = Y.indexOf(b1.y);
+      if (si < 0 || sj < 0 || ti < 0 || tj < 0) return null;
+      const inBlock = (p: Pt) => own.some(({ r }) => p.x > r.x && p.x < r.x + r.w && p.y > r.y && p.y < r.y + r.h);
+      /** What a run from `p` to `q` costs past its length: Infinity through a block (or, `soft`, a great deal). */
+      const extra = (p: Pt, q: Pt): number => {
+        let c = 0;
+        for (const { r } of own) if (runHits(p, q, r)) { if (!soft) return Infinity; c += LANE_THROUGH; }
+        const level = Math.abs(p.y - q.y) < 0.5;
+        const x0 = Math.min(p.x, q.x), x1 = Math.max(p.x, q.x), y0 = Math.min(p.y, q.y), y1 = Math.max(p.y, q.y);
+        for (const [k, { r }] of walls.entries()) {
+          const w = wallCost[k];
+          if (level) { if (p.y > r.y && p.y < r.y + r.h) { if (r.x > x0 && r.x < x1) c += w; if (r.x + r.w > x0 && r.x + r.w < x1) c += w; } }
+          else if (p.x > r.x && p.x < r.x + r.w) { if (r.y > y0 && r.y < y1) c += w; if (r.y + r.h > y0 && r.y + r.h < y1) c += w; }
+        }
+        for (const sg of made) {
+          const sLevel = Math.abs(sg.a.y - sg.b.y) < 0.5;
+          const sx0 = Math.min(sg.a.x, sg.b.x), sx1 = Math.max(sg.a.x, sg.b.x), sy0 = Math.min(sg.a.y, sg.b.y), sy1 = Math.max(sg.a.y, sg.b.y);
+          if (level && sLevel) {
+            const overlap = Math.min(x1, sx1) - Math.max(x0, sx0);
+            if (Math.abs(sg.a.y - p.y) < DIAGRAM_LANE - 0.5 && overlap > 0.5) c += LANE_ALONG + overlap * 20;
+          } else if (!level && !sLevel) {
+            const overlap = Math.min(y1, sy1) - Math.max(y0, sy0);
+            if (Math.abs(sg.a.x - p.x) < DIAGRAM_LANE - 0.5 && overlap > 0.5) c += LANE_ALONG + overlap * 20;
+          } else if (level && sg.a.x > x0 && sg.a.x < x1 && p.y > sy0 && p.y < sy1) c += LANE_CROSS;
+          else if (!level && sg.a.y > y0 && sg.a.y < y1 && p.x > sx0 && p.x < sx1) c += LANE_CROSS;
+        }
+        return c;
+      };
+      // A state: a grid point, the way it's going, and whether its label is placed. With it: where the straight run it's on
+      // started, and where its label went.
+      const N = W * H * 8;
+      const id = (i: number, j: number, d: number, done: number) => ((j * W + i) * 4 + d) * 2 + done;
+      const cost = new Float64Array(N).fill(Infinity);
+      const prev = new Int32Array(N).fill(-1);
+      const runX = new Float64Array(N), runY = new Float64Array(N);
+      const labelAt = new Map<number, Rect>();
+      const heap: [number, number][] = [];
+      const push = (c: number, k: number) => {
+        heap.push([c, k]);
+        for (let i = heap.length - 1; i > 0;) { const q = (i - 1) >> 1; if (heap[q][0] <= heap[i][0]) break; [heap[q], heap[i]] = [heap[i], heap[q]]; i = q; }
+      };
+      const pop = () => {
+        const top = heap[0], last = heap.pop()!;
+        if (heap.length) {
+          heap[0] = last;
+          for (let i = 0; ;) { const l = i * 2 + 1, r = l + 1; let m = i; if (l < heap.length && heap[l][0] < heap[m][0]) m = l; if (r < heap.length && heap[r][0] < heap[m][0]) m = r; if (m === i) break; [heap[m], heap[i]] = [heap[i], heap[m]]; i = m; }
+        }
+        return top;
+      };
+      const startDir = dirIndex(na), endDir = dirIndex({ x: -nb.x, y: -nb.y });
+      const s0 = id(si, sj, startDir, want ? 0 : 1);
+      cost[s0] = 0;
+      // Its first run starts at the end itself: the way out is straight on.
+      runX[s0] = from.p.x; runY[s0] = from.p.y;
+      // A*: what's left can't be shorter than the square distance to the end, which nothing makes cheaper.
+      const toGo = (k: number) => { const cell = (((k - (k % 2)) / 2) - (((k - (k % 2)) / 2) % 4)) / 4; return Math.abs(X[cell % W] - b1.x) + Math.abs(Y[(cell - (cell % W)) / W] - b1.y); };
+      push(toGo(s0), s0);
+      const relax = (k: number, nk: number, nc: number, rx: number, ry: number, label: Rect | undefined) => {
+        if (nc >= cost[nk]) return;
+        cost[nk] = nc; prev[nk] = k; runX[nk] = rx; runY[nk] = ry;
+        if (label) labelAt.set(nk, label);
+        push(nc + toGo(nk), nk);
+      };
+      // A run's label is looked for once the run's over (at a turn, or at the end), and each run once.
+      const runs = new Map<number, Rect | null>();
+      // A run is from a grid point (or the end itself, -1) to a grid point.
+      const labelOn = (a: Pt, b: Pt, bi: number, bj: number) => {
+        const ai = a === from.p || (a.x === from.p.x && a.y === from.p.y) ? -1 : X.indexOf(a.x) + Y.indexOf(a.y) * W;
+        const key = (ai + 1) * (W * H + 1) + bj * W + bi;
+        let box = runs.get(key);
+        if (box === undefined) { box = onRun(a, b); runs.set(key, box); }
+        return box;
+      };
+      let end = -1, best = Infinity, endLabel: Rect | null = null;
+      while (heap.length) {
+        const [f, k] = pop();
+        // Nothing left can come in under the best way to the end found so far.
+        if (f >= best) break;
+        const c = cost[k];
+        if (f > c + toGo(k) + 1e-6) continue;
+        const done = k % 2, d = ((k - done) / 2) % 4, cell = ((k - done) / 2 - d) / 4, i = cell % W, j = (cell - i) / W;
+        if (i === ti && j === tj) {
+          // Into the end the way it faces: a last turn if it isn't going that way already. Its label, if it's still to go,
+          // on the last run: on into the end itself when it's going that way.
+          const total = c + (d === endDir ? 0 : LANE_TURN);
+          const last = done ? null : d === endDir ? onRun({ x: runX[k], y: runY[k] }, to.p) : labelOn({ x: runX[k], y: runY[k] }, { x: X[i], y: Y[j] }, i, j);
+          if ((done || last) && total < best) { best = total; end = k; endLabel = last; }
+          continue;
+        }
+        for (let nd = 0; nd < 4; nd++) {
+          if (nd === (d + 2) % 4) continue;
+          const ni = i + DIRS[nd].x, nj = j + DIRS[nd].y;
+          if (ni < 0 || nj < 0 || ni >= W || nj >= H) continue;
+          const p = { x: X[i], y: Y[j] }, q = { x: X[ni], y: Y[nj] };
+          if (inBlock(q) && !soft) continue;
+          const more = extra(p, q);
+          if (more === Infinity) continue;
+          // Of ways as long, one that parts from the row it left by sooner leaves the room beside that row to the edges that
+          // leave the same port after it.
+          const onRow = nd === startDir && (startDir % 2 === 0 ? Math.abs(p.y - a1.y) < 0.5 : Math.abs(p.x - a1.x) < 0.5);
+          const nc = c + Math.abs(q.x - p.x) + Math.abs(q.y - p.y) + (nd === d ? 0 : LANE_TURN) + more + (onRow ? (Math.abs(q.x - p.x) + Math.abs(q.y - p.y)) * LANE_ROW : 0);
+          const run = nd === d ? { x: runX[k], y: runY[k] } : p;
+          relax(k, id(ni, nj, nd, done), nc, run.x, run.y, done ? labelAt.get(k) : undefined);
+          // Turning: the run that's over here can take its label, if there's a clear place on it.
+          if (!done && nd !== d) {
+            const box = labelOn({ x: runX[k], y: runY[k] }, p, i, j);
+            if (box) relax(k, id(ni, nj, nd, 1), nc, p.x, p.y, box);
+          }
+        }
+      }
+      if (end < 0) return null;
+      const path: Pt[] = [];
+      for (let k = end; k >= 0; k = prev[k]) { const cell = ((k - (k % 2)) / 2 - (((k - (k % 2)) / 2) % 4)) / 4; path.push({ x: X[cell % W], y: Y[(cell - (cell % W)) / W] }); }
+      path.reverse();
+      return { pts: simplifyRoute([from.p, ...path, to.p]), label: labelAt.get(end) ?? endLabel };
+    };
+    // With its label on a run of its own; or, with no room for that, without; or, when an end's way out is shut in (a card
+    // dragged against another), through what's in the way, still in a lane of its own; or, failing all, the plain elbow.
+    const found = (wanted ? find(true, false) : null) ?? find(false, false) ?? find(false, true);
+    const pts = found?.pts ?? connectorPath('elbow', from, to).pts;
+    let label = found?.label ?? undefined;
+    const clear = !!label;
+    // Wherever it covers least, but on its route: a label beside a line could be read as any line's.
+    if (wanted && !label) label = labelOnRoute(pts, wanted, covered);
+    for (let i = 1; i < pts.length; i++) {
+      const stub = i === 1 ? req.fromKey : i === pts.length - 1 ? req.toKey : undefined;
+      made.push({ a: pts[i - 1], b: pts[i], edge: req.id, key: stub });
+      room.add(segmentRect(pts[i - 1], pts[i]));
+    }
+    if (label) {
+      room.add(label);
+      placed.push({ id: `\0label:${req.id}`, r: label, kind: 'block' });
+    }
+    out.set(req.id, label ? { pts, label, clear } : { pts });
+  }
+  return out;
+}
+
+/** A label's box centered on its route where it covers least of what `overlap` says, from the middle of the route outward. */
+function labelOnRoute(pts: readonly Pt[], size: { w: number; h: number }, overlap: (box: Rect) => number): Rect {
+  let best = labelBoxOnRoute(pts, size, 0.5), least = overlap(best);
+  for (let k = 1; k <= 8 && least > 0; k++) {
+    for (const t of [0.5 + k * 0.05, 0.5 - k * 0.05]) {
+      const box = labelBoxOnRoute(pts, size, t);
+      const c = overlap(box);
+      if (c < least) { least = c; best = box; }
+    }
+  }
+  return best;
+}
+
+
+/** The edges of a diagram that `routeInLanes` routes: its obstacles are every card, the head of every box (its header and
+ *  sections, `headOf` long), every box's border as a wall, and `labels` (labels already placed); `around` are the routes it
+ *  keeps a lane from. Shorter edges go first, as they have the fewest ways to go. */
+export function laneRoutes<N, E>(index: DiagramIndex<N>, edges: readonly DiagramEdge<E>[], { headOf, around = [], labels = [], labelSize }: { headOf: (n: DiagramNode<N>) => number; around?: readonly (readonly Pt[])[]; labels?: readonly Rect[]; labelSize?: (e: DiagramEdge<E>) => { w: number; h: number } | null }, ends?: ReadonlyMap<string, { from: ConnectorEnd; to: ConnectorEnd }>): Map<string, LaneRoute> {
+  const obstacles: LaneObstacle[] = [];
+  for (const n of index.nodes) {
+    if (n.kind === 'marker') continue;
+    if (holdsNodes(n)) {
+      obstacles.push({ id: n.id, r: rectOf2(n), kind: 'wall' });
+      if (n.kind !== 'root' && n.kind !== 'region') obstacles.push({ id: `${n.id}\0head`, r: { x: n.x, y: n.y, w: n.w, h: Math.min(n.h, headOf(n)) }, kind: 'block' });
+    } else obstacles.push({ id: n.id, r: rectOf2(n), kind: 'block' });
+  }
+  labels.forEach((r, i) => obstacles.push({ id: `\0label${i}`, r, kind: 'block' }));
+  const none = new Set<string>();
+  const requests: LaneRequest[] = [];
+  for (const e of edges) {
+    const a = index.byId.get(e.from), b = index.byId.get(e.to);
+    if (!a || !b || a === b) continue;
+    const pa = portOf(a, e.fromPort), pb = portOf(b, e.toPort);
+    const given = ends?.get(e.id);
+    const from = pa ? portPoint(a, pa) : given?.from;
+    const to = pb ? portPoint(b, pb) : given?.to;
+    if (!from || !to) continue;
+    requests.push({ id: e.id, from, to, through: none, label: labelSize?.(e) ?? null, ...(pa ? { fromKey: `${a.id}\0${pa.id}` } : null), ...(pb ? { toKey: `${b.id}\0${pb.id}` } : null) });
+  }
+  const span = (r: LaneRequest) => Math.abs(r.from.p.x - r.to.p.x) + Math.abs(r.from.p.y - r.to.p.y);
+  requests.sort((p, q) => span(p) - span(q));
+  return routeInLanes(requests, obstacles, around);
+}
+
+/** Whether two routes run along each other for more than a crossing: on one line, or closer than a lane, for a stretch. */
+function routesShareLane(p: readonly Pt[], q: readonly Pt[], min = DIAGRAM_LANE): boolean {
+  for (let i = 1; i < p.length; i++) {
+    const a = p[i - 1], b = p[i];
+    const level = Math.abs(a.y - b.y) < 0.5, upright = Math.abs(a.x - b.x) < 0.5;
+    if (!level && !upright) continue;
+    for (let j = 1; j < q.length; j++) {
+      const c = q[j - 1], d = q[j];
+      if (level && Math.abs(c.y - d.y) < 0.5 && Math.abs(c.y - a.y) < 2) {
+        if (Math.min(Math.max(a.x, b.x), Math.max(c.x, d.x)) - Math.max(Math.min(a.x, b.x), Math.min(c.x, d.x)) > min) return true;
+      } else if (upright && Math.abs(c.x - d.x) < 0.5 && Math.abs(c.x - a.x) < 2) {
+        if (Math.min(Math.max(a.y, b.y), Math.max(c.y, d.y)) - Math.max(Math.min(a.y, b.y), Math.min(c.y, d.y)) > min) return true;
+      }
+    }
+  }
+  return false;
+}
+
+/** The ports that items name, on the side of their card that faces where their edges go: a row runs across the card, so
+ *  its port can be at either end, and the one nearer what it joins is a route that doesn't go round the card. A port with
+ *  no edges stays where it's declared. Nodes whose ports don't move are the same objects. */
+export function facePorts<N, E>(nodes: readonly DiagramNode<N>[], edges: readonly DiagramEdge<E>[]): DiagramNode<N>[] {
+  const named = new Map<string, Set<string>>();
+  for (const n of nodes) {
+    if (!n.ports?.length || !n.sections?.length) continue;
+    const ids = new Set<string>();
+    for (const s of n.sections) for (const it of s.items) if (it.port) ids.add(it.port);
+    if (ids.size) named.set(n.id, ids);
+  }
+  if (!named.size) return nodes as DiagramNode<N>[];
+  const byId = new Map(nodes.map((n) => [n.id, n]));
+  // Each named port's vote: how many of its edges go to its left and to its right.
+  const votes = new Map<string, number>();
+  const vote = (node: DiagramNode<N> | undefined, port: string | undefined, other: DiagramNode<N> | undefined) => {
+    if (!node || !port || !other || node === other || !named.get(node.id)?.has(port)) return;
+    const oc = other.x + other.w / 2;
+    const side = oc < node.x ? -1 : oc > node.x + node.w ? 1 : 0;
+    if (side) votes.set(`${node.id}\0${port}`, (votes.get(`${node.id}\0${port}`) ?? 0) + side);
+  };
+  for (const e of edges) {
+    vote(byId.get(e.from), e.fromPort, byId.get(e.to));
+    vote(byId.get(e.to), e.toPort, byId.get(e.from));
+  }
+  if (!votes.size) return nodes as DiagramNode<N>[];
+  return nodes.map((n) => {
+    if (!named.has(n.id)) return n;
+    let changed = false;
+    const ports = n.ports!.map((p) => {
+      const v = votes.get(`${n.id}\0${p.id}`) ?? 0;
+      if ((p.side !== 'left' && p.side !== 'right') || !v) return p;
+      const side: DiagramSide = v < 0 ? 'left' : 'right';
+      if (side === p.side) return p;
+      changed = true;
+      return { ...p, side };
+    });
+    return changed ? { ...n, ports } : n;
+  });
+}
+
 /** The routes of many edges, by id. Edges that have no route of their own and leave the same side of a node share it out
  *  evenly, in the order of what they lead to, and a node's self-loops nest. With `avoid`, one whose elbow would run through
  *  a card (or a box's header) goes round instead: for a hand-placed diagram that isn't too big to work out each time. An
  *  edge whose end doesn't exist isn't in it. */
-export function edgeGeometries<N, E>(edges: readonly DiagramEdge<E>[], index: DiagramIndex<N>, { avoid = false }: { avoid?: boolean } = {}): Map<string, ConnectorGeometry> {
+export function edgeGeometries<N, E>(edges: readonly DiagramEdge<E>[], index: DiagramIndex<N>, { avoid = false, headOf, labelSize, labels }: { avoid?: boolean; headOf?: (n: DiagramNode<N>) => number; labelSize?: (e: DiagramEdge<E>) => { w: number; h: number } | null; labels?: Map<string, Rect> } = {}): Map<string, ConnectorGeometry> {
   // Who's on each side of each node.
   const onSide = new Map<string, { edge: string; end: 'from' | 'to'; other: Pt }[]>();
   const loops = new Map<string, number>();
@@ -835,6 +1326,29 @@ export function edgeGeometries<N, E>(edges: readonly DiagramEdge<E>[], index: Di
       }
     }
     if (g) out.set(e.id, g);
+  }
+  // In lanes of their own: every edge between ports, and any other that would run along another's route, so that no two
+  // read as one and each label sits on a line that's only its own.
+  if (avoid && headOf) {
+    const lane = edges.filter((e) => !e.points && e.from !== e.to && e.route !== 'curve' && e.route !== 'straight' && out.has(e.id) && (e.fromPort || e.toPort));
+    const inLane = new Set(lane.map((e) => e.id));
+    const rest = edges.filter((e) => out.has(e.id) && !inLane.has(e.id));
+    rest.forEach((e, i) => {
+      if (e.points || e.from === e.to || e.route === 'curve' || e.route === 'straight') return;
+      const g = out.get(e.id)!;
+      if (rest.slice(0, i).some((o) => !inLane.has(o.id) && routesShareLane(g.pts, out.get(o.id)!.pts))) { lane.push(e); inLane.add(e.id); }
+    });
+    if (lane.length) {
+      const ends = new Map(lane.map((e) => {
+        const g = out.get(e.id)!;
+        return [e.id, { from: { p: g.start, n: unitOrNull({ x: -g.startDir.x, y: -g.startDir.y }) }, to: { p: g.end, n: unitOrNull({ x: -g.endDir.x, y: -g.endDir.y }) } }];
+      }));
+      const routed = laneRoutes(index, lane, { headOf, labelSize, around: edges.filter((e) => !inLane.has(e.id) && out.has(e.id)).map((e) => out.get(e.id)!.pts) }, ends);
+      for (const [id, r] of routed) {
+        out.set(id, polylinePath(r.pts));
+        if (r.label) labels?.set(id, r.label);
+      }
+    }
   }
   return out;
 }
@@ -941,6 +1455,8 @@ export const DIAGRAM_CARD = {
   chipX: 8, chipY: 2, chipIcon: 12, chipIconGap: 6, chipDescriptionGap: 6, chipGap: 4, rowGap: 2,
   /** The least width of a card. */
   minW: 64,
+  /** How wide an `inline` section's row of chips gets before it wraps. */
+  inlineMax: 560,
   /** An edge label: a pill's padding; a card's padding, and the room under its title. */
   pillX: 10, pillY: 4, labelX: 10, labelTop: 6, labelTitleGap: 6, labelBottom: 8,
 } as const;
@@ -976,7 +1492,7 @@ function itemSize(item: DiagramSectionItem, variant: DiagramSection['variant'], 
   const icon = item.icon ? glyphSize(item.icon, C.chipIcon, text) : 0;
   const w = (icon ? icon + C.chipIconGap : 0) + t.w + (item.description ? C.chipDescriptionGap + d.w : 0);
   const h = Math.max(t.h, d.h, icon ? C.chipIcon : 0);
-  return !variant || variant === 'default' ? { w: w + C.chipX * 2 + 2, h: h + C.chipY * 2 + 2 } : { w, h };
+  return !variant || variant === 'default' || variant === 'inline' ? { w: w + C.chipX * 2 + 2, h: h + C.chipY * 2 + 2 } : { w, h };
 }
 
 /** The sections block: its size, and the middle of each item's row from its top, by `section\0item`. */
@@ -992,6 +1508,20 @@ function sectionsSize(sections: readonly DiagramSection[], text: TextOf, gap: nu
       const c = text(s.title, 'caption');
       w = Math.max(w, c.w);
       y += c.h + (s.items.length ? C.captionGap : 0);
+    }
+    if (s.variant === 'inline') {
+      // Side by side, onto a new row where the next wouldn't fit: as the drawn row wraps.
+      let x = 0, rowH = 0;
+      s.items.forEach((it) => {
+        const size = itemSize(it, s.variant, text);
+        if (x && x + C.chipGap + size.w > C.inlineMax) { y += rowH + C.chipGap; x = 0; rowH = 0; }
+        x += (x ? C.chipGap : 0) + size.w;
+        rowH = Math.max(rowH, size.h);
+        rows.set(`${sectionKey(s, si)}\0${itemKey(it)}`, y + size.h / 2);
+        w = Math.max(w, x);
+      });
+      y += rowH;
+      return;
     }
     s.items.forEach((it, ii) => {
       if (ii) y += !s.variant || s.variant === 'default' ? C.chipGap : C.rowGap;

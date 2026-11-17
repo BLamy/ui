@@ -182,7 +182,8 @@ export function cloudflareBoardData(system: CloudflareSystem, { editable = false
   const wrong = cloudflareProblems(issues);
   const nodes: DiagramNode<CloudflareServiceNodeData>[] = [];
   if (system.services.length) {
-    const facts = sectionsOf(systemFacts(system));
+    // What's account-wide reads as a row of facts under the system's name, wrapping, not a column down its side.
+    const facts = sectionsOf(systemFacts(system)).map((s): DiagramSection => ({ ...s, variant: 'inline' }));
     nodes.push({ id: CLOUDFLARE_SYSTEM_NODE, kind: 'root', title: title ?? system.name ?? 'Cloudflare', icon: 'cloud', ...(facts.length ? { sections: facts } : null), x: 0, y: 0, w: 0, h: 0 });
     for (const env of [...new Set(system.services.flatMap((s) => (s.environment ? [s.environment] : [])))]) {
       // An environment's box only holds what's in it that isn't inside one of its Workers.

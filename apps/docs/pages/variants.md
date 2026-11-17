@@ -548,7 +548,7 @@ Defined in `@/components/ui/diagram`. Base classes:
 absolute border border-border bg-card text-card-foreground shadow-hairline
 ```
 
-**`shape`** — default `pill`
+**`variant`** — default `pill`
 
 | Value | Adds |
 | --- | --- |
