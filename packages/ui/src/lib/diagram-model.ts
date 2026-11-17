@@ -980,6 +980,9 @@ function routeInOrder(requests: readonly LaneRequest[], obstacles: readonly Lane
     // back is going round outside what holds it, which it all but never should; through one around neither is going over it.
     const inBox = (r: Rect, p: Pt) => p.x >= r.x && p.x <= r.x + r.w && p.y >= r.y && p.y <= r.y + r.h;
     const wallCost = walls.map(({ r }) => { const n = Number(inBox(r, from.p)) + Number(inBox(r, to.p)); return n === 2 ? LANE_WALL * 50 : n === 1 ? LANE_WALL : LANE_WALL * 3; });
+    // A box that holds neither end is a whole to this route: it goes round it, never across it (it would read as passing
+    // through it), as round a card.
+    const strangers: LaneObstacle[] = walls.filter(({ r }) => !inBox(r, from.p) && !inBox(r, to.p)).map((o) => ({ ...o, id: `${o.id}\0box`, kind: 'block' }));
     // A label a little off the cards and the other routes, so it reads as on its own line.
     const wanted = req.label ?? null;
     const covered = (box: Rect) => room.overlap({ x: box.x - LABEL_AIR, y: box.y - LABEL_AIR, w: box.w + LABEL_AIR * 2, h: box.h + LABEL_AIR * 2 }, (r) => stubOf.get(r) === req.id);
@@ -1007,7 +1010,7 @@ function routeInOrder(requests: readonly LaneRequest[], obstacles: readonly Lane
     const find = (labelled: boolean, soft: boolean, lo: Pt, hi: Pt, limit = Infinity): { pts: Pt[]; label: Rect | null; cost: number } | null => {
       const want = labelled ? wanted : null;
       // A little off every side, so no run hugs a card.
-      const own = [...blocks, ...placed].filter((b) => !req.through.has(b.id))
+      const own = [...blocks, ...placed, ...strangers].filter((b) => !req.through.has(b.id))
         .map((o) => ({ ...o, r: { x: o.r.x - LANE_CLEAR, y: o.r.y - LANE_CLEAR, w: o.r.w + LANE_CLEAR * 2, h: o.r.h + LANE_CLEAR * 2 } }));
       const xs = new Set([a1.x, b1.x, ...fixedX]), ys = new Set([a1.y, b1.y, ...fixedY]);
       for (const { r } of placed) { xs.add(r.x - AROUND_GAP); xs.add(r.x + r.w + AROUND_GAP); ys.add(r.y - AROUND_GAP); ys.add(r.y + r.h + AROUND_GAP); }

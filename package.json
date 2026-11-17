@@ -20,6 +20,7 @@
     "cloudflare:catalog": "node tools/cloudflare/catalog.mjs",
     "cloudflare:check": "node tools/cloudflare/check-package.mjs",
     "knip": "knip",
+    "fuzz:diagrams": "DIAGRAM_FUZZ_SEEDS=${DIAGRAM_FUZZ_SEEDS:-1,2,3,4,5,6,7,8} pnpm --dir packages/ui exec vitest run src/lib/diagram-editing.fuzz.test.ts",
     "postinstall": "node tools/ui-sdk/build.mjs --if-stale",
     "ui-sdk": "node tools/ui-sdk/build.mjs",
     "agent-test": "node tools/agent-test/run.mjs"

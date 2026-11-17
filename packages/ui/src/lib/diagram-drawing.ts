@@ -198,7 +198,13 @@ const CORNER_WIDTH = 240;
 
 /** What has the eye: what has to be in view (the selection, or the state a machine is in), and what should be with it when
  *  there's room (the labels of the transitions it can take now). */
-export interface DiagramEye { must: Rect; want?: Rect | null }
+export interface DiagramEye {
+  must: Rect;
+  want?: Rect | null;
+  /** One thing (a box, say) that may be too big to be seen whole: then it's seen from its top-start corner, where it says
+   *  what it is. Without it, what's too big is kept by the least pan (a selection of many things). */
+  one?: boolean;
+}
 
 const unionOf = (rs: readonly (Rect | null | undefined)[]): Rect | null => unionRect(rs.filter((r): r is Rect => !!r));
 
@@ -250,7 +256,7 @@ export function diagramEye<N, E>(d: Pick<DiagramDrawing<N, E>, 'index' | 'labels
   // A selected edge's two ends, with its label: what it joins is what it's about (a connection just made, say).
   const joined = ends ? on.edges.flatMap((id) => { const e = d.edges.find((x) => x.edge.id === id)?.edge; return e ? [d.index.byId.get(e.from), d.index.byId.get(e.to)].filter((n): n is DiagramNode<N> => !!n) : []; }) : [];
   const want = labels.length || joined.length ? unionRect([...labels, ...joined, ...(joined.length ? [must] : [])]) : null;
-  return { must, want };
+  return { must, want, one: rects.length === 1 && !on.edges.length };
 }
 
 /**
@@ -275,5 +281,7 @@ export function keepInView(view: Viewport, eye: DiagramEye, corner: Rect | null,
       return { zoom, x: sx - r.x * zoom, y: sy - r.y * zoom };
     }
   }
-  return viewportToKeep(view, eye.must, size, insets);
+  // One thing too big to be seen whole: from its top-start corner, where it says what it is (a box's header), as much as fits.
+  const fit = eye.one ? { ...eye.must, w: Math.min(eye.must.w, free.w / view.zoom), h: Math.min(eye.must.h, free.h / view.zoom) } : eye.must;
+  return viewportToKeep(view, fit, size, insets);
 }

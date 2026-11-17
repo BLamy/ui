@@ -957,6 +957,19 @@ test.describe('editing keeps the board', () => {
       expect(x2 >= x - 0.5 && y2 >= y - 0.5, `${id} moved only to make room`).toBe(true);
     }
     expect(afterConnect.api).toBe(added.api);
+    // It doesn't pass through Consumer's box, which holds neither of its ends (rule 2: a box is a whole to such a route).
+    const through = await page.evaluate((id) => {
+      const path = document.querySelector(`[data-slot=diagram-edge][data-edge="${id}"]`);
+      const box = document.querySelector('[data-slot=diagram-node][data-node="consumer"]')?.getBoundingClientRect();
+      if (!path || !box) return null;
+      const m = path.getScreenCTM(), total = path.getTotalLength();
+      for (let t = 0; t <= total; t += 4) {
+        const p = path.getPointAtLength(t), x = m.a * p.x + m.c * p.y + m.e, y = m.b * p.x + m.d * p.y + m.f;
+        if (x > box.left + 2 && x < box.right - 2 && y > box.top + 2 && y < box.bottom - 2) return `${Math.round(x)},${Math.round(y)}`;
+      }
+      return '';
+    }, made);
+    expect(through, 'the new connection runs round Consumer, not through it').toBe('');
     await expect(panel(page)).toBeVisible();
     expect(await onBoard(page, page.locator(`[data-slot=diagram-edge-label][data-edge="${made}"]`)), 'its label').toBe(true);
     // With both its ends, when the board the panel leaves can show the three together at a readable size.

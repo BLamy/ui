@@ -6,12 +6,14 @@
    1. attached: an edge starts and ends on (within 1.5 of) the border of what it claims (a port, a box's hairline under its
       sections for its own child, the label it forks from); the arrowhead is its last point; ends of different edges on one
       side of a card are at least 8 apart unless they share a port (no arrowhead on another edge's start);
-   2. clear: no run goes through a card, an entry marker, a box's header strip and sections, or along a box's wall (within a
-      lane, 10), its hairline (6) or a region's divider it doesn't cross; what's in a box keeps clear of its walls and header;
+   2. clear: no run goes through a card, an entry marker, a box's header strip and sections, a box that holds neither of its
+      ends (the whole box: a line across it reads as passing through it), or along a box's wall (within a lane, 10), its
+      hairline (6) or a region's divider it doesn't cross; what's in a box keeps clear of its walls and header;
    3. its own lane and label: no two edges run within a lane of each other for longer than a crossing; each label is on its
       own route, which runs through it, and nothing else is: no other route, card, label, header or border;
-   4. no U-turn: an edge that leaves (or enters) by a side not facing the other end, when a route between facing sides would
-      take fewer bends, is going round;
+   4. no U-turn: an edge that leaves (or enters) by a side not facing the other end, with three bends or more past the fewest
+      a route between facing sides takes (none when they're level, one otherwise, two when what's between them shuts every
+      straight way across: a route has to go round that), is going round; nor does one end with a hook;
    5. the frame is used: an editable drawing's places are its read-only ones; a drawing too big to read whole is shaped like
       its view (within 2×) or fills its width at the readable zoom;
    6. the first view shows the top-start corner (a root's header and sections), and what has the eye with it (with nothing
@@ -132,6 +134,7 @@ export function check(d: DiagramDrawing): string[] {
     return n.kind === 'region' ? [] : own;
   };
   const dividers: Seg[] = d.dividers.map((v, i) => ({ a: { x: v.x1, y: v.y1 }, b: { x: v.x2, y: v.y2 }, i }));
+  const holdsEnd = (box: DiagramNode, edge: DiagramEdge) => [edge.from, edge.to].some((id) => id === box.id || isInside(index, id, box.id));
 
   // 1. Attached: on what it claims, on a side clear of the corners, its end run square to that side and outside it.
   const CORNER = 6;
@@ -217,6 +220,8 @@ export function check(d: DiagramDrawing): string[] {
       for (const box of boxes) {
         const head = headOf(box);
         if (box.kind !== 'region' && head.h > 0 && runIn(s, shrink(head, ATTACH))) out.push(`2 clear: ${edge.id} runs through ${nameOf(box)}’s header and sections (${fmt(s.a)}→${fmt(s.b)})`);
+        // A box is a whole to an edge that neither starts nor ends in it: a route across it reads as passing through it.
+        else if (!holdsEnd(box, edge) && runIn(s, shrink(box, ATTACH))) out.push(`2 clear: ${edge.id} runs through ${nameOf(box)}, which holds neither of its ends (${fmt(s.a)}→${fmt(s.b)})`);
         for (const line of lines(box)) {
           // A lane off a wall (round 9's F8: a fork 9 px inside `playing`'s); a hairline, J4's 6.
           const by = alongBy(s, line, line.i === 4 ? LANE : EDGE_LANE);
@@ -278,10 +283,46 @@ export function check(d: DiagramDrawing): string[] {
     const k = ds.indexOf(Math.min(...ds));
     return [{ x: 0, y: -1 }, { x: 1, y: 0 }, { x: 0, y: 1 }, { x: -1, y: 0 }][k]!;
   };
-  /** The fewest bends between a side of `a` that faces `b` and a side of `b` that faces `a`, with nothing in the way. */
-  const fewest = (a: Rect, b: Rect) => {
-    const across = overlap1(a.x, a.x + a.w, b.x, b.x + b.w) > 16, down = overlap1(a.y, a.y + a.h, b.y, b.y + b.h) > 16;
-    if (across || down) return 0;
+  /** The fewest bends between a side of `a` that faces `b` and a side of `b` that faces `a`: none when they're level across
+   *  a side, one otherwise, and two when they're level but what's between them (other cards, other edges' labels, other
+   *  routes' runs along the way, a lane's clearance round each) shuts every straight line across the overlap, or leaves none
+   *  its own label has a clear place on: a route has to go round that, and doing so isn't going round. */
+  const fewest = (a: Rect, b: Rect, edge: DiagramEdge) => {
+    const shut: Rect[] = [...cards.filter((c) => c.id !== edge.from && c.id !== edge.to), ...d.labels.filter((l) => l.edge.id !== edge.id).map((l) => l.box)];
+    for (const k of ['x', 'y'] as const) {
+      const s = k === 'x' ? 'w' : 'h', c = k === 'x' ? 'y' : 'x', cs = k === 'x' ? 'h' : 'w';
+      const lo = Math.max(a[k], b[k]), hi = Math.min(a[k] + a[s], b[k] + b[s]);
+      if (hi - lo <= 16) continue;
+      const [first, second] = a[c] <= b[c] ? [a, b] : [b, a];
+      const c0 = first[c] + first[cs], c1 = second[c];
+      // Other routes' runs along the way between them, for longer than a crossing: a straight line there would share a lane.
+      const along: Rect[] = [];
+      for (const r of routes) if (r.edge.id !== edge.id) for (const sg of segs(r.pts)) {
+        if (Math.abs(sg.a[k] - sg.b[k]) > 0.5) continue;
+        if (overlap1(sg.a[c], sg.b[c], c0, c1) > SHARED) along.push({ [k]: sg.a[k] - LANE, [s]: 2 * LANE, [c]: c0, [cs]: c1 - c0 } as unknown as Rect);
+      }
+      const spans = [...shut, ...along].filter((r) => r[c] < c1 && r[c] + r[cs] > c0 && r[k] < hi && r[k] + r[s] > lo).map((r) => [r[k] - LANE, r[k] + r[s] + LANE] as const).sort((p, q) => p[0] - q[0]);
+      // The clear straight lines; of those, one its own label has a clear place on (it goes on its line).
+      const free: number[] = [];
+      let at = lo + LANE;
+      for (const [p, q] of spans) { for (let v = at; v < Math.min(p, hi - LANE); v += 4) free.push(v); at = Math.max(at, q); }
+      for (let v = at; v <= hi - LANE; v += 4) free.push(v);
+      if (!free.length) return 2;
+      const own = d.labels.find((l) => l.edge.id === edge.id)?.box;
+      if (!own) return 0;
+      const lw = k === 'x' ? own.w : own.h, lh = k === 'x' ? own.h : own.w;
+      const blocks: Rect[] = [...shut, ...routes.filter((r) => r.edge.id !== edge.id).flatMap((r) => segs(r.pts).map((sg) => ({ x: Math.min(sg.a.x, sg.b.x), y: Math.min(sg.a.y, sg.b.y), w: Math.abs(sg.a.x - sg.b.x), h: Math.abs(sg.a.y - sg.b.y) })))];
+      // A stub out of each card (16), then a run's air before the label (8) and the arrowhead's after it (16).
+      const [air0, air1] = a[c] <= b[c] ? [24, 32] : [32, 24];
+      const placeable = free.some((v) => {
+        for (let t = c0 + air0; t + lh <= c1 - air1; t += 4) {
+          const box = { [k]: v - lw / 2 - LANE, [s]: lw + 2 * LANE, [c]: t - LANE, [cs]: lh + 2 * LANE } as unknown as Rect;
+          if (!blocks.some((r) => rectsMeet(r, box) || (r.w === 0 || r.h === 0) && runIn({ a: { x: r.x, y: r.y }, b: { x: r.x + r.w, y: r.y + r.h }, i: 0 }, box))) return true;
+        }
+        return false;
+      });
+      return placeable ? 0 : 2;
+    }
     return 1;
   };
   // A route that ends with a hook (up past its target, across, and back down a stub onto it) is going round too (round 10's
@@ -298,7 +339,7 @@ export function check(d: DiagramDrawing): string[] {
     const a = index.byId.get(edge.from), b = index.byId.get(edge.to);
     if (!a || !b || isInside(index, a.id, b.id) || isInside(index, b.id, a.id) || a.kind === 'marker') continue;
     const bends = pts.length - 2;
-    const least = fewest(a, b);
+    const least = fewest(a, b, edge);
     const out0 = facing(a, b, sideAt(a, pts[0]!)), in0 = facing(b, a, sideAt(b, pts[pts.length - 1]!));
     if ((!out0 || !in0) && bends >= least + 3) out.push(`4 U-turn: ${edge.id} ${!out0 ? `leaves ${nameOf(a)} by a side away from ${nameOf(b)}` : `enters ${nameOf(b)} by its far side`} and takes ${bends} bends where ${least} would do`);
   }
@@ -420,7 +461,15 @@ export function checkInView(d: DiagramDrawing, frame: Frame, view: Viewport, sel
   };
   const found: string[] = [];
   const where = `${frame.name}, panel open (zoom ${next.zoom.toFixed(2)})`;
-  for (const id of select.nodes) { const n = d.index.byId.get(id); if (n && !shown(n)) found.push(`in view: ${what}, ${nameOf(n)} (${fmtR(n)}) isn’t on the board at ${where}`); }
+  // What was edited, whole; a box too big to be read whole on the board (a Worker holding its classes), its header and sections:
+  // the part of it that says what it is, which an edit of it (a rename, a machine) changed.
+  for (const id of select.nodes) {
+    const n = d.index.byId.get(id);
+    if (!n) continue;
+    const whole = n.w * DIAGRAM_LEGIBLE_ZOOM <= free.w && n.h * DIAGRAM_LEGIBLE_ZOOM <= free.h;
+    const r = whole ? n : { ...headOf(n), w: Math.min(n.w, free.w / next.zoom) };
+    if (!shown(r)) found.push(`in view: ${what}, ${nameOf(n)}${whole ? '' : '’s header'} (${fmtR(r)}) isn’t on the board at ${where}`);
+  }
   for (const id of select.edges) {
     const label = d.labels.find((l) => l.edge.id === id)?.box;
     const e = d.edges.find((x) => x.edge.id === id)?.edge;
@@ -534,7 +583,9 @@ export function rootMargins(d: DiagramDrawing): { top: number; left: number; rig
   const rc = rootContent(d);
   if (!rc) return null;
   const { root: r, content: c } = rc;
-  return { top: c.y - (r.y + headOf(r).h), left: c.x - r.x, right: r.x + r.w - (c.x + c.w), bottom: r.y + r.h - (c.y + c.h) };
+  const left = c.x - r.x, right = r.x + r.w - (c.x + c.w);
+  // As wide as its header (wider than what it holds needs): the room at its end is the header's doing; it keeps its start's.
+  return { top: c.y - (r.y + headOf(r).h), left, right: r.w <= nodeAnatomy(r, text).w + 0.5 && right > left ? left : right, bottom: r.y + r.h - (c.y + c.h) };
 }
 
 /** The root's box is the same function of what it holds in every path (round 10's F3: 7 px wider and 14 px taller after any
@@ -573,18 +624,108 @@ export function checkPushed(before: DiagramDrawing, after: DiagramDrawing, touch
   return out;
 }
 
-/** No route goes the long way round: a route between two cards is at most twice the square distance between its ends, and
- *  300 more (what going round a card or two takes). An edit that routes a connection a lap round the board isn't making room
- *  for it. */
+/** No route goes the long way round: a route between two cards is at most twice the shortest way between its ends (square,
+ *  and round the header of a box that holds one of them and is between them, which nothing crosses), and 300 more (what going
+ *  round a card or two takes). An edit that routes a connection a lap round the board isn't making room for it. */
 export function checkDetours(d: DiagramDrawing): string[] {
   const out: string[] = [];
+  const { index } = d;
   for (const { edge, geometry } of d.edges) {
     const pts = geometry.pts;
     if (pts.length < 3 || edge.from === edge.to || edge.forkOf) continue;
     const a = pts[0]!, b = pts[pts.length - 1]!;
-    const direct = Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
+    // The shortest way between them: square, and round the header of a box that holds one end and lies between them (nothing
+    // crosses a header: it goes in by a side wall).
+    let direct = Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
+    for (const box of index.nodes.filter((n) => holdsNodes(n) && n.kind !== 'region')) {
+      const holdsA = isInside(index, edge.from, box.id), holdsB = isInside(index, edge.to, box.id);
+      if (holdsA === holdsB) continue;
+      const head = headOf(box), [inside, outside] = holdsA ? [a, b] : [b, a];
+      if (outside.y < head.y + head.h && inside.y > head.y + head.h && outside.x > box.x && outside.x < box.x + box.w) direct += 2 * Math.min(inside.x - box.x, box.x + box.w - inside.x);
+    }
     const length = segs(pts).reduce((t, s) => t + len(s), 0);
     if (length > direct * 2 + 300) out.push(`4 detour: ${edge.id} is ${Math.round(length)} long between ends ${Math.round(direct)} apart`);
   }
   return out;
 }
+
+/** More than this many crossings, an edge is held to having no plainer way that crosses fewer. */
+export const CROSSINGS_AT_MOST = 2;
+
+/** How many times a route crosses others' (square runs crossing at a point inside both). */
+function crossCount(p: readonly Pt[], others: readonly (readonly Pt[])[]): number {
+  let n = 0;
+  for (const q of others) for (const s of segs(p)) for (const t of segs(q)) {
+    if (level(s) === level(t)) continue;
+    const [h, v] = level(s) ? [s, t] : [t, s];
+    if (v.a.x > Math.min(h.a.x, h.b.x) + 0.5 && v.a.x < Math.max(h.a.x, h.b.x) - 0.5 && h.a.y > Math.min(v.a.y, v.b.y) + 0.5 && h.a.y < Math.max(v.a.y, v.b.y) - 0.5) n++;
+  }
+  return n;
+}
+
+/**
+ * No tangle a single edit (or a layout) makes: an edge that crosses more than `CROSSINGS_AT_MOST` others, when a plain square
+ * way between the same two (straight, or one or two bends, out of a side that faces the other and into one that faces it,
+ * clear of every card, header and box that holds neither end) crosses at least two fewer at a similar length (at most a
+ * quarter longer, and a lane), is tangled for nothing.
+ */
+export function checkCrossings(d: DiagramDrawing): string[] {
+  const out: string[] = [];
+  const { index } = d;
+  const cards = cardsOf(d);
+  const boxes = index.nodes.filter((n) => holdsNodes(n) && n.kind !== 'region');
+  const routes = d.edges.map(({ edge, geometry }) => ({ edge, pts: geometry.pts }));
+  for (const { edge, pts } of routes) {
+    if (pts.length < 2 || edge.from === edge.to || edge.forkOf || edge.fromPort || edge.toPort) continue;
+    const a = index.byId.get(edge.from), b = index.byId.get(edge.to);
+    if (!a || !b || isInside(index, a.id, b.id) || isInside(index, b.id, a.id)) continue;
+    const others = routes.filter((r) => r.edge.id !== edge.id && r.edge.forkOf !== edge.id && edge.forkOf !== r.edge.id).map((r) => r.pts);
+    const has = crossCount(pts, others);
+    if (has <= CROSSINGS_AT_MOST) continue;
+    const length = segs(pts).reduce((t, s) => t + len(s), 0);
+    const labels = d.labels.filter((l) => l.edge.id !== edge.id).map((l) => l.box);
+    const clear = (q: readonly Pt[]) => segs(q).every((s) => cards.every((c) => c.id === a.id || c.id === b.id || !runIn(s, shrink(c, -4))) && labels.every((l) => !runIn(s, shrink(l, -2)))
+      && boxes.every((x) => (!runIn(s, shrink(headOf(x), -2)) || x.id === a.id || x.id === b.id) && ([edge.from, edge.to].some((id) => id === x.id || isInside(index, id, x.id)) || !runIn(s, shrink(x, 1)))));
+    // Ways out of facing sides: the middles, and straight across where they overlap.
+    const mid = (r: Rect) => ({ x: r.x + r.w / 2, y: r.y + r.h / 2 });
+    const ca = mid(a), cb = mid(b);
+    const tries: Pt[][] = [];
+    const ax = cb.x > a.x + a.w ? a.x + a.w : cb.x < a.x ? a.x : null, bx = ca.x > b.x + b.w ? b.x + b.w : ca.x < b.x ? b.x : null;
+    const ay = cb.y > a.y + a.h ? a.y + a.h : cb.y < a.y ? a.y : null, by = ca.y > b.y + b.h ? b.y + b.h : ca.y < b.y ? b.y : null;
+    if (ay !== null && by !== null) {
+      const x0 = Math.max(a.x, b.x) + 8, x1 = Math.min(a.x + a.w, b.x + b.w) - 8;
+      if (x1 >= x0) tries.push([{ x: (x0 + x1) / 2, y: ay }, { x: (x0 + x1) / 2, y: by }]);
+      const m = (ay + by) / 2;
+      tries.push([{ x: ca.x, y: ay }, { x: ca.x, y: m }, { x: cb.x, y: m }, { x: cb.x, y: by }]);
+    }
+    if (ax !== null && bx !== null) {
+      const y0 = Math.max(a.y, b.y) + 8, y1 = Math.min(a.y + a.h, b.y + b.h) - 8;
+      if (y1 >= y0) tries.push([{ x: ax, y: (y0 + y1) / 2 }, { x: bx, y: (y0 + y1) / 2 }]);
+      const m = (ax + bx) / 2;
+      tries.push([{ x: ax, y: ca.y }, { x: m, y: ca.y }, { x: m, y: cb.y }, { x: bx, y: cb.y }]);
+    }
+    if (ay !== null && bx !== null) tries.push([{ x: ca.x, y: ay }, { x: ca.x, y: cb.y }, { x: bx, y: cb.y }]);
+    if (ax !== null && by !== null) tries.push([{ x: ax, y: ca.y }, { x: cb.x, y: ca.y }, { x: cb.x, y: by }]);
+    // Its label has to have a clear place on a run of it (off every card, its own two too, other labels and other routes), past a stub and a run's
+    // air at its start and the arrowhead's at its end.
+    const own = d.labels.find((l) => l.edge.id === edge.id)?.box;
+    const blocks: Rect[] = [...cards, ...labels, ...others.flatMap((o) => segs(o).map((sg) => ({ x: Math.min(sg.a.x, sg.b.x), y: Math.min(sg.a.y, sg.b.y), w: Math.abs(sg.a.x - sg.b.x), h: Math.abs(sg.a.y - sg.b.y) })))];
+    const labelFits = (q: readonly Pt[]) => !own || segs(q).some((sg, i, all) => {
+      const k = level(sg) ? 'x' : 'y', c = k === 'x' ? 'y' : 'x', along = k === 'x' ? own.w : own.h;
+      const lo = Math.min(sg.a[k], sg.b[k]) + (i === 0 ? 24 : 8), hi = Math.max(sg.a[k], sg.b[k]) - (i === all.length - 1 ? 32 : 8);
+      for (let t = lo; t + along <= hi; t += 4) {
+        const box = { [k]: t - LANE, [k === 'x' ? 'w' : 'h']: along + 2 * LANE, [c]: sg.a[c] - (k === 'x' ? own.h : own.w) / 2 - LANE, [c === 'x' ? 'w' : 'h']: (k === 'x' ? own.h : own.w) + 2 * LANE } as unknown as Rect;
+        if (!blocks.some((r) => rectsMeet(r, box) || ((r.w === 0 || r.h === 0) && runIn({ a: { x: r.x, y: r.y }, b: { x: r.x + r.w, y: r.y + r.h }, i: 0 }, box)))) return true;
+      }
+      return false;
+    });
+    for (const q of tries) {
+      const l = segs(q).reduce((t, s) => t + len(s), 0);
+      if (l > length * 1.25 + EDGE_LANE || !clear(q) || !labelFits(q)) continue;
+      const c = crossCount(q, others);
+      if (c <= has - 2) { out.push(`4 tangle: ${edge.id} crosses ${has} others, and a plain way ${Math.round(l)} long crosses ${c} (${q.map(fmt).join('→')})`); break; }
+    }
+  }
+  return out;
+}
+

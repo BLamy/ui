@@ -16,7 +16,7 @@ export type {
   CatalogBinding, CatalogClass, CatalogContextType, CatalogField, CatalogHandlers, CatalogMethod, CatalogOtherKey, CatalogProduct, CatalogProperty, CatalogReceive, CatalogRunner, CatalogSurface, CloudflareCatalog,
 } from './lib/cloudflare-catalog';
 export {
-  ENV_PORT, EVENTS_PORT, SERVICE_PRODUCTS, bindingName, catalogBinding, catalogProduct, handlerNames, linkBetween, linkOf, methodSignature, newEdge, runsCode, serviceIconName, servicePorts,
+  ENV_PORT, EVENTS_PORT, SERVICE_PRODUCTS, bindingName, catalogBinding, catalogProduct, handlerNames, linkBetween, linkOf, methodSignature, newEdge, repeatsLink, runsCode, serviceIconName, servicePorts,
 } from './lib/cloudflare-services';
 export type {
   CloudflareConsumerSettings, CloudflareEdge, CloudflareMigration, CloudflareService, CloudflareSettings, CloudflareTrigger, ServiceLink, ServiceLinkCheck,

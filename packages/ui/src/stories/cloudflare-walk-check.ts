@@ -3,6 +3,7 @@
    made step by step, each drawing held to the drawing rules (`diagram-rules`) and to what editing promises. */
 import type { Viewport } from '@/lib/canvas-math';
 import { cloudflareNoun, type CloudflareDrawn } from '@/lib/cloudflare-board';
+import { linkBetween, repeatsLink } from '@/lib/cloudflare-services';
 import type { CloudflareSystem } from '@/lib/cloudflare-system';
 import { AVOID_UP_TO, diagramStartEye, drawDiagram, drawingCorner, firstView, keepInView, type DiagramDrawing } from '@/lib/diagram-drawing';
 import { describeNode, edgesByNode } from '@/lib/diagram-keyboard';
@@ -12,7 +13,7 @@ import type { TextMeasurer } from '@/lib/diagram-text';
 import { CloudflareWalk, describeStep, pickStep, seeded, type CloudflareWalkMade, type CloudflareWalkStep } from './cloudflare-walk';
 import { PLATFORM, PLATFORM_EDGES, SMALL, SMALL_EDGES, STUDIO_EXAMPLE, UPLOAD, UPLOAD_EDGES } from './cloudflare-systems';
 import { placeInLayers } from '@/lib/cloudflare-board';
-import { boardOf, cardsOf, check, checkAnnounced, checkContained, checkDetours, checkInView, checkLabelRuns, checkOverlaps, checkPlaced, checkPushed, checkRootBox, fmtR, FRAMES, nameOf, rootMargins, step as stepOf, type Frame } from './diagram-rules';
+import { boardOf, cardsOf, check, checkAnnounced, checkContained, checkCrossings, checkDetours, checkInView, checkLabelRuns, checkOverlaps, checkPlaced, checkPushed, checkRootBox, fmtR, FRAMES, nameOf, rootMargins, step as stepOf, type Frame } from './diagram-rules';
 
 /* ── The walks: each example system, laid out and placed from the start, and the studio's ── */
 
@@ -85,10 +86,19 @@ export async function checkWalk(system: CloudflareSystem, frame: Frame, plan: { 
     const before = d;
     const said = describeStep(step, w.system);
     const made: CloudflareWalkMade = await w.apply(step);
-    if (made.kind === 'nothing') continue;
+    if (made.kind === 'nothing') {
+      // A connection the board refuses says why (the catalog's reason, or a handler made again), shown beside the target.
+      if (step.op === 'connect') {
+        const byId = new Map(w.system.services.map((x) => [x.id, x]));
+        const check = linkBetween(byId.get(step.from)?.kind ?? '', step.fromPort, byId.get(step.to)?.kind ?? '', step.toPort);
+        const why = !check.ok ? check.reason : repeatsLink(w.system.services, w.system.edges, step.from, step.to, check.link);
+        if (!why) { first ??= { found: [`step ${i + 1} (${said}): refused: the board makes no connection and gives no reason`], steps: [...steps], at: i, length: count }; if (!keepGoing) return first; }
+      }
+      continue;
+    }
     d = drawingOf(made.drawn);
     const found: string[] = [];
-    found.push(...check(d), ...checkLabelRuns(d), ...checkOverlaps(d), ...checkContained(d), ...checkDetours(d));
+    found.push(...check(d), ...checkLabelRuns(d), ...checkOverlaps(d), ...checkContained(d), ...checkDetours(d), ...checkCrossings(d));
     found.push(...checkAnnounced(d, (n) => cloudflareNoun(n), (n) => describeNode(n, d.index, edgesByNode(d.edges.map((e) => e.edge)).get(n.id), cloudflareNoun)));
     if (made.kind === 'tidy') {
       // The read-only layout of the same system, and in view: whole when it can be read whole, else from its corner.
@@ -102,6 +112,8 @@ export async function checkWalk(system: CloudflareSystem, frame: Frame, plan: { 
       view = tidyView(view, d, panel.size, panel.pad);
       found.push(...tidyInView(d, view, panel.size, panel.pad, text));
     } else if (made.kind === 'undo' || made.kind === 'redo') {
+      // The drawing put back is the one that was there, with the room its root kept (from before a Tidy up it undid, say).
+      margins = rootMargins(d);
       const was = seen.get(made.system);
       if (was) for (const n of [...was.index.nodes]) {
         const m = d.index.byId.get(n.id);
@@ -121,15 +133,29 @@ export async function checkWalk(system: CloudflareSystem, frame: Frame, plan: { 
     }
     seen.set(made.system, d);
     // Left in a knot (no room to be made, as on a board placed by hand into one): the board suggests Tidy up, and holds
-    // rules 1 to 3 still.
-    // A board left in a knot stays one until Tidy up: the steps after it are held to rules 1 to 3 too.
+    // rules 1 to 3 still, and nothing on anything (a knot is a label with no room of its own, never a card on a card or in a
+    // box that doesn't hold it). A board left in a knot stays one until Tidy up: the steps after it are held so too.
     if (made.knot) knotted = true;
     if (made.kind === 'tidy') knotted = false;
-    if (made.knot || knotted) { if (made.knot) knots++; found.splice(0, found.length, ...found.filter((v) => /^[123] /.test(v))); }
+    if (made.knot || knotted) { if (made.knot) knots++; found.splice(0, found.length, ...found.filter((v) => /^([123] |overlaps)/.test(v))); }
     found.splice(0, found.length, ...kept(found));
     onStep?.({ step, said, drawn: made.drawn, drawing: d, found: [...new Set(found)], view: view!, select: made.select, pushed: made.pushed, knot: made.knot });
     if (found.length && !first) first = { found: [...new Set(found)].map((v) => `step ${i + 1} (${said}): ${v}`), steps: [...steps], at: i, length: count };
     if (first && !keepGoing) return first;
+  }
+  // However tangled a walk left it, one Tidy up makes it clean: every rule (none relaxed for a knot), and the read-only layout
+  // of the same system.
+  if (!first || keepGoing) {
+    const tidied = await w.apply({ op: 'tidy' });
+    const t = drawingOf(tidied.drawn);
+    const found = kept([...check(t), ...checkLabelRuns(t), ...checkOverlaps(t), ...checkContained(t), ...checkDetours(t), ...checkCrossings(t)]);
+    const ro = drawingOf(await tidyLayout(tidied.system));
+    for (const n of cardsOf(ro)) {
+      const m = t.index.byId.get(n.id);
+      if (!m || Math.abs(m.x - n.x) > 0.5 || Math.abs(m.y - n.y) > 0.5) found.push(`tidy: ${nameOf(n)} is at ${m ? fmtR(m) : 'nowhere'}, read-only at ${fmtR(n)}`);
+    }
+    onStep?.({ step: { op: 'tidy' }, said: 'Tidy up, after the walk', drawn: tidied.drawn, drawing: t, found, view: view!, select: { nodes: [], edges: [] }, pushed: 0, knot: false });
+    if (found.length && !first) first = { found: found.map((v) => `Tidy up after the walk: ${v}`), steps: [...steps, { op: 'tidy' }], at: count, length: count };
   }
   return first ?? { found: [], steps, at: count, length: count, knots };
 }

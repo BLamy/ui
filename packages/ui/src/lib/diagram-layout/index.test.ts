@@ -64,7 +64,8 @@ describe('toElkGraph', () => {
     expect(box.layoutOptions!['elk.nodeSize.constraints']).toBe('MINIMUM_SIZE');
     // The least a compound can be is its header strip; what it holds starts under it.
     expect(box.layoutOptions!['elk.nodeSize.minimum']).toBe('(72, 29)');
-    expect(box.layoutOptions!['elk.padding']).toBe('[top=40,left=16,bottom=16,right=16]');
+    // An edge crosses its wall (kid → free): it keeps a stub and a lane inside its walls for the route to turn in.
+    expect(box.layoutOptions!['elk.padding']).toBe('[top=58,left=30,bottom=30,right=30]');
     // A label is a pill on its route, sized to its title.
     expect(g.edges![0]).toEqual({ id: 'e', sources: ['kid'], targets: ['free'], labels: [{ text: 'GO', width: 42, height: 25, layoutOptions: { 'elk.edgeLabels.inline': 'true', 'elk.edgeLabels.placement': 'CENTER' } }] });
   });

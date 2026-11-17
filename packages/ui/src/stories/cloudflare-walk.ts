@@ -9,7 +9,9 @@
    - add a service of any product from the catalog's search, beside what's selected or in the middle of the view: `add`
    - delete a service (the panel's Delete, or Delete on the board): `delete`
    - rename a service (the panel's "Called"): `rename`
-   - connect two services, by any pair of ports the catalog allows (a drag, or C and the arrows): `connect`
+   - connect two services, by any pair of ports the catalog allows (a drag, or C and the arrows), between environments, a
+     class and its own Worker, and one that's there already (a binding again under another name; a handler or events again
+     is refused, and the board says why): `connect`
    - delete a connection: `disconnect`
    - rename a binding (the panel's "On env, as"): `binding`
    - tick and untick the operations a connection uses: `operations`
@@ -158,6 +160,7 @@ export class CloudflareWalk {
         return changeService(step.id, { label: step.label.trim() || undefined }) ? made('edit', { nodes: [step.id], edges: [] }, [step.id]) : made('nothing');
       case 'connect': {
         const edge = newEdge(s.services, s.edges, step);
+        // Refused (the catalog's rule, or a handler made again): nothing changes, and the board says why.
         if (!edge) return made('nothing');
         return this.send({ ...s, edges: [...s.edges, edge] }) ? made('edit', { nodes: [], edges: [edge.id] }) : made('nothing');
       }
@@ -232,6 +235,9 @@ export function pickStep(rng: () => number, walk: Pick<CloudflareWalk, 'system' 
   const s = walk.system;
   const pick = <T,>(list: readonly T[]): T => list[Math.floor(rng() * list.length)]!;
   const byId = new Map(s.services.map((x) => [x.id, x]));
+  // What's on the board: a connection to a service that's gone (kept, for its events, for validateSystem to say so) isn't
+  // drawn, so no one can select it.
+  const drawnEdges = s.edges.filter((e) => byId.has(e.from) && byId.has(e.to));
   const linked = s.edges.flatMap((e) => {
     const a = byId.get(e.from), b = byId.get(e.to);
     const check = a && b ? linkOf(e, a.kind, b.kind) : null;
@@ -254,25 +260,19 @@ export function pickStep(rng: () => number, walk: Pick<CloudflareWalk, 'system' 
     [2, () => ({ op: 'add', kind: pick(SERVICE_PRODUCTS).id, near: rng() < 0.5 && s.services.length ? pick(s.services).id : null })],
     [s.services.length > 2 ? 1 : 0, () => ({ op: 'delete', id: pick(s.services).id })],
     [2, () => {
+      // Any two ports the catalog joins: between environments, a class to the Worker it's of (or a second the other way), and
+      // one that's there already (a binding again draws beside it; a handler or events again is refused, with a reason).
       const ways: CloudflareWalkStep[] = [];
-      // Not to the Worker a class is of, from the class, nor a second from the Worker to its class: two edges inside one box
-      // between the same two go side by side over the class's width (a residue: see the J6 handoff).
-      const holder = (x: CloudflareService, y: CloudflareService) => x.host === y.id || (y.host === x.id && s.edges.some((e) => (e.from === x.id && e.to === y.id) || (e.from === y.id && e.to === x.id)));
       for (const a of s.services) for (const b of s.services) {
-        // Nor from one environment into another (two deployments): a layout of a line into an environment's box from
-        // outside it, under its header, is ELK's, and isn't held to the rules yet (a residue: see the J6 handoff).
-        if (a.id === b.id || holder(a, b) || (a.environment ?? null) !== (b.environment ?? null)) continue;
+        if (a.id === b.id) continue;
         for (const p of servicePorts(a.kind).filter((x) => x.direction === 'out')) for (const q of servicePorts(b.kind).filter((x) => x.direction === 'in')) {
-          const link = linkBetween(a.kind, p.id, b.kind, q.id);
-          // A connection that's already there, the same way, isn't another one to make (a queue consumed twice by one
-          // Worker, a bucket bound twice to it): two of one kind between the same two cards aren't walked.
-          if (link.ok && !s.edges.some((e) => e.from === a.id && e.to === b.id && e.via === link.link.via)) ways.push({ op: 'connect', from: a.id, fromPort: p.id, to: b.id, toPort: q.id });
+          if (linkBetween(a.kind, p.id, b.kind, q.id).ok) ways.push({ op: 'connect', from: a.id, fromPort: p.id, to: b.id, toPort: q.id });
         }
       }
       return ways.length ? pick(ways) : null;
     }],
-    [1, () => (s.edges.length ? { op: 'disconnect', edge: pick(s.edges).id } : null)],
-    [1, () => (s.edges.length ? { op: 'events', edge: pick(s.edges).id, events: pick(EVENTS) } : null)],
+    [1, () => (drawnEdges.length ? { op: 'disconnect', edge: pick(drawnEdges).id } : null)],
+    [1, () => (drawnEdges.length ? { op: 'events', edge: pick(drawnEdges).id, events: pick(EVENTS) } : null)],
     [1, () => { const code = s.services.filter((x) => runsCode(x.kind)); if (!code.length) return null; const x = pick(code); return { op: 'machine', id: x.id, on: !x.machine }; }],
     [0.5, () => { const free = s.services.filter((x) => !x.host); return free.length ? { op: 'environment', id: pick(free).id, environment: pick(ENVIRONMENTS) } : null; }],
     [1, () => (s.services.length ? { op: 'move', id: pick(s.services).id, by: { x: Math.round((rng() - 0.5) * 480), y: Math.round((rng() - 0.5) * 360) } } : null)],

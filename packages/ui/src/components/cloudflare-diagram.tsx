@@ -26,7 +26,7 @@ import {
 import { CLOUDFLARE_CATALOG } from '@/lib/cloudflare-catalog.generated';
 import type { CatalogProduct } from '@/lib/cloudflare-catalog';
 import {
-  catalogBinding, catalogProduct, linkBetween, methodSignature, newEdge, runsCode, serviceIconName, servicePorts,
+  catalogBinding, catalogProduct, linkBetween, methodSignature, newEdge, repeatsLink, runsCode, serviceIconName, servicePorts,
   type CloudflareEdge, type CloudflareService, type ServiceLink,
 } from '@/lib/cloudflare-services';
 import {
@@ -159,10 +159,15 @@ function markProblems(board: { nodes: DiagramNode<CloudflareServiceNodeData>[]; 
   };
 }
 
-/** Whether the catalog says two ports can join, as a Diagram's `isValidConnection`: true, or why not. */
-const catalogConnection = (byId: ReadonlyMap<string, CloudflareService>) => (c: DiagramConnection): boolean | string => {
-  const check = linkBetween(byId.get(c.from)?.kind ?? '', c.fromPort, byId.get(c.to)?.kind ?? '', c.toPort);
-  return check.ok ? true : check.reason;
+/** Whether the catalog says two ports can join, as a Diagram's `isValidConnection`: true, or why not (a second handler or
+ *  events between the same two, too). */
+const catalogConnection = (services: readonly CloudflareService[], edges: readonly CloudflareEdge[]) => {
+  const byId = new Map(services.map((s) => [s.id, s]));
+  return (c: DiagramConnection): boolean | string => {
+    const check = linkBetween(byId.get(c.from)?.kind ?? '', c.fromPort, byId.get(c.to)?.kind ?? '', c.toPort);
+    if (!check.ok) return check.reason;
+    return repeatsLink(services, edges, c.from, c.to, check.link) ?? true;
+  };
 };
 
 /** The far-zoom rule the Diagram's own parts follow: past a zoom where words can't be read, they aren't drawn. */
@@ -214,7 +219,7 @@ export function cloudflareBoardProps(system: CloudflareSystem, { icon, issues, e
   const board = cloudflareBoardData(placed, { editable, issues: issues ?? validateSystem(system), title });
   return {
     ...board,
-    isValidConnection: catalogConnection(new Map(placed.services.map((s) => [s.id, s]))),
+    isValidConnection: catalogConnection(placed.services, placed.edges),
     portsOnly: true,
     autoSize: true,
     background: 'grid',
@@ -380,7 +385,7 @@ export function CloudflareDiagram({
   const shownEdges = drawn?.edges ?? NO_DRAWN_EDGES;
   // The preset's other props (the lined board, the noun, a product's own glyph).
   const board = useMemo(() => cloudflareBoardProps({ ...system, services: [], edges: [] }, { icon }), [system, icon]);
-  const isValidConnection = useMemo(() => catalogConnection(byId), [byId]);
+  const isValidConnection = useMemo(() => catalogConnection(system.services, system.edges), [system.services, system.edges]);
   const canvasRef = useRef<ReturnType<typeof useCanvas> | null>(null);
 
   /* ── Selection, and what's open ── */

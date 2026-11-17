@@ -46,7 +46,7 @@ import { createDiagramLayoutEngine, finishLayout, runLayout, toElkGraph, type Di
 import { onLayout } from './diagram-layout/react';
 import { DIAGRAM_LEGIBLE_ZOOM, growNodesToText, holdsNodes, indexDiagram, isInside, nodeAnatomy, portPoint, sizeNodesToText, type DiagramEdge, type DiagramNode } from './diagram-model';
 import { estimateText } from './diagram-text';
-import { boardOf, cardsOf, check, checkAnnounced, checkInView, checkPlaced, checkPushed, checkShape, checkStable, checkView, CHROME, fmtR, FRAMES, nameOf, step, type Frame } from '../stories/diagram-rules';
+import { boardOf, cardsOf, check, checkAnnounced, checkCrossings, checkInView, checkPlaced, checkPushed, checkShape, checkStable, checkView, CHROME, fmtR, FRAMES, nameOf, step, type Frame } from '../stories/diagram-rules';
 import { addState, addTransition, renameState } from './state-diagram-edit';
 import { machineToDraft } from './state-diagram-model';
 import { parseXState } from './state-diagram-source';
@@ -182,7 +182,7 @@ for (const c of CASES) {
           for (const mode of MODES) {
             const d = await drawingOf(c, mode, board);
             drawn.set(mode, d);
-            for (const v of check(d)) found.push(`${mode}: ${v}`);
+            for (const v of [...check(d), ...checkCrossings(d)]) found.push(`${mode}: ${v}`);
             for (const v of checkShape(d, frame, panel)) found.push(`${mode}: ${v}`);
             if (c.whole?.includes(frame.name) && !panel && d.bounds) {
               const { visible } = boardOf(frame, false);
@@ -288,7 +288,7 @@ for (const c of EDIT_CASES) {
         let view = firstView(first.drawing.bounds, size, pad);
         const steps: Step[] = [{ name: 'laid out', system: c.system, ...first, select: { nodes: [], edges: [] }, touched: new Set() }];
         const hold = (s: Step, before: Step, made: string) => {
-          say(s.name, check(s.drawing));
+          say(s.name, [...check(s.drawing), ...checkCrossings(s.drawing)]);
           say(s.name, checkShape(s.drawing, frame, false));
           say(s.name, checkAnnounced(s.drawing, cfNoun, (n) => describeNode(n, s.drawing.index, edgesByNode(s.drawing.edges.map((e) => e.edge)).get(n.id), cloudflareNoun)));
           // An edit keeps every card but what it's about where it was, unless it makes room (a push: J6).
@@ -372,7 +372,7 @@ describe('Editing a machine: the Audio Player', () => {
       const edit = async (name: string, next: Record<string, unknown>, select: (dd: DiagramDrawing) => { nodes: string[]; edges: string[] }) => {
         config = next;
         d = await draw(config, name);
-        for (const v of check(d)) found.push(`${name}: ${v}`);
+        for (const v of [...check(d), ...checkCrossings(d)]) found.push(`${name}: ${v}`);
         const sel = select(d);
         if (!sel.nodes.length && !sel.edges.length) { found.push(`${name}: what was edited isn’t drawn`); return; }
         const eye = diagramEye(d, sel, null, { ends: true })!;

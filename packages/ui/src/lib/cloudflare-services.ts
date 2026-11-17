@@ -288,7 +288,7 @@ export function newEdge(services: readonly CloudflareService[], edges: readonly 
   const find = (id: string) => services.find((s) => s.id === id);
   const to = find(c.to);
   const check = linkBetween(find(c.from)?.kind ?? '', c.fromPort, to?.kind ?? '', c.toPort);
-  if (!check.ok) return null;
+  if (!check.ok || repeatsLink(services, edges, c.from, c.to, check.link)) return null;
   const { link } = check;
   const taken = new Set(edges.map((e) => e.id));
   let id = `${c.from}-${link.via}`;
@@ -296,6 +296,20 @@ export function newEdge(services: readonly CloudflareService[], edges: readonly 
   const names = edges.filter((e) => e.from === c.from).flatMap((e) => e.binding ?? find(e.to)?.binding ?? []);
   const name = to?.binding && !names.includes(to.binding) ? to.binding : bindingName(to?.binding ?? link.label, names);
   return { id, from: c.from, to: c.to, via: link.via, ...(link.kind === 'binding' ? { binding: name } : null) };
+}
+
+/**
+ * Why a second connection of this kind between the same two services isn't one to make, or null when it is. A binding can be
+ * made again (the same bucket, namespace or Worker on `env` under another name, which Cloudflare allows: it draws beside the
+ * first in a lane of its own); a handler (consuming a queue, tailing a Worker, a socket) or event notifications made again say
+ * nothing the first doesn't, and a config can't hold them twice.
+ */
+export function repeatsLink(services: readonly CloudflareService[], edges: readonly CloudflareEdge[], from: string, to: string, link: Pick<ServiceLink, 'kind' | 'via' | 'label'>): string | null {
+  if (link.kind === 'binding') return null;
+  if (!edges.some((e) => e.from === from && e.to === to && e.via === link.via)) return null;
+  const name = (id: string) => { const s = services.find((x) => x.id === id); return s ? s.label ?? nameOf(s.kind) : id; };
+  const what = link.kind === 'events' ? 'sends its events to' : link.kind === 'handler' ? `is already joined by its ${link.label} to` : `already reaches through ${link.label}`;
+  return `${name(from)} ${what} ${name(to)}: a second one says nothing more.`;
 }
 
 /** A plain way to write a method: `get(key, options)`. */
