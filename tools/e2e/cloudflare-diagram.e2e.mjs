@@ -950,11 +950,26 @@ test.describe('editing keeps the board', () => {
     await settle(page);
     const made = await page.locator('[data-slot=diagram-edge][data-selected]').getAttribute('data-edge');
     expect(made).toMatch(/^api-d1_databases/);
-    expect(await places(page)).toEqual(added);
+    // Nothing moves but to make room for it: past where it needs it, along or down, all by one amount (J6), none back or up.
+    const afterConnect = await places(page);
+    for (const [id, at] of Object.entries(added)) {
+      const [x, y] = at.split(',').map(Number), [x2, y2] = afterConnect[id].split(',').map(Number);
+      expect(x2 >= x - 0.5 && y2 >= y - 0.5, `${id} moved only to make room`).toBe(true);
+    }
+    expect(afterConnect.api).toBe(added.api);
     await expect(panel(page)).toBeVisible();
     expect(await onBoard(page, page.locator(`[data-slot=diagram-edge-label][data-edge="${made}"]`)), 'its label').toBe(true);
-    expect(await onBoard(page, service(page, 'api')), 'where it starts').toBe(true);
-    expect(await onBoard(page, service(page, 'db')), 'where it goes').toBe(true);
+    // With both its ends, when the board the panel leaves can show the three together at a readable size.
+    const together = await page.evaluate(() => {
+      const r = (id) => document.querySelector(`[data-slot=diagram-node][data-node="${id}"]`)?.getBoundingClientRect();
+      const a = r('api'), b = r('db'), board = document.querySelector('[data-slot=canvas]')?.getBoundingClientRect();
+      const z = parseFloat(getComputedStyle(document.querySelector('[data-slot=diagram-layer]')).getPropertyValue('--canvas-zoom') || '1') || 1;
+      return !!a && !!b && !!board && (Math.max(a.right, b.right) - Math.min(a.left, b.left)) / z * 0.875 <= board.width - 48;
+    });
+    if (together) {
+      expect(await onBoard(page, service(page, 'api')), 'where it starts').toBe(true);
+      expect(await onBoard(page, service(page, 'db')), 'where it goes').toBe(true);
+    }
     const connected = await places(page);
 
     // A refused connection says why where it was let go, in words with a glyph, and goes at the next press.
@@ -968,9 +983,10 @@ test.describe('editing keeps the board', () => {
     await expect(refusal).toBeVisible();
     await expect(refusal).toContainText('through a Queue');
     await expect(page.locator('[data-slot=diagram-status]')).toContainText('through a Queue');
-    // Over the card it was offered to.
+    // Beside the card it was offered to (above it, or below, after or before it, wherever it covers no other card).
     const r = await refusal.boundingBox(), target = await service(page, 'db').boundingBox();
-    expect(Math.abs((r.x + r.width / 2) - (target.x + target.width / 2))).toBeLessThan(target.width);
+    const gap = Math.hypot(Math.max(target.x - (r.x + r.width), 0, r.x - (target.x + target.width)), Math.max(target.y - (r.y + r.height), 0, r.y - (target.y + target.height)));
+    expect(gap, 'the reason is beside the card').toBeLessThanOrEqual(16);
     await page.mouse.up();
     await expect(refusal).toBeVisible();
     await expect(page.locator('[data-slot=diagram-edge]')).toHaveCount(lines + 1);
@@ -988,6 +1004,88 @@ test.describe('editing keeps the board', () => {
     await page.getByRole('button', { name: 'Undo' }).click();
     await settle(page);
     await page.getByRole('button', { name: 'Undo' }).click();
+    await settle(page);
+    expect(await places(page)).toEqual(laidOut);
+  });
+});
+
+test.describe('making room', () => {
+  /** Where each card is in the drawing (board units: its placed box), by id; a Worker that holds its classes is a box, which
+   *  grows round them, and isn't one. */
+  const places = (page) => cards(page).evaluateAll((els) => Object.fromEntries(els.filter((el) => el.getAttribute('data-kind') !== 'group').map((el) => [el.getAttribute('data-node'), [parseFloat(el.style.left), parseFloat(el.style.top)]])));
+  /** Each label on its own line (its route runs through it, and only its), off every card, inside the system, with room after
+   *  it for the whole arrowhead when it's on the run into the end. In board units. */
+  const labelsSeated = (page) => page.evaluate(() => {
+    const out = [];
+    const box = (el) => ({ left: parseFloat(el.style.left), top: parseFloat(el.style.top), right: parseFloat(el.style.left) + parseFloat(el.style.width), bottom: parseFloat(el.style.top) + parseFloat(el.style.height) });
+    const paths = [...document.querySelectorAll('[data-slot=diagram-edge]')];
+    // Cards: not the system's box, an environment's, nor a Worker's that holds its classes.
+    const nodes = [...document.querySelectorAll('[data-slot=diagram-node]')].filter((n) => !['root', 'group', 'region', 'marker'].includes(n.getAttribute('data-kind') ?? ''));
+    const root = document.querySelector('[data-slot=diagram-node][data-node="cloudflare:system"]');
+    for (const label of document.querySelectorAll('[data-slot=diagram-edge-label]')) {
+      const id = label.getAttribute('data-edge'), r = box(label);
+      const inside = (q, d = 2) => q.x > r.left + d && q.x < r.right - d && q.y > r.top + d && q.y < r.bottom - d;
+      const through = paths.filter((p) => { const n = p.getTotalLength(); for (let t = 0; t <= n; t += 2) if (inside(p.getPointAtLength(t))) return true; return false; }).map((p) => p.getAttribute('data-edge'));
+      if (through.length !== 1 || through[0] !== id) out.push(`${id}: ${through.join(', ') || 'no route'} through it`);
+      const own = paths.find((p) => p.getAttribute('data-edge') === id);
+      if (own) {
+        // From the last point in it to the arrowhead's tip, along its route.
+        const n = own.getTotalLength();
+        let last = -1;
+        for (let t = 0; t <= n; t += 1) if (inside(own.getPointAtLength(t), -1)) last = t;
+        if (last >= 0 && n - last < 14) out.push(`${id}: ${Math.round(n - last)} px of line after it to the arrowhead`);
+      }
+      for (const c of nodes) { const b = box(c); if (r.left < b.right && b.left < r.right && r.top < b.bottom && b.top < r.bottom) out.push(`${id} is on ${c.getAttribute('data-node')}`); }
+      if (root) { const b = box(root); if (r.left < b.left || r.right > b.right || r.top < b.top || r.bottom > b.bottom) out.push(`${id} is outside the system`); }
+    }
+    return out;
+  });
+  /** Whether cards moved only as one push does: none sideways, none up, and those level with one another by as much. */
+  const pushedOnly = (was, now) => {
+    const out = [];
+    for (const [id, [x, y]] of Object.entries(was)) {
+      const [x2, y2] = now[id];
+      if (Math.abs(x2 - x) > 0.5) out.push(`${id} moved across`);
+      if (y2 < y - 0.5) out.push(`${id} moved up`);
+    }
+    for (const [a, [, ya]] of Object.entries(was)) for (const [b, [, yb]] of Object.entries(was)) {
+      if (a >= b) continue;
+      const da = now[a][1] - ya, db = now[b][1] - yb;
+      if ((Math.abs(ya - yb) < 0.5 && Math.abs(da - db) > 0.5) || (ya < yb - 0.5 && da > db + 0.5)) out.push(`${a} and ${b} didn't move as one push`);
+    }
+    return out;
+  };
+
+  test('round 10’s F1: operations ticked on FILES make room for its label on its own line, renamed too, and it all undoes', async ({ page }) => {
+    test.setTimeout(120_000);
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto('/?demo=cloudflare-diagram/editing&theme=light', { waitUntil: 'load' });
+    await cards(page).first().waitFor({ timeout: 30_000 });
+    await settle(page);
+    const laidOut = await places(page);
+    await pressLabel(page, 'api-files');
+    await expect(panel(page).locator('[data-operation]')).toHaveCount(7);
+    expect(await labelsSeated(page)).toEqual([]);
+    // Two more: four chips (it ended 9 px over Files, the arrowhead a stub).
+    for (const op of ['delete', 'list']) await panel(page).locator(`[data-operation="${op}"]`).click();
+    await settle(page);
+    expect(await labelsSeated(page)).toEqual([]);
+    const two = await places(page);
+    expect(pushedOnly(laidOut, two)).toEqual([]);
+    expect(two.api).toEqual(laidOut.api);
+    // Three more: seven chips (it was moved across the board, its line round it and over JOBS twice).
+    for (const op of ['head', 'createMultipartUpload', 'resumeMultipartUpload']) await panel(page).locator(`[data-operation="${op}"]`).click();
+    await settle(page);
+    expect(await labelsSeated(page)).toEqual([]);
+    expect(pushedOnly(two, await places(page))).toEqual([]);
+    // A longer name too (it ran through Consumer).
+    const name = panel(page).locator('[data-field=binding-name]');
+    await name.fill('UPLOADED_FILES_BUCKET');
+    await name.press('Enter');
+    await settle(page);
+    expect(await labelsSeated(page)).toEqual([]);
+    // Each was a step: undoing them all puts every card back where it was laid out.
+    for (let i = 0; i < 6; i++) await page.getByRole('button', { name: 'Undo' }).click();
     await settle(page);
     expect(await places(page)).toEqual(laidOut);
   });

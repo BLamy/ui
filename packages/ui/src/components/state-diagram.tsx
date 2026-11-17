@@ -579,7 +579,9 @@ export function StateDiagram({
   }, [editable]);
   const [refusal, setRefusal] = useState<Refusal | null>(null);
   // The field a pressed chip asks for, so the panel opens on it.
+  // The field to focus once the panel shows it; a new one's default name selected, so typing replaces it.
   const [focus, setFocus] = useState<string | null>(null);
+  const selectOnFocus = useRef(false);
   const [selection, setSelection] = useControllableChange<DiagramSelection, DiagramSelectionChangeReason>(selectionProp, defaultSelection, onSelectionChange);
   const select = (next: DiagramSelection) => setSelection(next, { reason: 'imperative' });
   const base = (shown ?? (given?.config as StateMachineConfig | undefined)) ?? null;
@@ -724,7 +726,7 @@ export function StateDiagram({
       const name = uniqueName('action', actionsOf(at).map((a) => a.name));
       const made = commit((c) => addAction(c, where, name));
       keepSelected(made);
-      if (made) setFocus(`${at}:${actionsOf(at).length}`);
+      if (made) { selectOnFocus.current = true; setFocus(`${at}:${actionsOf(at).length}`); }
     },
   };
   const contextConfig = base && (base.context === undefined || isPlainObject(base.context)) ? (base.context as Record<string, unknown> | undefined) ?? {} : null;
@@ -735,7 +737,7 @@ export function StateDiagram({
     remove: (key: string) => { commit((c) => removeContextKey(c, key)); },
     add: () => {
       const key = uniqueName('key', [...Object.keys(contextConfig ?? {}), ...Object.keys(contextTypes)]);
-      if (commit((c) => addContextKey(c, key))) setFocus(`context:${key}`);
+      if (commit((c) => addContextKey(c, key))) { selectOnFocus.current = true; setFocus(`context:${key}`); }
     },
   };
   const missing = useMemo(() => {
@@ -803,9 +805,15 @@ export function StateDiagram({
     const find = () => {
       const panel = board.current?.closest('[data-slot=diagram-frame]');
       const input = panel?.querySelector<HTMLInputElement>(`[data-field="${CSS.escape(focus)}"]`);
-      if (input) { input.focus(); setFocus(null); return; }
+      if (input) {
+        input.focus();
+        if (selectOnFocus.current) input.select();
+        selectOnFocus.current = false;
+        setFocus(null);
+        return;
+      }
       if (++tries < 20) frame = requestAnimationFrame(find);
-      else setFocus(null);
+      else { selectOnFocus.current = false; setFocus(null); }
     };
     frame = requestAnimationFrame(find);
     return () => cancelAnimationFrame(frame);

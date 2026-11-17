@@ -18,8 +18,8 @@ import { DiagramChromeProvider, useDiagramChrome, useDiagramChromeInset, useDiag
 import type { DiagramHistory } from '@/lib/diagram-history';
 import { describeEdge, describeItem, describeNode, fitViewport, type DiagramNoun, nearestNode, stepFocus, viewportToShow, type DiagramItem, type DiagramStep } from '@/lib/diagram-keyboard';
 import {
-  DIAGRAM_CARD, DIAGRAM_LEGIBLE_ZOOM, DIAGRAM_SIDES, NOTHING_SELECTED, anchorNormal, codeKey, anchorPoint, connectorPath, diagramTextRuns, edgeGeometries, edgeGeometry, hasEdgeLabel, holdsNodes, indexDiagram, itemKey, moveNodes, nearestSide, portPoint, renderWindow, sectionKey, sizeNodesToText, growNodesToText,
-  type ConnectorEnd, type ConnectorGeometry, type DiagramConnection, type DiagramEdge, type DiagramEdgeTone, type DiagramEdgeVariant, type DiagramGlyph, type DiagramNode, type DiagramNodeKind, type DiagramNodeVariant, type DiagramPort, type DiagramSection, type DiagramSelection, type DiagramSide, type DiagramTone,
+  DIAGRAM_CARD, DIAGRAM_LEGIBLE_ZOOM, DIAGRAM_SIDES, NOTHING_SELECTED, anchorNormal, codeKey, anchorPoint, connectorPath, diagramTextRuns, edgeGeometries, edgeGeometry, hasEdgeLabel, holdsNodes, indexDiagram, itemKey, moveNodes, nearestSide, nodeAnatomy, portPoint, renderWindow, sectionKey, sizeNodesToText, growNodesToText,
+  type ConnectorEnd, type ConnectorGeometry, type DiagramConnection, type DiagramEdge, type DiagramIndex, type DiagramEdgeTone, type DiagramEdgeVariant, type DiagramGlyph, type DiagramNode, type DiagramNodeKind, type DiagramNodeVariant, type DiagramPort, type DiagramSection, type DiagramSelection, type DiagramSide, type DiagramTone,
 } from '@/lib/diagram-model';
 import {
   diagram, type DiagramController, type DiagramData, type DiagramDataChangeDetails, type DiagramDataChangeReason, type DiagramOptions, type DiagramSelectionChangeDetails, type DiagramSelectionChangeReason,
@@ -636,6 +636,12 @@ export interface DiagramContextValue {
   /** What undo and redo drive here: the `history` it was given, its own when it's `editable`, or null for none. */
   history: DiagramHistory | null;
   zoom: number;
+  /** Says something through the diagram's live region (what a change did, that a step was undone), for a component that
+   *  draws a diagram from something it changes itself. */
+  announce: (message: string) => void;
+  /** Opens on what's drawn after the next change of its data, as it opened at first: whole when it can be read whole, else
+   *  from its top-start corner at a readable size, in the room the chrome leaves (Tidy up's result, say). */
+  reframe: () => void;
 }
 
 const DiagramContext = createContext<DiagramContextValue | null>(null);
@@ -738,6 +744,8 @@ export interface DiagramProps<N = unknown, E = unknown> extends Pick<CanvasProps
 
 const EMPTY: readonly never[] = [];
 const NO_GUIDES: Guide[] = [];
+/** How wide a refused connection's reason gets (16rem), so a short one stays on a line or two. */
+const REFUSAL_WIDTH = 256;
 /** How long a refused connection's reason stays after it's let go of. */
 const REFUSAL_MS = 2500;
 /** How long a change's moves take, when they're animated. */
@@ -866,6 +874,8 @@ export function Diagram<N = unknown, E = unknown>({
   const read = useCallback(() => instance.get(), [instance]);
   const state = useSyncExternalStore(subscribe, read, read);
   const data = (givenData ?? state.data) as DiagramData<N, E>;
+  const dataRef = useRef(data);
+  dataRef.current = data;
   const selection = selectionProp ?? state.selection;
   const canUndo = ownHistory && state.past > 0;
   const canRedo = ownHistory && state.future > 0;
@@ -879,6 +889,11 @@ export function Diagram<N = unknown, E = unknown>({
   const [marquee, setMarquee] = useState<Rect | null>(null);
   const [connecting, setConnecting] = useState<Extract<DiagramGesture, { k: 'connect' }> | null>(null);
   const [status, setStatus] = useState('');
+  // The same words twice are said twice: a live region only speaks when its text changes.
+  const announce = useCallback((message: string) => setStatus((was) => (was === message ? `${message}\u00a0` : message)), []);
+  // After the next change of data, the view opens on it again.
+  const reframeFrom = useRef<unknown>(null);
+  const reframe = useCallback(() => { reframeFrom.current = dataRef.current; }, []);
 
   // A change from outside that moves things moves them over a moment, when asked to.
   const tweened = useLayoutTween(data, animate, draft);
@@ -953,6 +968,15 @@ export function Diagram<N = unknown, E = unknown>({
     onViewportChange?.(next, details);
     if (!details.canceled) setOwn(next);
   };
+
+  // Asked to open again on what's drawn next (Tidy up): once the data has changed, the opening view of where it's going (not
+  // of a frame of its slide there).
+  useEffect(() => {
+    if (!reframeFrom.current || reframeFrom.current === data) return;
+    reframeFrom.current = null;
+    const target = drawDiagram(autoSize ? sizeNodesToText(data.nodes, text) : data.nodes, data.edges, text).bounds;
+    canvas.setViewport(firstView(target, size, fitPad), { reason: 'imperative' });
+  }, [data, autoSize, text, size, fitPad, canvas]);
 
   // After the first view, what has the eye is kept in view by a pan, once the board has settled after a change to it.
   const rectKey = (r: Rect | null | undefined) => (r ? `${Math.round(r.x)},${Math.round(r.y)},${Math.round(r.w)},${Math.round(r.h)}` : '');
@@ -1392,6 +1416,8 @@ export function Diagram<N = unknown, E = unknown>({
         : h.hit.kind === 'port' ? <PortDot key={`${h.hit.id}/${h.hit.port ?? h.hit.side}`} at={h.at} node={h.hit.id} port={h.hit.port} side={h.hit.side} active={connectable} /> : null))}
     </div>
   ) : null, [handles, connectable, viewport.zoom, drawWindow]);
+  const headOfText = useCallback((n: DiagramNode<N>) => nodeAnatomy(n, text).top, [text]);
+  const rootHead = useCallback((index: DiagramIndex<N>) => index.nodes.filter((n) => n.kind === 'root').map((n) => ({ x: n.x, y: n.y, w: n.w, h: Math.min(n.h, nodeAnatomy(n, text).top) })), [text]);
   const connection = useMemo(() => {
     if (!connecting) return null;
     const index = laid.index;
@@ -1400,7 +1426,8 @@ export function Diagram<N = unknown, E = unknown>({
     const c = connecting.over ? connectionOf(connecting, connecting.over) : null;
     let route: ConnectorGeometry | null = null;
     // Round the cards in its way, as a drawn edge goes, not through them.
-    if (c) route = edgeGeometries([{ id: 'connecting', from: c.from, fromPort: c.fromPort, to: c.to, toPort: c.toPort }], index, { avoid: true }).get('connecting') ?? edgeGeometry({ id: 'connecting', from: c.from, fromPort: c.fromPort, to: c.to, toPort: c.toPort }, index);
+    // Round the cards in its way, as a drawn edge goes, and off the labels and the boxes' headers and sections, not through them.
+    if (c) route = edgeGeometries([{ id: 'connecting', from: c.from, fromPort: c.fromPort, to: c.to, toPort: c.toPort }], index, { avoid: true, headOf: headOfText, also: [...laid.labels.map((l) => l.box), ...rootHead(index)] }).get('connecting') ?? edgeGeometry({ id: 'connecting', from: c.from, fromPort: c.fromPort, to: c.to, toPort: c.toPort }, index);
     else {
       // Nothing to land on yet: from the fixed end to the pointer.
       const port = connecting.fixed.port ? a.ports?.find((x) => x.id === connecting.fixed.port) : undefined;
@@ -1422,26 +1449,42 @@ export function Diagram<N = unknown, E = unknown>({
         ) : null}
       </div>
     );
-  }, [connecting, laid, viewport.zoom]);
+  }, [connecting, laid, viewport.zoom, headOfText, rootHead]);
 
-  // Why a connection can't be made, where it was offered: above what it was offered to (below it, under the toolbar), or at
-  // the pointer. In the tooltip's look, with a glyph and words, so it isn't told by color alone; already said aloud.
+  // Why a connection can't be made, where it was offered: beside what it was offered to, on the first side of it (above,
+  // below, after, before) where it covers no other card and clears the toolbar, or at the pointer. In the tooltip's look, with
+  // a glyph and words, so it isn't told by color alone; already said aloud. Up to 16rem wide, so a short reason is a line.
   const refusal = (() => {
     const r = connecting && typeof connecting.valid === 'string' ? { node: connecting.over?.node ?? null, at: connecting.at, text: connecting.valid } : refused;
     if (!r) return null;
     const target = r.node ? laid.index.byId.get(r.node) : null;
     const z = viewport.zoom;
-    const x = (target ? target.x + target.w / 2 : r.at.x) * z + viewport.x;
-    const over = (target ? target.y : r.at.y) * z + viewport.y - 8;
-    const under = target ? (target.y + target.h) * z + viewport.y + 8 : over + 24;
-    const below = over < Math.max(56, chrome.insets.top + 48);
-    const half = Math.min(124, size.width / 2 - 8);
+    const screen = (b: Rect): Rect => ({ x: b.x * z + viewport.x, y: b.y * z + viewport.y, w: b.w * z, h: b.h * z });
+    // Its size, near enough: the words at the footnote size in a box up to 16rem, a glyph and padding.
+    // (A little over the item text's estimate: it's semibold at the footnote size.)
+    const words = estimateText(r.text, 'item').w * 1.15;
+    const w = Math.min(REFUSAL_WIDTH, words + 40), h = Math.ceil(words / (REFUSAL_WIDTH - 40)) * 17 + 12;
+    const t = target ? screen(target) : { x: r.at.x * z + viewport.x, y: r.at.y * z + viewport.y, w: 0, h: 0 };
+    const tries: Rect[] = [
+      { x: t.x + t.w / 2 - w / 2, y: t.y - 8 - h, w, h }, { x: t.x + t.w / 2 - w / 2, y: t.y + t.h + 8, w, h },
+      { x: t.x + t.w + 8, y: t.y + t.h / 2 - h / 2, w, h }, { x: t.x - 8 - w, y: t.y + t.h / 2 - h / 2, w, h },
+    ];
+    const others = laid.leaves.filter((n) => n.id !== r.node && n.kind !== 'marker').map(screen);
+    const inside = (q: Rect) => q.y >= Math.max(8, chrome.insets.top + 4) && q.x >= 8 && q.x + q.w <= size.width - 8 && q.y + q.h <= size.height - 8;
+    // Clear of every other card where it can be; else where it covers least of them.
+    const covers = (q: Rect) => others.reduce((t, o) => t + Math.max(0, Math.min(q.x + q.w, o.x + o.w) - Math.max(q.x, o.x)) * Math.max(0, Math.min(q.y + q.h, o.y + o.h) - Math.max(q.y, o.y)), 0);
+    const at = tries.find((q) => inside(q) && covers(q) === 0) ?? [...tries].sort((p, q) => (Number(!inside(p)) - Number(!inside(q))) || covers(p) - covers(q))[0]!;
+    // Its size is only near enough: it's anchored to the side it's on, 8 px off it, whatever its real size.
+    const side = tries.indexOf(at);
+    const left = side < 2 ? Math.min(Math.max(at.x, 8), Math.max(8, size.width - w - 8)) : side === 2 ? t.x + t.w + 8 : t.x - 8;
+    const top = side === 0 ? t.y - 8 : side === 1 ? t.y + t.h + 8 : t.y + t.h / 2;
+    const shift = side === 0 ? 'translateY(-100%)' : side === 2 ? 'translateY(-50%)' : side === 3 ? 'translate(-100%, -50%)' : undefined;
     return (
       <div
         data-slot="diagram-refusal"
         aria-hidden="true"
-        className={cn('pointer-events-none absolute z-20 box-border flex max-w-60 -translate-x-1/2 items-start gap-1.5 rounded-ctl bg-foreground px-2.5 py-1.5 text-footnote leading-[17px] font-medium text-background shadow-tooltip', !below && '-translate-y-full')}
-        style={{ left: Math.min(Math.max(x, half + 8), size.width - half - 8), top: below ? under : over }}
+        className="pointer-events-none absolute z-20 box-border flex w-max max-w-64 items-start gap-1.5 rounded-ctl bg-foreground px-2.5 py-1.5 text-footnote leading-[17px] font-medium text-background shadow-tooltip"
+        style={{ left, top, transform: shift }}
       >
         <Icon name="nosign" size={14} className="mt-0.5 shrink-0" />
         <span>{r.text}</span>
@@ -1454,7 +1497,7 @@ export function Diagram<N = unknown, E = unknown>({
     getData: api.getData, getSelection: api.getSelection, select: api.select, selectAll: api.selectAll, clearSelection: api.clearSelection,
     deleteSelection: api.deleteSelection, moveNodes: api.moveNodes, connect: api.connect, undo: api.undo, redo: api.redo, canUndo: api.canUndo, canRedo: api.canRedo,
   }), [api]);
-  const context = useMemo<DiagramContextValue>(() => ({ diagram: methods, canvas, history, zoom: viewport.zoom }), [methods, canvas, history, viewport.zoom]);
+  const context = useMemo<DiagramContextValue>(() => ({ diagram: methods, canvas, history, zoom: viewport.zoom, announce, reframe }), [methods, canvas, history, viewport.zoom, announce, reframe]);
   const empty = !loading && !error && !laid.index.nodes.length;
   // The shortcuts are spelled for the platform (⌘ on Apple's, Ctrl elsewhere), once it's known: a server can't tell.
   const [platform, setPlatform] = useState<boolean | undefined>(false);

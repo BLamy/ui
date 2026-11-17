@@ -142,6 +142,43 @@ test('the example’s connections each have a lane of their own, and each label 
   await expect(page.locator('[data-slot=diagram-frame-bar] [data-diagram-frame-trigger]')).toHaveText('Add a service');
 });
 
+/** Labels outside the system's box (round 10's F2: JOBS on the root's header, no line into it). */
+const labelsInTheSystem = (page) => page.evaluate(() => {
+  const root = document.querySelector('[data-slot=diagram-node][data-node="cloudflare:system"]');
+  if (!root) return ['no system'];
+  const box = (el) => ({ left: parseFloat(el.style.left), top: parseFloat(el.style.top), right: parseFloat(el.style.left) + parseFloat(el.style.width), bottom: parseFloat(el.style.top) + parseFloat(el.style.height) });
+  const r = box(root);
+  return [...document.querySelectorAll('[data-slot=diagram-edge-label]')].flatMap((label) => {
+    const l = box(label);
+    return l.left >= r.left && l.right <= r.right && l.top >= r.top && l.bottom <= r.bottom ? [] : [`${label.getAttribute('data-edge')} is outside the system`];
+  });
+});
+
+test('round 10’s F2: three services added and a connection made, every label stays on its own line, in the system', async ({ page }) => {
+  test.setTimeout(120_000);
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await open(page);
+  await expect(services(page)).toHaveCount(6);
+  await settle(page);
+  const labels = () => page.locator('[data-slot=diagram-edge-label]').evaluateAll((els) => Object.fromEntries(els.map((el) => [el.getAttribute('data-edge'), `${el.style.left},${el.style.top}`])));
+  const before = await labels();
+  // The bar's button opens the panel on the catalog's search.
+  await page.locator('[data-slot=diagram-frame-bar] [data-diagram-frame-trigger]').click();
+  for (const kind of ['kv', 'd1', 'workers']) await add(page, kind);
+  await expect(services(page)).toHaveCount(9);
+  await settle(page);
+  expect(await labelsOnTheirOwn(page)).toEqual([]);
+  expect(await labelsInTheSystem(page)).toEqual([]);
+  // The three adds went to free room: every label that was there is where it was.
+  const added = await labels();
+  for (const [id, at] of Object.entries(before)) expect(added[id], `${id}'s label stays`).toBe(at);
+  await connect(page, 'api', 'env', 'kv', 'binding:kv_namespaces');
+  await settle(page);
+  expect(await labelsOnTheirOwn(page)).toEqual([]);
+  expect(await sharedRuns(page)).toEqual([]);
+  expect(await labelsInTheSystem(page)).toEqual([]);
+});
+
 test('the file upload, from nothing, by hand, kept through a reload, and exported', async ({ page }) => {
   test.setTimeout(120_000);
   await open(page);

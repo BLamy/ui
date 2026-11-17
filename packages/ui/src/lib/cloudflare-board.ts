@@ -305,14 +305,20 @@ export interface CloudflareDrawn {
 
 /** The system with each service that has no place yet where the board drew it: what every edit writes, so that its places
  *  are the system's from the first edit on (a laid-out board's places are its layout's until then). A service with a place
- *  keeps it (one just moved, one just added), and one the board didn't draw has none. */
-export function cloudflarePlaces(system: CloudflareSystem, drawn: Pick<CloudflareDrawn, 'nodes'> | null): CloudflareSystem {
+ *  keeps it (one just moved, one just added), unless `before` (the system before this edit) had it at the same place: then
+ *  it's where the board drew it, which made room round it. One the board didn't draw keeps what it has. */
+export function cloudflarePlaces(system: CloudflareSystem, drawn: Pick<CloudflareDrawn, 'nodes'> | null, before?: CloudflareSystem | null): CloudflareSystem {
   if (!drawn) return system;
   const at = new Map(drawn.nodes.flatMap((n) => (n.data?.service ? [[n.id, { x: n.x, y: n.y }] as const] : [])));
+  const was = new Map((before?.services ?? []).map((s) => [s.id, s.at]));
   let changed = false;
   const services = system.services.map((s) => {
     const p = at.get(s.id);
-    if (!p || s.at) return s;
+    if (!p) return s;
+    const w = was.get(s.id);
+    const unmoved = !!before && (s.at === w || (!!s.at && !!w && s.at.x === w.x && s.at.y === w.y));
+    if (s.at && !unmoved) return s;
+    if (s.at && s.at.x === p.x && s.at.y === p.y) return s;
     changed = true;
     return { ...s, at: p };
   });
@@ -329,7 +335,7 @@ export function cloudflareAddService(system: CloudflareSystem, kind: string, dra
   const taken = new Set(system.services.map((s) => s.id));
   let id = kind;
   for (let n = 2; taken.has(id); n++) id = `${kind}-${n}`;
-  const placed = cloudflarePlaces(system, drawn);
+  const placed = cloudflarePlaces(system, drawn, system);
   const service: CloudflareService = { id, kind };
   if (!drawn?.nodes.length) return { system: { ...placed, services: [...placed.services, service] }, id };
   const node = cloudflareBoardData({ ...placed, services: [...placed.services, service] }, { editable: true }).nodes.find((n) => n.id === id)!;
@@ -339,27 +345,29 @@ export function cloudflareAddService(system: CloudflareSystem, kind: string, dra
 }
 
 /**
- * What an editable board draws for a system whose services have places, given what it drew before (`was`): the same cards
- * where they were, the boxes grown round what they hold, the routes that still join the same places kept, and what's new
- * routed in among them (`keepLayout`). With nothing drawn before, the system as placed (`placeInLayers`), for the Diagram to
- * size and route. `text` sizes what's new or changed.
+ * What a board draws for a system whose services have places, given what it drew before (`was`): the same cards where they
+ * were, room made where something grew or something new needs it, the routes that still join the same places kept, what's new
+ * routed in among them, and the boxes drawn round what they hold (`keepLayout`). With nothing drawn before, the system as placed
+ * (`placeInLayers` for any without a place), its cards sized to their words and every connection routed between its cards
+ * where they are, its label on a run of its own: a first drawing that edits keep from then on. `text` sizes what's new or
+ * changed. `pushed` is how many cards making room moved, and `knot` says something couldn't be given room (a board placed by
+ * hand into a knot), which Tidy up would.
  */
-export function cloudflareKeptBoard(system: CloudflareSystem, was: CloudflareDrawn | null, { editable = false, issues, title, text: measure = estimateText }: CloudflareBoardDataOptions & { text?: TextMeasurer } = {}): CloudflareBoardData & { sized: boolean } {
+export function cloudflareKeptBoard(system: CloudflareSystem, was: CloudflareDrawn | null, { editable = false, issues, title, text: measure = estimateText }: CloudflareBoardDataOptions & { text?: TextMeasurer } = {}): CloudflareBoardData & { sized: boolean; pushed: number; knot: boolean } {
   const board = cloudflareBoardData(placeInLayers(system, { editable }), { editable, issues, title });
-  if (!was) return { ...board, sized: false };
-  const kept = keepLayout(was, board, { text: measure });
-  return { nodes: kept.nodes, edges: kept.edges, sized: !!was.sized };
+  const kept = keepLayout(was, board, { text: measure, routeAll: !was });
+  return { nodes: kept.nodes, edges: kept.edges, sized: was ? !!was.sized : true, pushed: kept.pushed, knot: kept.knot };
 }
 
 /**
- * An edit, as CloudflareDiagram makes it: every service written down where the board has it (`cloudflarePlaces`), the board
- * drawn again from what it drew (`cloudflareKeptBoard`), and the places it drew written back, so the system says where
- * everything is (a card that grew into its neighbour moved into free room, say). With nothing drawn yet, the system as it
- * is, for the layout.
+ * An edit, as CloudflareDiagram makes it: every service written down where the board has it (`cloudflarePlaces`; `before`, the
+ * system before the edit, tells what was moved by hand in it), the board drawn again from what it drew (`cloudflareKeptBoard`),
+ * and the places it drew written back, so the system says where everything is (cards pushed apart to make room, say). With
+ * nothing drawn yet, the system as it is, for the layout. `pushed` and `knot` are the drawing's (`cloudflareKeptBoard`).
  */
-export function cloudflareEdit(system: CloudflareSystem, drawn: CloudflareDrawn | null, options: CloudflareBoardDataOptions & { text?: TextMeasurer } = {}): { system: CloudflareSystem; drawn: CloudflareDrawn | null } {
-  const placed = cloudflarePlaces(system, drawn);
-  if (!drawn || !placed.services.some((s) => s.at)) return { system: placed, drawn: null };
+export function cloudflareEdit(system: CloudflareSystem, drawn: CloudflareDrawn | null, { before, ...options }: CloudflareBoardDataOptions & { text?: TextMeasurer; before?: CloudflareSystem | null } = {}): { system: CloudflareSystem; drawn: CloudflareDrawn | null; pushed: number; knot: boolean } {
+  const placed = cloudflarePlaces(system, drawn, before);
+  if (!drawn || !placed.services.some((s) => s.at)) return { system: placed, drawn: null, pushed: 0, knot: false };
   const kept = cloudflareKeptBoard(placed, drawn, options);
   const at = new Map(kept.nodes.flatMap((n) => (n.data?.service ? [[n.id, n] as const] : [])));
   let changed = false;
@@ -369,7 +377,7 @@ export function cloudflareEdit(system: CloudflareSystem, drawn: CloudflareDrawn 
     changed = true;
     return { ...s, at: { x: n.x, y: n.y } };
   });
-  return { system: changed ? { ...placed, services } : placed, drawn: { nodes: kept.nodes, edges: kept.edges, sized: kept.sized } };
+  return { system: changed ? { ...placed, services } : placed, drawn: { nodes: kept.nodes, edges: kept.edges, sized: kept.sized }, pushed: kept.pushed, knot: kept.knot };
 }
 
 /* ── A place for each ── */

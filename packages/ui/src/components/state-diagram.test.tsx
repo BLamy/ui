@@ -154,6 +154,12 @@ describe('StateDiagram', () => {
     act(() => { fireEvent.click(add); });
     await waitFor(() => expect(onConfigChange).toHaveBeenCalledTimes(1));
     expect((onConfigChange.mock.lastCall![0] as { states: { closed: { entry: unknown } } }).states.closed.entry).toEqual(['lockUp', 'action']);
+    // The new action's field has focus with its default name selected, so typing replaces it (round 10's F8).
+    await waitFor(() => {
+      const made = document.querySelector<HTMLInputElement>('[data-field="entry:1"]')!;
+      expect(document.activeElement).toBe(made);
+      expect([made.selectionStart, made.selectionEnd]).toEqual([0, 'action'.length]);
+    });
     const first = document.querySelector<HTMLInputElement>('[data-field="entry:0"]')!;
     act(() => { fireEvent.input(first, { target: { value: 'secure' } }); });
     act(() => { fireEvent.keyDown(first, { key: 'Enter' }); });

@@ -2762,6 +2762,9 @@ export function Fetching() {
 | — | `Diagram` `animate`; `DiagramToolbarButton`; `DiagramFrame` `height`; `DiagramFramePanel` `initialFocus`; `StateDiagram` and `CloudflareDiagram` `height` |
 | A refused connection's reason only in the live region | also shown beside the target (`diagram-refusal`), and for a moment after release |
 | Ports at one place: the one under the pointer, if the rule took it | the first pair the rule takes, in each card's own order |
+| Editable: a card or label that grew was crushed into its gap or moved itself (and its line) across the board; a board placed by hand was routed again on every change | an edit never rearranges the board, and makes room: the cards past what grew (or what a new connection needs) are pushed apart by exactly what it needs, rows and columns kept, as part of the same step; lines the push bends are routed again, the rest keep their lanes; a placed board's lines are kept from its first drawing on; where no room can be made, a quiet "No room to make here" offers Tidy up |
+| Editable: Tidy up laid out for the frame and left the view where it was; undo, redo and Tidy up said nothing | Tidy up lays out for the board in view (the one a column panel leaves) and opens on the result; Tidy up, undo, redo and room made are said through the diagram's live region ("Undid: added KV.", "Tidied up: 6 services laid out again, 4 moved.") |
+| `useDiagram()`: `{ diagram, canvas, history, zoom }` | adds `announce(message)` (the diagram's live region) and `reframe()` (open again on what's drawn after the next change) |
 
 The block's export is a Dialog (a sheet at a phone's size), and its buttons are `data-action="new"`, `open`, `export`, `download`, `download-all`.
 

@@ -1343,7 +1343,7 @@ export function facePorts<N, E>(nodes: readonly DiagramNode<N>[], edges: readonl
  *  evenly, in the order of what they lead to, and a node's self-loops nest. With `avoid`, one whose elbow would run through
  *  a card (or a box's header) goes round instead: for a hand-placed diagram that isn't too big to work out each time. An
  *  edge whose end doesn't exist isn't in it. */
-export function edgeGeometries<N, E>(edges: readonly DiagramEdge<E>[], index: DiagramIndex<N>, { avoid = false, headOf, labelSize, labels }: { avoid?: boolean; headOf?: (n: DiagramNode<N>) => number; labelSize?: (e: DiagramEdge<E>) => { w: number; h: number } | null; labels?: Map<string, Rect> } = {}): Map<string, ConnectorGeometry> {
+export function edgeGeometries<N, E>(edges: readonly DiagramEdge<E>[], index: DiagramIndex<N>, { avoid = false, headOf, labelSize, labels, also = [] }: { avoid?: boolean; headOf?: (n: DiagramNode<N>) => number; labelSize?: (e: DiagramEdge<E>) => { w: number; h: number } | null; labels?: Map<string, Rect>; also?: readonly Rect[] } = {}): Map<string, ConnectorGeometry> {
   // Who's on each side of each node.
   const onSide = new Map<string, { edge: string; end: 'from' | 'to'; other: Pt }[]>();
   const loops = new Map<string, number>();
@@ -1392,7 +1392,11 @@ export function edgeGeometries<N, E>(edges: readonly DiagramEdge<E>[], index: Di
   }
   const out = new Map<string, ConnectorGeometry>();
   // What a route mustn't go through: every card, and the strip along the top of every box that its header takes.
-  const blocks = avoid ? index.nodes.flatMap((n) => (n.kind === 'marker' || n.kind === 'region' ? [] : holdsNodes(n) ? (n.kind === 'root' ? [] : [{ id: n.id, r: { x: n.x, y: n.y, w: n.w, h: Math.min(n.h, HEADER_ROOM) } }]) : [{ id: n.id, r: rectOf2(n) }])) : [];
+  const blocks = avoid ? [
+    ...index.nodes.flatMap((n) => (n.kind === 'marker' || n.kind === 'region' ? [] : holdsNodes(n) ? (n.kind === 'root' ? [] : [{ id: n.id, r: { x: n.x, y: n.y, w: n.w, h: Math.min(n.h, headOf ? headOf(n) : HEADER_ROOM) } }]) : [{ id: n.id, r: rectOf2(n) }])),
+    // And what else it's asked to keep off (a connection's preview: the labels, the root's header and sections).
+    ...also.map((r, i) => ({ id: `\0also${i}`, r })),
+  ] : [];
   for (const e of edges) {
     let g = edgeGeometry(e, index, spread.get(e.id));
     if (g && avoid && !e.points && e.from !== e.to && e.route !== 'curve' && e.route !== 'straight') {

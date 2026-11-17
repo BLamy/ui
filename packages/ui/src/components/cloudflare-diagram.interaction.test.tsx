@@ -349,6 +349,53 @@ describe('CloudflareDiagram, editing keeps the board', () => {
     expect((onChange.mock.calls.at(-1) as [CloudflareSystem])[0].services).toEqual(PLACED);
   });
 
+  it('makes room for a label that grows: what’s past it moves apart by what it needs, rows kept, in one step undo takes back', async () => {
+    const CLOSE: CloudflareService[] = [
+      { id: 'api', kind: 'workers', label: 'API', at: { x: 40, y: 40 } },
+      { id: 'files', kind: 'r2', label: 'Files', at: { x: 40, y: 200 } },
+      { id: 'jobs', kind: 'queues', label: 'Jobs', at: { x: 360, y: 200 } },
+    ];
+    const onChange = vi.fn();
+    render(<div style={{ position: 'relative', width: 1200, height: 700 }}><Controlled onChange={onChange} start={CLOSE} edges={[PLACED_EDGES[0]!]} defaultSelection={{ nodes: [], edges: ['api-files'] }} /></div>);
+    await settle();
+    const panelEl = document.querySelector<HTMLElement>('[data-slot=cloudflare-panel]')!;
+    for (const op of [/^delete\(/, /^get\(/, /^head\(/, /^list\(/]) {
+      fireEvent.click(within(panelEl).getByRole('checkbox', { name: op }));
+      await settle();
+    }
+    const [grown, details] = onChange.mock.calls.at(-1) as [CloudflareSystem, { reason: string }];
+    expect(details.reason).toBe('edit');
+    // API stays; Files and Jobs, level with each other, moved down by the same amount, and nothing moved across.
+    expect(at(grown, 'api')).toEqual({ x: 40, y: 40 });
+    const files = at(grown, 'files')!, jobs = at(grown, 'jobs')!;
+    expect(files.x).toBe(40);
+    expect(jobs.x).toBe(360);
+    expect(files.y).toBeGreaterThan(200);
+    expect(jobs.y).toBe(files.y);
+    // Said, with what moved.
+    expect(document.querySelector('[data-slot=diagram-status]')?.textContent).toMatch(/moved to make room/);
+    // Undoing the last tick takes its room back with it.
+    fireEvent.click(screen.getByRole('button', { name: 'Undo' }));
+    await settle();
+    expect(document.querySelector('[data-slot=diagram-status]')?.textContent).toMatch(/^Undid: changed FILES/);
+  });
+
+  it('says what Tidy up, undo and redo did, through the diagram’s live region', async () => {
+    const onChange = vi.fn();
+    render(<div style={{ position: 'relative', width: 1200, height: 700 }}><Controlled onChange={onChange} /></div>);
+    await settle();
+    const status = () => document.querySelector('[data-slot=diagram-status]')?.textContent ?? '';
+    fireEvent.click(screen.getByRole('button', { name: 'Tidy up' }));
+    for (let i = 0; i < 100 && !onChange.mock.calls.length; i++) await settle();
+    expect(status()).toMatch(/^Tidied up: 3 services laid out again, \d+ moved\.$/);
+    fireEvent.click(screen.getByRole('button', { name: 'Undo' }));
+    await settle();
+    expect(status()).toBe('Undid: tidied up.');
+    fireEvent.click(screen.getByRole('button', { name: 'Redo' }));
+    await settle();
+    expect(status()).toBe('Redid: tidied up.');
+  });
+
   it('“Add a service” opens the panel on the search, ready to type', async () => {
     render(<div style={{ position: 'relative', width: 1200, height: 700 }}><CloudflareDiagram editable panelPresentation="column" defaultServices={PLACED} defaultEdges={PLACED_EDGES} /></div>);
     await settle();

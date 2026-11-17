@@ -8,7 +8,7 @@ import { Checkbox, CheckboxGroup } from '@/components/ui/checkbox';
 import {
   Combobox, ComboboxContent, ComboboxEmpty, ComboboxInput, ComboboxInputGroup, ComboboxItem, ComboboxList,
 } from '@/components/ui/combobox';
-import { Diagram, DiagramNodeBody, DiagramToolbar, DiagramToolbarButton, type DiagramItem, type DiagramNoun, type DiagramProps } from '@/components/ui/diagram';
+import { Diagram, DiagramNodeBody, DiagramToolbar, DiagramToolbarButton, useDiagram, type DiagramContextValue, type DiagramItem, type DiagramNoun, type DiagramProps } from '@/components/ui/diagram';
 import {
   DiagramFrame, DiagramFrameBar, DiagramFrameBoard, DiagramFrameCover, DiagramFrameCoverHeader, DiagramFramePanel, DiagramFrameSection,
   DiagramFrameTrigger, useDiagramFrame, type DiagramFrameProps,
@@ -85,9 +85,10 @@ export interface CloudflareDiagramProps
    *  are its layout's until then, and an edit writes them down, so that what's saved opens as it was left. */
   onDataChange?: (data: CloudflareSystem, details: CloudflareDiagramChangeDetails) => void;
   /** Services can be moved, added, connected and deleted, and connections and machines changed. Default `false`: a
-   *  picture you can select in and read, with a panel to inspect it. Editing never moves a service you didn't move: a new
-   *  one goes in free room, a connection is routed between its services where they are, and Tidy up (in the toolbar) lays
-   *  the whole system out again, as one step to undo. */
+   *  picture you can select in and read, with a panel to inspect it. Editing never rearranges the board: a new service goes
+   *  in free room, a connection is routed between its services where they are, and where something grows (a label with more
+   *  operations, a longer name) the cards past it are pushed apart by exactly what it needs, rows and columns kept. Tidy up
+   *  (in the toolbar) lays the whole system out again for the board in view, as one step to undo. */
   editable?: boolean;
   selection?: DiagramSelection;
   defaultSelection?: DiagramSelection;
@@ -136,12 +137,25 @@ const sharesMost = (drawn: CloudflareDrawn | null, services: readonly Cloudflare
   return services.filter((s) => ids.has(s.id)).length * 2 > services.length;
 };
 
-/** What's wrong, drawn on what's been laid out: as it isn't anything to lay out again for. */
+/** What's wrong, drawn on what's been laid out (or drawn before): as it isn't anything to lay out again for. What was wrong and
+ *  isn't now is drawn as it is. */
 function markProblems(board: { nodes: DiagramNode<CloudflareServiceNodeData>[]; edges: DiagramEdge<CloudflareServiceEdgeData>[] }, issues: readonly SystemIssue[]) {
   const wrong = cloudflareProblems(issues);
   return {
-    nodes: board.nodes.map((n) => (wrong.services.has(n.id) && n.data ? { ...n, tone: 'destructive' as const, data: { ...n.data, problem: true } } : n)),
-    edges: board.edges.map((e) => (wrong.edges.has(e.id) ? { ...e, tone: 'destructive' as const } : e)),
+    nodes: board.nodes.map((n) => {
+      if (!n.data) return n;
+      if (wrong.services.has(n.id)) return { ...n, tone: 'destructive' as const, data: { ...n.data, problem: true } };
+      if (!n.data.problem && n.tone !== 'destructive') return n;
+      const { problem: _was, ...data } = n.data;
+      const { tone: _tone, ...rest } = n;
+      return { ...rest, ...(!n.data.product ? { tone: 'warning' as const } : null), data };
+    }),
+    edges: board.edges.map((e) => {
+      if (wrong.edges.has(e.id)) return e.tone === 'destructive' ? e : { ...e, tone: 'destructive' as const };
+      if (e.tone !== 'destructive') return e;
+      const { tone: _tone, ...rest } = e;
+      return rest;
+    }),
   };
 }
 
@@ -209,11 +223,32 @@ export function cloudflareBoardProps(system: CloudflareSystem, { icon, issues, e
   };
 }
 
-/** The board's view, for what's added to go in the middle of it. */
-function CanvasHandle({ into }: { into: { current: ReturnType<typeof useCanvas> | null } }) {
+/** The board's view, for what's added to go in the middle of it; and the diagram's live region and its opening view, for
+ *  what the board says and shows after a change it makes itself (Tidy up, undo, room made). */
+function CanvasHandle({ into, diagram }: { into: { current: ReturnType<typeof useCanvas> | null }; diagram: { current: Pick<DiagramContextValue, 'announce' | 'reframe'> | null } }) {
   into.current = useCanvas();
+  const { announce, reframe } = useDiagram();
+  diagram.current = { announce, reframe };
   return null;
 }
+
+/** Each system's drawing, by its services and its edges (a connection keeps the services as they were): what undo and redo
+ *  put back, and what an edit draws from. */
+function useDrawingMemo() {
+  return useRef({
+    map: new WeakMap<readonly CloudflareService[], WeakMap<readonly CloudflareEdge[], CloudflareDrawn>>(),
+    get(system: Pick<CloudflareSystem, 'services' | 'edges'>) { return this.map.get(system.services)?.get(system.edges); },
+    has(system: Pick<CloudflareSystem, 'services' | 'edges'>) { return !!this.get(system); },
+    set(system: Pick<CloudflareSystem, 'services' | 'edges'>, drawn: CloudflareDrawn) {
+      let byEdges = this.map.get(system.services);
+      if (!byEdges) { byEdges = new WeakMap(); this.map.set(system.services, byEdges); }
+      byEdges.set(system.edges, drawn);
+    },
+  }).current;
+}
+
+/** What made room moved, in words: "2 services moved to make room". */
+const roomSaid = (moved: number) => (moved ? ` ${moved} ${moved === 1 ? 'service' : 'services'} moved to make room.` : '');
 
 /** How big an element is, in steps of 40 px, once it's been measured: the board a layout wraps to fill. */
 function useFrameSize(ref: RefObject<HTMLElement | null>): DiagramBoardSize | null {
@@ -297,6 +332,8 @@ export function CloudflareDiagram({
   // Wrapped to fill the frame, not what its panel leaves of it: the panel opens on a selection, and what was just pressed
   // mustn't move. The view pans to keep it in sight instead (Diagram keeps what's selected in view).
   const frameBoard = useFrameSize(frameRef);
+  // Tidy up lays out for the board in view: what a column panel leaves of the frame, when it's open.
+  const visibleBoard = useFrameSize(boardRef);
   const [tidying, setTidying] = useState<{ from: CloudflareSystem; to: CloudflareSystem } | null>(null);
   // What the layout lays out: the system while it has no places, Tidy up's while it runs, else the last it laid out (so
   // undoing back to a laid-out system finds its layout there).
@@ -304,11 +341,12 @@ export function CloudflareDiagram({
   if (!anyPlaced) laidFrom.current = system;
   const layoutSystem = tidying?.to ?? laidFrom.current;
   const draft = useMemo(() => (layoutSystem.services.some((s) => s.at) ? NO_DRAFT : cloudflareBoardData(layoutSystem, { editable })), [layoutSystem, editable]);
-  const layoutBoard = frameBoard && height === 'content' ? { width: frameBoard.width, height: CONTENT_BOARD_HEIGHT } : frameBoard;
+  const fillBoard = tidying ? visibleBoard ?? frameBoard : frameBoard;
+  const layoutBoard = fillBoard && height === 'content' ? { width: fillBoard.width, height: CONTENT_BOARD_HEIGHT } : fillBoard;
   const laid = useDiagramLayout<CloudflareServiceNodeData, CloudflareServiceEdgeData>(draft, { host: boardRef, direction, density, ...(layoutBoard ? { board: layoutBoard } : null) });
   // What's wrong goes on after laying out, as it isn't anything to lay out again for.
   const laidBoard = useMemo(() => markProblems({ nodes: laid.nodes, edges: laid.edges }, issues), [laid.nodes, laid.edges, issues]);
-  const drawings = useRef(new WeakMap<readonly CloudflareService[], CloudflareDrawn>()).current;
+  const drawings = useDrawingMemo();
   // The systems that are this board's own edits (and its undos and redos): what it drew last is what they're drawn from.
   const ours = useRef(new WeakSet<readonly CloudflareService[]>()).current;
   const lastDrawn = useRef<CloudflareDrawn | null>(null);
@@ -319,15 +357,25 @@ export function CloudflareDiagram({
   }, []);
   const kept = useMemo(() => {
     if (!anyPlaced) return null;
-    const was = drawings.get(services) ?? (ours.has(services) || sharesMost(lastDrawn.current, services) ? lastDrawn.current : null);
+    // What it drew for this very system (an edit's, or one undo or redo comes back to) is what it draws, exactly.
+    const same = drawings.get(system);
+    if (same) return { ...markProblems(same, issues), sized: !!same.sized, pushed: 0, knot: false };
+    const was = ours.has(services) || sharesMost(lastDrawn.current, services) ? lastDrawn.current : null;
     return cloudflareKeptBoard(system, was, { editable, issues, text: measure });
   }, [anyPlaced, system, services, editable, issues, measure, drawings, ours]);
-  const drawn: CloudflareDrawn | null = kept ?? (laid.nodes.length ? { ...laidBoard, sized: true } : drawings.get(services) ?? null);
+  const drawn: CloudflareDrawn | null = kept ?? (laid.nodes.length ? { ...laidBoard, sized: true } : drawings.get(system) ?? null);
   useLayoutEffect(() => {
     if (!drawn) return;
     lastDrawn.current = drawn;
-    if (!drawings.has(services)) drawings.set(services, drawn);
-  }, [drawn, services, drawings]);
+    if (!drawings.has(system)) drawings.set(system, drawn);
+  }, [drawn, system, drawings]);
+  // No room could be made (a board placed by hand into a knot): Tidy up is suggested, quietly, until it's dismissed.
+  const knot = !!kept?.knot;
+  const [knotDismissed, setKnotDismissed] = useState(false);
+  useEffect(() => {
+    if (!knot) { setKnotDismissed(false); return; }
+    diagramRef.current?.announce('No room to make here. Tidy up lays the system out again.');
+  }, [knot]);
   const nodes = drawn?.nodes ?? NO_NODES;
   const shownEdges = drawn?.edges ?? NO_DRAWN_EDGES;
   // The preset's other props (the lined board, the noun, a product's own glyph).
@@ -346,19 +394,40 @@ export function CloudflareDiagram({
 
   /* ── One history for the board, the panel and the machines, driven by the Diagram's toolbar and ⌘Z. What's undone here
         is what was done here; something new from outside starts over. ── */
+  // What each of this board's systems was made by, in words, for undo and redo to say what they took back or did again.
+  const madeBy = useRef(new WeakMap<readonly CloudflareEdge[], WeakMap<readonly CloudflareService[], string>>()).current;
+  const said = (to: Pick<CloudflareSystem, 'services' | 'edges'>) => madeBy.get(to.edges)?.get(to.services);
+  const sayMade = (to: Pick<CloudflareSystem, 'services' | 'edges'>, what: string) => {
+    let bySvc = madeBy.get(to.edges);
+    if (!bySvc) { bySvc = new WeakMap(); madeBy.set(to.edges, bySvc); }
+    bySvc.set(to.services, what);
+  };
+  const diagramRef = useRef<Pick<DiagramContextValue, 'announce' | 'reframe'> | null>(null);
   const history = useDiagramHistory<CloudflareSystem>(
     system,
-    (to, details) => setSystem(to, { reason: details.reason, event: details.event }),
+    (to, details) => {
+      const what = details.reason === 'undo' ? said(system) : said(to);
+      const done = setSystem(to, { reason: details.reason, event: details.event });
+      if (done !== false) diagramRef.current?.announce(`${details.reason === 'undo' ? 'Undid' : 'Redid'}: ${what ?? 'the last change'}.`);
+      return done;
+    },
     { isEqual: sameSystem },
   );
-  /** An edit: every service where the board has it (written down, if it wasn't), the change, and one step of history. */
-  const send = (next: Partial<CloudflareSystem>, reason: CloudflareDiagramChangeReason, event?: Event) => {
-    const edit = cloudflareEdit({ ...system, services: [...(next.services ?? services)], edges: [...(next.edges ?? edges)] }, drawn, { editable, issues, text: measure });
+  /** An edit: every service where the board has it (written down, if it wasn't), the change, room made for it, and one step
+   *  of history. `what` says what it was, as undo and redo will (and, with what room it made, said now). */
+  const send = (next: Partial<CloudflareSystem>, reason: CloudflareDiagramChangeReason, what: string, event?: Event) => {
+    const edit = cloudflareEdit({ ...system, services: [...(next.services ?? services)], edges: [...(next.edges ?? edges)] }, drawn, { editable, issues, text: measure, before: system });
     const after = edit.system;
     ours.add(after.services);
-    if (edit.drawn) drawings.set(after.services, edit.drawn);
-    if (setSystem(after, { reason, event })) history.record(system, after);
+    if (edit.drawn) drawings.set(after, edit.drawn);
+    sayMade(after, what);
+    if (setSystem(after, { reason, event })) {
+      history.record(system, after);
+      if (edit.pushed || reason === 'edit' || reason === 'add') diagramRef.current?.announce(`${what[0]!.toUpperCase()}${what.slice(1)}.${roomSaid(edit.pushed)}`);
+    }
   };
+  const nameOf = (id: string) => { const x = byId.get(id); return x ? serviceName(x) : id; };
+  const edgeNameOf = (e: CloudflareEdge) => cloudflareEdgeTitle(e, byId.get(e.to), shownEdges.find((x) => x.id === e.id)?.data?.link ?? null);
 
   const drawnById = useMemo(() => new Map(nodes.map((n) => [n.id, n])), [nodes]);
   const onDiagramDataChange: NonNullable<DiagramProps<CloudflareServiceNodeData, CloudflareServiceEdgeData>['onDataChange']> = (data, details) => {
@@ -385,26 +454,34 @@ export function CloudflareDiagram({
       const edge = newEdge(services, edges, e);
       return edge ? [edge] : [];
     });
-    send({ services: nextServices, edges: [...keptEdges, ...made] }, details.reason, details.event);
+    const movedOne = details.reason === 'move' ? nextServices.find((x) => x !== byId.get(x.id)) : undefined;
+    const what = details.reason === 'connect' && made[0] ? `connected ${nameOf(made[0].from)} to ${nameOf(made[0].to)}`
+      : details.reason === 'move' ? `moved ${movedOne ? serviceName(movedOne) : 'a service'}`
+        : details.reason === 'delete' ? 'deleted the selection' : 'changed the board';
+    send({ services: nextServices, edges: [...keptEdges, ...made] }, details.reason, what, details.event);
     // A connection just made is selected: the panel opens on it, and the board keeps it in view with both its ends.
     if (details.reason === 'connect' && made[0]) select({ nodes: [], edges: [made[0].id] });
   };
-  const changeEdge = (id: string, patch: Partial<CloudflareEdge>) => send({ edges: edges.map((e) => (e.id === id ? { ...e, ...patch } : e)) }, 'edit');
-  const changeService = (id: string, patch: Partial<CloudflareService>) => send({ services: services.map((s) => (s.id === id ? { ...s, ...patch } : s)) }, 'edit');
+  const changeEdge = (id: string, patch: Partial<CloudflareEdge>) => {
+    const e = edges.find((x) => x.id === id);
+    send({ edges: edges.map((x) => (x.id === id ? { ...x, ...patch } : x)) }, 'edit', `changed ${e ? edgeNameOf(e) : id}`);
+  };
+  const changeService = (id: string, patch: Partial<CloudflareService>) => send({ services: services.map((s) => (s.id === id ? { ...s, ...patch } : s)) }, 'edit', `changed ${nameOf(id)}`);
   const removeEdge = (id: string) => {
     if (selection.edges.includes(id)) select(NOTHING_SELECTED);
-    send({ edges: edges.filter((e) => e.id !== id) }, 'delete');
+    const e = edges.find((x) => x.id === id);
+    send({ edges: edges.filter((x) => x.id !== id) }, 'delete', `deleted ${e ? edgeNameOf(e) : id}`);
   };
   const removeService = (id: string) => {
     select(NOTHING_SELECTED);
-    send(removeServices(system, [id]), 'delete');
+    send(removeServices(system, [id]), 'delete', `deleted ${nameOf(id)}`);
   };
   /** A service from the catalog, in free room: beside what's selected (a connection's start), else in the middle of the view. */
   const addFromCatalog = (product: CatalogProduct) => {
     const view = canvasRef.current?.visible();
     const near = selectedService?.id ?? selectedEdge?.from ?? null;
     const { system: next, id } = cloudflareAddService(system, product.id, drawn, { near, center: view ? { x: view.x + view.w / 2, y: view.y + view.h / 2 } : null, text: measure });
-    send(next, 'add');
+    send(next, 'add', `added ${product.name}`);
     select({ nodes: [id], edges: [] });
   };
   /** Tidy up: the whole system laid out again by the read-only pipeline, as one step to undo, its places written down. */
@@ -418,11 +495,20 @@ export function CloudflareDiagram({
     if (!sameSystem(tidying.from, system)) { setTidying(null); return; }
     if (laid.status !== 'ready' || !laid.nodes.length) return;
     const next = cloudflarePlaces(tidying.to, laidBoard);
-    drawings.set(next.services, { ...laidBoard, sized: true });
+    drawings.set(next, { ...laidBoard, sized: true });
     ours.add(next.services);
     laidFrom.current = tidying.to;
     setTidying(null);
-    if (setSystem(next, { reason: 'tidy' })) history.record(system, next);
+    const was = new Map(nodes.map((n) => [n.id, n]));
+    const moved = laidBoard.nodes.filter((n) => { const w = was.get(n.id); return !!n.data?.service && (!w || Math.abs(w.x - n.x) > 0.5 || Math.abs(w.y - n.y) > 0.5); }).length;
+    const what = 'tidied up';
+    sayMade(next, what);
+    // The new layout is shown from where it opens, in the room the chrome leaves.
+    diagramRef.current?.reframe();
+    if (setSystem(next, { reason: 'tidy' })) {
+      history.record(system, next);
+      diagramRef.current?.announce(`Tidied up: ${count} laid out again, ${moved} moved.`);
+    }
   }, [tidying, system, laid.status, laid.nodes.length, laidBoard, drawings, ours, setSystem, history]);
   // A service's machine chip opens its machine.
   const onItemAction = (item: DiagramItem, details: Parameters<NonNullable<DiagramProps['onAction']>>[1]) => {
@@ -503,19 +589,29 @@ export function CloudflareDiagram({
           error={(!anyPlaced || tidying) && laid.error ? laid.error.message : undefined}
           {...(editable ? { editable: true, history, onDataChange: onDiagramDataChange } : null)}
           overlay={(
-            <DiagramToolbar>
-              {editable ? (
-                <>
-                  <ToolbarSeparator />
-                  <DiagramToolbarButton label="Tidy up" shortcut={TIDY_KEYS} icon="grid" disabled={!services.length || !!tidying} onClick={tidy} />
-                </>
+            <>
+              <DiagramToolbar>
+                {editable ? (
+                  <>
+                    <ToolbarSeparator />
+                    <DiagramToolbarButton label="Tidy up" shortcut={TIDY_KEYS} icon="grid" disabled={!services.length || !!tidying} onClick={tidy} />
+                  </>
+                ) : null}
+              </DiagramToolbar>
+              {/* No room could be made for an edit (cards placed by hand into a knot): quietly, Tidy up would. */}
+              {editable && knot && !knotDismissed ? (
+                <div data-slot="cloudflare-tidy-hint" className="absolute end-3 top-3 flex items-center gap-1 rounded-ctl bg-popover py-1 ps-3 pe-1 text-footnote text-popover-foreground shadow-raised">
+                  <span>No room to make here</span>
+                  <Button data-action="tidy-hint" variant="plain" size="sm" onClick={tidy}>Tidy up</Button>
+                  <Button data-action="dismiss-tidy-hint" variant="quiet" size="icon-sm" aria-label="Dismiss" onClick={() => setKnotDismissed(true)}><Icon name="xmark" size={14} /></Button>
+                </div>
               ) : null}
-            </DiagramToolbar>
+            </>
           )}
           minimap={minimap}
           {...diagram}
         >
-          <CanvasHandle into={canvasRef} />
+          <CanvasHandle into={canvasRef} diagram={diagramRef} />
         </Diagram>
         <DiagramFrameBar trigger={<DiagramFrameTrigger>{heading ? 'Details' : editable ? 'Add a service' : 'Services'}</DiagramFrameTrigger>}>
           <span data-slot="cloudflare-status" className="min-w-0 truncate">{status}</span>
