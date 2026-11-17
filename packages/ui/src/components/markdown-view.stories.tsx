@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { MarkdownView, type ReferenceNode } from '@/components/ui/markdown-view';
+import { AUDIO_PLAYER_SOURCE } from '../stories/audio-player-machine';
 import { Panel, Caption } from '../stories/primitive-frame';
 import { Phone } from '../stories/frame';
 
@@ -111,6 +112,22 @@ export const WorkerdConfigOnAPhone: Story = { args: { markdown: WORKERD }, param
 
 /** A config that doesn't read says where, and its source is still a press away. */
 export const WorkerdConfigUnreadable: Story = { args: { markdown: WORKERD.replace('enableSql = true) ],', 'enableSql = true ],') } };
+
+/* An ```xstate fence: the machine on a read-only StateDiagram, as tall as it needs to be read whole (up to 70% of the viewport
+   or 640 px; past that it opens on its top-start corner, or on where it starts when that can't be read with it, and pans).
+   The diagram loads from `@brett_lamy/ui/state-diagram` when it's first shown. */
+const XSTATE = `The audio player, as a machine:
+
+\`\`\`xstate
+${AUDIO_PLAYER_SOURCE}
+\`\`\``;
+
+export const XStateFence: Story = { args: { markdown: XSTATE } };
+
+export const XStateFenceDark: Story = { args: { markdown: XSTATE }, parameters: { dark: true } };
+
+/** In a phone's column it opens on where the machine starts. */
+export const XStateFenceNarrow: Story = { args: { markdown: XSTATE }, parameters: { phone: true } };
 
 /* ── GitBook blocks: what sets MarkdownView apart from plain Markdown, and what most often regresses ── */
 const BLOCKS = `## Install

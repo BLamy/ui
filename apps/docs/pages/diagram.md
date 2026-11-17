@@ -129,7 +129,7 @@ A card is sized from its real, measured content: the header, the description, ea
 
 Lines and arrowheads keep their thickness on screen at any zoom. Text that would be too small to read hides: an edge's label below 40%, and a node's below 25%. It's the same `Canvas` underneath, so scrolling pans, a pinch or ⌘-scroll zooms, and ⌘0 fits.
 
-**Where it opens.** Until the view's moved, a diagram shows all of itself, centered, when that can be read: never past 100%, and never below 87.5%, where a chip's 12 px words are about 11 px and a title's over 11. One that can't be seen whole at that size opens at 87.5% from its **top-start corner**, centered across when its width fits: what a machine or a system says about itself (its name, its Context, what's account-wide) is there, and the rest is a scroll, a drag, ⌘0 or a press on the minimap away. A phone's board opens on that corner too; a simulation's current state, or a selection, is then brought in by the rule above. All of this is worked out in the part of the board nothing covers: clear of a `DiagramToolbar`, the minimap, a `DiagramFrameBar` and a DiagramFrame's drawer, which say how much room they take as they're drawn; and as that changes (a panel opening as a column beside the board, or a drawer over it, and closing), the view follows, until it's moved. What has the eye (below) is kept in that part from the first view on.
+**Where it opens.** Until the view's moved, a diagram shows all of itself, centered, when that can be read: never past 100%, and never below 87.5%, where a chip's 12 px words are about 11 px and a title's over 11. One that can't be seen whole at that size opens at 87.5% from its **top-start corner**, centered across when its width fits: what a machine or a system says about itself (its name, its Context, what's account-wide) is there, and the rest is a scroll, a drag, ⌘0 or a press on the minimap away. With nothing selected or current, where the drawing starts (the first of its root's own cards with an entry marker: a machine's first state) has the eye in the opening view: the corner when the two can be read together, else the start, so a phone opens where a machine begins. A simulation's current state, or a selection, is then brought in by the rule above; a selected edge is kept in view with its two ends beside its label when they can be read together. All of this is worked out in the part of the board nothing covers: clear of a `DiagramToolbar`, the minimap, a `DiagramFrameBar` and a DiagramFrame's drawer, which say how much room they take as they're drawn; and as that changes (a panel opening as a column beside the board, or a drawer over it, and closing), the view follows, until it's moved. What has the eye (below) is kept in that part from the first view on.
 
 **The minimap.** `minimap` puts `CanvasMiniMap` in a corner. `minimap="auto"` (StateDiagram's and CloudflareDiagram's default) puts it there only while a good part of the diagram is out of view at a readable size (a whole fit would be under 70%), on a board with room for it (720 × 600 px or more: not a phone's, nor a docs page's fence), above a frame's bar: the rest of a big diagram is then one press away, on the minimap or on Fit.
 
@@ -268,7 +268,7 @@ Those that edit need `editable`. Those that select need `selectable`, which is o
 
 ## Ports and connecting
 
-A port is a named place on a node's side, and an edge can join two of them: `at` says how far along the side, as a share of it, or `offset` in board units from its top or left end, for a port that stays where it is however tall its node grows (on a header strip). With `connectable`, which `editable` turns on, a drag from a port draws a connection, which snaps to the nearest port within 24 px on screen, even one under another node. Ports at the same place are one place to connect: the connection is offered between the first of them `isValidConnection` takes, and so is one dropped on a node rather than a port (its first port that's allowed), with the reason the first would have been refused when none is. A node with no ports gets one on each side once it's the only thing selected, and a selected edge has a handle on each end to move it.
+A port is a named place on a node's side, and an edge can join two of them: `at` says how far along the side, as a share of it, or `offset` in board units from its top or left end, for a port that stays where it is however tall its node grows (on a header strip). With `connectable`, which `editable` turns on, a drag from a port draws a connection, which snaps to the nearest port within 24 px on screen, even one under another node. Ports at the same place are one place to connect, at either end: the connection is offered between the first pair of them `isValidConnection` takes, in the order each node lists its ports (whichever of them the pointer is nearest, as they're all under it), and so is one dropped on a node rather than a port (its first port that's allowed), with the reason the first would have been refused when none is. A node with no ports gets one on each side once it's the only thing selected, and a selected edge has a handle on each end to move it.
 
 {% demo src="diagram/connecting" %}
 
@@ -281,7 +281,7 @@ const nodes = [{
 <Diagram editable nodes={nodes} edges={edges} onDataChange={save} isValidConnection={(c) => c.to !== 'locked' || 'That one is locked.'} />
 ```
 
-`isValidConnection` returns true, false, or the reason in words. While dragging, an invalid target turns the line and the target the destructive color, dashed (so it's never color alone), and says why, and it refuses on release. Without one, `checkConnection` keeps to the ordinary rules: a port can't connect to itself, nothing's connected twice, a connection goes the way its ports' `direction` goes, and ports of a `kind` only join that kind. A self-loop's fine. `createEdge` makes the edge for a new connection, and the default has only its ends and an id.
+`isValidConnection` returns true, false, or the reason in words. While dragging, an invalid target turns the line and the target the destructive color, dashed, and the reason shows beside the target (`diagram-refusal`: a glyph and the words, in the tooltip's look, so it's never color alone), as well as being said; it refuses on release, and the reason stays a moment where you let go, until your next press or key. The line on its way goes round the cards in its way, as a drawn edge does. Without one, `checkConnection` keeps to the ordinary rules: a port can't connect to itself, nothing's connected twice, a connection goes the way its ports' `direction` goes, and ports of a `kind` only join that kind. A self-loop's fine. `createEdge` makes the edge for a new connection, and the default has only its ends and an id.
 
 A port's `side` is `top`, `right`, `bottom` or `left`: physical words, not `start` and `end`, as a board doesn't mirror in a right-to-left language. Its dot is the same size on screen until the board's fitted so far out that dots would crowd their node (a phone's view of a big system); from there it shrinks with the board.
 
@@ -328,7 +328,7 @@ With no nodes, the shared [EmptyState](#/empty-state) shows over the board ("Not
 
 - The root is a `group` named by `aria-label`, with `aria-roledescription="diagram"`; the board inside is the one tab stop, an `application` named "<name> board" and described by its keys.
 - Every node and edge is a `button` (out of the tab order: the keys move to it) whose name says what it is and what it connects to. Selected ones have `aria-pressed="true"` when the diagram is `selectable`; current ones `aria-current="true"`.
-- Each step of connecting by keyboard, a refusal and its reason, and a delete are announced in a polite status. A refused connection is drawn dashed as well as in the destructive color.
+- Each step of connecting by keyboard, a refusal and its reason, and a delete are announced in a polite status. A refused connection is drawn dashed as well as in the destructive color, and its reason is shown beside the target too (hidden from a screen reader, which has heard it).
 - Focus never falls out: when what has focus is deleted, it goes to what's nearest. Escape drops a gesture, then the selection, then goes back to the board.
 - Nothing animates: the view moves when you move it, so there's nothing for reduced motion to turn off.
 - Focus, selection and what's current are told apart by shape (a ring past a gap, a tint and a line, a bar), not only by color.
@@ -363,6 +363,7 @@ With no nodes, the shared [EmptyState](#/empty-state) shows over the board ("Not
 | `loading` | `false` | The data isn't here yet: a status, and no empty state. |
 | `error` | — | Why it can't be drawn: an alert under the toolbar's row, in place of the empty state. |
 | `autoSize` | `false` | Size each node to its content (header, description, sections), around its center. |
+| `animate` | `false` | Data from outside that moves things (a layout run again, Tidy up, undo) moves them over a moment: cards slide to their new places and routes turn into their new ones. Never with reduced motion, nor under a drag. StateDiagram and CloudflareDiagram turn it on. |
 | `cull` | above 200 | Draw only what's near the view. |
 | `minimap` | `false` | `CanvasMiniMap` in a corner, or its props (`side`, `align`); `'auto'` only while a good part of the diagram is out of view at a readable size, on a board of 720 × 600 px or more. |
 | `renderNode` | `DiagramNodeBody` | Draws a node's insides. Keep it stable, as nodes memoize on it. |
@@ -382,8 +383,10 @@ With no nodes, the shared [EmptyState](#/empty-state) shows over the board ("Not
 | --- | --- | --- |
 | `side`, `align` | `bottom` (`top` in a DiagramFrame), `start` | Where it floats over the board. A fit leaves room for it. |
 | `variant`, `size` | `floating`, `sm` | As on `Toolbar`. |
-| `children` | — | More tools after its own. |
+| `children` | — | More tools after its own: `ToolbarSeparator` and `DiagramToolbarButton`. |
 | `aria-label` | "Diagram tools" | Its name. |
+
+`DiagramToolbarButton` is one of its tools for a tool of your own: `label` (its tooltip and its name), `icon` (a kit `Icon` name), `shortcut` (shown in its tooltip; handle the keys yourself), `disabled`, `onClick(event)`. CloudflareDiagram's Tidy up is one.
 
 ### `<DiagramNodeBody>`
 

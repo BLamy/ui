@@ -14,7 +14,7 @@
    Nothing here renders, so a server, a layout and a test read it as it is. */
 import type { CatalogProduct } from '@/lib/cloudflare-catalog';
 import {
-  catalogProduct, linkOf, serviceIconName, servicePorts,
+  catalogBinding, catalogProduct, linkOf, serviceIconName, servicePorts,
   type CloudflareEdge, type CloudflareService, type ServiceLink,
 } from '@/lib/cloudflare-services';
 import {
@@ -25,7 +25,8 @@ import {
   CONTAINER_PADDING, ELBOW_GAP, edgeLabelSize, nodeAnatomy, placeItemPorts,
   type DiagramEdge, type DiagramNode, type DiagramSection, type DiagramSectionItem,
 } from '@/lib/diagram-model';
-import { estimateText } from '@/lib/diagram-text';
+import { freePlace, keepLayout } from '@/lib/diagram-layout';
+import { estimateText, type TextMeasurer } from '@/lib/diagram-text';
 import type { Rect } from '@/lib/canvas-math';
 import type { IconName } from '@/lib/icon';
 
@@ -89,15 +90,22 @@ const sectionsOf = (sections: readonly CloudflareFactSection[]): DiagramSection[
   };
 });
 
+/** What a connection is called, on its label, at the head of its panel and to a screen reader alike: its name on `env`, or
+ *  what it is ("consumer", "event notification", a handler's or a surface's name, or its binding in the catalog's words). */
+export function cloudflareEdgeTitle(edge: CloudflareEdge, to: CloudflareService | undefined, link: ServiceLink | null): string {
+  if (edge.via === 'queue-consumer') return 'consumer';
+  if (link?.kind === 'events') return 'event notification';
+  if (link?.kind === 'handler' || link?.kind === 'surface') return link.label;
+  return edgeBinding(edge, to) ?? link?.label ?? catalogBinding(edge.via.split('.')[0] ?? '')?.friendlyName ?? edge.via;
+}
+
 /** What a connection's label says: its title (what it's called on `env`, or what it is), a glyph, and its chips. */
 function cloudflareEdgeLabel(edge: CloudflareEdge, to: CloudflareService | undefined, link: ServiceLink | null): Pick<DiagramEdge, 'title' | 'icon' | 'sections'> {
   const items: DiagramSectionItem[] = [];
   const chip = (id: string, title: string, icon: IconName, description?: string) => items.push({ id, title, icon, ...(description ? { description } : null) });
-  const name = edgeBinding(edge, to);
-  let title = name ?? link?.label ?? edge.via;
+  const title = cloudflareEdgeTitle(edge, to, link);
   let icon: IconName | undefined;
   if (edge.via === 'queue-consumer') {
-    title = 'consumer';
     icon = 'tray';
     const c = edge.consumer ?? {};
     if (c.batchSize !== undefined) chip('batch', `${c.batchSize} per batch`, 'square-on-square');
@@ -107,10 +115,7 @@ function cloudflareEdgeLabel(edge: CloudflareEdge, to: CloudflareService | undef
     if (c.concurrency !== undefined) chip('concurrency', `${c.concurrency} at once`, 'layers');
     if (c.deadLetterQueue) chip('dead-letter', c.deadLetterQueue, 'archivebox', 'dead letters');
   } else if (link?.kind === 'events') {
-    title = 'event notification';
     icon = 'bell';
-  } else if (link?.kind === 'handler' || link?.kind === 'surface') {
-    title = link.label;
   }
   if (edge.via === 'queues') chip('producer', 'producer', 'tray');
   if (edge.deliveryDelay !== undefined) chip('delay', `${edge.deliveryDelay}s delay`, 'clock');
@@ -286,6 +291,85 @@ export function cloudflareBoardBounds(system: CloudflareSystem): Rect | null {
   if (!system.services.length || !system.services.every((s) => s.at)) return null;
   const root = cloudflareBoardData(system).nodes.find((n) => n.id === CLOUDFLARE_SYSTEM_NODE);
   return root ? { x: root.x, y: root.y, w: root.w, h: root.h } : null;
+}
+
+/* ── Editing: what's there stays where it is ── */
+
+/** What a board drew: its cards and boxes where they are, and its edges with their routes and labels. `sized`: its cards
+ *  are the size they're drawn at (a layout's, in measured words), not to be sized to their words again. */
+export interface CloudflareDrawn {
+  nodes: DiagramNode<CloudflareServiceNodeData>[];
+  edges: DiagramEdge<CloudflareServiceEdgeData>[];
+  sized?: boolean;
+}
+
+/** The system with each service that has no place yet where the board drew it: what every edit writes, so that its places
+ *  are the system's from the first edit on (a laid-out board's places are its layout's until then). A service with a place
+ *  keeps it (one just moved, one just added), and one the board didn't draw has none. */
+export function cloudflarePlaces(system: CloudflareSystem, drawn: Pick<CloudflareDrawn, 'nodes'> | null): CloudflareSystem {
+  if (!drawn) return system;
+  const at = new Map(drawn.nodes.flatMap((n) => (n.data?.service ? [[n.id, { x: n.x, y: n.y }] as const] : [])));
+  let changed = false;
+  const services = system.services.map((s) => {
+    const p = at.get(s.id);
+    if (!p || s.at) return s;
+    changed = true;
+    return { ...s, at: p };
+  });
+  return changed ? { ...system, services } : system;
+}
+
+/**
+ * A service of the catalog's added to a system, placed in free room on what the board drew (`freePlace`): next to `near` (the
+ * selected card, or the card it's connected from) or else nearest `center` (the middle of the view); never on a card, a label,
+ * a marker or a box's header and sections, and in the system's box, which grows to hold it. Every other service keeps its
+ * place, written down if it wasn't. With nothing drawn, it has no place, for the layout to give it one.
+ */
+export function cloudflareAddService(system: CloudflareSystem, kind: string, drawn: CloudflareDrawn | null, { near, center, text: measure = estimateText }: { near?: string | null; center?: { x: number; y: number } | null; text?: TextMeasurer } = {}): { system: CloudflareSystem; id: string } {
+  const taken = new Set(system.services.map((s) => s.id));
+  let id = kind;
+  for (let n = 2; taken.has(id); n++) id = `${kind}-${n}`;
+  const placed = cloudflarePlaces(system, drawn);
+  const service: CloudflareService = { id, kind };
+  if (!drawn?.nodes.length) return { system: { ...placed, services: [...placed.services, service] }, id };
+  const node = cloudflareBoardData({ ...placed, services: [...placed.services, service] }, { editable: true }).nodes.find((n) => n.id === id)!;
+  const size = nodeAnatomy(node, measure);
+  const at = freePlace(drawn, size, { parent: CLOUDFLARE_SYSTEM_NODE, near, center, text: measure });
+  return { system: { ...placed, services: [...placed.services, { ...service, at }] }, id };
+}
+
+/**
+ * What an editable board draws for a system whose services have places, given what it drew before (`was`): the same cards
+ * where they were, the boxes grown round what they hold, the routes that still join the same places kept, and what's new
+ * routed in among them (`keepLayout`). With nothing drawn before, the system as placed (`placeInLayers`), for the Diagram to
+ * size and route. `text` sizes what's new or changed.
+ */
+export function cloudflareKeptBoard(system: CloudflareSystem, was: CloudflareDrawn | null, { editable = false, issues, title, text: measure = estimateText }: CloudflareBoardDataOptions & { text?: TextMeasurer } = {}): CloudflareBoardData & { sized: boolean } {
+  const board = cloudflareBoardData(placeInLayers(system, { editable }), { editable, issues, title });
+  if (!was) return { ...board, sized: false };
+  const kept = keepLayout(was, board, { text: measure });
+  return { nodes: kept.nodes, edges: kept.edges, sized: !!was.sized };
+}
+
+/**
+ * An edit, as CloudflareDiagram makes it: every service written down where the board has it (`cloudflarePlaces`), the board
+ * drawn again from what it drew (`cloudflareKeptBoard`), and the places it drew written back, so the system says where
+ * everything is (a card that grew into its neighbour moved into free room, say). With nothing drawn yet, the system as it
+ * is, for the layout.
+ */
+export function cloudflareEdit(system: CloudflareSystem, drawn: CloudflareDrawn | null, options: CloudflareBoardDataOptions & { text?: TextMeasurer } = {}): { system: CloudflareSystem; drawn: CloudflareDrawn | null } {
+  const placed = cloudflarePlaces(system, drawn);
+  if (!drawn || !placed.services.some((s) => s.at)) return { system: placed, drawn: null };
+  const kept = cloudflareKeptBoard(placed, drawn, options);
+  const at = new Map(kept.nodes.flatMap((n) => (n.data?.service ? [[n.id, n] as const] : [])));
+  let changed = false;
+  const services = placed.services.map((s) => {
+    const n = at.get(s.id);
+    if (!n || (s.at && s.at.x === n.x && s.at.y === n.y)) return s;
+    changed = true;
+    return { ...s, at: { x: n.x, y: n.y } };
+  });
+  return { system: changed ? { ...placed, services } : placed, drawn: { nodes: kept.nodes, edges: kept.edges, sized: kept.sized } };
 }
 
 /* ── A place for each ── */

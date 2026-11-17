@@ -2178,10 +2178,10 @@ details[open] > .docstream-tui__source-trigger .docstream-tui__caret {
   grid-template-columns: minmax(0, 1fr);
 }
 
-/* An xstate fence's board: the library's StateDiagram, read-only, fitted to the machine (XStateDiagram.tsx). */
+/* An xstate fence's board: the library's StateDiagram, read-only, as tall as the machine needs (its `height="content"`, up to
+   70% of the viewport or 640 px), with nothing over the drawing at rest (XStateDiagram.tsx). */
 .docs-xstate-board {
   position: relative;
-  height: 520px;
   overflow: hidden;
   border: 1px solid var(--gb-border);
   border-radius: calc(var(--gb-radius, 12px) - 2px);
@@ -2189,6 +2189,7 @@ details[open] > .docstream-tui__source-trigger .docstream-tui__caret {
 
 .docs-xstate-board.docs-mermaid {
   padding: 0;
+  min-height: 200px;
 }
 
 .docs-xstate-result > .docs-mermaid-error {
@@ -2199,11 +2200,11 @@ details[open] > .docstream-tui__source-trigger .docstream-tui__caret {
   color: var(--gb-danger);
 }
 
-/* The board starts with the whole system in view, between the zoom tools and the frame's bar; on a narrow card, at a
-   size that can be read, from the first services (CapnpDiagram.tsx, startView). */
+/* A capnp fence's board: as tall as the system needs (the CloudflareDiagram's `height="content"`, up to 70% of the viewport or
+   640 px), its bar docked under the drawing; it opens on all of it when that can be read, else its top-start corner
+   (CapnpDiagram.tsx). */
 .docs-capnp-board {
   position: relative;
-  height: 420px;
   overflow: hidden;
   border: 1px solid var(--gb-border);
   border-radius: calc(var(--gb-radius, 12px) - 2px);
@@ -2211,6 +2212,7 @@ details[open] > .docstream-tui__source-trigger .docstream-tui__caret {
 
 .docs-capnp-board.docs-mermaid {
   padding: 0;
+  min-height: 200px;
 }
 
 /* Why a config can't be drawn, in the danger ink only: a host's own `pre` box (MarkdownView's code panel) isn't for it. */

@@ -347,15 +347,16 @@ export const Connecting: Story = {
   play: press(['Home', 'c', 'ArrowRight']),
 };
 
-/** A connection `isValidConnection` refuses: the route and the target in the destructive color, dashed, and why, read out. */
+/** A connection `isValidConnection` refuses: the route and the target in the destructive color, dashed, and why, beside the
+ *  target (a glyph and words, as well as read out). */
 export const InvalidConnection: Story = {
   render: () => <Phone w={500} h={240}><Diagram defaultNodes={PORTED} defaultEdges={PORTED_EDGES} editable isValidConnection={(c) => (c.to === 'd1' ? 'D1 takes queries from one Worker only.' : true)} /></Phone>,
-  play: press(['Home', 'c', 'ArrowUp']),
+  play: press(['Home', 'c', 'ArrowRight']),
 };
 
 export const InvalidConnectionDark: Story = {
   render: () => <Phone w={500} h={240} appearance="dark"><Diagram defaultNodes={PORTED} defaultEdges={PORTED_EDGES} editable isValidConnection={(c) => (c.to === 'd1' ? 'D1 takes queries from one Worker only.' : true)} /></Phone>,
-  play: press(['Home', 'c', 'ArrowUp']),
+  play: press(['Home', 'c', 'ArrowRight']),
 };
 
 /** What's current (a machine's state, the edge it just took), apart from what's selected. */

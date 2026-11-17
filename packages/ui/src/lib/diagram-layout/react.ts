@@ -125,7 +125,8 @@ export function useDiagramLayout<N = unknown, E = unknown>(draft: DiagramDraft<N
   return {
     nodes: now?.nodes ?? NOTHING, edges: now?.edges ?? NOTHING,
     bounds: shaped?.bounds, engine: result?.engine, ms: result?.ms,
-    status: state.status, error: state.error,
+    // Of the draft as it is now: a new graph is `working` from the render that brings it, before its run has started.
+    status: fresh || state.status === 'error' ? state.status : result ? 'working' : 'pending', error: state.error,
   };
 }
 

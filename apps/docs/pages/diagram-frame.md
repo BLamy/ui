@@ -118,6 +118,7 @@ A field that changes something once you're done with it, rather than on every ke
 | `presentation` | `auto` | `auto` · `column` · `drawer` · `push` · `cover`. |
 | `side` | `end` | `start` · `end` (logical). |
 | `breakpoints` | `{ medium: 440, regular: 720 }` | The widths, px, the frame's size classes start at. |
+| `height` | `fill` | `fill`: it fills the nearest positioned box. `content`: as tall as its Diagram's drawing needs to be read whole (at 100%, or down to the readable 87.5% to fit across), between its `min-height` (200 px) and `max-height` (`min(70vh, 640px)`; set your own with a class), past which the drawing opens on its top-start corner and pans; its bar is docked under the board, a strip of its own, never over the drawing. For a diagram in a document. |
 | `className`, `style`, `ref`, … | — | The root `div`'s props. |
 
 ### DiagramFramePanel
@@ -129,6 +130,7 @@ A field that changes something once you're done with it, rather than on every ke
 | `width` | 288 | Its width as a column (a drawer is at least 300). |
 | `modal` | `false` | Whether a drawer dims and blocks the board. |
 | `actions` | — | Things to do after the title (a ToolbarButton, a menu). |
+| `initialFocus` | the body | What takes focus when its trigger opens it: a selector in its body (CloudflareDiagram's search, for "Add a service"). |
 | `className` | — | The pane's box. |
 | `ref`, `id`, `data-*`, … | — | The panel's element (`data-slot="diagram-frame-panel"`, around the pane). |
 

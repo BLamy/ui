@@ -188,6 +188,10 @@ export const AudioPlayerSimulating: Story = {
   render: () => <Page w={800} h={1000} appearance="dark"><StateDiagram source={AUDIO_PLAYER_SOURCE} simulate defaultPanelOpen={false} aria-label="Audio Player" /></Page>,
 };
 
+export const AudioPlayerSimulatingLight: Story = {
+  render: () => <Page w={800} h={1000} appearance="light"><StateDiagram source={AUDIO_PLAYER_SOURCE} simulate defaultPanelOpen={false} aria-label="Audio Player" /></Page>,
+};
+
 export const AudioPlayerPhone: Story = {
   render: () => <Page w={390} h={844}><StateDiagram source={AUDIO_PLAYER_SOURCE} aria-label="Audio Player" /></Page>,
 };

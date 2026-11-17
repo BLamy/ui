@@ -24,6 +24,10 @@ interface DiagramChromeScope {
   container: RefObject<HTMLElement | null>;
   /** The scope is a DiagramFrame's board, whose foot is the frame's bar. */
   frame: boolean;
+  /** How tall the board in it would be for its drawing to be read whole (`diagramContentHeight`), px, as its Diagram says:
+   *  what a frame sized to its content (`height="content"`) takes. */
+  content: number | null;
+  reportContent: (px: number | null) => void;
 }
 
 const DiagramChromeContext = createContext<DiagramChromeScope | null>(null);
@@ -48,7 +52,9 @@ export function useDiagramChromeScope(container: RefObject<HTMLElement | null>, 
     for (const { side, px } of Object.values(reports)) out[side] = Math.max(out[side], px);
     return out;
   }, [reports]);
-  return useMemo(() => ({ insets, report, container, frame }), [insets, report, container, frame]);
+  const [content, setContent] = useState<number | null>(null);
+  const reportContent = useCallback((px: number | null) => setContent((was) => (was === px || (was !== null && px !== null && Math.abs(was - px) < 0.5) ? was : px)), []);
+  return useMemo(() => ({ insets, report, container, frame, content, reportContent }), [insets, report, container, frame, content, reportContent]);
 }
 
 export function DiagramChromeProvider({ value, children }: { value: DiagramChromeScope; children?: ReactNode }) {

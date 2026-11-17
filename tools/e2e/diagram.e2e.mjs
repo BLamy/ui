@@ -1903,14 +1903,26 @@ test.describe('StateDiagram edits', () => {
 
   test('dragging an end of a transition moves that end, and only if it can', async ({ page }) => {
     await open(page);
+    /** Where a label is once it's stopped moving: an edit lays the machine out again, and things slide to their places. */
+    const stillLabel = async (text) => {
+      const label = page.locator('[data-slot=diagram-edge-label]', { hasText: text });
+      let was = JSON.stringify(await label.boundingBox());
+      for (let i = 0; i < 20; i++) {
+        await page.waitForTimeout(100);
+        const now = JSON.stringify(await label.boundingBox());
+        if (now === was) break;
+        was = now;
+      }
+      return JSON.parse(was);
+    };
     /** Presses on an edge's label, which is the same as pressing on the edge. */
     const pressLabel = async (text) => {
-      const b = await page.locator('[data-slot=diagram-edge-label]', { hasText: text }).boundingBox();
+      const b = await stillLabel(text);
       await page.mouse.click(b.x + b.width / 2, b.y + b.height / 2);
     };
     const dragEnd = async (end, to) => {
       const dot = await page.locator(`[data-slot=diagram-edge-end][data-end=${end}]`).boundingBox();
-      const b = await node(page, to).boundingBox();
+      const b = await still(page, to);
       await page.mouse.move(dot.x + dot.width / 2, dot.y + dot.height / 2);
       await page.mouse.down();
       await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2, { steps: 8 });

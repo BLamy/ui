@@ -70,13 +70,14 @@ const DEFAULT_NAME = "workerd config"
 
 type System = ReturnType<Cloudflare["placeInLayers"]>
 
-/** The board: the system on a read-only CloudflareDiagram. Where it starts is the diagram's: all of it when that can be read,
- *  else across its width from the top, where requests come in, clear of its toolbar and its bar. */
+/** The board: the system on a read-only CloudflareDiagram, as tall as it needs to be read whole (up to 70% of the viewport or
+ *  640 px), with its bar docked under it. Where it starts is the diagram's: all of it when that can be read, else its top-start
+ *  corner, clear of its toolbar. */
 function Board({ cloudflare, system, name, appearance }: { cloudflare: Cloudflare; system: System; name: string; appearance: CapnpAppearance | undefined }) {
   const [measureScheme, scheme] = useColorScheme(appearance)
   return (
     <div ref={measureScheme} className={`docs-capnp-board ${scheme}`} data-appearance={scheme}>
-      <cloudflare.CloudflareDiagram services={system.services} edges={system.edges} title={name} defaultPanelOpen={false} aria-label={`${name}, as Cloudflare services`} />
+      <cloudflare.CloudflareDiagram services={system.services} edges={system.edges} title={name} defaultPanelOpen={false} height="content" aria-label={`${name}, as Cloudflare services`} />
     </div>
   )
 }

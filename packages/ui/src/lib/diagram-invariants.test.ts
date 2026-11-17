@@ -6,18 +6,23 @@
    own sizing and `drawDiagram`, and its opening view. Each drawing is held to seven rules:
 
    1. attached: an edge starts and ends on (within 1.5 of) the border of what it claims (a port, a box's hairline under its
-      sections for its own child, the label it forks from); the arrowhead is its last point;
-   2. clear: no run goes through a card, an entry marker, a box's header strip and sections, or along (within a lane of) a
-      border or a region's divider it doesn't cross; what's in a box keeps clear of its walls and header;
+      sections for its own child, the label it forks from); the arrowhead is its last point; ends of different edges on one
+      side of a card are at least 8 apart unless they share a port (no arrowhead on another edge's start);
+   2. clear: no run goes through a card, an entry marker, a box's header strip and sections, or along a box's wall (within a
+      lane, 10), its hairline (6) or a region's divider it doesn't cross; what's in a box keeps clear of its walls and header;
    3. its own lane and label: no two edges run within a lane of each other for longer than a crossing; each label is on its
       own route, which runs through it, and nothing else is: no other route, card, label, header or border;
    4. no U-turn: an edge that leaves (or enters) by a side not facing the other end, when a route between facing sides would
       take fewer bends, is going round;
    5. the frame is used: an editable drawing's places are its read-only ones; a drawing too big to read whole is shaped like
       its view (within 2×) or fills its width at the readable zoom;
-   6. the first view shows the top-start corner (a root's header and sections), and what has the eye with it, or that alone
-      when the two can't both be read at once;
+   6. the first view shows the top-start corner (a root's header and sections), and what has the eye with it (with nothing
+      selected or current, where it starts: its root's first card with an entry marker), or that alone when the two can't
+      both be read at once;
    7. what's announced is what's drawn: a box "holding N things" holds N of them.
+
+   After the matrix: edit sequences on every Cloudflare example and on a machine (see "Editing"), and the docstream fences in
+   a document's column (see "In a document").
 
    The frames' chrome (a toolbar over the top, a frame's bar along the foot, the 288 px column panel) is the kit's, measured
    in a browser: see `CHROME`. Text is estimated, as on a server; a browser's measured text is checked by eye and in e2e. */
@@ -29,18 +34,19 @@ import { EDGES as EDGE_KINDS, EDGE_NODES, KINDS, STATECHART_LIKE, SYSTEM_LIKE } 
 import { AUDIO_PLAYER_SOURCE } from '../stories/audio-player-machine';
 import { SEVERAL_TARGETS, TRANSITION_FORMS } from '../stories/state-machines';
 import { uploadMachine } from '../stories/upload-machine';
-import type { Pt, Rect } from './canvas-math';
-import { cloudflareBoardData, cloudflareNoun, CLOUDFLARE_SYSTEM_NODE, placeInLayers } from './cloudflare-board';
+import type { Pt, Rect, Viewport } from './canvas-math';
+import { cloudflareAddService, cloudflareBoardData, cloudflareEdit, cloudflareKeptBoard, cloudflareNoun, cloudflarePlaces, CLOUDFLARE_SYSTEM_NODE, placeInLayers, type CloudflareDrawn } from './cloudflare-board';
 import { cloudflareBoardProps } from '../components/cloudflare-diagram';
 import { readWorkerdConfig } from './cloudflare-workerd';
-import type { CloudflareSystem } from './cloudflare-system';
-import type { CloudflareEdge, CloudflareService } from './cloudflare-services';
-import { AVOID_UP_TO, drawDiagram, drawingCorner, firstView, keepInView, type DiagramDrawing } from './diagram-drawing';
+import { removeServices, searchCatalog, validateSystem, type CloudflareSystem } from './cloudflare-system';
+import { linkBetween, newEdge, servicePorts, type CloudflareEdge, type CloudflareService } from './cloudflare-services';
+import { AVOID_UP_TO, diagramContentHeight, diagramEye, diagramStartEye, drawDiagram, drawingCorner, firstView, keepInView, type DiagramDrawing } from './diagram-drawing';
 import { describeNode, edgesByNode } from './diagram-keyboard';
 import { createDiagramLayoutEngine, finishLayout, runLayout, toElkGraph, type DiagramBoardSize, type DiagramDraft, type DiagramLayoutResult } from './diagram-layout';
 import { onLayout } from './diagram-layout/react';
 import { DIAGRAM_LEGIBLE_ZOOM, growNodesToText, holdsNodes, indexDiagram, isInside, nodeAnatomy, portPoint, sizeNodesToText, type DiagramEdge, type DiagramNode } from './diagram-model';
 import { estimateText } from './diagram-text';
+import { addState, addTransition, renameState } from './state-diagram-edit';
 import { machineToDraft } from './state-diagram-model';
 import { parseXState } from './state-diagram-source';
 
@@ -192,6 +198,8 @@ const ALONG = 10;
 const SHARED = 20;
 /** What a box keeps between its walls (and its header and sections) and what it holds. */
 const INSIDE_CLEAR = 8;
+/** How far apart the ends of two different edges on one side of a card keep (round 9's F4). */
+const END_APART = 8;
 
 interface Seg { a: Pt; b: Pt; i: number }
 const segs = (pts: readonly Pt[]): Seg[] => pts.slice(1).map((b, i) => ({ a: pts[i]!, b, i }));
@@ -301,6 +309,34 @@ function check(d: DiagramDrawing): string[] {
     end(a, pts[0]!, pts[1]!, edge.fromPort, b, 'start');
     end(b, pts[pts.length - 1]!, pts[pts.length - 2]!, edge.toPort, a, 'end');
   }
+  // Ends of different edges on one side of a card keep apart (unless they share a port, which spreads them by a few
+  // units): an arrowhead that lands where another edge leaves reads as one line through the wall.
+  const sideEnds = new Map<string, { edge: DiagramEdge; p: Pt; which: 'start' | 'end'; port?: string }[]>();
+  for (const { edge, pts } of routes) {
+    if (pts.length < 2 || edge.from === edge.to) continue;
+    for (const [which, id, p, port] of [['start', edge.from, pts[0]!, edge.fromPort], ['end', edge.to, pts[pts.length - 1]!, edge.toPort]] as const) {
+      if (which === 'start' && edge.forkOf) continue;
+      const n = index.byId.get(id);
+      if (!n || n.kind === 'marker' || fromBorder(p, n) > ATTACH) continue;
+      // A box's own edge to what it holds starts under its sections, not on a side.
+      const other = index.byId.get(which === 'start' ? edge.to : edge.from);
+      if (holdsNodes(n) && other && isInside(index, other.id, n.id)) continue;
+      const side = Math.abs(p.y - n.y) <= ATTACH ? 'top' : Math.abs(p.y - n.y - n.h) <= ATTACH ? 'foot' : Math.abs(p.x - n.x) <= ATTACH ? 'start' : 'end';
+      const key = `${n.id}\0${side}`;
+      sideEnds.set(key, [...(sideEnds.get(key) ?? []), { edge, p, which, port }]);
+    }
+  }
+  for (const [key, list] of sideEnds) {
+    for (let i = 0; i < list.length; i++) for (let j = i + 1; j < list.length; j++) {
+      const u = list[i]!, v = list[j]!;
+      if (u.edge.id === v.edge.id || (u.port && u.port === v.port)) continue;
+      const apart = Math.hypot(u.p.x - v.p.x, u.p.y - v.p.y);
+      if (apart >= END_APART) continue;
+      const [id, side] = key.split('\0') as [string, string];
+      const what = u.which !== v.which ? `${(u.which === 'end' ? u : v).edge.id}’s arrowhead lands on ${(u.which === 'end' ? v : u).edge.id}’s start` : `${u.edge.id} and ${v.edge.id} ${u.which === 'end' ? 'arrive' : 'leave'} at one point`;
+      out.push(`1 attached: ${what} on ${nameOf(index.byId.get(id))}’s ${side} (${Math.round(apart)} apart at ${fmt(u.p)})`);
+    }
+  }
 
   // 2. Clear: of cards, markers, heads, borders and dividers.
   for (const { edge, pts } of routes) {
@@ -311,7 +347,8 @@ function check(d: DiagramDrawing): string[] {
         const head = headOf(box);
         if (box.kind !== 'region' && head.h > 0 && runIn(s, shrink(head, ATTACH))) out.push(`2 clear: ${edge.id} runs through ${nameOf(box)}’s header and sections (${fmt(s.a)}→${fmt(s.b)})`);
         for (const line of lines(box)) {
-          const by = alongBy(s, line, LANE);
+          // A lane off a wall (round 9's F8: a fork 9 px inside `playing`'s); a hairline, J4's 6.
+          const by = alongBy(s, line, line.i === 4 ? LANE : EDGE_LANE);
           if (by > ALONG) out.push(`2 clear: ${edge.id} runs ${Math.round(by)} along ${nameOf(box)}’s ${['top', 'foot', 'start side', 'end side', 'hairline'][line.i]} (${fmt(s.a)}→${fmt(s.b)})`);
         }
       }
@@ -401,6 +438,10 @@ function checkView(d: DiagramDrawing, frame: Frame, panel: boolean, eyeIds: { no
     must = union(eyeIds.nodes.flatMap((id) => { const n = d.index.byId.get(id); return n ? [n] : []; }));
     want = union(eyeIds.edges.flatMap((id) => { const l = d.labels.find((x) => x.edge.id === id)?.box; return l ? [l] : []; }));
     if (must) view = keepInView(view, { must, want }, corner, size, pad);
+  } else {
+    // Nothing selected or current: where it starts (a machine's first state) has the eye.
+    const start = diagramStartEye(d);
+    if (start) { must = start.must; view = keepInView(view, start, corner, size, pad); }
   }
   const free = { w: size.width - pad.left - pad.right, h: size.height - pad.top - pad.bottom };
   const shown = (r: Rect) => {
@@ -507,3 +548,314 @@ for (const c of CASES) {
     }
   });
 }
+
+/* ══ Editing ══
+   What a person does with an editable board, step by step, through what the components run for each step: a Cloudflare
+   board laid out once, then a service added from the catalog, two connected, a connected service deleted, each undone and
+   redone, and Tidy up; a machine with a state added, connected and renamed. After every step the drawing is held to the
+   rules above, and to what editing promises:
+   - stable: no card the step didn't touch has moved (Tidy up and the first layout lay out; nothing else does);
+   - placed: a new card is clear of every card, label, entry marker and box header, inside its box (rule 2 sees to that);
+   - tidy: after Tidy up the board is the read-only layout of the same system;
+   - in view: what the step made (the new card; a new connection's label, and its two ends when they can be read with it)
+     is on the board the panel leaves, by the least pan from where the view was.
+   A machine is laid out again on every edit (as XState's editor does); what was edited has to be in view after it. */
+
+interface Step { name: string; system: CloudflareSystem; drawn: CloudflareDrawn; drawing: DiagramDrawing; select: { nodes: string[]; edges: string[] }; touched: ReadonlySet<string>; tidy?: boolean }
+
+const laidCache = new Map<string, Promise<CloudflareDrawn>>();
+/** What CloudflareDiagram draws for a system: with no places, its layout for the frame (the read-only pipeline); with places,
+ *  what it drew last kept, and the change drawn into it. */
+async function cloudflareStep(system: CloudflareSystem, was: CloudflareDrawn | null, board: DiagramBoardSize, mode: Mode = 'editable'): Promise<{ drawn: CloudflareDrawn; drawing: DiagramDrawing }> {
+  if (!system.services.some((s) => s.at)) {
+    const draft = cloudflareBoardData(system, { editable: mode === 'editable' });
+    const key = JSON.stringify([mode, board, system.name, system.services.map((s) => s.id), system.edges.map((e) => [e.id, e.from, e.to])]);
+    let run = laidCache.get(key);
+    if (!run) {
+      run = elkOf(key, draft as DiagramDraft).then((raw) => ({ ...onLayout(draft as DiagramDraft, finishLayout(raw, { board, text })), sized: true }) as CloudflareDrawn);
+      laidCache.set(key, run);
+    }
+    const drawn = await run;
+    return { drawn, drawing: drawDiagram(drawn.nodes.length <= AVOID_UP_TO ? growNodesToText(drawn.nodes, text) : drawn.nodes, drawn.edges, text) };
+  }
+  const kept = cloudflareKeptBoard(system, was, { editable: mode === 'editable', issues: validateSystem(system), text });
+  const drawn = { nodes: kept.nodes, edges: kept.edges, sized: kept.sized };
+  const sized = kept.sized ? growNodesToText(kept.nodes, text) : sizeNodesToText(kept.nodes, text);
+  return { drawn, drawing: drawDiagram(sized, kept.edges, text) };
+}
+
+/** A connection the catalog allows from one service to another, by the first pair of ports it takes (as a drag between two
+ *  cards does). */
+function connection(system: CloudflareSystem, from: string, to: string): CloudflareEdge {
+  const a = system.services.find((s) => s.id === from)!, b = system.services.find((s) => s.id === to)!;
+  for (const p of servicePorts(a.kind).filter((x) => x.direction === 'out')) for (const q of servicePorts(b.kind).filter((x) => x.direction === 'in')) {
+    if (!linkBetween(a.kind, p.id, b.kind, q.id).ok) continue;
+    const edge = newEdge(system.services, system.edges, { from, fromPort: p.id, to, toPort: q.id });
+    if (edge) return edge;
+  }
+  throw new Error(`The catalog has no way from ${from} to ${to}`);
+}
+
+const cardsOf = (d: DiagramDrawing) => d.index.nodes.filter((n) => !holdsNodes(n) && n.kind !== 'marker');
+
+/** Stable: what the step didn't touch is where it was. */
+function checkStable(before: DiagramDrawing, after: DiagramDrawing, touched: ReadonlySet<string>): string[] {
+  const out: string[] = [];
+  for (const n of cardsOf(before)) {
+    if (touched.has(n.id)) continue;
+    const m = after.index.byId.get(n.id);
+    if (!m) continue;
+    if (Math.abs(m.x - n.x) > 0.5 || Math.abs(m.y - n.y) > 0.5) out.push(`stable: ${nameOf(n)} moved from ${fmt(n)} to ${fmt(m)}`);
+  }
+  return out;
+}
+
+/** Placed: a new card is clear of what's there (cards, labels, markers, the header and sections of every box it's in or
+ *  near); inside its box is rule 2's. */
+function checkPlaced(d: DiagramDrawing, id: string): string[] {
+  const out: string[] = [];
+  const n = d.index.byId.get(id);
+  if (!n) return [`placed: ${id} isn’t drawn`];
+  for (const c of cardsOf(d)) if (c.id !== id && rectsMeet(n, c)) out.push(`placed: ${nameOf(n)} is on ${nameOf(c)}`);
+  for (const l of d.labels) if (rectsMeet(n, l.box)) out.push(`placed: ${nameOf(n)} is on ${l.edge.id}’s label`);
+  for (const m of d.index.nodes) if (m.entry && m.id !== id && rectsMeet(n, { x: m.x - 22, y: m.y - 16, w: 22, h: 34 })) out.push(`placed: ${nameOf(n)} is on ${nameOf(m)}’s entry marker`);
+  for (const b of d.index.nodes.filter((x) => holdsNodes(x) && x.kind !== 'region')) {
+    if (rectsMeet(n, headOf(b))) out.push(`placed: ${nameOf(n)} is on ${nameOf(b)}’s header and sections`);
+    // A box it isn't in: not on it at all.
+    if (!isInside(d.index, id, b.id) && rectsMeet(n, b)) out.push(`placed: ${nameOf(n)} is on ${nameOf(b)}, which it isn’t in`);
+  }
+  return out;
+}
+
+/** In view: the view after a step is the least pan (`keepInView`) from the one before, on the board the panel leaves, and
+ *  what the step made is in it (an edge's two ends with its label, when they can be read together). */
+function checkInView(d: DiagramDrawing, frame: Frame, view: Viewport, select: { nodes: string[]; edges: string[] }, what: string): { found: string[]; view: Viewport } {
+  const { size, pad } = boardOf(frame, true);
+  const eye = diagramEye(d, select, null, { ends: true });
+  if (!eye) return { found: [`in view: ${what} has nothing to keep in view`], view };
+  const next = keepInView(view, eye, drawingCorner(d, text), size, pad);
+  const free = { w: size.width - pad.left - pad.right, h: size.height - pad.top - pad.bottom };
+  const shown = (r: Rect) => {
+    const x0 = r.x * next.zoom + next.x, y0 = r.y * next.zoom + next.y;
+    return x0 >= pad.left - 1 && y0 >= pad.top - 1 && x0 + r.w * next.zoom <= size.width - pad.right + 1 && y0 + r.h * next.zoom <= size.height - pad.bottom + 1;
+  };
+  const found: string[] = [];
+  const where = `${frame.name}, panel open (zoom ${next.zoom.toFixed(2)})`;
+  for (const id of select.nodes) { const n = d.index.byId.get(id); if (n && !shown(n)) found.push(`in view: ${what}, ${nameOf(n)} (${fmtR(n)}) isn’t on the board at ${where}`); }
+  for (const id of select.edges) {
+    const label = d.labels.find((l) => l.edge.id === id)?.box;
+    const e = d.edges.find((x) => x.edge.id === id)?.edge;
+    if (label && !shown(label)) found.push(`in view: ${what}, ${id}’s label isn’t on the board at ${where}`);
+    const ends = e ? [d.index.byId.get(e.from), d.index.byId.get(e.to)].filter((n): n is DiagramNode => !!n) : [];
+    const all = [...ends, ...(label ? [label] : [])];
+    const box = { x: Math.min(...all.map((r) => r.x)), y: Math.min(...all.map((r) => r.y)), w: 0, h: 0 };
+    box.w = Math.max(...all.map((r) => r.x + r.w)) - box.x; box.h = Math.max(...all.map((r) => r.y + r.h)) - box.y;
+    if (all.length && box.w * DIAGRAM_LEGIBLE_ZOOM <= free.w && box.h * DIAGRAM_LEGIBLE_ZOOM <= free.h) {
+      for (const n of ends) if (!shown(n)) found.push(`in view: ${what}, ${id}’s end ${nameOf(n)} is under the panel or off the board at ${where}`);
+    }
+  }
+  return { found, view: next };
+}
+
+interface EditCase { name: string; system: CloudflareSystem; connect: [string, string]; addThenConnect: string; remove: string }
+const EDIT_CASES: EditCase[] = [
+  { name: 'link shortener', system: system(SMALL, SMALL_EDGES, 'Link shortener'), connect: ['shortener', 'links'], addThenConnect: 'shortener', remove: 'links' },
+  { name: 'file upload', system: system(UPLOAD, UPLOAD_EDGES, 'File upload'), connect: ['api', 'db'], addThenConnect: 'api', remove: 'files' },
+  { name: 'docs search', system: system(PLATFORM, PLATFORM_EDGES, 'Docs search', '4f1b9c2e7a'), connect: ['gateway', 'docs'], addThenConnect: 'indexer', remove: 'cache' },
+];
+/** What the catalog search offers first for "kv", which Enter adds (the round-9 critic's step). */
+const KV = searchCatalog('kv', 6)[0]!.id;
+const stripped = (s: CloudflareSystem): CloudflareSystem => ({ ...s, services: s.services.map(({ at: _, ...rest }) => rest) });
+
+for (const c of EDIT_CASES) {
+  describe(`Editing Cloudflare: ${c.name}`, () => {
+    for (const frame of FRAMES) {
+      it(frame.name, async () => {
+        const board = step(frame);
+        const found: string[] = [];
+        const say = (at: string, list: string[]) => { for (const v of list) found.push(`${at}: ${v}`); };
+        const { size, pad } = boardOf(frame, false);
+        const first = await cloudflareStep(c.system, null, board);
+        let view = firstView(first.drawing.bounds, size, pad);
+        const steps: Step[] = [{ name: 'laid out', system: c.system, ...first, select: { nodes: [], edges: [] }, touched: new Set() }];
+        const hold = (s: Step, before: Step, made: string) => {
+          say(s.name, check(s.drawing));
+          say(s.name, checkShape(s.drawing, frame, false));
+          say(s.name, checkAnnounced(s.drawing, cfNoun, (n) => describeNode(n, s.drawing.index, edgesByNode(s.drawing.edges.map((e) => e.edge)).get(n.id), cloudflareNoun)));
+          if (!s.tidy) say(s.name, checkStable(before.drawing, s.drawing, s.touched));
+          if (s.select.nodes.length || s.select.edges.length) {
+            const seen = checkInView(s.drawing, frame, view, s.select, made);
+            say(s.name, seen.found);
+            view = seen.view;
+          }
+        };
+        const run = async (name: string, from: Step, next: CloudflareSystem, select: Step['select'], touched: string[], made: string, tidy = false) => {
+          // As the component makes an edit: places written down, the board drawn from what it drew, its places written back.
+          const edit = tidy ? null : cloudflareEdit(next, from.drawn, { editable: true, issues: validateSystem(next), text });
+          const d = tidy ? await cloudflareStep(stripped(next), null, board) : await cloudflareStep(edit!.system, edit!.drawn ?? from.drawn, board);
+          const s: Step = { name, system: tidy ? cloudflarePlaces(stripped(next), d.drawn) : edit!.system, ...d, select, touched: new Set(touched), tidy };
+          hold(s, from, made);
+          return s;
+        };
+        const s0 = steps[0]!;
+        // A service from the catalog, with nothing selected: at the middle of the view.
+        const center = { x: (size.width / 2 - view.x) / view.zoom, y: (size.height / 2 - view.y) / view.zoom };
+        const added = cloudflareAddService(cloudflarePlaces(s0.system, s0.drawn), KV, s0.drawn, { center, text });
+        const s1 = await run('add from the catalog', s0, added.system, { nodes: [added.id], edges: [] }, [added.id], `the new ${KV}`);
+        say('add from the catalog', checkPlaced(s1.drawing, added.id));
+        // Undo is what was there; redo, what was made.
+        const u1 = await cloudflareStep(s0.system, s1.drawn, board);
+        say('undo the add', checkStable(s0.drawing, u1.drawing, new Set()));
+        const r1 = await cloudflareStep(s1.system, u1.drawn, board);
+        say('redo the add', checkStable(s1.drawing, r1.drawing, new Set()));
+        // Two services connected (the first edit on the board).
+        const edge = connection(s0.system, c.connect[0], c.connect[1]);
+        const placed0 = cloudflarePlaces(s0.system, s0.drawn);
+        const s2 = await run('connect', s0, { ...placed0, edges: [...placed0.edges, edge] }, { nodes: [], edges: [edge.id] }, [], `${edge.id}`);
+        const u2 = await cloudflareStep(s0.system, s2.drawn, board);
+        say('undo the connection', checkStable(s0.drawing, u2.drawing, new Set()));
+        // Added, then connected to.
+        const edge2 = connection(s1.system, c.addThenConnect, added.id);
+        const placed1 = cloudflarePlaces(s1.system, s1.drawn);
+        const s3 = await run('add, then connect', s1, { ...placed1, edges: [...placed1.edges, edge2] }, { nodes: [], edges: [edge2.id] }, [], `${edge2.id}`);
+        // A service renamed to something longer: its card grows where there's room, or goes to free room; nothing else moves.
+        const renamed = await run('rename', s3, { ...s3.system, services: s3.system.services.map((x) => (x.id === c.remove ? { ...x, label: 'A much longer name than before' } : x)) }, { nodes: [c.remove], edges: [] }, [c.remove], `the renamed ${c.remove}`);
+        say('rename', checkPlaced(renamed.drawing, c.remove));
+        // A connected service deleted.
+        const s4 = await run('delete a connected service', renamed, removeServices(renamed.system, [c.remove]), { nodes: [], edges: [] }, [c.remove], 'the deletion');
+        const u4 = await cloudflareStep(renamed.system, s4.drawn, board);
+        say('undo the deletion', checkStable(renamed.drawing, u4.drawing, new Set()));
+        // Tidy up: the read-only layout of the same system.
+        const s5 = await run('Tidy up', s4, s4.system, { nodes: [], edges: [] }, [], 'Tidy up', true);
+        const ro = await cloudflareStep(stripped(s4.system), null, board, 'read-only');
+        for (const n of cardsOf(ro.drawing)) {
+          const m = s5.drawing.index.byId.get(n.id);
+          if (!m || Math.abs(m.x - n.x) > 0.5 || Math.abs(m.y - n.y) > 0.5) found.push(`Tidy up: ${nameOf(n)} is at ${m ? fmtR(m) : 'nowhere'}, read-only at ${fmtR(n)}`);
+        }
+        if (!s5.system.services.every((s) => s.at)) found.push('Tidy up: the system doesn’t say where its services are');
+        const unique = [...new Set(found)];
+        if (DUMP && unique.length) appendFileSync(DUMP, unique.map((v) => `Editing ${c.name} | ${frame.name} | ${v}\n`).join(''));
+        expect(unique).toEqual([]);
+      }, 60_000);
+    }
+  });
+}
+
+/* A machine laid out again on each edit: a state added at the root, connected from the start, renamed. */
+describe('Editing a machine: the Audio Player', () => {
+  for (const frame of FRAMES) {
+    it(frame.name, async () => {
+      const found: string[] = [];
+      const panel = frame.width >= CHROME.columnFrom;
+      const { size, pad } = boardOf(frame, panel);
+      const board = step(size);
+      let config = parseXState(AUDIO_PLAYER_SOURCE) as Record<string, unknown>;
+      const draw = async (cfg: Record<string, unknown>, key: string) => {
+        const draft = machineToDraft(createMachine(cfg as never) as never);
+        const raw = await elkOf(`machine edit\0${key}`, draft);
+        const { nodes, edges } = onLayout(draft, finishLayout(raw, { board, text }));
+        return drawDiagram(nodes.length <= AVOID_UP_TO ? growNodesToText(nodes, text) : nodes, edges, text);
+      };
+      let d = await draw(config, 'start');
+      let view = firstView(d.bounds, size, pad);
+      const idOf = (dd: DiagramDrawing, title: string) => dd.index.nodes.find((n) => n.title === title)?.id;
+      const edit = async (name: string, next: Record<string, unknown>, select: (dd: DiagramDrawing) => { nodes: string[]; edges: string[] }) => {
+        config = next;
+        d = await draw(config, name);
+        for (const v of check(d)) found.push(`${name}: ${v}`);
+        const sel = select(d);
+        if (!sel.nodes.length && !sel.edges.length) { found.push(`${name}: what was edited isn’t drawn`); return; }
+        const eye = diagramEye(d, sel, null, { ends: true })!;
+        view = keepInView(view, eye, drawingCorner(d, text), size, pad);
+        const shownR = (r: Rect) => { const x0 = r.x * view.zoom + view.x, y0 = r.y * view.zoom + view.y; return x0 >= pad.left - 1 && y0 >= pad.top - 1 && x0 + r.w * view.zoom <= size.width - pad.right + 1 && y0 + r.h * view.zoom <= size.height - pad.bottom + 1; };
+        if (!shownR(eye.must)) found.push(`${name}: what was edited (${fmtR(eye.must)}) isn’t in view at ${frame.name}`);
+      };
+      await edit('add a state', addState(config, [], 'state'), (dd) => ({ nodes: [idOf(dd, 'state') ?? ''].filter(Boolean), edges: [] }));
+      await edit('connect', addTransition(config, ['Init'], 'EVENT', ['state']), (dd) => ({ nodes: [], edges: dd.edges.filter((e) => e.edge.title === 'EVENT').map((e) => e.edge.id) }));
+      await edit('rename', renameState(config, ['state'], 'buffering'), (dd) => ({ nodes: [idOf(dd, 'buffering') ?? ''].filter(Boolean), edges: [] }));
+      const unique = [...new Set(found)];
+      if (DUMP && unique.length) appendFileSync(DUMP, unique.map((v) => `Editing a machine | ${frame.name} | ${v}\n`).join(''));
+      expect(unique).toEqual([]);
+    }, 60_000);
+  }
+});
+
+/* ══ In a document ══
+   docstream's fences draw a workerd config (```capnp) and a machine (```xstate) in an article's column: 630 px across in a
+   680 px column, 342 in a 390 px phone's. The board is as tall as its drawing needs at the readable size, between a floor and
+   a cap; under the cap the drawing is whole, past it the first view is its top-start corner at a readable size; and the
+   frame's bar is never over the drawing at rest. */
+
+const FENCE = { min: 200, max: 640, toolbar: 60, bar: 48, side: 24, foot: 24 } as const;
+const COLUMNS = [{ name: 'article (680 px)', width: 630 }, { name: 'phone (390 px)', width: 342 }] as const;
+/** The tree before this pass: fixed boards (capnp 420, xstate 520) with the bar floating over their foot. */
+const OLD_FENCES = !!process.env.DIAGRAM_OLD_FENCES;
+const EVENT_LOG = `using Workerd = import "/workerd/workerd.capnp";
+const config :Workerd.Config = (
+  services = [ (name = "main", worker = .main), (name = "do-storage", disk = (path = "do-storage", writable = true)) ],
+  sockets = [ (name = "http", address = "127.0.0.1:19610", http = (), service = "main") ],
+);
+const main :Workerd.Worker = (
+  modules = [ (name = "worker.js", esModule = embed "worker.js") ],
+  compatibilityDate = "2026-01-01",
+  bindings = [ (name = "ACCOUNTS", durableObjectNamespace = "ProofAccount") ],
+  durableObjectNamespaces = [ (className = "ProofAccount", uniqueKey = "event-log", enableSql = true) ],
+  durableObjectStorage = (localDisk = "do-storage"),
+);`;
+const REQUEST = { id: 'request', initial: 'idle', states: { idle: { on: { FETCH: 'loading' } }, loading: { on: { RESOLVE: 'success', REJECT: 'failure' } }, failure: { on: { RETRY: 'loading' } }, success: { type: 'final' } } };
+
+const FENCES: { name: string; fence: 'capnp' | 'xstate'; draw: (board: DiagramBoardSize) => Promise<DiagramDrawing> }[] = [
+  ...[['a chat app’s config.capnp', WORKERD_CONFIG], ['event-log.capnp', EVENT_LOG]].map(([name, code]) => ({
+    name: name!, fence: 'capnp' as const,
+    draw: async () => {
+      const read = readWorkerdConfig(code!);
+      if (!read.ok) throw new Error(read.reason);
+      const props = cloudflareBoardProps(placeInLayers({ ...read.system, name: 'workerd config' }));
+      return drawDiagram(sizeNodesToText(props.nodes, text), props.edges, text);
+    },
+  })),
+  ...[['the Audio Player', parseXState(AUDIO_PLAYER_SOURCE)], ['the request machine', REQUEST]].map(([name, cfg]) => ({
+    name: name as string, fence: 'xstate' as const,
+    draw: async (board: DiagramBoardSize) => {
+      const draft = machineToDraft(createMachine(cfg as never) as never);
+      const raw = await elkOf(`fence\0${name as string}`, draft);
+      const { nodes, edges } = onLayout(draft, finishLayout(raw, { board, text }));
+      return drawDiagram(nodes.length <= AVOID_UP_TO ? growNodesToText(nodes, text) : nodes, edges, text);
+    },
+  })),
+];
+
+describe('In a document', () => {
+  for (const f of FENCES) for (const col of COLUMNS) {
+    it(`${f.name}, ${col.name}`, async () => {
+      const found: string[] = [];
+      // A machine's layout wraps for the board it may grow to; a placed config isn't laid out.
+      const fixed = f.fence === 'capnp' ? 420 : 520;
+      const d = await f.draw(step({ width: col.width, height: OLD_FENCES ? fixed : FENCE.max }));
+      const insets = { top: FENCE.toolbar, left: FENCE.side, right: FENCE.side, bottom: OLD_FENCES ? 72 + 12 : FENCE.foot };
+      // The frame's height: the drawing's, with the chrome over it and the bar docked under it.
+      const height = OLD_FENCES ? fixed : diagramContentHeight(d.bounds, col.width, { ...insets, bottom: insets.bottom + FENCE.bar }, { min: FENCE.min, max: FENCE.max });
+      // With the bar docked under the drawing, the board is what's over it; floating, it's the whole of it.
+      const size = { width: col.width, height: OLD_FENCES ? height : height - FENCE.bar };
+      const view = keepInView(firstView(d.bounds, size, insets), diagramStartEye(d) ?? { must: drawingCorner(d, text)! }, drawingCorner(d, text), size, insets);
+      const b = d.bounds!;
+      const free = { w: size.width - insets.left - insets.right, h: size.height - insets.top - insets.bottom };
+      const at = (r: Rect) => ({ x0: r.x * view.zoom + view.x, y0: r.y * view.zoom + view.y, x1: (r.x + r.w) * view.zoom + view.x, y1: (r.y + r.h) * view.zoom + view.y });
+      const shown = (r: Rect) => { const s = at(r); return s.x0 >= insets.left - 1 && s.y0 >= insets.top - 1 && s.x1 <= size.width - insets.right + 1 && s.y1 <= size.height - insets.bottom + 1; };
+      const readable = Math.min(1, Math.max(DIAGRAM_LEGIBLE_ZOOM, free.w / b.w));
+      const needs = b.h * readable + insets.top + insets.bottom + (OLD_FENCES ? 0 : FENCE.bar);
+      if (!OLD_FENCES && (height < FENCE.min - 0.5 || height > FENCE.max + 0.5)) found.push(`fence: ${Math.round(height)} px tall, outside ${FENCE.min}–${FENCE.max}`);
+      if (needs <= FENCE.max + 0.5 && b.w * DIAGRAM_LEGIBLE_ZOOM <= free.w && !shown(b)) found.push(`fence: ${Math.round(b.w)}×${Math.round(b.h)} needs ${Math.round(needs)} px and isn’t whole on a ${Math.round(height)} px board (zoom ${view.zoom.toFixed(2)})`);
+      const corner = drawingCorner(d, text);
+      if (corner && !shown(corner) && !shown(diagramStartEye(d)?.must ?? corner)) found.push('fence: neither the top-start corner nor where it starts is in the first view');
+      if (view.zoom < Math.min(DIAGRAM_LEGIBLE_ZOOM, free.w / b.w, free.h / b.h) - 0.001) found.push(`fence: opens at ${view.zoom.toFixed(2)}, under the readable ${DIAGRAM_LEGIBLE_ZOOM}`);
+      // The bar at the foot: floating over the board, it mustn't be over the drawing (docked under it, it can't be).
+      const s = at(b);
+      const barTop = height - 12 - FENCE.bar;
+      if (OLD_FENCES && s.y1 > barTop + 0.5 && s.y0 < barTop) found.push(`fence: the bar covers the drawing at rest (it ends at ${Math.round(s.y1)}, the bar starts at ${Math.round(barTop)})`);
+      const unique = [...new Set(found)];
+      if (DUMP && unique.length) appendFileSync(DUMP, unique.map((v) => `In a document: ${f.name} | ${col.name} | ${v}\n`).join(''));
+      expect(unique).toEqual([]);
+    }, 30_000);
+  }
+});

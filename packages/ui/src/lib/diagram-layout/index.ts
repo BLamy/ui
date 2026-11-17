@@ -7,7 +7,7 @@
    a layout's first asked for, and an app with fixed positions never loads it. Nothing at module scope touches a browser
    API, so this is safe to import on a server. `lib/diagram-layout/react` has the hook. */
 import type { Pt, Rect } from '@/lib/canvas-math';
-import { CONTAINER_PADDING, DIAGRAM_LEGIBLE_ZOOM, ancestorsOf, descendantsOf, diagramBounds, edgeLabelSize, facePorts, hasEdgeLabel, holdsNodes, indexDiagram, isInside, itemKey, laneRoutes, nodeAnatomy, placeItemPorts, regionDividers, rerouteOrthogonal, sectionKey, sideLoopRoute, simplifyRoute, type ConnectorEnd, type DiagramEdge, type DiagramIndex, type DiagramNode, type DiagramSide } from '@/lib/diagram-model';
+import { CONTAINER_PADDING, DIAGRAM_LEGIBLE_ZOOM, ELBOW_GAP, ancestorsOf, descendantsOf, diagramBounds, edgeLabelSize, facePorts, hasEdgeLabel, holdsNodes, indexDiagram, isInside, itemKey, laneRoutes, nodeAnatomy, placeItemPorts, regionDividers, rerouteOrthogonal, sectionKey, sideLoopRoute, simplifyRoute, type ConnectorEnd, type DiagramEdge, type DiagramIndex, type DiagramNode, type DiagramSide } from '@/lib/diagram-model';
 import { estimateText, type TextMeasurer } from '@/lib/diagram-text';
 
 /* ── What goes in and what comes out ── */
@@ -606,8 +606,10 @@ const crossesCut = (a: number, b: number, y: number) => Math.min(a, b) <= y && y
  * `board` best: cut between layers where few edges cross, each column moved up beside the one before it, and each edge that
  * crosses a cut taken from the foot of its column, along the gap, over to the head of the next. Unchanged when one column
  * fits best (a phone gets one column, read by scrolling), or when no cut is clean. Works on layers that run down or across.
+ * Parts that nothing joins are packed side by side after the biggest has been wrapped on its own (`packing`: that's been
+ * done, and this is the packing).
  */
-export function wrapDiagram<N, E>(laid: Pick<DiagramLayoutResult<N, E>, 'nodes' | 'edges' | 'bounds'>, board: DiagramBoardSize, direction: DiagramDirection = 'down'): Pick<DiagramLayoutResult<N, E>, 'nodes' | 'edges' | 'bounds'> {
+export function wrapDiagram<N, E>(laid: Pick<DiagramLayoutResult<N, E>, 'nodes' | 'edges' | 'bounds'>, board: DiagramBoardSize, direction: DiagramDirection = 'down', packing = false): Pick<DiagramLayoutResult<N, E>, 'nodes' | 'edges' | 'bounds'> {
   // A graph this big is explored, not read whole: it stays as laid out (and wrapping it would hold the main thread).
   if ((direction !== 'down' && direction !== 'right') || laid.nodes.length > WRAP_UP_TO) return laid;
   // Work as if the layers ran down: x across them, y along them.
@@ -650,11 +652,20 @@ export function wrapDiagram<N, E>(laid: Pick<DiagramLayoutResult<N, E>, 'nodes' 
     if (a === b) { if (e.labelBox) grow(a, tr(e.labelBox)); continue; }
     if (e.labelBox) labelBlocks.push({ edge: e.id, r: tr(e.labelBox) });
   }
-  // What isn't joined to anything else in the run (an environment of its own) is arranged with the rest to fill the board:
-  // side by side on a wide one, one above the other on a tall one, each from the top.
+  // What isn't joined to anything else in the run (an environment of its own, a service just added) is arranged with the rest
+  // to fill the board: side by side on a wide one, one above the other on a tall one, each from the top. The biggest part is
+  // wrapped first, as a run of its own: a card on its own beside it is no reason for a long run not to wrap (round 9's F1,
+  // where adding an unconnected service unwrapped a two-column system into one 1,500 px column).
+  const parts = partsOfRun(laid.edges, runIds, blockOf);
+  if (parts.length > 1 && !packing) {
+    const biggest = parts.reduce((a, b) => (b.length > a.length ? b : a));
+    const wrapped = biggest.length >= 3 ? wrapPart(laid, holder, biggest, blockOf, board, direction) : laid;
+    return wrapDiagram(wrapped, board, direction, true);
+  }
   const packed = packParts(laid, { holder, runIds, blockOf, box, labelBlocks, room, tr, tp });
   if (packed) return packed;
-  if (runIds.length < 3) return laid;
+  // Parts already wrapped and packed: nothing more to cut.
+  if (runIds.length < 3 || parts.length > 1) return laid;
   const blocks = [...[...box.values()], ...labelBlocks.map((l) => l.r)].sort((p, q) => p.y - q.y);
   const bands: Band[] = [];
   for (const r of blocks) {
@@ -855,9 +866,53 @@ export function wrapDiagram<N, E>(laid: Pick<DiagramLayoutResult<N, E>, 'nodes' 
   return crossesHeads(flat, crossingLabels) ? place(true) : flat;
 }
 
-/** Whether any of the given edges runs through a box's header and sections, or has its label on them. */
+/** The run's parts that nothing joins to one another, each as the ids of its blocks, in the run's order. */
+function partsOfRun<E>(edges: readonly DiagramEdge<E>[], runIds: readonly string[], blockOf: ReadonlyMap<string, string>): string[][] {
+  const root = new Map(runIds.map((id) => [id, id]));
+  const find = (id: string): string => { let r = id; while (root.get(r) !== r) r = root.get(r)!; return r; };
+  for (const e of edges) {
+    const a = blockOf.get(e.from), b = blockOf.get(e.to);
+    if (a && b && a !== b) root.set(find(a), find(b));
+  }
+  const parts = new Map<string, string[]>();
+  for (const id of runIds) parts.set(find(id), [...(parts.get(find(id)) ?? []), id]);
+  return [...parts.values()];
+}
+
+/** One part of a run wrapped on its own (the others left where they are, for packing after): the part with its box, as if it
+ *  were all the box held, wrapped to the board, and put back. */
+function wrapPart<N, E>(laid: Pick<DiagramLayoutResult<N, E>, 'nodes' | 'edges' | 'bounds'>, holder: DiagramNode<N> | null, part: readonly string[], blockOf: ReadonlyMap<string, string>, board: DiagramBoardSize, direction: DiagramDirection): Pick<DiagramLayoutResult<N, E>, 'nodes' | 'edges' | 'bounds'> {
+  const inPart = new Set(part);
+  const mine = (id: string) => inPart.has(blockOf.get(id) ?? '');
+  const nodes = laid.nodes.filter((n) => mine(n.id));
+  const edges = laid.edges.filter((e) => mine(e.from) && mine(e.to));
+  if (holder) {
+    // The box as tall and wide as this part needs of it (with its header and sections), so what's beside it isn't counted.
+    const x1 = Math.max(...nodes.map((n) => n.x + n.w), ...edges.flatMap((e) => (e.points ?? []).map((p) => p.x))) + CONTAINER_PADDING.side;
+    const y1 = Math.max(...nodes.map((n) => n.y + n.h), ...edges.flatMap((e) => (e.points ?? []).map((p) => p.y))) + CONTAINER_PADDING.bottom;
+    const own = Math.ceil(nodeAnatomy(holder, estimateText).w);
+    nodes.unshift({ ...holder, w: Math.max(own, x1 - holder.x), h: y1 - holder.y });
+  }
+  const bounds = diagramBounds(nodes, edges.map((e) => ({ pts: e.points ?? [] })), edges.flatMap((e) => (e.labelBox ? [e.labelBox] : []))) ?? laid.bounds;
+  const wrapped = wrapDiagram({ nodes, edges, bounds }, board, direction, true);
+  if (wrapped.nodes === nodes) return laid;
+  const placed = new Map(wrapped.nodes.map((n) => [n.id, n]));
+  const routed = new Map(wrapped.edges.map((e) => [e.id, e]));
+  const outNodes = laid.nodes.map((n) => {
+    const p = placed.get(n.id);
+    if (!p) return n;
+    // The box keeps its own width at least, and holds the rest of what's in it as well: packing grows it round them all.
+    return n.id === holder?.id ? { ...n, x: p.x, y: p.y, w: Math.max(p.w, n.w), h: Math.max(p.h, n.h) } : p;
+  });
+  const outEdges = laid.edges.map((e) => routed.get(e.id) ?? e);
+  return { nodes: outNodes, edges: outEdges, bounds: diagramBounds(outNodes, outEdges.map((e) => ({ pts: e.points ?? [] })), outEdges.flatMap((e) => (e.labelBox ? [e.labelBox] : []))) ?? laid.bounds };
+}
+
+/** Whether any of the given edges runs through a box's header and sections (or a lane under them), or has its label on
+ *  them. */
 function crossesHeads<N, E>(laid: Pick<DiagramLayoutResult<N, E>, 'nodes' | 'edges'>, ids: ReadonlySet<string>): boolean {
-  const heads = laid.nodes.filter((n) => holdsNodes(n) && n.kind !== 'region').map((n) => ({ x: n.x, y: n.y, w: n.w, h: Math.min(n.h, nodeAnatomy(n, estimateText).top) }));
+  // A lane under the head too: a route that close to its hairline reads as the hairline.
+  const heads = laid.nodes.filter((n) => holdsNodes(n) && n.kind !== 'region').map((n) => ({ x: n.x, y: n.y, w: n.w, h: Math.min(n.h, nodeAnatomy(n, estimateText).top + 10) }));
   const meets = (p: Rect, q: Rect) => p.x < q.x + q.w - 1 && q.x < p.x + p.w - 1 && p.y < q.y + q.h - 1 && q.y < p.y + p.h - 1;
   return laid.edges.some((e) => ids.has(e.id) && heads.some((h) => (e.labelBox && meets(e.labelBox, h)) || (e.points ?? []).some((p, i, pts) => i > 0 && runCrosses(pts[i - 1], p, { x: h.x + 1, y: h.y + 1, w: h.w - 2, h: h.h - 2 }))));
 }
@@ -966,20 +1021,13 @@ const PACK_GAP = 48;
 /** The run's parts that nothing joins, in a grid of rows that fills the board best, the biggest first (left to right, then
  *  down), each part kept as it was laid out. Null when there's one part, or the arrangement it has is as good. */
 function packParts<N, E>(laid: Pick<DiagramLayoutResult<N, E>, 'nodes' | 'edges' | 'bounds'>, { holder, runIds, blockOf, box, labelBlocks, room, tr, tp }: PackInput<N>): Pick<DiagramLayoutResult<N, E>, 'nodes' | 'edges' | 'bounds'> | null {
-  const root = new Map(runIds.map((id) => [id, id]));
-  const find = (id: string): string => { let r = id; while (root.get(r) !== r) r = root.get(r)!; return r; };
-  for (const e of laid.edges) {
-    const a = blockOf.get(e.from), b = blockOf.get(e.to);
-    if (a && b && a !== b) root.set(find(a), find(b));
-  }
-  const parts = new Map<string, string[]>();
-  for (const id of runIds) parts.set(find(id), [...(parts.get(find(id)) ?? []), id]);
-  if (parts.size < 2) return null;
+  const parts = partsOfRun(laid.edges, runIds, blockOf);
+  if (parts.length < 2) return null;
   const union = (rs: Rect[]): Rect => {
     const x0 = Math.min(...rs.map((r) => r.x)), y0 = Math.min(...rs.map((r) => r.y));
     return { x: x0, y: y0, w: Math.max(...rs.map((r) => r.x + r.w)) - x0, h: Math.max(...rs.map((r) => r.y + r.h)) - y0 };
   };
-  const list = [...parts.values()].map((ids) => {
+  const list = parts.map((ids) => {
     const set = new Set(ids);
     const rects = ids.map((id) => box.get(id)!);
     for (const e of laid.edges) {
@@ -988,7 +1036,11 @@ function packParts<N, E>(laid: Pick<DiagramLayoutResult<N, E>, 'nodes' | 'edges'
       const l = labelBlocks.find((b) => b.edge === e.id);
       if (l) rects.push(l.r);
     }
-    return { ids: set, r: union(rects) };
+    const r = union(rects);
+    // How far its first card is below its top (an entry marker, a label over it): parts in a row line up by their cards,
+    // so a part with neither doesn't stand up into what's above the run (a box's header).
+    const cardsTop = Math.min(...ids.map((id) => tr(laid.nodes.find((n) => n.id === id)!).y));
+    return { ids: set, r, lift: Math.max(0, cardsTop - r.y) };
     // The biggest first: it's what the board opens on.
   }).sort((a, b) => b.r.w * b.r.h - a.r.w * a.r.h || a.r.x - b.r.x);
   const all = tr(laid.bounds), run = union(list.map((p) => p.r));
@@ -1001,10 +1053,11 @@ function packParts<N, E>(laid: Pick<DiagramLayoutResult<N, E>, 'nodes' | 'edges'
     let y = run.y, w = 0;
     for (let r = 0; r * per < list.length; r++) {
       const row = list.slice(r * per, (r + 1) * per);
+      const lift = Math.max(...row.map((p) => p.lift));
       let x = run.x;
-      for (const p of row) { at.push({ x, y }); x += p.r.w + PACK_GAP; }
+      for (const p of row) { at.push({ x, y: y + lift - p.lift }); x += p.r.w + PACK_GAP; }
       w = Math.max(w, x - PACK_GAP - run.x);
-      y += Math.max(...row.map((p) => p.r.h)) + PACK_GAP;
+      y += Math.max(...row.map((p) => p.r.h + lift - p.lift)) + PACK_GAP;
     }
     return { at, w, h: y - PACK_GAP - run.y };
   };
@@ -1172,7 +1225,13 @@ export function routeForks<N, E>(laid: Pick<DiagramLayoutResult<N, E>, 'nodes' |
     else blocks.push({ id: n.id, r: { x: n.x, y: n.y, w: n.w, h: Math.min(n.h, headOf(n)) } });
   }
   for (const e of laid.edges) if (e.labelBox) blocks.push({ id: `\0label:${e.id}`, r: e.labelBox });
-  const clear = (a: Pt, b: Pt, to: string, self: string) => blocks.every(({ id, r }) => id === to || !runCrosses(a, b, { x: r.x - 4, y: r.y - 4, w: r.w + 8, h: r.h + 8 }))
+  // A box's walls: a run beside one, closer than a lane, reads as the wall.
+  const walls = laid.nodes.filter((n) => holdsNodes(n) && n.kind !== 'region').flatMap((n) => [
+    [{ x: n.x, y: n.y }, { x: n.x + n.w, y: n.y }], [{ x: n.x, y: n.y + n.h }, { x: n.x + n.w, y: n.y + n.h }],
+    [{ x: n.x, y: n.y }, { x: n.x, y: n.y + n.h }], [{ x: n.x + n.w, y: n.y }, { x: n.x + n.w, y: n.y + n.h }],
+  ]);
+  const clear = (a: Pt, b: Pt, to: string, self: string) => walls.every((w) => !alongRoute(a, b, w))
+    && blocks.every(({ id, r }) => id === to || !runCrosses(a, b, { x: r.x - 4, y: r.y - 4, w: r.w + 8, h: r.h + 8 }))
     // nor along another route, closer than a lane (the one it forks from is its trunk, and others fork from it too)
     && laid.edges.every((o) => o.id === self || o.forkOf === byId.get(self)?.forkOf || o.id === byId.get(self)?.forkOf || !alongRoute(a, b, o.points ?? []));
   const out = new Map<string, Pt[]>();
@@ -1395,9 +1454,10 @@ function withoutSimplex(graph: ElkGraph): ElkGraph {
 
 /** What ELK's answer becomes before it's drawn, the same wherever it's laid out: wrapped to fill `board` (when there's one),
  *  then the routes between ports in lanes of their own (`routePortEdges`), then the edges that fork from another's label
- *  (`routeForks`). `useDiagramLayout` runs it on each new board size without running ELK again. */
+ *  (`routeForks`), no U-turns, room inside the outermost boxes, and the ends of different edges on a card's side a lane
+ *  apart (`spreadEnds`). `useDiagramLayout` runs it on each new board size without running ELK again. */
 export function finishLayout<N, E>(laid: Pick<DiagramLayoutResult<N, E>, 'nodes' | 'edges' | 'bounds'>, { board, direction, text = estimateText }: { board?: DiagramBoardSize | null; direction?: DiagramDirection; text?: TextMeasurer } = {}): Pick<DiagramLayoutResult<N, E>, 'nodes' | 'edges' | 'bounds'> {
-  return roomInside(noUTurns(routeForks(routePortEdges(board ? wrapDiagram(laid, board, direction) : laid, text), text), text));
+  return spreadEnds(roomInside(noUTurns(routeForks(routePortEdges(board ? wrapDiagram(laid, board, direction) : laid, text), text), text)));
 }
 
 /**
@@ -1538,3 +1598,302 @@ export async function runLayout<N, E>(draft: DiagramDraft<N, E>, options: Diagra
   return { ...shaped, engine: where, ms };
 }
 
+
+/* ── Ends kept apart ── */
+
+/** How far apart the ends of different edges on one side of a card keep: a lane. */
+const END_LANE = 12;
+/** How far from a card's corner an end stays. */
+const END_CORNER = 7;
+
+/**
+ * Ends of different edges that meet on one side of a card moved apart along it, a lane at least, so an arrowhead never lands
+ * where another edge leaves (and two never arrive at one point): the end and the bend next to it slide along the side
+ * together, keeping the route square, and a label on that run goes with them. Ends at a port (spread by the router) and a
+ * box's own edges to what it holds are left alone, and a slide that would take a run through a card, or an end off its side,
+ * isn't made.
+ */
+function spreadEnds<N, E>(laid: Pick<DiagramLayoutResult<N, E>, 'nodes' | 'edges' | 'bounds'>): Pick<DiagramLayoutResult<N, E>, 'nodes' | 'edges' | 'bounds'> {
+  if (laid.nodes.length > WRAP_UP_TO) return laid;
+  const index = indexDiagram(laid.nodes);
+  const cards = laid.nodes.filter((n) => !holdsNodes(n) && n.kind !== 'marker');
+  interface End { edge: number; start: boolean; p: Pt; along: 'x' | 'y'; node: DiagramNode<N> }
+  const groups = new Map<string, End[]>();
+  laid.edges.forEach((e, i) => {
+    const pts = e.points;
+    if (!pts || pts.length < 2 || e.from === e.to || e.route === 'curve' || e.route === 'straight') return;
+    for (const start of [true, false]) {
+      if ((start && (e.forkOf || e.fromPort)) || (!start && e.toPort)) continue;
+      const n = index.byId.get(start ? e.from : e.to), other = index.byId.get(start ? e.to : e.from);
+      if (!n || n.kind === 'marker' || !other || (holdsNodes(n) && isInside(index, other.id, n.id))) continue;
+      const p = start ? pts[0] : pts[pts.length - 1];
+      const side = Math.abs(p.y - n.y) < 1.5 ? 'top' : Math.abs(p.y - n.y - n.h) < 1.5 ? 'foot' : Math.abs(p.x - n.x) < 1.5 ? 'start' : Math.abs(p.x - n.x - n.w) < 1.5 ? 'end' : null;
+      if (!side) continue;
+      const key = `${n.id}\0${side}`;
+      groups.set(key, [...(groups.get(key) ?? []), { edge: i, start, p, along: side === 'top' || side === 'foot' ? 'x' : 'y', node: n }]);
+    }
+  });
+  let edges = laid.edges;
+  const slide = (end: End, by: number): boolean => {
+    const e = edges[end.edge];
+    const pts = (e.points ?? []).map((q) => ({ ...q }));
+    const k = end.along;
+    // The end and the bend after it (or the whole run, for a straight one between two cards).
+    const which = pts.length === 2 ? [0, 1] : end.start ? [0, 1] : [pts.length - 1, pts.length - 2];
+    const a = pts[which[0]], b = pts[which[1]];
+    if (Math.abs(a[k] - b[k]) > 0.5) return false;
+    for (const j of which) pts[j] = { ...pts[j], [k]: pts[j][k] + by };
+    const n = end.node;
+    const lo = k === 'x' ? n.x : n.y, hi = k === 'x' ? n.x + n.w : n.y + n.h;
+    if (pts[which[0]][k] < lo + END_CORNER || pts[which[0]][k] > hi - END_CORNER) return false;
+    if (pts.length === 2) {
+      const far = index.byId.get(end.start ? e.to : e.from)!;
+      const flo = k === 'x' ? far.x : far.y, fhi = k === 'x' ? far.x + far.w : far.y + far.h;
+      if (pts[which[1]][k] < flo + END_CORNER || pts[which[1]][k] > fhi - END_CORNER) return false;
+    }
+    const ends = new Set([e.from, e.to]);
+    for (let j = 1; j < pts.length; j++) if (cards.some((c) => !ends.has(c.id) && runCrosses(pts[j - 1], pts[j], c))) return false;
+    // Nor alongside another route, a lane or less from it.
+    for (let j = 1; j < pts.length; j++) {
+      const a = pts[j - 1], b = pts[j];
+      const level = Math.abs(a.y - b.y) < 0.5;
+      for (const [o, other] of edges.entries()) {
+        if (o === end.edge) continue;
+        const q = other.points ?? [];
+        for (let m = 1; m < q.length; m++) {
+          const c = q[m - 1], d = q[m];
+          const along = level
+            ? Math.abs(c.y - d.y) < 0.5 && Math.abs(c.y - a.y) < 10 && Math.min(Math.max(a.x, b.x), Math.max(c.x, d.x)) - Math.max(Math.min(a.x, b.x), Math.min(c.x, d.x))
+            : Math.abs(c.x - d.x) < 0.5 && Math.abs(c.x - a.x) < 10 && Math.min(Math.max(a.y, b.y), Math.max(c.y, d.y)) - Math.max(Math.min(a.y, b.y), Math.min(c.y, d.y));
+          if (typeof along === 'number' && along > 20) return false;
+        }
+      }
+    }
+    // A label on the run that slid goes with it.
+    const seg = end.start ? [pts[0], pts[1]] : [pts[pts.length - 2], pts[pts.length - 1]];
+    const was = e.labelBox;
+    const onIt = was && (k === 'x' ? Math.abs(was.x + was.w / 2 - (seg[0].x - by)) < 2 : Math.abs(was.y + was.h / 2 - (seg[0].y - by)) < 2);
+    const labelBox = onIt ? { ...was!, [k]: was![k] + by } : was;
+    edges = edges.map((x, j) => (j === end.edge ? { ...x, points: pts, ...(labelBox ? { labelBox } : null) } : x));
+    end.p = pts[which[0]];
+    return true;
+  };
+  for (const list of groups.values()) {
+    if (list.length < 2) continue;
+    const k = list[0].along;
+    list.sort((u, v) => u.p[k] - v.p[k]);
+    for (let i = 1; i < list.length; i++) {
+      const u = list[i - 1], v = list[i];
+      if (u.edge === v.edge) continue;
+      const gap = v.p[k] - u.p[k];
+      if (gap >= END_LANE) continue;
+      // The later one on along, or else the earlier one back, or else each half the way (a short card's side).
+      const need = END_LANE - gap;
+      if (slide(v, need) || slide(u, -need)) continue;
+      // Either way round: at one point, which of the two goes which way is the routes' to say.
+      const before = { edges, u: u.p, v: v.p };
+      for (const s of [1, -1]) {
+        if (slide(v, (s * need) / 2) && slide(u, (-s * need) / 2)) break;
+        edges = before.edges; u.p = before.u; v.p = before.v;
+      }
+    }
+  }
+  if (edges === laid.edges) return laid;
+  const bounds = diagramBounds(laid.nodes, edges.map((e) => ({ pts: e.points ?? [] })), edges.flatMap((e) => (e.labelBox ? [e.labelBox] : []))) ?? laid.bounds;
+  return { nodes: laid.nodes, edges, bounds };
+}
+
+/* ── Editing a drawing without moving what's in it ── */
+
+/** What a card says, which its size is for: the same, and the size it was laid out at (in its measured words) still holds. */
+const lookOf = (n: DiagramNode<unknown>) => JSON.stringify([n.kind ?? null, n.variant ?? null, n.title ?? null, n.icon ?? null, n.trailing ?? null, n.description ?? null, n.sections ?? null, !!n.entry, n.ports?.map((p) => p.id) ?? null]);
+const labelLookOf = (e: DiagramEdge<unknown>) => JSON.stringify([e.title ?? null, e.icon ?? null, e.sections ?? null, e.forkOf ?? null]);
+const sameBox = (a: Rect, b: Rect) => Math.abs(a.x - b.x) < 0.5 && Math.abs(a.y - b.y) < 0.5 && Math.abs(a.w - b.w) < 0.5 && Math.abs(a.h - b.h) < 0.5;
+const meets = (p: Rect, q: Rect) => p.x < q.x + q.w && q.x < p.x + p.w && p.y < q.y + q.h && q.y < p.y + p.h;
+
+/**
+ * A drawing changed without moving what the change didn't touch: `next` is what to draw now, its cards where they're placed
+ * (a laid-out board's places, written down by its first edit), and `was` is what was drawn last. A card that says what it said
+ * keeps the size it was drawn at; a new one, or one that says something else, is sized to its words. A box grows to hold
+ * what's in it and never shrinks or moves (a deletion leaves the rest in place); a new one is drawn round what it holds. A
+ * route whose two ends are where they were, with a label that says the same and nothing new in its way, is kept as it was;
+ * any other (a new connection, one whose end moved) is routed between its cards where they are, in a lane of its own with
+ * its label on its own run, clear of what's kept, out of a side that faces the other end. With nothing routed to keep (a
+ * board placed by hand from the start), routes are the Diagram's own, as before.
+ */
+export function keepLayout<N, E>(was: { nodes: readonly DiagramNode<N>[]; edges: readonly DiagramEdge<E>[] } | null, next: { nodes: readonly DiagramNode<N>[]; edges: readonly DiagramEdge<E>[] }, { text = estimateText }: { text?: TextMeasurer } = {}): Pick<DiagramLayoutResult<N, E>, 'nodes' | 'edges' | 'bounds'> {
+  const wasNodes = new Map((was?.nodes ?? []).map((n) => [n.id, n]));
+  const wasEdges = new Map((was?.edges ?? []).map((e) => [e.id, e]));
+  const byId = new Map<string, DiagramNode<N>>();
+  const resized: string[] = [];
+  for (const n of next.nodes) {
+    if (holdsNodes(n) || n.kind === 'marker') { byId.set(n.id, n); continue; }
+    const w0 = wasNodes.get(n.id);
+    if (w0 && lookOf(w0) === lookOf(n)) byId.set(n.id, { ...n, w: w0.w, h: w0.h, ...(w0.ports ? { ports: w0.ports } : null) });
+    else {
+      const a = nodeAnatomy(n, text);
+      byId.set(n.id, placeItemPorts({ ...n, w: a.w, h: a.h }, a, a.h));
+      if (w0 && w0.x === n.x && w0.y === n.y && (a.w > w0.w + 0.5 || a.h > w0.h + 0.5)) resized.push(n.id);
+    }
+  }
+  // A card that says more than it did (a longer name) grows the way there's room: from where it starts, else from where it
+  // ends, else about its middle; with none, it goes to the nearest free room itself. Nothing else moves for it.
+  for (const id of resized) {
+    const n = byId.get(id)!, w0 = wasNodes.get(id)!;
+    const index1 = indexDiagram([...byId.values()]);
+    const others = [...byId.values()].filter((o) => o.id !== id && o.kind !== 'marker' && !(holdsNodes(o) && isInside(index1, id, o.id)));
+    const blocked = (r: Rect) => others.some((o) => meets({ x: r.x - 16, y: r.y - 16, w: r.w + 32, h: r.h + 32 }, o))
+      || ancestorsOf(index1, id).some((b) => { const box = byId.get(b)!; return meets(r, { x: box.x, y: box.y, w: box.w, h: Math.min(box.h, nodeAnatomy(box, text).top) }); });
+    const tries = [{ x: n.x, y: n.y }, { x: w0.x + w0.w - n.w, y: n.y }, { x: w0.x + (w0.w - n.w) / 2, y: n.y }];
+    const fit = tries.find((p) => !blocked({ ...n, ...p }));
+    const at = fit ?? freePlace({ nodes: [...byId.values()].filter((o) => o.id !== id), edges: (was?.edges ?? []) as DiagramEdge<E>[] }, n, { parent: n.parent ?? null, near: null, center: { x: w0.x + w0.w / 2, y: w0.y + w0.h / 2 }, text });
+    if (at.x !== n.x || at.y !== n.y) byId.set(id, { ...n, x: round(at.x), y: round(at.y) });
+  }
+  // Boxes, innermost first, each round what it holds now, and never less than it was.
+  const index0 = indexDiagram([...byId.values()]);
+  const boxes = [...byId.values()].filter(holdsNodes).sort((a, b) => (index0.depth.get(b.id) ?? 0) - (index0.depth.get(a.id) ?? 0));
+  const P = CONTAINER_PADDING;
+  for (const b of boxes) {
+    const kids = (index0.children.get(b.id) ?? []).map((k) => byId.get(k.id)!);
+    const a = nodeAnatomy(b, text);
+    // Room under its sections for the labels of its own edges into what it holds.
+    const own = Math.max(0, ...next.edges.filter((e) => e.from === b.id && isInside(index0, e.to, b.id)).map((e) => edgeLabelSize(e, text)?.h ?? 0));
+    const room = own ? own + ELBOW_GAP + 12 : 0;
+    const w0 = wasNodes.get(b.id);
+    let r: Rect = w0 && w0.w > 0 && w0.h > 0 ? { x: w0.x, y: w0.y, w: w0.w, h: w0.h } : { x: b.x, y: b.y, w: Math.max(b.w, a.w), h: Math.max(b.h, a.h) };
+    if (kids.length) {
+      const rs = kids.flatMap((k) => [k as Rect, ...(k.entry ? [{ x: k.x - 22, y: k.y - 16, w: 22, h: 16 }] : [])]);
+      const kx0 = Math.min(...rs.map((q) => q.x)), ky0 = Math.min(...rs.map((q) => q.y));
+      const kx1 = Math.max(...rs.map((q) => q.x + q.w)), ky1 = Math.max(...rs.map((q) => q.y + q.h));
+      if (!w0) {
+        // New: round what it holds, as a placed board's boxes are.
+        r = { x: kx0 - P.side, y: ky0 - a.top - P.top - room, w: Math.max(a.w, kx1 - kx0 + P.side * 2), h: ky1 - ky0 + a.top + P.top + room + P.bottom };
+      } else {
+        // Grown only where what it holds is past its walls (its start, its header, its end, its foot), never moved.
+        const x0 = Math.min(r.x, kx0 - P.side), x1 = Math.max(r.x + r.w, kx1 + P.side), y1 = Math.max(r.y + r.h, ky1 + P.bottom);
+        const y0 = ky0 < r.y + a.top + 8 ? Math.min(r.y, ky0 - a.top - P.top - room) : r.y;
+        r = { x: x0, y: y0, w: Math.max(a.w, x1 - x0), h: y1 - y0 };
+      }
+    }
+    byId.set(b.id, placeItemPorts({ ...b, ...r, ...(w0?.ports && lookOf(w0) === lookOf(b) ? { ports: w0.ports } : null) }, a, r.h));
+  }
+  const nodes = next.nodes.map((n) => byId.get(n.id)!);
+  const index = indexDiagram(nodes);
+  // What's new or has moved, which a kept route mustn't now run through.
+  const moved = nodes.filter((n) => n.kind !== 'marker' && !(wasNodes.has(n.id) && sameBox(wasNodes.get(n.id)!, n)));
+  const changed = moved.filter((n) => !holdsNodes(n));
+  const changedIds = new Set(moved.map((n) => n.id));
+  const kept: DiagramEdge<E>[] = [];
+  const todo: DiagramEdge<E>[] = [];
+  for (const e of next.edges) {
+    const w0 = wasEdges.get(e.id);
+    const pts = w0?.points;
+    const keep = !!w0 && !!pts && pts.length >= 2 && w0.from === e.from && w0.to === e.to && (w0.fromPort ?? null) === (e.fromPort ?? null) && (w0.toPort ?? null) === (e.toPort ?? null)
+      && !changedIds.has(e.from) && !changedIds.has(e.to) && labelLookOf(w0) === labelLookOf(e)
+      && !changed.some((c) => pts.some((p, i) => i > 0 && runCrosses(pts[i - 1], p, c)) || (!!w0.labelBox && meets(w0.labelBox, c)));
+    if (keep) kept.push({ ...e, points: pts, ...(w0.labelBox ? { labelBox: w0.labelBox } : null) });
+    else { const { points: _p, labelBox: _l, ...rest } = e; todo.push(rest as DiagramEdge<E>); }
+  }
+  const routed = new Map<string, DiagramEdge<E>>(kept.map((e) => [e.id, e]));
+  // Routed only where there were routes to keep: a board placed by hand is routed by the Diagram, all of it, as before.
+  if (was?.edges.some((e) => (e.points?.length ?? 0) >= 2) && nodes.length + next.edges.length <= SEARCH_UP_TO * 2) {
+    const tops = new Map<string, number>();
+    const headOf = (n: DiagramNode<N>) => { let t = tops.get(n.id); if (t === undefined) { t = nodeAnatomy(n, text).top; tops.set(n.id, t); } return t; };
+    for (const e of todo) {
+      const a = index.byId.get(e.from), b = index.byId.get(e.to);
+      // A loop, a box's own edge to what it holds and an edge that forks from another's label are the Diagram's to draw.
+      if (!a || !b || a === b || e.forkOf || isInside(index, a.id, b.id) || isInside(index, b.id, a.id)) continue;
+      const others = [...routed.values()];
+      const options = {
+        headOf, captionOf: (n: DiagramNode<N>) => nodeAnatomy(n, text).w,
+        around: others.map((o) => o.points ?? []), labels: others.flatMap((o) => (o.labelBox ? [o.labelBox] : [])),
+        labelSize: (x: DiagramEdge<E>) => edgeLabelSize(x, text),
+      };
+      // Out of the middle of each side that faces the other end, a lane along from any end already there.
+      const taken = others.flatMap((o) => (o.points?.length ? [o.points[0], o.points[o.points.length - 1]] : []));
+      const ways = facingWays(a, b, index).map((w) => ({ from: clearEnd(w.from, a, taken), to: clearEnd(w.to, b, taken) }));
+      if (!ways.length) continue;
+      const way = cheapestWay(index, e, ways, options);
+      const r = laneRoutes(index, [e], options, new Map([[e.id, way]])).get(e.id);
+      if (r) routed.set(e.id, { ...e, points: r.pts, ...(r.label ? { labelBox: r.label } : null) });
+    }
+  }
+  const edges = next.edges.map((e) => routed.get(e.id) ?? todo.find((t) => t.id === e.id) ?? e);
+  const grown = roomInside({ nodes, edges, bounds: { x: 0, y: 0, w: 0, h: 0 } });
+  const bounds = diagramBounds(grown.nodes, edges.map((e) => ({ pts: e.points ?? [] })), edges.flatMap((e) => (e.labelBox ? [e.labelBox] : []))) ?? { x: 0, y: 0, w: 0, h: 0 };
+  return { nodes: grown.nodes, edges, bounds };
+}
+
+/** An end on a card's side moved along it, a lane at a time, until it's two lanes from every end already there (and off the
+ *  card's corners). */
+function clearEnd(end: ConnectorEnd, card: Rect, taken: readonly Pt[]): ConnectorEnd {
+  const n = end.n;
+  if (!n) return end;
+  const k = n.x !== 0 ? 'y' : 'x';
+  const lo = (k === 'x' ? card.x : card.y) + 12, hi = (k === 'x' ? card.x + card.w : card.y + card.h) - 12;
+  // Two lanes from what's there: an arrowhead's width and a lane between.
+  const free = (v: number) => !taken.some((p) => Math.abs((k === 'x' ? p.y : p.x) - (k === 'x' ? end.p.y : end.p.x)) < 1.5 && Math.abs(p[k] - v) < END_LANE * 2);
+  for (let i = 0; i <= 12; i++) for (const s of i ? [1, -1] : [1]) {
+    const v = end.p[k] + s * i * END_LANE;
+    if (v >= lo && v <= hi && free(v)) return { ...end, p: { ...end.p, [k]: round(v) } };
+  }
+  return end;
+}
+
+/**
+ * Where a new card of `size` goes on a drawing without moving anything: in free room, next to `near` (a card's id) when
+ * there's one, else nearest `center` (the middle of the view): never on a card, a label, an entry marker, or the header and
+ * sections of the box it goes in (`parent`, default the drawing's root), nor in a box it isn't in, and a lane's room from all
+ * of them; clear of routes where it can be. Within the box's start and top, so the box grows only on its end side and foot.
+ */
+export function freePlace<N, E>(drawn: { nodes: readonly DiagramNode<N>[]; edges: readonly DiagramEdge<E>[] }, size: { w: number; h: number }, { parent, near, center, text = estimateText }: { parent?: string | null; near?: string | null; center?: Pt | null; text?: TextMeasurer } = {}): Pt {
+  const index = indexDiagram(drawn.nodes);
+  const box = parent ? index.byId.get(parent) : drawn.nodes.find((n) => n.kind === 'root' && !index.parent.get(n.id));
+  const GAP = 40, HALF = 20;
+  const grow = (r: Rect, d: number): Rect => ({ x: r.x - d, y: r.y - d, w: r.w + 2 * d, h: r.h + 2 * d });
+  const hard: Rect[] = [];
+  for (const n of drawn.nodes) {
+    if (n.kind === 'marker') continue;
+    if (holdsNodes(n)) {
+      if (n.kind === 'region') continue;
+      const mine = box && (n.id === box.id || isInside(index, box.id, n.id));
+      hard.push(mine ? grow({ x: n.x, y: n.y, w: n.w, h: Math.min(n.h, nodeAnatomy(n, text).top) }, HALF) : grow(n, GAP));
+    } else hard.push(grow(n, GAP));
+    if (n.entry) hard.push(grow({ x: n.x - 22, y: n.y - 16, w: 22, h: 34 }, 8));
+  }
+  for (const e of drawn.edges) if (e.labelBox) hard.push(grow(e.labelBox, HALF));
+  const soft: Rect[] = drawn.edges.flatMap((e) => (e.points ?? []).slice(1).map((b, i) => {
+    const a = e.points![i];
+    return grow({ x: Math.min(a.x, b.x), y: Math.min(a.y, b.y), w: Math.abs(a.x - b.x), h: Math.abs(a.y - b.y) }, 12);
+  }));
+  const top = box ? box.y + Math.min(box.h, nodeAnatomy(box, text).top) + CONTAINER_PADDING.top + HALF : -Infinity;
+  const start = box ? box.x + CONTAINER_PADDING.side + HALF : -Infinity;
+  const fits = (r: Rect, withRoutes: boolean) => r.x >= start && r.y >= top && !hard.some((h) => meets(r, h)) && (!withRoutes || !soft.some((s) => meets(r, s)));
+  const at = (x: number, y: number): Rect => ({ x: round(x), y: round(y), w: size.w, h: size.h });
+  const by = near ? index.byId.get(near) : undefined;
+  // Beside what it's for: its end side, its foot, its start side, its top.
+  if (by) {
+    const slots = [at(by.x + by.w + GAP, by.y), at(by.x, by.y + by.h + GAP), at(by.x - GAP - size.w, by.y), at(by.x, by.y - GAP - size.h)];
+    for (const withRoutes of [true, false]) for (const s of slots) if (fits(s, withRoutes)) return { x: s.x, y: s.y };
+  }
+  // Else the nearest free room, ring by ring.
+  const c = by ? { x: by.x + by.w / 2, y: by.y + by.h / 2 } : center ?? (box ? { x: box.x + box.w / 2, y: box.y + box.h / 2 } : { x: 0, y: 0 });
+  const STEP = 16;
+  for (const withRoutes of [true, false]) {
+    for (let ring = 0; ring <= 250; ring++) {
+      const found: Rect[] = [];
+      for (let i = -ring; i <= ring; i++) for (const [dx, dy] of [[i, -ring], [i, ring], [-ring, i], [ring, i]] as const) {
+        if (ring && Math.abs(dx) !== ring && Math.abs(dy) !== ring) continue;
+        const r = at(c.x - size.w / 2 + dx * STEP, c.y - size.h / 2 + dy * STEP);
+        if (fits(r, withRoutes)) found.push(r);
+      }
+      if (found.length) {
+        found.sort((p, q) => Math.hypot(p.x + p.w / 2 - c.x, p.y + p.h / 2 - c.y) - Math.hypot(q.x + q.w / 2 - c.x, q.y + q.h / 2 - c.y));
+        return { x: found[0].x, y: found[0].y };
+      }
+    }
+  }
+  // Nowhere near: past the end of everything.
+  const right = Math.max(...drawn.nodes.map((n) => n.x + n.w), 0);
+  return { x: round(right + GAP), y: round(Math.max(top, box?.y ?? 0)) };
+}

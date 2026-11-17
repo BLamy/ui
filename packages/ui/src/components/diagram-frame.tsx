@@ -1,7 +1,7 @@
 'use client';
 import {
   createContext, useCallback, useContext, useEffect, useId, useLayoutEffect, useMemo, useRef, useState,
-  type ComponentProps, type MouseEvent, type ReactNode, type Ref,
+  type ComponentProps, type CSSProperties, type MouseEvent, type ReactNode, type Ref,
 } from 'react';
 import {
   AdaptivePane, AdaptivePaneClose, AdaptivePaneHeader, AdaptivePaneTitle, AdaptivePaneTrigger, adaptivePanePageClass, createAdaptivePaneController,
@@ -65,6 +65,11 @@ interface DiagramFrameContextValue {
   /** The board's chrome scope, which a drawer over the board reports itself to, so a fit keeps clear of it. */
   board: ReturnType<typeof useDiagramChromeScope> | null;
   setBoard: (scope: ReturnType<typeof useDiagramChromeScope> | null) => void;
+  /** The frame takes its drawing's height, and its bar is docked under the board rather than floating over it. */
+  docked: boolean;
+  /** The docked bar's height, px. */
+  bar: number;
+  setBar: (px: number) => void;
 }
 
 const DiagramFrameContext = createContext<DiagramFrameContextValue | null>(null);
@@ -102,11 +107,17 @@ export interface DiagramFrameProps extends Omit<ComponentProps<'div'>, 'ref'> {
   side?: 'start' | 'end';
   /** The widths, px, the frame's medium and regular size classes start at. Default 440 and 720. */
   breakpoints?: SizeClassBreakpoints;
+  /** `fill` (the default): it fills the nearest positioned box. `content`: it's as tall as its drawing needs to be read
+   *  whole (at 100%, or as far down as the readable size to fit across), between its `min-height` (default 200 px) and
+   *  `max-height` (default 70% of the viewport or 640 px, whichever's less), past which its first view is its top-start
+   *  corner and the drawing pans; and its bar is docked under the board, never over the drawing. For a diagram in a
+   *  document. */
+  height?: 'fill' | 'content';
   ref?: Ref<HTMLDivElement>;
 }
 
 /** The frame: a board and its panel, filling the nearest positioned box. */
-export function DiagramFrame({ open: openProp, defaultOpen, onOpenChange, presentation = 'auto', side = 'end', breakpoints = BREAKPOINTS, className, children, ref, ...props }: DiagramFrameProps) {
+export function DiagramFrame({ open: openProp, defaultOpen, onOpenChange, presentation = 'auto', side = 'end', breakpoints = BREAKPOINTS, height = 'fill', className, style, children, ref, ...props }: DiagramFrameProps) {
   const [measure, sizeClass] = useSizeClass<HTMLDivElement>({ breakpoints });
   const rootRef = useCallback((el: HTMLDivElement | null) => {
     measure(el);
@@ -129,6 +140,10 @@ export function DiagramFrame({ open: openProp, defaultOpen, onOpenChange, presen
   const [covered, setCovered] = useState(false);
   const moved = useRef(false);
   const [board, setBoard] = useState<DiagramFrameContextValue['board']>(null);
+  const [bar, setBar] = useState(0);
+  const docked = height === 'content';
+  // What its Diagram says its drawing needs, and the bar under it.
+  const content = docked && board?.content != null ? Math.ceil(board.content + bar) : null;
   const setOpen = useCallback<DiagramFrameContextValue['setOpen']>((next, { focus = true, ...options } = {}) => {
     const done = controller.setOpen(next, options);
     if (!focus) moved.current = false;
@@ -140,8 +155,8 @@ export function DiagramFrame({ open: openProp, defaultOpen, onOpenChange, presen
     if (!details.canceled && openProp === undefined) setChoice(next);
   }, [onOpenChange, openProp]);
   const value = useMemo<DiagramFrameContextValue>(() => ({
-    open, setOpen, changed, presentation: shown, sizeClass, side, controller, covered, title, setTitle, setCovered, moved, board, setBoard,
-  }), [open, setOpen, changed, shown, sizeClass, side, controller, covered, title, board]);
+    open, setOpen, changed, presentation: shown, sizeClass, side, controller, covered, title, setTitle, setCovered, moved, board, setBoard, docked, bar, setBar,
+  }), [open, setOpen, changed, shown, sizeClass, side, controller, covered, title, board, docked, bar]);
   return (
     <DiagramFrameContext.Provider value={value}>
       <SizeClassProvider value={sizeClass}>
@@ -152,7 +167,12 @@ export function DiagramFrame({ open: openProp, defaultOpen, onOpenChange, presen
           data-size-class={sizeClass}
           data-open={open ? '' : undefined}
           data-covered={covered ? '' : undefined}
-          className={cn('absolute inset-0 flex overflow-hidden bg-background', side === 'start' && 'flex-row-reverse', className)}
+          data-height={height}
+          className={cn(
+            'flex overflow-hidden bg-background', docked ? 'relative min-h-[200px] max-h-[min(70vh,640px)]' : 'absolute inset-0',
+            side === 'start' && 'flex-row-reverse', className,
+          )}
+          style={docked ? { height: content ?? 320, ...style } : style}
           {...props}
         >
           {children}
@@ -167,8 +187,8 @@ export type DiagramFrameBoardProps = ComponentProps<'div'>;
 /** The board's box: put a `Diagram` (and a `DiagramFrameBar`) in it. It's the page a pushed panel slides over, and
  *  it's inert under a cover. Its `ref` is a good `host` to measure a layout's text in. A Diagram in it fits its content
  *  clear of the bar, and puts its toolbar at the top. */
-export function DiagramFrameBoard({ className, children, ref: refProp, ...props }: DiagramFrameBoardProps) {
-  const { covered, setBoard } = useFrame('DiagramFrameBoard');
+export function DiagramFrameBoard({ className, style, children, ref: refProp, ...props }: DiagramFrameBoardProps) {
+  const { covered, setBoard, docked, bar } = useFrame('DiagramFrameBoard');
   const own = useRef<HTMLDivElement | null>(null);
   const ref = useCallback((el: HTMLDivElement | null) => {
     own.current = el;
@@ -181,7 +201,15 @@ export function DiagramFrameBoard({ className, children, ref: refProp, ...props 
     return () => setBoard(null);
   }, [chrome, setBoard]);
   return (
-    <div ref={ref} data-slot="diagram-frame-board" inert={covered || undefined} className={cn('relative min-h-0 min-w-0 flex-1', adaptivePanePageClass, className)} {...props}>
+    <div
+      ref={ref}
+      data-slot="diagram-frame-board"
+      inert={covered || undefined}
+      // A docked bar's room is the board's foot: the Diagram ends above it.
+      className={cn('relative min-h-0 min-w-0 flex-1', docked && '[&>[data-slot=diagram]]:bottom-(--diagram-frame-bar)', adaptivePanePageClass, className)}
+      style={docked ? { '--diagram-frame-bar': `${bar}px`, ...style } as CSSProperties : style}
+      {...props}
+    >
       <DiagramChromeProvider value={chrome}>{children}</DiagramChromeProvider>
     </div>
   );
@@ -217,10 +245,19 @@ export interface DiagramFrameBarProps extends ComponentProps<'div'> {
 /** A bar floating at the foot of the board, while the panel's closed: a status (its children, read politely as it
  *  changes) and the button that opens the panel. */
 export function DiagramFrameBar({ trigger, className, children, ...props }: DiagramFrameBarProps) {
-  const { open, moved } = useFrame('DiagramFrameBar');
+  const { open, moved, docked, setBar } = useFrame('DiagramFrameBar');
   const bar = useRef<HTMLDivElement>(null);
-  // A fit leaves room for it while it shows.
-  useDiagramChromeInset(bar, 'bottom', !open);
+  // A fit leaves room for it while it shows over the board. Docked, it's under the board, and the frame makes room for it.
+  useDiagramChromeInset(bar, 'bottom', !open && !docked);
+  useLayoutEffect(() => {
+    const el = bar.current;
+    if (!docked || open || !el) { setBar(0); return undefined; }
+    const measure = () => setBar(el.offsetHeight);
+    measure();
+    const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(measure);
+    observer?.observe(el);
+    return () => { observer?.disconnect(); setBar(0); };
+  }, [docked, open, setBar]);
   // The panel closed from inside it (its × or back): focus comes back to the button that opens it.
   useEffect(() => {
     if (open || !moved.current) return;
@@ -232,7 +269,12 @@ export function DiagramFrameBar({ trigger, className, children, ...props }: Diag
     <div
       ref={bar}
       data-slot="diagram-frame-bar"
-      className={cn('absolute inset-x-3 bottom-3 z-10 flex items-center justify-between gap-2 rounded-ctl bg-popover p-2 ps-3 text-footnote text-popover-foreground shadow-raised', className)}
+      data-docked={docked ? '' : undefined}
+      className={cn(
+        'absolute z-10 flex items-center justify-between gap-2 p-2 ps-3 text-footnote',
+        docked ? 'inset-x-0 bottom-0 border-t border-border bg-background text-foreground' : 'inset-x-3 bottom-3 rounded-ctl bg-popover text-popover-foreground shadow-raised',
+        className,
+      )}
       {...props}
     >
       <span data-slot="diagram-frame-status" role="status" className="min-w-0 truncate font-semibold">{children}</span>
@@ -252,6 +294,8 @@ export interface DiagramFramePanelProps extends Omit<ComponentProps<'div'>, 'tit
   modal?: boolean;
   /** Things to do, after the title: a ToolbarButton, a menu. */
   actions?: ReactNode;
+  /** What takes focus when its trigger opens it: a selector in its body (a search to type in). Default the body. */
+  initialFocus?: string;
   className?: string;
   children?: ReactNode;
 }
@@ -259,7 +303,7 @@ export interface DiagramFramePanelProps extends Omit<ComponentProps<'div'>, 'tit
 /** The panel: an AdaptivePane with a header (its title, and × or ‹ back), and a body that scrolls. Its `ref`, `id` and
  *  `data-*` go to the panel's element (`data-slot="diagram-frame-panel"`, around the pane), and `aria-label` names the
  *  pane. */
-export function DiagramFramePanel({ title, backLabel = 'Board', width = PANEL_WIDTH, modal = false, actions, className, children, 'aria-label': ariaLabel, ...props }: DiagramFramePanelProps) {
+export function DiagramFramePanel({ title, backLabel = 'Board', width = PANEL_WIDTH, modal = false, actions, initialFocus, className, children, 'aria-label': ariaLabel, ...props }: DiagramFramePanelProps) {
   const { open, changed, presentation, side, controller, covered, setTitle, moved, board } = useFrame('DiagramFramePanel');
   useLayoutEffect(() => { setTitle(title); }, [title, setTitle]);
   const body = useRef<HTMLDivElement>(null);
@@ -281,12 +325,22 @@ export function DiagramFramePanel({ title, backLabel = 'Board', width = PANEL_WI
       report(bodyId, edge, null);
     };
   }, [report, boardBox, drawer, side, bodyId]);
-  // Opened by its trigger as a column, focus goes in: the trigger's gone (the bar hides). A drawer and a push move it themselves.
+  // Opened by its trigger, focus goes in: the trigger's gone (the bar hides). A drawer and a push move it into themselves,
+  // and then to what `initialFocus` names, once it isn't inert.
   useEffect(() => {
-    if (!open || presentation !== 'column' || !moved.current) return;
+    if (!open || !moved.current) return undefined;
+    if (presentation !== 'column' && !initialFocus) return undefined;
     moved.current = false;
-    body.current?.focus({ preventScroll: true });
-  }, [open, presentation, moved]);
+    let frame = 0;
+    const go = (tries: number) => {
+      const el = body.current;
+      const target = (initialFocus ? el?.querySelector<HTMLElement>(initialFocus) : null) ?? (presentation === 'column' ? el : null);
+      if (target && !target.closest('[inert]')) target.focus({ preventScroll: true });
+      else if (tries > 0 && typeof requestAnimationFrame === 'function') frame = requestAnimationFrame(() => go(tries - 1));
+    };
+    go(10);
+    return () => cancelAnimationFrame(frame);
+  }, [open, presentation, moved, initialFocus]);
   return (
     <div data-slot="diagram-frame-panel" className="contents" inert={covered || undefined} {...props}>
       <AdaptivePane

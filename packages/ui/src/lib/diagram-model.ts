@@ -834,7 +834,7 @@ const LANE_CLEAR = 6;
  *  enough to go out of a box and back in (two walls) for it. */
 const LABEL_DETOUR = 12000;
 /** Closer than this along a box's wall, a route reads as the wall. */
-const WALL_CLEAR = 8;
+const WALL_CLEAR = 10;
 
 interface LaneSegment { a: Pt; b: Pt; edge: string; key?: string }
 
@@ -1566,8 +1566,19 @@ function glyphSize(glyph: DiagramGlyph, size: number, text: TextOf): number {
   return typeof glyph === 'string' ? size : Math.max(size, text(glyph.text, 'trailing').w + 4);
 }
 
-/** An item's title as drawn: in a `code` section, a key with a value or type after it reads `key:` (`audioRef: string`). */
-export const codeKey = (item: Pick<DiagramSectionItem, 'title' | 'description'>, code: boolean): string => (code && item.description ? `${item.title}:` : item.title);
+/** Titles already said to end in a colon of their own, so each is said once. */
+const colonWarned = new Set<string>();
+
+/** An item's title as drawn: in a `code` section, a key with a value or type after it reads `key:` (`audioRef: string`). A
+ *  title that ends in a colon of its own would read `key::`; that's said once, in the console. */
+export const codeKey = (item: Pick<DiagramSectionItem, 'title' | 'description'>, code: boolean): string => {
+  if (!code || !item.description) return item.title;
+  if (item.title.endsWith(':') && !colonWarned.has(item.title)) {
+    colonWarned.add(item.title);
+    console.warn(`Diagram: the code item "${item.title}" ends in a colon, and a key in a code section gets one of its own ("${item.title}:"). Leave it off.`);
+  }
+  return `${item.title}:`;
+};
 
 function itemSize(item: DiagramSectionItem, variant: DiagramSection['variant'], text: TextOf): { w: number; h: number } {
   const C = DIAGRAM_CARD;

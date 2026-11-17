@@ -9,7 +9,7 @@ export type {
   CloudflareBoardOptions, CloudflareBoardProps, CloudflareDiagramChangeDetails, CloudflareDiagramChangeReason, CloudflareDiagramProps, CloudflareMachineChangeReason,
   CloudflareServiceSearchProps,
 } from './components/cloudflare-diagram';
-export { CLOUDFLARE_SYSTEM_NODE, cloudflareBoardBounds, cloudflareBoardData, cloudflareEnvironmentNode, cloudflareNoun, placeInLayers } from './lib/cloudflare-board';
+export { CLOUDFLARE_SYSTEM_NODE, cloudflareBoardBounds, cloudflareBoardData, cloudflareEdgeTitle, cloudflareEnvironmentNode, cloudflareNoun, placeInLayers } from './lib/cloudflare-board';
 export type { CloudflareBoardData, CloudflareBoardDataOptions, CloudflareServiceEdgeData, CloudflareServiceNodeData } from './lib/cloudflare-board';
 export { CLOUDFLARE_CATALOG } from './lib/cloudflare-catalog.generated';
 export type {

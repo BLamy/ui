@@ -8,8 +8,8 @@ export const STATECHART_LIKE: DiagramDraft = {
     {
       id: 'player', kind: 'root', title: 'Audio Player',
       sections: [{ title: 'Context', variant: 'code', items: [
-        { title: 'audioRef:', description: 'string' }, { title: 'currentTime:', description: 'number' },
-        { title: 'trackSource:', description: 'string' }, { title: 'audioContext:', description: 'string' },
+        { title: 'audioRef', description: 'string' }, { title: 'currentTime', description: 'number' },
+        { title: 'trackSource', description: 'string' }, { title: 'audioContext', description: 'string' },
       ] }],
     },
     { id: 'init', parent: 'player', title: 'Init', entry: true },

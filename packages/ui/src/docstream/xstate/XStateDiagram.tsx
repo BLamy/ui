@@ -64,7 +64,8 @@ function MermaidFallback({ code }: { code: string }) {
     : <div className="docs-mermaid docs-mermaid-pending" role="status">Drawing statechart…</div>
 }
 
-/** The result pane shared by Markdown and the live editor: the machine on a read-only StateDiagram. */
+/** The result pane shared by Markdown and the live editor: the machine on a read-only StateDiagram, as tall as it needs to be
+ *  read whole (up to 70% of the viewport or 640 px; past that it opens on its start, and pans). */
 export function XStatePreview({ code, appearance }: XStateDiagramProps) {
   const library = useStateDiagram()
   const [measureScheme, scheme] = useColorScheme(appearance)
@@ -73,7 +74,7 @@ export function XStatePreview({ code, appearance }: XStateDiagramProps) {
   else if (library) {
     board = (
       <div ref={measureScheme} className={`docs-xstate-board ${scheme}`} data-appearance={scheme}>
-        <library.StateDiagram source={code} defaultPanelOpen={false} />
+        <library.StateDiagram source={code} defaultPanelOpen={false} height="content" />
       </div>
     )
   } else board = <div className="docs-xstate-board docs-mermaid docs-mermaid-pending" role="status">Drawing statechart…</div>

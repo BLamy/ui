@@ -2755,6 +2755,13 @@ export function Fetching() {
 | `data-slot="cloudflare-service"` (`data-kind`, `data-problem`), `cloudflare-service-name`, `cloudflare-port-label` | Diagram's node, `[data-slot=diagram-node][data-node=<id>]`; `diagram-node-title`; a problem is `[data-slot=diagram-node-header][data-tone=destructive]`; ports are `diagram-port`, editable only |
 | Editable: a connection was drawn from its ports (`fromPort` / `toPort` on its edge) | a connection claims no dots: it's the read-only edge, so an editable board is laid out, wrapped and routed exactly as the read-only one, with dots to connect by |
 | `cloudflareBoardProps(...).noun: 'service'` | `noun: cloudflareNoun` (services, environments and the system each by their name), exported from `@brett_lamy/ui/cloudflare` |
+| Editable: every add, connect or delete laid the system out again (and an add could unwrap the board) | an edit never moves a service you didn't move: the first edit writes every service's `at` into the system `onDataChange` hands back; a new service goes in free room, a connection is routed between its cards where they are; Tidy up (toolbar, ⌃⌥T) lays it out again as one undoable step, `details.reason: 'tidy'` |
+| `CloudflareDiagramChangeReason`: `… \| 'edit' \| 'add' \| 'undo' \| 'redo'` | adds `'tidy'` |
+| A connection's panel title by `via` ("events · Files → Jobs") | the label's own title everywhere: "event notification · Files → Jobs" (`cloudflareEdgeTitle`, exported from `@brett_lamy/ui/cloudflare`) |
+| `xstate` and `capnp` fences: fixed 520 px / 420 px boards, the bar over the drawing | as tall as the drawing needs (`height="content"` on StateDiagram, CloudflareDiagram and DiagramFrame), up to `min(70vh, 640px)`; the bar is docked under the board |
+| — | `Diagram` `animate`; `DiagramToolbarButton`; `DiagramFrame` `height`; `DiagramFramePanel` `initialFocus`; `StateDiagram` and `CloudflareDiagram` `height` |
+| A refused connection's reason only in the live region | also shown beside the target (`diagram-refusal`), and for a moment after release |
+| Ports at one place: the one under the pointer, if the rule took it | the first pair the rule takes, in each card's own order |
 
 The block's export is a Dialog (a sheet at a phone's size), and its buttons are `data-action="new"`, `open`, `export`, `download`, `download-all`.
 

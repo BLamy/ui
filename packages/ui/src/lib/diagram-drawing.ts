@@ -202,6 +202,57 @@ export interface DiagramEye { must: Rect; want?: Rect | null }
 
 const unionOf = (rs: readonly (Rect | null | undefined)[]): Rect | null => unionRect(rs.filter((r): r is Rect => !!r));
 
+/** What has the eye in the opening view when nothing's selected or current: where the drawing starts, the first of its root's
+ *  own cards with an entry marker (a machine's initial state, a system's first entry point), marker and all. Kept in view
+ *  with the top-start corner when both can be read; else it wins, so a phone opens on where a machine starts. */
+export function diagramStartEye<N, E>(d: Pick<DiagramDrawing<N, E>, 'index'>): DiagramEye | null {
+  const { index } = d;
+  const root = index.nodes.find((n) => n.kind === 'root' && !index.parent.get(n.id));
+  const pool = root ? index.children.get(root.id) ?? [] : index.nodes.filter((n) => !index.parent.get(n.id));
+  const first = pool.filter((n) => n.entry && n.kind !== 'marker').sort((a, b) => a.y - b.y || a.x - b.x)[0];
+  return first ? { must: { x: first.x - 22, y: first.y - 16, w: first.w + 22, h: first.h + 16 } } : null;
+}
+
+/**
+ * How tall a board is for its drawing to be read whole: the drawing at the size it opens at across the board's `width` (100%,
+ * or as far down as the readable size to fit across), with the room `insets` keep for the chrome over it; between `min` and
+ * `max`. Past `max`, the board opens on its top-start corner and the drawing pans.
+ */
+export function diagramContentHeight(bounds: Rect | null, width: number, insets: DiagramInsets, { min = 0, max = Infinity }: { min?: number; max?: number } = {}): number {
+  if (!bounds || bounds.w <= 0 || bounds.h <= 0) return min;
+  const across = Math.max(1, width - insets.left - insets.right);
+  const zoom = Math.min(1, Math.max(DIAGRAM_LEGIBLE_ZOOM, across / bounds.w));
+  return Math.min(max, Math.max(min, Math.ceil(bounds.h * zoom + insets.top + insets.bottom)));
+}
+
+/**
+ * What has the eye in a drawing: the nodes and edges given (what's selected, or what's current), each node as its box (the
+ * innermost of those that hold one another), each edge as its label (or its middle); with it, what's wanted beside it when
+ * there's room: the labels of `wanted` edges (the transitions a machine can take now), and with `ends`, the two cards each
+ * edge joins (a selection: a connection just made is seen with what it connects).
+ */
+export function diagramEye<N, E>(d: Pick<DiagramDrawing<N, E>, 'index' | 'labels' | 'geometries' | 'edges'>, on: { nodes: readonly string[]; edges: readonly string[] }, wanted?: ReadonlySet<string> | null, { ends = false }: { ends?: boolean } = {}): DiagramEye | null {
+  const rects: Rect[] = [];
+  // The innermost of them: a state, not the box around it that's current as well.
+  const set = new Set(on.nodes);
+  const holdsOne = new Set<string>();
+  for (const id of on.nodes) for (let p = d.index.parent.get(id); p; p = d.index.parent.get(p) ?? null) { if (set.has(p)) holdsOne.add(p); }
+  for (const id of on.nodes) { const n = d.index.byId.get(id); if (n && !holdsOne.has(id)) rects.push(n); }
+  for (const id of on.edges) {
+    const l = d.labels.find((x) => x.edge.id === id)?.box;
+    const g = l ? null : d.geometries.get(id);
+    if (l) rects.push(l);
+    else if (g) rects.push({ x: g.mid.x - 1, y: g.mid.y - 1, w: 2, h: 2 });
+  }
+  const must = unionRect(rects);
+  if (!must) return null;
+  const labels = wanted?.size ? d.labels.filter((l) => wanted.has(l.edge.id)).map((l) => l.box) : [];
+  // A selected edge's two ends, with its label: what it joins is what it's about (a connection just made, say).
+  const joined = ends ? on.edges.flatMap((id) => { const e = d.edges.find((x) => x.edge.id === id)?.edge; return e ? [d.index.byId.get(e.from), d.index.byId.get(e.to)].filter((n): n is DiagramNode<N> => !!n) : []; }) : [];
+  const want = labels.length || joined.length ? unionRect([...labels, ...joined, ...(joined.length ? [must] : [])]) : null;
+  return { must, want };
+}
+
 /**
  * The view, moved as little as keeps what has the eye in the part of the board nothing covers (`insets`): with what it
  * wants beside it, and then with the drawing's top-start corner when that's in view now (it isn't taken away to show

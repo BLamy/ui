@@ -97,8 +97,29 @@ export interface StateDiagramProps extends Pick<DiagramProps, 'minimap' | 'backg
   onPanelOpenChange?: DiagramFrameProps['onOpenChange'];
   /** How the panel shows (default `auto`: column, drawer or pushed page, by the frame's size class). */
   panelPresentation?: DiagramFrameProps['presentation'];
+  /** `fill` (the default) fills the nearest positioned box; `content` is as tall as the machine needs to be read whole,
+   *  between a floor and a cap, with its bar under the board (`DiagramFrame`'s `height`): for a machine in a document. */
+  height?: DiagramFrameProps['height'];
   className?: string;
   style?: CSSProperties;
+}
+
+/** The board a layout fills when the frame takes its drawing's height: its width, and as tall as such a frame gets. */
+const CONTENT_BOARD_HEIGHT = 640;
+
+/** How wide an element is, in steps of 40 px, once it's been measured. */
+function useWidth(ref: { current: HTMLElement | null }, on: boolean): number | null {
+  const [width, setWidth] = useState<number | null>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!on || !el || typeof ResizeObserver === 'undefined') return undefined;
+    const read = () => { const w = el.getBoundingClientRect().width; if (w) setWidth(Math.round(w / 40) * 40); };
+    read();
+    const observer = new ResizeObserver(read);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [ref, on]);
+  return width;
 }
 
 const XSTATE_PEER = 'This needs xstate, an optional peer of @brett_lamy/ui: npm install xstate';
@@ -515,7 +536,7 @@ const isPlainObject = (v: unknown): v is Record<string, unknown> => typeof v ===
 export function StateDiagram({
   machine: given, source, config, defaultConfig, onConfigChange, direction, density, layout: initialLayout, simulate, editable = false, implementations,
   selection: selectionProp, defaultSelection = NOTHING_SELECTED, onSelectionChange, panelOpen, defaultPanelOpen, onPanelOpenChange, panelPresentation,
-  background = 'grid', minimap = 'auto', onAction, className, style, 'aria-label': ariaLabel, ...diagram
+  background = 'grid', minimap = 'auto', onAction, height, className, style, 'aria-label': ariaLabel, ...diagram
 }: StateDiagramProps) {
   /* ── What's being shown: `config` when it's controlled; otherwise what it started from (`defaultConfig`, `source` or
         `machine`), until there's an edit to show instead ── */
@@ -540,7 +561,10 @@ export function StateDiagram({
     }
   }, [machine]);
   const board = useRef<HTMLDivElement>(null);
-  const laid = useDiagramLayout(draft, { host: board, direction, density, initial: initialLayout });
+  // In a frame that takes its drawing's height, the layout fills its width and as tall as it can get, not the height it
+  // has now (which is the drawing's own).
+  const width = useWidth(board, height === 'content');
+  const laid = useDiagramLayout(draft, { host: board, direction, density, initial: initialLayout, ...(height === 'content' && width ? { board: { width, height: CONTENT_BOARD_HEIGHT } } : null) });
   const behind = implementations ?? given?.implementations;
   const { sim, error: simError } = useSimulation(machine, simulate, behind?.delays);
 
@@ -840,11 +864,14 @@ export function StateDiagram({
       defaultOpen={defaultPanelOpen}
       onOpenChange={onPanelOpenChange}
       presentation={panelPresentation}
+      height={height}
       className={className}
       style={style}
     >
       <DiagramFrameBoard ref={board}>
         <Diagram<StateNodeData, StateEdgeData>
+          // An edit lays the machine out again, as XState's editor does: things slide to their new places.
+          animate
           nodes={laid.nodes}
           edges={laid.edges}
           current={where}

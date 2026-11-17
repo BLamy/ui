@@ -268,3 +268,103 @@ describe('CloudflareDiagram, its anatomy', () => {
     expect(onDataChange.mock.calls[0]?.[0]).toMatchObject({ name: 'Uploads', accountId: 'acc-1' });
   });
 });
+
+/* Editing keeps the board: what an edit didn't touch stays where it was, in the system it reports (`at`), and undo puts it
+   all back. The layout itself is the invariant suite's (lib/diagram-invariants.test.ts); this is the component's part. */
+describe('CloudflareDiagram, editing keeps the board', () => {
+  const PLACED: CloudflareService[] = [
+    { id: 'api', kind: 'workers', label: 'API', at: { x: 40, y: 120 } },
+    { id: 'files', kind: 'r2', label: 'Files', at: { x: 40, y: 420 } },
+    { id: 'jobs', kind: 'queues', label: 'Jobs', at: { x: 360, y: 420 } },
+  ];
+  const PLACED_EDGES: CloudflareEdge[] = [
+    { id: 'api-files', from: 'api', to: 'files', via: 'r2_buckets', binding: 'FILES', operations: ['put'] },
+    { id: 'files-jobs', from: 'files', to: 'jobs', via: 'events', operations: ['object-create'] },
+  ];
+  function Controlled({ onChange, start = PLACED, edges = PLACED_EDGES, ...props }: Partial<CloudflareDiagramProps> & { onChange: (s: CloudflareSystem, d: { reason: string }) => void; start?: CloudflareService[]; edges?: CloudflareEdge[] }) {
+    const [system, setSystem] = useState<CloudflareSystem>({ services: start, edges });
+    return <CloudflareDiagram editable panelPresentation="column" defaultPanelOpen services={system.services} edges={system.edges} onDataChange={(next, details) => { onChange(next, details); setSystem(next); }} {...props} />;
+  }
+  const at = (s: CloudflareSystem, id: string) => s.services.find((x) => x.id === id)?.at;
+  const boxOf = (s: CloudflareSystem, id: string) => {
+    const n = document.querySelector<HTMLElement>(`[data-slot=diagram-node][data-node="${id}"]`);
+    const p = at(s, id)!;
+    return { x: p.x, y: p.y, w: parseFloat(n?.parentElement?.style.width || n?.style.width || '0'), h: parseFloat(n?.parentElement?.style.height || n?.style.height || '0') };
+  };
+
+  it('adds a service from the catalog in free room beside what’s selected; nothing else moves, and undo puts it all back', async () => {
+    const onChange = vi.fn();
+    render(<div style={{ position: 'relative', width: 1200, height: 700 }}><Controlled onChange={onChange} defaultSelection={{ nodes: ['api'], edges: [] }} /></div>);
+    await settle();
+    await type(screen.getByRole('combobox', { name: 'Search Cloudflare’s services' }), 'kv');
+    fireEvent.keyDown(screen.getByRole('combobox', { name: 'Search Cloudflare’s services' }), { key: 'Enter' });
+    await settle();
+    const [added, details] = onChange.mock.calls.at(-1) as [CloudflareSystem, { reason: string }];
+    expect(details.reason).toBe('add');
+    for (const s of PLACED) expect(at(added, s.id)).toEqual(s.at);
+    const kv = added.services.find((s) => !PLACED.some((p) => p.id === s.id))!;
+    expect(kv.at).toBeTruthy();
+    await settle();
+    // Clear of every card, beside the selected one.
+    const mine = boxOf(added, kv.id);
+    for (const s of PLACED) {
+      const o = boxOf(added, s.id);
+      expect(mine.x < o.x + o.w && o.x < mine.x + mine.w && mine.y < o.y + o.h && o.y < mine.y + mine.h, `${kv.id} on ${s.id}`).toBe(false);
+    }
+    const api = boxOf(added, 'api');
+    expect(Math.hypot(mine.x - api.x, mine.y - api.y)).toBeLessThan(600);
+    fireEvent.click(screen.getByRole('button', { name: 'Undo' }));
+    await settle();
+    const [undone, why] = onChange.mock.calls.at(-1) as [CloudflareSystem, { reason: string }];
+    expect(why.reason).toBe('undo');
+    expect(undone.services).toEqual(PLACED);
+  });
+
+  it('deletes a service and leaves the rest where they were', async () => {
+    const onChange = vi.fn();
+    render(<div style={{ position: 'relative', width: 1200, height: 700 }}><Controlled onChange={onChange} defaultSelection={{ nodes: ['files'], edges: [] }} /></div>);
+    await settle();
+    fireEvent.click(within(panel()).getByRole('button', { name: 'Delete' }));
+    await settle();
+    const [left] = onChange.mock.calls.at(-1) as [CloudflareSystem];
+    expect(left.services.map((s) => s.id)).toEqual(['api', 'jobs']);
+    expect(at(left, 'api')).toEqual(PLACED[0]!.at);
+    expect(at(left, 'jobs')).toEqual(PLACED[2]!.at);
+  });
+
+  it('has Tidy up in its toolbar, with its shortcut, which lays the board out again as one step that undo takes back', async () => {
+    const onChange = vi.fn();
+    render(<div style={{ position: 'relative', width: 1200, height: 700 }}><Controlled onChange={onChange} /></div>);
+    await settle();
+    const tidy = screen.getByRole('button', { name: 'Tidy up' });
+    expect(tidy.closest('[role=toolbar]')).toBeTruthy();
+    fireEvent.click(tidy);
+    for (let i = 0; i < 100 && !onChange.mock.calls.length; i++) await settle();
+    const [tidied, details] = onChange.mock.calls.at(-1) as [CloudflareSystem, { reason: string }];
+    expect(details.reason).toBe('tidy');
+    expect(tidied.services.every((s) => s.at)).toBe(true);
+    expect(tidied.services.map((s) => s.at)).not.toEqual(PLACED.map((s) => s.at));
+    fireEvent.click(screen.getByRole('button', { name: 'Undo' }));
+    await settle();
+    expect((onChange.mock.calls.at(-1) as [CloudflareSystem])[0].services).toEqual(PLACED);
+  });
+
+  it('“Add a service” opens the panel on the search, ready to type', async () => {
+    render(<div style={{ position: 'relative', width: 1200, height: 700 }}><CloudflareDiagram editable panelPresentation="column" defaultServices={PLACED} defaultEdges={PLACED_EDGES} /></div>);
+    await settle();
+    fireEvent.click(screen.getByRole('button', { name: 'Add a service' }));
+    await settle();
+    await settle();
+    expect(document.activeElement).toBe(screen.getByRole('combobox', { name: 'Search Cloudflare’s services' }));
+  });
+
+  it('calls a connection by one name in the panel, on the board and to a screen reader', async () => {
+    render(<div style={{ position: 'relative', width: 1200, height: 700 }}><CloudflareDiagram panelPresentation="column" services={PLACED} edges={PLACED_EDGES} defaultSelection={{ nodes: [], edges: ['files-jobs'] }} /></div>);
+    await settle();
+    const label = document.querySelector('[data-slot=diagram-edge-label][data-edge=files-jobs]')?.textContent ?? '';
+    expect(label).toContain('event notification');
+    expect(document.querySelector('[data-slot=adaptive-pane-title]')?.textContent).toBe('event notification · Files → Jobs');
+    expect(document.querySelector('[data-slot=cloudflare-panel-status]')?.textContent).toBe('event notification, from Files to Jobs');
+    expect(document.querySelector('[data-slot=diagram-edge][data-edge=files-jobs]')?.getAttribute('aria-label')).toMatch(/^event notification/);
+  });
+});

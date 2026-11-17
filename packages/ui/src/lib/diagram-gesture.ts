@@ -119,23 +119,29 @@ function endsLike(end: DiagramConnectionEnd, ctx: DiagramGestureContext): Diagra
   return [end, ...like.map((p) => ({ node: end.node, port: p.id }))];
 }
 
+/** Ends of one node in the order its ports are declared, a bare node first. */
+function inCardOrder(ends: DiagramConnectionEnd[], ctx: DiagramGestureContext): DiagramConnectionEnd[] {
+  const order = ctx.index.byId.get(ends[0]?.node ?? '')?.ports?.map((p) => p.id) ?? [];
+  const rank = (e: DiagramConnectionEnd) => (e.port ? order.indexOf(e.port) : -1);
+  return [...ends].sort((a, b) => rank(a) - rank(b));
+}
+
 /** A connection gesture, offered `over`. Where the ports it's between aren't a connection the rule allows, but others at the
  *  same places are (or `over` is a node, and one of its ports is), it's offered between those: the first the rule takes. */
 export function offerConnection(g: Extract<DiagramGesture, { k: 'connect' }>, at: Pt, over: DiagramConnectionEnd | null, ctx: DiagramGestureContext): Extract<DiagramGesture, { k: 'connect' }> {
   if (!over || !ctx.connect) return { ...g, at, over, valid: null };
   const check = ctx.connect.check;
-  const valid = check(connectionOf(g, over));
-  if (valid === true) return { ...g, at, over, valid };
-  // An edge's end that's being moved keeps the other end it has.
-  const fixeds = g.edge ? [g.fixed] : endsLike(g.fixed, ctx);
-  const overs = endsLike(over, ctx);
+  // Ports at one place are one place to connect, whichever of them the pointer is nearest (they're all under it): tried in
+  // the order each card has them, the first pair the rule takes. An edge's end that's being moved keeps the other end it has.
+  const fixeds = g.edge ? [g.fixed] : inCardOrder(endsLike(g.fixed, ctx), ctx);
+  const overs = inCardOrder(endsLike(over, ctx), ctx);
   for (const fixed of fixeds) {
     for (const o of overs) {
-      if (fixed === g.fixed && o === over) continue;
-      const tried = { ...g, fixed };
+      const tried = fixed === g.fixed ? g : { ...g, fixed };
       if (check(connectionOf(tried, o)) === true) return { ...tried, at, over: o, valid: true };
     }
   }
+  const valid = check(connectionOf(g, over));
   // Why not: as it was offered, or, for a node with ports, as its first port would be.
   return { ...g, at, over, valid: over.port || !overs[1] ? valid : check(connectionOf(g, overs[1])) };
 }

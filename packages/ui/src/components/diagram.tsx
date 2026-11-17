@@ -10,15 +10,15 @@ import { renderEmptyState } from '@/components/ui/empty-state';
 import { Spinner } from '@/components/ui/spinner';
 import { Toolbar, ToolbarButton, ToolbarSeparator, type ToolbarProps } from '@/components/ui/toolbar';
 import { Tooltip, TooltipContent, TooltipShortcut, TooltipTrigger } from '@/components/ui/tooltip';
-import { centerOf, intersects, rectOf, toBoard, unionRect, type Guide, type Pt, type Rect } from '@/lib/canvas-math';
+import { centerOf, intersects, rectOf, toBoard, type Guide, type Pt, type Rect } from '@/lib/canvas-math';
 import { useContainerSize } from '@/lib/container';
 import { connectionOf, connectionTargetAt, hitTestDiagram, movableNodes, offerConnection, stepDiagramGesture, type DiagramConnectionEnd, type DiagramGesture, type DiagramGestureEvent, type DiagramHit } from '@/lib/diagram-gesture';
-import { AVOID_UP_TO, drawDiagram, drawingCorner, firstView, keepInView, type DiagramDrawing, type DiagramEye } from '@/lib/diagram-drawing';
+import { AVOID_UP_TO, diagramContentHeight, diagramEye, diagramStartEye, drawDiagram, drawingCorner, firstView, keepInView, type DiagramDrawing, type DiagramEye } from '@/lib/diagram-drawing';
 import { DiagramChromeProvider, useDiagramChrome, useDiagramChromeInset, useDiagramChromeScope, type DiagramInsets } from '@/lib/diagram-chrome';
 import type { DiagramHistory } from '@/lib/diagram-history';
 import { describeEdge, describeItem, describeNode, fitViewport, type DiagramNoun, nearestNode, stepFocus, viewportToShow, type DiagramItem, type DiagramStep } from '@/lib/diagram-keyboard';
 import {
-  DIAGRAM_CARD, DIAGRAM_LEGIBLE_ZOOM, DIAGRAM_SIDES, NOTHING_SELECTED, anchorNormal, codeKey, anchorPoint, connectorPath, diagramTextRuns, edgeGeometry, hasEdgeLabel, holdsNodes, indexDiagram, itemKey, moveNodes, nearestSide, portPoint, renderWindow, sectionKey, sizeNodesToText, growNodesToText,
+  DIAGRAM_CARD, DIAGRAM_LEGIBLE_ZOOM, DIAGRAM_SIDES, NOTHING_SELECTED, anchorNormal, codeKey, anchorPoint, connectorPath, diagramTextRuns, edgeGeometries, edgeGeometry, hasEdgeLabel, holdsNodes, indexDiagram, itemKey, moveNodes, nearestSide, portPoint, renderWindow, sectionKey, sizeNodesToText, growNodesToText,
   type ConnectorEnd, type ConnectorGeometry, type DiagramConnection, type DiagramEdge, type DiagramEdgeTone, type DiagramEdgeVariant, type DiagramGlyph, type DiagramNode, type DiagramNodeKind, type DiagramNodeVariant, type DiagramPort, type DiagramSection, type DiagramSelection, type DiagramSide, type DiagramTone,
 } from '@/lib/diagram-model';
 import {
@@ -26,6 +26,7 @@ import {
 } from '@/lib/diagram-primitive';
 import { DIAGRAM_TEXT_CLASS, estimateText, measureText, type TextMeasurer } from '@/lib/diagram-text';
 import { Icon } from '@/lib/icon';
+import { prefersReducedMotion } from '@/lib/reduced-motion';
 import { formatShortcutText } from '@/lib/shortcut-text';
 import { useFontVersion, useShownVersion } from '@/lib/use-font-version';
 import { cn } from '@/lib/utils';
@@ -706,6 +707,9 @@ export interface DiagramProps<N = unknown, E = unknown> extends Pick<CanvasProps
   fitPadding?: number | Partial<DiagramInsets>;
   /** Size each node to its words, measured in the real font, around its center. A node that holds others keeps its size. */
   autoSize?: boolean;
+  /** Moves what a change of data moves (a layout run again, Tidy up) over a moment rather than at once: cards slide to their
+   *  new places and routes go with them. Never with reduced motion, nor under a drag. Default false. */
+  animate?: boolean;
   /** Draw only what's near the view. By default that's on above 200 nodes and edges. */
   cull?: boolean;
   /** An overview in a corner, on `CanvasMiniMap` (`side`, `align`). `auto`: only while the diagram can't be seen whole at a
@@ -734,6 +738,75 @@ export interface DiagramProps<N = unknown, E = unknown> extends Pick<CanvasProps
 
 const EMPTY: readonly never[] = [];
 const NO_GUIDES: Guide[] = [];
+/** How long a refused connection's reason stays after it's let go of. */
+const REFUSAL_MS = 2500;
+/** How long a change's moves take, when they're animated. */
+const TWEEN_MS = 260;
+
+/** Two polylines with the same number of points, for one to turn into the other: the shorter has its last bend repeated. */
+function padRoute(pts: readonly Pt[], n: number): Pt[] {
+  if (pts.length >= n || pts.length < 2) return [...pts];
+  const out = pts.slice(0, -1);
+  while (out.length < n - 1) out.push(pts[pts.length - 2]);
+  out.push(pts[pts.length - 1]);
+  return out;
+}
+const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
+const lerpRect = <R extends Rect>(a: Rect, b: R, t: number): R => ({ ...b, x: lerp(a.x, b.x, t), y: lerp(a.y, b.y, t), w: lerp(a.w, b.w, t), h: lerp(a.h, b.h, t) });
+
+/** The data on its way from what was shown to what's given, `t` of the way (eased): what's in both slides, what's new is
+ *  where it's going, and a route turns into its new one. */
+function tweenData<N, E>(from: DiagramData<N, E>, to: DiagramData<N, E>, t: number): DiagramData<N, E> {
+  const nodesFrom = new Map(from.nodes.map((n) => [n.id, n]));
+  const edgesFrom = new Map(from.edges.map((e) => [e.id, e]));
+  return {
+    nodes: to.nodes.map((n) => { const a = nodesFrom.get(n.id); return a ? lerpRect(a, n, t) : n; }),
+    edges: to.edges.map((e) => {
+      const a = edgesFrom.get(e.id);
+      if (!a?.points || !e.points || a.points.length < 2 || e.points.length < 2) return e;
+      const k = Math.max(a.points.length, e.points.length);
+      const p = padRoute(a.points, k), q = padRoute(e.points, k);
+      return { ...e, points: q.map((b, i) => ({ x: lerp(p[i].x, b.x, t), y: lerp(p[i].y, b.y, t) })), ...(e.labelBox && a.labelBox ? { labelBox: lerpRect(a.labelBox, e.labelBox, t) } : null) };
+    }),
+  };
+}
+
+/** What's shown of `data`: itself, or, with `on`, on its way there from what was shown when it changed in a way that moves
+ *  something, for `TWEEN_MS`. A change in the middle of one starts from where it had got to; what a drag shows (`dragged`)
+ *  is what was shown, so a drop doesn't move back to slide again. */
+function useLayoutTween<N, E>(data: DiagramData<N, E>, on: boolean, dragged: DiagramData<N, E> | null): DiagramData<N, E> {
+  const [frame, setFrame] = useState<DiagramData<N, E> | null>(null);
+  const shownRef = useRef(data);
+  const raf = useRef(0);
+  useLayoutEffect(() => {
+    if (dragged) { cancelAnimationFrame(raf.current); shownRef.current = dragged; setFrame(null); }
+  }, [dragged]);
+  useLayoutEffect(() => {
+    const from = shownRef.current;
+    if (from === data || dragged) return undefined;
+    const before = new Map(from.nodes.map((n) => [n.id, n]));
+    const moves = data.nodes.some((n) => { const a = before.get(n.id); return !!a && (Math.abs(a.x - n.x) > 0.5 || Math.abs(a.y - n.y) > 0.5); });
+    if (!on || !moves || typeof requestAnimationFrame !== 'function' || prefersReducedMotion()) {
+      shownRef.current = data;
+      setFrame(null);
+      return undefined;
+    }
+    const start = performance.now();
+    const step = () => {
+      const t = Math.min(1, (performance.now() - start) / TWEEN_MS);
+      const eased = 1 - (1 - t) ** 3;
+      if (t >= 1) { shownRef.current = data; setFrame(null); return; }
+      const now = tweenData(from, data, eased);
+      shownRef.current = now;
+      setFrame(now);
+      raf.current = requestAnimationFrame(step);
+    };
+    step();
+    return () => cancelAnimationFrame(raf.current);
+    // `dragged` is read as it is: a drag's own frames are its business.
+  }, [data, on]);
+  return frame ?? data;
+}
 
 /** What the text in a diagram measures. The first render, on a server or hydrating, goes by estimates. Straight after, it's
  *  measured in the real font, and again if the words change or a font turns up later. A drag doesn't measure anything. */
@@ -761,7 +834,7 @@ const MINIMAP_AUTO_SHARE = 0.8;
 export function Diagram<N = unknown, E = unknown>({
   nodes: givenNodes, edges: givenEdges, defaultNodes = EMPTY, defaultEdges = EMPTY, onDataChange, selectable = true, editable = false, movable: movableProp, history: givenHistory, portsOnly = false, connectable: connectableProp,
   isValidConnection, createEdge, selection: selectionProp, defaultSelection = NOTHING_SELECTED, current = NOTHING_SELECTED, onSelectionChange, onAction, pressable: pressableProp, noun, describeNode: nodeLabel, describeEdge: edgeLabel,
-  viewport: controlled, defaultViewport, onViewportChange, fitPadding = 24, autoSize, cull, minimap, renderNode, emptyState, loading = false, error, controller,
+  viewport: controlled, defaultViewport, onViewportChange, fitPadding = 24, autoSize, animate = false, cull, minimap, renderNode, emptyState, loading = false, error, controller,
   background, panning, autoFocus, 'aria-label': ariaLabel = 'Diagram', overlay, children, className, style, ref: refProp,
 }: DiagramProps<N, E>) {
   const connectable = connectableProp ?? editable;
@@ -807,7 +880,9 @@ export function Diagram<N = unknown, E = unknown>({
   const [connecting, setConnecting] = useState<Extract<DiagramGesture, { k: 'connect' }> | null>(null);
   const [status, setStatus] = useState('');
 
-  const shown = draft ?? data;
+  // A change from outside that moves things moves them over a moment, when asked to.
+  const tweened = useLayoutTween(data, animate, draft);
+  const shown = draft ?? tweened;
   const text = useDiagramText(ref, shown.nodes, shown.edges, !!autoSize || shown.nodes.length <= AVOID_UP_TO || shown.edges.some((e) => !e.labelBox && hasEdgeLabel(e)));
   /** What can be pressed: chips in an editable diagram that says what a press does, and whatever `pressable` names. */
   const chipsEverywhere = (editable && !!onAction) || pressableProp === true;
@@ -844,6 +919,12 @@ export function Diagram<N = unknown, E = unknown>({
   // `fitKey` stands for `fitInsets`, a new object each render.
   const fitPad = useMemo(() => fitInsets, [fitKey]);
 
+  // In a frame that takes its drawing's height (a document's fence), how tall that is.
+  const contentHeight = around?.frame ? diagramContentHeight(laid.bounds, size.width, fitPad) : null;
+  const reportContent = around?.reportContent;
+  useLayoutEffect(() => { reportContent?.(contentHeight); }, [reportContent, contentHeight]);
+  useLayoutEffect(() => () => reportContent?.(null), [reportContent]);
+
   // Where it opens: its top-start corner (a machine's name and context, a system's account).
   const corner = useMemo(() => drawingCorner(laid, text), [laid, text]);
   // What has the eye: what's selected, or else what's current (a machine's state), whichever changed last; with it, when
@@ -857,26 +938,13 @@ export function Diagram<N = unknown, E = unknown>({
   if (watch.current.current !== currentKey) watch.current = { ...watch.current, current: currentKey, on: 'current' };
   const onCurrent = !(watch.current.on === 'selection' && (selection.nodes.length || selection.edges.length));
   const eyeOn = onCurrent ? current : selection;
-  const eye = useMemo((): DiagramEye | null => {
-    const rects: Rect[] = [];
-    // The innermost of them: a state, not the box around it that's current as well.
-    const set = new Set(eyeOn.nodes);
-    const holdsOne = new Set<string>();
-    for (const id of eyeOn.nodes) for (let p = laid.index.parent.get(id); p; p = laid.index.parent.get(p) ?? null) { if (set.has(p)) holdsOne.add(p); }
-    for (const id of eyeOn.nodes) { const n = laid.index.byId.get(id); if (n && !holdsOne.has(id)) rects.push(n); }
-    for (const id of eyeOn.edges) {
-      const l = laid.labels.find((x) => x.edge.id === id)?.box;
-      const g = l ? null : laid.geometries.get(id);
-      if (l) rects.push(l);
-      else if (g) rects.push({ x: g.mid.x - 1, y: g.mid.y - 1, w: 2, h: 2 });
-    }
-    const must = unionRect(rects);
-    if (!must) return null;
-    const want = onCurrent && pressSets?.edges.size ? unionRect(laid.labels.filter((l) => pressSets.edges.has(l.edge.id)).map((l) => l.box)) : null;
-    return { must, want };
-  }, [eyeOn, onCurrent, pressSets, laid]);
+  const eye = useMemo((): DiagramEye | null => diagramEye(laid, eyeOn, onCurrent ? pressSets?.edges : null, { ends: !onCurrent }), [eyeOn, onCurrent, pressSets, laid]);
   const opening = firstView(laid.bounds, size, fitPad);
-  const viewport = controlled ?? own ?? (eye ? keepInView(opening, eye, corner, size, fitPad) : opening);
+  // With nothing selected or current, where the drawing starts has the eye in the opening view (only there: deselecting
+  // later doesn't send the view back to it).
+  const startEye = useMemo(() => (eye ? null : diagramStartEye(laid)), [eye, laid]);
+  const firstEye = eye ?? startEye;
+  const viewport = controlled ?? own ?? (firstEye ? keepInView(opening, firstEye, corner, size, fitPad) : opening);
   const viewportRef = useRef(viewport);
   viewportRef.current = viewport;
   /** Every move of the view comes through the canvas, ours included (the keys following focus go through its
@@ -910,6 +978,19 @@ export function Diagram<N = unknown, E = unknown>({
   const currentSets = useMemo(() => ({ nodes: new Set(current.nodes), edges: new Set(current.edges) }), [current]);
   const commit = (next: DiagramData<N, E>, reason: DiagramDataChangeReason, event?: Event) => api.internal.commit(next, reason, event);
 
+  /* ── A refused connection's reason, where the eye is: on what it was offered to, while it's offered and for a moment after
+        it's let go of (until the next press or key). It's said aloud as well, by the status. ── */
+  const [refused, setRefused] = useState<{ node: string | null; at: Pt; text: string } | null>(null);
+  const refusedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const showRefusal = (next: { node: string | null; at: Pt; text: string } | null) => {
+    if (refusedTimer.current) clearTimeout(refusedTimer.current);
+    refusedTimer.current = next ? setTimeout(() => setRefused(null), REFUSAL_MS) : null;
+    setRefused(next);
+  };
+  useEffect(() => () => { if (refusedTimer.current) clearTimeout(refusedTimer.current); }, []);
+  // The next thing done (an edit, an undo, a press anywhere in the diagram) takes it away.
+  useEffect(() => { setRefused(null); }, [data]);
+
   /* ── The gesture ── */
   const gesture = useRef<DiagramGesture>({ k: 'idle' });
   const connectContext = connectable ? {
@@ -927,7 +1008,9 @@ export function Diagram<N = unknown, E = unknown>({
   const send = (event: DiagramGestureEvent, cause?: Event) => {
     // A view that's still fitting the content stops at the first press, or dragging would move the view under the pointer.
     if (event.type === 'down' && !controlled && !own) setOwn(viewport);
-    const was = gesture.current.k;
+    if (event.type === 'down' && refused) showRefusal(null);
+    const before = gesture.current;
+    const was = before.k;
     const step = stepDiagramGesture(gesture.current, event, gestureContext());
     const g = step.gesture;
     gesture.current = g;
@@ -945,6 +1028,8 @@ export function Diagram<N = unknown, E = unknown>({
     setStatus(g.k === 'connect' && typeof g.valid === 'string' ? `Can’t connect: ${g.valid}` : '');
     if (step.commit) commit(moveNodes(data.nodes, data.edges, step.commit.ids, step.commit.delta.x, step.commit.delta.y), 'move', cause);
     if (step.connect) api.connect(step.connect, cause);
+    // Let go of where it can't connect: why stays where it was let go, for a moment.
+    if (before.k === 'connect' && g.k !== 'connect' && event.type === 'up' && typeof before.valid === 'string') showRefusal({ node: before.over?.node ?? null, at: before.at, text: before.valid });
   };
   const cancel = () => { if (gesture.current.k !== 'idle') send({ type: 'cancel' }); };
   /** The places to start a connection, or to take hold of an edge's end. Named ports are always there, and a node without
@@ -1136,6 +1221,7 @@ export function Diagram<N = unknown, E = unknown>({
   const onKeyDown = (e: KeyboardEvent) => {
     // Typing in something a node draws keeps its keys.
     if ((e.target as Element | null)?.closest?.('input, textarea, select, [contenteditable]:not([contenteditable="false"])')) return;
+    if (refused) showRefusal(null);
     const mod = e.metaKey || e.ctrlKey;
     const key = e.key.toLowerCase();
     const g = gesture.current;
@@ -1313,7 +1399,8 @@ export function Diagram<N = unknown, E = unknown>({
     if (!a) return null;
     const c = connecting.over ? connectionOf(connecting, connecting.over) : null;
     let route: ConnectorGeometry | null = null;
-    if (c) route = edgeGeometry({ id: 'connecting', from: c.from, fromPort: c.fromPort, to: c.to, toPort: c.toPort }, index);
+    // Round the cards in its way, as a drawn edge goes, not through them.
+    if (c) route = edgeGeometries([{ id: 'connecting', from: c.from, fromPort: c.fromPort, to: c.to, toPort: c.toPort }], index, { avoid: true }).get('connecting') ?? edgeGeometry({ id: 'connecting', from: c.from, fromPort: c.fromPort, to: c.to, toPort: c.toPort }, index);
     else {
       // Nothing to land on yet: from the fixed end to the pointer.
       const port = connecting.fixed.port ? a.ports?.find((x) => x.id === connecting.fixed.port) : undefined;
@@ -1336,6 +1423,31 @@ export function Diagram<N = unknown, E = unknown>({
       </div>
     );
   }, [connecting, laid, viewport.zoom]);
+
+  // Why a connection can't be made, where it was offered: above what it was offered to (below it, under the toolbar), or at
+  // the pointer. In the tooltip's look, with a glyph and words, so it isn't told by color alone; already said aloud.
+  const refusal = (() => {
+    const r = connecting && typeof connecting.valid === 'string' ? { node: connecting.over?.node ?? null, at: connecting.at, text: connecting.valid } : refused;
+    if (!r) return null;
+    const target = r.node ? laid.index.byId.get(r.node) : null;
+    const z = viewport.zoom;
+    const x = (target ? target.x + target.w / 2 : r.at.x) * z + viewport.x;
+    const over = (target ? target.y : r.at.y) * z + viewport.y - 8;
+    const under = target ? (target.y + target.h) * z + viewport.y + 8 : over + 24;
+    const below = over < Math.max(56, chrome.insets.top + 48);
+    const half = Math.min(124, size.width / 2 - 8);
+    return (
+      <div
+        data-slot="diagram-refusal"
+        aria-hidden="true"
+        className={cn('pointer-events-none absolute z-20 box-border flex max-w-60 -translate-x-1/2 items-start gap-1.5 rounded-ctl bg-foreground px-2.5 py-1.5 text-footnote leading-[17px] font-medium text-background shadow-tooltip', !below && '-translate-y-full')}
+        style={{ left: Math.min(Math.max(x, half + 8), size.width - half - 8), top: below ? under : over }}
+      >
+        <Icon name="nosign" size={14} className="mt-0.5 shrink-0" />
+        <span>{r.text}</span>
+      </div>
+    );
+  })();
 
   // Only the controller's methods: what the gestures commit with stays inside.
   const methods = useMemo<DiagramController<any, any>>(() => ({
@@ -1379,6 +1491,7 @@ export function Diagram<N = unknown, E = unknown>({
       else history.undo(e.nativeEvent);
     },
     onLostPointerCapture: cancel,
+    onPointerDownCapture: () => { if (refused) showRefusal(null); },
     // What the keys go to is the board's: focus on the toolbar or a field in the overlay has left it, ring and all.
     onFocus: (e: ReactFocusEvent) => { focusWithin.current = onBoard(e.target); },
     onBlur: (e: ReactFocusEvent) => { if (!onBoard(e.relatedTarget)) { focusWithin.current = false; setRingOn(null); } },
@@ -1446,13 +1559,8 @@ export function Diagram<N = unknown, E = unknown>({
           {overlay}
         </div>
         <p id={keysId} data-slot="diagram-keys" hidden>{keys}</p>
-        <div
-          data-slot="diagram-status"
-          role="status"
-          className={cn(status.startsWith('Can’t') && connecting && !connecting.keyboard ? 'pointer-events-none absolute bottom-3 left-1/2 z-10 max-w-[calc(100%-1.5rem)] -translate-x-1/2 rounded-ctl bg-popover px-3 py-2 text-footnote text-popover-foreground shadow-hairline' : 'sr-only')}
-        >
-          {status}
-        </div>
+        {refusal}
+        <div data-slot="diagram-status" role="status" className="sr-only">{status}</div>
         </DiagramChromeProvider>
       </DiagramContext.Provider>
     ),
@@ -1470,7 +1578,19 @@ export type DiagramToolbarProps = Omit<ToolbarProps, 'children'> & {
   children?: ReactNode;
 };
 
-function Tool({ label, shortcut, icon, disabled, onClick }: { label: string; shortcut: string; icon: Parameters<typeof Icon>[0]['name']; disabled?: boolean; onClick: (event: Event) => void }) {
+export interface DiagramToolbarButtonProps {
+  /** Its name, in its tooltip and to a screen reader. */
+  label: string;
+  /** Its keys, in its tooltip (`mod+z`): handle them yourself. */
+  shortcut?: string;
+  icon: Parameters<typeof Icon>[0]['name'];
+  disabled?: boolean;
+  onClick: (event: Event) => void;
+}
+
+/** One of a DiagramToolbar's tools, for one of your own among them: an icon button named by its tooltip, which says its
+ *  shortcut, as Zoom in and Undo are. */
+export function DiagramToolbarButton({ label, shortcut, icon, disabled, onClick }: DiagramToolbarButtonProps) {
   return (
     <Tooltip type="label" shortcut={shortcut}>
       <TooltipTrigger render={<ToolbarButton data-action={label.toLowerCase().replace(/ /g, '-')} aria-label={label} size="icon-sm" disabled={disabled} onClick={(e) => onClick(e.nativeEvent)} />}>
@@ -1510,14 +1630,14 @@ export function DiagramToolbar({ side: sideProp, align = 'start', variant = 'flo
       className={cn('absolute', side === 'top' ? 'top-3' : 'bottom-3', align === 'start' ? 'start-3' : 'end-3', className)}
       {...props}
     >
-      <Tool label="Zoom out" shortcut="mod+-" icon="minus" onClick={() => canvas.zoomBy(0.8)} />
-      <Tool label="Zoom in" shortcut="mod+=" icon="plus" onClick={() => canvas.zoomBy(1.25)} />
-      <Tool label="Fit" shortcut="mod+0" icon="arrows-expand" onClick={() => canvas.fit()} />
+      <DiagramToolbarButton label="Zoom out" shortcut="mod+-" icon="minus" onClick={() => canvas.zoomBy(0.8)} />
+      <DiagramToolbarButton label="Zoom in" shortcut="mod+=" icon="plus" onClick={() => canvas.zoomBy(1.25)} />
+      <DiagramToolbarButton label="Fit" shortcut="mod+0" icon="arrows-expand" onClick={() => canvas.fit()} />
       {history ? (
         <>
           <ToolbarSeparator />
-          <Tool label="Undo" shortcut="mod+z" icon="arrow-uturn-backward" disabled={!history.canUndo} onClick={(e) => history.undo(e)} />
-          <Tool label="Redo" shortcut="mod+shift+z" icon="arrow-uturn-forward" disabled={!history.canRedo} onClick={(e) => history.redo(e)} />
+          <DiagramToolbarButton label="Undo" shortcut="mod+z" icon="arrow-uturn-backward" disabled={!history.canUndo} onClick={(e) => history.undo(e)} />
+          <DiagramToolbarButton label="Redo" shortcut="mod+shift+z" icon="arrow-uturn-forward" disabled={!history.canRedo} onClick={(e) => history.redo(e)} />
         </>
       ) : null}
       {children}

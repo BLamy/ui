@@ -21,11 +21,11 @@ export type {
   CanvasFrameProps, CanvasHandlesProps, CanvasMarqueeProps, CanvasGuidesProps, CanvasMiniMapProps, CanvasMiniMapItem, CanvasPointerLayer,
 } from './components/canvas';
 export {
-  Diagram, DiagramNodeBody, DiagramNodeHeader, DiagramSections, DiagramEntryMarker, DiagramToolbar, useDiagram, useDiagramHistory, createDiagramController,
+  Diagram, DiagramNodeBody, DiagramNodeHeader, DiagramSections, DiagramEntryMarker, DiagramToolbar, DiagramToolbarButton, useDiagram, useDiagramHistory, createDiagramController,
   diagramEdgeVariants, diagramNodeVariants, diagramItemVariants, diagramEdgeLabelVariants,
 } from './components/diagram';
 export type {
-  DiagramProps, DiagramNodeBodyProps, DiagramNodeHeaderProps, DiagramSectionsProps, DiagramToolbarProps, DiagramContextValue, DiagramController, DiagramData, DiagramItem, DiagramNoun, DiagramActionDetails,
+  DiagramProps, DiagramNodeBodyProps, DiagramNodeHeaderProps, DiagramSectionsProps, DiagramToolbarProps, DiagramToolbarButtonProps, DiagramContextValue, DiagramController, DiagramData, DiagramItem, DiagramNoun, DiagramActionDetails,
   DiagramDataChangeDetails, DiagramDataChangeReason, DiagramSelectionChangeDetails, DiagramSelectionChangeReason,
   DiagramHistory, DiagramHistoryChangeDetails, DiagramHistoryOptions, UseDiagramHistory,
 } from './components/diagram';

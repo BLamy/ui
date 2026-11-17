@@ -894,6 +894,105 @@ test.describe('the upload system, wrapped into columns', () => {
   });
 });
 
+test.describe('editing keeps the board', () => {
+  /** Where each card is in the drawing (board units: its placed box), by id: what an edit mustn't change. */
+  const places = (page) => cards(page).evaluateAll((els) => Object.fromEntries(els.map((el) => [el.getAttribute('data-node'), `${parseFloat(el.style.left)},${parseFloat(el.style.top)}`])));
+  /** Whether a screen box is wholly on the board the panel leaves, clear of the toolbar. */
+  const onBoard = (page, locator) => locator.evaluate((el) => {
+    const b = el.closest('[data-slot=canvas]')?.getBoundingClientRect(), r = el.getBoundingClientRect();
+    const tools = el.closest('[data-slot=diagram]')?.querySelector('[data-slot=diagram-overlay] [data-slot=toolbar]')?.getBoundingClientRect();
+    const under = tools && r.left < tools.right && r.right > tools.left && r.top < tools.bottom && r.bottom > tools.top;
+    return !!b && !under && r.left >= b.left - 1 && r.right <= b.right + 1 && r.top >= b.top - 1 && r.bottom <= b.bottom + 1;
+  });
+  const startDrag = async (page, from, to) => {
+    await page.mouse.move(from.x, from.y);
+    await page.mouse.down();
+    await page.mouse.move(to.x, to.y, { steps: 10 });
+  };
+
+  test('add from the catalog, connect by a drag, a refusal said where you let go, Tidy up and undo: nothing moves but what’s asked to', async ({ page }) => {
+    test.setTimeout(90_000);
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto('/?demo=cloudflare-diagram/editing&theme=light', { waitUntil: 'load' });
+    await cards(page).first().waitFor({ timeout: 30_000 });
+    await settle(page);
+    const laidOut = await places(page);
+    expect(Object.keys(laidOut)).toHaveLength(6);
+
+    // Add a service: the bar's button opens the panel on the search, ready to type.
+    await page.getByRole('button', { name: 'Add a service' }).click();
+    await expect(catalogSearch(page)).toBeFocused();
+    await page.keyboard.type('kv');
+    await page.locator('[role=option][data-kind=kv]').waitFor();
+    await page.keyboard.press('Enter');
+    await expect(cards(page)).toHaveCount(7);
+    await settle(page);
+    const added = await places(page);
+    const kv = Object.keys(added).find((id) => !(id in laidOut));
+    for (const [id, at] of Object.entries(laidOut)) expect(added[id], `${id} stays where it was`).toBe(at);
+    // In free room: on no other card, and in view beside the panel.
+    const boxes = await cards(page).evaluateAll((els) => els.map((el) => { const r = el.getBoundingClientRect(); return { id: el.getAttribute('data-node'), x: r.x, y: r.y, w: r.width, h: r.height }; }));
+    const mine = boxes.find((b) => b.id === kv);
+    for (const o of boxes) if (o.id !== kv) expect(mine.x < o.x + o.w && o.x < mine.x + mine.w && mine.y < o.y + o.h && o.y < mine.y + mine.h, `${kv} on ${o.id}`).toBe(false);
+    expect(await onBoard(page, service(page, kv))).toBe(true);
+
+    // Connect by a real drag, from the end of API's header to Uploads: nothing moves, and the new connection is whole beside
+    // the panel that opens on it, with both its ends.
+    await page.keyboard.press('Escape');
+    await page.locator('[data-slot=diagram-overlay] [data-action=fit]').first().click();
+    await settle(page);
+    const lines = await page.locator('[data-slot=diagram-edge]').count();
+    const env = await port(page, 'api', 'env');
+    const db = await service(page, 'db').boundingBox();
+    await startDrag(page, env, { x: db.x + db.width / 2, y: db.y + db.height / 2 });
+    await page.mouse.up();
+    await expect(page.locator('[data-slot=diagram-edge]')).toHaveCount(lines + 1);
+    await settle(page);
+    const made = await page.locator('[data-slot=diagram-edge][data-selected]').getAttribute('data-edge');
+    expect(made).toMatch(/^api-d1_databases/);
+    expect(await places(page)).toEqual(added);
+    await expect(panel(page)).toBeVisible();
+    expect(await onBoard(page, page.locator(`[data-slot=diagram-edge-label][data-edge="${made}"]`)), 'its label').toBe(true);
+    expect(await onBoard(page, service(page, 'api')), 'where it starts').toBe(true);
+    expect(await onBoard(page, service(page, 'db')), 'where it goes').toBe(true);
+    const connected = await places(page);
+
+    // A refused connection says why where it was let go, in words with a glyph, and goes at the next press.
+    await page.keyboard.press('Escape');
+    await page.locator('[data-slot=diagram-overlay] [data-action=fit]').first().click();
+    await settle(page);
+    const out = await port(page, 'files', 'out:events');
+    const to = await service(page, 'db').boundingBox();
+    await startDrag(page, out, { x: to.x + to.width / 2, y: to.y + to.height / 2 });
+    const refusal = page.locator('[data-slot=diagram-refusal]');
+    await expect(refusal).toBeVisible();
+    await expect(refusal).toContainText('through a Queue');
+    await expect(page.locator('[data-slot=diagram-status]')).toContainText('through a Queue');
+    // Over the card it was offered to.
+    const r = await refusal.boundingBox(), target = await service(page, 'db').boundingBox();
+    expect(Math.abs((r.x + r.width / 2) - (target.x + target.width / 2))).toBeLessThan(target.width);
+    await page.mouse.up();
+    await expect(refusal).toBeVisible();
+    await expect(page.locator('[data-slot=diagram-edge]')).toHaveCount(lines + 1);
+    await page.mouse.click(5, 400);
+    await expect(refusal).toHaveCount(0);
+    expect(await places(page)).toEqual(connected);
+
+    // Tidy up lays it all out again, as one step; undo puts every card back exactly; undoing the rest goes back to the start.
+    await page.getByRole('button', { name: 'Tidy up' }).click();
+    await expect.poll(async () => JSON.stringify(await places(page)) !== JSON.stringify(connected), { timeout: 15_000 }).toBe(true);
+    await settle(page);
+    await page.getByRole('button', { name: 'Undo' }).click();
+    await settle(page);
+    expect(await places(page)).toEqual(connected);
+    await page.getByRole('button', { name: 'Undo' }).click();
+    await settle(page);
+    await page.getByRole('button', { name: 'Undo' }).click();
+    await settle(page);
+    expect(await places(page)).toEqual(laidOut);
+  });
+});
+
 test.describe('a system and wrangler.jsonc', () => {
   const config = (page) => page.locator('[data-demo-config]');
   const different = (page) => page.locator('[data-demo-differences]').getAttribute('data-demo-differences');
