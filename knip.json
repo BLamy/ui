@@ -50,6 +50,19 @@
     },
     "packages/ui": {
       "entry": [
+        // Docstream's public entries (package.json `exports`), named here so a run does not depend on how a given
+        // install resolves `@brett_lamy/ui/docstream/<entry>`. Knip calls some of these (and the registry's two
+        // `types.ts` entries) redundant in a long-lived checkout; a fresh clone, which is what CI runs, needs them.
+        "src/docstream/index.ts",
+        "src/docstream/*/index.ts",
+        "src/docstream/replay/demo/index.ts",
+        "src/docstream/strudel/{rack.ts,ast/index.ts}",
+        "src/docstream/xstate/machine.ts",
+        "src/docstream/{streamdown.tsx,assets.ts}",
+        "src/docstream/docs/{DocumentProperties,TaskCheckbox,reference}.tsx",
+        "src/docstream/openapi/OpenApiOperation.tsx",
+        "src/docstream-editor/index.ts",
+        "src/docstream-editor/editor/{Editor.tsx,convert.ts}",
         "src/**/*.stories.tsx",
         "src/**/*.test.{ts,tsx}"
       ],
@@ -60,7 +73,10 @@
     "registry": {
       "entry": [
         "blocks/*/page.tsx",
-        "blocks/**/*.stories.tsx"
+        "blocks/**/*.stories.tsx",
+        // The shapes of meta.json and the component manifests: documentation for the JSON files, imported by nothing.
+        "blocks/types.ts",
+        "components/types.ts"
       ],
       "project": [
         "**/*.{ts,tsx}"
@@ -84,6 +100,10 @@
         "highlight.js",
         "lowlight"
       ]
+    },
+    "apps/docstream-playground": {
+      // Run from package.json scripts (`node scripts/copy-sw.mjs && vite build && node scripts/prune-dist.mjs`).
+      "entry": ["scripts/*.mjs"]
     },
     "apps/catalog": {
       "entry": [
