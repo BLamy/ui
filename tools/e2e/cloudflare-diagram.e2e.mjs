@@ -4,6 +4,42 @@ import { test, expect } from '@playwright/test';
 
 const panel = (page) => page.locator('[data-slot=cloudflare-panel]');
 const service = (page, id) => page.locator(`[data-slot=diagram-node][data-node="${id}"]`);
+/** Every service's card: a node that isn't the system's box or an environment's. */
+const CARD = '[data-slot=diagram-node]:not([data-node^="cloudflare:"])';
+const cards = (page) => page.locator(CARD);
+/** What a card's called: its header's title. */
+const nameOf = (page, id) => service(page, id).locator('[data-slot=diagram-node-title]').first();
+/** A press on a card's name, where no edge comes in. */
+const pressName = async (page, id) => {
+  const box = await nameOf(page, id).boundingBox();
+  await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+};
+/** Until nothing's moved for a while: what has no place is laid out by ELK, again after each change. */
+const settle = async (page) => {
+  const where = () => page.locator('[data-slot=diagram-node], [data-slot=diagram-edge-label]').evaluateAll((els) => els.map((el) => { const r = el.getBoundingClientRect(); return `${r.x},${r.y}`; }).join(' '));
+  let before = await where();
+  for (let i = 0; i < 40; i++) {
+    await page.waitForTimeout(150);
+    const now = await where();
+    if (now === before) return;
+    before = now;
+  }
+};
+/** A press on the middle of an edge's label, which sits on its route and selects it. */
+const pressLabel = async (page, id) => {
+  await settle(page);
+  const box = await page.locator(`[data-slot=diagram-edge-label][data-edge="${id}"]`).boundingBox();
+  await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+};
+/** A card's machine chip, which a service with a machine has. */
+const machineChip = (page, id) => page.locator(`[data-slot=diagram-item][data-owner="${id}"][data-section=machine]`);
+/** A label's words: its title, then its chips. */
+const labelWords = (page, id) => page.locator(`[data-slot=diagram-edge-label][data-edge="${id}"]`).evaluate((el) => [
+  el.querySelector(':scope > :first-child')?.textContent?.trim() ?? '',
+  ...[...el.querySelectorAll('[data-slot=diagram-item]')].map((item) => item.textContent?.trim() ?? ''),
+]);
+/** The label whose title is this, as a locator. */
+const labelTitled = (page, title) => page.locator('[data-slot=diagram-edge-label]').filter({ has: page.locator(':scope > :first-child', { hasText: new RegExp(`^${title}$`) }) });
 const port = async (page, node, name) => {
   const b = await page.locator(`[data-slot=diagram-port][data-port-of="${node}"][data-port="${name}"]`).boundingBox();
   return { x: b.x + b.width / 2, y: b.y + b.height / 2 };
@@ -13,7 +49,7 @@ const edges = (page) => page.locator('[data-demo-edges]').getAttribute('data-dem
 const catalogSearch = (page) => page.getByRole('combobox', { name: 'Search Cloudflare’s services' });
 const open = async (page, demo) => {
   await page.goto(`/?demo=cloudflare-diagram/${demo}&theme=light`, { waitUntil: 'load' });
-  await page.locator('[data-slot=cloudflare-service]').first().waitFor({ timeout: 30_000 });
+  await cards(page).first().waitFor({ timeout: 30_000 });
 };
 /** A real drag from one port to another, stopping over it to see what it offers. */
 const drag = async (page, from, to, whileOver) => {
@@ -49,7 +85,8 @@ test.describe('connecting', () => {
     await panel(page).getByRole('checkbox', { name: /^put\(/ }).click();
     await panel(page).getByRole('checkbox', { name: /^get\(/ }).click();
     await expect.poll(() => edges(page)).toBe('worker>r2:r2_buckets:R2_BUCKET:get+put');
-    await expect(page.locator('[data-slot=diagram-edge-label]', { hasText: 'R2_BUCKET: get, put' })).toHaveCount(1);
+    // Its label is its name on env, then what it uses, as chips.
+    await expect.poll(() => labelWords(page, 'worker-r2_buckets')).toEqual(['R2_BUCKET', 'get', 'put']);
     // It's named on env, and can be renamed, and not to what isn't a name.
     const name = page.locator('[data-field="binding-name"]');
     await expect(name).toHaveValue('R2_BUCKET');
@@ -214,26 +251,36 @@ test.describe('connecting', () => {
     const label = page.locator('[data-field="label"]');
     await label.fill('Uploads');
     await label.press('Enter');
-    await expect(service(page, 'r2').locator('[data-slot=cloudflare-service-name]')).toHaveText('Uploads');
+    await expect(service(page, 'r2').locator('[data-slot=diagram-node-title]')).toHaveText('Uploads');
     await panel(page).locator('[data-action=delete]').click();
     await expect(service(page, 'r2')).toHaveCount(0);
     // Undo goes back through what the panel did, too, one at a time.
     await page.locator('[data-action=undo]').click();
-    await expect(service(page, 'r2').locator('[data-slot=cloudflare-service-name]')).toHaveText('Uploads');
+    await expect(service(page, 'r2').locator('[data-slot=diagram-node-title]')).toHaveText('Uploads');
     await page.locator('[data-action=undo]').click();
-    await expect(service(page, 'r2').locator('[data-slot=cloudflare-service-name]')).toHaveText('R2');
+    await expect(service(page, 'r2').locator('[data-slot=diagram-node-title]')).toHaveText('R2');
     await page.locator('[data-action=redo]').click();
-    await expect(service(page, 'r2').locator('[data-slot=cloudflare-service-name]')).toHaveText('Uploads');
+    await expect(service(page, 'r2').locator('[data-slot=diagram-node-title]')).toHaveText('Uploads');
   });
 });
 
 test.describe('drawing', () => {
-  test('a whole system, laid out, with its connections on the right ports', async ({ page }) => {
+  test('a whole system, laid out top to bottom: cards with sections, labelled edges, the system around it', async ({ page }) => {
     await open(page, 'upload');
-    await expect(page.locator('[data-slot=cloudflare-service]')).toHaveCount(6);
-    await expect(page.locator('[data-slot=diagram-edge]')).toHaveCount(6);
-    await expect(service(page, 'api').locator('[data-slot=cloudflare-service-name]')).toHaveText('API');
-    await expect(page.locator('[data-slot=diagram-edge-label]', { hasText: 'FILES: put, get' })).toHaveCount(1);
+    await expect(cards(page)).toHaveCount(6);
+    await expect(page.locator('[data-slot=diagram-edge]')).toHaveCount(5);
+    await expect(nameOf(page, 'api')).toHaveText('API');
+    await expect(service(page, 'cloudflare:system').locator('[data-slot=diagram-node-title]').first()).toHaveText('File upload');
+    expect(await labelWords(page, 'api-files')).toEqual(['FILES', 'put', 'get']);
+    expect(await labelWords(page, 'jobs-consumer')).toEqual(['consumer', '10 per batch', '3 retries']);
+    // Where requests come in, the entry marker; the consumer holds its class, Room; and the layers run down.
+    await expect(service(page, 'api').locator('[data-slot=diagram-entry]')).toHaveCount(1);
+    await expect(service(page, 'consumer')).toHaveAttribute('data-kind', 'group');
+    const y = async (id) => (await service(page, id).boundingBox()).y;
+    expect(await y('files')).toBeGreaterThan(await y('api'));
+    expect(await y('db')).toBeGreaterThan(await y('jobs'));
+    // Read-only, there are no ports to connect by.
+    await expect(page.locator('[data-slot=diagram-port]')).toHaveCount(0);
     await pressOnEdge(page, 'api-files');
     await expect(panel(page).locator('[data-operation]')).toHaveCount(7);
     await expect(panel(page).locator('[data-slot=cloudflare-binding-name]')).toContainText('FILES');
@@ -241,9 +288,10 @@ test.describe('drawing', () => {
     await expect(panel(page).locator('input')).toHaveCount(0);
     await expect(panel(page).locator('[data-action=delete]')).toHaveCount(0);
     await expect(panel(page).locator('[data-slot=cloudflare-attribution]')).toContainText('CC-BY-4.0');
-    // A service says what it is, with a link to Cloudflare's own page.
-    const box = await service(page, 'files').boundingBox();
-    await page.mouse.click(box.x + 60, box.y + 14);
+    // A service says what it is, with a link to Cloudflare's own page. (A press on its name: an edge comes in at the middle
+    // of its top.)
+    const box = await nameOf(page, 'files').boundingBox();
+    await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
     await expect(panel(page).locator('[data-slot=cloudflare-docs-link]')).toHaveAttribute('href', 'https://developers.cloudflare.com/r2/');
     await expect(panel(page).locator('[data-slot=cloudflare-reached-by]')).toContainText('R2 Bucket');
   });
@@ -253,11 +301,11 @@ test.describe('drawing', () => {
     page.on('pageerror', (e) => errors.push(String(e)));
     page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
     await page.goto('/?demo=cloudflare-diagram/every-service&theme=light', { waitUntil: 'load' });
-    await expect.poll(() => page.locator('[data-slot=cloudflare-service]').count(), { timeout: 60_000 }).toBe(101);
-    expect(await page.locator('[data-slot=cloudflare-service][data-kind=flagship]').count()).toBe(1);
+    await expect.poll(() => cards(page).count(), { timeout: 60_000 }).toBe(101);
+    expect(await service(page, 'flagship').count()).toBe(1);
     expect(errors).toEqual([]);
     // Nothing's connected, so they're in rows, and not in one long column you can't read at all.
-    const boxes = await page.locator('[data-slot=diagram-node]').evaluateAll((els) => els.map((el) => { const r = el.getBoundingClientRect(); return { x: r.x, y: r.y, r: r.right, b: r.bottom }; }));
+    const boxes = await cards(page).evaluateAll((els) => els.map((el) => { const r = el.getBoundingClientRect(); return { x: r.x, y: r.y, r: r.right, b: r.bottom }; }));
     const wide = Math.max(...boxes.map((b) => b.r)) - Math.min(...boxes.map((b) => b.x));
     const high = Math.max(...boxes.map((b) => b.b)) - Math.min(...boxes.map((b) => b.y));
     expect(wide / high).toBeGreaterThan(0.8);
@@ -277,8 +325,7 @@ test.describe('only to read', () => {
       for (const what of ['[data-action=delete]', '[data-action=undo]', '[data-action=redo]', '[data-field]', '[data-slot=cloudflare-search]']) await expect(page.locator(what)).toHaveCount(0);
     };
     await none();
-    const box = await service(page, 'files').boundingBox();
-    await page.mouse.click(box.x + box.width / 2, box.y + 10);
+    await pressName(page, 'files');
     await expect(panel(page).locator('[data-slot=cloudflare-description]')).toBeVisible();
     await none();
     // Nothing to drag from, and pressing Delete doesn't do anything.
@@ -293,8 +340,7 @@ test.describe('only to read', () => {
 
   test('a machine opens to read and run, and not to change', async ({ page }) => {
     await open(page, 'upload');
-    const box = await service(page, 'room').boundingBox();
-    await page.mouse.click(box.x + box.width / 2, box.y + 10);
+    await pressName(page, 'room');
     await expect(panel(page).locator('[data-action=remove-machine]')).toHaveCount(0);
     await panel(page).locator('[data-action=open-machine]').click();
     await expect(page.locator('[data-state-diagram] [data-slot=diagram-node][data-node="room.empty"]')).toHaveCount(1);
@@ -303,8 +349,7 @@ test.describe('only to read', () => {
     await page.locator('[data-slot=diagram-frame-cover-back]').click();
     await expect(panel(page).locator('[data-action=open-machine]')).toBeFocused();
     // Nothing that doesn't have one offers one.
-    const api = await service(page, 'api').boundingBox();
-    await page.mouse.click(api.x + api.width / 2, api.y + 10);
+    await pressName(page, 'api');
     await expect(panel(page).locator('[data-action=add-machine]')).toHaveCount(0);
   });
 });
@@ -452,8 +497,8 @@ test.describe('a system', () => {
   });
 
   test('a machine opens in a StateDiagram, and what’s done to it there is checked out here', async ({ page }) => {
-    await expect(service(page, 'room').locator('[data-part=machine]')).toHaveText('machine');
-    await expect(service(page, 'api').locator('[data-part=machine]')).toHaveCount(0);
+    await expect(machineChip(page, 'room')).toContainText('2 states, from empty');
+    await expect(machineChip(page, 'api')).toHaveCount(0);
     await press(page, 'room');
     await expect(panel(page).locator('[data-slot=cloudflare-machine-receives]')).toHaveText('Receives: FILE_READY, VIEWER_JOINED, VIEWER_LEFT');
     await panel(page).locator('[data-action=open-machine]').click();
@@ -490,9 +535,9 @@ test.describe('a system', () => {
     await panel(page).locator('[data-action=add-machine]').click();
     await expect(page.locator('[data-state-diagram] [data-slot=diagram-node][data-node="consumer.idle"]')).toHaveCount(1);
     await page.locator('[data-slot=diagram-frame-cover-back]').click();
-    await expect(service(page, 'consumer').locator('[data-part=machine]')).toHaveCount(1);
+    await expect(machineChip(page, 'consumer')).toHaveCount(1);
     await panel(page).locator('[data-action=remove-machine]').click();
-    await expect(service(page, 'consumer').locator('[data-part=machine]')).toHaveCount(0);
+    await expect(machineChip(page, 'consumer')).toHaveCount(0);
     // Without its machine there, Room still has its own.
     await expect(issues(page)).toHaveCount(0);
   });
@@ -508,7 +553,7 @@ test.describe('a system', () => {
     next.services.find((s) => s.id === 'api').label = 'Front door';
     await page.locator('[data-demo-json]').fill(JSON.stringify(next));
     await page.locator('[data-demo-load]').click();
-    await expect(service(page, 'api').locator('[data-slot=cloudflare-service-name]')).toHaveText('Front door');
+    await expect(service(page, 'api').locator('[data-slot=diagram-node-title]')).toHaveText('Front door');
   });
 
   test('what’s undone is only what was done here, and something loaded starts over', async ({ page }) => {
@@ -558,8 +603,8 @@ test.describe('a system', () => {
     await expect(page.locator('[data-slot=diagram-edge][data-edge=a-made_up]')).toHaveAttribute('data-tone', 'destructive');
     // What's wrong with a service gets you to it too, and it's drawn as wrong.
     await panel(page).locator('[data-slot=cloudflare-issue][data-code=machine] [data-action=show-issue]').click();
-    await expect(service(page, 'broken').locator('[data-slot=cloudflare-service]')).toHaveAttribute('data-problem', 'true');
-    await expect(service(page, 'a').locator('[data-slot=cloudflare-service]')).not.toHaveAttribute('data-problem', 'true');
+    await expect(service(page, 'broken').locator('[data-slot=diagram-node-header]').first()).toHaveAttribute('data-tone', 'destructive');
+    await expect(service(page, 'a').locator('[data-slot=diagram-node-header]').first()).not.toHaveAttribute('data-tone', 'destructive');
     // A machine that won't draw says why, on the service, and when it's opened.
     await expect(panel(page).locator('[data-slot=cloudflare-machine-problem]')).toContainText('nowhere');
     await panel(page).locator('[data-action=open-machine]').click();
@@ -621,7 +666,7 @@ test.describe('a system', () => {
   test('two systems sharing a service are each their own', async ({ page }) => {
     await page.goto('/?demo=cloudflare-diagram/two-systems&theme=light', { waitUntil: 'load' });
     const side = (name) => page.locator(`[data-demo-side=${name}]`);
-    await side('Site').locator('[data-slot=cloudflare-service]').first().waitFor({ timeout: 30_000 });
+    await side('Site').locator(CARD).first().waitFor({ timeout: 30_000 });
     await expect(page.locator('[data-demo-shared]')).toHaveAttribute('data-demo-shared', 'room:same');
     await expect(side('Site')).toHaveAttribute('data-demo-problems', '');
     await expect(side('Admin')).toHaveAttribute('data-demo-problems', '');
@@ -661,10 +706,10 @@ test.describe('a system and wrangler.jsonc', () => {
   test('a config’s drawn, what changes is listed by name, and writing keeps its comments', async ({ page }) => {
     const errors = [];
     page.on('pageerror', (e) => errors.push(String(e)));
-    await expect(page.locator('[data-slot=cloudflare-service]')).toHaveCount(4);
-    await expect(service(page, 'api').locator('[data-slot=cloudflare-service-name]')).toHaveText('api');
-    await expect(service(page, 'r2:uploads').locator('[data-slot=cloudflare-service-name]')).toHaveText('uploads');
-    await expect(page.locator('[data-slot=diagram-edge-label]', { hasText: 'FILES' })).toHaveCount(1);
+    await expect(cards(page)).toHaveCount(4);
+    await expect(service(page, 'api').locator('[data-slot=diagram-node-title]')).toHaveText('api');
+    await expect(service(page, 'r2:uploads').locator('[data-slot=diagram-node-title]')).toHaveText('uploads');
+    await expect(labelTitled(page, 'FILES')).toHaveCount(1);
     expect(await different(page)).toBe('');
     const before = await config(page).inputValue();
     // Nothing to write, and it's the same.
@@ -676,8 +721,8 @@ test.describe('a system and wrangler.jsonc', () => {
     await panel(page).locator('[data-action=delete]').click();
     await expect.poll(() => different(page)).toBe('removed:SESSIONS');
     await expect(page.locator('[data-demo-differences] li')).toHaveText('SESSIONS (KV Namespace) is in the config, and not in the system.');
-    // Renamed on the board, the same.
-    await pressOnEdge(page, 'api-r2_buckets-FILES');
+    // Renamed on the board, the same. (Taking one off laid it out again: what's pressed is where it is now.)
+    await pressLabel(page, 'api-r2_buckets-FILES');
     const name = page.locator('[data-field="binding-name"]');
     await name.fill('UPLOADS');
     await name.press('Enter');
@@ -703,7 +748,7 @@ test.describe('a system and wrangler.jsonc', () => {
     await expect(config(page)).toHaveValue(/\/\/ the big one/);
     await page.locator('[data-demo-read]').click();
     await expect.poll(() => different(page)).toBe('');
-    await expect(page.locator('[data-slot=diagram-edge-label]', { hasText: 'D1_DATABASE' })).toHaveCount(1);
+    await expect(labelTitled(page, 'D1_DATABASE')).toHaveCount(1);
   });
 
   test('TOML’s refused by name, and what’s broken says where', async ({ page }) => {
@@ -733,9 +778,12 @@ test.describe('a system, at a phone’s size', () => {
 
   test('its machine opens over the board, from the tray, and comes back', async ({ page }) => {
     await open(page, 'system');
+    // At a phone's size the board starts at the top, at a size that can be read: Fit shows the whole system.
+    await settle(page);
+    await page.getByRole('button', { name: 'Fit' }).click();
+    await settle(page);
     // Select it on the board, then open the panel: at a phone's size it's a page pushed over the board.
-    const box = await service(page, 'room').boundingBox();
-    await page.mouse.click(box.x + box.width / 2, box.y + 5);
+    await pressName(page, 'room');
     await page.locator('[data-diagram-frame-trigger]').click();
     await expect(page.locator('[data-slot=diagram-frame][data-presentation=push] [data-slot=cloudflare-panel]')).toBeVisible();
     await page.locator('[data-action=open-machine]').click();
@@ -772,11 +820,11 @@ test.describe('at a phone’s size', () => {
 });
 
 test.describe('a workerd config', () => {
-  const nodesIn = (scope) => scope.locator('[data-slot=diagram-node]').evaluateAll((els) => els.map((el) => el.getAttribute('data-node')).sort());
+  const nodesIn = (scope) => scope.locator(CARD).evaluateAll((els) => els.map((el) => el.getAttribute('data-node')).sort());
 
   test('its services are drawn from the text, and what isn’t one of them is said', async ({ page }) => {
     await page.goto('/?demo=cloudflare-diagram/workerd&theme=light', { waitUntil: 'load' });
-    await page.locator('[data-slot=cloudflare-service]').first().waitFor({ timeout: 30_000 });
+    await cards(page).first().waitFor({ timeout: 30_000 });
     expect(await nodesIn(page)).toEqual(['broker', 'consumer', 'main', 'main.Order', 'queues:broker']);
     expect(await page.locator('[data-slot=diagram-edge]').count()).toBe(5);
     await expect(page.locator('[data-demo-notes]')).toContainText('do-storage is a disk service');
@@ -785,9 +833,9 @@ test.describe('a workerd config', () => {
     const config = await text.inputValue();
     await text.fill(config.replace('(name = "main", worker = .main),', '(name = "main" worker = .main),'));
     await expect(page.locator('[data-demo-unreadable]')).toContainText('line 5');
-    await expect(page.locator('[data-slot=cloudflare-service]')).toHaveCount(0);
+    await expect(cards(page)).toHaveCount(0);
     await text.fill(config);
-    await expect(page.locator('[data-slot=cloudflare-service]')).toHaveCount(5);
+    await expect(cards(page)).toHaveCount(5);
   });
 
   test('a capnp fence and an embedded .capnp file draw themselves in the docs', async ({ page }) => {

@@ -3,17 +3,17 @@ import * as xstate from 'xstate';
 import { createActor, createMachine, type AnyStateMachine } from 'xstate';
 import { uploadMachine } from '../stories/upload-machine';
 import {
-  StateEditRefused, addState, addTransition, eventNameProblem, inlineCodeIn, missingImplementations, removeItems, removeState, removeTransition, renameState, setInitial, setTransitionEvent,
+  StateEditRefused, addAction, addContextKey, addState, addTransition, eventNameProblem, removeAction, removeContextKey, renameAction, renameContextKey, setContextValue, inlineCodeIn, missingImplementations, removeItems, removeState, removeTransition, renameState, setInitial, setTransitionEvent,
   setTransitionGuard, setTransitionSource, setTransitionTarget, stateAt, stateNameProblem, targetText, tryEdit, uniqueName, type StateMachineConfig,
 } from './state-diagram-edit';
-import { machineEdgePlaces, machineStatePaths, machineToDraft, type StateMachineLike, type TransitionPlace } from './state-diagram-model';
+import { machineEdgePlaces, machineStatePaths, machineToDraft, transitionNotation, type StateMachineLike, type TransitionPlace } from './state-diagram-model';
 import { createSimulation } from './state-diagram-simulation';
 
 const uploadConfig = () => JSON.parse(JSON.stringify((uploadMachine as unknown as { config: object }).config)) as StateMachineConfig;
 const make = (config: StateMachineConfig) => createMachine(config as never) as unknown as StateMachineLike;
 /** What's drawn, as `from -event-> to`. */
-const edges = (config: StateMachineConfig) => machineToDraft(make(config)).edges.filter((e) => e.data?.transition !== 'initial').map((e) => `${e.from} -${e.data?.event ?? 'always'}-> ${e.to}`).sort();
-const states = (config: StateMachineConfig) => machineToDraft(make(config)).nodes.filter((n) => n.data?.type !== 'initial').map((n) => n.id);
+const edges = (config: StateMachineConfig) => machineToDraft(make(config)).edges.map((e) => `${e.from} -${e.data?.event ?? 'always'}-> ${e.to}`).sort();
+const states = (config: StateMachineConfig) => machineToDraft(make(config)).nodes.map((n) => n.id);
 const place = (config: StateMachineConfig, edgeId: string): TransitionPlace => {
   const found = machineEdgePlaces(make(config)).get(edgeId);
   if (!found) throw new Error(`no edge ${edgeId}: ${[...machineEdgePlaces(make(config)).keys()]}`);
@@ -296,7 +296,7 @@ describe('a transition as it’s drawn, back to where it’s written', () => {
     const config = uploadConfig();
     const draft = machineToDraft(make(config));
     const places = machineEdgePlaces(make(config));
-    const real = draft.edges.filter((e) => e.data?.transition !== 'initial');
+    const real = draft.edges;
     expect(real).toHaveLength(36);
     for (const e of real) {
       const at = places.get(e.id);
@@ -306,9 +306,9 @@ describe('a transition as it’s drawn, back to where it’s written', () => {
       const after = machineToDraft(make(next)).edges;
       expect(after.length, e.id).toBe(before - 1);
       // It's the one that's gone, and the rest are still there.
-      const left = (es: typeof after) => es.map((x) => `${x.from}|${x.to}|${x.data?.event ?? x.kind}|${x.data?.guard ?? ''}`).sort();
+      const left = (es: typeof after) => es.map((x) => `${x.from}|${x.to}|${x.data?.event ?? x.kind}|${x.data?.guard?.text ?? ''}`).sort();
       const expected = left(draft.edges);
-      expected.splice(expected.indexOf(`${e.from}|${e.to}|${e.data?.event ?? e.kind}|${e.data?.guard ?? ''}`), 1);
+      expected.splice(expected.indexOf(`${e.from}|${e.to}|${e.data?.event ?? e.kind}|${e.data?.guard?.text ?? ''}`), 1);
       expect(left(after), e.id).toEqual(expected);
     }
   });
@@ -403,7 +403,7 @@ describe('changing a transition', () => {
     expect((stateAt(cleared, ['closed'])?.on as Record<string, unknown>).LOCK).toEqual({ target: 'locked' });
     const timed = setTransitionGuard(DOOR, place(DOOR, 'door.open:xstate.after.5000.door.open->door.closed'), 'canTime');
     expect(stateAt(timed, ['open'])?.after).toEqual({ 5000: { target: 'closed', guard: 'canTime' } });
-    expect(machineToDraft(make(timed)).edges.find((e) => e.data?.guard === 'canTime')?.label).toBe('after 5000 [canTime]');
+    expect(transitionNotation(machineToDraft(make(timed)).edges.find((e) => e.data?.guard?.name === 'canTime')?.data)).toBe('after 5,000 ms [canTime]');
   });
 
   it('points it somewhere else', () => {
@@ -426,6 +426,74 @@ describe('changing a transition', () => {
   it('refuses moving one that goes with what its state does', () => {
     refused(() => setTransitionSource(DOOR, place(DOOR, 'door.open:xstate.after.5000.door.open->door.closed'), ['closed']), /goes with what its state does/);
     expect(setTransitionSource(DOOR, close(), ['open'])).toBe(DOOR);
+  });
+});
+
+describe('actions', () => {
+  const C: StateMachineConfig = {
+    id: 'm', initial: 'a',
+    states: {
+      a: { entry: 'onA', exit: ['x', { type: 'track', params: { n: 1 } }, { type: 'xstate.raise', params: { event: 'E' } }], on: { GO: { target: 'b', actions: 'go' }, PLAIN: 'b' } },
+      b: {},
+    },
+  };
+
+  it('adds, renames and removes an entry action, writing one on its own as it was', () => {
+    const added = addAction(C, { state: ['a'], slot: 'entry' }, 'onA2');
+    expect(stateAt(added, ['a'])?.entry).toEqual(['onA', 'onA2']);
+    expect(stateAt(renameAction(C, { state: ['a'], slot: 'entry' }, 0, 'onEnter'), ['a'])?.entry).toBe('onEnter');
+    expect(stateAt(removeAction(C, { state: ['a'], slot: 'entry' }, 0), ['a'])).not.toHaveProperty('entry');
+    // A state with none gets its first.
+    expect(stateAt(addAction(C, { state: ['b'], slot: 'exit' }, 'leave'), ['b'])?.exit).toBe('leave');
+  });
+
+  it('keeps a parameterized action’s params when it’s renamed, and refuses to rename code or a built-in', () => {
+    const at = { state: ['a'], slot: 'exit' } as const;
+    expect((stateAt(renameAction(C, at, 1, 'log'), ['a'])?.exit as unknown[])[1]).toEqual({ type: 'log', params: { n: 1 } });
+    refused(() => renameAction(C, at, 2, 'mine'), /has no name in the config/);
+    refused(() => renameAction(C, at, 9, 'mine'), /isn’t in the config/);
+    refused(() => addAction(C, at, ' '), /needs a name/);
+    refused(() => addAction(C, at, 'xstate.raise'), /XState’s own/);
+    expect(stateAt(removeAction(C, at, 2), ['a'])?.exit).toEqual(['x', { type: 'track', params: { n: 1 } }]);
+  });
+
+  it('changes a transition’s actions, on a transition written as a target alone too', () => {
+    const go = place(C, 'm.a:GO->m.b');
+    expect((stateAt(addAction(C, { transition: go }, 'more'), ['a'])?.on as Record<string, unknown>).GO).toEqual({ target: 'b', actions: ['go', 'more'] });
+    expect((stateAt(removeAction(C, { transition: go }, 0), ['a'])?.on as Record<string, unknown>).GO).toEqual({ target: 'b' });
+    const plain = place(C, 'm.a:PLAIN->m.b');
+    expect((stateAt(addAction(C, { transition: plain }, 'note'), ['a'])?.on as Record<string, unknown>).PLAIN).toEqual({ target: 'b', actions: 'note' });
+  });
+
+  it('is drawn as it’s changed, and XState has it', () => {
+    const outcome = tryEdit<StateMachineLike>(xstate as never, C, (c) => addAction(c, { state: ['b'], slot: 'entry' }, 'arrive'));
+    expect(outcome.ok).toBe(true);
+    if (outcome.ok) expect(machineToDraft(outcome.machine).nodes.find((n) => n.id === 'm.b')?.sections?.[0]?.items.map((i) => i.title)).toEqual(['arrive']);
+  });
+});
+
+describe('context', () => {
+  const C: StateMachineConfig = { id: 'm', initial: 'a', types: { context: { n: 'number', s: 'string' } }, context: { n: 0, s: '' }, states: { a: {} } };
+
+  it('adds, renames, sets and removes a key, keeping its type with it', () => {
+    expect(addContextKey(C, 'k').context).toEqual({ n: 0, s: '', k: null });
+    expect(addContextKey({ id: 'm', states: { a: {} } }, 'k', 1).context).toEqual({ k: 1 });
+    const renamed = renameContextKey(C, 'n', 'count');
+    expect(Object.keys(renamed.context as object)).toEqual(['count', 's']);
+    expect(renamed.types).toEqual({ context: { count: 'number', s: 'string' } });
+    expect(setContextValue(C, 's', 'hi').context).toEqual({ n: 0, s: 'hi' });
+    const removed = removeContextKey(C, 'n');
+    expect(removed.context).toEqual({ s: '' });
+    expect(removed.types).toEqual({ context: { s: 'string' } });
+    expect(removeContextKey(removed, 's')).not.toHaveProperty('context');
+  });
+
+  it('refuses what it can’t do, and says why', () => {
+    refused(() => addContextKey(C, 'n'), /already a context key/);
+    refused(() => addContextKey(C, ''), /needs a name/);
+    refused(() => renameContextKey(C, 'nope', 'x'), /no context key/);
+    refused(() => renameContextKey(C, 'n', 's'), /already a context key/);
+    refused(() => addContextKey({ id: 'm', context: () => ({}), states: { a: {} } }, 'k'), /made by code/);
   });
 });
 

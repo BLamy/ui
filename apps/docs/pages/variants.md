@@ -1,6 +1,6 @@
 # Variants reference
 
-Every BL UI component is a [cva](https://cva.style) recipe. This page is generated from the source (101 recipes) — the same functions you can call on any element, and the defaults you can edit in your installed copy. See [Styling and variants](https://blamy.github.io/ui/#/styling) for how to use, compose and change them.
+Every BL UI component is a [cva](https://cva.style) recipe. This page is generated from the source (102 recipes) — the same functions you can call on any element, and the defaults you can edit in your installed copy. See [Styling and variants](https://blamy.github.io/ui/#/styling) for how to use, compose and change them.
 
 ```tsx
 import { buttonVariants } from '@/components/ui/button'
@@ -240,23 +240,6 @@ Defined in `@/components/ui/checkbox`. Base classes:
 | `circle` (default) | `rounded-full` |
 | `square` | `rounded-md` |
 
-## CloudflareDiagram
-
-### `cloudflareServiceVariants`
-
-Defined in `@/components/ui/cloudflare-diagram`. Base classes:
-
-```text
-absolute inset-0 overflow-hidden rounded-ctl border bg-card text-card-foreground
-```
-
-**`tone`** — default `default`
-
-| Value | Adds |
-| --- | --- |
-| `default` (default) | `border-border` |
-| `destructive` | `border-destructive` |
-
 ## CodeEditor
 
 ### `codeEditorVariants`
@@ -465,10 +448,10 @@ relative size-full
 
 | Value | Adds |
 | --- | --- |
-| `node` (default) | `flex flex-col items-center justify-center rounded-ctl border border-border bg-card px-3 py-2 text-card-foreground shadow-hairline` |
-| `group` | `rounded-card border border-border bg-secondary` |
-| `region` | `rounded-card` |
-| `root` | `rounded-card border border-border` |
+| `node` (default) | `flex flex-col overflow-hidden rounded-ctl border border-border bg-card text-card-foreground shadow-hairline` |
+| `group` | `flex flex-col overflow-hidden rounded-card border border-border bg-secondary/35 text-card-foreground` |
+| `region` | `flex flex-col rounded-card text-card-foreground` |
+| `root` | `flex flex-col overflow-hidden rounded-card border border-border bg-background/60 text-card-foreground` |
 | `marker` | `rounded-full bg-foreground` |
 
 **`variant`** — default `default`
@@ -504,6 +487,56 @@ fill-none ${LINE}
 | `destructive` | `stroke-destructive` |
 
 1 compound variant — see the source.
+
+### `diagramItemVariants`
+
+Defined in `@/components/ui/diagram`. Base classes:
+
+```text
+flex max-w-full min-w-0 items-center gap-1.5
+```
+
+**`variant`** — default `default`
+
+| Value | Adds |
+| --- | --- |
+| `default` (default) | `rounded-md border border-border bg-background px-2 py-0.5 text-foreground shadow-hairline` |
+| `list` | `text-foreground` |
+| `code` | `text-foreground` |
+
+**`tone`** — default `default`
+
+| Value | Adds |
+| --- | --- |
+| `default` (default) | `[&_[data-part=glyph]]:text-muted-foreground` |
+| `success` | `border-success/40 [&_[data-part=glyph]]:text-success` |
+| `warning` | `border-warning/50 [&_[data-part=glyph]]:text-warning` |
+| `destructive` | `border-destructive/40 text-destructive [&_[data-part=glyph]]:text-destructive` |
+| `muted` | `text-muted-foreground [&_[data-part=glyph]]:text-muted-foreground` |
+
+**`pressable`** — default `false`
+
+| Value | Adds |
+| --- | --- |
+| `true` | `pointer-events-auto cursor-pointer transition-colors hover:bg-accent active:bg-secondary-strong` |
+| `false` (default) | — |
+
+1 compound variant — see the source.
+
+### `diagramEdgeLabelVariants`
+
+Defined in `@/components/ui/diagram`. Base classes:
+
+```text
+absolute border border-border bg-card text-card-foreground shadow-hairline
+```
+
+**`shape`** — default `pill`
+
+| Value | Adds |
+| --- | --- |
+| `pill` (default) | `flex items-center justify-center gap-1 rounded-full px-2.5 py-1 whitespace-nowrap` |
+| `card` | `flex flex-col items-start gap-1.5 rounded-ctl px-2.5 pt-1.5 pb-2` |
 
 ## Dialog
 

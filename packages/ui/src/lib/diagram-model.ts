@@ -7,6 +7,8 @@
    Freeform's connectors, Interface Builder's segues and Replay Canvas's segues run on the same geometry. The frame math
    underneath (rotation, distances, bounds) is the canvas toolkit's, in `@/lib/canvas-math`. */
 import { centerOf, dist, distToPolyline, inFrame, rectOf, rotatePt, unionRect, type Pt, type Rect } from '@/lib/canvas-math';
+import type { DiagramTextKind } from '@/lib/diagram-text';
+import type { IconName } from '@/lib/icon';
 
 /* ── The data ── */
 
@@ -46,15 +48,56 @@ export type DiagramEdgeTone = 'default' | 'destructive';
 /** Whether a node holds others: a group, a region or the root. */
 export const holdsNodes = (node: { kind?: DiagramNodeKind }): boolean => node.kind === 'group' || node.kind === 'region' || node.kind === 'root';
 
+/** A glyph: one of the kit's icons by name, or a few characters drawn as one (`{ text: 'H*' }`). */
+export type DiagramGlyph = IconName | { text: string };
+
+/** The kit's semantic colors, and `muted` for a quiet one. */
+export type DiagramTone = 'default' | 'success' | 'warning' | 'destructive' | 'muted';
+
+/** One entry of a section: a chip, or a row of text in a `list` or `code` section. */
+export interface DiagramSectionItem {
+  /** Its address in `onAction` (default: its `title`). Unique in its section. */
+  id?: string;
+  title: string;
+  /** Quieter words after the title: a type, a value, parameters. */
+  description?: string;
+  icon?: DiagramGlyph;
+  tone?: DiagramTone;
+  /** A port of the node that sits on this item's row: without an `at` of its own, the port follows the row. */
+  port?: string;
+}
+
+/** A labelled group of items: a quiet caption over a column of them. */
+export interface DiagramSection {
+  /** Its address in `onAction` (default: its index, as a string). */
+  id?: string;
+  /** The caption. An edge label's chips usually go without one. */
+  title?: string;
+  /** `default`: bordered chips. `list`: plain rows of text. `code`: plain rows in the mono face. */
+  variant?: 'default' | 'list' | 'code';
+  items: readonly DiagramSectionItem[];
+}
+
 export interface DiagramNode<D = unknown> extends Rect {
   id: string;
   /** The group it sits in. A node moves with its parent. */
   parent?: string | null;
   kind?: DiagramNodeKind;
   variant?: DiagramNodeVariant;
-  label?: string;
-  /** A second, quieter line. */
-  detail?: string;
+  /** The header strip's words. */
+  title?: string;
+  /** A glyph at the start of the header strip. */
+  icon?: DiagramGlyph;
+  /** Short words at the end of the header strip, drawn as a quiet badge. */
+  trailing?: string;
+  /** A quiet paragraph under the header. */
+  description?: string;
+  /** Labelled sections of items under the header (and, in something that holds others, before what it holds). */
+  sections?: readonly DiagramSection[];
+  /** The entry marker: a dot with a curved arrow into the node's top-start corner. */
+  entry?: boolean;
+  /** A colored accent on the header strip; `default` for none. */
+  tone?: DiagramTone;
   ports?: readonly DiagramPort[];
   data?: D;
 }
@@ -72,13 +115,26 @@ export interface DiagramEdge<D = unknown> {
   route?: ConnectorRoute;
   /** A route already worked out, in board units, from the start to the tip. */
   points?: readonly Pt[];
-  label?: string;
-  /** Where a layout put the label, in board units. Without it `labelBox` finds a place. */
+  /** The label's heading. Alone, the label is a pill; with `sections`, a small card with the title on top. */
+  title?: string;
+  /** A glyph before the title. */
+  icon?: DiagramGlyph;
+  /** Items under the title, which make the label a card. */
+  sections?: readonly DiagramSection[];
+  /** Where the label sits, in board units: a layout puts it on the route. Without it, one is found. */
   labelBox?: Rect;
   variant?: DiagramEdgeVariant;
   tone?: DiagramEdgeTone;
   data?: D;
 }
+
+/** A section's address: its `id`, or its index. */
+export const sectionKey = (section: DiagramSection, index: number): string => section.id ?? String(index);
+/** An item's address in its section: its `id`, or its title. */
+export const itemKey = (item: DiagramSectionItem): string => item.id ?? item.title;
+
+/** Whether an edge has a label to draw. */
+export const hasEdgeLabel = (edge: Pick<DiagramEdge<unknown>, 'title' | 'sections'>): boolean => !!edge.title || !!edge.sections?.some((s) => s.items.length);
 
 /* ── Nesting ── */
 
@@ -412,24 +468,52 @@ export function labelBox(pts: readonly Pt[], size: { w: number; h: number }, { t
   return { x: point.x + nx * off - size.w / 2, y: point.y + ny * off - size.h / 2, w: size.w, h: size.h };
 }
 
-/** Where along a route a label tries to go, in order: beside the middle first, then out along the route, each above and
- *  then below; then the same again, standing further off the line, a step at a time. */
-const LABEL_TRIES: readonly { t: number; flip: boolean; step: number }[] = [0, 1, 2].flatMap((step) =>
-  [0.5, 0.35, 0.65, 0.2, 0.8].flatMap((t) => [{ t, flip: false, step }, { t, flip: true, step }]));
+/** A label's box centered on a route, `t` of the way along it: the route runs into it and out of it. */
+export function labelBoxOnRoute(pts: readonly Pt[], size: { w: number; h: number }, t = 0.5): Rect {
+  const { point } = pointAlong(pts, t);
+  return { x: point.x - size.w / 2, y: point.y - size.h / 2, w: size.w, h: size.h };
+}
+
+/** Where along a route a label tries to go, in order: on the route, at the middle and then out along it; then beside it,
+ *  above and then below; then the same again, standing further off the line, a step at a time. */
+const LABEL_TRIES: readonly { t: number; flip: boolean; step: number }[] = [
+  ...[0.5, 0.4, 0.6, 0.3, 0.7, 0.2, 0.8].map((t) => ({ t, flip: false, step: -1 })),
+  ...[0, 1, 2].flatMap((step) => [0.5, 0.35, 0.65, 0.2, 0.8].flatMap((t) => [{ t, flip: false, step }, { t, flip: true, step }])),
+];
 
 /** A label's box that keeps clear of what `overlap` says it covers (nodes, other labels): `given` if that's clear, or else
- *  the first clear place along the route, then further off it, or failing all that the place that covers least. */
+ *  the first clear place on the route, then beside it and further off it, or failing all that the place that covers least. */
 export function labelBoxAvoiding(pts: readonly Pt[], size: { w: number; h: number }, overlap: (box: Rect) => number, given?: Rect): Rect {
   if (given && overlap(given) <= 0) return given;
   let best = given ?? null, least = given ? overlap(given) : Infinity;
   for (const { t, flip, step } of LABEL_TRIES) {
-    const box = labelBox(pts, size, { t, flip, gap: 2 + step * (size.h + 8) });
+    const box = step < 0 ? labelBoxOnRoute(pts, size, t) : labelBox(pts, size, { t, flip, gap: 2 + step * (size.h + 8) });
     const covered = overlap(box);
     if (covered <= 0) return box;
     if (covered < least) { least = covered; best = box; }
   }
   return best!;
 }
+
+/** A polyline as SVG path data with its corners rounded by up to `radius`, never more than half of either run beside a
+ *  corner, so short steps stay square-ish and nothing overshoots. */
+export function roundedPolylineD(pts: readonly Pt[], radius = 8): string {
+  if (pts.length < 3 || radius <= 0) return polylineD(pts);
+  let d = `M${pts[0].x} ${pts[0].y}`;
+  for (let i = 1; i < pts.length - 1; i++) {
+    const a = pts[i - 1], b = pts[i], c = pts[i + 1];
+    const l1 = dist(a, b), l2 = dist(b, c);
+    const r = Math.min(radius, l1 / 2, l2 / 2);
+    if (r < 0.5) { d += `L${b.x} ${b.y}`; continue; }
+    const p1 = { x: b.x + ((a.x - b.x) / l1) * r, y: b.y + ((a.y - b.y) / l1) * r };
+    const p2 = { x: b.x + ((c.x - b.x) / l2) * r, y: b.y + ((c.y - b.y) / l2) * r };
+    d += `L${round2(p1.x)} ${round2(p1.y)}Q${b.x} ${b.y} ${round2(p2.x)} ${round2(p2.y)}`;
+  }
+  const z = pts[pts.length - 1];
+  return `${d}L${z.x} ${z.y}`;
+}
+
+const round2 = (v: number) => Math.round(v * 100) / 100;
 
 /** Rects in a grid of `cell`-sized buckets, for asking quickly how much of a box they cover. */
 export function rectIndex(rects: readonly Rect[], cell = 160): { add: (r: Rect) => void; overlap: (box: Rect, except?: (r: Rect) => boolean) => number } {
@@ -529,9 +613,10 @@ export function edgeGeometry<N, E>(edge: DiagramEdge<E>, index: DiagramIndex<N>,
   const pa = portOf(a, edge.fromPort), pb = portOf(b, edge.toPort);
   if (a === b) {
     const loop = spread?.loop ?? 0;
+    // Beside the node, out of its right side and back in: a loop that doesn't cross the header.
     const ends: [ConnectorEnd, ConnectorEnd] = pa || pb
-      ? [pa ? portPoint(a, pa) : { p: anchorPoint(a, 'top', 0.35), n: NORMAL.top }, pb ? portPoint(a, pb) : { p: anchorPoint(a, 'top', 0.65), n: NORMAL.top }]
-      : [{ p: anchorPoint(a, 'top', 0.35 - Math.min(loop, 3) * 0.08), n: NORMAL.top }, { p: anchorPoint(a, 'top', 0.65 + Math.min(loop, 3) * 0.08), n: NORMAL.top }];
+      ? [pa ? portPoint(a, pa) : { p: anchorPoint(a, 'right', 0.35), n: NORMAL.right }, pb ? portPoint(a, pb) : { p: anchorPoint(a, 'right', 0.65), n: NORMAL.right }]
+      : [{ p: anchorPoint(a, 'right', 0.35 - Math.min(loop, 3) * 0.08), n: NORMAL.right }, { p: anchorPoint(a, 'right', 0.65 + Math.min(loop, 3) * 0.08), n: NORMAL.right }];
     return selfLoopPath(a, ends[0], ends[1], SELF_LOOP_SIZE + loop * 12);
   }
   const route = edge.route ?? 'elbow';
@@ -716,56 +801,206 @@ export function diagramBounds(nodes: readonly Rect[], geometries: Iterable<{ pts
   return unionRect(rects);
 }
 
-/* ── Sizes from text ── */
+/* ── Sizes from text: a card's anatomy ── */
 
-/** The room a node keeps around its words, and the least it's drawn as. */
-export const NODE_PADDING = { x: 12, y: 8 };
-export const NODE_MIN_SIZE = { w: 72, h: 34 };
+/** A card's measures, in board units. `DiagramNodeBody` and the edge label draw with the same numbers, as classes. */
+export const DIAGRAM_CARD = {
+  /** Header strip: padding, a glyph and the room beside it, the badge's padding. */
+  headerX: 10, headerY: 6, glyph: 14, glyphGap: 6, trailingGap: 8, badgeX: 6, badgeY: 1,
+  /** Under the header: padding, and the room between a description, sections, a caption and its items. */
+  bodyX: 10, bodyTop: 8, bodyBottom: 10, descriptionGap: 8, sectionGap: 10, captionGap: 4,
+  /** A chip: padding, its glyph, and the room between chips; a list row's room. */
+  chipX: 8, chipY: 2, chipIcon: 12, chipIconGap: 6, chipDescriptionGap: 6, chipGap: 4, rowGap: 2,
+  /** The least width of a card. */
+  minW: 64,
+  /** An edge label: a pill's padding; a card's padding, and the room under its title. */
+  pillX: 10, pillY: 4, labelX: 10, labelTop: 6, labelTitleGap: 6, labelBottom: 8,
+} as const;
+
 /** A `marker`'s size. */
 export const MARKER_SIZE = 12;
 
-type TextOf = (text: string, kind: 'label' | 'detail' | 'title' | 'edge') => { w: number; h: number };
+/** The room a group keeps around what it holds, past its header and sections. */
+export const CONTAINER_PADDING = { side: 16, bottom: 16, top: 12 } as const;
 
-/** The texts in a diagram, for measuring in one go. */
-export function diagramTextRuns(nodes: readonly DiagramNode<unknown>[], edges: readonly DiagramEdge<unknown>[] = []): { text: string; kind: 'label' | 'detail' | 'title' | 'edge' }[] {
-  const runs: { text: string; kind: 'label' | 'detail' | 'title' | 'edge' }[] = [];
-  for (const n of nodes) {
-    if (n.kind === 'marker') continue;
-    const holds = holdsNodes(n);
-    if (n.label) runs.push({ text: n.label, kind: holds ? 'title' : 'label' });
-    if (n.detail) runs.push({ text: n.detail, kind: holds ? 'title' : 'detail' });
-  }
-  for (const e of edges) if (e.label) runs.push({ text: e.label, kind: 'edge' });
-  return runs;
+type TextOf = (text: string, kind: DiagramTextKind) => { w: number; h: number };
+
+const NONE = { w: 0, h: 0 };
+
+/** How wide a glyph is: an icon is square, a few characters as wide as they are. */
+function glyphSize(glyph: DiagramGlyph, size: number, text: TextOf): number {
+  return typeof glyph === 'string' ? size : Math.max(size, text(glyph.text, 'trailing').w + 4);
 }
 
-/** How big a node needs to be for its words. What holds other nodes gets its size from them, so this is the least it can
- *  be: wide enough for its title. */
-export function nodeTextSize(node: Pick<DiagramNode<unknown>, 'kind' | 'variant' | 'label' | 'detail'>, text: TextOf): { w: number; h: number } {
-  if (node.kind === 'marker') return { w: MARKER_SIZE, h: MARKER_SIZE };
-  if (holdsNodes(node)) {
-    const title = node.label ? text(node.label, 'title') : { w: 0, h: 0 };
-    const detail = node.detail ? text(` (${node.detail})`, 'title').w : 0;
-    return { w: title.w + detail + NODE_PADDING.x * 2, h: title.h + NODE_PADDING.y * 2 };
-  }
-  // A double border is a pixel thicker on each side, and its inner line takes up the rest of the padding.
-  const border = node.variant === 'double' ? 4 : 2;
-  const a = node.label ? text(node.label, 'label') : { w: 0, h: 0 };
-  const b = node.detail ? text(node.detail, 'detail') : { w: 0, h: 0 };
+function itemSize(item: DiagramSectionItem, variant: DiagramSection['variant'], text: TextOf): { w: number; h: number } {
+  const C = DIAGRAM_CARD;
+  const code = variant === 'code';
+  const t = text(item.title, code ? 'code' : 'item');
+  const d = item.description ? text(item.description, code ? 'code' : 'description') : NONE;
+  const icon = item.icon ? glyphSize(item.icon, C.chipIcon, text) : 0;
+  const w = (icon ? icon + C.chipIconGap : 0) + t.w + (item.description ? C.chipDescriptionGap + d.w : 0);
+  const h = Math.max(t.h, d.h, icon ? C.chipIcon : 0);
+  return !variant || variant === 'default' ? { w: w + C.chipX * 2 + 2, h: h + C.chipY * 2 + 2 } : { w, h };
+}
+
+/** The sections block: its size, and the middle of each item's row from its top, by `section\0item`. */
+function sectionsSize(sections: readonly DiagramSection[], text: TextOf, gap: number = DIAGRAM_CARD.sectionGap): { w: number; h: number; rows: Map<string, number> } {
+  const C = DIAGRAM_CARD;
+  const rows = new Map<string, number>();
+  let y = 0, w = 0, first = true;
+  sections.forEach((s, si) => {
+    if (!s.items.length && !s.title) return;
+    if (!first) y += gap;
+    first = false;
+    if (s.title) {
+      const c = text(s.title, 'caption');
+      w = Math.max(w, c.w);
+      y += c.h + (s.items.length ? C.captionGap : 0);
+    }
+    s.items.forEach((it, ii) => {
+      if (ii) y += !s.variant || s.variant === 'default' ? C.chipGap : C.rowGap;
+      const size = itemSize(it, s.variant, text);
+      rows.set(`${sectionKey(s, si)}\0${itemKey(it)}`, y + size.h / 2);
+      w = Math.max(w, size.w);
+      y += size.h;
+    });
+  });
+  return { w, h: y, rows };
+}
+
+/** The header strip's size. */
+function headerSize(node: Pick<DiagramNode<unknown>, 'title' | 'icon' | 'trailing'>, text: TextOf): { w: number; h: number } {
+  const C = DIAGRAM_CARD;
+  const t = node.title ? text(node.title, 'title') : NONE;
+  const icon = node.icon ? glyphSize(node.icon, C.glyph, text) : 0;
+  const badge = node.trailing ? text(node.trailing, 'trailing') : null;
+  const w = C.headerX * 2 + (icon ? icon + (t.w ? C.glyphGap : 0) : 0) + t.w + (badge ? C.trailingGap + badge.w + C.badgeX * 2 : 0);
+  const h = Math.max(t.h || text('M', 'title').h, icon ? C.glyph : 0, badge ? badge.h + C.badgeY * 2 : 0) + C.headerY * 2;
+  return { w, h };
+}
+
+/** What's under the header: a description and the sections. */
+function bodySize(node: Pick<DiagramNode<unknown>, 'description' | 'sections'>, text: TextOf): { w: number; h: number; rows: Map<string, number> } | null {
+  const C = DIAGRAM_CARD;
+  const sections = node.sections?.filter((s) => s.items.length || s.title) ?? [];
+  if (!node.description && !sections.length) return null;
+  const d = node.description ? text(node.description, 'description') : NONE;
+  const block = sections.length ? sectionsSize(sections, text) : { w: 0, h: 0, rows: new Map<string, number>() };
+  const top = C.bodyTop + d.h + (node.description && sections.length ? C.descriptionGap : 0);
+  const rows = new Map<string, number>();
+  for (const [k, y] of block.rows) rows.set(k, top + y);
+  return { w: Math.max(d.w, block.w) + C.bodyX * 2, h: top + block.h + C.bodyBottom, rows };
+}
+
+/** A node's anatomy, in board units: its size, how tall its header strip is, where what's under the header starts and
+ *  ends (for what holds others, where its children's room starts), and the middle of each item's row from the node's top. */
+export interface DiagramAnatomy {
+  w: number;
+  h: number;
+  /** The border's width. */
+  border: number;
+  header: number;
+  /** From the node's top to the end of its header and sections: where something that holds others has room for them. */
+  top: number;
+  rows: Map<string, number>;
+}
+
+/** The anatomy of a node: what `DiagramNodeBody` draws, measured. What holds others gets its size from them, so this is
+ *  the least it can be. */
+export function nodeAnatomy(node: Pick<DiagramNode<unknown>, 'kind' | 'variant' | 'title' | 'icon' | 'trailing' | 'description' | 'sections'>, text: TextOf): DiagramAnatomy {
+  if (node.kind === 'marker') return { w: MARKER_SIZE, h: MARKER_SIZE, border: 0, header: 0, top: 0, rows: new Map() };
+  const C = DIAGRAM_CARD;
+  // A double border is a pixel thicker on each side, and its inner line takes up a little more.
+  const border = node.variant === 'double' ? 2 : node.kind === 'region' ? 0 : 1;
+  const inner = node.variant === 'double' ? 4 : border * 2;
+  const header = node.title || node.icon || node.trailing || !holdsNodes(node) ? headerSize(node, text) : { w: 0, h: 0 };
+  const body = bodySize(node, text);
+  const rows = new Map<string, number>();
+  const bodyAt = border + header.h + (header.h && body ? 1 : 0);
+  if (body) for (const [k, y] of body.rows) rows.set(k, bodyAt + y);
+  const top = bodyAt + (body?.h ?? 0);
+  const w = Math.ceil(Math.max(holdsNodes(node) ? 0 : C.minW, header.w, body?.w ?? 0) + inner);
+  return { w, h: Math.ceil(top + border + (inner - border * 2) / 2), border, header: header.h, top, rows };
+}
+
+/** How big a node needs to be for what it says. */
+export function nodeSize(node: Pick<DiagramNode<unknown>, 'kind' | 'variant' | 'title' | 'icon' | 'trailing' | 'description' | 'sections'>, text: TextOf): { w: number; h: number } {
+  const a = nodeAnatomy(node, text);
+  return { w: a.w, h: a.h };
+}
+
+/** The size of an edge's label: a pill for a title alone, a card with sections. Null when it has none. */
+export function edgeLabelSize(edge: Pick<DiagramEdge<unknown>, 'title' | 'icon' | 'sections'>, text: TextOf): { w: number; h: number } | null {
+  if (!hasEdgeLabel(edge)) return null;
+  const C = DIAGRAM_CARD;
+  const t = edge.title ? text(edge.title, 'edge') : NONE;
+  const icon = edge.icon ? glyphSize(edge.icon, C.chipIcon, text) : 0;
+  const head = { w: (icon ? icon + (t.w ? 4 : 0) : 0) + t.w, h: Math.max(t.h, icon ? C.chipIcon : 0) };
+  const sections = edge.sections?.filter((s) => s.items.length || s.title) ?? [];
+  if (!sections.length) return { w: Math.ceil(head.w + C.pillX * 2 + 2), h: Math.ceil(head.h + C.pillY * 2 + 2) };
+  const block = sectionsSize(sections, text, 8);
   return {
-    w: Math.max(NODE_MIN_SIZE.w, Math.max(a.w, b.w) + NODE_PADDING.x * 2 + border),
-    h: Math.max(NODE_MIN_SIZE.h, a.h + b.h + NODE_PADDING.y * 2 + border),
+    w: Math.ceil(Math.max(head.w, block.w) + C.labelX * 2 + 2),
+    h: Math.ceil(C.labelTop + head.h + (head.h ? C.labelTitleGap : 0) + block.h + C.labelBottom + 2),
   };
 }
 
-/** Nodes resized to their words, around their centers. Nodes that hold others, and nodes whose size didn't change, come
- *  back as they were, so a memo on them holds. */
+/** A port that an item names, without an `at` of its own, sits on that item's row. */
+export function placeItemPorts<N extends Pick<DiagramNode<unknown>, 'ports' | 'sections'>>(node: N, anatomy: DiagramAnatomy, h: number): N {
+  if (!node.ports?.length || !node.sections?.length) return node;
+  const rowOf = new Map<string, number>();
+  node.sections.forEach((s, si) => s.items.forEach((it) => { if (it.port) rowOf.set(it.port, anatomy.rows.get(`${sectionKey(s, si)}\0${itemKey(it)}`) ?? -1); }));
+  if (!rowOf.size) return node;
+  let changed = false;
+  const ports = node.ports.map((p) => {
+    const y = rowOf.get(p.id);
+    if (p.at !== undefined || y === undefined || y < 0 || (p.side !== 'left' && p.side !== 'right')) return p;
+    changed = true;
+    return { ...p, at: Math.round((y / (h || 1)) * 1000) / 1000 };
+  });
+  return changed ? { ...node, ports } : node;
+}
+
+/** The texts in a diagram, for measuring in one go. */
+export function diagramTextRuns(nodes: readonly DiagramNode<unknown>[], edges: readonly DiagramEdge<unknown>[] = []): { text: string; kind: DiagramTextKind }[] {
+  const runs: { text: string; kind: DiagramTextKind }[] = [];
+  const glyph = (g: DiagramGlyph | undefined) => { if (g && typeof g !== 'string') runs.push({ text: g.text, kind: 'trailing' }); };
+  const sections = (list: readonly DiagramSection[] | undefined) => {
+    for (const s of list ?? []) {
+      if (s.title) runs.push({ text: s.title, kind: 'caption' });
+      const code = s.variant === 'code';
+      for (const it of s.items) {
+        runs.push({ text: it.title, kind: code ? 'code' : 'item' });
+        if (it.description) runs.push({ text: it.description, kind: code ? 'code' : 'description' });
+        glyph(it.icon);
+      }
+    }
+  };
+  for (const n of nodes) {
+    if (n.kind === 'marker') continue;
+    if (n.title) runs.push({ text: n.title, kind: 'title' });
+    if (n.trailing) runs.push({ text: n.trailing, kind: 'trailing' });
+    if (n.description) runs.push({ text: n.description, kind: 'description' });
+    glyph(n.icon);
+    sections(n.sections);
+  }
+  for (const e of edges) {
+    if (e.title) runs.push({ text: e.title, kind: 'edge' });
+    glyph(e.icon);
+    sections(e.sections);
+  }
+  return runs;
+}
+
+/** Nodes resized to what they say, around their centers, with ports that items name placed on their rows. Nodes that
+ *  hold others, and nodes whose size didn't change, come back as they were, so a memo on them holds. */
 export function sizeNodesToText<N>(nodes: readonly DiagramNode<N>[], text: TextOf): DiagramNode<N>[] {
   return nodes.map((n) => {
     if (holdsNodes(n)) return n;
-    const { w, h } = nodeTextSize(n, text);
-    if (w === n.w && h === n.h) return n;
-    return { ...n, x: n.x + (n.w - w) / 2, y: n.y + (n.h - h) / 2, w, h };
+    const a = nodeAnatomy(n, text);
+    const placed = placeItemPorts(n, a, a.h);
+    if (a.w === n.w && a.h === n.h && placed === n) return n;
+    return { ...placed, x: n.x + (n.w - a.w) / 2, y: n.y + (n.h - a.h) / 2, w: a.w, h: a.h };
   });
 }
 

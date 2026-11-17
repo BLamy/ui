@@ -7,7 +7,7 @@
    a layout's first asked for, and an app with fixed positions never loads it. Nothing at module scope touches a browser
    API, so this is safe to import on a server. `lib/diagram-layout/react` has the hook. */
 import type { Pt, Rect } from '@/lib/canvas-math';
-import { diagramBounds, holdsNodes, indexDiagram, nodeTextSize, type DiagramEdge, type DiagramNode, type DiagramSide } from '@/lib/diagram-model';
+import { CONTAINER_PADDING, diagramBounds, edgeLabelSize, hasEdgeLabel, holdsNodes, indexDiagram, nodeAnatomy, placeItemPorts, type DiagramEdge, type DiagramNode, type DiagramSide } from '@/lib/diagram-model';
 import { estimateText, type TextMeasurer } from '@/lib/diagram-text';
 
 /* ── What goes in and what comes out ── */
@@ -33,9 +33,14 @@ export interface DiagramLayoutResult<N = unknown, E = unknown> {
 /** Which way a layout's layers run: what an edge mostly points along. */
 export type DiagramDirection = 'right' | 'down' | 'left' | 'up';
 
+/** How much room a layout leaves between things: `compact` for big generated graphs, `default` to read at 100%. */
+export type DiagramLayoutDensity = 'compact' | 'default' | 'comfortable';
+
 export interface DiagramLayoutOptions {
-  /** Which way the layers run (default `right`). */
+  /** Which way the layers run (default `down`). */
   direction?: DiagramDirection;
+  /** How much room between things (default `default`). */
+  density?: DiagramLayoutDensity;
   /** ELK options of your own, which win over these defaults. */
   elk?: Record<string, string>;
   /** Text sizes. The default is `estimateText`, which is what a server has. In a browser, use `measureText`. */
@@ -57,7 +62,8 @@ export class DiagramLayoutError extends Error {
 
 /* ── To ELK and back ── */
 
-interface ElkLabel { text?: string; x?: number; y?: number; width?: number; height?: number }
+interface ElkLabel { text?: string; x?: number; y?: number; width?: number; height?: number; layoutOptions?: Record<string, string> }
+const LABEL_OPTIONS: Record<string, string> = { 'elk.edgeLabels.inline': 'true', 'elk.edgeLabels.placement': 'CENTER' };
 interface ElkPort { id: string; x?: number; y?: number; layoutOptions?: Record<string, string>; width?: number; height?: number }
 interface ElkSection { startPoint: Pt; endPoint: Pt; bendPoints?: Pt[] }
 interface ElkEdge { id: string; sources: string[]; targets: string[]; labels?: ElkLabel[]; sections?: ElkSection[]; container?: string }
@@ -75,55 +81,86 @@ export interface ElkGraph {
 }
 
 const ROOT = '__root';
-/** Room for a title along the top of what holds other nodes. */
-const COMPOUND_PADDING = '[top=32,left=16,bottom=16,right=16]';
 /** A region has no border of its own, and the padding of the group it's a lane of is already around it. */
-const REGION_PADDING = '[top=30,left=12,bottom=12,right=12]';
-const LANES_PADDING = '[top=28,left=8,bottom=8,right=8]';
+const REGION_PADDING = { side: 12, bottom: 12, top: 8 };
+/** A group of regions keeps little air: each region has its own. */
+const LANES_PADDING = { side: 8, bottom: 8, top: 8 };
 
 const SIDE: Record<DiagramSide, string> = { top: 'NORTH', right: 'EAST', bottom: 'SOUTH', left: 'WEST' };
 
-/** What these defaults are for: readable statecharts. They come from the Cloudflare diagrams spike. */
-export const DIAGRAM_ELK_OPTIONS: Readonly<Record<string, string>> = {
-  'elk.algorithm': 'layered',
-  'elk.direction': 'RIGHT',
-  'elk.hierarchyHandling': 'INCLUDE_CHILDREN',
-  'elk.edgeRouting': 'ORTHOGONAL',
-  'elk.layered.spacing.nodeNodeBetweenLayers': '36',
-  'elk.spacing.nodeNode': '24',
-  'elk.spacing.edgeLabel': '4',
-  'elk.edgeLabels.inline': 'false',
-  'elk.layered.edgeLabels.sideSelection': 'ALWAYS_UP',
-  'elk.layered.mergeEdges': 'false',
-  'elk.padding': COMPOUND_PADDING,
+/** The room between things, per density: between layers, between nodes in a layer, between edges and around them. */
+const SPACING: Record<DiagramLayoutDensity, { layers: number; nodes: number; edges: number; edgeNode: number }> = {
+  compact: { layers: 36, nodes: 24, edges: 8, edgeNode: 12 },
+  default: { layers: 44, nodes: 40, edges: 14, edgeNode: 18 },
+  comfortable: { layers: 64, nodes: 56, edges: 18, edgeNode: 24 },
 };
 
+/** ELK options for a density. */
+export function diagramElkOptions(density: DiagramLayoutDensity = 'default'): Record<string, string> {
+  const s = SPACING[density];
+  return {
+    'elk.algorithm': 'layered',
+    'elk.direction': 'DOWN',
+    'elk.hierarchyHandling': 'INCLUDE_CHILDREN',
+    'elk.edgeRouting': 'ORTHOGONAL',
+    'elk.layered.spacing.nodeNodeBetweenLayers': String(s.layers),
+    'elk.spacing.nodeNode': String(s.nodes),
+    'elk.spacing.edgeEdge': String(s.edges),
+    'elk.layered.spacing.edgeEdgeBetweenLayers': String(s.edges),
+    'elk.spacing.edgeNode': String(s.edgeNode),
+    'elk.layered.spacing.edgeNodeBetweenLayers': String(s.edgeNode),
+    // A label is an object on its edge: the edge runs into it and out of it.
+    'elk.edgeLabels.inline': 'true',
+    'elk.edgeLabels.placement': 'CENTER',
+    'elk.spacing.edgeLabel': '0',
+    'elk.layered.mergeEdges': 'false',
+    'elk.layered.selfLoopDistribution': 'EQUALLY',
+    'elk.spacing.portPort': '8',
+  };
+}
+
+/** The defaults: readable diagrams at 100%, top to bottom. */
+export const DIAGRAM_ELK_OPTIONS: Readonly<Record<string, string>> = diagramElkOptions('default');
+
+const padding = (p: { top: number; side: number; bottom: number }) => `[top=${p.top},left=${p.side},bottom=${p.bottom},right=${p.side}]`;
+
 const portId = (node: string, port: string) => `${node}\0${port}`;
+/** The stand-in for a self-loop's label: a node one layer on, so ELK makes room for the loop and routes its way out. */
+const loopId = (edge: string) => `\0loop\0${edge}`;
+/** The size of an unlabelled self-loop's stand-in. */
+const LOOP_ROOM = { w: 16, h: 8 };
 
 
 /** A graph for ELK: nodes nested as their parents say, sized to their words, with every edge on the root, which is what
  *  `INCLUDE_CHILDREN` wants. Edges with a missing end are left out, and duplicate ids count once. */
-export function toElkGraph<N, E>(draft: DiagramDraft<N, E>, options: Pick<DiagramLayoutOptions, 'direction' | 'elk' | 'text'> = {}): ElkGraph {
+export function toElkGraph<N, E>(draft: DiagramDraft<N, E>, options: Pick<DiagramLayoutOptions, 'direction' | 'density' | 'elk' | 'text'> = {}): ElkGraph {
   const text = options.text ?? estimateText;
   const placed = dedupe(draft.nodes).map((n) => ({ ...n, x: n.x ?? 0, y: n.y ?? 0, w: n.w ?? 0, h: n.h ?? 0 })) as DiagramNode<N>[];
   const index = indexDiagram(placed);
   const elements = new Map<string, ElkGraph>();
-  for (const n of placed) {
-    const el: ElkGraph = { id: n.id };
-    const hasChildren = !!index.children.get(n.id)?.length;
-    const size = nodeTextSize(n, text);
-    if (hasChildren || holdsNodes(n)) {
+  for (const n0 of placed) {
+    const el: ElkGraph = { id: n0.id };
+    const hasChildren = !!index.children.get(n0.id)?.length;
+    const anatomy = nodeAnatomy(n0, text);
+    const holds = hasChildren || holdsNodes(n0);
+    // A port an item names sits on the item's row, which is known once the card's measured.
+    const n = holds ? n0 : placeItemPorts(n0, anatomy, n0.h || anatomy.h);
+    if (holds) {
       el.children = [];
+      // Room for the header and the sections, then air around what it holds. A group of regions keeps less: each region
+      // has its own.
+      const air = n.kind === 'region' ? REGION_PADDING : index.children.get(n.id)?.some((c) => c.kind === 'region') ? LANES_PADDING : CONTAINER_PADDING;
       el.layoutOptions = {
-        // A group of regions (lanes) keeps less air: each region has its own.
-        'elk.padding': n.kind === 'region' ? REGION_PADDING : index.children.get(n.id)?.some((c) => c.kind === 'region') ? LANES_PADDING : COMPOUND_PADDING,
+        'elk.padding': padding({ ...air, top: Math.ceil(anatomy.top) + air.top }),
         'elk.nodeSize.constraints': 'MINIMUM_SIZE',
-        'elk.nodeSize.minimum': `(${n.w || size.w}, ${n.h || size.h})`,
+        'elk.nodeSize.minimum': `(${n.w || anatomy.w}, ${n.h || anatomy.h})`,
       };
     } else {
-      el.width = n.w || size.w;
-      el.height = n.h || size.h;
+      el.width = n.w || anatomy.w;
+      el.height = n.h || anatomy.h;
     }
+    // Where things start is first in what holds it.
+    if (n.entry) el.layoutOptions = { ...el.layoutOptions, 'elk.layered.layering.layerConstraint': 'FIRST' };
     if (n.ports?.length) {
       // A node's size is known here, so its ports can stay where they're drawn, with routes ending at them. One that holds
       // others is only as big as ELK makes it, so ELK says where they went, and `fromElkGraph` reads that back.
@@ -141,7 +178,7 @@ export function toElkGraph<N, E>(draft: DiagramDraft<N, E>, options: Pick<Diagra
     id: ROOT,
     // Laying out what's inside something takes everything at once. With nothing inside anything, ELK can treat what isn't connected
     // apart, and pack it into rows, where otherwise it's all one long column.
-    layoutOptions: { ...DIAGRAM_ELK_OPTIONS, ...(placed.some((n) => index.parent.get(n.id)) ? null : { 'elk.hierarchyHandling': 'SEPARATE_CHILDREN' }), ...(options.direction ? { 'elk.direction': options.direction.toUpperCase() } : null), ...options.elk },
+    layoutOptions: { ...diagramElkOptions(options.density), ...(placed.some((n) => index.parent.get(n.id)) ? null : { 'elk.hierarchyHandling': 'SEPARATE_CHILDREN' }), ...(options.direction ? { 'elk.direction': options.direction.toUpperCase() } : null), ...options.elk },
     children: [],
     edges: [],
   };
@@ -149,19 +186,30 @@ export function toElkGraph<N, E>(draft: DiagramDraft<N, E>, options: Pick<Diagra
     const p = index.parent.get(n.id);
     (p ? elements.get(p)! : root).children!.push(elements.get(n.id)!);
   }
+  // A self-loop goes out to a stand-in the size of its label, placed one layer on in the same parent, right after its node
+  // in the order, and comes back from it (drawn by `fromElkGraph`): a loop below the node (beside it, across), with its
+  // label on it, in room ELK has kept.
+  for (const e of draft.edges ?? []) {
+    if (e.from !== e.to || !index.byId.has(e.from)) continue;
+    const size = edgeLabelSize(e, text) ?? LOOP_ROOM;
+    const p = index.parent.get(e.from);
+    const list = (p ? elements.get(p)! : root).children!;
+    const at = list.findIndex((c) => c.id === e.from);
+    list.splice(at + 1, 0, { id: loopId(e.id), width: size.w, height: size.h });
+  }
   const hasPort = (node: DiagramNode<N> | undefined, id?: string) => !!id && !!node?.ports?.some((p) => p.id === id);
   for (const e of draft.edges ?? []) {
     const a = index.byId.get(e.from), b = index.byId.get(e.to);
     if (!a || !b) continue;
+    const loop = e.from === e.to;
     const el: ElkEdge = {
       id: e.id,
       sources: [hasPort(a, e.fromPort) ? portId(e.from, e.fromPort!) : e.from],
-      targets: [hasPort(b, e.toPort) ? portId(e.to, e.toPort!) : e.to],
+      targets: [loop ? loopId(e.id) : hasPort(b, e.toPort) ? portId(e.to, e.toPort!) : e.to],
     };
-    if (e.label) {
-      const size = text(e.label, 'edge');
-      el.labels = [{ text: e.label, width: size.w, height: size.h }];
-    }
+    const size = loop ? null : edgeLabelSize(e, text);
+    // On the route, the edge running into it and out of it: these are the label's own options.
+    if (size) el.labels = [{ text: e.title ?? '', width: size.w, height: size.h, layoutOptions: LABEL_OPTIONS }];
     root.edges!.push(el);
   }
   return root;
@@ -214,9 +262,12 @@ export function fromElkGraph<N, E>(draft: DiagramDraft<N, E>, out: ElkGraph): Pi
   };
   collect(out);
   const edges: DiagramEdge<E>[] = [];
+  const direction = (out.layoutOptions?.['elk.direction'] ?? 'DOWN') as 'DOWN' | 'UP' | 'RIGHT' | 'LEFT';
   for (const e of draft.edges ?? []) {
     const route = routes.get(e.id);
     if (!route) continue;
+    const stand = e.from === e.to ? boxes.get(loopId(e.id)) : undefined;
+    const node = stand ? boxes.get(e.from) : undefined;
     const at = origin.get(route.container ?? ROOT) ?? { x: 0, y: 0 };
     const move = (p: Pt): Pt => ({ x: round(p.x + at.x), y: round(p.y + at.y) });
     const points: Pt[] = [];
@@ -226,6 +277,11 @@ export function fromElkGraph<N, E>(draft: DiagramDraft<N, E>, out: ElkGraph): Pi
       points.push(move(s.endPoint));
     }
     const { labelBox: _stale, ...rest } = e;
+    if (stand && node && points.length) {
+      // Out to the label, and back from its side to the node.
+      edges.push({ ...rest, points: loopRoute(node, stand, direction), ...(hasEdgeLabel(e) ? { labelBox: stand } : null) });
+      continue;
+    }
     const l = route.labels?.[0];
     edges.push({
       ...rest,
@@ -235,6 +291,38 @@ export function fromElkGraph<N, E>(draft: DiagramDraft<N, E>, out: ElkGraph): Pi
   }
   const bounds = diagramBounds(nodes, edges.map((e) => ({ pts: e.points ?? [] })), edges.flatMap((e) => (e.labelBox ? [e.labelBox] : []))) ?? { x: 0, y: 0, w: 0, h: 0 };
   return { nodes, edges, bounds };
+}
+
+/** A self-loop's route, through its label's stand-in one layer on: out of the node's side nearer the label (or its foot,
+ *  when the label's under it) and into the label's head, then back out of the label's far side and into the node's foot
+ *  (or its other side, when there's no room under it). The two legs keep apart. Worked out as if the layers ran down, and
+ *  turned to the way they do. */
+function loopRoute(node: Rect, label: Rect, direction: 'DOWN' | 'UP' | 'RIGHT' | 'LEFT'): Pt[] {
+  // Into a frame where the layers run down, and back.
+  const to = (p: Pt): Pt => (direction === 'DOWN' ? p : direction === 'UP' ? { x: p.x, y: -p.y } : direction === 'RIGHT' ? { x: p.y, y: p.x } : { x: p.y, y: -p.x });
+  const from = (p: Pt): Pt => (direction === 'DOWN' ? p : direction === 'UP' ? { x: p.x, y: -p.y } : direction === 'RIGHT' ? { x: p.y, y: p.x } : { x: -p.y, y: p.x });
+  const box = (r: Rect): Rect => {
+    const a = to({ x: r.x, y: r.y }), b = to({ x: r.x + r.w, y: r.y + r.h });
+    return { x: Math.min(a.x, b.x), y: Math.min(a.y, b.y), w: Math.abs(b.x - a.x), h: Math.abs(b.y - a.y) };
+  };
+  const n = box(node), l = box(label);
+  const foot = n.y + n.h, mid = l.y + l.h / 2, side = n.y + n.h - Math.min(10, n.h / 3);
+  const lc = l.x + l.w / 2;
+  const inset = Math.min(14, n.w / 4);
+  // Mirror so the label's toward the start, work it out, and mirror back.
+  const flip = lc > n.x + n.w / 2;
+  const fx = (x: number) => (flip ? n.x + n.w - (x - n.x) : x);
+  const L = flip ? { ...l, x: n.x + n.w - (l.x + l.w - n.x) } : l;
+  const lcx = L.x + L.w / 2;
+  const out: Pt[] = lcx < n.x - 6
+    ? [{ x: n.x, y: side }, { x: lcx, y: side }, { x: lcx, y: L.y }]
+    : (() => { const x = Math.min(Math.max(L.x + 12, n.x + inset), n.x + n.w / 2 - 6); return [{ x, y: foot }, { x, y: L.y }]; })();
+  const outX = out[out.length - 1].x;
+  const x = Math.max(L.x + L.w + 14, n.x + inset, outX + 12);
+  const back: Pt[] = x <= n.x + n.w - inset
+    ? [{ x: L.x + L.w, y: mid }, { x, y: mid }, { x, y: foot }]
+    : [{ x: L.x + L.w, y: mid }, { x: Math.max(x, n.x + n.w + 14), y: mid }, { x: Math.max(x, n.x + n.w + 14), y: n.y + n.h / 2 }, { x: n.x + n.w, y: n.y + n.h / 2 }];
+  return [...out, ...back].map((p) => { const q = from({ x: fx(p.x), y: p.y }); return { x: round(q.x), y: round(q.y) }; });
 }
 
 function stretchRegions<N>(nodes: DiagramNode<N>[]): void {
@@ -258,9 +346,11 @@ function stretchRegions<N>(nodes: DiagramNode<N>[]): void {
       down += Math.max(0, Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y));
     }
     const pad = 8;
+    // Side by side, they start where the highest does (under the group's header and sections) and reach its foot.
+    const top = Math.min(...list.map((i) => nodes[i].y));
     for (const i of list) {
       const r = nodes[i];
-      nodes[i] = across >= down ? { ...r, x: round(p.x + pad), w: round(p.w - pad * 2) } : { ...r, y: round(p.y + 28), h: round(p.h - 28 - pad) };
+      nodes[i] = across >= down ? { ...r, x: round(p.x + pad), w: round(p.w - pad * 2) } : { ...r, y: round(top), h: round(p.y + p.h - pad - top) };
     }
   }
 }

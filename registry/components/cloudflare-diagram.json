@@ -1,14 +1,11 @@
 {
   "name": "cloudflare-diagram",
   "title": "CloudflareDiagram",
-  "description": "Cloudflare's services on a Diagram: each a node with what it can call and receive as ports, from a catalog generated from Cloudflare's docs, Wrangler's schema and the Workers types. A connection can only be one the catalog says there is, and it offers the real methods. What it's given is a system, which saves as JSON and reads from and writes to wrangler.jsonc, or is read from a workerd config.capnp: it says what's wrong with one, and with editable a search of the catalog adds a service and a service's machine opens in a StateDiagram. Read-only by default: a picture to select in and read. Its board is also a Diagram preset, cloudflareBoardProps(system). No Cloudflare artwork. ELK and XState are optional peers.",
+  "description": "Cloudflare's services on a Diagram, drawn as a statechart is: the system is a container with its name and what's account-wide, an environment a box in it, each service a card with a header (its name, its product's glyph and name) and labelled sections of chips (its handlers, triggers, settings, machine), a Worker holding its Durable Object classes, an entry marker where requests and schedules come in, and each binding an edge whose label is a card with its name on env and the operations it uses. What it knows comes from a catalog generated from Cloudflare's docs, Wrangler's schema and the Workers types: a connection can only be one the catalog says there is, and editable cards carry their ports on a Connect section. What it's given is a system, which saves as JSON and reads from and writes to wrangler.jsonc, or is read from a workerd config.capnp: it says what's wrong with one, and with editable a search of the catalog adds a service and a service's machine opens in a StateDiagram. Read-only by default. Its board is also a Diagram preset, cloudflareBoardProps(system). No Cloudflare artwork. ELK and XState are optional peers.",
   "page": "cloudflare-diagram",
   "exports": [
     "CloudflareDiagram",
-    "CloudflareServiceNode",
     "CloudflareServiceSearch",
-    "cloudflareServiceVariants",
-    "cloudflareServiceNode",
     "cloudflareBoardProps"
   ],
   "imports": [
@@ -16,10 +13,11 @@
   ],
   "types": [
     "CloudflareDiagramProps",
-    "CloudflareServiceNodeData",
-    "CloudflareServiceEdgeData",
     "CloudflareBoardOptions",
     "CloudflareBoardProps",
-    "CloudflareMachineChangeReason"
+    "CloudflareDiagramChangeReason",
+    "CloudflareDiagramChangeDetails",
+    "CloudflareMachineChangeReason",
+    "CloudflareServiceSearchProps"
   ]
 }

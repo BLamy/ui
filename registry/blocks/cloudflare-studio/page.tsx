@@ -120,6 +120,7 @@ export default function CloudflareStudio({ initial = EXAMPLE, storageKey = 'clou
           services={studio.system.services}
           edges={studio.system.edges}
           onDataChange={changeSystem}
+          title={studio.name || 'Untitled system'}
           aria-label={studio.name || 'Untitled system'}
         />
       </div>

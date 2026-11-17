@@ -3692,10 +3692,9 @@
       "name": "cloudflare-diagram",
       "type": "registry:ui",
       "title": "CloudflareDiagram",
-      "description": "Cloudflare's services on a Diagram: each a node with what it can call and receive as ports, from a catalog generated from Cloudflare's docs, Wrangler's schema and the Workers types. A connection can only be one the catalog says there is, and it offers the real methods. What it's given is a system, which saves as JSON and reads from and writes to wrangler.jsonc, or is read from a workerd config.capnp: it says what's wrong with one, and with editable a search of the catalog adds a service and a service's machine opens in a StateDiagram. Read-only by default: a picture to select in and read. Its board is also a Diagram preset, cloudflareBoardProps(system). No Cloudflare artwork. ELK and XState are optional peers.",
+      "description": "Cloudflare's services on a Diagram, drawn as a statechart is: the system is a container with its name and what's account-wide, an environment a box in it, each service a card with a header (its name, its product's glyph and name) and labelled sections of chips (its handlers, triggers, settings, machine), a Worker holding its Durable Object classes, an entry marker where requests and schedules come in, and each binding an edge whose label is a card with its name on env and the operations it uses. What it knows comes from a catalog generated from Cloudflare's docs, Wrangler's schema and the Workers types: a connection can only be one the catalog says there is, and editable cards carry their ports on a Connect section. What it's given is a system, which saves as JSON and reads from and writes to wrangler.jsonc, or is read from a workerd config.capnp: it says what's wrong with one, and with editable a search of the catalog adds a service and a service's machine opens in a StateDiagram. Read-only by default. Its board is also a Diagram preset, cloudflareBoardProps(system). No Cloudflare artwork. ELK and XState are optional peers.",
       "dependencies": [
         "@ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1",
-        "class-variance-authority@^0.7.1",
         "xstate@^5.33.3"
       ],
       "registryDependencies": [
@@ -3704,6 +3703,7 @@
         "https://blamy.github.io/ui/r/button.json",
         "https://blamy.github.io/ui/r/canvas.json",
         "https://blamy.github.io/ui/r/checkbox.json",
+        "https://blamy.github.io/ui/r/cloudflare-board.json",
         "https://blamy.github.io/ui/r/cloudflare-catalog.json",
         "https://blamy.github.io/ui/r/cloudflare-services.json",
         "https://blamy.github.io/ui/r/cloudflare-system.json",
@@ -3734,10 +3734,7 @@
         "page": "cloudflare-diagram",
         "exports": [
           "CloudflareDiagram",
-          "CloudflareServiceNode",
           "CloudflareServiceSearch",
-          "cloudflareServiceVariants",
-          "cloudflareServiceNode",
           "cloudflareBoardProps"
         ]
       }
@@ -4435,7 +4432,7 @@
       "name": "diagram-layout",
       "type": "registry:lib",
       "title": "Diagram layout",
-      "description": "Places a Diagram's nodes and routes its edges with ELK, in a Web Worker, measuring their words first. ELK is 442 KB gzipped and licensed EPL-2.0 OR GPL-3.0-or-later, so it's only loaded when a layout's first asked for, and this item is what installs it.",
+      "description": "Places a Diagram's nodes and routes its edges with ELK, in a Web Worker, measuring every part of every card first: top to bottom by default, labels on their routes, self-loops in room of their own. ELK is 442 KB gzipped and licensed EPL-2.0 OR GPL-3.0-or-later, so it's only loaded when a layout's first asked for, and this item is what installs it.",
       "dependencies": [
         "elkjs@^0.12.1"
       ],
@@ -4473,6 +4470,7 @@
           "fromElkGraph",
           "DiagramLayoutError",
           "DIAGRAM_ELK_OPTIONS",
+          "diagramElkOptions",
           "useDiagramLayout"
         ]
       }
@@ -4481,11 +4479,13 @@
       "name": "diagram-model",
       "type": "registry:lib",
       "title": "Diagram model",
-      "description": "Diagram's data as plain functions on plain nodes, ports and edges: index a diagram, measure its bounds, move nodes and edge ends, check and add a connection, delete a selection (with what it leaves dangling), and the geometry of every connector (routes, curves, arrowheads, hit tests). Nothing renders; Diagram, Freeform's connectors and Interface Builder's segues run on it.",
+      "description": "Diagram's data as plain functions on plain nodes, ports and edges: index a diagram, measure its bounds, move nodes and edge ends, check and add a connection, delete a selection (with what it leaves dangling), a card's anatomy measured from its text (nodeSize, edgeLabelSize), and the geometry of every connector (routes, curves, arrowheads, hit tests). Nothing renders; Diagram, Freeform's connectors and Interface Builder's segues run on it.",
       "dependencies": [],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
-        "https://blamy.github.io/ui/r/canvas-math.json"
+        "https://blamy.github.io/ui/r/canvas-math.json",
+        "https://blamy.github.io/ui/r/diagram-text.json",
+        "https://blamy.github.io/ui/r/icon.json"
       ],
       "files": [
         {
@@ -4507,7 +4507,9 @@
           "NOTHING_SELECTED",
           "edgeGeometry",
           "nodeAt",
-          "edgeAt"
+          "edgeAt",
+          "nodeSize",
+          "edgeLabelSize"
         ]
       }
     },
@@ -4515,7 +4517,7 @@
       "name": "diagram",
       "type": "registry:ui",
       "title": "Diagram",
-      "description": "Nodes, edges, labels and regions on a Canvas, as plain data, on one primitive (data, selection, history) with a controller and agent actions. Generic looks (a node's kind and border, an edge's line and tone), lines that keep their thickness at any zoom, labels and routes that keep clear of the nodes, and above 200 items only what's near the view is drawn. Read-only, it selects and reads; with editable: dragging, deleting and undo as one gesture, named ports, and connecting with validation; every change goes through onDataChange(data, details) and can be refused. One history: its own, or one handed to it (useDiagramHistory), driven by ⌘Z and DiagramToolbar's zoom, fit, undo and redo, with a fit that leaves room for the toolbar. One tab stop: every node and edge is reached by keyboard and says what it connects to; focus, selection and what's current are drawn three ways.",
+      "description": "Nodes, edges, labels and regions on a Canvas, as plain data, on one primitive (data, selection, history) with a controller and agent actions. A card's anatomy from generic parts (a header strip with a glyph and a trailing badge, a description, labelled sections of chips or rows, the entry marker, containers with the same header and sections), edge labels that are pills or cards on their routes, self-loops, square routes with rounded corners, generic looks (a node's kind and border, an edge's line and tone), lines that keep their thickness at any zoom, labels and routes that keep clear of the nodes, and above 200 items only what's near the view is drawn. Read-only, it selects and reads; with editable: dragging, deleting and undo as one gesture, named ports, and connecting with validation; every change goes through onDataChange(data, details) and can be refused. One history: its own, or one handed to it (useDiagramHistory), driven by ⌘Z and DiagramToolbar's zoom, fit, undo and redo, with a fit that leaves room for the toolbar. One tab stop: every node and edge is reached by keyboard and says what it connects to; focus, selection and what's current are drawn three ways.",
       "dependencies": [
         "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1",
         "class-variance-authority@^0.7.1"
@@ -4553,12 +4555,17 @@
         "exports": [
           "Diagram",
           "DiagramNodeBody",
+          "DiagramNodeHeader",
+          "DiagramSections",
+          "DiagramEntryMarker",
           "DiagramToolbar",
           "useDiagram",
           "useDiagramHistory",
           "createDiagramController",
           "diagramNodeVariants",
-          "diagramEdgeVariants"
+          "diagramEdgeVariants",
+          "diagramItemVariants",
+          "diagramEdgeLabelVariants"
         ]
       }
     },
@@ -7298,7 +7305,7 @@
       "name": "state-diagram-model",
       "type": "registry:lib",
       "title": "StateDiagram logic",
-      "description": "StateDiagram's logic as plain functions: an XState machine's source read without running it (parseXState), a machine as Diagram nodes and edges (machineToDraft), a simulation with stand-ins for everything it names, and edits to a machine's config that XState checks. Babel reads the source; XState is handed in, never imported.",
+      "description": "StateDiagram's logic as plain functions: an XState machine's source read without running it (parseXState), everything a machine says (its context, each state's entry and exit actions, invokes, tags, meta, each transition's guard, actions and delay) read and drawn as Diagram nodes and edges with sections of chips (machineToDraft), a simulation with stand-ins for everything it names, and edits to a machine's config (states, transitions, actions, context) that XState checks. Babel reads the source; XState is handed in, never imported.",
       "dependencies": [
         "@babel/parser@7.29.12",
         "xstate@^5.33.3"
@@ -7352,7 +7359,26 @@
           "removeItems",
           "missingImplementations",
           "inlineCodeIn",
-          "StateEditRefused"
+          "StateEditRefused",
+          "describeMachine",
+          "describeAction",
+          "describeActions",
+          "describeGuard",
+          "describeEvent",
+          "describeContextValue",
+          "stateSections",
+          "transitionSections",
+          "transitionNotation",
+          "STATE_GLYPHS",
+          "addAction",
+          "renameAction",
+          "removeAction",
+          "actionNameProblem",
+          "addContextKey",
+          "renameContextKey",
+          "setContextValue",
+          "removeContextKey",
+          "contextKeyProblem"
         ]
       }
     },
@@ -7360,7 +7386,7 @@
       "name": "state-diagram",
       "type": "registry:ui",
       "title": "StateDiagram",
-      "description": "An XState machine on a Diagram, drawn from machine.root: compound and parallel states, initial markers, final states, and all of always, after, invoke and guards labelled. A machine or its JSON config, which can be run with stand-ins for all it names, and edited, writing to the config. XState and ELK are optional peers.",
+      "description": "An XState machine on a Diagram, drawn as XState's visualizer draws it: the machine as a container with its context, each state a card with its entry and exit actions, invokes and tags as chips, compound and parallel states holding theirs with entry markers, final and history glyphs, and each transition a pill or a card with its guard, actions and delay. A machine, its JSON config or its source; run with stand-ins (what it can take now is a button on its label, its context shown live) and edited, writing to the config. XState and ELK are optional peers.",
       "dependencies": [
         "@ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1",
         "xstate@^5.33.3"
@@ -8679,6 +8705,30 @@
           "path": "packages/ui/src/lib/change-details.ts",
           "type": "registry:lib",
           "target": "lib/change-details.ts"
+        }
+      ]
+    },
+    {
+      "name": "cloudflare-board",
+      "type": "registry:lib",
+      "title": "Cloudflare Board",
+      "description": "Cloudflare Board — part of BL UI's library (lib/cloudflare-board.ts).",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/canvas-math.json",
+        "https://blamy.github.io/ui/r/cloudflare-catalog.json",
+        "https://blamy.github.io/ui/r/cloudflare-services.json",
+        "https://blamy.github.io/ui/r/cloudflare-system.json",
+        "https://blamy.github.io/ui/r/diagram-model.json",
+        "https://blamy.github.io/ui/r/diagram-text.json",
+        "https://blamy.github.io/ui/r/icon.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/cloudflare-board.ts",
+          "type": "registry:lib",
+          "target": "lib/cloudflare-board.ts"
         }
       ]
     },
@@ -10587,6 +10637,7 @@
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
         "https://blamy.github.io/ui/r/button.json",
+        "https://blamy.github.io/ui/r/cloudflare-board.json",
         "https://blamy.github.io/ui/r/cloudflare-diagram.json",
         "https://blamy.github.io/ui/r/cloudflare-services.json",
         "https://blamy.github.io/ui/r/cloudflare-system.json",

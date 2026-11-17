@@ -4,11 +4,11 @@ import type { CloudflareEdge, CloudflareService } from '@/lib/cloudflare-service
 
 const SERVICES: CloudflareService[] = [
   { id: 'worker', kind: 'workers', at: { x: 40, y: 40 } },
-  { id: 'r2', kind: 'r2', at: { x: 400, y: 20 } },
-  { id: 'd1', kind: 'd1', at: { x: 400, y: 120 } },
-  { id: 'queue', kind: 'queues', at: { x: 400, y: 220 } },
-  { id: 'consumer', kind: 'workers', label: 'Consumer', at: { x: 40, y: 280 } },
-  { id: 'dlp', kind: 'dlp', at: { x: 400, y: 340 } },
+  { id: 'r2', kind: 'r2', at: { x: 420, y: 20 } },
+  { id: 'd1', kind: 'd1', at: { x: 420, y: 160 } },
+  { id: 'queue', kind: 'queues', at: { x: 420, y: 280 } },
+  { id: 'consumer', kind: 'workers', label: 'Consumer', at: { x: 40, y: 360 } },
+  { id: 'dlp', kind: 'dlp', at: { x: 420, y: 450 } },
 ]
 
 // Drag from `env` to something a Worker can bind to, and it offers what that can do. What can't connect says why not.

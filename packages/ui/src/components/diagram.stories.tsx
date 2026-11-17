@@ -9,6 +9,7 @@ import { Icon } from '@/lib/icon';
 import type { DiagramDraft } from '@/lib/diagram-layout';
 import { useDiagramLayout } from '@/lib/diagram-layout/react';
 import type { DiagramEdge, DiagramNode } from '@/lib/diagram-model';
+import { STATECHART_LIKE, SYSTEM_LIKE } from '../stories/diagram-anatomy';
 import { UPLOAD_EDGES, UPLOAD_NODES } from '../stories/diagram-machine';
 import { Phone } from '../stories/frame';
 
@@ -39,18 +40,18 @@ export const MachineCloseUpDark: Story = {
 };
 
 const KINDS: DiagramNode[] = [
-  { id: 'root', kind: 'root', label: 'A root, which holds everything', x: 0, y: 0, w: 900, h: 420 },
-  { id: 'plain', kind: 'node', parent: 'root', label: 'A node', x: 40, y: 56, w: 120, h: 36 },
-  { id: 'detail', kind: 'node', parent: 'root', label: 'With a detail', detail: 'invoke fetchUser', x: 200, y: 50, w: 150, h: 50 },
-  { id: 'final', variant: 'double', parent: 'root', label: 'Double', x: 400, y: 56, w: 110, h: 36 },
-  { id: 'initial', kind: 'marker', parent: 'root', label: 'Start', x: 560, y: 66, w: 12, h: 12 },
-  { id: 'compound', kind: 'group', parent: 'root', label: 'A group', x: 40, y: 140, w: 320, h: 240 },
-  { id: 'inner', kind: 'node', parent: 'compound', label: 'Inside', x: 90, y: 200, w: 110, h: 36 },
-  { id: 'parallel', kind: 'group', variant: 'dashed', parent: 'root', label: 'A dashed group', detail: 'of regions', x: 400, y: 140, w: 460, h: 240 },
-  { id: 'r1', kind: 'region', parent: 'parallel', label: 'A region', x: 412, y: 170, w: 436, h: 90 },
-  { id: 'r2', kind: 'region', parent: 'parallel', label: 'Another', x: 412, y: 276, w: 436, h: 90 },
-  { id: 'r1a', kind: 'node', parent: 'r1', label: 'One', x: 560, y: 195, w: 100, h: 36 },
-  { id: 'r2a', kind: 'node', parent: 'r2', label: 'Two', x: 560, y: 300, w: 100, h: 36 },
+  { id: 'root', kind: 'root', title: 'A root, which holds everything', x: 0, y: 0, w: 900, h: 420 },
+  { id: 'plain', kind: 'node', parent: 'root', title: 'A node', x: 40, y: 56, w: 120, h: 36 },
+  { id: 'detail', kind: 'node', parent: 'root', title: 'With a detail', description: 'invoke fetchUser', x: 200, y: 50, w: 150, h: 50 },
+  { id: 'final', variant: 'double', parent: 'root', title: 'Double', x: 400, y: 56, w: 110, h: 36 },
+  { id: 'initial', kind: 'marker', parent: 'root', title: 'Start', x: 560, y: 66, w: 12, h: 12 },
+  { id: 'compound', kind: 'group', parent: 'root', title: 'A group', x: 40, y: 140, w: 320, h: 240 },
+  { id: 'inner', kind: 'node', parent: 'compound', title: 'Inside', x: 90, y: 200, w: 110, h: 36 },
+  { id: 'parallel', kind: 'group', variant: 'dashed', parent: 'root', title: 'A dashed group', description: 'of regions', x: 400, y: 140, w: 460, h: 240 },
+  { id: 'r1', kind: 'region', parent: 'parallel', title: 'A region', x: 412, y: 170, w: 436, h: 90 },
+  { id: 'r2', kind: 'region', parent: 'parallel', title: 'Another', x: 412, y: 276, w: 436, h: 90 },
+  { id: 'r1a', kind: 'node', parent: 'r1', title: 'One', x: 560, y: 195, w: 100, h: 36 },
+  { id: 'r2a', kind: 'node', parent: 'r2', title: 'Two', x: 560, y: 300, w: 100, h: 36 },
 ];
 
 /** Every kind of node (`node`, `group`, `region`, `root`, `marker`) and border (`default`, `dashed`, `double`). */
@@ -63,46 +64,46 @@ export const NodeKindsDark: Story = {
 };
 
 const EDGE_NODES: DiagramNode[] = [
-  { id: 'a', label: 'default', x: 0, y: 0, w: 110, h: 36 },
-  { id: 'a2', label: 'target', x: 300, y: 0, w: 110, h: 36 },
-  { id: 'b', label: 'dashed', x: 0, y: 70, w: 110, h: 36 },
-  { id: 'b2', label: 'target', x: 300, y: 70, w: 110, h: 36 },
-  { id: 'c', label: 'dotted', x: 0, y: 140, w: 110, h: 36 },
-  { id: 'c2', label: 'target', x: 300, y: 140, w: 110, h: 36 },
-  { id: 'd', label: 'strong', x: 0, y: 210, w: 110, h: 36 },
-  { id: 'd2', label: 'target', x: 300, y: 210, w: 110, h: 36 },
-  { id: 'e', label: 'destructive', x: 0, y: 280, w: 110, h: 36 },
-  { id: 'e2', label: 'target', x: 300, y: 280, w: 110, h: 36 },
+  { id: 'a', title: 'default', x: 0, y: 0, w: 110, h: 36 },
+  { id: 'a2', title: 'target', x: 300, y: 0, w: 110, h: 36 },
+  { id: 'b', title: 'dashed', x: 0, y: 70, w: 110, h: 36 },
+  { id: 'b2', title: 'target', x: 300, y: 70, w: 110, h: 36 },
+  { id: 'c', title: 'dotted', x: 0, y: 140, w: 110, h: 36 },
+  { id: 'c2', title: 'target', x: 300, y: 140, w: 110, h: 36 },
+  { id: 'd', title: 'strong', x: 0, y: 210, w: 110, h: 36 },
+  { id: 'd2', title: 'target', x: 300, y: 210, w: 110, h: 36 },
+  { id: 'e', title: 'destructive', x: 0, y: 280, w: 110, h: 36 },
+  { id: 'e2', title: 'target', x: 300, y: 280, w: 110, h: 36 },
   { id: 'dot', kind: 'marker', x: 49, y: 350, w: 12, h: 12 },
-  { id: 'f2', label: 'from a marker', x: 300, y: 338, w: 110, h: 36 },
-  { id: 's', label: 'straight', x: 520, y: 0, w: 110, h: 36 },
-  { id: 's2', label: 'target', x: 800, y: 90, w: 110, h: 36 },
-  { id: 'el', label: 'elbow', x: 520, y: 100, w: 110, h: 36 },
-  { id: 'el2', label: 'target', x: 800, y: 190, w: 110, h: 36 },
-  { id: 'cu', label: 'curve', x: 520, y: 200, w: 110, h: 36 },
-  { id: 'cu2', label: 'target', x: 800, y: 290, w: 110, h: 36 },
-  { id: 'loop', label: 'self-loops', x: 540, y: 340, w: 130, h: 36 },
-  { id: 'p', label: 'parallel', x: 730, y: 370, w: 110, h: 90 },
-  { id: 'p2', label: 'edges', x: 950, y: 370, w: 110, h: 90 },
-  { id: 'box', kind: 'group', label: 'to and from its own child', x: 0, y: 420, w: 420, h: 120 },
-  { id: 'kid', parent: 'box', label: 'child', x: 120, y: 470, w: 110, h: 36 },
+  { id: 'f2', title: 'from a marker', x: 300, y: 338, w: 110, h: 36 },
+  { id: 's', title: 'straight', x: 520, y: 0, w: 110, h: 36 },
+  { id: 's2', title: 'target', x: 800, y: 90, w: 110, h: 36 },
+  { id: 'el', title: 'elbow', x: 520, y: 100, w: 110, h: 36 },
+  { id: 'el2', title: 'target', x: 800, y: 190, w: 110, h: 36 },
+  { id: 'cu', title: 'curve', x: 520, y: 200, w: 110, h: 36 },
+  { id: 'cu2', title: 'target', x: 800, y: 290, w: 110, h: 36 },
+  { id: 'loop', title: 'self-loops', x: 540, y: 340, w: 130, h: 36 },
+  { id: 'p', title: 'parallel', x: 730, y: 370, w: 110, h: 90 },
+  { id: 'p2', title: 'edges', x: 950, y: 370, w: 110, h: 90 },
+  { id: 'box', kind: 'group', title: 'to and from its own child', x: 0, y: 420, w: 420, h: 120 },
+  { id: 'kid', parent: 'box', title: 'child', x: 120, y: 470, w: 110, h: 36 },
 ];
 const EDGES: DiagramEdge[] = [
-  { id: 'ev', from: 'a', to: 'a2', label: 'SUBMIT' },
-  { id: 'al', from: 'b', to: 'b2', variant: 'dashed', label: 'always [isValid]' },
-  { id: 'af', from: 'c', to: 'c2', variant: 'dotted', label: 'after 5000' },
-  { id: 'do', from: 'd', to: 'd2', variant: 'strong', label: 'strong' },
-  { id: 'in', from: 'e', to: 'e2', tone: 'destructive', label: 'can’t' },
+  { id: 'ev', from: 'a', to: 'a2', title: 'SUBMIT' },
+  { id: 'al', from: 'b', to: 'b2', variant: 'dashed', title: 'always [isValid]' },
+  { id: 'af', from: 'c', to: 'c2', variant: 'dotted', title: 'after 5000' },
+  { id: 'do', from: 'd', to: 'd2', variant: 'strong', title: 'strong' },
+  { id: 'in', from: 'e', to: 'e2', tone: 'destructive', title: 'can’t' },
   { id: 'it', from: 'dot', to: 'f2', variant: 'strong' },
-  { id: 'r1', from: 's', to: 's2', route: 'straight', label: 'a straight route' },
-  { id: 'r2', from: 'el', to: 'el2', route: 'elbow', label: 'an elbow route' },
-  { id: 'r3', from: 'cu', to: 'cu2', route: 'curve', label: 'a curved route' },
-  { id: 'l1', from: 'loop', to: 'loop', label: 'RETRY' },
-  { id: 'l2', from: 'loop', to: 'loop', label: 'PING', variant: 'dotted' },
-  { id: 'p1', from: 'p', to: 'p2', label: 'one' },
-  { id: 'p2', from: 'p', to: 'p2', label: 'two' },
-  { id: 'p3', from: 'p', to: 'p2', label: 'three' },
-  { id: 'wall', from: 'box', to: 'kid', label: 'enter' },
+  { id: 'r1', from: 's', to: 's2', route: 'straight', title: 'a straight route' },
+  { id: 'r2', from: 'el', to: 'el2', route: 'elbow', title: 'an elbow route' },
+  { id: 'r3', from: 'cu', to: 'cu2', route: 'curve', title: 'a curved route' },
+  { id: 'l1', from: 'loop', to: 'loop', title: 'RETRY' },
+  { id: 'l2', from: 'loop', to: 'loop', title: 'PING', variant: 'dotted' },
+  { id: 'p1', from: 'p', to: 'p2', title: 'one' },
+  { id: 'p2', from: 'p', to: 'p2', title: 'two' },
+  { id: 'p3', from: 'p', to: 'p2', title: 'three' },
+  { id: 'wall', from: 'box', to: 'kid', title: 'enter' },
   { id: 'wall2', from: 'kid', to: 'box', route: 'curve' },
 ];
 
@@ -154,14 +155,14 @@ export const CustomNode: Story = {
 };
 
 const WORDY: DiagramNode[] = [
-  { id: 'short', label: 'idle', x: 0, y: 0, w: 1, h: 1 },
-  { id: 'detail', label: 'checkingQuota', detail: 'invoke verifyTokenAndQuota', x: 240, y: 0, w: 1, h: 1 },
-  { id: 'long', label: 'A very long state name that goes on for a good deal longer than any node should', x: 0, y: 90, w: 1, h: 1 },
-  { id: 'nospaces', label: 'aVeryLongStateNameWithNoSpacesInItAtAllThatHasToBreakSomewhereOrItWillRunOutOfItsBox', x: 280, y: 90, w: 1, h: 1 },
-  { id: 'cjk', label: '認証を確認しています', detail: 'アップロードを待っています', x: 0, y: 190, w: 1, h: 1 },
-  { id: 'cjklong', label: 'これはとても長い状態の名前で、折り返さなければ箱からはみ出してしまいます', x: 280, y: 190, w: 1, h: 1 },
-  { id: 'final', variant: 'double', label: 'quarantined', x: 0, y: 280, w: 1, h: 1 },
-  { id: 'emoji', label: '🚀 launching 🌕', x: 280, y: 280, w: 1, h: 1 },
+  { id: 'short', title: 'idle', x: 0, y: 0, w: 1, h: 1 },
+  { id: 'detail', title: 'checkingQuota', description: 'invoke verifyTokenAndQuota', x: 240, y: 0, w: 1, h: 1 },
+  { id: 'long', title: 'A very long state name that goes on for a good deal longer than any node should', x: 0, y: 90, w: 1, h: 1 },
+  { id: 'nospaces', title: 'aVeryLongStateNameWithNoSpacesInItAtAllThatHasToBreakSomewhereOrItWillRunOutOfItsBox', x: 280, y: 90, w: 1, h: 1 },
+  { id: 'cjk', title: '認証を確認しています', description: 'アップロードを待っています', x: 0, y: 190, w: 1, h: 1 },
+  { id: 'cjklong', title: 'これはとても長い状態の名前で、折り返さなければ箱からはみ出してしまいます', x: 280, y: 190, w: 1, h: 1 },
+  { id: 'final', variant: 'double', title: 'quarantined', x: 0, y: 280, w: 1, h: 1 },
+  { id: 'emoji', title: '🚀 launching 🌕', x: 280, y: 280, w: 1, h: 1 },
 ];
 
 /** With `autoSize`, a node's as big as its words, in the real font: short ones, long ones, ones with no spaces, and CJK. */
@@ -193,14 +194,14 @@ export const LaidOutDark: Story = {
 };
 
 const SELECTABLE: DiagramNode[] = [
-  { id: 'a', label: 'One selected', x: 0, y: 0, w: 130, h: 36 },
-  { id: 'b', label: 'And another', x: 220, y: 0, w: 130, h: 36 },
-  { id: 'c', label: 'Not this one', x: 110, y: 90, w: 130, h: 36 },
-  { id: 'box', kind: 'group', label: 'A selected compound', x: 0, y: 170, w: 350, h: 90 },
-  { id: 'd', parent: 'box', label: 'Inside it', x: 110, y: 205, w: 130, h: 36 },
+  { id: 'a', title: 'One selected', x: 0, y: 0, w: 130, h: 36 },
+  { id: 'b', title: 'And another', x: 220, y: 0, w: 130, h: 36 },
+  { id: 'c', title: 'Not this one', x: 110, y: 90, w: 130, h: 36 },
+  { id: 'box', kind: 'group', title: 'A selected compound', x: 0, y: 170, w: 350, h: 90 },
+  { id: 'd', parent: 'box', title: 'Inside it', x: 110, y: 205, w: 130, h: 36 },
 ];
 const SELECTABLE_EDGES: DiagramEdge[] = [
-  { id: 'ab', from: 'a', to: 'b', label: 'selected' },
+  { id: 'ab', from: 'a', to: 'b', title: 'selected' },
   { id: 'ac', from: 'a', to: 'c' },
   { id: 'bc', from: 'b', to: 'c' },
 ];
@@ -216,13 +217,13 @@ export const SelectedDark: Story = {
 };
 
 const PORTED: DiagramNode[] = [
-  { id: 'w', label: 'Worker', x: 0, y: 40, w: 130, h: 80, ports: [{ id: 'db', side: 'right', at: 0.25, kind: 'sql' }, { id: 'files', side: 'right', at: 0.75, kind: 'files' }, { id: 'in', side: 'left', direction: 'in' }] },
-  { id: 'd1', label: 'D1', x: 260, y: 0, w: 110, h: 50, ports: [{ id: 'in', side: 'left', kind: 'sql', direction: 'in' }] },
-  { id: 'r2', label: 'R2', x: 260, y: 110, w: 110, h: 50, ports: [{ id: 'in', side: 'left', kind: 'files', direction: 'in' }] },
+  { id: 'w', title: 'Worker', x: 0, y: 40, w: 130, h: 80, ports: [{ id: 'db', side: 'right', at: 0.25, kind: 'sql' }, { id: 'files', side: 'right', at: 0.75, kind: 'files' }, { id: 'in', side: 'left', direction: 'in' }] },
+  { id: 'd1', title: 'D1', x: 260, y: 0, w: 110, h: 50, ports: [{ id: 'in', side: 'left', kind: 'sql', direction: 'in' }] },
+  { id: 'r2', title: 'R2', x: 260, y: 110, w: 110, h: 50, ports: [{ id: 'in', side: 'left', kind: 'files', direction: 'in' }] },
 ];
 const PORTED_EDGES: DiagramEdge[] = [
-  { id: 'a', from: 'w', fromPort: 'db', to: 'd1', toPort: 'in', label: 'prepare' },
-  { id: 'b', from: 'w', fromPort: 'files', to: 'r2', toPort: 'in', label: 'put' },
+  { id: 'a', from: 'w', fromPort: 'db', to: 'd1', toPort: 'in', title: 'prepare' },
+  { id: 'b', from: 'w', fromPort: 'files', to: 'r2', toPort: 'in', title: 'put' },
 ];
 
 /** Named ports, on their sides, with edges from one to another. They're quieter where nothing can be connected. */
@@ -330,15 +331,15 @@ export const PhoneInFrameDark: Story = {
    the right and arrives on the left of a card to its left, and the Queue → Consumer label would sit on the consumer's
    port names if it went where a label goes by default. */
 const SERVICES: DiagramNode[] = [
-  { id: 'files', label: 'Files', detail: 'R2', x: 0, y: 0, w: 200, h: 90, ports: [{ id: 'events', side: 'right', at: 0.5, label: 'events', direction: 'out' }] },
-  { id: 'queue', label: 'Jobs', detail: 'Queue', x: 0, y: 170, w: 200, h: 90, ports: [{ id: 'events', side: 'left', at: 0.35, label: 'events', direction: 'in' }, { id: 'batch', side: 'right', at: 0.5, label: 'batch', direction: 'out' }] },
-  { id: 'consumer', label: 'Consumer', detail: 'Worker', x: 400, y: 140, w: 200, h: 150, ports: [{ id: 'queue', side: 'left', at: 0.32, label: 'queue', direction: 'in' }, { id: 'email', side: 'left', at: 0.5, label: 'email', direction: 'in' }, { id: 'env', side: 'right', at: 0.5, label: 'env', direction: 'out' }] },
-  { id: 'db', label: 'Uploads', detail: 'D1', x: 720, y: 160, w: 200, h: 90, ports: [{ id: 'in', side: 'left', at: 0.5, label: 'queries', direction: 'in' }] },
+  { id: 'files', title: 'Files', description: 'R2', x: 0, y: 0, w: 200, h: 90, ports: [{ id: 'events', side: 'right', at: 0.5, label: 'events', direction: 'out' }] },
+  { id: 'queue', title: 'Jobs', description: 'Queue', x: 0, y: 170, w: 200, h: 90, ports: [{ id: 'events', side: 'left', at: 0.35, label: 'events', direction: 'in' }, { id: 'batch', side: 'right', at: 0.5, label: 'batch', direction: 'out' }] },
+  { id: 'consumer', title: 'Consumer', description: 'Worker', x: 400, y: 140, w: 200, h: 150, ports: [{ id: 'queue', side: 'left', at: 0.32, label: 'queue', direction: 'in' }, { id: 'email', side: 'left', at: 0.5, label: 'email', direction: 'in' }, { id: 'env', side: 'right', at: 0.5, label: 'env', direction: 'out' }] },
+  { id: 'db', title: 'Uploads', description: 'D1', x: 720, y: 160, w: 200, h: 90, ports: [{ id: 'in', side: 'left', at: 0.5, label: 'queries', direction: 'in' }] },
 ];
 const SERVICE_EDGES: DiagramEdge[] = [
-  { id: 'r2-queue', from: 'files', fromPort: 'events', to: 'queue', toPort: 'events', label: 'events' },
-  { id: 'queue-consumer', from: 'queue', fromPort: 'batch', to: 'consumer', toPort: 'queue', label: 'message batch from a Queue' },
-  { id: 'consumer-db', from: 'consumer', fromPort: 'env', to: 'db', toPort: 'in', label: 'env.DB' },
+  { id: 'r2-queue', from: 'files', fromPort: 'events', to: 'queue', toPort: 'events', title: 'events' },
+  { id: 'queue-consumer', from: 'queue', fromPort: 'batch', to: 'consumer', toPort: 'queue', title: 'message batch from a Queue' },
+  { id: 'consumer-db', from: 'consumer', fromPort: 'env', to: 'db', toPort: 'in', title: 'env.DB' },
 ];
 const renderService = (node: DiagramNode) => (
   <DiagramNodeBody node={node} className="items-stretch justify-start gap-0.5 text-start">
@@ -427,4 +428,72 @@ const MANY_EDGES: DiagramEdge[] = MANY_NODES.flatMap((n, i) => (i % GRID === GRI
 export const Large: Story = {
   name: '2,400 nodes',
   render: () => <Phone w={1000} h={600}><Diagram nodes={MANY_NODES} edges={MANY_EDGES} minimap overlay={<DiagramToolbar />} defaultViewport={{ x: 20, y: 20, zoom: 0.6 }} aria-label="A large machine" /></Phone>,
+};
+
+/* ── The anatomy: everything a statechart and a system of services say, with nothing but the generic parts ── */
+
+/** A draft laid out by ELK, top to bottom, on the lined board. */
+function Anatomy({ draft, editable = false, label }: { draft: DiagramDraft; editable?: boolean; label: string }) {
+  const host = useRef<HTMLDivElement>(null);
+  const laid = useDiagramLayout(draft, { host });
+  return (
+    <div ref={host} className="absolute inset-0">
+      <Diagram nodes={laid.nodes} edges={laid.edges} loading={laid.status === 'pending'} background="grid" editable={editable} movable={false} connectable={false} onAction={editable ? () => undefined : undefined} overlay={<DiagramToolbar />} aria-label={label} />
+    </div>
+  );
+}
+
+/** The XState visualizer's "Audio Player", drawn with Diagram's generic parts: compare with the reference at 800 × 1000. */
+export const StatechartLike: Story = {
+  parameters: { layout: 'fullscreen' },
+  render: () => <Phone w={800} h={1000}><Anatomy draft={STATECHART_LIKE} label="Audio Player" /></Phone>,
+};
+export const StatechartLikeDark: Story = {
+  parameters: { layout: 'fullscreen' },
+  render: () => <Phone w={800} h={1000} appearance="dark"><Anatomy draft={STATECHART_LIKE} label="Audio Player" /></Phone>,
+};
+/** Editable: the items are pressable chips (hover them), reached by keyboard with Alt+↓. */
+export const StatechartLikeEditable: Story = {
+  parameters: { layout: 'fullscreen' },
+  render: () => <Phone w={800} h={1000}><Anatomy draft={STATECHART_LIKE} editable label="Audio Player" /></Phone>,
+};
+export const StatechartLikePhone: Story = {
+  parameters: { layout: 'fullscreen' },
+  render: () => <Phone w={390} h={844} appearance="dark"><Anatomy draft={STATECHART_LIKE} label="Audio Player" /></Phone>,
+};
+/** A system of services, with the same parts: product badges, sections, a Worker holding its Durable Object, the entry
+ *  point's marker, binding labels as cards. */
+export const SystemLike: Story = {
+  parameters: { layout: 'fullscreen' },
+  render: () => <Phone w={800} h={1000}><Anatomy draft={SYSTEM_LIKE} label="Uploads" /></Phone>,
+};
+export const SystemLikeDark: Story = {
+  parameters: { layout: 'fullscreen' },
+  render: () => <Phone w={800} h={1000} appearance="dark"><Anatomy draft={SYSTEM_LIKE} label="Uploads" /></Phone>,
+};
+
+const PARTS: DiagramNode[] = [
+  { id: 'plain', title: 'Only a title', x: 0, y: 0, w: 1, h: 1 },
+  { id: 'glyph', title: 'Final', icon: 'stop', x: 160, y: 0, w: 1, h: 1 },
+  { id: 'hist', title: 'History', icon: { text: 'H*' }, x: 300, y: 0, w: 1, h: 1 },
+  { id: 'badge', title: 'api', icon: 'cube', trailing: 'Worker', entry: true, x: 0, y: 90, w: 1, h: 1, description: 'Takes uploads.', sections: [{ title: 'Exposes', items: [{ title: 'fetch', icon: 'globe' }, { title: 'queue', icon: 'tray', tone: 'warning' }] }] },
+  { id: 'list', title: 'Lists', tone: 'destructive', x: 220, y: 90, w: 1, h: 1, sections: [{ title: 'Context', variant: 'code', items: [{ title: 'count:', description: 'number' }] }, { title: 'Triggers', variant: 'list', items: [{ title: '*/5 * * * *', icon: 'clock' }] }] },
+];
+const PART_EDGES: DiagramEdge[] = [
+  { id: 'pill', from: 'plain', to: 'glyph', title: 'next' },
+  { id: 'card', from: 'badge', to: 'list', title: 'FILES', sections: [{ items: [{ title: 'put' }, { title: 'get' }] }] },
+  { id: 'delay', from: 'glyph', to: 'hist', title: 'after 500ms', icon: 'clock', variant: 'dotted' },
+];
+
+/** Every part, hand-placed (no layout) and sized to its content with `autoSize`: headers with glyphs and badges, tones,
+ *  chips, list and code rows, a description, the entry marker, a pill and a card on their routes. */
+export const Parts: Story = {
+  render: () => <Phone w={700} h={420}><Diagram nodes={PARTS} edges={PART_EDGES} autoSize background="grid" aria-label="Parts" /></Phone>,
+};
+export const PartsDark: Story = {
+  render: () => <Phone w={700} h={420} appearance="dark"><Diagram nodes={PARTS} edges={PART_EDGES} autoSize background="grid" aria-label="Parts" /></Phone>,
+};
+/** An edge's label selected (it's part of its edge), and a chip with the keyboard's ring. */
+export const PartsSelected: Story = {
+  render: () => <Phone w={700} h={420}><Diagram nodes={PARTS} edges={PART_EDGES} autoSize defaultSelection={{ nodes: ['badge'], edges: ['card'] }} aria-label="Parts" /></Phone>,
 };

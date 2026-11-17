@@ -5,7 +5,7 @@ import { createDiagramLayoutEngine, runLayout, toElkGraph, type DiagramDraft, ty
 import { measureTextGently, nextFrame } from '@/lib/diagram-text';
 import { useFontVersion, useShownVersion } from '@/lib/use-font-version';
 
-export interface UseDiagramLayoutOptions<N = unknown, E = unknown> extends Pick<DiagramLayoutOptions, 'direction' | 'elk' | 'worker'> {
+export interface UseDiagramLayoutOptions<N = unknown, E = unknown> extends Pick<DiagramLayoutOptions, 'direction' | 'density' | 'elk' | 'worker'> {
   /** Measure text in here, so its fonts apply. Without it, measuring happens in the page's body. */
   host?: RefObject<Element | null>;
   /** A layout done ahead of time, on a server perhaps, to show until this one's ready. */
@@ -25,7 +25,7 @@ const NOTHING: never[] = [];
 /** Lays a draft out, in a worker, measuring its words first. It runs again when the graph or a font changes, and a new run
  *  stops the one before it. Unmounting stops the worker. */
 export function useDiagramLayout<N = unknown, E = unknown>(draft: DiagramDraft<N, E>, options: UseDiagramLayoutOptions<N, E> = {}): UseDiagramLayout<N, E> {
-  const { direction, elk, worker, host, initial } = options;
+  const { direction, density, elk, worker, host, initial } = options;
   const fonts = useFontVersion();
   const shown = useShownVersion(host);
   const [state, setState] = useState<{
@@ -41,10 +41,10 @@ export function useDiagramLayout<N = unknown, E = unknown>(draft: DiagramDraft<N
   const elkKey = useMemo(() => JSON.stringify(elk ?? null), [elk]);
   // What a layout depends on: not positions, which it's about to replace, nor anything else in a node's data.
   const key = useMemo(() => JSON.stringify([
-    draft.nodes.map((n) => [n.id, n.parent ?? null, n.kind ?? null, n.label ?? null, n.detail ?? null, n.w ?? null, n.h ?? null, n.ports?.map((p) => [p.id, p.side]) ?? null]),
-    (draft.edges ?? NOTHING).map((e) => [e.id, e.from, e.to, e.fromPort ?? null, e.toPort ?? null, e.label ?? null]),
-    direction ?? null, elkKey,
-  ]), [draft.nodes, draft.edges, direction, elkKey]);
+    draft.nodes.map((n) => [n.id, n.parent ?? null, n.kind ?? null, n.variant ?? null, n.title ?? null, n.icon ?? null, n.trailing ?? null, n.description ?? null, n.sections ?? null, n.w ?? null, n.h ?? null, n.ports?.map((p) => [p.id, p.side, p.at ?? null]) ?? null]),
+    (draft.edges ?? NOTHING).map((e) => [e.id, e.from, e.to, e.fromPort ?? null, e.toPort ?? null, e.title ?? null, e.icon ?? null, e.sections ?? null]),
+    direction ?? null, density ?? null, elkKey,
+  ]), [draft.nodes, draft.edges, direction, density, elkKey]);
   const latest = useRef(draft);
   latest.current = draft;
 
@@ -66,7 +66,7 @@ export function useDiagramLayout<N = unknown, E = unknown>(draft: DiagramDraft<N
       const large = current.nodes.length > 500;
       if (large) await nextFrame();
       if (stop.signal.aborted) return;
-      const graph = toElkGraph(current, { direction, elk: elk ?? undefined, text });
+      const graph = toElkGraph(current, { direction, density, elk: elk ?? undefined, text });
       if (large) await nextFrame();
       if (stop.signal.aborted) return;
       const signature = JSON.stringify(graph);

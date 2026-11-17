@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { CLOUDFLARE_CATALOG as C } from './cloudflare-catalog.generated';
-import { ENV_PORT, EVENTS_PORT, SERVICE_PRODUCTS, bindingName, catalogProduct, linkBetween, linkOf, methodSignature, newEdge, runsCode, serviceIconName, serviceNodeHeight, servicePorts, SERVICE_NODE } from './cloudflare-services';
+import { ENV_PORT, EVENTS_PORT, SERVICE_PRODUCTS, bindingName, catalogProduct, linkBetween, linkOf, methodSignature, newEdge, runsCode, serviceIconName, servicePorts } from './cloudflare-services';
 
 const ids = (kind: string, dir: 'in' | 'out') => servicePorts(kind).filter((p) => p.direction === dir).map((p) => p.id);
 const ok = (a: string, ap: string | undefined, b: string, bp: string | undefined) => {
@@ -45,16 +45,14 @@ describe('ports', () => {
     expect(servicePorts('rules')).toEqual([]);
   });
 
-  it('gives every catalog service ports that fit on its node, each with a place of its own', () => {
+  it('gives every catalog service ports with names of their own, in on the left and out on the right, for its card to place', () => {
     for (const p of C.products) {
       const ports = servicePorts(p.id);
       const seen = new Set(ports.map((x) => x.id));
       expect(seen.size, p.id).toBe(ports.length);
-      const h = serviceNodeHeight(ports.filter((x) => x.direction === 'in').length, ports.filter((x) => x.direction === 'out').length);
       for (const x of ports) {
-        expect(x.at!, `${p.id} ${x.id}`).toBeGreaterThan(0);
-        expect(x.at!, `${p.id} ${x.id}`).toBeLessThan(1);
-        expect(x.at! * h, `${p.id} ${x.id}`).toBeGreaterThanOrEqual(SERVICE_NODE.head);
+        expect(x.side, `${p.id} ${x.id}`).toBe(x.direction === 'in' ? 'left' : 'right');
+        expect(x.at, `${p.id} ${x.id}`).toBeUndefined();
         expect(x.label, `${p.id} ${x.id}`).toBeTruthy();
       }
     }

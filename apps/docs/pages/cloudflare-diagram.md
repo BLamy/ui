@@ -1,6 +1,6 @@
 # CloudflareDiagram
 
-Cloudflare's services on a [Diagram](#/diagram), for drawing, checking and editing a system built on Workers: a Worker and the buckets, queues, databases and Durable Objects it binds. Each service is a node with what it can call and receive as ports, from a catalog generated from Cloudflare's own docs, Wrangler's config schema and the Workers types. A connection can only be one the catalog says there is: a Worker to R2 offers R2's real methods, and R2 to D1 is refused, with why.
+Cloudflare's services on a [Diagram](#/diagram), for drawing, checking and editing a system built on Workers: a Worker and the buckets, queues, databases and Durable Objects it binds. It's drawn the way a statechart is: the system is a container with its name and what's account-wide; each service is a card with a header and labelled sections of chips (what it handles, its triggers, its settings, its machine); each binding is an edge whose label is a card with its name on `env` and the operations it uses. What it knows about each product comes from a catalog generated from Cloudflare's own docs, Wrangler's config schema and the Workers types, and a connection can only be one the catalog says there is: a Worker to R2 offers R2's real methods, and R2 to D1 is refused, with why.
 
 **When to use something else.** Use a [Diagram](#/diagram) for boxes and lines that aren't Cloudflare's services: it has no catalog, so it allows any connection and says nothing about what crosses it. Use a [StateDiagram](#/state-diagram) for one XState machine on its own. CloudflareDiagram is a Diagram with the catalog's rules, a panel that explains each service and connection, and a StateDiagram for any service's machine, over the board. It isn't a `variant` of Diagram, as what it adds is data and rules (the catalog, a system, what's wrong with it), not a look.
 
@@ -33,6 +33,56 @@ On npm, everything on this page is on one entry, `@brett_lamy/ui/cloudflare`, an
 **No Cloudflare logos or artwork.** [Cloudflare's trademark page](https://www.cloudflare.com/trademark/) asks for written permission to use their logos and product icons, so this has none: services are named in words, drawn with the library's own icons, and an `icon` prop lets an app that has its own permission draw Cloudflare's. The same check looks for any of Cloudflare's images, by hash and by SVG path, in the package, the registry and these demos. Cloudflare is a trademark of Cloudflare, Inc., which doesn't endorse this library.
 {% endhint %}
 
+## Three systems
+
+A small one: a Worker on a route, with a KV namespace and a D1 database. The route is where requests come in, so the Worker has the entry marker, as a machine's initial state has.
+
+{% demo src="cloudflare-diagram/small" %}
+
+The upload pipeline: the API puts a file in R2, R2's event notification goes to a Queue, and the queue's consumer writes to D1 and tells the file's `Room`, a Durable Object class of the consumer's, drawn inside it, with a machine.
+
+{% demo src="cloudflare-diagram/upload" %}
+
+A larger one: two environments, each a box of its own; a gateway on a route and a custom domain calling the Search Worker's `SearchService` entrypoint through a service binding; an indexer on a cron schedule and a queue, with a dead-letter queue; Workers AI (the account's, in no environment) and a Vectorize index.
+
+{% demo src="cloudflare-diagram/platform" %}
+
+## What is drawn
+
+Everything a system says has one drawn form. Each fact is drawn once: a binding is its edge's label, not a chip on its Worker too.
+
+| What a system says | How it's drawn |
+| --- | --- |
+| The system, `title` / `name` | The root container: a header strip with a cloud glyph and the name ("Cloudflare" by default) |
+| What's account-wide: `accountId`, the zones its routes are on, its environments | The root's **Account** section, a chip each |
+| An environment, `environment` on a service | A dashed box in the system, headed with its name and "environment", holding its services |
+| A service | A card: its header has the product's glyph (the library's own icons), its name, and its product as a quiet badge when the name isn't the product's |
+| What's behind it, `resource` (a bucket, a database, a queue, an index) | A quiet line under the header: "bucket uploads". Left out when it's what the service is called |
+| What it exposes: `handlers`, and those its triggers and connections imply (`fetch` for a route, `scheduled` for a cron, `queue` for a consumer, `tail`, `run` for a Workflow) | The **Handlers** section, an arrow chip each |
+| Its triggers, `triggers`: routes (with their zone), custom domains, `workers.dev`, cron schedules, a workerd socket, an email address | The **Triggers** section (a globe, a clock, a network glyph), and the **entry marker** on its header: a dot with a curved arrow, as on a machine's initial state |
+| Its names on `env` that aren't a connection: `vars`, and a binding to something not in the system | The **Bindings** section |
+| Its settings, `settings`: compatibility date and flags, Smart Placement, CPU and subrequest limits, observability and its sampling rate, logpush | The **Settings** section, a gear chip each |
+| A Durable Object class, `host` | A card inside its Worker, which becomes a container with its own header and sections. Its storage and the migration it started in, from its Worker's `migrations`, are a chip: "SQLite storage, since v1"; the Worker's own Settings say its migrations |
+| A machine, `machine` | The **Machine** section: a chip with its id, how many states and where it starts. Pressed on an editable board, or "Open it" in the panel, it opens in a StateDiagram |
+| A binding, an edge with `via` a binding key | An edge whose label is a card: its name on `env` in semibold, then the `operations` it uses as bolt chips. With none chosen it's a pill |
+| A queue producer | The same, with a "producer" chip, and its `deliveryDelay` |
+| A queue consumer, `via: 'queue-consumer'`, and its `consumer` settings | An edge from the queue labelled "consumer", with batch size, wait, retries, retry delay, concurrency and the dead-letter queue as chips |
+| A dead-letter queue, when it's in the system | A dashed edge from the queue to it, "dead letters", "after 5 retries" |
+| An R2 event notification, `via: 'events'` | A dashed edge to its queue, labelled "event notification", with its event types as chips |
+| A service binding's `entrypoint` | A chip on its label: "SearchService, entrypoint" |
+| Machine events crossing an edge, `events` | A paper-plane chip each on its label |
+| Something wrong | The edge, or the card's header, in the destructive color (and dashed, for an edge), and listed in the panel |
+
+Still not drawn: a route's `zone_id` (only `zone_name` is held), an R2 event notification's prefix and suffix rules (wrangler.jsonc doesn't hold them), a Workflow's `schedules` and `limits`, `tail_consumers` and `streaming_tail_consumers` from a file (the catalog's `tail` connection can be drawn by hand), `assets`, `ratelimits` and the other settings that are a Worker's own (they're in `read.settings`), and a Hyperdrive's or a D1's IDs beyond what `resource` holds.
+
+### Ports: only for connecting
+
+A read-only diagram is cards, sections and labelled edges: it has **no ports**, and its edges are routed between the cards by the layout. A list of sockets on every card would say how a service *can* be reached, which is the catalog's business, rather than how this system *is* connected, which is the diagram's; it doubled each card's height and put labels under the lines. With `editable`, each card gains a **Connect** section whose rows are its ports, in (on the left: how it's reached, like `R2 Bucket`, `queue`) and out (on the right: `env`, what it sends), each with its dot on its row. Drag from an out dot to an in dot to connect; the catalog refuses what can't be, with its reason, as you drag. By keyboard, `C` on a focused card starts a connection and `P` changes port, as on Diagram.
+
+### On a plain Diagram
+
+The board is a Diagram preset, so a plain `<Diagram {...cloudflareBoardProps(system)} />` draws the same board, with the catalog's rule for connecting, and `cloudflareBoardData(system)` is the same nodes and edges as data, for a `useDiagramLayout` of your own. Nothing in it is Cloudflare's own drawing: it's Diagram's anatomy (`title`, `icon`, `trailing`, `description`, `sections`, `entry`, `tone`, groups and the root), filled in from the system, so a Cloudflare card and a state are the same kind of thing, in the same type scale, radii and colors, light and dark.
+
 ## The catalog, a system, `wrangler.jsonc` and a workerd config
 
 Four things, and how they fit:
@@ -40,15 +90,13 @@ Four things, and how they fit:
 | What | Is | Where it comes from |
 | --- | --- | --- |
 | **The catalog**, `CLOUDFLARE_CATALOG` | What Cloudflare has, and what can reach what: 195 products, 41 binding keys with their runtime types and methods, the handlers a Worker can export | Generated from pinned upstream versions; you don't write it |
-| **A system**, `{ services, edges }` | Your services, what each is bound as, which have a machine, and which events cross which connection. Plain data, saved as JSON | You, on the board, or read from one of the two below |
+| **A system**, `{ name?, accountId?, services, edges }` | Your services, what each handles, is triggered by, is bound as and runs with, which have a machine, and which events cross which connection. Plain data, saved as JSON | You, on the board, or read from one of the two below |
 | **`wrangler.jsonc`** | One Worker's config | `readWrangler` reads it into a system; `writeWrangler` writes a system's bindings back to it, changing only what changed |
 | **A workerd `config.capnp`** | A whole workerd process: its Workers and what they bind | `readWorkerdConfig` reads it into a system; it's only read |
 
 The diagram draws a system, and checks it against the catalog. `kind` on a service is a product's id in the catalog, and `via` on an edge is a binding key or a row of what a Worker can receive.
 
 ## A system's services
-
-{% demo src="cloudflare-diagram/upload" %}
 
 ```tsx
 const services = [
@@ -64,7 +112,7 @@ const edges = [
 </div>
 ```
 
-It's **read-only** unless it's `editable`, the same prop as Diagram's and StateDiagram's: without `editable`, a diagram is a picture you can select in and read, where selecting a service or a connection shows what it is in the panel, and nothing moves, connects or is deleted. With no `at` on any service they're laid out by ELK, an optional peer. With a place for any of them, they stay where they say, and those without one go in a column to the right. Once something's moved, each has one, which saves as plain data and needs no ELK.
+It's **read-only** unless it's `editable`, the same prop as Diagram's and StateDiagram's: without `editable`, a diagram is a picture you can select in and read, where selecting a service or a connection shows what it is in the panel, and nothing moves, connects or is deleted. With no `at` on any service they're laid out by the Diagram's layout (ELK, an optional peer), top to bottom (`direction`), with each edge's label on its route. With a place for any of them, they stay where they say, and those without one go in a column to the right. Once something's moved, each has one, which saves as plain data and needs no ELK. `placeInLayers(system)` places a system without ELK: quick and the same every time, top to bottom, but a long connection can cross a card, which the layout's routing doesn't.
 
 ## Editing
 
@@ -79,7 +127,7 @@ const [system, setSystem] = useState({ services, edges })
 <CloudflareDiagram editable services={system.services} edges={system.edges} onDataChange={setSystem} />
 ```
 
-With `editable`, the panel has a search of the catalog (a Combobox: type, then pick, or press Enter for the first), and the board's `DiagramToolbar` has undo and redo, with ⌘Z and ⇧⌘Z on the board: the system's history, handed to the Diagram as its `history`, so it's the same toolbar and keys as every diagram. Drag from a port on the right of one service to a port on the left of another to connect them. `onDataChange(system, details)` has the whole system and `details.reason`: Diagram's `move`, `delete`, `connect`, `reconnect`, `undo` and `redo`, or `edit` for the panel and a machine, and `add` for the search. `details.cancel()` refuses a change when uncontrolled. Undo covers the board, the panel and the machines together; a new system from outside starts its history over.
+With `editable`, the panel has a search of the catalog (a Combobox: type, then pick, or press Enter for the first), and the board's `DiagramToolbar` has undo and redo, with ⌘Z and ⇧⌘Z on the board: the system's history, handed to the Diagram as its `history`, so it's the same toolbar and keys as every diagram. Each card has a Connect section: drag from the dot of an "out" row of one (like `env`) to the dot of an "in" row of another to connect them. `onDataChange(system, details)` has the whole system and `details.reason`: Diagram's `move`, `delete`, `connect`, `reconnect`, `undo` and `redo`, or `edit` for the panel and a machine, and `add` for the search. `details.cancel()` refuses a change when uncontrolled. Undo covers the board, the panel and the machines together; a new system from outside starts its history over.
 
 | What's joined | How it says so | What's on offer |
 | --- | --- | --- |
@@ -111,6 +159,9 @@ const { system: back, issues } = parseSystem(text)
 | `event-no-machine` | A note | An event with no machine past that connection at all |
 | `operation` | Wrong, and drawn as wrong | A method that isn't on offer across that connection |
 | `binding-name` | Wrong, or a note when there's no name yet | Something that can't be a name on `env`, or a name used twice on one Worker. A name only has to be its own on each Worker, as each has its own `env` |
+| `cron`, `trigger` | Wrong | A schedule that isn't five fields; a trigger on something that doesn't run code |
+| `host`, `handler` | Wrong, or a note | A class whose Worker isn't there or doesn't run code; a handler its kind hasn't got |
+| `dead-letter-queue` | Wrong | A consumer that sends what it gives up on back to the queue it consumes |
 | `machine` | Wrong, and drawn as wrong | What XState says about a machine, which is only checked if `xstate` is installed |
 | `machine-no-code`, `machine-code` | A note | A machine on something that doesn't run code, or with code in its config, which JSON can't hold |
 | `unknown-kind` | A note | A kind that isn't in the catalog, which could only be newer than it |
@@ -128,12 +179,15 @@ Two systems can have a service in common. Each is a document of its own, so taki
 It reads a Worker's config into a system, writes a system's bindings back to that file, and says where the two differ. It's files only: nothing's deployed, and no account comes into it. From the registry it's an item of its own, `cloudflare-wrangler`, as not every app wants `jsonc-parser`.
 
 ```tsx
-import { compareWrangler, readWrangler, writeWrangler } from '@brett_lamy/ui/cloudflare'
+import { compareWrangler, readWrangler, readWranglerEnvironments, writeWrangler } from '@brett_lamy/ui/cloudflare'
 
 const read = readWrangler(text)
 if (read.ok) {
   // read.system, read.worker, read.envs, read.settings, read.notes
 }
+
+// Every env section at once, each Worker in its environment.
+const all = readWranglerEnvironments(text)
 
 const compared = compareWrangler(text, system)
 // compared.differences: { kind, key, name, was?, now?, message }[]
@@ -148,11 +202,19 @@ const written = writeWrangler(text, system)
 | --- | --- |
 | The Worker, from `name` | A service of kind `workers`, or `pages` with `pages_build_output_dir` |
 | A binding the catalog says reaches something | A service for what's behind it, with its name as `resource`, and an edge with its name as `binding`. Two bindings to one bucket are one service, with two edges |
-| A consumer, in `queues.consumers` | An edge from the queue to the Worker, `via: 'queue-consumer'` |
-| `vars`, `assets`, `ratelimits` and what else is a Worker's own | Not drawn, as they don't reach anything. They're in `read.settings`, by name, and stay in the file |
+| A consumer, in `queues.consumers` | An edge from the queue to the Worker, `via: 'queue-consumer'`, with `max_batch_size`, `max_batch_timeout`, `max_retries`, `retry_delay`, `dead_letter_queue` and `max_concurrency` as its `consumer` settings |
+| A producer's `delivery_delay`, a service binding's `entrypoint` | `deliveryDelay` and `entrypoint` on its edge |
+| A Durable Object binding's `script_name` | Its class's `host`: that Worker, or this one without it |
+| `main`, `compatibility_date`, `compatibility_flags`, `placement.mode`, `limits`, `observability`, `logpush` | The Worker's `settings` |
+| `routes` (or `route`), `workers_dev`, `triggers.crons` | The Worker's `triggers` |
+| `migrations` | The Worker's `migrations` |
+| `vars` | The Worker's `vars`, by name. Their values stay in the file; a new one is written as `""`, and said in `written.needs` |
+| `account_id` | The system's `accountId` |
+| `assets`, `ratelimits` and what else is a Worker's own | Not drawn, as they don't reach anything. They're in `read.settings`, by name, and stay in the file |
 | A binding the catalog doesn't know | Not drawn, as it isn't anything to guess at. It's in `read.notes`, by name, and stays in the file |
 
-- **`env` sections.** Bindings aren't inherited, so `{ env: 'staging' }` reads and writes that section and nothing else. Without one it's the top level, and `read.notes` says what wasn't read.
+- **`env` sections.** Bindings aren't inherited, so `{ env: 'staging' }` reads and writes that section and nothing else, and its services are in that `environment`. Settings and triggers are inherited, as wrangler does: what a section doesn't say is the top level's, and a different value is written into the section. Without one it's the top level, and `read.notes` says what wasn't read. `readWranglerEnvironments(text)` reads every section into one system, with what two environments share in neither.
+- **A setting the system doesn't say is left as it is.** `settings`, `triggers`, `vars` and `migrations` left out of a service mean "not said", so nothing's written; `triggers: []` means none, and they're taken out. Settings are compared as what they mean, so a file that says the same thing another way (`route` for one `routes`) is left alone.
 - **A new binding** gets what a system can say. What it has to have that a system doesn't, like a Vectorize index's name, or a migration for a new Durable Object's class, is in `written.needs`, for you to fill in.
 - **A connection that isn't real** isn't written, and it's in `written.skipped`, with why. What a config doesn't hold, like a machine, or where things are on the board, is left out of it.
 - **A label's only what it's called on a diagram.** It's `resource` that says which bucket it is.
@@ -163,7 +225,7 @@ const written = writeWrangler(text, system)
 
 {% demo src="cloudflare-diagram/workerd" %}
 
-`readWorkerdConfig` reads the Cap'n Proto text of a workerd config, `config.capnp`, into the same system `readWrangler` makes from a `wrangler.jsonc`. It only reads: nothing's run, nothing's fetched, and an `embed "worker.js"` stays a name. `placeInLayers` gives each service a place, in layers by what reaches what, so it's drawn at once and the same every time, without a layout engine.
+`readWorkerdConfig` reads the Cap'n Proto text of a workerd config, `config.capnp`, into the same system `readWrangler` makes from a `wrangler.jsonc`. It only reads: nothing's run, nothing's fetched, and an `embed "worker.js"` stays a name. `placeInLayers` gives each service a place, top to bottom by what reaches what, sized for its card and inside what holds it, so it's drawn at once and the same every time, without a layout engine: a config is drawn by placed layers, not the Diagram's layout, so ELK never loads for one.
 
 ```tsx
 import { CloudflareDiagram, placeInLayers, readWorkerdConfig } from '@brett_lamy/ui/cloudflare'
@@ -179,13 +241,14 @@ if (read.ok) {
 
 | What's in the config | What it is in a system |
 | --- | --- |
-| A service with a `worker` | A service of kind `workers`, called by the service's name |
-| A class in `durableObjectNamespaces` | A `durable-objects` service, `<worker>.<class>` |
+| A service with a `worker` | A service of kind `workers`, called by the service's name, with its `compatibilityDate`, `compatibilityFlags` and first module as its `settings` |
+| A class in `durableObjectNamespaces` | A `durable-objects` service, `<worker>.<class>`, drawn inside its Worker (`host`) |
+| A socket | In `read.sockets`, and a `socket` trigger on the service it's for: where requests come in |
 | A `durableObjectNamespace` binding | An edge to the class, `via: 'durable_objects'`, from its own Worker or `serviceName`'s |
 | A `service` binding to another Worker | An edge to it, `via: 'services'` |
 | A `kvNamespace`, `r2Bucket` or `queue` binding | A `kv`, `r2` or `queues` service called by the service that answers for it, and an edge to it. A queue's Worker is drawn getting its messages, `via: 'queue-consumer'` |
 | A `wrapped` D1 binding, a `hyperdrive` | A `d1` or `hyperdrive` service, and an edge to it |
-| A `disk`, `external` or `network` service, a socket, a `text`, `json` or `data` value | Not drawn, and said in `read.notes`. Sockets are in `read.sockets` too |
+| A `disk`, `external` or `network` service, a `text`, `json` or `data` value | Not drawn, and said in `read.notes` |
 
 In Markdown, a `capnp` fence that's a workerd config draws itself on a read-only `CloudflareDiagram`, with the notes under it and the source a press away, and other Cap'n Proto stays code. That's docstream's, so it's the same in [MarkdownView](#/markdown-view), [MarkdownEditor](#/markdown-editor) (beside the source you edit) and these docs. The diagram and the catalog load by dynamic import when the first one is shown, so a page without one never gets them, and `placeInLayers` places every service, so ELK never loads. Here's one through `MarkdownView`, and one that doesn't read:
 
@@ -235,16 +298,17 @@ Any product can go on a diagram. What has no binding or handler, like Data Loss 
 
 | Prop | Default | Effect |
 | --- | --- | --- |
-| `services`, `edges` | — | The system, controlled. `services`: `{ id, kind, label?, at?, binding?, resource?, machine? }`; `binding` is what a binding to it is called on `env`, unless its edge says otherwise, and `resource` is what's behind it at Cloudflare, like a bucket's name. `edges`: `{ id, from, to, via, binding?, operations?, events? }` |
+| `services`, `edges` | — | The system, controlled. `services`: `{ id, kind, label?, at?, binding?, resource?, machine?, handlers?, triggers?, settings?, vars?, migrations?, host?, environment? }`; `binding` is what a binding to it is called on `env`, unless its edge says otherwise, and `resource` is what's behind it at Cloudflare, like a bucket's name. `edges`: `{ id, from, to, via, binding?, operations?, events?, entrypoint?, deliveryDelay?, consumer? }` |
 | `defaultServices`, `defaultEdges` | none | The system, left to the diagram |
+| `title`, `accountId` | "Cloudflare", none | The system's name and account, in its header; `onDataChange` hands them back as the system's `name` and `accountId` |
 | `onDataChange` | — | `(system, details)` after a change; `details.reason` is `move`, `delete`, `connect`, `reconnect`, `undo`, `redo`, `edit` or `add` |
-| `onAction` | — | `(item, details)` when a service or a connection is activated (Enter, double-click), as on Diagram |
+| `onAction` | — | `(item, details)` when a service, a connection or (editable) a chip is activated, as on Diagram. A Machine chip opens its machine first |
 | `editable` | `false` | Moving, adding, connecting and deleting services, and changing connections and machines. Without it, it's read-only: you can still select in it |
 | `selection`, `defaultSelection`, `onSelectionChange(selection, details)` | nothing | What's selected, `{ nodes, edges }`, as on Diagram |
 | `panelOpen`, `defaultPanelOpen`, `onPanelOpenChange` | open when it's a column | The panel, as on DiagramFrame |
 | `panelPresentation` | `auto` | `column` beside the board when there's room, a `drawer` at medium, a `push`ed page at a phone's size |
 | `openMachine`, `defaultOpenMachine`, `onOpenMachineChange` | none | Whose machine is open over the board, by the service's id, or `null` |
-| `direction` | `right` | Which way a layout runs: `right`, `down`, `left` or `up` |
+| `direction` | `down` | Which way a layout runs: `down`, `right`, `up` or `left` |
 | `icon` | the library's own | What to draw for a product, for an app with permission to use Cloudflare's |
 | `emptyState` | an `EmptyState` | What an empty system shows. Editable, it says to search the catalog |
 | `panelHeader` | — | At the top of the panel: a name field, an app's own actions |
@@ -256,14 +320,13 @@ Any product can go on a diagram. What has no binding or handler, like Data Loss 
 
 | Part | What it is |
 | --- | --- |
-| `CloudflareServiceNode` | A service's card, for a plain Diagram's `renderNode`: its icon, name, what it is, a `machine` badge and its ports named. `tone` (`default`, `destructive`) overrides what its data says |
-| `cloudflareServiceVariants` | That card's recipe |
-| `cloudflareServiceNode(service)` | A service as a Diagram node: its size and ports from the catalog, and its place if it has one |
 | `CloudflareServiceSearch` | The catalog search, for a toolbar of your own: `onAction(product, details)` when one's chosen, with `details.reason` `item-press` or `enter-key` |
 
 ### `cloudflareBoardProps(system, options?)`
 
-The board half as a Diagram preset: `<Diagram {...cloudflareBoardProps(system)} />` draws a system as CloudflareDiagram's board does, with no frame or panel. It gives `nodes` (placed where they say, the rest in a column beside them, or with no places at all in layers by what reaches what, so no layout engine loads), `edges` labelled with what they're bound as and use, what's wrong as `tone: 'destructive'`, `renderNode` (a `CloudflareServiceNode`), `isValidConnection` (the catalog's rule), `portsOnly` and `noun: 'service'`. Options: `icon`, and `issues` (default `validateSystem(system)`). CloudflareDiagram draws its own board with it. Memoize it on the system, as `renderNode` is new each call.
+The board half as a Diagram preset: `<Diagram {...cloudflareBoardProps(system)} />` draws a system as CloudflareDiagram's board does, with no frame or panel. It gives `nodes` (the system's root, its environments, and a card per service, placed where they say, the rest in a column beside them, or with no places at all top to bottom by `placeInLayers`, so no layout engine loads), `edges` with their label cards, what's wrong as `tone: 'destructive'`, `isValidConnection` (the catalog's rule), `portsOnly`, `autoSize`, `background: 'grid'` and `noun: 'service'`, and `renderNode` only with an `icon`. Options: `icon`, `issues` (default `validateSystem(system)`), `editable` (the Connect sections and their ports) and `title`. CloudflareDiagram draws its own board with it. Memoize it on the system.
+
+`cloudflareBoardData(system, { editable?, issues?, title? })` is the same nodes and edges, unplaced when nothing has a place, for a layout of your own: `useDiagramLayout(cloudflareBoardData(system), { direction: 'down' })`. `CLOUDFLARE_SYSTEM_NODE` and `cloudflareEnvironmentNode(name)` are the ids of the boxes that aren't services, and `cloudflareBoardBounds(system)` is how big a placed drawing is.
 
 {% demo src="cloudflare-diagram/preset" %}
 
@@ -287,7 +350,9 @@ const board = useMemo(() => cloudflareBoardProps(system), [system])
 | `checkMachines(xstate, system)` | What XState says about each machine, with XState handed in, as it's an optional peer |
 | `searchCatalog(query, limit?)` | What's in the catalog for a search, best first |
 | `addService(system, kind)`, `removeServices(system, ids)` | A system with one more, with an id of its own, or some fewer |
-| `placeInLayers(system)` | Each service a place, in layers by what reaches what, and the same every time |
+| `placeInLayers(system, { editable? })` | Each service a place, top to bottom by what reaches what, inside what holds it, with room for the labels between rows, and the same every time |
+| `serviceFacts(system, service)`, `systemFacts(system)` | What a card's sections say, and the system's Account section, as `{ id, title, items: { kind, label, detail? }[] }[]` |
+| `serviceHandlers(system, service)`, `serviceEntries(service)`, `serviceResource(service)`, `systemEnvironments(system)` | A service's handlers (said and implied), where things come in to it (`request`, `schedule`, `message`), what's behind it in words, and a system's environments |
 | `sharedServices(a, b)` | What two systems have in common |
 | `machineEvents(config)`, `machineReceives(config, event)`, `machinesPast(system, edge)` | What a machine has transitions for, and which an edge's events reach |
 | `serviceName(service)`, `edgeBinding(edge, to)`, `newEdge(services, edges, connection)` | The small things |
@@ -297,7 +362,8 @@ const board = useMemo(() => cloudflareBoardProps(system), [system])
 | Name | What it does |
 | --- | --- |
 | `readWrangler(text, { env? })` | A config, as `{ ok: true, system, worker, envs, settings, notes }`, or `{ ok: false, kind, reason }` |
-| `compareWrangler(text, system, { env?, worker? })` | Where they differ, by name, as `{ ok: true, differences, notes, skipped }` |
+| `readWranglerEnvironments(text)` | Every section, as `{ ok: true, system, workers, envs, notes }`: each Worker in its `environment`, `workers` by environment (`''` for the top level) |
+| `compareWrangler(text, system, { env?, worker? })` | Where they differ, by name, as `{ ok: true, differences, notes, skipped }`; a difference's `kind` is `added`, `removed`, `renamed`, `resource` or `setting` |
 | `writeWrangler(text, system, { env?, worker? })` | The config with the system's bindings for that Worker written to it, as `{ ok: true, text, differences, needs, skipped }` |
 | `WRANGLER_RESOURCE_FIELDS` | Which field of each binding says what's behind it |
 
@@ -315,7 +381,8 @@ const board = useMemo(() => cloudflareBoardProps(system), [system])
 | --- | --- |
 | `CLOUDFLARE_CATALOG` | All of it: `products`, `bindings`, `handlers`, `receives`, `runsCode`, the events, the `pins` and the `attribution`, which is the credit to show with its text |
 | `SERVICE_PRODUCTS`, `catalogProduct(id)`, `catalogBinding(key)` | Finding things in it |
-| `servicePorts(kind)` | A service's ports, with `at`, `side` and `direction` |
+| `servicePorts(kind)` | A service's ports, with `side` and `direction`; a card's Connect section places them |
+| `handlerNames(kind)` | The handlers a kind that runs code can have |
 | `linkBetween(fromKind, fromPort, toKind, toPort)` | Whether two ports can join, as `{ ok: true, link }` or `{ ok: false, reason }` |
 | `linkOf(edge, fromKind, toKind)` | The same, from what an edge says it is |
 | `runsCode(kind)`, `bindingName(label, taken)`, `methodSignature(method)`, `serviceIconName(product)` | The small things |
@@ -326,7 +393,9 @@ The frame carries `data-cloudflare-diagram` beside DiagramFrame's own. Elements 
 
 | Where | Attributes |
 | --- | --- |
-| A service | `data-slot="cloudflare-service"` with `data-kind` and `data-problem`; in it `cloudflare-service-name`, `cloudflare-port-label` (`data-side="start"` or `"end"`) and a `data-part="machine"` badge |
+| A service | Diagram's node, `data-node` its id (`data-kind="group"` when it holds its classes), with Diagram's anatomy: `diagram-node-header` (`data-tone="destructive"` when something's wrong), `diagram-node-title`, `diagram-node-trailing` (its product), `diagram-node-description` (its resource), `diagram-entry`, and `diagram-section` / `diagram-item` with `data-section` `handlers`, `bindings`, `triggers`, `settings`, `machine` or `connect` |
+| The system and an environment | Diagram nodes `data-node="cloudflare:system"` (`data-kind="root"`, section `account`) and `cloudflare:env:<name>` |
+| A connection's label | `diagram-edge-label` (`data-shape="pill"` or `"card"`), its chips `diagram-item` with `data-section="uses"`; a dead-letter queue's edge is `data-edge="dead-letter:<consumer edge>"` |
 | The bar | `cloudflare-status` |
 | The panel | `cloudflare-panel`, with `cloudflare-search`, `cloudflare-hint`, `cloudflare-issues` and `cloudflare-issue` (`data-severity`, `data-code`, `data-edge`, `data-service`), `cloudflare-description`, `cloudflare-reached-by`, `cloudflare-reaches-with`, `cloudflare-no-ports`, `cloudflare-unknown`, `cloudflare-binding-name`, `cloudflare-edge-problem`, `cloudflare-events`, `cloudflare-event-problem`, `cloudflare-receivable`, `cloudflare-machine-receives`, `cloudflare-machine-problem`, `cloudflare-attribution`; a field's refusal is its `FieldError`, `data-part="refusal"` |
 | Operations | `data-part="operations"` (editable) or `cloudflare-operations` (read-only); each row has `data-operation`, and `data-used` when read-only |
@@ -336,29 +405,11 @@ The frame carries `data-cloudflare-diagram` beside DiagramFrame's own. Elements 
 
 ## Accessibility
 
-- The diagram is a group named by `aria-label`, and every service and connection can be reached with the keyboard and says what it connects to, as on Diagram. A screen reader calls a node a "service".
+- The diagram is a group named by `aria-label`, and every service and connection can be reached with the keyboard and says what it connects to, as on Diagram. A screen reader calls a node a "service", and reads its sections: "API, service, where it starts. Handlers: fetch. Triggers: api.example.com/* on example.com…". The system's box says how many services it holds.
+- Editable, a card's chips can be reached with Alt+↓ and pressed with Enter, as on Diagram; a Machine chip opens its machine.
 - The panel's problems are a polite live region, and each says what's wrong in words, with a "Wrong" or "Note" badge, so color isn't the only sign. A connection that isn't real is an alert.
 - The search is a Combobox: arrow keys move through what matches, Enter adds the highlighted one, and focus stays in the search for another.
 - Undo and redo are the DiagramToolbar's buttons, with their shortcuts in their tooltips, and ⌘Z / ⇧⌘Z (⌘Y) on the board; a field in the panel keeps its own.
 - A refused binding name is the field's `FieldError`, tied to it, and the field is marked invalid.
 - Opening a machine moves focus to its back button, and going back returns it to the button that opened it.
 - No product's image is drawn, so nothing's announced but its name.
-
-## cva recipes
-
-Generated from the source. Call a recipe on any element to borrow a component's look; in a registry-installed copy, change `defaultVariants` to change the default. All recipes are listed in the [Variants reference](https://blamy.github.io/ui/#/variants).
-
-### `cloudflareServiceVariants`
-
-Defined in `@/components/ui/cloudflare-diagram`. Base classes:
-
-```text
-absolute inset-0 overflow-hidden rounded-ctl border bg-card text-card-foreground
-```
-
-**`tone`** — default `default`
-
-| Value | Adds |
-| --- | --- |
-| `default` (default) | `border-border` |
-| `destructive` | `border-destructive` |

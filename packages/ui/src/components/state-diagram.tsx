@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore
 import type { ChangeDetails } from '@ui-sdk/core';
 import { Button } from '@/components/ui/button';
 import { useCanvas } from '@/components/ui/canvas';
-import { Diagram, DiagramToolbar, type DiagramData, type DiagramDataChangeDetails, type DiagramProps, type DiagramSelectionChangeDetails, type DiagramSelectionChangeReason } from '@/components/ui/diagram';
+import { Diagram, DiagramToolbar, type DiagramData, type DiagramDataChangeDetails, type DiagramItem, type DiagramProps, type DiagramSelectionChangeDetails, type DiagramSelectionChangeReason } from '@/components/ui/diagram';
 import { DiagramFrame, DiagramFrameBar, DiagramFrameBoard, DiagramFramePanel, DiagramFrameSection, useDiagramFrame, type DiagramFrameProps } from '@/components/ui/diagram-frame';
 import { Field, FieldError, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
@@ -19,11 +19,14 @@ import { NOTHING_SELECTED, type DiagramConnection, type DiagramEdge, type Diagra
 import { Icon } from '@/lib/icon';
 import { calloutVariants } from '@/lib/primitives';
 import {
-  addState, addTransition, inlineCodeIn, missingImplementations, removeItems, renameState, setInitial, setTransitionEvent, setTransitionGuard, setTransitionSource, setTransitionTarget, stateAt, tryEdit, uniqueName,
-  type StateMachineConfig, type StateMachineImplementations, type StatePath,
+  addAction, addContextKey, addState, addTransition, inlineCodeIn, missingImplementations, removeAction, removeContextKey, removeItems, renameAction, renameContextKey, renameState, setContextValue, setInitial,
+  setTransitionEvent, setTransitionGuard, setTransitionSource, setTransitionTarget, stateAt, tryEdit, uniqueName,
+  type ActionsPlace, type StateMachineConfig, type StateMachineImplementations, type StatePath,
 } from '@/lib/state-diagram-edit';
-import { machineEdgePlaces, machineStatePaths, machineToDraft, type StateEdgeData, type StateMachineLike, type StateNodeData, type TransitionPlace } from '@/lib/state-diagram-model';
-import { createSimulation, type Simulation, type SimulationStandIns } from '@/lib/state-diagram-simulation';
+import {
+  describeContextValue, machineEdgePlaces, machineStatePaths, machineToDraft, transitionNotation, type StateAction, type StateEdgeData, type StateMachineLike, type StateNodeData, type TransitionPlace,
+} from '@/lib/state-diagram-model';
+import { createSimulation, type Simulation, type SimulationState, type SimulationStandIns } from '@/lib/state-diagram-simulation';
 
 export type { StateMachineLike } from '@/lib/state-diagram-model';
 export type { StateMachineConfig, StateMachineImplementations } from '@/lib/state-diagram-edit';
@@ -35,14 +38,25 @@ export type { SimulationStandIns } from '@/lib/state-diagram-simulation';
    `parseXState` (`lib/state-diagram-source`) without being run. XState and ELK are optional peers, so a config or source
    needs `xstate` installed, and laying it out needs `elkjs`.
 
+   Everything the machine says is drawn (`machineToDraft`, `lib/state-diagram-model`): the machine is the root container,
+   its header its name and under it its Context; a state is a card, its header its name (with the final square or the
+   history H), then its sections of chips (Entry actions, Exit actions, Invoke, Tags, Meta); a compound or parallel state
+   holds its children, and where one starts is its entry marker; a transition's label is a pill with its event, or a card
+   with the event over chips for its guard ("if canRetry"), its actions, a delay's clock, and how it goes (re-entering,
+   no target, several targets). It runs top to bottom on a lined board.
+
    Without `editable` it's a picture you can select in and read: nothing moves, connects or is deleted. With `simulate`, it
    also runs a copy of it, with stand-ins for everything it names, so none of an app's code runs here either. Where it is
-   is `current` on the board, and a panel offers what it can do next: a `DiagramFramePanel`, so a column beside the board
-   when there's the room, a drawer over it at medium sizes, and a pushed page on a phone.
+   is `current` on the board; each transition it can take now gets a send button on its label (a play glyph, a primary
+   outline: not color alone), which sends its event, as Enter on it does; and a panel offers what it can do next, with its
+   context as it is now: a `DiagramFramePanel`, so a column beside the board when there's the room, a drawer over it at
+   medium sizes, and a pushed page on a phone.
 
-   With `editable`, what's drawn can be changed, and that writes to its config, which is plain data. A machine's
-   implementations stay out of it, by name, so an edit never touches code. Whatever XState won't have is refused, with what
-   it said. Undo and redo are the config's, on the Diagram's toolbar and its ⌘Z, through `<Diagram history>`. */
+   With `editable`, what's drawn can be changed, and that writes to its config, which is plain data: states, transitions,
+   events, guards, entry and exit actions, a transition's actions, and context keys. A machine's implementations stay out
+   of it, by name, so an edit never touches code. Pressing a chip opens it in the panel. Whatever XState won't have is
+   refused, with what it said. Undo and redo are the config's, on the Diagram's toolbar and its ⌘Z, through
+   `<Diagram history>`. */
 
 /** Why the config changed: an edit (on the board or in the panel), or undoing and redoing one. */
 export type StateDiagramConfigChangeReason = 'edit' | 'undo' | 'redo';
@@ -59,7 +73,7 @@ export interface StateDiagramProps extends Pick<DiagramProps, 'minimap' | 'backg
   defaultConfig?: StateMachineConfig;
   /** The config after each edit, undoing included, and why. `details.cancel()` refuses one when the config isn't controlled. */
   onConfigChange?: (config: StateMachineConfig, details: StateDiagramConfigChangeDetails) => void;
-  /** Which way the layers run (default `right`). */
+  /** Which way the layers run (default `down`, as XState's visualizer draws: it reads on a portrait frame and a phone). */
   direction?: DiagramDirection;
   /** A layout done ahead of time, on a server perhaps, shown until this one's ready. */
   layout?: DiagramLayoutResult<StateNodeData, StateEdgeData>;
@@ -87,7 +101,6 @@ export interface StateDiagramProps extends Pick<DiagramProps, 'minimap' | 'backg
 
 const XSTATE_PEER = 'This needs xstate, an optional peer of @brett_lamy/ui: npm install xstate';
 const NO_CONFIG = 'Simulating needs a machine from XState, which has a config to run a copy of.';
-const STARTING_LINE = 'That line says where it starts. Select another state and choose Start here.';
 
 /** A machine's source, read into its config without running it. The reader (and Babel) load only when there's source. */
 function useSource(source: string | undefined): { config: StateMachineConfig | undefined; error: string | null } {
@@ -181,20 +194,25 @@ function useSimulation(machine: StateMachineLike | null, simulate: StateDiagramP
 const NOTHING_YET: readonly string[] = [];
 const noSubscribe = () => () => undefined;
 
-/** What a screen reader hears for a state: its name, what kind it is, where it is, and every way in and out. */
-function describeState(node: DiagramNode<StateNodeData>, byId: ReadonlyMap<string, DiagramNode<StateNodeData>>, out: readonly DiagramEdge[], into: readonly DiagramEdge[]): string {
-  const nameOf = (id: string) => byId.get(id)?.label || id;
-  const isMarker = (id: string) => byId.get(id)?.data?.type === 'initial';
-  if (node.data?.type === 'initial') return `Start, of ${nameOf(node.parent ?? '')}.`;
-  const kind = node.data?.type === 'final' ? 'final state' : node.data?.type === 'parallel' ? 'parallel state' : node.data?.type === 'history' ? 'history state' : 'state';
+/** What a screen reader hears for a state: its name, what kind it is, where it is, what it does, and every way in and out. */
+function describeState(node: DiagramNode<StateNodeData>, byId: ReadonlyMap<string, DiagramNode<StateNodeData>>, out: readonly DiagramEdge<StateEdgeData>[], into: readonly DiagramEdge<StateEdgeData>[]): string {
+  const nameOf = (id: string) => byId.get(id)?.title || id;
+  const data = node.data;
+  const kind = data?.type === 'final' ? 'final state' : data?.type === 'parallel' ? 'parallel state' : data?.type === 'history' ? `${data.history === 'deep' ? 'deep ' : ''}history state` : node.parent ? 'state' : 'machine';
   const parent = node.parent ? byId.get(node.parent) : undefined;
   const where = parent?.parent ? `, in ${nameOf(parent.id)}` : '';
-  const detail = node.detail && node.detail !== 'parallel' && !node.detail.includes('history') ? ` ${node.detail}.` : '';
-  const starts = into.some((e) => isMarker(e.from)) ? ' Where it starts.' : '';
-  const going = out.map((e) => `${e.label ? `${e.label} ` : ''}${e.to === node.id ? 'back to itself' : `to ${nameOf(e.to)}`}`);
-  const coming = into.filter((e) => e.from !== node.id && !isMarker(e.from)).map((e) => `${e.label ? `${e.label} ` : ''}from ${nameOf(e.from)}`);
+  const names = (list: readonly StateAction[]) => list.map((a) => a.name).join(', ');
+  const does = [
+    data?.entry.length ? `On entry: ${names(data.entry)}.` : '',
+    data?.exit.length ? `On exit: ${names(data.exit)}.` : '',
+    data?.invoke.length ? `Invokes ${data.invoke.map((i) => i.src).join(', ')}.` : '',
+    data?.tags.length ? `Tagged ${data.tags.join(', ')}.` : '',
+  ].filter(Boolean).map((t) => ` ${t}`).join('');
+  const starts = node.entry ? ' Where it starts.' : '';
+  const going = out.map((e) => `${transitionNotation(e.data)} ${e.to === node.id ? 'back to itself' : `to ${nameOf(e.to)}`}`);
+  const coming = into.filter((e) => e.from !== node.id).map((e) => `${transitionNotation(e.data)} from ${nameOf(e.from)}`);
   const list = (items: string[], what: string) => (items.length ? ` ${items.length} ${what}: ${items.join(', ')}.` : '');
-  return `${node.label ?? node.id}, ${kind}${where}.${detail}${starts}${list(going, 'going out')}${list(coming, 'coming in')}`;
+  return `${node.title ?? node.id}, ${kind}${where}.${does}${starts}${list(going, 'going out')}${list(coming, 'coming in')}`;
 }
 
 /** How long a drawer takes to slide in, and a frame more. */
@@ -283,6 +301,18 @@ function SimulationPanel({ sim }: { sim: Simulation }) {
           </div>
         </DiagramFrameSection>
       ) : null}
+      {state.context ? (
+        <DiagramFrameSection title="Context">
+          <dl data-slot="simulation-context" className="m-0 grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-1 font-mono text-caption">
+            {Object.entries(state.context).map(([key, value]) => (
+              <div key={key} data-key={key} className="contents">
+                <dt className="text-foreground/70">{key}</dt>
+                <dd className="m-0 [overflow-wrap:anywhere]">{describeContextValue(value)}</dd>
+              </div>
+            ))}
+          </dl>
+        </DiagramFrameSection>
+      ) : null}
       <DiagramFrameSection title="Time">
         <Toolbar aria-label="Time" size="sm" className="flex-wrap">
           <ToolbarButton data-action="next-timer" variant="secondary" disabled={!canRun} onClick={() => sim.stepTime()}>Next timer</ToolbarButton>
@@ -323,39 +353,93 @@ function SimulationPanel({ sim }: { sim: Simulation }) {
 
 /* ── The panel, while editing ── */
 
-/** Which field an edit came from, so that a refusal is that field's error; `null` for the board and the panel's buttons. */
-type EditFieldName = 'name' | 'event' | 'guard';
+/** Which field an edit came from, so that a refusal is that field's error (`name`, `event`, `guard`, `entry:2`,
+ *  `actions:0`, `context:key`, `value:key`); `null` for the board and the panel's buttons. */
+type EditFieldName = string;
 interface Refusal { reason: string; field: EditFieldName | null }
 
 /** A field that changes the config once you're done with it: Enter or leaving it commits, Escape puts it back. Refused, it
  *  says why under it. */
-function EditField({ field, label, value, placeholder, refusal, onCommit }: { field: EditFieldName; label: string; value: string; placeholder?: string; refusal: Refusal | null; onCommit: (value: string) => void }) {
+function EditField({ field, label, hideLabel, value, placeholder, refusal, onCommit, mono }: { field: EditFieldName; label: string; hideLabel?: boolean; value: string; placeholder?: string; refusal: Refusal | null; onCommit: (value: string) => void; mono?: boolean }) {
   const refused = refusal?.field === field ? refusal.reason : null;
   return (
-    <Field invalid={!!refused}>
-      <FieldLabel>{label}</FieldLabel>
-      <Input data-field={field} size="sm" value={value} placeholder={placeholder} autoCapitalize="off" autoCorrect="off" spellCheck={false} onValueCommit={onCommit} />
+    <Field invalid={!!refused} className="min-w-0 flex-1">
+      <FieldLabel className={hideLabel ? 'sr-only' : undefined}>{label}</FieldLabel>
+      <Input data-field={field} size="sm" value={value} placeholder={placeholder} autoCapitalize="off" autoCorrect="off" spellCheck={false} className={mono ? 'font-mono' : undefined} onValueCommit={onCommit} />
       <FieldError>{refused}</FieldError>
     </Field>
   );
 }
 
+/** A remove button for one row of a list in the panel. */
+function RemoveButton({ label, onClick }: { label: string; onClick: () => void }) {
+  return (
+    <Button data-action="remove" variant="ghost" size="icon-sm" aria-label={label} className="mt-0.5 shrink-0 text-foreground/70" onClick={onClick}>
+      <Icon name="xmark" size={14} />
+    </Button>
+  );
+}
+
+/** A list of actions to change: each of the machine's own by its name, in a field; code and XState's built-ins as what they
+ *  are, which can only be taken away; and a button to add one. */
+function ActionList({ id, title, actions, refusal, onRename, onRemove, onAdd }: { id: string; title: string; actions: readonly StateAction[]; refusal: Refusal | null; onRename: (index: number, name: string) => void; onRemove: (index: number) => void; onAdd: () => void }) {
+  return (
+    <div data-slot="edit-actions" data-actions={id} className="flex flex-col gap-1.5">
+      <span className="text-footnote text-foreground/70">{title}</span>
+      {actions.map((a, i) => (
+        <div key={i} data-slot="edit-action" className="flex items-start gap-1">
+          {a.kind === 'named' ? (
+            <EditField field={`${id}:${i}`} label={`${title}, ${i + 1}`} hideLabel value={a.name} refusal={refusal} onCommit={(name) => onRename(i, name)} />
+          ) : (
+            <span data-kind={a.kind} className="flex min-h-8 min-w-0 flex-1 items-center gap-1.5 text-footnote [overflow-wrap:anywhere]">
+              <Icon name="bolt" size={12} className="shrink-0 text-foreground/70" />
+              <span className="font-medium">{a.name}</span>
+              {a.detail ? <span className="text-foreground/70">{a.detail}</span> : null}
+            </span>
+          )}
+          <RemoveButton label={`Remove ${a.name} from ${title.toLowerCase()}`} onClick={() => onRemove(i)} />
+        </div>
+      ))}
+      <div>
+        <Button data-action={`add-${id}`} variant="secondary" size="sm" onClick={onAdd}>
+          <Icon name="plus-circle" size={14} />
+          Add
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+/** A context value as it's typed in a field: JSON, or a string as it is. */
+const valueText = (value: unknown) => (typeof value === 'string' ? value : JSON.stringify(value) ?? '');
+const readValue = (text: string): unknown => {
+  try {
+    return JSON.parse(text);
+  } catch {
+    return text;
+  }
+};
+
 interface EditPanelProps {
   refusal: Refusal | null;
   addStateHere: () => void;
-  node: { id: string; label: string; path: StatePath; isStart: boolean; canStart: boolean } | null;
-  edge: { label: string; event: string | null; guard: string } | null;
+  node: { id: string; label: string; path: StatePath; isStart: boolean; canStart: boolean; entry: readonly StateAction[]; exit: readonly StateAction[] } | null;
+  edge: { label: string; event: string | null; guard: string; actions: readonly StateAction[] } | null;
+  /** The machine's context, to change, when nothing's selected; null when it's made by code. */
+  context: { entries: readonly [string, unknown][]; types: Readonly<Record<string, unknown>> } | null;
   renameNode: (name: string) => void;
   makeStart: () => void;
   addInside: () => void;
   removeSelected: () => void;
   renameEvent: (event: string) => void;
   setGuard: (guard: string) => void;
+  actions: { rename: (at: 'entry' | 'exit' | 'actions', index: number, name: string) => void; remove: (at: 'entry' | 'exit' | 'actions', index: number) => void; add: (at: 'entry' | 'exit' | 'actions') => void };
+  contextEdits: { rename: (key: string, next: string) => void; set: (key: string, text: string) => void; remove: (key: string) => void; add: () => void };
   missing: { kind: string; names: readonly string[] }[];
   inline: readonly string[];
 }
 
-function EditPanel({ refusal, addStateHere, node, edge, renameNode, makeStart, addInside, removeSelected, renameEvent, setGuard, missing, inline }: EditPanelProps) {
+function EditPanel({ refusal, addStateHere, node, edge, context, renameNode, makeStart, addInside, removeSelected, renameEvent, setGuard, actions, contextEdits, missing, inline }: EditPanelProps) {
   // A refusal of the board's, or of a button's, is the panel's; a field's is under the field.
   const general = refusal && !refusal.field ? refusal.reason : null;
   return (
@@ -372,6 +456,8 @@ function EditPanel({ refusal, addStateHere, node, edge, renameNode, makeStart, a
       {node ? (
         <DiagramFrameSection title="This state">
           <EditField field="name" label="Name" value={node.label} refusal={refusal} onCommit={renameNode} />
+          <ActionList id="entry" title="Entry actions" actions={node.entry} refusal={refusal} onRename={(i, n) => actions.rename('entry', i, n)} onRemove={(i) => actions.remove('entry', i)} onAdd={() => actions.add('entry')} />
+          <ActionList id="exit" title="Exit actions" actions={node.exit} refusal={refusal} onRename={(i, n) => actions.rename('exit', i, n)} onRemove={(i) => actions.remove('exit', i)} onAdd={() => actions.add('exit')} />
           <div className="flex flex-wrap gap-1.5 pt-1">
             {node.canStart ? <Button data-action="make-start" variant="secondary" size="sm" disabled={node.isStart} onClick={makeStart}>{node.isStart ? 'It starts here' : 'Start here'}</Button> : null}
             <Button data-action="add-inside" variant="secondary" size="sm" onClick={addInside}>Add one inside</Button>
@@ -382,10 +468,36 @@ function EditPanel({ refusal, addStateHere, node, edge, renameNode, makeStart, a
         <DiagramFrameSection title="This transition">
           {edge.event !== null ? <EditField field="event" label="Event" value={edge.event} refusal={refusal} onCommit={renameEvent} /> : <div className="text-footnote">{edge.label}</div>}
           <EditField field="guard" label="Guard" value={edge.guard} placeholder="None" refusal={refusal} onCommit={setGuard} />
+          <ActionList id="actions" title="Actions" actions={edge.actions} refusal={refusal} onRename={(i, n) => actions.rename('actions', i, n)} onRemove={(i) => actions.remove('actions', i)} onAdd={() => actions.add('actions')} />
           <div className="pt-1"><Button data-action="delete" variant="secondary" size="sm" className="text-destructive" onClick={removeSelected}>Delete</Button></div>
         </DiagramFrameSection>
       ) : (
-        <p data-slot="edit-hint" className="m-0 text-footnote text-foreground/70">Select a state or a transition to change it. To connect two states, select one and drag from a dot on its edge, or press C.</p>
+        <>
+          <p data-slot="edit-hint" className="m-0 text-footnote text-foreground/70">Select a state or a transition to change it. To connect two states, select one and drag from a dot on its edge, or press C.</p>
+          {context ? (
+            <DiagramFrameSection title="Context">
+              <div data-slot="edit-context" className="flex flex-col gap-1.5">
+                {context.entries.map(([key, value]) => (
+                  <div key={key} data-key={key} className="flex items-start gap-1">
+                    <EditField field={`context:${key}`} label={`Context key ${key}`} hideLabel mono value={key} refusal={refusal} onCommit={(next) => contextEdits.rename(key, next)} />
+                    {typeof context.types[key] === 'string' && value === undefined ? (
+                      <span className="flex min-h-8 min-w-0 flex-1 items-center font-mono text-caption text-foreground/70">{String(context.types[key])}</span>
+                    ) : (
+                      <EditField field={`value:${key}`} label={`Value of ${key}`} hideLabel mono value={valueText(value)} refusal={refusal} onCommit={(text) => contextEdits.set(key, text)} />
+                    )}
+                    <RemoveButton label={`Remove ${key} from the context`} onClick={() => contextEdits.remove(key)} />
+                  </div>
+                ))}
+                <div>
+                  <Button data-action="add-context" variant="secondary" size="sm" onClick={contextEdits.add}>
+                    <Icon name="plus-circle" size={14} />
+                    Add key
+                  </Button>
+                </div>
+              </div>
+            </DiagramFrameSection>
+          ) : null}
+        </>
       )}
       {missing.length ? (
         <DiagramFrameSection title="Named, with nothing behind them">
@@ -405,16 +517,69 @@ function EditPanel({ refusal, addStateHere, node, edge, renameNode, makeStart, a
   );
 }
 
+/* ── Sending from the board ── */
+
+/** While simulating, a send button on each transition it can take now, over its label: pressing the label sends its event.
+ *  The label gets a primary outline and a play glyph, so it isn't told by color alone. Placed in the board's own units. */
+function SendButtons({ edges, enabled, onSend }: { edges: readonly DiagramEdge<StateEdgeData>[]; enabled: ReadonlySet<string>; onSend: (event: string) => void }) {
+  return (
+    <>
+      {edges.map((e) => {
+        if (!enabled.has(e.id) || !e.labelBox || !e.data?.event) return null;
+        const box = e.labelBox, event = e.data.event;
+        return (
+          <Button
+            key={e.id}
+            data-action="send-on-board"
+            data-edge={e.id}
+            data-event={event}
+            variant="plain"
+            aria-label={`Send ${e.data.name ?? event}`}
+            className="absolute rounded-card p-0 ring-2 ring-primary hover:bg-primary/8 active:bg-primary/15"
+            style={{ left: box.x, top: box.y, width: box.w, height: box.h }}
+            // Its own press, not the board's: the board would take the pointer to select or pan.
+            onPointerDown={(pe) => pe.stopPropagation()}
+            onKeyDown={(ke) => ke.stopPropagation()}
+            onClick={() => onSend(event)}
+          >
+            <span aria-hidden="true" className="absolute -top-2 -left-2 grid size-4 place-items-center rounded-full bg-primary text-primary-foreground shadow-hairline">
+              <Icon name="play" size={9} />
+            </span>
+          </Button>
+        );
+      })}
+    </>
+  );
+}
+
+/** The transitions a simulation can take now: from a state it's in, on an event (or an actor's finish) it can take, through a
+ *  guard that answers yes. */
+function enabledEdges(edges: readonly DiagramEdge<StateEdgeData>[], state: SimulationState | null): Set<string> {
+  const out = new Set<string>();
+  if (!state || state.status !== 'active') return out;
+  const events = new Set([...state.events, ...state.finishes.map((f) => f.event)]);
+  const active = new Set(state.active);
+  for (const e of edges) {
+    const d = e.data;
+    if (!d?.event || !active.has(e.from)) continue;
+    if (!events.has(d.event)) continue;
+    if (d.guard && state.guards[d.guard.name] === false) continue;
+    out.add(e.id);
+  }
+  return out;
+}
+
 /* ── StateDiagram ── */
 
 const isOwnEvent = (place: TransitionPlace | undefined, state: StateMachineConfig | null) => !!place?.event && !!(state?.on as Record<string, unknown> | undefined)?.[place.event];
 const eventsOf = (state: StateMachineConfig | null) => Object.keys((state?.on as Record<string, unknown> | undefined) ?? {});
 const statesOf = (state: StateMachineConfig | null) => Object.keys((state?.states as Record<string, unknown> | undefined) ?? {});
+const isPlainObject = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
 
 export function StateDiagram({
   machine: given, source, config, defaultConfig, onConfigChange, direction, layout: initialLayout, simulate, editable = false, implementations,
   selection: selectionProp, defaultSelection = NOTHING_SELECTED, onSelectionChange, panelOpen, defaultPanelOpen, onPanelOpenChange, panelPresentation,
-  className, style, 'aria-label': ariaLabel, ...diagram
+  background = 'grid', onAction, className, style, 'aria-label': ariaLabel, ...diagram
 }: StateDiagramProps) {
   /* ── What's being shown: `config` when it's controlled; otherwise what it started from (`defaultConfig`, `source` or
         `machine`), until there's an edit to show instead ── */
@@ -453,6 +618,8 @@ export function StateDiagram({
     return () => { live = false; };
   }, [editable]);
   const [refusal, setRefusal] = useState<Refusal | null>(null);
+  // The field a pressed chip asks for, so the panel opens on it.
+  const [focus, setFocus] = useState<string | null>(null);
   const [selection, setSelection] = useControllableChange<DiagramSelection, DiagramSelectionChangeReason>(selectionProp, defaultSelection, onSelectionChange);
   const select = (next: DiagramSelection) => setSelection(next, { reason: 'imperative' });
   const base = (shown ?? (given?.config as StateMachineConfig | undefined)) ?? null;
@@ -519,27 +686,15 @@ export function StateDiagram({
     } else if (details.reason === 'delete') {
       const nodesLeft = new Set(change.nodes.map((n) => n.id));
       const edgesLeft = new Set(change.edges.map((e) => e.id));
-      const goneNodes = laid.nodes.filter((n) => !nodesLeft.has(n.id));
-      const goneEdges = laid.edges.filter((e) => !edgesLeft.has(e.id));
-      const states = goneNodes.flatMap((n) => { const p = paths.get(n.id); return p ? [p] : []; });
-      // What's only there to say where something starts goes with that something, or not at all.
-      const startingOnly = goneEdges.some((e) => !places.has(e.id) && nodesLeft.has(e.to));
-      if (startingOnly) {
-        setRefusal({ reason: STARTING_LINE, field: null });
-        return;
-      }
+      const states = laid.nodes.filter((n) => !nodesLeft.has(n.id)).flatMap((n) => { const p = paths.get(n.id); return p ? [p] : []; });
       // What's attached to a state that's going goes with it.
-      const transitions = goneEdges.filter((e) => nodesLeft.has(e.from) && nodesLeft.has(e.to)).flatMap((e) => { const p = places.get(e.id); return p ? [p] : []; });
+      const transitions = laid.edges.filter((e) => !edgesLeft.has(e.id) && nodesLeft.has(e.from) && nodesLeft.has(e.to)).flatMap((e) => { const p = places.get(e.id); return p ? [p] : []; });
       const made = commit((c) => removeItems(c, { states, transitions }));
       if (made) select(NOTHING_SELECTED);
     }
     // Moving isn't on, as where things are is ELK's; undoing is the config's history, which the Diagram drives.
   };
-  const validConnection = (c: DiagramConnection): boolean | string => {
-    if (!paths.has(c.from) || !paths.has(c.to)) return STARTING_LINE;
-    if (c.edge && !places.has(c.edge)) return STARTING_LINE;
-    return true;
-  };
+  const validConnection = (c: DiagramConnection): boolean | string => paths.has(c.from) && paths.has(c.to);
 
   /* ── What the panel's about ── */
   const selectedNode = selection.nodes.length === 1 && !selection.edges.length ? draft.nodes.find((n) => n.id === selection.nodes[0]) : undefined;
@@ -587,6 +742,42 @@ export function StateDiagram({
     const made = commit((c) => setTransitionGuard(c, edgePlace, guard.trim() || null), 'guard');
     if (made) selectTransition(made, edgePlace.state, edgePlace.event, edgePlace.index);
   };
+  /** Where a list of actions in the panel is written: the selected state's entry or exit, or the selected transition's. */
+  const actionsAt = (at: 'entry' | 'exit' | 'actions'): ActionsPlace | null => (at === 'actions' ? (edgePlace ? { transition: edgePlace } : null) : nodePath ? { state: nodePath, slot: at } : null);
+  /** After an edit to a transition's actions, the same transition stays selected: its place is the same. */
+  const keepSelected = (made: StateMachineLike | null) => {
+    if (made && edgePlace) selectTransition(made, edgePlace.state, edgePlace.event, edgePlace.index);
+  };
+  const actionsOf = (at: 'entry' | 'exit' | 'actions') => (at === 'actions' ? selectedEdge?.data?.actions ?? [] : selectedNode?.data?.[at] ?? []);
+  const actionEdits = {
+    rename: (at: 'entry' | 'exit' | 'actions', index: number, name: string) => {
+      const where = actionsAt(at);
+      if (where) keepSelected(commit((c) => renameAction(c, where, index, name), `${at}:${index}`));
+    },
+    remove: (at: 'entry' | 'exit' | 'actions', index: number) => {
+      const where = actionsAt(at);
+      if (where) keepSelected(commit((c) => removeAction(c, where, index)));
+    },
+    add: (at: 'entry' | 'exit' | 'actions') => {
+      const where = actionsAt(at);
+      if (!where) return;
+      const name = uniqueName('action', actionsOf(at).map((a) => a.name));
+      const made = commit((c) => addAction(c, where, name));
+      keepSelected(made);
+      if (made) setFocus(`${at}:${actionsOf(at).length}`);
+    },
+  };
+  const contextConfig = base && (base.context === undefined || isPlainObject(base.context)) ? (base.context as Record<string, unknown> | undefined) ?? {} : null;
+  const contextTypes = base && isPlainObject(base.types) && isPlainObject(base.types.context) ? base.types.context : {};
+  const contextEdits = {
+    rename: (key: string, next: string) => { commit((c) => renameContextKey(c, key, next), `context:${key}`); },
+    set: (key: string, text: string) => { commit((c) => setContextValue(c, key, readValue(text)), `value:${key}`); },
+    remove: (key: string) => { commit((c) => removeContextKey(c, key)); },
+    add: () => {
+      const key = uniqueName('key', [...Object.keys(contextConfig ?? {}), ...Object.keys(contextTypes)]);
+      if (commit((c) => addContextKey(c, key))) setFocus(`context:${key}`);
+    },
+  };
   const missing = useMemo(() => {
     if (!editable || !base) return [];
     const names = missingImplementations(base, behind);
@@ -596,20 +787,25 @@ export function StateDiagram({
 
   /* ── What's drawn ── */
   const problem = read.error ?? error ?? draftError ?? laid.error?.message ?? simError ?? xstateError;
-  const name = ariaLabel ?? (machine ? `State machine ${machine.root.key || machine.root.id}` : 'State machine');
+  const name = ariaLabel ?? (machine ? `State machine ${laid.nodes.find((n) => !n.parent)?.title ?? machine.root.key ?? machine.root.id}` : 'State machine');
 
   // Only what's current, so time going by doesn't redraw the board.
   const active = useSyncExternalStore(sim ? sim.subscribe : noSubscribe, () => sim?.get().active ?? NOTHING_YET, () => NOTHING_YET);
   const taken = useSyncExternalStore(sim ? sim.subscribe : noSubscribe, () => sim?.get().taken ?? NOTHING_YET, () => NOTHING_YET);
   const now = useSyncExternalStore(sim ? sim.subscribe : noSubscribe, () => sim?.get().now ?? NOTHING_YET, () => NOTHING_YET);
+  const simState = useSyncExternalStore(sim ? sim.subscribe : noSubscribe, () => sim?.get() ?? null, () => null);
   const rootId = machine?.root.id;
   const where = useMemo(() => ({ nodes: active.filter((id) => id !== rootId), edges: [...taken] }), [active, taken, rootId]);
   // The states it's in that hold none it's in: what to bring out from under a drawer.
   const leaves = useMemo(() => where.nodes.filter((id) => !draft.nodes.some((n) => n.parent === id && where.nodes.includes(n.id))), [where, draft]);
+  // What it can take now, which a press on the board sends.
+  // The same set while it says the same, so time going by doesn't redraw the board.
+  const enabledIds = [...enabledEdges(laid.edges, simState)].join('\0');
+  const enabled = useMemo(() => new Set(enabledIds ? enabledIds.split('\0') : []), [enabledIds]);
 
   const byId = useMemo(() => new Map(laid.nodes.map((n) => [n.id, n])), [laid.nodes]);
   const ends = useMemo(() => {
-    const out = new Map<string, DiagramEdge[]>(), into = new Map<string, DiagramEdge[]>();
+    const out = new Map<string, DiagramEdge<StateEdgeData>[]>(), into = new Map<string, DiagramEdge<StateEdgeData>[]>();
     for (const e of laid.edges) {
       out.set(e.from, [...(out.get(e.from) ?? []), e]);
       into.set(e.to, [...(into.get(e.to) ?? []), e]);
@@ -617,6 +813,43 @@ export function StateDiagram({
     return { out, into };
   }, [laid.edges]);
   const describe = useCallback((n: DiagramNode<StateNodeData>) => describeState(n, byId, ends.out.get(n.id) ?? [], ends.into.get(n.id) ?? []), [byId, ends]);
+  const describeTransition = useCallback((e: DiagramEdge<StateEdgeData>) => {
+    const nameOf = (id: string) => byId.get(id)?.title ?? id;
+    return `${transitionNotation(e.data)}, edge from ${nameOf(e.from)} to ${nameOf(e.to)}.${enabled.has(e.id) ? ' It can be sent now: press Enter.' : ''}`;
+  }, [byId, enabled]);
+
+  const send = (event: string) => sim?.send(event);
+  /** Enter on a transition it can take sends it; a chip pressed while editing opens it in the panel. */
+  const act = (item: DiagramItem, details: Parameters<NonNullable<DiagramProps['onAction']>>[1]) => {
+    onAction?.(item, details);
+    if (item.kind === 'edge' && !item.item && enabled.has(item.id)) {
+      const event = laid.edges.find((e) => e.id === item.id)?.data?.event;
+      if (event) send(event);
+      return;
+    }
+    if (item.item === undefined) return;
+    select(item.kind === 'node' ? { nodes: [item.id], edges: [] } : { nodes: [], edges: [item.id] });
+    const owner = item.kind === 'node' ? byId.get(item.id) : undefined;
+    // An entry or exit action's field; a transition's action's (`action-2`) or its guard's; a context key's.
+    if (owner && !owner.parent && item.section === 'context') { select(NOTHING_SELECTED); setFocus(`context:${item.item}`); }
+    else if (item.section === 'label') setFocus(item.item.startsWith('action-') ? `actions:${item.item.slice('action-'.length)}` : item.item === 'guard' ? 'guard' : `label:${item.item}`);
+    else setFocus(`${item.section}:${item.item}`);
+  };
+  // The field a pressed chip asked for gets focus once the panel shows it (after the selection it made has rendered).
+  useEffect(() => {
+    if (!focus) return undefined;
+    let tries = 0;
+    let frame = 0;
+    const find = () => {
+      const panel = board.current?.closest('[data-slot=diagram-frame]');
+      const input = panel?.querySelector<HTMLInputElement>(`[data-field="${CSS.escape(focus)}"]`);
+      if (input) { input.focus(); setFocus(null); return; }
+      if (++tries < 20) frame = requestAnimationFrame(find);
+      else setFocus(null);
+    };
+    frame = requestAnimationFrame(find);
+    return () => cancelAnimationFrame(frame);
+  }, [focus, selection]);
 
   const [tab, setTab] = useState<'run' | 'edit'>('edit');
   const showEdit = editable && !!xstate && !!base;
@@ -626,22 +859,27 @@ export function StateDiagram({
     <EditPanel
       refusal={refusal}
       addStateHere={addStateHere}
-      node={selectedNode && nodePath ? {
-        id: selectedNode.id, label: selectedNode.label ?? '', path: nodePath,
+      node={selectedNode && nodePath && selectedNode.parent ? {
+        id: selectedNode.id, label: selectedNode.title ?? '', path: nodePath,
         isStart: !!parentOfNode && (typeof parentOfNode.initial === 'object' ? (parentOfNode.initial as { target?: unknown }).target : parentOfNode.initial) === nodePath[nodePath.length - 1],
         canStart: nodePath.length > 0 && parentOfNode?.type !== 'parallel',
+        entry: selectedNode.data?.entry ?? [], exit: selectedNode.data?.exit ?? [],
       } : null}
       edge={selectedEdge && edgePlace ? {
-        label: selectedEdge.label ?? '',
+        label: transitionNotation(selectedEdge.data),
         event: isOwnEvent(edgePlace, base && stateAt(base, edgePlace.state)) ? edgePlace.event : null,
-        guard: selectedEdge.data?.guard ?? '',
+        guard: selectedEdge.data?.guard?.text ?? '',
+        actions: selectedEdge.data?.actions ?? [],
       } : null}
+      context={contextConfig ? { entries: [...new Set([...Object.keys(contextConfig), ...Object.keys(contextTypes)])].map((k) => [k, contextConfig[k]] as [string, unknown]), types: contextTypes } : null}
       renameNode={renameNode}
       makeStart={makeStart}
       addInside={addInside}
       removeSelected={removeSelected}
       renameEvent={renameEvent}
       setGuard={setGuard}
+      actions={actionEdits}
+      contextEdits={contextEdits}
       missing={missing}
       inline={inline}
     />
@@ -658,7 +896,7 @@ export function StateDiagram({
       <TabsPanel value="run" keepMounted className="pt-3">{simulationPanel}</TabsPanel>
     </Tabs>
   ) : simulationPanel ?? editPanel;
-  const status = now.length ? `In ${now.join(', ')}` : selectedNode?.label ?? (laid.status === 'pending' ? 'Laying out…' : name);
+  const status = now.length ? `In ${now.join(', ')}` : selectedNode?.title ?? (laid.status === 'pending' ? 'Laying out…' : name);
   return (
     <DiagramFrame
       data-state-diagram=""
@@ -677,15 +915,19 @@ export function StateDiagram({
           aria-label={name}
           noun="state"
           describeNode={describe}
+          describeEdge={describeTransition}
           loading={laid.status === 'pending' && !problem}
           error={problem ?? undefined}
           selection={selection}
           onSelectionChange={setSelection}
+          background={background}
+          onAction={act}
           {...(editable ? { editable: true, movable: false, history, onDataChange: onDiagramChange, isValidConnection: validConnection } : null)}
           overlay={<DiagramToolbar />}
           {...diagram}
         >
           <RevealCurrent nodes={laid.nodes} ids={leaves} board={board} />
+          {sim ? <SendButtons edges={laid.edges} enabled={enabled} onSend={send} /> : null}
         </Diagram>
         {panel ? <DiagramFrameBar>{status}</DiagramFrameBar> : null}
       </DiagramFrameBoard>

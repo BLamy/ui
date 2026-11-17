@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { CloudflareDiagram } from '@/components/ui/cloudflare-diagram'
 import { Textarea } from '@/components/ui/textarea'
-import { placeInLayers } from '@/lib/cloudflare-system'
+import { placeInLayers } from '@/lib/cloudflare-board'
 import { readWorkerdConfig } from '@/lib/cloudflare-workerd'
 
 const CONFIG = `using Workerd = import "/workerd/workerd.capnp";

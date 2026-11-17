@@ -68,19 +68,35 @@ export function useDiagramChromeInset(ref: RefObject<HTMLElement | null>, side: 
   const container = scope?.container;
   const [id] = useState(() => Math.random().toString(36).slice(2));
   useLayoutEffect(() => {
-    const el = ref.current, box = container?.current;
-    if (!report || !active || !el || !box) return undefined;
-    const measure = () => {
-      const r = el.getBoundingClientRect(), c = box.getBoundingClientRect();
-      if (!r.width && !r.height) { report(id, side, null); return; }
-      const px = side === 'top' ? r.bottom - c.top : side === 'bottom' ? c.bottom - r.top : side === 'left' ? r.right - c.left : c.right - r.left;
-      report(id, side, Math.max(0, Math.min(px, side === 'top' || side === 'bottom' ? c.height / 2 : c.width / 2)));
+    if (!report || !active) return undefined;
+    let observer: ResizeObserver | null = null;
+    let frame = 0;
+    // A parent's ref is attached after its children's layout effects run, so the scope's element (the Diagram's root,
+    // the frame's board) may not be there yet: wait a frame for it.
+    const start = () => {
+      const el = ref.current, box = container?.current;
+      if (!el || !box) {
+        if (typeof requestAnimationFrame === 'function' && frame >= 0) frame = requestAnimationFrame(start);
+        return;
+      }
+      begin(el, box);
     };
-    measure();
-    const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(measure);
-    observer?.observe(el);
-    observer?.observe(box);
+    const begin = (el: HTMLElement, box: HTMLElement) => {
+      const measure = () => {
+        const r = el.getBoundingClientRect(), c = box.getBoundingClientRect();
+        if (!r.width && !r.height) { report(id, side, null); return; }
+        const px = side === 'top' ? r.bottom - c.top : side === 'bottom' ? c.bottom - r.top : side === 'left' ? r.right - c.left : c.right - r.left;
+        report(id, side, Math.max(0, Math.min(px, side === 'top' || side === 'bottom' ? c.height / 2 : c.width / 2)));
+      };
+      measure();
+      observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(measure);
+      observer?.observe(el);
+      observer?.observe(box);
+    };
+    start();
     return () => {
+      if (frame > 0 && typeof cancelAnimationFrame === 'function') cancelAnimationFrame(frame);
+      frame = -1;
       observer?.disconnect();
       report(id, side, null);
     };

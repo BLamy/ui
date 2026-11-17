@@ -112,7 +112,7 @@ export const toggle = createMachine({
 })
 ```
 
-XState accepts JSON configs and static TypeScript machine configs. Actions, guards and invoked actors are never executed. A state's `invoke` shows on a second line, with its `onDone` and `onError` as `done` and `error` edges, which is what **XState diagram** starts you with. Invalid or unfinished source shows an inline error without stopping editing.
+XState accepts JSON configs and static TypeScript machine configs. Actions, guards and invoked actors are never executed. The preview is the library's [StateDiagram](https://blamy.github.io/ui/#/state-diagram), read-only: a state's `invoke`, entry and exit actions and tags are chips on its card, and its `onDone` and `onError` are edges that say whose they are (`fetchPage: done`), which is what **XState diagram** starts you with. Invalid or unfinished source shows an inline error without stopping editing.
 
 ```tscircuit
 circuit.add(

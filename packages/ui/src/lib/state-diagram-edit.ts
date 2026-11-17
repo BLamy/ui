@@ -411,6 +411,130 @@ export function removeItems(config: StateMachineConfig, items: { states?: readon
   return next;
 }
 
+/* ── Actions ── */
+
+/** Where a list of actions is written: a state's `entry` or `exit`, or a transition's `actions`. */
+export type ActionsPlace = { state: StatePath; slot: 'entry' | 'exit' } | { transition: TransitionPlace };
+
+/** Why an action can't be called this, or null if it can. */
+export function actionNameProblem(name: string): string | null {
+  if (!name.trim()) return 'An action needs a name.';
+  if (name !== name.trim()) return `An action’s name can’t start or end with a space: “${name}”.`;
+  if (name.startsWith('xstate.')) return `Names starting with xstate. are XState’s own: “${name}”.`;
+  return null;
+}
+
+/** A list of actions changed by `fn`, written back the way it was: one on its own, or a list; none takes the key away. */
+function changeActions(config: StateMachineConfig, at: ActionsPlace, fn: (list: unknown[]) => unknown[]): StateMachineConfig {
+  const write = (holder: Record<string, unknown>, key: string): Record<string, unknown> => {
+    const had = holder[key];
+    const next = fn(asList(had));
+    const { [key]: _was, ...rest } = holder;
+    if (!next.length) return rest;
+    return { ...holder, [key]: !Array.isArray(had) && next.length === 1 ? next[0] : next };
+  };
+  if ('state' in at) {
+    if (!stateAt(config, at.state)) throw new StateEditRefused(`There’s no state at ${at.state.join('.') || 'the root'}.`);
+    return changeState(config, at.state, (s) => write(s, at.slot));
+  }
+  return changeEntry(config, at.transition, (entry) => write(entry, 'actions'));
+}
+
+const actionAt = (list: unknown[], index: number): unknown => {
+  if (index < 0 || index >= list.length) throw new StateEditRefused('That action isn’t in the config.');
+  return list[index];
+};
+
+/** A new action, by name, at the end of the list. */
+export function addAction(config: StateMachineConfig, at: ActionsPlace, name: string): StateMachineConfig {
+  const problem = actionNameProblem(name);
+  if (problem) throw new StateEditRefused(problem);
+  return changeActions(config, at, (list) => [...list, name]);
+}
+
+/** Another name for an action, keeping its params. One written as code, or one of XState's built-ins, has no name of its
+ *  own in the config to change: it can only be taken away. */
+export function renameAction(config: StateMachineConfig, at: ActionsPlace, index: number, name: string): StateMachineConfig {
+  const problem = actionNameProblem(name);
+  if (problem) throw new StateEditRefused(problem);
+  return changeActions(config, at, (list) => {
+    const was = actionAt(list, index);
+    const type = typeof was === 'string' ? was : isPlain(was) && typeof was.type === 'string' && !was.type.startsWith('xstate.') ? was.type : null;
+    if (type === null) throw new StateEditRefused('That one is code, or one of XState’s own, so it has no name in the config to change. It can be deleted.');
+    return list.map((a, i) => (i !== index ? a : typeof a === 'string' ? name : { ...(a as Record<string, unknown>), type: name }));
+  });
+}
+
+/** Takes an action away. */
+export function removeAction(config: StateMachineConfig, at: ActionsPlace, index: number): StateMachineConfig {
+  return changeActions(config, at, (list) => {
+    actionAt(list, index);
+    return list.filter((_, i) => i !== index);
+  });
+}
+
+/* ── Context ── */
+
+/** Why a context key can't be called this, or null if it can. */
+export function contextKeyProblem(key: string, others: readonly string[]): string | null {
+  if (!key.trim()) return 'A context key needs a name.';
+  if (key !== key.trim()) return `A context key can’t start or end with a space: “${key}”.`;
+  if (others.includes(key)) return `There’s already a context key called “${key}”.`;
+  return null;
+}
+
+/** The context, as data to change, or why it can't be. */
+function contextOf(config: StateMachineConfig): Record<string, unknown> {
+  if (config.context === undefined) return {};
+  if (!isPlain(config.context)) throw new StateEditRefused('This machine’s context is made by code, so it can’t be changed here.');
+  return config.context;
+}
+
+/** The context's types, as `parseXState` keeps them, with `fn` done to them; untouched when there are none. */
+function changeTypes(config: StateMachineConfig, fn: (types: Record<string, unknown>) => Record<string, unknown>): StateMachineConfig {
+  const types = isPlain(config.types) && isPlain(config.types.context) ? config.types.context : null;
+  if (!types) return config;
+  return { ...config, types: { ...(config.types as Record<string, unknown>), context: fn(types) } };
+}
+
+/** A key of the machine's context with a value (`null` unless one's given), at the end. */
+export function addContextKey(config: StateMachineConfig, key: string, value: unknown = null): StateMachineConfig {
+  const context = contextOf(config);
+  const problem = contextKeyProblem(key, Object.keys(context));
+  if (problem) throw new StateEditRefused(problem);
+  return { ...config, context: { ...context, [key]: value } };
+}
+
+/** Another name for a context key, in the same place, and in its types. */
+export function renameContextKey(config: StateMachineConfig, key: string, next: string): StateMachineConfig {
+  const context = contextOf(config);
+  const types = isPlain(config.types) && isPlain(config.types.context) ? config.types.context : {};
+  if (!(key in context) && !(key in types)) throw new StateEditRefused(`There’s no context key called “${key}”.`);
+  if (next === key) return config;
+  const problem = contextKeyProblem(next, [...new Set([...Object.keys(context), ...Object.keys(types)])]);
+  if (problem) throw new StateEditRefused(problem);
+  const rename = (o: Record<string, unknown>) => Object.fromEntries(Object.entries(o).map(([k, v]) => [k === key ? next : k, v]));
+  return changeTypes({ ...config, context: rename(context) }, rename);
+}
+
+/** The value a context key starts with. */
+export function setContextValue(config: StateMachineConfig, key: string, value: unknown): StateMachineConfig {
+  const context = contextOf(config);
+  if (typeof value === 'function') throw new StateEditRefused('A context value here is data: code goes in the machine’s source.');
+  return { ...config, context: { ...context, [key]: value } };
+}
+
+/** Takes a context key away, and its type. */
+export function removeContextKey(config: StateMachineConfig, key: string): StateMachineConfig {
+  const context = contextOf(config);
+  const types = isPlain(config.types) && isPlain(config.types.context) ? config.types.context : {};
+  if (!(key in context) && !(key in types)) throw new StateEditRefused(`There’s no context key called “${key}”.`);
+  const { [key]: _gone, ...rest } = context;
+  const next: StateMachineConfig = { ...config, context: rest };
+  if (!Object.keys(rest).length) delete next.context;
+  return changeTypes(next, ({ [key]: _type, ...left }) => left);
+}
+
 /* ── What it says about code ── */
 
 /** Where a config has code written into it, which JSON can't hold, as dotted paths. */

@@ -4,14 +4,14 @@ import { Button } from '@/components/ui/button'
 import { ThemeScope } from '@/lib/theme'
 import type { DiagramNode } from '@/lib/diagram-model'
 
-const words = (id: string, label: string, x: number, y: number, more: Partial<DiagramNode> = {}): DiagramNode => ({ id, label, x, y, w: 1, h: 1, ...more })
+const words = (id: string, label: string, x: number, y: number, more: Partial<DiagramNode> = {}): DiagramNode => ({ id, title: label, x, y, w: 1, h: 1, ...more })
 
 const NODES: DiagramNode[] = [
   words('short', 'idle', 0, 0),
-  words('detail', 'checkingQuota', 240, 0, { detail: 'invoke verifyTokenAndQuota' }),
+  words('detail', 'checkingQuota', 240, 0, { description: 'invoke verifyTokenAndQuota' }),
   words('long', 'A very long state name that goes on for a good deal longer than any node should', 0, 90),
   words('nospaces', 'aVeryLongStateNameWithNoSpacesInItAtAllThatHasToBreakSomewhereOrItWillRunOutOfItsBox', 280, 90),
-  words('cjk', '認証を確認しています', 0, 190, { detail: 'アップロードを待っています' }),
+  words('cjk', '認証を確認しています', 0, 190, { description: 'アップロードを待っています' }),
   words('cjklong', 'これはとても長い状態の名前で、折り返さなければ箱からはみ出してしまいます', 280, 190),
   words('final', 'quarantined', 0, 280, { variant: 'double' }),
   words('emoji', '🚀 launching 🌕', 280, 280),
@@ -20,7 +20,7 @@ const NODES: DiagramNode[] = [
 // With `autoSize`, each node's as big as its words, in whatever font it's in. The second one's in another font.
 export default function SizedText() {
   const [name, setName] = useState('idle')
-  const nodes = NODES.map((n) => (n.id === 'short' ? { ...n, label: name } : n))
+  const nodes = NODES.map((n) => (n.id === 'short' ? { ...n, title: name } : n))
   return (
     <div className="grid h-full min-h-96 w-full grid-rows-[1fr_1fr_auto] gap-2">
       <div data-demo="plain" className="relative">

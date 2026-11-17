@@ -19,16 +19,16 @@ describe('what isn’t connected', () => {
     expect(new Set(loose.nodes.map((n) => n.x)).size).toBeGreaterThan(3);
     expect(spread(loose.nodes)).toBeGreaterThan(0.8);
     for (let i = 0; i < loose.nodes.length; i++) for (let j = i + 1; j < loose.nodes.length; j++) expect(overlap(loose.nodes[i]!, loose.nodes[j]!)).toBe(false);
-    // Asked for what it was, it's one column, which is what this is here to stop.
-    const column = await layoutDiagram({ nodes: nodes(40) }, { elk: { 'elk.hierarchyHandling': 'INCLUDE_CHILDREN' } });
-    expect(new Set(column.nodes.map((n) => n.x)).size).toBe(1);
+    // Asked for what it was, it's one long row (the layers run down), which is what this is here to stop.
+    const row = await layoutDiagram({ nodes: nodes(40) }, { elk: { 'elk.hierarchyHandling': 'INCLUDE_CHILDREN' } });
+    expect(spread(row.nodes)).toBeGreaterThan(10);
   });
 
   it('keeps what is connected together, and in order', async () => {
     const out = await layoutDiagram({ nodes: nodes(12), edges: [{ id: 'a', from: 'n0', to: 'n1' }, { id: 'b', from: 'n1', to: 'n2' }] }, {});
     const at = (id: string) => out.nodes.find((n) => n.id === id)!;
-    expect(at('n0').x).toBeLessThan(at('n1').x);
-    expect(at('n1').x).toBeLessThan(at('n2').x);
+    expect(at('n0').y).toBeLessThan(at('n1').y);
+    expect(at('n1').y).toBeLessThan(at('n2').y);
     expect(out.edges).toHaveLength(2);
     for (const e of out.edges) expect(e.points?.length).toBeGreaterThan(1);
   });
@@ -42,30 +42,35 @@ describe('toElkGraph', () => {
     // With nothing inside anything, what isn't connected can be packed.
     expect(toElkGraph({ nodes: [{ id: 'a' }, { id: 'b' }] }).layoutOptions!['elk.hierarchyHandling']).toBe('SEPARATE_CHILDREN');
     expect(toElkGraph({ nodes: [{ id: 'a' }] }, { elk: { 'elk.hierarchyHandling': 'INCLUDE_CHILDREN' } }).layoutOptions!['elk.hierarchyHandling']).toBe('INCLUDE_CHILDREN');
-    expect(g.layoutOptions!['elk.direction']).toBe('RIGHT');
-    expect(toElkGraph({ nodes: [] }, { direction: 'down' }).layoutOptions!['elk.direction']).toBe('DOWN');
+    // Top to bottom unless told otherwise, with labels on their routes and room to read at 100%.
+    expect(g.layoutOptions!['elk.direction']).toBe('DOWN');
+    expect(toElkGraph({ nodes: [] }, { direction: 'right' }).layoutOptions!['elk.direction']).toBe('RIGHT');
+    expect(Number(toElkGraph({ nodes: [] }, { density: 'compact' }).layoutOptions!['elk.spacing.nodeNode'])).toBeLessThan(Number(g.layoutOptions!['elk.spacing.nodeNode']));
+    expect(Number(toElkGraph({ nodes: [] }, { density: 'comfortable' }).layoutOptions!['elk.spacing.nodeNode'])).toBeGreaterThan(Number(g.layoutOptions!['elk.spacing.nodeNode']));
     expect(toElkGraph({ nodes: [] }, { direction: 'down', elk: { 'elk.direction': 'LEFT', 'elk.foo': 'bar' } }).layoutOptions).toMatchObject({ 'elk.direction': 'LEFT', 'elk.foo': 'bar' });
     expect(Object.keys(DIAGRAM_ELK_OPTIONS)).toContain('elk.edgeRouting');
   });
 
   it('nests nodes under their parents, however they were listed, with every edge on the root', () => {
     const g = toElkGraph({
-      nodes: [{ id: 'kid', parent: 'box', label: 'abc' }, { id: 'box', kind: 'group', label: 'hello' }, { id: 'free', label: 'x' }],
-      edges: [{ id: 'e', from: 'kid', to: 'free', label: 'GO' }],
+      nodes: [{ id: 'kid', parent: 'box', title: 'abc' }, { id: 'box', kind: 'group', title: 'hello' }, { id: 'free', title: 'x' }],
+      edges: [{ id: 'e', from: 'kid', to: 'free', title: 'GO' }],
     }, { text });
     expect(g.children!.map((c) => c.id)).toEqual(['box', 'free']);
     const box = g.children![0];
     expect(box.children!.map((c) => c.id)).toEqual(['kid']);
     expect(box.width).toBeUndefined();
     expect(box.layoutOptions!['elk.nodeSize.constraints']).toBe('MINIMUM_SIZE');
-    // The least a compound can be is its title, and its padding.
-    expect(box.layoutOptions!['elk.nodeSize.minimum']).toBe('(74, 31)');
-    expect(g.edges![0]).toEqual({ id: 'e', sources: ['kid'], targets: ['free'], labels: [{ text: 'GO', width: 20, height: 15 }] });
+    // The least a compound can be is its header strip; what it holds starts under it.
+    expect(box.layoutOptions!['elk.nodeSize.minimum']).toBe('(72, 29)');
+    expect(box.layoutOptions!['elk.padding']).toBe('[top=40,left=16,bottom=16,right=16]');
+    // A label is a pill on its route, sized to its title.
+    expect(g.edges![0]).toEqual({ id: 'e', sources: ['kid'], targets: ['free'], labels: [{ text: 'GO', width: 42, height: 25, layoutOptions: { 'elk.edgeLabels.inline': 'true', 'elk.edgeLabels.placement': 'CENTER' } }] });
   });
 
   it('sizes leaves to their words, and keeps a size it was given', () => {
-    const g = toElkGraph({ nodes: [{ id: 'a', label: 'x'.repeat(20) }, { id: 'b', label: 'x'.repeat(20), w: 50, h: 60 }, { id: 'i', kind: 'marker' }] }, { text });
-    expect(g.children![0]).toMatchObject({ width: 226, height: 34 });
+    const g = toElkGraph({ nodes: [{ id: 'a', title: 'x'.repeat(20) }, { id: 'b', title: 'x'.repeat(20), w: 50, h: 60 }, { id: 'i', kind: 'marker' }] }, { text });
+    expect(g.children![0]).toMatchObject({ width: 222, height: 29 });
     expect(g.children![1]).toMatchObject({ width: 50, height: 60 });
     expect(g.children![2]).toMatchObject({ width: 12, height: 12 });
   });
@@ -121,7 +126,7 @@ describe('toElkGraph', () => {
 
 describe('fromElkGraph', () => {
   const draft: DiagramDraft = {
-    nodes: [{ id: 'kid', parent: 'box', label: 'k', data: { keep: true } }, { id: 'box', kind: 'group', label: 'b' }],
+    nodes: [{ id: 'kid', parent: 'box', title: 'k', data: { keep: true } }, { id: 'box', kind: 'group', title: 'b' }],
     edges: [{ id: 'e', from: 'box', to: 'kid', label: 'GO', variant: 'dotted', labelBox: { x: 1, y: 2, w: 3, h: 4 } }, { id: 'lost', from: 'box', to: 'gone' }],
   };
   const out: ElkGraph = {
@@ -133,7 +138,7 @@ describe('fromElkGraph', () => {
   it('makes everything absolute, in the order it was given, and keeps what ELK didn’t touch', () => {
     const { nodes, edges, bounds } = fromElkGraph(draft, out);
     expect(nodes.map((n) => n.id)).toEqual(['kid', 'box']);
-    expect(nodes[0]).toMatchObject({ x: 110, y: 70, w: 80, h: 34, label: 'k', data: { keep: true }, parent: 'box' });
+    expect(nodes[0]).toMatchObject({ x: 110, y: 70, w: 80, h: 34, title: 'k', data: { keep: true }, parent: 'box' });
     expect(nodes[1]).toMatchObject({ x: 100, y: 50, w: 300, h: 200 });
     expect(edges.map((e) => e.id)).toEqual(['e']);
     expect(edges[0].variant).toBe('dotted');
@@ -159,32 +164,32 @@ describe('fromElkGraph', () => {
 
 const MACHINE: DiagramDraft = {
   nodes: [
-    { id: 'root', kind: 'root', label: 'upload' },
+    { id: 'root', kind: 'root', title: 'upload' },
     { id: 'i0', kind: 'marker', parent: 'root' },
-    { id: 'worker', kind: 'group', parent: 'root', label: 'worker' },
+    { id: 'worker', kind: 'group', parent: 'root', title: 'worker' },
     { id: 'i1', kind: 'marker', parent: 'worker' },
-    { id: 'auth', parent: 'worker', label: 'authenticating', detail: 'invoke verifyToken' },
-    { id: 'stream', parent: 'worker', label: 'streaming' },
-    { id: 'p', kind: 'group', variant: 'dashed', parent: 'root', label: 'processing', detail: 'parallel' },
-    { id: 'r1', kind: 'region', parent: 'p', label: 'scan' },
-    { id: 'r2', kind: 'region', parent: 'p', label: 'thumbnails' },
-    { id: 'scanning', parent: 'r1', label: 'scanning' },
-    { id: 'clean', variant: 'double', parent: 'r1', label: 'clean' },
-    { id: 'resizing', parent: 'r2', label: 'resizing' },
-    { id: 'stored', variant: 'double', parent: 'r2', label: 'stored' },
-    { id: 'done', variant: 'double', parent: 'root', label: 'done' },
+    { id: 'auth', parent: 'worker', title: 'authenticating', description: 'invoke verifyToken' },
+    { id: 'stream', parent: 'worker', title: 'streaming' },
+    { id: 'p', kind: 'group', variant: 'dashed', parent: 'root', title: 'processing', description: 'parallel' },
+    { id: 'r1', kind: 'region', parent: 'p', title: 'scan' },
+    { id: 'r2', kind: 'region', parent: 'p', title: 'thumbnails' },
+    { id: 'scanning', parent: 'r1', title: 'scanning' },
+    { id: 'clean', variant: 'double', parent: 'r1', title: 'clean' },
+    { id: 'resizing', parent: 'r2', title: 'resizing' },
+    { id: 'stored', variant: 'double', parent: 'r2', title: 'stored' },
+    { id: 'done', variant: 'double', parent: 'root', title: 'done' },
   ],
   edges: [
     { id: 'e0', from: 'i0', to: 'worker', variant: 'strong' },
     { id: 'e1', from: 'i1', to: 'auth', variant: 'strong' },
-    { id: 'e2', from: 'auth', to: 'stream', label: 'done' },
-    { id: 'self', from: 'stream', to: 'stream', label: 'CHUNK' },
-    { id: 'e3', from: 'stream', to: 'p', label: 'EOF' },
-    { id: 'e4', from: 'scanning', to: 'clean', label: 'done' },
-    { id: 'e5', from: 'resizing', to: 'stored', label: 'done' },
-    { id: 'e6', from: 'p', to: 'done', label: 'done' },
-    { id: 'wall', from: 'worker', to: 'stream', label: 'RESET' },
-    { id: 'out', from: 'stream', to: 'done', label: 'CANCEL' },
+    { id: 'e2', from: 'auth', to: 'stream', title: 'done' },
+    { id: 'self', from: 'stream', to: 'stream', title: 'CHUNK' },
+    { id: 'e3', from: 'stream', to: 'p', title: 'EOF' },
+    { id: 'e4', from: 'scanning', to: 'clean', title: 'done' },
+    { id: 'e5', from: 'resizing', to: 'stored', title: 'done' },
+    { id: 'e6', from: 'p', to: 'done', title: 'done' },
+    { id: 'wall', from: 'worker', to: 'stream', title: 'RESET' },
+    { id: 'out', from: 'stream', to: 'done', title: 'CANCEL' },
   ],
 };
 
@@ -203,7 +208,7 @@ describe('layoutDiagram, with real ELK, on a server', () => {
     }
     for (const e of out.edges) {
       expect(e.points!.length, e.id).toBeGreaterThanOrEqual(2);
-      if (e.label) expect(e.labelBox, e.id).toBeDefined();
+      if (e.title) expect(e.labelBox, e.id).toBeDefined();
     }
     expect(out.bounds.w).toBeGreaterThan(100);
     // A self-transition comes back to where it started, and doesn't run through the node.
@@ -214,25 +219,26 @@ describe('layoutDiagram, with real ELK, on a server', () => {
   it('gives regions the width of their parallel state', async () => {
     const { nodes } = await layoutDiagram(MACHINE, { text });
     const [r1, r2, p] = ['r1', 'r2', 'p'].map((id) => nodes.find((n) => n.id === id)!);
-    expect(r1.x).toBe(r2.x);
-    expect(r1.w).toBe(r2.w);
-    expect(r1.w).toBe(p.w - 16);
+    // The layers run down, so the lanes sit side by side, each as tall as the group has room for.
+    expect(r1.y).toBe(r2.y);
+    expect(r1.h).toBe(r2.h);
+    expect(r1.y + r1.h).toBe(p.y + p.h - 8);
   });
 
   it('copes with a cycle through a compound, and a compound with an edge to its own child', async () => {
     const out = await layoutDiagram({
-      nodes: [{ id: 'a', label: 'a' }, { id: 'box', kind: 'group', label: 'box' }, { id: 'kid', parent: 'box', label: 'kid' }, { id: 'kid2', parent: 'box', label: 'kid2' }],
+      nodes: [{ id: 'a', title: 'a' }, { id: 'box', kind: 'group', title: 'box' }, { id: 'kid', parent: 'box', title: 'kid' }, { id: 'kid2', parent: 'box', title: 'kid2' }],
       edges: [{ id: '1', from: 'a', to: 'kid' }, { id: '2', from: 'kid', to: 'kid2' }, { id: '3', from: 'kid2', to: 'a' }, { id: '4', from: 'box', to: 'kid' }, { id: '5', from: 'kid2', to: 'box' }, { id: '6', from: 'a', to: 'box' }, { id: '7', from: 'box', to: 'a' }],
     }, { text });
     expect(out.edges.every((e) => (e.points?.length ?? 0) >= 2)).toBe(true);
   });
 
   it('runs the way it’s told', async () => {
-    const draft: DiagramDraft = { nodes: [{ id: 'a', label: 'a' }, { id: 'b', label: 'b' }], edges: [{ id: 'e', from: 'a', to: 'b' }] };
-    const right = await layoutDiagram(draft, { text });
+    const draft: DiagramDraft = { nodes: [{ id: 'a', title: 'a' }, { id: 'b', title: 'b' }], edges: [{ id: 'e', from: 'a', to: 'b' }] };
+    const right = await layoutDiagram(draft, { text, direction: 'right' });
     expect(right.nodes[1].x).toBeGreaterThan(right.nodes[0].x);
     expect(right.nodes[1].y).toBe(right.nodes[0].y);
-    const down = await layoutDiagram(draft, { text, direction: 'down' });
+    const down = await layoutDiagram(draft, { text });
     expect(down.nodes[1].y).toBeGreaterThan(down.nodes[0].y);
     expect(down.nodes[1].x).toBe(down.nodes[0].x);
   });

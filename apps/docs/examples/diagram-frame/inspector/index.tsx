@@ -10,15 +10,15 @@ import type { DiagramSelection } from '@/lib/diagram-model'
 
 const START: DiagramData = {
   nodes: [
-    { id: 'inbox', label: 'Inbox', x: 0, y: 40, w: 110, h: 40 },
-    { id: 'triage', label: 'Triage', x: 200, y: 40, w: 110, h: 40 },
-    { id: 'archive', label: 'Archive', x: 400, y: 0, w: 110, h: 40 },
-    { id: 'reply', label: 'Reply', x: 400, y: 90, w: 110, h: 40 },
+    { id: 'inbox', title: 'Inbox', x: 0, y: 40, w: 110, h: 40 },
+    { id: 'triage', title: 'Triage', x: 200, y: 40, w: 110, h: 40 },
+    { id: 'archive', title: 'Archive', x: 400, y: 0, w: 110, h: 40 },
+    { id: 'reply', title: 'Reply', x: 400, y: 90, w: 110, h: 40 },
   ],
   edges: [
-    { id: 'sort', from: 'inbox', to: 'triage', label: 'sort' },
-    { id: 'done', from: 'triage', to: 'archive', label: 'done' },
-    { id: 'answer', from: 'triage', to: 'reply', label: 'answer' },
+    { id: 'sort', from: 'inbox', to: 'triage', title: 'sort' },
+    { id: 'done', from: 'triage', to: 'archive', title: 'done' },
+    { id: 'answer', from: 'triage', to: 'reply', title: 'answer' },
   ],
 }
 
@@ -34,9 +34,9 @@ function Inspector() {
   const rename = (label: string) => {
     const name = label.trim()
     if (!name) return setRefused('A step needs a name.')
-    if (data.nodes.some((n) => n.id !== node?.id && n.label === name)) return setRefused(`There’s a “${name}” already.`)
+    if (data.nodes.some((n) => n.id !== node?.id && n.title === name)) return setRefused(`There’s a “${name}” already.`)
     setRefused(null)
-    setData((d) => ({ ...d, nodes: d.nodes.map((n) => (n.id === node?.id ? { ...n, label: name } : n)) }))
+    setData((d) => ({ ...d, nodes: d.nodes.map((n) => (n.id === node?.id ? { ...n, title: name } : n)) }))
   }
   return (
     <DiagramFrame>
@@ -52,14 +52,14 @@ function Inspector() {
           overlay={<DiagramToolbar />}
           aria-label="Mail rules"
         />
-        <DiagramFrameBar>{node ? node.label : `${data.nodes.length} steps`}</DiagramFrameBar>
+        <DiagramFrameBar>{node ? node.title : `${data.nodes.length} steps`}</DiagramFrameBar>
       </DiagramFrameBoard>
       <DiagramFramePanel title="Inspector" backLabel="Rules">
         {node ? (
           <DiagramFrameSection title="This step">
             <Field invalid={!!refused}>
               <FieldLabel>Name</FieldLabel>
-              <Input size="sm" value={node.label ?? ''} onValueCommit={rename} autoCapitalize="off" autoCorrect="off" spellCheck={false} />
+              <Input size="sm" value={node.title ?? ''} onValueCommit={rename} autoCapitalize="off" autoCorrect="off" spellCheck={false} />
               <FieldError>{refused}</FieldError>
             </Field>
             <div><Button variant="secondary" size="sm" onClick={() => setInside(node.id)}>Open it</Button></div>
@@ -70,7 +70,7 @@ function Inspector() {
       </DiagramFramePanel>
       {inside ? (
         <DiagramFrameCover>
-          <DiagramFrameCoverHeader title={`Inside ${data.nodes.find((n) => n.id === inside)?.label}`} backLabel="Rules" onBack={() => setInside(null)} />
+          <DiagramFrameCoverHeader title={`Inside ${data.nodes.find((n) => n.id === inside)?.title}`} backLabel="Rules" onBack={() => setInside(null)} />
           <div className="grid flex-1 place-items-center text-footnote text-foreground/70">What a step holds goes here.</div>
         </DiagramFrameCover>
       ) : null}

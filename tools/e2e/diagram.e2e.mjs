@@ -48,7 +48,7 @@ test.describe('drawing', () => {
   }
 
   test('text hides as the board gets too small to read it, and comes back', async ({ page }) => {
-    const node = page.locator('[data-node="upload.worker.streaming"] [data-slot=diagram-node-label]');
+    const node = page.locator('[data-node="upload.worker.streaming"] [data-slot=diagram-node-title]');
     const edge = page.locator('[data-slot=diagram-edge-label]').first();
     await zoomTo(page, 1);
     await expect(node).toBeVisible();
@@ -90,7 +90,7 @@ test.describe('text', () => {
     for (const node of root.querySelectorAll('[data-slot=diagram-node]')) {
       if (node.dataset.kind !== 'node') continue;
       const box = node.getBoundingClientRect();
-      for (const el of node.querySelectorAll('[data-slot=diagram-node-label], [data-slot=diagram-node-detail]')) {
+      for (const el of node.querySelectorAll('[data-slot=diagram-node-title], [data-slot=diagram-node-description]')) {
         if (!el.textContent) continue;
         const range = document.createRange();
         range.selectNodeContents(el);
@@ -103,7 +103,7 @@ test.describe('text', () => {
     }
     return out;
   });
-  /** A node's padding is 12 across, and a double border's inner line takes up 6 of that. Down, it's what's left of 8. */
+  /** A card's padding is 10 across, and a double border's inner line takes up some of that. Down, its header keeps 6. */
   const clear = (list) => {
     for (const m of list) {
       const across = m.double ? 7 : 9;
@@ -120,7 +120,8 @@ test.describe('text', () => {
     el.parentElement.append(probe);
     const exact = parseFloat(getComputedStyle(probe).width);
     probe.remove();
-    return Math.ceil(exact) + 12 * 2 + 2;
+    // A card's header and body both keep 10 either side, inside a 1 px border.
+    return Math.ceil(exact) + 10 * 2 + 2;
   });
 
   for (const theme of ['light', 'dark']) {
@@ -146,7 +147,7 @@ test.describe('text', () => {
     expect(await nodeWidth(plain, 'nospaces')).toBeLessThan(260);
     expect(await nodeWidth(plain, 'long')).toBeLessThan(260);
     // And they wrap the way they were measured: the words fill the height the node was given, no more.
-    const fits = await plain.locator('[data-node=nospaces] [data-slot=diagram-node-label]').evaluate((el) => el.scrollHeight <= el.parentElement.clientHeight);
+    const fits = await plain.locator('[data-node=nospaces] [data-slot=diagram-node-title]').evaluate((el) => el.scrollHeight <= el.parentElement.clientHeight);
     expect(fits).toBe(true);
   });
 
@@ -155,7 +156,7 @@ test.describe('text', () => {
     const plain = page.locator('[data-demo=plain] [data-slot=diagram]');
     const serif = page.locator('[data-demo=serif] [data-slot=diagram]');
     await expect.poll(() => nodeWidth(serif, 'detail')).toBeGreaterThan(100);
-    const family = (scope) => scope.locator('[data-node=detail] [data-slot=diagram-node-label]').evaluate((el) => getComputedStyle(el).fontFamily);
+    const family = (scope) => scope.locator('[data-node=detail] [data-slot=diagram-node-title]').evaluate((el) => getComputedStyle(el).fontFamily);
     expect(await family(serif)).toContain('Georgia');
     expect(await family(plain)).not.toContain('Georgia');
     expect(await nodeWidth(serif, 'detail')).not.toBe(await nodeWidth(plain, 'detail'));
@@ -170,7 +171,7 @@ test.describe('text', () => {
     await page.getByRole('button', { name: 'Rename the first node' }).click();
     await expect.poll(() => nodeWidth(plain, 'short')).toBeGreaterThan(before + 60);
     // Measured, and not just estimated, which would get it about right.
-    expect(await nodeWidth(plain, 'short')).toBe(await widthOfWords(plain, 'short', 'diagram-node-label'));
+    expect(await nodeWidth(plain, 'short')).toBe(await widthOfWords(plain, 'short', 'diagram-node-title'));
     clear(await margins(plain));
   });
 
@@ -193,7 +194,7 @@ test.describe('text', () => {
       @font-face { font-family: 'Late'; src: url('/late-font.woff2') format('woff2'); font-display: swap; }
       [data-demo=plain] [data-slot=diagram] { font-family: 'Late', sans-serif; }
     ` });
-    await plain.locator('[data-node=detail] [data-slot=diagram-node-label]').evaluate((el) => document.fonts.load(`12px Late`, el.textContent).catch(() => null) && null);
+    await plain.locator('[data-node=detail] [data-slot=diagram-node-title]').evaluate((el) => document.fonts.load(`12px Late`, el.textContent).catch(() => null) && null);
     await expect.poll(() => page.evaluate(() => document.fonts.status)).toBe('loading');
     expect(await nodeWidth(plain, 'detail')).toBe(before);
     // Measure while it's still loading, so what's remembered for this font is really the fallback's.
@@ -202,7 +203,7 @@ test.describe('text', () => {
     release();
     await expect.poll(() => page.evaluate(() => document.fonts.status), { timeout: 10_000 }).toBe('loaded');
     // What the words measure now, in the font that came. It has to differ, or this shows nothing.
-    const fresh = await widthOfWords(plain, 'detail', 'diagram-node-detail');
+    const fresh = await widthOfWords(plain, 'detail', 'diagram-node-description');
     expect(fresh).not.toBe(before);
     // The node follows it, without anything else having happened.
     await expect.poll(() => nodeWidth(plain, 'detail'), { timeout: 10_000 }).toBe(fresh);
@@ -1161,13 +1162,13 @@ test.describe('in a tab that starts hidden', () => {
     await page.getByRole('button', { name: 'Show the tab' }).click();
     const sized = page.locator('[data-demo=sized]'), laid = page.locator('[data-demo=laid]');
     const width = (scope, id) => scope.locator(`[data-node="${id}"]`).evaluate((el) => parseFloat(el.style.width));
-    const natural = (scope, id) => scope.locator(`[data-node="${id}"] [data-slot=diagram-node-label]`).evaluate((el) => {
+    const natural = (scope, id) => scope.locator(`[data-node="${id}"] [data-slot=diagram-node-title]`).evaluate((el) => {
       const probe = el.cloneNode(true);
       probe.style.cssText = 'position:absolute;width:max-content;max-width:none;visibility:hidden';
       el.parentElement.append(probe);
       const w = parseFloat(getComputedStyle(probe).width);
       probe.remove();
-      return Math.ceil(w) + 26;
+      return Math.ceil(w) + 22;
     });
     // Measured, with the size of the words, and not left at what it got while hidden.
     await expect.poll(async () => (await width(sized, 'one')) === (await natural(sized, 'one'))).toBe(true);
@@ -1194,22 +1195,69 @@ test.describe('in a tab that starts hidden', () => {
 test.describe('StateDiagram', () => {
   test('draws all of the spike’s machine, in a worker, with nothing touching its nodes’ edges', async ({ page }) => {
     await page.goto('/?demo=state-diagram/machine&theme=light', { waitUntil: 'load' });
-    await expect.poll(() => page.locator('[data-slot=diagram-node]').count(), { timeout: 30_000 }).toBe(40);
-    await expect(page.locator('[data-slot=diagram-edge]')).toHaveCount(43);
+    await expect.poll(() => page.locator('[data-slot=diagram-node]').count(), { timeout: 30_000 }).toBe(33);
+    await expect(page.locator('[data-slot=diagram-edge]')).toHaveCount(36);
     await expect(page.locator('[data-slot=diagram-edge-label]')).toHaveCount(36);
     await expect(page.locator('[data-slot=diagram-divider]')).toHaveCount(2);
-    // The statechart look, on Diagram's generic looks.
-    await expect(page.locator('[data-node="upload.worker.__initial"]')).toHaveAttribute('data-kind', 'marker');
+    // The statechart look, on Diagram's generic looks: where a state starts is its entry marker.
+    await expect(page.locator('[data-node="upload.worker.authenticating"] [data-slot=diagram-entry]')).toHaveCount(1);
+    await expect(page.locator('[data-slot=diagram-entry]')).toHaveCount(7);
+    await expect(page.locator('[data-node="upload.done"] [data-slot=diagram-node-icon]')).toHaveCount(1);
     await expect(page.locator('[data-node="upload.done"]')).toHaveAttribute('data-variant', 'double');
     await expect(page.locator('[data-node="upload.processing"]')).toHaveAttribute('data-kind', 'group');
     await expect(page.locator('[data-node="upload.processing"]')).toHaveAttribute('data-variant', 'dashed');
     await expect(page.locator('[data-node="upload.done"]')).toHaveAttribute('aria-label', /^done, final state/);
     // In a machine's words, with what it connects to.
     await expect(page.locator('[data-node="upload.worker.streaming"]')).toHaveAttribute('aria-label', /^streaming, state, in worker\./);
-    // Labelled by name, always, after and guards.
-    for (const label of ['always [withinQuota]', 'after IDLE_TIMEOUT', 'after BACKOFF [retriesLeft]', 'always [isClean]']) {
-      await expect(page.locator('[data-slot=diagram-edge-label]', { hasText: label }).first()).toHaveCount(1);
+    // A label is the event, and under it its guard and actions as chips; a state's card has what it invokes.
+    for (const [title, chip] of [['always', 'if withinQuota'], ['after IDLE_TIMEOUT', null], ['after BACKOFF', 'if retriesLeft'], ['always', 'if isClean'], ['after BACKOFF', 'bumpRetry']]) {
+      const label = page.locator('[data-slot=diagram-edge-label]', { has: page.locator('[data-slot=diagram-edge-label-title]', { hasText: title }) });
+      await expect(chip ? label.filter({ has: page.locator('[data-slot=diagram-item]', { hasText: chip }) }).first() : label.first()).toHaveCount(1);
     }
+    await expect(page.locator('[data-node="upload.worker.authenticating"] [data-slot=diagram-item]', { hasText: 'verifyToken' })).toHaveCount(1);
+  });
+
+  test('draws the Audio Player as XState’s visualizer does: context, entry actions as chips, pills and cards, loops', async ({ page }) => {
+    await page.goto('/?demo=state-diagram/audio-player&simulate=0&theme=light', { waitUntil: 'load' });
+    await expect.poll(() => page.locator('[data-slot=diagram-node]').count(), { timeout: 30_000 }).toBe(7);
+    const root = page.locator('[data-node="Audio Player"]');
+    await expect(root.locator('[data-slot=diagram-node-title]').first()).toHaveText('Audio Player');
+    await expect(root.locator('[data-slot=diagram-section-title]').first()).toHaveText('Context');
+    for (const key of ['audioRef', 'currentTime', 'trackSource', 'audioContext']) await expect(root.locator('[data-slot=diagram-item]', { hasText: key })).toHaveCount(1);
+    await expect(page.locator('[data-node="Audio Player.Active.Paused"] [data-slot=diagram-item]')).toHaveText(/onPause/);
+    await expect(page.locator('[data-node="Audio Player.Active.Paused"] [data-slot=diagram-entry]')).toHaveCount(1);
+    await expect(page.locator('[data-node="Audio Player.Error"] [data-slot=diagram-node-icon]')).toHaveCount(1);
+    // An event alone is a pill; one with actions a card.
+    const label = (title) => page.locator('[data-slot=diagram-edge-label]', { has: page.locator('[data-slot=diagram-edge-label-title]', { hasText: new RegExp(`^${title}$`) }) });
+    for (const pill of ['loaded', 'play', 'pause', 'end']) await expect(label(pill)).toHaveAttribute('data-shape', 'pill');
+    for (const card of ['loading', 'init-error', 'error', 'time']) await expect(label(card)).toHaveAttribute('data-shape', 'card');
+    await expect(label('restart')).toHaveCount(2);
+    // Playing's own: restart and time leave it and come back to it.
+    for (const id of ['Audio Player.Active.Playing:restart->Audio Player.Active.Playing', 'Audio Player.Active.Playing:time->Audio Player.Active.Playing']) {
+      await expect(page.locator(`[data-slot=diagram-edge][data-edge="${id}"]`)).toHaveCount(1);
+    }
+  });
+
+  test('sends from the board: what it can take now is a button on its label, and the context is shown as it runs', async ({ page }) => {
+    await page.goto('/?demo=state-diagram/audio-player&theme=light', { waitUntil: 'load' });
+    const send = (event) => page.locator(`[data-action=send-on-board][data-event="${event}"]`);
+    await expect(send('loading')).toBeVisible({ timeout: 30_000 });
+    await expect(send('init-error')).toBeVisible();
+    await expect(send('loaded')).toHaveCount(0);
+    await expect(send('loading')).toHaveAccessibleName('Send loading');
+    await send('loading').click();
+    await expect(send('loaded')).toBeVisible();
+    await expect(send('loading')).toHaveCount(0);
+    await expect(page.locator('[data-node="Audio Player.Loading"]')).toHaveAttribute('aria-current', 'true');
+    await send('loaded').click();
+    await expect(page.locator('[data-node="Audio Player.Active.Paused"]')).toHaveAttribute('aria-current', 'true');
+    // A send button is a button: Enter on it sends too.
+    await send('play').focus();
+    await page.keyboard.press('Enter');
+    await expect(page.locator('[data-node="Audio Player.Active.Playing"]')).toHaveAttribute('aria-current', 'true');
+    // The panel has the context, as it is.
+    await page.locator('[data-diagram-frame-trigger]').click();
+    await expect(page.locator('[data-slot=simulation-context] [data-key=currentTime] dd')).toHaveText('0');
   });
 
   test('a config works, and one XState won’t have shows what it said, not a blank', async ({ page }) => {
@@ -1245,7 +1293,7 @@ test.describe('StateDiagram simulates', () => {
   test('runs the spike’s whole machine with the buttons, lit at each step, with parallel regions lit together', async ({ page }) => {
     await page.goto('/?demo=state-diagram/simulate&theme=light', { waitUntil: 'load' });
     await expect(page.locator('[data-slot=simulation-panel]')).toBeVisible({ timeout: 30_000 });
-    await expect.poll(() => page.locator('[data-slot=diagram-node]').count(), { timeout: 30_000 }).toBe(40);
+    await expect.poll(() => page.locator('[data-slot=diagram-node]').count(), { timeout: 30_000 }).toBe(33);
     await expect(now(page)).toHaveText('authenticating');
     expect(await lit(page)).toEqual(['upload.worker', 'upload.worker.authenticating']);
     // What's lit says so to a screen reader too, and what isn't doesn't.
@@ -1342,7 +1390,7 @@ test.describe('StateDiagram simulates', () => {
     await page.locator('[data-action=run]').click();
     await expect(now(page)).toHaveText('red', { timeout: 5_000 });
     // Each at the time it was due, however often the page got to look.
-    await expect(page.locator('[data-slot=simulation-log-entry]')).toHaveText(['Started at 0 ms, in green', 'after 400 at 400 ms, in amber', 'after 400 at 800 ms, in red']);
+    await expect(page.locator('[data-slot=simulation-log-entry]')).toHaveText(['Started at 0 ms, in green', 'after 400 ms at 400 ms, in amber', 'after 400 ms at 800 ms, in red']);
     // With nothing left to wait for, it stops on its own.
     await expect(page.locator('[data-action=run]')).toBeDisabled();
     await expect(page.getByRole('button', { name: 'Run' })).toBeVisible();
@@ -1396,7 +1444,7 @@ test.describe('StateDiagram simulates', () => {
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.goto('/?demo=state-diagram/simulate&theme=light', { waitUntil: 'load' });
     await expect(page.locator('[data-slot=simulation-panel]')).toBeVisible({ timeout: 30_000 });
-    await expect.poll(() => page.locator('[data-slot=diagram-node]').count(), { timeout: 30_000 }).toBe(40);
+    await expect.poll(() => page.locator('[data-slot=diagram-node]').count(), { timeout: 30_000 }).toBe(33);
     const moving = () => page.evaluate(() => document.getAnimations().filter((a) => a.playState === 'running' && a.effect?.getTiming().duration > 0).map((a) => a.animationName ?? a.transitionProperty ?? a.constructor.name));
     await finish(page, 'verifyToken: done').click();
     await expect(now(page)).toHaveText('streaming');
@@ -1445,7 +1493,7 @@ test.describe('StateDiagram simulates', () => {
     // Opening it took focus into it.
     await expect(page.locator('[data-slot=drawer-content]')).toBeFocused();
     // Non-modal: the board still takes the keys and presses while it's open, once it's laid out.
-    await expect.poll(() => page.locator('[data-slot=diagram-node]').count(), { timeout: 30_000 }).toBe(40);
+    await expect.poll(() => page.locator('[data-slot=diagram-node]').count(), { timeout: 30_000 }).toBe(33);
     await page.locator('[data-slot=canvas]').focus();
     await page.keyboard.press('Home');
     await expect(page.locator('[data-slot=diagram-ring][data-focused]')).toHaveCount(1);
@@ -1538,6 +1586,27 @@ test.describe('StateDiagram edits', () => {
   }));
   const run = (page, name) => page.getByRole('tab', { name }).click({ force: true });
 
+  test('edits a state’s entry actions in the panel, and a pressed chip opens its field', async ({ page }) => {
+    await open(page);
+    await select(page, 'door.open');
+    await page.locator('[data-slot=edit-panel] [data-action=add-entry]').click();
+    await expect(node(page, 'door.open').locator('[data-slot=diagram-item]', { hasText: 'action' })).toHaveCount(1);
+    await page.locator('[data-field="entry:0"]').fill('openLatch');
+    await page.locator('[data-field="entry:0"]').press('Enter');
+    const chip = node(page, 'door.open').locator('[data-slot=diagram-item]', { hasText: 'openLatch' });
+    await expect(chip).toHaveCount(1);
+    // Pressing the chip, from another state, selects its state and opens it in the panel.
+    await select(page, 'door.closed');
+    const b = await chip.boundingBox();
+    await page.mouse.click(b.x + b.width / 2, b.y + b.height / 2);
+    await expect(node(page, 'door.open')).toHaveAttribute('data-selected', '');
+    await expect(page.locator('[data-field="entry:0"]')).toBeFocused();
+    await page.locator('[data-slot=edit-panel] [data-actions=entry] [data-action=remove]').click();
+    await expect(chip).toHaveCount(0);
+    await page.locator('[data-state-diagram] [data-action=undo]').click();
+    await expect(chip).toHaveCount(1);
+  });
+
   test('adds a state, names it, connects it with a real drag, and takes it all back', async ({ page }) => {
     await open(page);
     const before = await graph(page);
@@ -1560,7 +1629,7 @@ test.describe('StateDiagram edits', () => {
     await expect(edge(page, 'door.broken:REPAIR->door.closed')).toHaveAttribute('data-selected', '');
     await field(page, 'edit-guard').fill('canRepair');
     await field(page, 'edit-guard').press('Enter');
-    await expect(page.locator('[data-slot=diagram-edge-label]', { hasText: 'REPAIR [canRepair]' })).toHaveCount(1);
+    await expect(page.locator('[data-slot=diagram-edge-label]', { hasText: 'REPAIR' }).filter({ has: page.locator('[data-slot=diagram-item]', { hasText: 'if canRepair' }) })).toHaveCount(1);
     // That name's new, with nothing behind it.
     await expect(page.locator('[data-slot=edit-missing] [data-kind=guards]')).toContainText('canRepair');
     await expect(page.locator('[data-slot=edit-missing] [data-kind=actors]')).toContainText('alarm');
@@ -1594,7 +1663,7 @@ test.describe('StateDiagram edits', () => {
     await expect(node(page, 'door.shut')).toHaveAttribute('data-selected', '');
     for (const id of ['door.open:CLOSE->door.shut', 'door.locked:UNLOCK->door.shut', 'door.shut:OPEN->door.open', 'door.shut:LOCK->door.locked']) await expect(edge(page, id)).toHaveCount(1);
     // It's still where it starts.
-    await expect(edge(page, 'door.__initial->door.shut')).toHaveCount(1);
+    await expect(node(page, 'door.shut').locator('[data-slot=diagram-entry]')).toHaveCount(1);
     await expect(page.locator('[data-slot=edit-panel] [data-action=make-start]')).toBeDisabled();
     await expect(page.locator('[data-slot=edit-refusal]')).toHaveCount(0);
   });
@@ -1628,19 +1697,11 @@ test.describe('StateDiagram edits', () => {
     await select(page, 'door.open');
     await page.locator('[data-slot=edit-panel] [data-action=make-start]').click();
     await expect(refusal(page)).toHaveCount(0);
-    await expect(edge(page, 'door.__initial->door.open')).toHaveCount(1);
+    await expect(node(page, 'door.open').locator('[data-slot=diagram-entry]')).toHaveCount(1);
     await select(page, 'door.closed');
     await page.locator('[data-slot=edit-panel] [data-action=delete]').click();
     await expect(node(page, 'door.closed')).toHaveCount(0);
     await expect(edge(page, 'door.open:CLOSE->door.closed')).toHaveCount(0);
-    // What only says where it starts can't be deleted.
-    const line = edge(page, 'door.__initial->door.open');
-    await expect(line).toHaveCount(1);
-    const b = await page.locator('[data-slot=diagram-node][data-node="door.__initial"]').boundingBox();
-    await page.mouse.click(b.x + b.width / 2, b.y + b.height / 2);
-    await page.keyboard.press('Delete');
-    await expect(refusal(page)).toContainText('where it starts');
-    await expect(line).toHaveCount(1);
   });
 
   test('saved as JSON and loaded, it’s the same graph and the same run', async ({ page }) => {
@@ -1791,7 +1852,11 @@ test.describe('StateDiagram edits', () => {
     await page.keyboard.press('End');
     await page.keyboard.press('c');
     await expect(status).toContainText('Connecting from');
-    await page.keyboard.press('ArrowUp');
+    // Whichever way a neighbour is, as the layout has it.
+    for (const key of ['ArrowUp', 'ArrowLeft', 'ArrowRight', 'ArrowDown']) {
+      await page.keyboard.press(key);
+      if ((await status.textContent()).includes('To ')) break;
+    }
     await expect(status).toContainText('To ');
     await page.keyboard.press('Enter');
     await expect.poll(async () => (await graph(page)).edges.filter((e) => e.includes(':EVENT->')).length).toBe(1);
@@ -1826,7 +1891,7 @@ test.describe('StateDiagram edits', () => {
     await expect(edge(page, 'door.open:UNLOCK->door.closed')).toHaveCount(1);
     await expect(edge(page, 'door.locked:UNLOCK->door.closed')).toHaveCount(0);
     // A timer can go somewhere else, but it goes with its state.
-    await pressLabel('after 5000');
+    await pressLabel('after 5,000 ms');
     const timer = 'door.open:xstate.after.5000.door.open->door.closed';
     await expect(edge(page, timer)).toHaveAttribute('data-selected', '');
     await dragEnd('from', 'door.locked');
@@ -1871,10 +1936,8 @@ test.describe('StateDiagram edits', () => {
     await page.getByRole('button', { name: 'Close State machine' }).click();
     await page.locator('[data-diagram-frame-trigger]').click();
     await expect(page.locator('[data-slot=diagram-frame-panel-body]')).toBeFocused();
-    // A line that says where it starts has nothing to change.
+    // With nothing selected, the panel has its hint.
     await run(page, 'Edit');
-    const b = await page.locator('[data-slot=diagram-node][data-node="door.__initial"]').boundingBox();
-    await page.mouse.click(b.x + b.width / 2, b.y + b.height / 2);
     await expect(page.locator('[data-slot=edit-hint]')).toBeVisible();
   });
 
@@ -1930,5 +1993,82 @@ test.describe('StateDiagram edits', () => {
     await expect(page.locator('[data-slot=edit-missing] [data-kind=guards]')).toHaveText('guards: hasEnoughBytes');
     await page.getByRole('button', { name: 'With code in it' }).click();
     await expect(page.locator('[data-slot=edit-inline]')).toContainText('states.a.entry');
+  });
+});
+
+test.describe('the anatomy: a statechart and a system from the generic parts', () => {
+  test.use({ viewport: { width: 800, height: 1000 } });
+  const open = async (page, demo) => {
+    await page.goto(`/?demo=diagram/${demo}&theme=light`, { waitUntil: 'load' });
+    await expect(page.locator('[data-demo-status]')).toHaveAttribute('data-demo-status', 'ready', { timeout: 60_000 });
+    await page.locator('[data-slot=diagram-edge-label]').first().waitFor();
+  };
+
+  test('ten states fit 800 × 1000 at 100%, top to bottom, with routes that run through their labels', async ({ page }) => {
+    await open(page, 'statechart-like');
+    const zoom = await page.locator('[data-slot=canvas-board]').evaluate((el) => Number(/scale\(([^)]+)\)/.exec(el.style.transform)[1]));
+    expect(zoom).toBeGreaterThan(0.9);
+    expect(zoom).toBeLessThanOrEqual(1);
+    const seen = await page.evaluate(() => {
+      const box = (el) => el.getBoundingClientRect();
+      const node = (id) => box(document.querySelector(`[data-slot=diagram-node][data-node="${id}"]`));
+      // Each label's middle is on its edge's path: the line runs into it and out of it.
+      const throughLabels = [...document.querySelectorAll('[data-slot=diagram-edge-label]')].map((label) => {
+        const path = document.querySelector(`[data-slot=diagram-edge][data-edge="${label.dataset.edge}"]`);
+        const r = box(label), len = path.getTotalLength(), m = path.getScreenCTM();
+        let inside = false;
+        for (let at = 0; at <= len && !inside; at += 2) {
+          const p = path.getPointAtLength(at).matrixTransform(m);
+          inside = p.x > r.left + 2 && p.x < r.right - 2 && p.y > r.top + 2 && p.y < r.bottom - 2;
+        }
+        return { edge: label.dataset.edge, shape: label.dataset.shape, inside };
+      });
+      return { init: node('init'), loading: node('loading'), paused: node('paused'), playing: node('playing'), throughLabels, chips: document.querySelectorAll('[data-slot=diagram-item]').length };
+    });
+    // Top to bottom, the entry state first.
+    expect(seen.init.top).toBeLessThan(seen.loading.top);
+    expect(seen.paused.top).toBeLessThan(seen.playing.top);
+    for (const l of seen.throughLabels) expect(l.inside, `${l.edge} runs through its label`).toBe(true);
+    expect(seen.throughLabels.filter((l) => l.shape === 'pill').map((l) => l.edge).sort()).toEqual(['loading-active', 'paused-playing', 'playing-end', 'playing-paused']);
+    // Context (4), two entry actions, and the chips of six labels.
+    expect(seen.chips).toBe(4 + 2 + 6);
+    // The text is the kit's small text: 12 px chips and 13 px titles, on screen.
+    const sizes = await page.evaluate(() => [...document.querySelectorAll('[data-slot=diagram-node-title], [data-slot=diagram-item]')].map((el) => el.getBoundingClientRect().height));
+    expect(Math.min(...sizes)).toBeGreaterThanOrEqual(14);
+    await expect(page.locator('[data-slot=diagram-entry]')).toHaveCount(2);
+    // The first fit leaves room for the toolbar at the foot.
+    const machine = await page.locator('[data-slot=diagram-node][data-node=player]').boundingBox();
+    const tools = await page.getByRole('toolbar', { name: 'Diagram tools' }).boundingBox();
+    expect(machine.y + machine.height).toBeLessThanOrEqual(tools.y);
+  });
+
+  test('a chip is pressed by pointer and by keyboard', async ({ page }) => {
+    await open(page, 'statechart-like');
+    await page.locator('[data-slot=diagram-item][data-item=onPause]').click();
+    await expect(page.getByRole('status').filter({ hasText: 'Pressed onPause on paused' })).toHaveCount(1);
+    // The press left the keys on Paused, the card it selected: Alt+↓ goes into its items.
+    await page.getByRole('application', { name: 'Audio Player board' }).focus();
+    await page.keyboard.press('Alt+ArrowDown');
+    await expect(page.locator('[data-slot=diagram-item][data-focused]')).toHaveCount(1);
+    await page.keyboard.press('Enter');
+    await expect(page.getByRole('status').filter({ hasText: /^Pressed / })).toHaveCount(1);
+  });
+
+  test('a system: containers hold their cards under their sections, and nothing overlaps', async ({ page }) => {
+    await open(page, 'system-like');
+    const boxes = await page.evaluate(() => Object.fromEntries([...document.querySelectorAll('[data-slot=diagram-node]')].map((el) => {
+      const r = el.getBoundingClientRect();
+      return [el.dataset.node, { x: r.left, y: r.top, r: r.right, b: r.bottom }];
+    })));
+    const sections = await page.locator('[data-node=consumer] > [data-slot=diagram-node-body] [data-slot=diagram-sections]').boundingBox();
+    expect(boxes.room.y).toBeGreaterThan(sections.y + sections.height);
+    expect(boxes.room.x).toBeGreaterThan(boxes.consumer.x);
+    expect(boxes.room.b).toBeLessThan(boxes.consumer.b);
+    const leaves = ['api', 'files', 'jobs', 'db'];
+    for (const a of leaves) for (const b of leaves) {
+      if (a >= b) continue;
+      const p = boxes[a], q = boxes[b];
+      expect(p.r <= q.x || q.r <= p.x || p.b <= q.y || q.b <= p.y, `${a} and ${b}`).toBe(true);
+    }
   });
 });

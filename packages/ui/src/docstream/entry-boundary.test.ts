@@ -187,7 +187,14 @@ describe("entry boundaries", () => {
     expect([...graph(target, { dynamic: false }).bare].filter((spec) => /^@brett_lamy\/ui\/(cloudflare|cloudflare-diagram|lib\/cloudflare-)/.test(spec))).toEqual([])
   })
 
-  // Every service the fence draws has its place (placeInLayers), so no docstream entry ever asks for a layout engine.
+  // The xstate fence draws with the library's StateDiagram, which lays the machine out with ELK and makes it with XState (both
+  // optional peers, loaded by the diagram itself): only through a dynamic import, when there's a fence to draw.
+  it.each(entries)("%s (%s) loads the library's StateDiagram only through a dynamic import", (_name, target) => {
+    expect([...graph(target, { dynamic: false }).bare].filter((spec) => spec === "@brett_lamy/ui/state-diagram")).toEqual([])
+  })
+
+  // Every service the capnp fence draws has its place (placeInLayers), and the xstate fence's layout is its StateDiagram's,
+  // behind the import above: no docstream entry asks for a layout engine itself.
   it.each(entries)("%s (%s) never loads ELK", (_name, target) => {
     expect([...graph(target).bare].filter((spec) => spec === "elkjs" || spec.startsWith("elkjs/") || spec.includes("diagram-layout"))).toEqual([])
   })

@@ -85,11 +85,11 @@ describe('CloudflareDiagram, editable', () => {
     const [system, details] = onDataChange.mock.calls[0] as [CloudflareSystem, { reason: string }];
     expect(details.reason).toBe('edit');
     expect(system.services.find((s) => s.id === 'files')?.label).toBe('Uploads');
-    expect(document.querySelector('[data-node=files] [data-slot=cloudflare-service-name]')?.textContent).toBe('Uploads');
+    expect(document.querySelector('[data-node=files] [data-slot=diagram-node-title]')?.textContent).toBe('Uploads');
     fireEvent.click(screen.getByRole('button', { name: 'Undo' }));
     await settle();
     expect(onDataChange.mock.calls[1]?.[1].reason).toBe('undo');
-    expect(document.querySelector('[data-node=files] [data-slot=cloudflare-service-name]')?.textContent).toBe('Files');
+    expect(document.querySelector('[data-node=files] [data-slot=diagram-node-title]')?.textContent).toBe('Files');
     expect((screen.getByRole('button', { name: 'Redo' }) as HTMLButtonElement).hasAttribute('data-disabled')).toBe(false);
   });
 
@@ -97,7 +97,7 @@ describe('CloudflareDiagram, editable', () => {
     shown({ editable: true, defaultServices: SERVICES, defaultEdges: EDGES, defaultSelection: { nodes: ['files'], edges: [] }, onDataChange: (_, details) => details.cancel() });
     await settle();
     await commit(field('label'), 'Uploads');
-    expect(document.querySelector('[data-node=files] [data-slot=cloudflare-service-name]')?.textContent).toBe('Files');
+    expect(document.querySelector('[data-node=files] [data-slot=diagram-node-title]')?.textContent).toBe('Files');
   });
 
   it('refuses a binding name that can’t be on env, and says why', async () => {
@@ -184,5 +184,44 @@ describe('CloudflareDiagram, editable', () => {
     fireEvent.click(within(issue as HTMLElement).getByRole('button', { name: 'Show it' }));
     await settle();
     expect(panel().querySelector('[data-slot=cloudflare-edge-problem]')?.textContent).toBeTruthy();
+  });
+});
+
+describe('CloudflareDiagram, its anatomy', () => {
+  const ROOM = { id: 'room', initial: 'empty', states: { empty: { on: { JOIN: 'empty' } } } };
+  const WITH_ROOM: CloudflareService[] = [...SERVICES, { id: 'room', kind: 'durable-objects', label: 'Room', host: 'api', machine: ROOM, at: { x: 40, y: 200 } }];
+
+  it('opens a service’s machine from its Machine chip, when editing', async () => {
+    const onAction = vi.fn();
+    const onOpenMachineChange = vi.fn();
+    shown({ editable: true, defaultServices: WITH_ROOM, defaultEdges: EDGES, onAction, onOpenMachineChange });
+    await settle();
+    const chip = document.querySelector<HTMLElement>('[data-slot=diagram-item][data-owner=room][data-section=machine]');
+    expect(chip?.getAttribute('data-pressable')).toBe('');
+    fireEvent.pointerDown(chip!, { button: 0, pointerId: 1, isPrimary: true });
+    fireEvent.pointerUp(chip!, { button: 0, pointerId: 1, isPrimary: true });
+    fireEvent.click(chip!);
+    await settle();
+    expect(onOpenMachineChange).toHaveBeenCalledWith('room', expect.objectContaining({ reason: 'press' }));
+    expect(onAction).toHaveBeenCalledWith(expect.objectContaining({ kind: 'node', id: 'room', section: 'machine' }), expect.anything());
+    expect(document.querySelector('[data-state-diagram]')).not.toBeNull();
+  });
+
+  it('read-only, a chip is words, not a button', async () => {
+    shown({ services: WITH_ROOM, edges: EDGES });
+    await settle();
+    const chip = document.querySelector('[data-slot=diagram-item][data-owner=room][data-section=machine]');
+    expect(chip).not.toBeNull();
+    expect(chip?.hasAttribute('data-pressable')).toBe(false);
+    expect(document.querySelector('[data-slot=diagram-port]')).toBeNull();
+  });
+
+  it('gives the system’s name and account back with every change', async () => {
+    const onDataChange = vi.fn();
+    shown({ editable: true, title: 'Uploads', accountId: 'acc-1', defaultServices: SERVICES, defaultEdges: EDGES, defaultSelection: { nodes: ['files'], edges: [] }, onDataChange });
+    await settle();
+    expect(document.querySelector('[data-node="cloudflare:system"] [data-slot=diagram-node-title]')?.textContent).toBe('Uploads');
+    await commit(field('label'), 'Bucket');
+    expect(onDataChange.mock.calls[0]?.[0]).toMatchObject({ name: 'Uploads', accountId: 'acc-1' });
   });
 });

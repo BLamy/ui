@@ -55,8 +55,8 @@ Arrows point from a layer to the entries built on it; dotted arrows are optional
 | `/site` | `DocsSite`, `buildDocsTree`, docs search — a site from a folder of Markdown ([Docs sites](../02-docs-site/README.md)) | same as root, plus yaml | same as root |
 | `/site/styles.css` | Site chrome styles alone (already inside `/styles.css`) | — | — |
 | `/vite` | `docstreamSources` Vite plugin (Node-only) | vite, node:fs, node:path | — |
-| `/xstate` | `XStateDiagram`, the ` ```xstate ` fence's preview | react | its machine (`/xstate/machine`) |
-| `/xstate/machine` | `xstateToMermaid`: an XState machine read from code, with the library's `parseXState` | @babel/parser, **xstate** | — |
+| `/xstate` | `XStateDiagram`, the ` ```xstate ` fence's preview, drawn by the library's StateDiagram | react | `@brett_lamy/ui/state-diagram`; its text form (`/xstate/machine`) where that can't load |
+| `/xstate/machine` | `xstateToMermaid`: an XState machine read from code, with the library's `parseXState`, as a Mermaid statechart (the fence's text form) | @babel/parser, **xstate** | — |
 | `/capnp` | `CapnpDiagram`, the ` ```capnp ` fence: a workerd config drawn as Cloudflare services | react | `@brett_lamy/ui/cloudflare` |
 | `/tscircuit` | `TsCircuit`, the ` ```tscircuit ` fence's preview | react | its compiler worker |
 | `/styles.css` | The full stylesheet | — | — |

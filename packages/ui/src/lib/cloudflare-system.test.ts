@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import * as xstate from 'xstate';
-import { EMPTY_SYSTEM, addService, checkMachines, edgeBinding, machineEvents, machineReceives, machinesPast, parseSystem, removeServices, searchCatalog, serviceName, sharedServices, systemToJson, validateSystem, type CloudflareSystem } from './cloudflare-system';
+import { EMPTY_SYSTEM, addService, checkMachines, serviceEntries, serviceFacts, serviceHandlers, serviceResource, systemEnvironments, systemFacts, edgeBinding, machineEvents, machineReceives, machinesPast, parseSystem, removeServices, searchCatalog, serviceName, sharedServices, systemToJson, validateSystem, type CloudflareSystem } from './cloudflare-system';
 
 const ROOM = { id: 'room', initial: 'idle', states: { idle: { on: { VIEWER_JOINED: 'busy' } }, busy: { on: { VIEWER_LEFT: 'idle', 'error.*': 'idle' } } } };
 const CONSUMER = { id: 'consumer', initial: 'waiting', states: { waiting: { on: { R2_EVENT: 'working' } }, working: { initial: 'a', states: { a: { on: { DEEP: 'b' } }, b: {} } } } };
@@ -350,5 +350,144 @@ describe('two systems sharing a service', () => {
   it('checks each by what’s in it, whatever the other says', () => {
     expect(validateSystem(a)).toEqual([]);
     expect(validateSystem({ ...b, edges: [...b.edges, { id: 'y', from: 'two', to: 'room', via: 'durable_objects', binding: 'ROOM', events: ['VIEWER_JOINED'] }] })[0]).toMatchObject({ code: 'event-not-received' });
+  });
+});
+
+/* ── What a system holds past its connections, and what's drawn of it ── */
+
+const RICH: CloudflareSystem = {
+  name: 'Uploads',
+  accountId: 'acc-1',
+  services: [
+    {
+      id: 'api', kind: 'workers', label: 'API', environment: 'production', handlers: ['fetch'], vars: ['LOG_LEVEL'],
+      triggers: [{ kind: 'route', pattern: 'api.example.com/*', zone: 'example.com' }, { kind: 'workers-dev' }, { kind: 'cron', schedule: '0 * * * *' }],
+      settings: { compatibilityDate: '2026-11-01', compatibilityFlags: ['nodejs_compat'], placement: 'smart', cpuMs: 50, observability: true, headSamplingRate: 0.5 },
+      migrations: [{ tag: 'v1', newSqliteClasses: ['Room'] }],
+    },
+    { id: 'room', kind: 'durable-objects', label: 'Room', resource: 'Room', host: 'api', handlers: ['alarm', 'webSocketMessage'], machine: ROOM },
+    { id: 'jobs', kind: 'queues', label: 'Jobs', resource: 'jobs' },
+    { id: 'dlq', kind: 'queues', label: 'jobs-dlq', resource: 'jobs-dlq' },
+    { id: 'consumer', kind: 'workers', label: 'Consumer', triggers: [{ kind: 'socket', name: 'http', address: '*:8080' }, { kind: 'email', address: 'in@example.com' }] },
+  ],
+  edges: [
+    { id: 'api-room', from: 'api', to: 'room', via: 'durable_objects', binding: 'ROOM', operations: ['idFromName', 'get'] },
+    { id: 'api-jobs', from: 'api', to: 'jobs', via: 'queues', binding: 'JOBS', deliveryDelay: 5, operations: ['send'] },
+    { id: 'jobs-consumer', from: 'jobs', to: 'consumer', via: 'queue-consumer', consumer: { batchSize: 10, retries: 3, deadLetterQueue: 'jobs-dlq' } },
+    { id: 'api-auth', from: 'api', to: 'consumer', via: 'services', binding: 'AUTH', entrypoint: 'Sessions' },
+  ],
+};
+
+describe('a system’s other facts', () => {
+  it('saves and loads every one of them as they were', () => {
+    const { system, issues } = parseSystem(systemToJson(RICH));
+    expect(issues).toEqual([]);
+    expect(system).toEqual(RICH);
+    expect(systemToJson(system)).toBe(systemToJson(RICH));
+  });
+
+  it('leaves out what isn’t right, says so, and keeps the rest', () => {
+    const text = JSON.stringify({
+      name: 3,
+      services: [{
+        id: 'w', kind: 'workers', handlers: 'fetch', environment: 'prod',
+        triggers: [{ kind: 'cron', schedule: '* * * * *' }, { kind: 'teleport' }],
+        settings: { compatibilityDate: '2026-01-01', cpuMs: 'lots' },
+        migrations: [{ tag: 'v1' }, { new_classes: ['A'] }],
+      }],
+      edges: [{ from: 'q', to: 'w', via: 'queue-consumer', consumer: { batchSize: 5, deadLetterQueue: 7 }, deliveryDelay: -1 }],
+    });
+    const { system, issues } = parseSystem(text);
+    expect(system.name).toBeUndefined();
+    expect(system.services[0]).toEqual({
+      id: 'w', kind: 'workers', environment: 'prod', triggers: [{ kind: 'cron', schedule: '* * * * *' }],
+      settings: { compatibilityDate: '2026-01-01' }, migrations: [{ tag: 'v1' }],
+    });
+    expect(system.edges[0]).toMatchObject({ consumer: { batchSize: 5 } });
+    expect(system.edges[0]!.deliveryDelay).toBeUndefined();
+    expect(issues.map((i) => i.message)).toEqual(expect.arrayContaining([
+      expect.stringContaining('`handlers`'), expect.stringContaining('`triggers`'), expect.stringContaining('`settings.cpuMs`'),
+      expect.stringContaining('`migrations`'), expect.stringContaining('`consumer.deadLetterQueue`'), expect.stringContaining('`deliveryDelay`'),
+    ]));
+    expect(issues.every((i) => i.severity === 'warning')).toBe(true);
+  });
+
+  it('keeps a system’s name and account through removing a service', () => {
+    expect(removeServices(RICH, ['dlq'])).toMatchObject({ name: 'Uploads', accountId: 'acc-1' });
+  });
+});
+
+describe('what’s drawn on a card', () => {
+  const by = (id: string) => RICH.services.find((s) => s.id === id)!;
+  const titles = (id: string) => serviceFacts(RICH, by(id)).map((s) => `${s.title}: ${s.items.map((i) => (i.detail ? `${i.label} (${i.detail})` : i.label)).join(', ')}`);
+
+  it('a Worker: its handlers, its names on env, its triggers and its settings', () => {
+    // Each binding to something in the system is drawn once, as its connection's label: the card says the rest of env.
+    expect(titles('api')).toEqual([
+      'Handlers: fetch, scheduled',
+      'Bindings: LOG_LEVEL (var)',
+      'Triggers: api.example.com/* (on example.com), workers.dev, 0 * * * * (cron)',
+      'Settings: 2026-11-01 (compatibility), nodejs_compat (flag), smart placement, 50 ms (CPU), observability (50%), v1 (1 migration)',
+    ]);
+  });
+
+  it('a Durable Object: what it handles, its storage and since when, from its Worker, and its machine', () => {
+    expect(titles('room')).toEqual([
+      'Handlers: alarm, webSocketMessage',
+      'Settings: SQLite storage (since v1)',
+      'Machine: room (2 states, from idle)',
+    ]);
+  });
+
+  it('a consumer: the queue handler its queue says it has, and requests and mail that come in to it', () => {
+    expect(serviceHandlers(RICH, by('consumer'))).toEqual(['email', 'fetch', 'queue']);
+    expect(titles('consumer')).toEqual(['Handlers: email, fetch, queue', 'Triggers: *:8080 (http), in@example.com (email)']);
+  });
+
+  it('a resource with nothing more to say than its name is just its header, and what it’s for is a line under it', () => {
+    expect(serviceFacts(RICH, by('jobs'))).toEqual([]);
+    expect(serviceResource(by('jobs'))).toBeUndefined();
+    const files = { id: 'b', kind: 'r2', label: 'Files', resource: 'uploads' };
+    expect(serviceFacts({ services: [files], edges: [] }, files)).toEqual([]);
+    expect(serviceResource(files)).toBe('bucket uploads');
+  });
+
+  it('a binding to something that isn’t in the system is on the card, as nothing else draws it', () => {
+    const system: CloudflareSystem = { services: [{ id: 'w', kind: 'workers' }], edges: [{ id: 'e', from: 'w', to: 'gone', via: 'r2_buckets', binding: 'FILES' }] };
+    expect(serviceFacts(system, system.services[0]!)).toEqual([
+      { id: 'bindings', title: 'Bindings', items: [{ kind: 'binding', label: 'FILES', detail: 'R2 Bucket' }] },
+    ]);
+  });
+
+  it('where things come in from outside: requests, schedules and messages', () => {
+    expect(serviceEntries(by('api'))).toEqual(['request', 'schedule']);
+    expect(serviceEntries(by('consumer'))).toEqual(['request', 'message']);
+    expect(serviceEntries(by('jobs'))).toEqual([]);
+  });
+
+  it('the system’s own header: its account, its zones and its environments', () => {
+    expect(systemFacts(RICH)).toEqual([{ id: 'account', title: 'Account', items: [
+      { kind: 'account', label: 'acc-1', detail: 'account' },
+      { kind: 'zone', label: 'example.com', detail: 'zone' },
+      { kind: 'environment', label: 'production', detail: 'environment' },
+    ] }]);
+    expect(systemEnvironments(RICH)).toEqual(['production']);
+    expect(systemFacts({ services: [], edges: [] })).toEqual([]);
+  });
+});
+
+describe('what’s wrong with the other facts', () => {
+  const issues = (system: CloudflareSystem) => validateSystem(system).map((i) => `${i.severity}:${i.code}`);
+  it('says a schedule that isn’t one, a trigger on what runs no code, a host that isn’t there, and a handler a kind hasn’t got', () => {
+    expect(validateSystem(RICH)).toEqual([]);
+    expect(issues({ services: [{ id: 'w', kind: 'workers', triggers: [{ kind: 'cron', schedule: 'hourly' }] }], edges: [] })).toEqual(['error:cron']);
+    expect(issues({ services: [{ id: 'b', kind: 'r2', triggers: [{ kind: 'workers-dev' }] }], edges: [] })).toEqual(['error:trigger']);
+    expect(issues({ services: [{ id: 'd', kind: 'durable-objects', host: 'gone' }], edges: [] })).toEqual(['warning:host']);
+    expect(issues({ services: [{ id: 'd', kind: 'durable-objects', host: 'b' }, { id: 'b', kind: 'r2' }], edges: [] })).toEqual(['error:host']);
+    expect(issues({ services: [{ id: 'w', kind: 'workers', handlers: ['alarm'] }], edges: [] })).toEqual(['warning:handler']);
+  });
+  it('says a consumer that sends what it gives up on back to its own queue', () => {
+    const system: CloudflareSystem = { services: [{ id: 'q', kind: 'queues', resource: 'jobs' }, { id: 'w', kind: 'workers' }], edges: [{ id: 'c', from: 'q', to: 'w', via: 'queue-consumer', consumer: { deadLetterQueue: 'jobs' } }] };
+    expect(issues(system)).toEqual(['error:dead-letter-queue']);
   });
 });

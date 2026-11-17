@@ -79,8 +79,14 @@ describe('readWorkerdConfig', () => {
     expect(read.ok).toBe(true);
     if (!read.ok) return;
     expect(read.system.services).toEqual([
-      { id: 'main', kind: 'workers', label: 'main' },
-      { id: 'main.ProofAccount', kind: 'durable-objects', label: 'ProofAccount' },
+      {
+        id: 'main', kind: 'workers', label: 'main',
+        settings: { compatibilityDate: '2026-01-01', main: 'worker.js' },
+        // Where requests come in: its socket.
+        triggers: [{ kind: 'socket', name: 'http', address: '127.0.0.1:19610' }],
+      },
+      // A class is in its Worker's code, and is drawn inside it.
+      { id: 'main.ProofAccount', kind: 'durable-objects', label: 'ProofAccount', host: 'main' },
     ]);
     expect(edgesOf(EVENT_LOG)).toEqual(['main -durable_objects:ACCOUNTS-> main.ProofAccount']);
     expect(read.sockets).toEqual([{ name: 'http', address: '127.0.0.1:19610', service: 'main' }]);
@@ -154,31 +160,5 @@ const b :Bar = ();`);
   it('tells a config from other Cap’n Proto without reading it', () => {
     expect(looksLikeWorkerdConfig(EVENT_LOG)).toBe(true);
     expect(looksLikeWorkerdConfig('struct Foo { a @0 :Text; }')).toBe(false);
-  });
-});
-
-describe('placeInLayers', () => {
-  it('puts what nothing reaches first, then what it reaches, and keeps a place that was given', async () => {
-    const { placeInLayers } = await import('@/lib/cloudflare-system');
-    const read = readWorkerdConfig(ORDERS);
-    if (!read.ok) throw new Error(read.reason);
-    const placed = placeInLayers(read.system);
-    const at = Object.fromEntries(placed.services.map((s) => [s.id, s.at]));
-    // main reaches the queue and Order; the queue reaches broker, broker reaches consumer, consumer reaches Order.
-    const column = (id: string) => at[id]!.x;
-    expect(column('main')).toBe(0);
-    expect(column('queues:broker')).toBeGreaterThan(column('main'));
-    expect(column('broker')).toBeGreaterThan(column('queues:broker'));
-    expect(column('consumer')).toBeGreaterThan(column('broker'));
-    expect(column('main.Order')).toBeGreaterThan(column('consumer'));
-    // Nothing on top of anything in a column.
-    const byColumn = new Map<number, { y: number; id: string }[]>();
-    for (const s of placed.services) byColumn.set(s.at!.x, [...(byColumn.get(s.at!.x) ?? []), { y: s.at!.y, id: s.id }]);
-    for (const list of byColumn.values()) expect(new Set(list.map((p) => p.y)).size).toBe(list.length);
-    const kept = placeInLayers({ ...read.system, services: read.system.services.map((s) => (s.id === 'main' ? { ...s, at: { x: 5, y: 7 } } : s)) });
-    expect(kept.services.find((s) => s.id === 'main')!.at).toEqual({ x: 5, y: 7 });
-    // A circle doesn't stop it.
-    const circle = placeInLayers({ services: [{ id: 'a', kind: 'workers' }, { id: 'b', kind: 'workers' }], edges: [{ id: '1', from: 'a', to: 'b', via: 'services' }, { id: '2', from: 'b', to: 'a', via: 'services' }] });
-    expect(circle.services.every((s) => s.at)).toBe(true);
   });
 });

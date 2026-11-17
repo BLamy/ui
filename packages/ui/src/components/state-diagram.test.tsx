@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { createMachine } from 'xstate';
+import { assign, createMachine } from 'xstate';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { StateDiagram } from '@/components/ui/state-diagram';
 
@@ -119,5 +119,61 @@ describe('StateDiagram', () => {
   it('says what XState says about a config it won’t have', async () => {
     render(<div style={{ position: 'relative', width: 900, height: 600 }}><StateDiagram config={{ id: 'bad', initial: 'nowhere', states: { a: {} } }} aria-label="Bad" /></div>);
     expect((await screen.findByRole('alert')).textContent).toMatch(/nowhere/);
+  });
+  it('sends from the board: a transition it can take now is a button on its label, and pressing it moves on', async () => {
+    render(<div style={{ position: 'relative', width: 900, height: 600 }}><StateDiagram machine={doors} simulate panelPresentation="column" aria-label="Door" /></div>);
+    const send = await screen.findByRole('button', { name: 'Send OPEN' });
+    expect(screen.getByRole('button', { name: 'Send LOCK' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Send CLOSE' })).toBeNull();
+    // Said on the edge too, for a screen reader.
+    expect(await node(/^OPEN, edge from closed to open\. It can be sent now/)).toBeTruthy();
+    act(() => { fireEvent.click(send); });
+    await waitFor(() => expect(screen.getByRole('button', { name: /^open, state\./ }).getAttribute('aria-current')).toBe('true'));
+    expect(await screen.findByRole('button', { name: 'Send CLOSE' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Send OPEN' })).toBeNull();
+  });
+
+  it('shows the context as it is while it runs', async () => {
+    const counter = createMachine({ id: 'c', initial: 'idle', context: { count: 0, label: 'none' }, states: { idle: { on: { GO: { target: 'busy', actions: assign({ count: 5 }) } } }, busy: {} } });
+    render(<div style={{ position: 'relative', width: 900, height: 600 }}><StateDiagram machine={counter} simulate panelPresentation="column" aria-label="Counter" /></div>);
+    const value = () => document.querySelector('[data-slot=simulation-context] [data-key=count] dd')?.textContent;
+    await waitFor(() => expect(value()).toBe('0'));
+    act(() => { fireEvent.click(screen.getByRole('button', { name: 'GO' })); });
+    await waitFor(() => expect(value()).toBe('5'));
+  });
+
+  it('edits a state’s entry actions and the machine’s context in the panel, with undo', async () => {
+    const onConfigChange = vi.fn();
+    const config = { id: 'door', initial: 'closed', context: { open: false }, states: { closed: { entry: 'lockUp' }, open: {} } };
+    const { unmount } = render(<div style={{ position: 'relative', width: 900, height: 600 }}><StateDiagram defaultConfig={config} onConfigChange={onConfigChange} editable defaultSelection={{ nodes: ['door.closed'], edges: [] }} panelPresentation="column" aria-label="Door" /></div>);
+    const add = await waitFor(() => { const b = document.querySelector<HTMLElement>('[data-action=add-entry]'); expect(b).toBeTruthy(); return b!; });
+    expect(add.closest('[data-actions=entry]')?.textContent).toMatch(/Entry actions/);
+    act(() => { fireEvent.click(add); });
+    await waitFor(() => expect(onConfigChange).toHaveBeenCalledTimes(1));
+    expect((onConfigChange.mock.lastCall![0] as { states: { closed: { entry: unknown } } }).states.closed.entry).toEqual(['lockUp', 'action']);
+    const first = document.querySelector<HTMLInputElement>('[data-field="entry:0"]')!;
+    act(() => { fireEvent.input(first, { target: { value: 'secure' } }); });
+    act(() => { fireEvent.keyDown(first, { key: 'Enter' }); });
+    await waitFor(() => expect(onConfigChange).toHaveBeenCalledTimes(2));
+    expect((onConfigChange.mock.lastCall![0] as { states: { closed: { entry: unknown } } }).states.closed.entry).toEqual(['secure', 'action']);
+    act(() => { fireEvent.click(screen.getByRole('button', { name: 'Remove action from entry actions' })); });
+    await waitFor(() => expect(onConfigChange).toHaveBeenCalledTimes(3));
+    expect((onConfigChange.mock.lastCall![0] as { states: { closed: { entry: unknown } } }).states.closed.entry).toEqual(['secure']);
+    act(() => { fireEvent.click(screen.getByRole('button', { name: 'Undo' })); });
+    await waitFor(() => expect(onConfigChange.mock.lastCall![1].reason).toBe('undo'));
+    unmount();
+    // With nothing selected, the panel has the machine's context.
+    onConfigChange.mockClear();
+    render(<div style={{ position: 'relative', width: 900, height: 600 }}><StateDiagram defaultConfig={config} onConfigChange={onConfigChange} editable panelPresentation="column" aria-label="Door" /></div>);
+    const addKey = await screen.findByRole('button', { name: 'Add key' });
+    act(() => { fireEvent.click(addKey); });
+    await waitFor(() => expect(onConfigChange).toHaveBeenCalledTimes(1));
+    expect((onConfigChange.mock.lastCall![0] as { context: object }).context).toEqual({ open: false, key: null });
+    // XState's refusal, or the edit's, is said under the field.
+    const keyField = await waitFor(() => { const f = document.querySelector<HTMLInputElement>('[data-field="context:key"]'); expect(f).toBeTruthy(); return f!; });
+    act(() => { fireEvent.input(keyField, { target: { value: 'open' } }); });
+    act(() => { fireEvent.keyDown(keyField, { key: 'Enter' }); });
+    await waitFor(() => expect(keyField.closest('[data-invalid]')).toBeTruthy());
+    expect(keyField.closest('[data-slot=field]')?.textContent).toMatch(/already a context key/);
   });
 });

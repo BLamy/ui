@@ -25,7 +25,7 @@ afterEach(async () => {
 
 const settle = () => act(async () => { await new Promise((resolve) => setTimeout(resolve, 30)); });
 const show = async (ui: React.ReactNode) => { await act(async () => root.render(ui)); await settle(); };
-const services = () => element.querySelectorAll('[data-slot=cloudflare-service]').length;
+const services = () => element.querySelectorAll('[data-slot=diagram-node]:not([data-node^="cloudflare:"])').length;
 const saved = () => readSaved(localStorage.getItem('cloudflare-studio'));
 const button = (name: string) => [...document.querySelectorAll<HTMLElement>('button')].find((b) => (b.getAttribute('aria-label') ?? b.textContent?.trim()) === name);
 const press = async (name: string) => {

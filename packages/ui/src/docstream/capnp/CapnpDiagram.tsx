@@ -74,35 +74,28 @@ interface View { x: number; y: number; zoom: number }
 
 // The air at a board's edge.
 const EDGE = 20
-// Below this a service's words are too small to read. A board too narrow for the whole system at this size (a phone)
-// starts here, at the first layer, and the rest is a drag, Fit, or the Services panel away. Services connect left to
-// right, so a narrow board can't stack them in a column: the connections would have to come back round through them.
+// Below this a service's words are too small to read. A board too small for the whole system at this size (a phone)
+// starts here, at the top, where requests come in, and the rest is a drag, Fit, or the Services panel away. Services
+// run top to bottom, so a narrow board shows the whole width when it can, and scrolls down.
 const LEGIBLE = 0.66
 
-/** The box around the services, from their places and sizes. */
+/** The box around the drawing, the system's, from its places and its cards' sizes. */
 function boundsOf(cloudflare: Cloudflare, system: System) {
-  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity
-  for (const s of system.services) {
-    if (!s.at) return null
-    const ports = cloudflare.servicePorts(s.kind)
-    const ins = ports.filter((p) => p.direction === "in").length
-    x0 = Math.min(x0, s.at.x)
-    y0 = Math.min(y0, s.at.y)
-    x1 = Math.max(x1, s.at.x + cloudflare.SERVICE_NODE.w)
-    y1 = Math.max(y1, s.at.y + cloudflare.serviceNodeHeight(ins, ports.length - ins))
-  }
-  return Number.isFinite(x0) ? { x0, y0, x1, y1 } : null
+  const box = cloudflare.cloudflareBoardBounds(system)
+  return box ? { x0: box.x, y0: box.y, x1: box.x + box.w, y1: box.y + box.h } : null
 }
 
-/** Where the board starts when the whole system wouldn't be legible: at the first layer, at the smallest size that can be
- *  read. Undefined when it would be, and then the Diagram fits it, in the room its toolbar and bar leave. */
+/** Where the board starts when the whole system wouldn't be legible: at its top, at the smallest size that can be read,
+ *  in the middle if it's as wide as the board or less. Undefined when it would be, and then the Diagram fits it, in the
+ *  room its toolbar and bar leave. */
 function startView(box: { x0: number; y0: number; x1: number; y1: number }, size: Size): View | undefined {
   if (size.width <= 0 || size.height <= 0) return undefined
   const w = size.width - EDGE * 2, h = size.height - EDGE * 2
   const fit = Math.min(1, w / (box.x1 - box.x0), h / (box.y1 - box.y0))
   if (fit >= LEGIBLE) return undefined
-  const zoom = Math.max(LEGIBLE, Math.min(fit, h / (box.y1 - box.y0)))
-  return { zoom, x: EDGE - box.x0 * zoom, y: size.height / 2 - ((box.y0 + box.y1) / 2) * zoom }
+  const zoom = Math.max(LEGIBLE, Math.min(1, w / (box.x1 - box.x0)))
+  const wide = (box.x1 - box.x0) * zoom
+  return { zoom, x: wide <= w ? size.width / 2 - ((box.x0 + box.x1) / 2) * zoom : EDGE - box.x0 * zoom, y: EDGE - box.y0 * zoom }
 }
 
 /** The element's size, as it changes. */
@@ -137,7 +130,7 @@ function Board({ cloudflare, system, name, appearance }: { cloudflare: Cloudflar
   return (
     <div ref={ref} className={`docs-capnp-board ${scheme}`} data-appearance={scheme} data-whole={whole ? "" : undefined}>
       {size ? (
-        <cloudflare.CloudflareDiagram key={whole ? "whole" : "part"} services={system.services} edges={system.edges} defaultPanelOpen={false}
+        <cloudflare.CloudflareDiagram key={whole ? "whole" : "part"} services={system.services} edges={system.edges} title={name} defaultPanelOpen={false}
           {...(view ? { defaultViewport: view } : {})} aria-label={`${name}, as Cloudflare services`} />
       ) : null}
     </div>

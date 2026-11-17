@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { indexDiagram, type DiagramEdge, type DiagramNode } from './diagram-model';
 import { fitViewport, viewportToShow, describeEdge, describeNode, edgesByNode, focusOrder, nearestNode, nodeInDirection, stepFocus, type DiagramItem } from './diagram-keyboard';
 
-const node = (id: string, x: number, y: number, extra: Partial<DiagramNode> = {}): DiagramNode => ({ id, label: id, x, y, w: 100, h: 40, ...extra });
+const node = (id: string, x: number, y: number, extra: Partial<DiagramNode> = {}): DiagramNode => ({ id, title: id, x, y, w: 100, h: 40, ...extra });
 const nodes: DiagramNode[] = [
   node('a', 0, 0), node('b', 300, 0), node('c', 300, 200), node('d', 0, 200),
   node('box', 600, 0, { kind: 'group', w: 400, h: 300 }), node('k1', 650, 60, { parent: 'box' }), node('k2', 850, 200, { parent: 'box' }),
@@ -10,8 +10,8 @@ const nodes: DiagramNode[] = [
 ];
 // a → b → c → d → a is a cycle.
 const edges: DiagramEdge[] = [
-  { id: 'ab', from: 'a', to: 'b', label: 'GO' }, { id: 'bc', from: 'b', to: 'c' }, { id: 'cd', from: 'c', to: 'd' }, { id: 'da', from: 'd', to: 'a' },
-  { id: 'loop', from: 'b', to: 'b', label: 'AGAIN' }, { id: 'in', from: 'b', to: 'k1' }, { id: 'k', from: 'k1', to: 'k2' },
+  { id: 'ab', from: 'a', to: 'b', title: 'GO' }, { id: 'bc', from: 'b', to: 'c' }, { id: 'cd', from: 'c', to: 'd' }, { id: 'da', from: 'd', to: 'a' },
+  { id: 'loop', from: 'b', to: 'b', title: 'AGAIN' }, { id: 'in', from: 'b', to: 'k1' }, { id: 'k', from: 'k1', to: 'k2' },
 ];
 const ctx = { index: indexDiagram(nodes), edges };
 const n = (id: string): DiagramItem => ({ kind: 'node', id });
@@ -159,7 +159,7 @@ describe('what a screen reader hears', () => {
   it('names each kind', () => {
     const list: DiagramNode[] = [
       node('r', 0, 0, { kind: 'root' }), node('p', 0, 0, { kind: 'group', variant: 'dashed', parent: 'r' }), node('g', 0, 0, { kind: 'region', parent: 'p' }),
-      node('f', 0, 0, { variant: 'double', parent: 'g' }), node('i', 0, 0, { kind: 'marker', parent: 'g', label: undefined }), node('d', 0, 0, { detail: 'invoke verifyToken', parent: 'r' }),
+      node('f', 0, 0, { variant: 'double', parent: 'g' }), node('i', 0, 0, { kind: 'marker', parent: 'g', title: undefined }), node('d', 0, 0, { description: 'invoke verifyToken', parent: 'r' }),
     ];
     const index = indexDiagram(list);
     const text = (id: string) => describeNode(index.byId.get(id)!, index, undefined);
@@ -169,13 +169,13 @@ describe('what a screen reader hears', () => {
     // A border's a look, and says nothing; a marker goes by its label, if it has one.
     expect(text('f')).toBe('f, node, in g. Not connected to anything.');
     expect(text('i')).toBe('Marker, in g. Not connected to anything.');
-    const started = indexDiagram([node('s', 0, 0, { kind: 'marker', label: 'Start' })]);
+    const started = indexDiagram([node('s', 0, 0, { kind: 'marker', title: 'Start' })]);
     expect(describeNode(started.byId.get('s')!, started, undefined)).toBe('Start, marker. Not connected to anything.');
     expect(text('d')).toBe('d, node. invoke verifyToken. Not connected to anything.');
   });
 
   it('keeps a long list short', () => {
-    const many = Array.from({ length: 8 }, (_, i) => ({ id: `e${i}`, from: 'a', to: 'b', label: `E${i}` }));
+    const many = Array.from({ length: 8 }, (_, i) => ({ id: `e${i}`, from: 'a', to: 'b', title: `E${i}` }));
     const text = describeNode(ctx.index.byId.get('a')!, ctx.index, edgesByNode(many).get('a'));
     expect(text).toContain('8 going out: E0 to b, E1 to b, E2 to b, E3 to b, E4 to b, and 3 more.');
   });

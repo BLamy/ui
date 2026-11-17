@@ -1,7 +1,7 @@
 {
   "name": "state-diagram",
   "title": "StateDiagram",
-  "description": "An XState machine on a Diagram, drawn from machine.root: compound and parallel states, initial markers, final states, and all of always, after, invoke and guards labelled. A machine or its JSON config, which can be run with stand-ins for all it names, and edited, writing to the config. XState and ELK are optional peers.",
+  "description": "An XState machine on a Diagram, drawn as XState's visualizer draws it: the machine as a container with its context, each state a card with its entry and exit actions, invokes and tags as chips, compound and parallel states holding theirs with entry markers, final and history glyphs, and each transition a pill or a card with its guard, actions and delay. A machine, its JSON config or its source; run with stand-ins (what it can take now is a button on its label, its context shown live) and edited, writing to the config. XState and ELK are optional peers.",
   "page": "state-diagram",
   "exports": [
     "StateDiagram"

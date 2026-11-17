@@ -27,14 +27,14 @@ afterEach(cleanup);
 const agent = createAgent();
 
 const NODES: DiagramNode[] = [
-  { id: 'inbox', label: 'Inbox', x: 0, y: 0, w: 100, h: 40 },
-  { id: 'triage', label: 'Triage', x: 200, y: 0, w: 100, h: 40 },
-  { id: 'archive', label: 'Archive', x: 400, y: 0, w: 100, h: 40 },
-  { id: 'alone', label: 'Alone', x: 200, y: 200, w: 100, h: 40 },
+  { id: 'inbox', title: 'Inbox', x: 0, y: 0, w: 100, h: 40 },
+  { id: 'triage', title: 'Triage', x: 200, y: 0, w: 100, h: 40 },
+  { id: 'archive', title: 'Archive', x: 400, y: 0, w: 100, h: 40 },
+  { id: 'alone', title: 'Alone', x: 200, y: 200, w: 100, h: 40 },
 ];
 const EDGES: DiagramEdge[] = [
-  { id: 'sort', from: 'inbox', to: 'triage', label: 'sort' },
-  { id: 'done', from: 'triage', to: 'archive', label: 'done' },
+  { id: 'sort', from: 'inbox', to: 'triage', title: 'sort' },
+  { id: 'done', from: 'triage', to: 'archive', title: 'done' },
 ];
 
 const board = (name = 'Mail') => screen.getByRole('application', { name: `${name} board` });
@@ -287,7 +287,7 @@ describe('Diagram, one history', () => {
   function Owner({ onStep }: { onStep?: (reason: string) => void }) {
     const [names, setNames] = useState(['Inbox', 'Triage']);
     const history = useDiagramHistory(names, (to, details) => { onStep?.(details.reason); setNames(to); });
-    const nodes = names.map((label, i) => ({ id: `n${i}`, label, x: i * 200, y: 0, w: 100, h: 40 }));
+    const nodes = names.map((title, i) => ({ id: `n${i}`, title, x: i * 200, y: 0, w: 100, h: 40 }));
     return (
       <>
         <button type="button" onClick={() => { const next = [...names, `Folder ${names.length + 1}`]; history.record(names, next); setNames(next); }}>Add</button>
@@ -446,5 +446,74 @@ describe('Diagram, what it shows', () => {
       </DiagramFrame>,
     );
     expect(screen.getByRole('toolbar', { name: 'Diagram tools' }).getAttribute('data-side')).toBe('top');
+  });
+});
+
+describe('Diagram, a card’s items', () => {
+  const CARDS: DiagramNode[] = [
+    { id: 'paused', title: 'Paused', entry: true, x: 0, y: 0, w: 140, h: 90, sections: [{ id: 'entry', title: 'Entry actions', items: [{ title: 'onPause', icon: 'bolt' }, { id: 'log', title: 'log' }] }] },
+    { id: 'playing', title: 'Playing', x: 300, y: 0, w: 140, h: 40 },
+  ];
+  const LABELLED: DiagramEdge[] = [{ id: 'play', from: 'paused', to: 'playing', title: 'play', sections: [{ items: [{ title: 'onPlay' }] }] }];
+  const status = () => document.querySelector('[data-slot=diagram-status]')!.textContent;
+
+  it('goes into a card’s items and an edge label’s with Alt+↓, along them with the arrows, presses with Enter, and out with Escape', () => {
+    const onAction = vi.fn();
+    render(<Diagram aria-label="Player" nodes={CARDS} edges={LABELLED} editable onAction={onAction} />);
+    act(() => board('Player').focus());
+    key('Home');
+    expect(document.activeElement?.getAttribute('data-node')).toBe('paused');
+    key('ArrowDown', { altKey: true });
+    // Focus stays on the card, the item has the ring, and it's said aloud.
+    expect(document.activeElement?.getAttribute('data-node')).toBe('paused');
+    expect(document.querySelector('[data-slot=diagram-item][data-focused]')?.getAttribute('data-item')).toBe('onPause');
+    expect(status()).toBe('onPause, Entry actions, in Paused. Enter presses it.');
+    key('ArrowDown');
+    expect(document.querySelector('[data-slot=diagram-item][data-focused]')?.getAttribute('data-item')).toBe('log');
+    key('Enter');
+    expect(onAction).toHaveBeenLastCalledWith({ kind: 'node', id: 'paused', section: 'entry', item: 'log' }, expect.objectContaining({ reason: 'enter-key' }));
+    // Pressing an item selects its card.
+    expect(screen.getByRole('button', { name: /^Paused, node/ }).getAttribute('aria-pressed')).toBe('true');
+    key('Escape');
+    expect(document.querySelector('[data-slot=diagram-item][data-focused]')).toBeNull();
+    expect(document.querySelector('[data-slot=diagram-ring][data-focused]')?.getAttribute('data-ring-of')).toBe('paused');
+    // An edge label's items, the same way.
+    key(']');
+    expect(document.activeElement?.getAttribute('data-edge')).toBe('play');
+    key('ArrowDown', { altKey: true });
+    expect(document.querySelector('[data-slot=diagram-edge-label] [data-slot=diagram-item][data-focused]')?.getAttribute('data-item')).toBe('onPlay');
+    key('Enter');
+    expect(onAction).toHaveBeenLastCalledWith({ kind: 'edge', id: 'play', section: '0', item: 'onPlay' }, expect.objectContaining({ reason: 'enter-key' }));
+  });
+
+  it('reports a press on an item, and keeps items as words when the diagram can’t be edited', () => {
+    const onAction = vi.fn();
+    const { unmount } = render(<Diagram aria-label="Player" nodes={CARDS} edges={LABELLED} editable onAction={onAction} />);
+    const chip = document.querySelector<HTMLElement>('[data-slot=diagram-item][data-item=onPause]')!;
+    expect(chip.hasAttribute('data-pressable')).toBe(true);
+    fireEvent.pointerDown(chip, { pointerId: 1, button: 0, clientX: 30, clientY: 50 });
+    fireEvent.pointerUp(chip, { pointerId: 1, button: 0, clientX: 30, clientY: 50 });
+    expect(onAction).toHaveBeenLastCalledWith({ kind: 'node', id: 'paused', section: 'entry', item: 'onPause' }, expect.objectContaining({ reason: 'press' }));
+    unmount();
+    render(<Diagram aria-label="Player" nodes={CARDS} edges={LABELLED} onAction={onAction} />);
+    expect(document.querySelector('[data-slot=diagram-item][data-pressable]')).toBeNull();
+    act(() => board('Player').focus());
+    key('Home');
+    key('ArrowDown', { altKey: true });
+    // Read-only: Alt+↓ has nowhere to go in a card that holds nothing.
+    expect(document.querySelector('[data-slot=diagram-item][data-focused]')).toBeNull();
+  });
+
+  it('draws the anatomy: a header strip, sections, the entry marker, and a label that is a card', () => {
+    render(<Diagram aria-label="Player" nodes={CARDS} edges={LABELLED} />);
+    const card = document.querySelector('[data-slot=diagram-node][data-node=paused]')!;
+    expect(card.querySelector('[data-slot=diagram-node-title]')?.textContent).toBe('Paused');
+    expect(card.querySelector('[data-slot=diagram-section-title]')?.textContent).toBe('Entry actions');
+    expect(card.querySelectorAll('[data-slot=diagram-item]')).toHaveLength(2);
+    expect(card.querySelector('[data-slot=diagram-entry]')).not.toBeNull();
+    expect(document.querySelector('[data-slot=diagram-edge-label]')?.getAttribute('data-shape')).toBe('card');
+    // A screen reader hears the sections with the card, and the label's with its edge.
+    expect(screen.getByRole('button', { name: /^Paused, node, where it starts\. Entry actions: onPause, log\./ })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'play, edge from Paused to Playing. onPlay.' })).toBeTruthy();
   });
 });

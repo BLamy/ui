@@ -20,7 +20,8 @@ async function until(check: () => boolean) {
   for (let i = 0; i < 500 && !check(); i++) await act(() => new Promise((r) => setTimeout(r, 20)))
   expect(check()).toBe(true)
 }
-const nodes = () => [...host.querySelectorAll("[data-docstream-capnp] [data-slot=diagram-node]")].map((n) => n.getAttribute("data-node")).sort()
+// The services' cards: not the system's own box around them.
+const nodes = () => [...host.querySelectorAll('[data-docstream-capnp] [data-slot=diagram-node]:not([data-node^="cloudflare:"])')].map((n) => n.getAttribute("data-node")).sort()
 
 describe("a workerd config in the editor", () => {
   it("round-trips through the editor schema", () => {

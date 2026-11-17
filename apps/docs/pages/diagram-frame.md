@@ -46,13 +46,13 @@ Like the library's other containers, the frame fills the nearest positioned box.
   <DiagramFrame>
     <DiagramFrameBoard>
       <Diagram nodes={nodes} edges={edges} selection={selection} onSelectionChange={setSelection} />
-      <DiagramFrameBar>{selected ? selected.label : `${nodes.length} steps`}</DiagramFrameBar>
+      <DiagramFrameBar>{selected ? selected.title : `${nodes.length} steps`}</DiagramFrameBar>
     </DiagramFrameBoard>
     <DiagramFramePanel title="Inspector" backLabel="Rules">
       <DiagramFrameSection title="This step">
         <Field invalid={!!refused}>
           <FieldLabel>Name</FieldLabel>
-          <Input size="sm" value={selected.label} onValueCommit={rename} />
+          <Input size="sm" value={selected.title} onValueCommit={rename} />
           <FieldError>{refused}</FieldError>
         </Field>
       </DiagramFrameSection>
@@ -86,7 +86,7 @@ Left to itself, opening or closing the panel holds for the way it shows now. Goi
 ```tsx
 {inside ? (
   <DiagramFrameCover>
-    <DiagramFrameCoverHeader title={`Inside ${inside.label}`} backLabel="Rules" onBack={() => setInside(null)} />
+    <DiagramFrameCoverHeader title={`Inside ${inside.title}`} backLabel="Rules" onBack={() => setInside(null)} />
     <Inside node={inside} />
   </DiagramFrameCover>
 ) : null}

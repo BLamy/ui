@@ -7,7 +7,10 @@
 import { findNodeAtLocation, getNodeValue, parseTree, printParseErrorCode, type Node, type ParseError } from 'jsonc-parser';
 import type { CatalogBinding } from '@/lib/cloudflare-catalog';
 import { CLOUDFLARE_CATALOG as C } from '@/lib/cloudflare-catalog.generated';
-import { catalogBinding, isOwnSetting, linkOf, runsCode, type CloudflareEdge, type CloudflareService } from '@/lib/cloudflare-services';
+import {
+  catalogBinding, isOwnSetting, linkOf, runsCode,
+  type CloudflareConsumerSettings, type CloudflareEdge, type CloudflareMigration, type CloudflareService, type CloudflareSettings, type CloudflareTrigger,
+} from '@/lib/cloudflare-services';
 import { edgeBinding, serviceName, type CloudflareSystem } from '@/lib/cloudflare-system';
 
 export interface WranglerOptions {
@@ -34,10 +37,15 @@ export type WranglerRead =
   | { ok: true; system: CloudflareSystem; /** The service whose config this is. */ worker: string; envs: string[]; settings: WranglerSetting[]; notes: WranglerNote[] }
   | { ok: false; /** Why it couldn't be read, in words. */ reason: string; kind: 'toml' | 'syntax' | 'shape' | 'env' };
 
+export type WranglerEnvironmentsRead =
+  | { ok: true; system: CloudflareSystem; /** Each environment's Worker, by its name; the top level's is under `''`. */ workers: Record<string, string>; envs: string[]; notes: WranglerNote[] }
+  | { ok: false; reason: string; kind: 'toml' | 'syntax' | 'shape' | 'env' };
+
 export interface WranglerDifference {
   /** `added`: in the system, and not in the config. `removed`: in the config, and not in the system. `renamed`: the same thing, under
-   *  another name. `resource`: the same name, for something else, like another bucket. */
-  kind: 'added' | 'removed' | 'renamed' | 'resource';
+   *  another name. `resource`: the same name, for something else, like another bucket. `setting`: one of the Worker's settings,
+   *  triggers or vars, or a binding's or a consumer's setting, is another value. */
+  kind: 'added' | 'removed' | 'renamed' | 'resource' | 'setting';
   /** The key at the top of the config. */
   key: string;
   /** What it's called on `env`, or the queue, for a consumer. */
@@ -150,6 +158,8 @@ interface Entry {
   node: Node;
   /** Its place among its siblings, and what holds it, for an array. */
   index: number | null;
+  /** What it says, as a value. */
+  value: Record<string, unknown>;
 }
 
 const pathOf = (b: CatalogBinding) => b.path.split('.');
@@ -178,7 +188,7 @@ function entriesIn(section: Node): { entries: Entry[]; settings: WranglerSetting
       if (own) { settings.push({ key: b.key, name }); return; }
       const field = WRANGLER_RESOURCE_FIELDS[b.key];
       const resource = field && typeof value[field] === 'string' && value[field] ? value[field] as string : undefined;
-      entries.push({ binding: b, key: b.key, name, ...(resource ? { resource } : null), node: el, index });
+      entries.push({ binding: b, key: b.key, name, ...(resource ? { resource } : null), node: el, index, value });
     };
     if (b.container === 'array') {
       if (node.type !== 'array') { notes.push({ code: 'wrong-shape', key: b.key, message: `\`${b.path}\` has to be a list, so it isn’t drawn.` }); continue; }
@@ -204,6 +214,7 @@ interface Consumer {
   queue: string;
   node: Node;
   index: number;
+  value: Record<string, unknown>;
 }
 
 function consumersIn(section: Node): Consumer[] {
@@ -211,8 +222,130 @@ function consumersIn(section: Node): Consumer[] {
   if (node?.type !== 'array') return [];
   return (node.children ?? []).flatMap((el, index) => {
     const value = getNodeValue(el) as unknown;
-    return isPlain(value) && typeof value.queue === 'string' && value.queue ? [{ queue: value.queue, node: el, index }] : [];
+    return isPlain(value) && typeof value.queue === 'string' && value.queue ? [{ queue: value.queue, node: el, index, value }] : [];
   });
+}
+
+/* ── A Worker's own facts: its settings, triggers, vars and class history ── */
+
+/** Whether two plain values are the same. */
+const same = (a: unknown, b: unknown): boolean => JSON.stringify(a) === JSON.stringify(b);
+const isNum = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
+const str = (v: unknown): v is string => typeof v === 'string' && !!v;
+const strings = (v: unknown): v is string[] => Array.isArray(v) && v.every((x) => typeof x === 'string');
+
+/** A setting of a Worker's, by where it is in the config. Wrangler inherits each from the top level into an env section. */
+const SETTING_PATHS: readonly { field: keyof CloudflareSettings; path: readonly string[]; is: (v: unknown) => boolean }[] = [
+  { field: 'main', path: ['main'], is: str },
+  { field: 'compatibilityDate', path: ['compatibility_date'], is: str },
+  { field: 'compatibilityFlags', path: ['compatibility_flags'], is: strings },
+  { field: 'placement', path: ['placement', 'mode'], is: str },
+  { field: 'cpuMs', path: ['limits', 'cpu_ms'], is: isNum },
+  { field: 'subrequests', path: ['limits', 'subrequests'], is: isNum },
+  { field: 'observability', path: ['observability', 'enabled'], is: (v) => typeof v === 'boolean' },
+  { field: 'headSamplingRate', path: ['observability', 'head_sampling_rate'], is: isNum },
+  { field: 'logpush', path: ['logpush'], is: (v) => typeof v === 'boolean' },
+];
+
+/** A consumer's settings, by their keys in `queues.consumers`. */
+const CONSUMER_FIELDS: readonly [keyof CloudflareConsumerSettings, string, (v: unknown) => boolean][] = [
+  ['batchSize', 'max_batch_size', isNum], ['batchTimeout', 'max_batch_timeout', isNum], ['retries', 'max_retries', isNum],
+  ['retryDelay', 'retry_delay', isNum], ['deadLetterQueue', 'dead_letter_queue', str], ['concurrency', 'max_concurrency', isNum],
+];
+
+/** What a section says, or the top level's, for an env section that doesn't say. */
+interface Reading {
+  root: Node;
+  section: Node;
+  /** It's an env section, which inherits what it doesn't say. */
+  inherits: boolean;
+}
+const valueAt = (r: Reading, path: readonly string[]): unknown => {
+  const own = at(r.section, path);
+  if (own) return getNodeValue(own) as unknown;
+  const inherited = r.inherits ? at(r.root, path) : undefined;
+  return inherited ? getNodeValue(inherited) as unknown : undefined;
+};
+
+function readSettings(r: Reading): CloudflareSettings | undefined {
+  const out: Record<string, unknown> = {};
+  for (const { field, path, is } of SETTING_PATHS) {
+    const v = valueAt(r, path);
+    if (is(v)) out[field] = v;
+  }
+  return Object.keys(out).length ? out as CloudflareSettings : undefined;
+}
+
+function readRoute(v: unknown): CloudflareTrigger | null {
+  if (str(v)) return { kind: 'route', pattern: v };
+  if (!isPlain(v) || !str(v.pattern)) return null;
+  return { kind: 'route', pattern: v.pattern, ...(str(v.zone_name) ? { zone: v.zone_name } : null), ...(v.custom_domain === true ? { customDomain: true } : null) };
+}
+/** The routes, `workers.dev` and cron schedules in a section, in that order, or nothing if it says nothing about any. */
+function readTriggers(r: Reading): CloudflareTrigger[] | undefined {
+  const routes = valueAt(r, ['routes']), route = valueAt(r, ['route']), dev = valueAt(r, ['workers_dev']), crons = valueAt(r, ['triggers', 'crons']);
+  if (routes === undefined && route === undefined && dev === undefined && crons === undefined) return undefined;
+  const out: CloudflareTrigger[] = [];
+  for (const v of Array.isArray(routes) ? routes : route !== undefined ? [route] : []) {
+    const t = readRoute(v);
+    if (t) out.push(t);
+  }
+  if (dev === true) out.push({ kind: 'workers-dev' });
+  if (strings(crons)) for (const schedule of crons) out.push({ kind: 'cron', schedule });
+  return out;
+}
+const writeRoute = (t: Extract<CloudflareTrigger, { kind: 'route' }>): unknown =>
+  (t.zone || t.customDomain ? { pattern: t.pattern, ...(t.zone ? { zone_name: t.zone } : null), ...(t.customDomain ? { custom_domain: true } : null) } : t.pattern);
+
+function readMigrations(r: Reading): CloudflareMigration[] | undefined {
+  const v = valueAt(r, ['migrations']);
+  if (!Array.isArray(v)) return undefined;
+  return v.flatMap((m): CloudflareMigration[] => {
+    if (!isPlain(m) || !str(m.tag)) return [];
+    const out: CloudflareMigration = { tag: m.tag };
+    if (strings(m.new_sqlite_classes)) out.newSqliteClasses = m.new_sqlite_classes;
+    if (strings(m.new_classes)) out.newClasses = m.new_classes;
+    if (Array.isArray(m.renamed_classes)) {
+      const renamed = m.renamed_classes.flatMap((x) => (isPlain(x) && str(x.from) && str(x.to) ? [{ from: x.from, to: x.to }] : []));
+      if (renamed.length) out.renamedClasses = renamed;
+    }
+    if (strings(m.deleted_classes)) out.deletedClasses = m.deleted_classes;
+    return [out];
+  });
+}
+const writeMigration = (m: CloudflareMigration): unknown => ({
+  tag: m.tag,
+  ...(m.newSqliteClasses ? { new_sqlite_classes: m.newSqliteClasses } : null),
+  ...(m.newClasses ? { new_classes: m.newClasses } : null),
+  ...(m.renamedClasses ? { renamed_classes: m.renamedClasses } : null),
+  ...(m.deletedClasses ? { deleted_classes: m.deletedClasses } : null),
+});
+
+/** The names of the plain values on `env` (`vars`), or nothing if it has none. They aren't inherited. */
+function readVars(section: Node): string[] | undefined {
+  const node = at(section, ['vars']);
+  return node?.type === 'object' ? propsOf(node).map(keyOf) : undefined;
+}
+
+/** A Worker's own facts, from its section. */
+function workerFacts(r: Reading): Pick<CloudflareService, 'settings' | 'triggers' | 'vars' | 'migrations'> {
+  const settings = readSettings(r), triggers = readTriggers(r), vars = readVars(r.section), migrations = readMigrations(r);
+  return { ...(settings ? { settings } : null), ...(triggers ? { triggers } : null), ...(vars ? { vars } : null), ...(migrations ? { migrations } : null) };
+}
+
+/** A consumer's settings, from its entry. */
+function consumerSettings(value: Record<string, unknown>): CloudflareConsumerSettings | undefined {
+  const out: Record<string, unknown> = {};
+  for (const [field, key, is] of CONSUMER_FIELDS) if (is(value[key])) out[field] = value[key];
+  return Object.keys(out).length ? out as CloudflareConsumerSettings : undefined;
+}
+
+/** What a binding's entry says past its name and resource: a service binding's entrypoint, a producer's delivery delay. */
+function entryFields(e: Entry): Pick<CloudflareEdge, 'entrypoint' | 'deliveryDelay'> {
+  return {
+    ...(e.key === 'services' && str(e.value.entrypoint) ? { entrypoint: e.value.entrypoint } : null),
+    ...(e.key === 'queues' && isNum(e.value.delivery_delay) ? { deliveryDelay: e.value.delivery_delay } : null),
+  };
 }
 
 const edgeIdOf = (worker: string, key: string, name: string) => `${worker}-${key}-${name}`;
@@ -235,10 +368,14 @@ export function readWrangler(text: string, options: WranglerOptions = {}): Wrang
   const baseName = value(at(root, ['name']));
   const ownName = options.env === undefined ? undefined : value(at(section, ['name']));
   const named = typeof ownName === 'string' && ownName ? ownName : typeof baseName === 'string' && baseName ? (options.env === undefined ? baseName : `${baseName}-${options.env}`) : null;
+  const reading: Reading = { root, section, inherits: options.env !== undefined };
+  const environment = options.env !== undefined ? { environment: options.env } : null;
   const worker: CloudflareService = {
     id: named ?? 'worker',
     kind: value(at(root, ['pages_build_output_dir'])) !== undefined ? 'pages' : 'workers',
     ...(named ? { label: named } : null),
+    ...workerFacts(reading),
+    ...environment,
   };
 
   const { entries, settings, notes } = entriesIn(section);
@@ -259,15 +396,57 @@ export function readWrangler(text: string, options: WranglerOptions = {}): Wrang
     seen.add(e.name);
     // A Worker bound to itself is one service.
     const id = e.key === 'services' && e.resource === worker.label ? worker.id : serviceIdOf(product, e.resource ?? (WRANGLER_RESOURCE_FIELDS[e.key] ? e.name : undefined));
-    if (!services.has(id)) services.set(id, { id, kind: product, ...(e.resource ? { label: e.resource, resource: e.resource } : null) });
-    edges.push({ id: uniqueId(edgeIdOf(worker.id, e.key, e.name)), from: worker.id, to: id, via: e.key, binding: e.name });
+    // A Durable Object's class is in this Worker's code, unless the binding says whose.
+    const host = e.key === 'durable_objects' ? { host: str(e.value.script_name) ? e.value.script_name : worker.id } : null;
+    if (!services.has(id)) services.set(id, { id, kind: product, ...(e.resource ? { label: e.resource, resource: e.resource } : null), ...host, ...environment });
+    edges.push({ id: uniqueId(edgeIdOf(worker.id, e.key, e.name)), from: worker.id, to: id, via: e.key, binding: e.name, ...entryFields(e) });
   }
   for (const c of consumersIn(section)) {
     const id = serviceIdOf('queues', c.queue);
-    if (!services.has(id)) services.set(id, { id, kind: 'queues', label: c.queue, resource: c.queue });
-    edges.push({ id: uniqueId(consumerEdgeId(worker.id, c.queue)), from: id, to: worker.id, via: CONSUMER_VIA });
+    if (!services.has(id)) services.set(id, { id, kind: 'queues', label: c.queue, resource: c.queue, ...environment });
+    const consumer = consumerSettings(c.value);
+    edges.push({ id: uniqueId(consumerEdgeId(worker.id, c.queue)), from: id, to: worker.id, via: CONSUMER_VIA, ...(consumer ? { consumer } : null) });
   }
-  return { ok: true, system: { services: [...services.values()], edges }, worker: worker.id, envs, settings, notes };
+  const account = value(at(root, ['account_id']));
+  const system: CloudflareSystem = { services: [...services.values()], edges, ...(str(account) ? { accountId: account } : null) };
+  return { ok: true, system, worker: worker.id, envs, settings, notes };
+}
+
+/**
+ * Every environment in a config, as one system: the top level's Worker and what it's bound to, and each `env` section's,
+ * each in its environment (`environment`). What two environments are bound to alike, like one bucket, is in neither, as it's
+ * shared. Each section is read as `readWrangler` reads it, so `writeWrangler(text, system, { env })` writes each one back.
+ */
+export function readWranglerEnvironments(text: string): WranglerEnvironmentsRead {
+  const top = readWrangler(text);
+  if (!top.ok) return top;
+  const workers: Record<string, string> = { '': top.worker };
+  const services = new Map(top.system.services.map((s) => [s.id, s]));
+  const edges = [...top.system.edges];
+  const notes = top.notes.filter((n) => n.code !== 'env-not-read');
+  const shared = new Set<string>();
+  for (const env of top.envs) {
+    const read = readWrangler(text, { env });
+    if (!read.ok) return read;
+    workers[env] = read.worker;
+    notes.push(...read.notes);
+    for (const s of read.system.services) {
+      const had = services.get(s.id);
+      if (!had) services.set(s.id, s);
+      else if (had.environment !== s.environment) shared.add(s.id);
+    }
+    edges.push(...read.system.edges.filter((e) => !edges.some((x) => x.id === e.id)));
+  }
+  const system: CloudflareSystem = {
+    ...top.system,
+    services: [...services.values()].map((s) => {
+      if (!shared.has(s.id)) return s;
+      const { environment: _, ...rest } = s;
+      return rest;
+    }),
+    edges,
+  };
+  return { ok: true, system, workers, envs: top.envs, notes };
 }
 
 /* ── Comparing them ── */
@@ -288,9 +467,14 @@ type Step =
   | { k: 'rename'; binding: CatalogBinding; from: string; to: string }
   | { k: 'resource'; binding: CatalogBinding; name: string; to: string | undefined }
   | { k: 'remove'; binding: CatalogBinding; name: string }
-  | { k: 'add'; binding: CatalogBinding; fields: Record<string, string> }
+  | { k: 'add'; binding: CatalogBinding; fields: Record<string, unknown> }
+  | { k: 'field'; binding: CatalogBinding; name: string; field: string; /** Left out, the field goes. */ value: unknown }
   | { k: 'remove-consumer'; queue: string }
-  | { k: 'add-consumer'; queue: string };
+  | { k: 'add-consumer'; queue: string; fields: Record<string, unknown> }
+  | { k: 'consumer-field'; queue: string; field: string; value: unknown }
+  | { k: 'set'; path: readonly string[]; /** Left out, the key goes. */ value: unknown }
+  | { k: 'add-var'; name: string }
+  | { k: 'remove-var'; name: string };
 
 /** Whether what's at a binding's path, if anything, is what it should be. */
 function canHold(section: Node, b: CatalogBinding): boolean {
@@ -333,14 +517,14 @@ function plan(text: string, system: CloudflareSystem, options: WranglerOptions &
 
   /* What the system says this Worker's bound to. A binding reached through another's method, like `ai.gateway`, is that binding. */
   const wanted: { edge: CloudflareEdge; binding: CatalogBinding; name: string; to: CloudflareService }[] = [];
-  const consumers: { edge: CloudflareEdge; queue: string }[] = [];
+  const consumers: { edge: CloudflareEdge; queue: string; settings?: CloudflareConsumerSettings }[] = [];
   for (const e of system.edges) {
     const from = byId.get(e.from), to = byId.get(e.to);
     if (e.to === worker && e.via === CONSUMER_VIA && from) {
       const check = linkOf(e, from.kind, byId.get(worker)!.kind);
       if (!check.ok) { skipped.push({ edge: e.id, reason: check.reason }); continue; }
       const queue = from.resource ?? from.label ?? from.id;
-      consumers.push({ edge: e, queue });
+      consumers.push({ edge: e, queue, settings: e.consumer });
       continue;
     }
     if (e.from !== worker) continue;
@@ -379,6 +563,29 @@ function plan(text: string, system: CloudflareSystem, options: WranglerOptions &
     differences.push({ kind: 'resource', key: entry.key, name: entry.name, was: entry.resource, now, message: `${entry.name} is for ${now} in the system, and ${entry.resource ?? 'nothing'} in the config.` });
     steps.push({ k: 'resource', binding: entry.binding, name: entry.name, to: now });
   }
+  /** A matched entry's fields past its name and resource: a service binding's entrypoint, a producer's delay, a Durable
+   *  Object's Worker. What the system doesn't say is left as it is. */
+  const desiredFields = (w: (typeof wanted)[number]): Record<string, unknown> => {
+    const out: Record<string, unknown> = {};
+    if (w.binding.key === 'services' && w.edge.entrypoint !== undefined) out.entrypoint = w.edge.entrypoint;
+    if (w.binding.key === 'queues' && w.edge.deliveryDelay !== undefined) out.delivery_delay = w.edge.deliveryDelay;
+    if (w.binding.key === 'durable_objects' && w.to.host !== undefined) {
+      const host = byId.get(w.to.host);
+      out.script_name = w.to.host === worker ? undefined : host?.label ?? w.to.host;
+    }
+    return out;
+  };
+  const compareFields = (entry: Entry, w: (typeof wanted)[number]) => {
+    for (const [field, value] of Object.entries(desiredFields(w))) {
+      if (same(entry.value[field], value)) continue;
+      differences.push({ kind: 'setting', key: entry.key, name: w.name, was: entry.value[field] === undefined ? undefined : String(entry.value[field]), now: value === undefined ? undefined : String(value), message: value === undefined ? `${w.name} has \`${field}\` in the config, and not in the system.` : `${w.name}’s \`${field}\` is ${String(value)} in the system, and ${entry.value[field] === undefined ? 'not set' : String(entry.value[field])} in the config.` });
+      steps.push({ k: 'field', binding: entry.binding, name: w.name, field, value });
+    }
+  };
+  for (const w of wanted) {
+    const entry = entries.find((en) => matched.has(en) && en.key === w.binding.key && en.name === w.name);
+    if (entry) compareFields(entry, w);
+  }
   const newOnes: typeof wanted = [];
   for (const w of unplaced) {
     const was = entries.find((en) => !matched.has(en) && en.key === w.binding.key && edgeIdOf(read.worker, en.key, en.name) === w.edge.id);
@@ -387,6 +594,7 @@ function plan(text: string, system: CloudflareSystem, options: WranglerOptions &
       differences.push({ kind: 'renamed', key: was.key, name: w.name, was: was.name, message: `${was.name}, in the config, is called ${w.name} in the system.` });
       steps.push({ k: 'rename', binding: was.binding, from: was.name, to: w.name });
       compareResource({ ...was, name: w.name }, w);
+      compareFields({ ...was, name: w.name }, w);
     } else newOnes.push(w);
   }
   for (const en of entries) {
@@ -400,7 +608,8 @@ function plan(text: string, system: CloudflareSystem, options: WranglerOptions &
     if (!canHold(section, b)) { skipped.push({ edge: w.edge.id, reason: `\`${b.path}\` isn’t what it should be, so ${w.name} can’t be added to it.` }); continue; }
     const field = WRANGLER_RESOURCE_FIELDS[b.key];
     const resource = w.to.resource ?? (field && field !== 'id' ? w.to.label : undefined);
-    const fields: Record<string, string> = { [b.nameField!]: w.name, ...(field && resource ? { [field]: resource } : null) };
+    const extra = Object.fromEntries(Object.entries(desiredFields(w)).filter(([, v]) => v !== undefined));
+    const fields: Record<string, unknown> = { [b.nameField!]: w.name, ...(field && resource ? { [field]: resource } : null), ...extra };
     differences.push({ kind: 'added', key: b.key, name: w.name, now: resource, message: `${w.name} (${kindWord(b)}) is in the system, and not in the config.` });
     steps.push({ k: 'add', binding: b, fields });
     const missing = b.fields.filter((f) => f.required && !(f.name in fields)).map((f) => f.name);
@@ -418,12 +627,90 @@ function plan(text: string, system: CloudflareSystem, options: WranglerOptions &
   }
   const consumerList = at(section, CONSUMER_KEY.split('.'));
   const holder = at(section, ['queues']);
+  const consumerFields = (settings: CloudflareConsumerSettings | undefined): [string, unknown][] =>
+    CONSUMER_FIELDS.flatMap(([field, key]) => (settings?.[field] !== undefined ? [[key, settings[field]] as [string, unknown]] : []));
   for (const c of consumers) {
-    if (haveConsumers.some((h) => h.queue === c.queue)) continue;
+    const had = haveConsumers.find((h) => h.queue === c.queue);
+    if (had) {
+      for (const [key, value] of consumerFields(c.settings)) {
+        if (same(had.value[key], value)) continue;
+        differences.push({ kind: 'setting', key: CONSUMER_KEY, name: c.queue, was: had.value[key] === undefined ? undefined : String(had.value[key]), now: String(value), message: `The consumer of ${c.queue}’s \`${key}\` is ${String(value)} in the system, and ${had.value[key] === undefined ? 'not set' : String(had.value[key])} in the config.` });
+        steps.push({ k: 'consumer-field', queue: c.queue, field: key, value });
+      }
+      continue;
+    }
     if ((holder && holder.type !== 'object') || (consumerList && consumerList.type !== 'array')) { skipped.push({ edge: c.edge.id, reason: `\`${CONSUMER_KEY}\` isn’t what it should be, so the consumer of ${c.queue} can’t be added to it.` }); continue; }
     differences.push({ kind: 'added', key: CONSUMER_KEY, name: c.queue, message: `The consumer of ${c.queue} is in the system, and not in the config.` });
-    steps.push({ k: 'add-consumer', queue: c.queue });
+    steps.push({ k: 'add-consumer', queue: c.queue, fields: Object.fromEntries(consumerFields(c.settings)) });
   }
+
+  /* The Worker's own facts, compared as what they mean, so a file that says the same thing another way is left as it is. New
+     ones go in ahead of its bindings, where a person would put them. */
+  const bindingSteps = steps.splice(0);
+  const me = byId.get(worker)!;
+  const reading: Reading = { root, section, inherits: options.env !== undefined };
+  const setting = (path: readonly string[], was: unknown, now: unknown, what: string) => {
+    differences.push({ kind: 'setting', key: path.join('.'), name: path[path.length - 1]!, ...(was === undefined ? null : { was: JSON.stringify(was) }), ...(now === undefined ? null : { now: JSON.stringify(now) }), message: `${what} ${now === undefined ? 'isn’t in the system' : `is ${JSON.stringify(now)} in the system`}, and ${was === undefined ? 'isn’t in the config' : `${JSON.stringify(was)} in the config`}.` });
+  };
+  /** Sets a key to a value, or takes it out (or, if it's inherited, empties it), as it isn't what the system says. */
+  const put = (path: readonly string[], value: unknown, empty: unknown) => {
+    const own = at(section, path) !== undefined;
+    if (value !== undefined) steps.push({ k: 'set', path, value });
+    else if (own) steps.push({ k: 'set', path, value: undefined });
+    if (value === undefined && reading.inherits && !own && at(root, path)) steps.push({ k: 'set', path, value: empty });
+  };
+  for (const { field, path } of SETTING_PATHS) {
+    const now = me.settings?.[field];
+    if (now === undefined) continue;
+    const was = valueAt(reading, path);
+    if (same(was, now)) continue;
+    setting(path, was, now, `\`${path.join('.')}\``);
+    put(path, now, undefined);
+  }
+  if (system.accountId !== undefined && !same(valueAt(reading, ['account_id']), system.accountId)) {
+    setting(['account_id'], valueAt(reading, ['account_id']), system.accountId, 'The account');
+    put(['account_id'], system.accountId, undefined);
+  }
+  if (me.triggers !== undefined) {
+    const had = readTriggers(reading) ?? [];
+    const routes = (list: readonly CloudflareTrigger[]) => list.flatMap((t) => (t.kind === 'route' ? [t] : []));
+    const crons = (list: readonly CloudflareTrigger[]) => list.flatMap((t) => (t.kind === 'cron' ? [t.schedule] : []));
+    const dev = (list: readonly CloudflareTrigger[]) => list.some((t) => t.kind === 'workers-dev');
+    if (!same(routes(had), routes(me.triggers))) {
+      const want = routes(me.triggers);
+      setting(['routes'], routes(had).map((t) => t.pattern), want.map((t) => t.pattern), 'Its routes');
+      if (at(section, ['route'])) steps.push({ k: 'set', path: ['route'], value: undefined });
+      put(['routes'], want.length ? want.map(writeRoute) : undefined, []);
+    }
+    if (dev(had) !== dev(me.triggers)) {
+      setting(['workers_dev'], dev(had), dev(me.triggers), '`workers_dev`');
+      steps.push({ k: 'set', path: ['workers_dev'], value: dev(me.triggers) });
+    }
+    if (!same(crons(had), crons(me.triggers))) {
+      setting(['triggers', 'crons'], crons(had), crons(me.triggers), 'Its cron schedules');
+      put(['triggers', 'crons'], crons(me.triggers).length ? crons(me.triggers) : undefined, []);
+    }
+  }
+  if (me.migrations !== undefined) {
+    const had = readMigrations(reading);
+    if (!same(had ?? [], me.migrations)) {
+      setting(['migrations'], had?.map((m) => m.tag), me.migrations.map((m) => m.tag), 'Its Durable Object migrations');
+      put(['migrations'], me.migrations.length ? me.migrations.map(writeMigration) : undefined, []);
+    }
+  }
+  if (me.vars !== undefined) {
+    const had = readVars(section) ?? [];
+    for (const name of had) if (!me.vars.includes(name)) {
+      differences.push({ kind: 'removed', key: 'vars', name, message: `${name} (a var) is in the config, and not in the system.` });
+      steps.push({ k: 'remove-var', name });
+    }
+    for (const name of me.vars) if (!had.includes(name)) {
+      differences.push({ kind: 'added', key: 'vars', name, message: `${name} (a var) is in the system, and not in the config.` });
+      steps.push({ k: 'add-var', name });
+      needs.push({ key: 'vars', name, fields: ['value'], message: `${name} needs a value, which a system doesn’t hold, so that’s for you to fill in.` });
+    }
+  }
+  steps.push(...bindingSteps);
   return { ok: true, plan: { section: sectionPath, parsed, worker, differences, steps, needs, skipped, notes } };
 }
 
@@ -544,13 +831,41 @@ function unit(text: string): string {
   return m?.[1]?.[0] === '\t' ? '\t' : m?.[1] ?? '  ';
 }
 
-const flat = (fields: Readonly<Record<string, string>>) => `{ ${Object.entries(fields).map(([k, v]) => `${JSON.stringify(k)}: ${JSON.stringify(v)}`).join(', ')} }`;
+/** A value as JSON on one line, spaced as a person would write it: `{ "a": 1 }`, `["a", "b"]`. */
+function inline(value: unknown): string {
+  if (Array.isArray(value)) return `[${value.map(inline).join(', ')}]`;
+  if (isPlain(value)) {
+    const fields = Object.entries(value).filter(([, v]) => v !== undefined);
+    return fields.length ? `{ ${fields.map(([k, v]) => `${JSON.stringify(k)}: ${inline(v)}`).join(', ')} }` : '{}';
+  }
+  return JSON.stringify(value);
+}
+const flat = (fields: Readonly<Record<string, unknown>>) => inline(fields);
 
-function setField(text: string, entry: Node, field: string, value: string): string {
-  const prop = propsOf(entry).filter((p) => keyOf(p) === field).pop();
+function setField(text: string, entry: Node, field: string, value: unknown): string {
+  const props = propsOf(entry);
+  const prop = props.filter((p) => keyOf(p) === field).pop();
   const node = prop?.children?.[1];
-  if (node) return text.slice(0, node.offset) + JSON.stringify(value) + text.slice(node.offset + node.length);
-  return appendTo(text, entry, `${JSON.stringify(field)}: ${JSON.stringify(value)}`);
+  if (value === undefined) return prop ? removeFrom(text, entry, props.indexOf(prop)) : text;
+  if (node) return text.slice(0, node.offset) + inline(value) + text.slice(node.offset + node.length);
+  return appendTo(text, entry, `${JSON.stringify(field)}: ${inline(value)}`);
+}
+
+/** Sets what's at a path in a section, making the objects on the way that aren't there yet, or takes it out. */
+function setPath(text: string, section: Node, path: readonly string[], value: unknown): string {
+  let holder = section, i = 0;
+  for (; i < path.length - 1; i++) {
+    const next = at(holder, [path[i]!]);
+    if (!next) break;
+    // Something that isn't an object is in the way, and that isn't this to put right.
+    if (next.type !== 'object') return text;
+    holder = next;
+  }
+  if (i === path.length - 1) return setField(text, holder, path[i]!, value);
+  if (value === undefined) return text;
+  const rest = path.slice(i);
+  const nested = rest.slice(1).reduceRight((inner, key) => `{ ${JSON.stringify(key)}: ${inner} }`, inline(value));
+  return appendTo(text, holder, `${JSON.stringify(rest[0])}: ${nested}`);
 }
 
 function sectionIn(text: string, sectionPath: readonly string[]): Node {
@@ -594,7 +909,21 @@ function applyStep(text: string, sectionPath: readonly string[], step: Step): st
       return removeFrom(text, at(section, CONSUMER_KEY.split('.'))!, c.index);
     }
     case 'add-consumer':
-      return appendAt(text, section, CONSUMER_KEY.split('.'), flat({ queue: step.queue }));
+      return appendAt(text, section, CONSUMER_KEY.split('.'), flat({ queue: step.queue, ...step.fields }));
+    case 'consumer-field': {
+      const c = consumersIn(section).find((x) => x.queue === step.queue)!;
+      return setField(text, c.node, step.field, step.value);
+    }
+    case 'field': {
+      const e = find(step.binding, step.name)!;
+      return setField(text, e.node, step.field, step.value);
+    }
+    case 'set':
+      return setPath(text, section, step.path, step.value);
+    case 'add-var':
+      return setPath(text, section, ['vars', step.name], '');
+    case 'remove-var':
+      return setPath(text, section, ['vars', step.name], undefined);
     default:
       return text;
   }

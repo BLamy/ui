@@ -20,9 +20,12 @@ export type {
   CanvasProps, CanvasPointerInfo, CanvasContextValue, CanvasController, CanvasFitOptions, CanvasInsets, CanvasViewportChangeDetails, CanvasViewportReason,
   CanvasFrameProps, CanvasHandlesProps, CanvasMarqueeProps, CanvasGuidesProps, CanvasMiniMapProps, CanvasMiniMapItem, CanvasPointerLayer,
 } from './components/canvas';
-export { Diagram, DiagramNodeBody, DiagramToolbar, useDiagram, useDiagramHistory, createDiagramController, diagramEdgeVariants, diagramNodeVariants } from './components/diagram';
+export {
+  Diagram, DiagramNodeBody, DiagramNodeHeader, DiagramSections, DiagramEntryMarker, DiagramToolbar, useDiagram, useDiagramHistory, createDiagramController,
+  diagramEdgeVariants, diagramNodeVariants, diagramItemVariants, diagramEdgeLabelVariants,
+} from './components/diagram';
 export type {
-  DiagramProps, DiagramNodeBodyProps, DiagramToolbarProps, DiagramContextValue, DiagramController, DiagramData, DiagramItem,
+  DiagramProps, DiagramNodeBodyProps, DiagramNodeHeaderProps, DiagramSectionsProps, DiagramToolbarProps, DiagramContextValue, DiagramController, DiagramData, DiagramItem,
   DiagramDataChangeDetails, DiagramDataChangeReason, DiagramSelectionChangeDetails, DiagramSelectionChangeReason,
   DiagramHistory, DiagramHistoryChangeDetails, DiagramHistoryOptions, UseDiagramHistory,
 } from './components/diagram';
@@ -38,8 +41,8 @@ export { StateDiagram } from './components/state-diagram';
 export type { StateDiagramProps, StateDiagramConfigChangeDetails, StateDiagramConfigChangeReason } from './components/state-diagram';
 // The diagram's data types, which Diagram's props take; the operations on them are on `@brett_lamy/ui/lib/diagram-model`.
 export type {
-  DiagramConnection, DiagramEdge, DiagramEdgeTone, DiagramEdgeVariant, DiagramNode, DiagramNodeKind, DiagramNodeVariant, DiagramPort,
-  DiagramSelection, DiagramSide,
+  DiagramConnection, DiagramEdge, DiagramEdgeTone, DiagramEdgeVariant, DiagramGlyph, DiagramNode, DiagramNodeKind, DiagramNodeVariant, DiagramPort,
+  DiagramSection, DiagramSectionItem, DiagramSelection, DiagramSide, DiagramTone,
 } from './lib/diagram-model';
 // StateDiagram's machine types; its logic (parseXState, machineToDraft, the simulation, the edits) is on
 // `@brett_lamy/ui/lib/state-diagram-*`.

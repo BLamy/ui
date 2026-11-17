@@ -8,22 +8,31 @@
    typical letter widths. The hydrating client starts from the same estimate, measures straight after, and only moves
    things if the sizes came out different. An app that wants no such move gives nodes fixed sizes. */
 
-/** What a piece of text is, which sets how it's drawn. */
-export type DiagramTextKind = 'label' | 'detail' | 'title' | 'edge';
+/** What a piece of text is, which sets how it's drawn: the parts of a card and of an edge's label. */
+export type DiagramTextKind = 'title' | 'description' | 'caption' | 'item' | 'code' | 'trailing' | 'edge';
 
 /** The classes each kind of text is drawn with. The measuring element uses them too, so the two can't disagree. */
 export const DIAGRAM_TEXT_CLASS: Record<DiagramTextKind, string> = {
-  /** A node's name. */
-  label: 'text-caption font-medium leading-tight',
-  /** A node's second line. */
-  detail: 'text-caption2 leading-tight',
-  /** The name of what holds other nodes. */
-  title: 'text-caption font-semibold leading-tight',
-  /** An edge's label. */
-  edge: 'text-caption2 leading-none',
+  /** A header strip's title: a node's, a group's, the root's. */
+  title: 'text-footnote font-semibold leading-tight',
+  /** A quiet paragraph under the header, and an item's second words. */
+  description: 'text-caption leading-tight',
+  /** A section's caption. */
+  caption: 'text-caption2 leading-tight',
+  /** An item: a chip's or a list row's words. */
+  item: 'text-caption font-medium leading-tight',
+  /** An item in a `code` section. */
+  code: 'font-mono text-caption leading-tight',
+  /** A header's trailing badge, and a glyph that is a few characters. */
+  trailing: 'text-caption2 font-medium leading-tight',
+  /** An edge label's title. */
+  edge: 'text-caption font-semibold leading-tight',
 };
 
-/** Past this width a node's words wrap. An edge's label doesn't wrap. */
+/** Kinds of text that never wrap: a badge, a glyph, an edge label's title. */
+const NO_WRAP: ReadonlySet<DiagramTextKind> = new Set(['trailing', 'edge']);
+
+/** Past this width a card's words wrap. */
 export const DIAGRAM_TEXT_MAX_WIDTH = 216;
 
 export interface TextSize {
@@ -41,10 +50,13 @@ export type TextMeasurer = (text: string, kind: DiagramTextKind) => TextSize;
 /* ── Estimating ── */
 
 const EM: Record<DiagramTextKind, { size: number; line: number; weight: number }> = {
-  label: { size: 12, line: 15, weight: 1.03 },
-  detail: { size: 11, line: 13.75, weight: 1 },
-  title: { size: 12, line: 15, weight: 1.05 },
-  edge: { size: 11, line: 11, weight: 1 },
+  title: { size: 13, line: 16.25, weight: 1.05 },
+  description: { size: 12, line: 15, weight: 1 },
+  caption: { size: 11, line: 13.75, weight: 1 },
+  item: { size: 12, line: 15, weight: 1.03 },
+  code: { size: 12, line: 15, weight: 1.05 },
+  trailing: { size: 11, line: 13.75, weight: 1.03 },
+  edge: { size: 12, line: 15, weight: 1.05 },
 };
 
 const WIDE = /[ᄀ-ᅟ⺀-꓏가-힣豈-﫿︰-﹏＀-｠￠-￦]|[\u{1f000}-\u{1faff}\u{20000}-\u{3ffff}]/u;
@@ -62,10 +74,12 @@ function charWidth(c: string): number {
 export function estimateText(text: string, kind: DiagramTextKind, maxWidth = DIAGRAM_TEXT_MAX_WIDTH): TextSize {
   const { size, line, weight } = EM[kind];
   let w = 0;
-  for (const c of text) w += charWidth(c);
+  // A mono face is the same width for every letter.
+  for (const c of text) w += kind === 'code' ? (WIDE.test(c) ? 1 : 0.62) : charWidth(c);
   w = Math.ceil(w * size * weight);
-  if (kind === 'edge' || w <= maxWidth) return { w, h: line };
-  return { w: maxWidth, h: Math.ceil(w / maxWidth) * line };
+  const h = Math.ceil(line);
+  if (NO_WRAP.has(kind) || w <= maxWidth) return { w, h };
+  return { w: maxWidth, h: Math.ceil((Math.ceil(w / maxWidth) * line)) };
 }
 
 /* ── Measuring ── */
@@ -135,7 +149,7 @@ export function measureText(runs: readonly TextRun[], host?: Element | null, max
       seen.add(id);
       const el = document.createElement('div');
       el.className = DIAGRAM_TEXT_CLASS[run.kind];
-      el.style.cssText = run.kind === 'edge'
+      el.style.cssText = NO_WRAP.has(run.kind)
         ? 'position:absolute;width:max-content;white-space:nowrap;'
         : `position:absolute;width:max-content;max-width:${maxWidth}px;white-space:normal;overflow-wrap:anywhere;`;
       el.textContent = run.text;
@@ -144,7 +158,7 @@ export function measureText(runs: readonly TextRun[], host?: Element | null, max
       pending.push({ run, el });
     }
     if (pending.length) {
-      const scale = (rulers.label.getBoundingClientRect().width || 100) / 100 || 1;
+      const scale = (rulers.title.getBoundingClientRect().width || 100) / 100 || 1;
       for (const { run, el } of pending) {
         const r = el.getBoundingClientRect();
         // Up to a whole pixel, so that a box this wide can't wrap what fitted here.

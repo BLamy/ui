@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { CLOUDFLARE_CATALOG as C } from './cloudflare-catalog.generated';
 import { catalogBinding, type CloudflareEdge, type CloudflareService } from './cloudflare-services';
 import { checkMachines, parseSystem, systemToJson, validateSystem, type CloudflareSystem } from './cloudflare-system';
-import { WRANGLER_RESOURCE_FIELDS, compareWrangler, readWrangler, writeWrangler, type WranglerRead } from './cloudflare-wrangler';
+import { WRANGLER_RESOURCE_FIELDS, compareWrangler, readWrangler, readWranglerEnvironments, writeWrangler, type WranglerRead } from './cloudflare-wrangler';
 
 /* Real configs, word for word, from replay-recording-inspector. */
 const TANSTACK_START = `// Read by @cloudflare/vite-plugin to build the worker. Nothing is deployed: replay-run serves the build with
@@ -149,15 +149,24 @@ describe('reading real configs', () => {
   it('reads the tanstack-start starter: a Worker, with nothing bound to it', () => {
     const r = read(TANSTACK_START);
     expect(r.worker).toBe('tasks-tanstack-start');
-    expect(r.system).toEqual({ services: [{ id: 'tasks-tanstack-start', kind: 'workers', label: 'tasks-tanstack-start' }], edges: [] });
+    expect(r.system).toEqual({
+      services: [{
+        id: 'tasks-tanstack-start', kind: 'workers', label: 'tasks-tanstack-start',
+        settings: { main: '@tanstack/react-start/server-entry', compatibilityDate: '2026-10-01', compatibilityFlags: ['nodejs_compat'] },
+      }],
+      edges: [],
+    });
     expect(r.notes).toEqual([]);
   });
 
   it('reads the do-shop’s: its Durable Object, by its class', () => {
     const r = read(DO_SHOP);
     expect(r.system.services).toEqual([
-      { id: 'tanstack-start-pair', kind: 'workers', label: 'tanstack-start-pair' },
-      { id: 'durable-objects:Shop', kind: 'durable-objects', label: 'Shop', resource: 'Shop' },
+      {
+        id: 'tanstack-start-pair', kind: 'workers', label: 'tanstack-start-pair',
+        settings: { main: 'src/server.ts', compatibilityDate: '2026-10-01' }, migrations: [{ tag: 'v1', newSqliteClasses: ['Shop'] }],
+      },
+      { id: 'durable-objects:Shop', kind: 'durable-objects', label: 'Shop', resource: 'Shop', host: 'tanstack-start-pair' },
     ]);
     expect(r.system.edges).toEqual([{ id: 'tanstack-start-pair-durable_objects-SHOP', from: 'tanstack-start-pair', to: 'durable-objects:Shop', via: 'durable_objects', binding: 'SHOP' }]);
     expect(validateSystem(r.system)).toEqual([]);
@@ -324,7 +333,8 @@ describe('writing back', () => {
     expect(gone.text).toBe(QUEUES.replace('{ "queue": "orders", "max_batch_size": 2, "max_batch_timeout": 1 }', ''));
     const back = write(gone.text, r.system);
     expect(back.differences).toEqual([expect.objectContaining({ kind: 'added', key: 'queues.consumers', name: 'orders', message: 'The consumer of orders is in the system, and not in the config.' })]);
-    expect(back.text).toBe(QUEUES.replace('{ "queue": "orders", "max_batch_size": 2, "max_batch_timeout": 1 }', '{ "queue": "orders" }'));
+    // The consumer's settings are the system's, so they go back with it.
+    expect(back.text).toBe(QUEUES);
   });
 
   it('says what a new binding has to have that a system doesn’t say', () => {
@@ -701,7 +711,7 @@ describe('comparing', () => {
 describe('where it’s from', () => {
   it('is all on the entry the docs say', async () => {
     const entry = await import('../cloudflare');
-    for (const name of ['readWrangler', 'writeWrangler', 'compareWrangler', 'WRANGLER_RESOURCE_FIELDS', 'parseSystem', 'systemToJson', 'validateSystem', 'checkMachines', 'searchCatalog', 'addService', 'removeServices', 'sharedServices', 'machineEvents', 'machineReceives', 'machinesPast', 'serviceName', 'edgeBinding', 'newEdge', 'CloudflareDiagram']) {
+    for (const name of ['readWrangler', 'writeWrangler', 'compareWrangler', 'WRANGLER_RESOURCE_FIELDS', 'parseSystem', 'systemToJson', 'validateSystem', 'checkMachines', 'searchCatalog', 'addService', 'removeServices', 'sharedServices', 'machineEvents', 'machineReceives', 'machinesPast', 'serviceName', 'edgeBinding', 'newEdge', 'CloudflareDiagram', 'readWranglerEnvironments', 'serviceFacts', 'systemFacts', 'serviceEntries', 'serviceHandlers', 'systemEnvironments', 'handlerNames']) {
       expect(entry, name).toHaveProperty(name);
     }
     // It loads a lot, which on a busy machine takes more than the five seconds a test gets.
@@ -779,5 +789,172 @@ describe('machines', () => {
     const withMachine = { ...r.system, services: r.system.services.map((s) => (s.kind === 'durable-objects' ? { ...s, machine: { initial: 'open', states: { open: {} } } } : s)) };
     expect(checkMachines(xstate, withMachine)).toEqual([]);
     expect(write(DO_SHOP, withMachine).text).toBe(DO_SHOP);
+  });
+});
+
+/* ── A Worker's own facts, both ways ── */
+
+/** Everything a system holds about a Worker that wrangler.jsonc has a place for. */
+const FULL = `{
+  "name": "api",
+  "account_id": "0123456789abcdef",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-11-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "placement": { "mode": "smart" },
+  "limits": { "cpu_ms": 50, "subrequests": 200 },
+  "observability": { "enabled": true, "head_sampling_rate": 0.25 },
+  "logpush": true,
+  "workers_dev": true,
+  "routes": ["api.example.com/*", { "pattern": "uploads.example.com", "custom_domain": true }, { "pattern": "example.com/v1/*", "zone_name": "example.com" }],
+  "triggers": { "crons": ["0 * * * *", "*/5 * * * *"] },
+  "vars": { "LOG_LEVEL": "info", "REGION": "eu" },
+  "durable_objects": { "bindings": [{ "name": "ROOM", "class_name": "Room" }, { "name": "LIMIT", "class_name": "Limiter", "script_name": "limits" }] },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Room"] }, { "tag": "v2", "renamed_classes": [{ "from": "Room", "to": "Lobby" }] }],
+  "services": [{ "binding": "AUTH", "service": "auth", "entrypoint": "Sessions" }],
+  "queues": {
+    "producers": [{ "binding": "JOBS", "queue": "jobs", "delivery_delay": 30 }],
+    "consumers": [{ "queue": "jobs", "max_batch_size": 10, "max_batch_timeout": 5, "max_retries": 3, "retry_delay": 60, "dead_letter_queue": "jobs-dlq", "max_concurrency": 2 }]
+  }
+}
+`;
+
+describe('a Worker’s facts, from the file and back', () => {
+  it('reads every one of them', () => {
+    const r = read(FULL);
+    const api = r.system.services.find((s) => s.id === 'api')!;
+    expect(r.system.accountId).toBe('0123456789abcdef');
+    expect(api.settings).toEqual({
+      main: 'src/index.ts', compatibilityDate: '2026-11-01', compatibilityFlags: ['nodejs_compat'], placement: 'smart',
+      cpuMs: 50, subrequests: 200, observability: true, headSamplingRate: 0.25, logpush: true,
+    });
+    expect(api.triggers).toEqual([
+      { kind: 'route', pattern: 'api.example.com/*' },
+      { kind: 'route', pattern: 'uploads.example.com', customDomain: true },
+      { kind: 'route', pattern: 'example.com/v1/*', zone: 'example.com' },
+      { kind: 'workers-dev' },
+      { kind: 'cron', schedule: '0 * * * *' },
+      { kind: 'cron', schedule: '*/5 * * * *' },
+    ]);
+    expect(api.vars).toEqual(['LOG_LEVEL', 'REGION']);
+    expect(api.migrations).toEqual([{ tag: 'v1', newSqliteClasses: ['Room'] }, { tag: 'v2', renamedClasses: [{ from: 'Room', to: 'Lobby' }] }]);
+    const by = (binding: string) => r.system.edges.find((e) => e.binding === binding)!;
+    expect(by('AUTH').entrypoint).toBe('Sessions');
+    expect(by('JOBS').deliveryDelay).toBe(30);
+    expect(r.system.edges.find((e) => e.via === 'queue-consumer')!.consumer).toEqual({ batchSize: 10, batchTimeout: 5, retries: 3, retryDelay: 60, deadLetterQueue: 'jobs-dlq', concurrency: 2 });
+    expect(r.system.services.find((s) => s.id === 'durable-objects:Room')!.host).toBe('api');
+    expect(r.system.services.find((s) => s.id === 'durable-objects:Limiter')!.host).toBe('limits');
+  });
+
+  it('writes the file it read back as it was, and through JSON too', () => {
+    const { system } = read(FULL);
+    expect(write(FULL, system)).toMatchObject({ text: FULL, differences: [] });
+    expect(write(FULL, parseSystem(systemToJson(system)).system).text).toBe(FULL);
+  });
+
+  it('writes every one of them into a file that has none, and reads the same system back', () => {
+    const { system } = read(FULL);
+    const base = '{\n  "name": "api"\n}\n';
+    const w = write(base, system);
+    expect(parses(w.text)).toEqual([]);
+    const back = read(w.text).system;
+    expect(back).toEqual(system);
+    // And once it's written, there's nothing left to do.
+    expect(write(w.text, system).differences).toEqual([]);
+  });
+
+  it('changes one setting, and nothing else', () => {
+    const { system } = read(FULL);
+    const change = (patch: Partial<CloudflareService>) => ({ ...system, services: system.services.map((s) => (s.id === 'api' ? { ...s, ...patch } : s)) });
+    const api = system.services.find((s) => s.id === 'api')!;
+    expect(write(FULL, change({ settings: { ...api.settings, compatibilityDate: '2026-12-01' } })).text).toBe(FULL.replace('"2026-11-01"', '"2026-12-01"'));
+    expect(write(FULL, change({ settings: { ...api.settings, cpuMs: 30 } })).text).toBe(FULL.replace('"cpu_ms": 50', '"cpu_ms": 30'));
+    const crons = api.triggers!.map((t) => (t.kind === 'cron' && t.schedule === '0 * * * *' ? { ...t, schedule: '0 0 * * *' } : t));
+    const w = write(FULL, change({ triggers: crons }));
+    expect(w.text).toBe(FULL.replace('["0 * * * *", "*/5 * * * *"]', '["0 0 * * *", "*/5 * * * *"]'));
+    expect(w.differences).toEqual([expect.objectContaining({ kind: 'setting', key: 'triggers.crons' })]);
+    expect(write(FULL, change({ triggers: api.triggers!.filter((t) => t.kind !== 'workers-dev') })).text).toBe(FULL.replace('"workers_dev": true', '"workers_dev": false'));
+    expect(write(FULL, change({ vars: ['LOG_LEVEL'] })).text).toBe(FULL.replace(', "REGION": "eu"', ''));
+    const added = write(FULL, change({ vars: ['LOG_LEVEL', 'REGION', 'TOKEN'] }));
+    expect(added.text).toBe(FULL.replace('"REGION": "eu"', '"REGION": "eu", "TOKEN": ""'));
+    expect(added.needs).toEqual([expect.objectContaining({ key: 'vars', name: 'TOKEN' })]);
+  });
+
+  it('a fact the system doesn’t say is left as it is, and one it says is none goes', () => {
+    const { system } = read(FULL);
+    const bare = { ...system, services: system.services.map((s) => (s.id === 'api' ? { id: s.id, kind: s.kind, label: s.label } : s)) };
+    expect(write(FULL, bare).text).toBe(FULL);
+    const none = { ...system, services: system.services.map((s) => (s.id === 'api' ? { ...s, triggers: [] } : s)) };
+    const w = write(FULL, none).text;
+    expect(read(w).system.services[0]!.triggers).toEqual([]);
+    expect(w).not.toContain('"routes"');
+    expect(w).not.toContain('"crons"');
+  });
+
+  it('a consumer’s and a binding’s settings change in their own entry', () => {
+    const { system } = read(FULL);
+    const next = {
+      ...system,
+      edges: system.edges.map((e) => (e.via === 'queue-consumer' ? { ...e, consumer: { ...e.consumer, retries: 5 } }
+        : e.binding === 'AUTH' ? { ...e, entrypoint: 'Admin' } : e.binding === 'JOBS' ? { ...e, deliveryDelay: 0 } : e)),
+    };
+    expect(write(FULL, next).text).toBe(FULL.replace('"max_retries": 3', '"max_retries": 5').replace('"Sessions"', '"Admin"').replace('"delivery_delay": 30', '"delivery_delay": 0'));
+  });
+
+  it('a Durable Object of another Worker’s says whose, and one of its own doesn’t', () => {
+    const { system } = read(FULL);
+    const swapped = { ...system, services: system.services.map((s) => (s.id === 'durable-objects:Room' ? { ...s, host: 'rooms' } : s.id === 'durable-objects:Limiter' ? { ...s, host: 'api' } : s)) };
+    expect(write(FULL, swapped).text).toBe(FULL
+      .replace('{ "name": "ROOM", "class_name": "Room" }', '{ "name": "ROOM", "class_name": "Room", "script_name": "rooms" }')
+      .replace(', "script_name": "limits"', ''));
+  });
+});
+
+describe('every environment at once', () => {
+  const ENVS = `{
+  "name": "shop",
+  "compatibility_date": "2026-11-01",
+  "routes": ["shop.example.com/*"],
+  "r2_buckets": [{ "binding": "FILES", "bucket_name": "files" }],
+  "kv_namespaces": [{ "binding": "CACHE", "id": "prod" }],
+  "env": {
+    "staging": {
+      "routes": ["staging.shop.example.com/*"],
+      "r2_buckets": [{ "binding": "FILES", "bucket_name": "files" }],
+      "kv_namespaces": [{ "binding": "CACHE", "id": "stage" }]
+    }
+  }
+}
+`;
+  const all = () => {
+    const r = readWranglerEnvironments(ENVS);
+    if (!r.ok) throw new Error(r.reason);
+    return r;
+  };
+
+  it('reads each section’s Worker into its environment, and what both use into neither', () => {
+    const r = all();
+    expect(r.workers).toEqual({ '': 'shop', staging: 'shop-staging' });
+    const env = Object.fromEntries(r.system.services.map((s) => [s.id, s.environment ?? null]));
+    expect(env).toEqual({ shop: null, 'r2:files': null, 'kv:prod': null, 'shop-staging': 'staging', 'kv:stage': 'staging' });
+    // A section inherits its settings, and has its own triggers.
+    const staging = r.system.services.find((s) => s.id === 'shop-staging')!;
+    expect(staging.settings).toEqual({ compatibilityDate: '2026-11-01' });
+    expect(staging.triggers).toEqual([{ kind: 'route', pattern: 'staging.shop.example.com/*' }]);
+  });
+
+  it('writes each one back as it was', () => {
+    const { system } = all();
+    expect(write(ENVS, system).text).toBe(ENVS);
+    expect(write(ENVS, system, { env: 'staging' }).text).toBe(ENVS);
+  });
+
+  it('writes a setting that’s another value in a section into that section, and leaves the top level’s', () => {
+    const { system } = all();
+    const next = { ...system, services: system.services.map((s) => (s.id === 'shop-staging' ? { ...s, settings: { compatibilityDate: '2026-12-01' } } : s)) };
+    const w = write(ENVS, next, { env: 'staging' }).text;
+    expect(w).toContain('"compatibility_date": "2026-11-01"');
+    expect(read(w, 'staging').system.services[0]!.settings).toEqual({ compatibilityDate: '2026-12-01' });
+    expect(read(w).system.services[0]!.settings).toEqual({ compatibilityDate: '2026-11-01' });
   });
 });

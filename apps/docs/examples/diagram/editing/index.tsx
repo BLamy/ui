@@ -4,21 +4,21 @@ import { Switch } from '@/components/ui/switch'
 import type { DiagramEdge, DiagramNode, DiagramSelection } from '@/lib/diagram-model'
 
 const NODES: DiagramNode[] = [
-  { id: 'a', label: 'Inbox', x: 40, y: 60, w: 110, h: 36 },
-  { id: 'b', label: 'Triage', x: 240, y: 60, w: 110, h: 36 },
-  { id: 'c', label: 'Archive', x: 240, y: 200, w: 110, h: 36 },
-  { id: 'box', kind: 'group', label: 'Review', x: 440, y: 20, w: 300, h: 240 },
-  { id: 'kid1', parent: 'box', label: 'Read', x: 470, y: 70, w: 100, h: 36 },
-  { id: 'kid2', parent: 'box', label: 'Reply', x: 610, y: 170, w: 100, h: 36 },
-  { id: 'far', label: 'Elsewhere', x: 40, y: 300, w: 110, h: 36 },
+  { id: 'a', title: 'Inbox', x: 40, y: 60, w: 110, h: 36 },
+  { id: 'b', title: 'Triage', x: 240, y: 60, w: 110, h: 36 },
+  { id: 'c', title: 'Archive', x: 240, y: 200, w: 110, h: 36 },
+  { id: 'box', kind: 'group', title: 'Review', x: 440, y: 20, w: 300, h: 240 },
+  { id: 'kid1', parent: 'box', title: 'Read', x: 470, y: 70, w: 100, h: 36 },
+  { id: 'kid2', parent: 'box', title: 'Reply', x: 610, y: 170, w: 100, h: 36 },
+  { id: 'far', title: 'Elsewhere', x: 40, y: 300, w: 110, h: 36 },
 ]
 
 const EDGES: DiagramEdge[] = [
-  { id: 'ab', from: 'a', to: 'b', label: 'sort', points: [{ x: 150, y: 78 }, { x: 240, y: 78 }], labelBox: { x: 180, y: 62, w: 24, h: 11 } },
-  { id: 'bc', from: 'b', to: 'c', label: 'done', points: [{ x: 295, y: 96 }, { x: 295, y: 200 }] },
-  { id: 'bk', from: 'b', to: 'kid1', label: 'open', points: [{ x: 350, y: 78 }, { x: 410, y: 78 }, { x: 410, y: 88 }, { x: 470, y: 88 }] },
+  { id: 'ab', from: 'a', to: 'b', title: 'sort', points: [{ x: 150, y: 78 }, { x: 240, y: 78 }], labelBox: { x: 180, y: 62, w: 24, h: 11 } },
+  { id: 'bc', from: 'b', to: 'c', title: 'done', points: [{ x: 295, y: 96 }, { x: 295, y: 200 }] },
+  { id: 'bk', from: 'b', to: 'kid1', title: 'open', points: [{ x: 350, y: 78 }, { x: 410, y: 78 }, { x: 410, y: 88 }, { x: 470, y: 88 }] },
   { id: 'kk', from: 'kid1', to: 'kid2' },
-  { id: 'loop', from: 'c', to: 'c', label: 'again' },
+  { id: 'loop', from: 'c', to: 'c', title: 'again' },
 ]
 
 // Drag anything: edges follow. Shift or ⌘ adds to the selection, a drag from nothing draws a marquee, Delete deletes, ⌘Z undoes.

@@ -7,7 +7,8 @@ import { readFile } from 'node:fs/promises';
 
 const panel = (page) => page.locator('[data-slot=cloudflare-panel]');
 const service = (page, id) => page.locator(`[data-slot=diagram-node][data-node="${id}"]`);
-const services = (page) => page.locator('[data-slot=cloudflare-service]');
+/** Every service's card: a node that isn't the system's box or an environment's. */
+const services = (page) => page.locator('[data-slot=diagram-node]:not([data-node^="cloudflare:"])');
 /** The catalog search: its combobox, by name (the Combobox also renders a hidden form input). */
 const catalogSearch = (page) => page.getByRole('combobox', { name: 'Search Cloudflare’s services' });
 const port = async (page, node, name) => {
@@ -42,7 +43,7 @@ const connect = async (page, a, ap, b, bp) => {
 /** A press on a service's name, which nothing's drawn over. */
 const press = async (page, id) => {
   await settle(page);
-  const box = await service(page, id).locator('[data-slot=cloudflare-service-name]').boundingBox();
+  const box = await service(page, id).locator('[data-slot=diagram-node-title]').first().boundingBox();
   await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
 };
 /** A new connection's selected, and this names it on env. */

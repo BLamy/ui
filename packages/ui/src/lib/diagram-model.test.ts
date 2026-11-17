@@ -323,18 +323,18 @@ describe('edge routes', () => {
     expect(route({ from: 'a', fromPort: 'nope', to: 'b' }).start).toEqual({ x: 100, y: 20 });
   });
 
-  it('loops a self-transition outside the node, top by default', () => {
+  it('loops a self-transition outside the node, beside it by default', () => {
     const g = route({ from: 'a', to: 'a' });
+    const a = nodes.find((n) => n.id === 'a')!;
     finite(g);
     square(g.pts);
-    expect(g.start.y).toBe(0);
-    expect(g.end.y).toBe(0);
-    expect(g.start.x).not.toBe(g.end.x);
+    expect(g.start.x).toBe(a.x + a.w);
+    expect(g.end.x).toBe(a.x + a.w);
+    expect(g.start.y).not.toBe(g.end.y);
     // It leaves and comes back, and everything between stands clear of the node.
-    for (const p of g.pts.slice(1, -1)) expect(p.y).toBeLessThan(0);
-    // Its arrow points down, into the node.
-    expect(g.endDir).toEqual({ x: 0, y: 1 });
-    expect(labelBox(g.pts, { w: 40, h: 12 }).y + 12).toBeLessThan(g.pts[1].y);
+    for (const p of g.pts.slice(1, -1)) expect(p.x).toBeGreaterThan(a.x + a.w);
+    // Its arrow points back, into the node.
+    expect(g.endDir).toEqual({ x: -1, y: 0 });
   });
 
   it('loops between two ports of the same node, without crossing it', () => {
@@ -354,8 +354,8 @@ describe('edge routes', () => {
   it('nests a node’s self-loops, so they can be told apart', () => {
     const two = edgeGeometries([{ id: 'x', from: 'a', to: 'a' }, { id: 'y', from: 'a', to: 'a' }], index);
     const [x, y] = [two.get('x')!, two.get('y')!];
-    expect(y.pts[1].y).toBeLessThan(x.pts[1].y);
-    expect(y.start.x).toBeLessThan(x.start.x);
+    expect(y.pts[1].x).toBeGreaterThan(x.pts[1].x);
+    expect(y.start.y).toBeLessThan(x.start.y);
   });
 
   it('runs an edge between a compound and its own child inside the compound, either way round', () => {
@@ -566,7 +566,7 @@ describe('moving nodes', () => {
     node('far', 0, 500),
   ];
   const edges: DiagramEdge[] = [
-    { id: 'ab', from: 'a', to: 'b', points: [{ x: 100, y: 20 }, { x: 300, y: 20 }], label: 'x', labelBox: { x: 180, y: 6, w: 40, h: 11 } },
+    { id: 'ab', from: 'a', to: 'b', points: [{ x: 100, y: 20 }, { x: 300, y: 20 }], title: 'x', labelBox: { x: 180, y: 6, w: 40, h: 11 } },
     { id: 'kk', from: 'kid', to: 'kid2', points: [{ x: 650, y: 120 }, { x: 660, y: 120 }] },
     { id: 'bx', from: 'b', to: 'box', points: [{ x: 400, y: 20 }, { x: 500, y: 20 }] },
     { id: 'free', from: 'a', to: 'far' },
@@ -708,13 +708,13 @@ describe('connections', () => {
   it('adds an edge under an id nothing else has, or the one you make', () => {
     const out = addConnection([{ id: 'edge-2', from: 'a', to: 'b' }], { from: 'w', fromPort: 'sql', to: 'd' });
     expect(out[1]).toEqual({ id: 'edge-3', from: 'w', fromPort: 'sql', to: 'd' });
-    expect(addConnection([], { from: 'a', to: 'b' }, (c) => ({ id: 'mine', from: c.from, to: c.to, label: 'hi' }))).toEqual([{ id: 'mine', from: 'a', to: 'b', label: 'hi' }]);
+    expect(addConnection([], { from: 'a', to: 'b' }, (c) => ({ id: 'mine', from: c.from, to: c.to, title: 'hi' }))).toEqual([{ id: 'mine', from: 'a', to: 'b', title: 'hi' }]);
   });
 
   it('moves an edge’s ends: its old route and label place go, as they were for the old ends, and the rest stays', () => {
-    const before: DiagramEdge[] = [{ id: 'e', from: 'a', fromPort: 'p', to: 'b', toPort: 'q', label: 'x', variant: 'dotted', points: [{ x: 0, y: 0 }, { x: 1, y: 1 }], labelBox: { x: 0, y: 0, w: 1, h: 1 } }, { id: 'f', from: 'a', to: 'b' }];
+    const before: DiagramEdge[] = [{ id: 'e', from: 'a', fromPort: 'p', to: 'b', toPort: 'q', title: 'x', variant: 'dotted', points: [{ x: 0, y: 0 }, { x: 1, y: 1 }], labelBox: { x: 0, y: 0, w: 1, h: 1 } }, { id: 'f', from: 'a', to: 'b' }];
     const [e, f] = moveEdgeEnd(before, { edge: 'e', from: 'a', to: 'c' });
-    expect(e).toEqual({ id: 'e', from: 'a', to: 'c', label: 'x', variant: 'dotted' });
+    expect(e).toEqual({ id: 'e', from: 'a', to: 'c', title: 'x', variant: 'dotted' });
     expect(f).toBe(before[1]);
     expect(moveEdgeEnd(before, { edge: 'e', from: 'z', fromPort: 'r', to: 'c', toPort: 's' })[0]).toMatchObject({ from: 'z', fromPort: 'r', to: 'c', toPort: 's' });
   });

@@ -1,7 +1,7 @@
 {
   "name": "diagram-model",
   "title": "Diagram model",
-  "description": "Diagram's data as plain functions on plain nodes, ports and edges: index a diagram, measure its bounds, move nodes and edge ends, check and add a connection, delete a selection (with what it leaves dangling), and the geometry of every connector (routes, curves, arrowheads, hit tests). Nothing renders; Diagram, Freeform's connectors and Interface Builder's segues run on it.",
+  "description": "Diagram's data as plain functions on plain nodes, ports and edges: index a diagram, measure its bounds, move nodes and edge ends, check and add a connection, delete a selection (with what it leaves dangling), a card's anatomy measured from its text (nodeSize, edgeLabelSize), and the geometry of every connector (routes, curves, arrowheads, hit tests). Nothing renders; Diagram, Freeform's connectors and Interface Builder's segues run on it.",
   "page": "diagram",
   "exports": [
     "indexDiagram",
@@ -14,7 +14,9 @@
     "NOTHING_SELECTED",
     "edgeGeometry",
     "nodeAt",
-    "edgeAt"
+    "edgeAt",
+    "nodeSize",
+    "edgeLabelSize"
   ],
   "imports": [
     "indexDiagram",
@@ -33,6 +35,10 @@
     "DiagramSelection",
     "DiagramConnection",
     "DiagramIndex",
-    "ConnectorRoute"
+    "ConnectorRoute",
+    "DiagramGlyph",
+    "DiagramTone",
+    "DiagramSection",
+    "DiagramSectionItem"
   ]
 }

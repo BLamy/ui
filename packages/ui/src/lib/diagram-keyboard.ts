@@ -6,22 +6,40 @@
      Arrows           to a neighbour that way, along an edge if there is one, or else whatever's nearest that way.
                       On an edge: right or down to where it goes, left or up to where it comes from.
      [ and ]          through a node's edges, and from an edge to the next one from the same node
-     Alt + ↓ and ↑    into what a node holds, and out to what holds it
+     Alt + ↓ and ↑    into a node's or an edge label's items (when they can be pressed) and then into what a node holds,
+                      and out again to what holds it
+     On an item       arrows to the next or the last item of the same node or label
      PageDown, PageUp every node and then every edge, in order, round and round
      Home, End        the first and the last node */
 import { centerOf, type Pt, type Rect, type Viewport } from '@/lib/canvas-math';
-import { ancestorsOf, descendantsOf, type DiagramEdge, type DiagramIndex, type DiagramNode } from '@/lib/diagram-model';
+import { ancestorsOf, descendantsOf, itemKey, sectionKey, type DiagramEdge, type DiagramIndex, type DiagramNode, type DiagramSection } from '@/lib/diagram-model';
 
-/** A node or an edge, by id: what has focus, what `onAction` hands over, what a step goes to. */
+/** A node or an edge, by id, or with `section` and `item` one of the items of its sections: what has focus, what
+ *  `onAction` hands over, what a step goes to. */
 export interface DiagramItem {
   kind: 'node' | 'edge';
   id: string;
+  /** The section's address (`DiagramSection.id`, or its index), with `item`. */
+  section?: string;
+  /** The item's address (`DiagramSectionItem.id`, or its title). */
+  item?: string;
 }
 
 export interface DiagramStepContext {
   index: DiagramIndex<any>;
   edges: readonly DiagramEdge<any>[];
+  /** Whether items can be pressed, which makes them somewhere focus goes. */
+  items?: boolean;
 }
+
+/** The items of a node's or an edge label's sections, in order, as addresses. */
+export function itemsOf(owner: { kind: 'node' | 'edge'; id: string }, sections: readonly DiagramSection[] | undefined): DiagramItem[] {
+  const out: DiagramItem[] = [];
+  sections?.forEach((s, si) => { for (const it of s.items) out.push({ kind: owner.kind, id: owner.id, section: sectionKey(s, si), item: itemKey(it) }); });
+  return out;
+}
+
+const sameItem = (a: DiagramItem, b: DiagramItem) => a.kind === b.kind && a.id === b.id && a.section === b.section && a.item === b.item;
 
 /** The edges at each node, in the order they're listed, each once. */
 export function edgesByNode(edges: readonly DiagramEdge<any>[]): Map<string, { out: DiagramEdge<any>[]; into: DiagramEdge<any>[] }> {
@@ -96,6 +114,26 @@ export function stepFocus(current: DiagramItem | null, step: DiagramStep, ctx: D
   if (step === 'first') return nodes.length ? { kind: 'node', id: nodes[0].id } : null;
   if (step === 'last') return nodes.length ? { kind: 'node', id: nodes[nodes.length - 1].id } : null;
   if (!current) return order[0];
+  const sectionsOf = (it: DiagramItem) => (it.kind === 'node' ? ctx.index.byId.get(it.id)?.sections : ctx.edges.find((e) => e.id === it.id)?.sections);
+  if (current.item !== undefined) {
+    // On an item: along its owner's items, and out to the owner; a group's children are past its items.
+    const owner: DiagramItem = { kind: current.kind, id: current.id };
+    const list = itemsOf(owner, sectionsOf(current));
+    const at = list.findIndex((x) => sameItem(x, current));
+    if (step === 'ArrowDown' || step === 'ArrowRight') return at >= 0 && at < list.length - 1 ? list[at + 1] : null;
+    if (step === 'ArrowUp' || step === 'ArrowLeft') return at > 0 ? list[at - 1] : null;
+    if (step === 'out') return owner;
+    if (step === 'in') {
+      const kids = current.kind === 'node' ? ctx.index.children.get(current.id) : undefined;
+      return kids?.length ? { kind: 'node', id: kids[0].id } : null;
+    }
+    if (step === 'next' || step === 'previous') return stepFocus(owner, step, ctx);
+    return null;
+  }
+  if (step === 'in' && ctx.items) {
+    const first = itemsOf(current, sectionsOf(current))[0];
+    if (first) return first;
+  }
   if (step === 'next' || step === 'previous') {
     const at = order.findIndex((f) => f.kind === current.kind && f.id === current.id);
     const by = step === 'next' ? 1 : -1;
@@ -145,7 +183,7 @@ export function nearestNode(index: DiagramIndex<any>, p: Pt): string | null {
 
 /* ── What a screen reader hears ── */
 
-const nameOf = (n: DiagramNode<any> | undefined, fallback: string) => n?.label || fallback;
+const nameOf = (n: DiagramNode<any> | undefined, fallback: string) => n?.title || fallback;
 
 function kindOf(n: DiagramNode<any>, index: DiagramIndex<any>, noun: string): string {
   const count = index.children.get(n.id)?.length ?? 0;
@@ -173,20 +211,41 @@ export function describeNode(node: DiagramNode<any>, index: DiagramIndex<any>, a
   const parentNode = parent ? index.byId.get(parent) : undefined;
   const where = parentNode && parentNode.kind !== 'root' ? `, in ${nameOf(parentNode, parentNode.id)}` : '';
   // A marker goes by its label ("Start, marker"), and is only a marker without one.
-  const head = node.kind === 'marker' ? (node.label ? `${node.label}, marker` : 'Marker') : `${nameOf(node, node.id)}, ${kindOf(node, index, noun)}`;
-  const detail = node.detail ? ` ${node.detail}.` : '';
+  const head = node.kind === 'marker' ? (node.title ? `${node.title}, marker` : 'Marker') : `${nameOf(node, node.id)}, ${kindOf(node, index, noun)}`;
+  const badge = node.trailing ? `, ${node.trailing}` : '';
+  const entry = node.entry ? ', where it starts' : '';
+  const description = node.description ? ` ${node.description}.` : '';
   const out = at?.out ?? [], into = at?.into ?? [];
-  const going = (e: DiagramEdge<any>) => (e.to === node.id ? `${e.label ? `${e.label} ` : ''}back to itself` : `${e.label ? `${e.label} ` : ''}to ${nameOf(index.byId.get(e.to), e.to)}`);
-  const coming = (e: DiagramEdge<any>) => `${e.label ? `${e.label} ` : ''}from ${nameOf(index.byId.get(e.from), e.from)}`;
+  const going = (e: DiagramEdge<any>) => (e.to === node.id ? `${e.title ? `${e.title} ` : ''}back to itself` : `${e.title ? `${e.title} ` : ''}to ${nameOf(index.byId.get(e.to), e.to)}`);
+  const coming = (e: DiagramEdge<any>) => `${e.title ? `${e.title} ` : ''}from ${nameOf(index.byId.get(e.from), e.from)}`;
   const none = !out.length && !into.length ? ' Not connected to anything.' : '';
-  return `${head}${where}.${detail}${listEdges(out, going, 'going out')}${listEdges(into, coming, 'coming in')}${none}`;
+  return `${head}${badge}${entry}${where}.${description}${describeSections(node.sections)}${listEdges(out, going, 'going out')}${listEdges(into, coming, 'coming in')}${none}`;
+}
+
+/** A node's or an edge label's sections, as a sentence each: "Entry actions: onPause, onPlay." */
+export function describeSections(sections: readonly DiagramSection[] | undefined): string {
+  if (!sections?.length) return '';
+  return sections.filter((s) => s.items.length).map((s) => ` ${s.title ? `${s.title}: ` : ''}${s.items.map((it) => (it.description ? `${it.title} ${it.description}` : it.title)).join(', ')}.`).join('');
+}
+
+/** What an item is, and whose: "onPause, Entry actions, in Paused". */
+export function describeItem(item: DiagramItem, sections: readonly DiagramSection[] | undefined, owner: string): string {
+  let found: { title: string; description?: string; section?: string } | null = null;
+  sections?.forEach((s, si) => {
+    if (sectionKey(s, si) !== item.section) return;
+    const it = s.items.find((x) => itemKey(x) === item.item);
+    if (it) found = { title: it.title, description: it.description, section: s.title };
+  });
+  if (!found) return owner;
+  const f = found as { title: string; description?: string; section?: string };
+  return `${f.title}${f.description ? ` ${f.description}` : ''}${f.section ? `, ${f.section}` : ''}, in ${owner}`;
 }
 
 /** What an edge is, and what it joins. */
 export function describeEdge(edge: DiagramEdge<any>, index: DiagramIndex<any>): string {
   const from = nameOf(index.byId.get(edge.from), edge.from), to = nameOf(index.byId.get(edge.to), edge.to);
-  const what = edge.label ? `${edge.label}, edge` : 'Edge';
-  return edge.from === edge.to ? `${what} from ${from} back to itself.` : `${what} from ${from} to ${to}.`;
+  const what = edge.title ? `${edge.title}, edge` : 'Edge';
+  return `${what} from ${from} ${edge.from === edge.to ? 'back to itself' : `to ${to}`}.${describeSections(edge.sections)}`;
 }
 
 /* ── The view follows ── */

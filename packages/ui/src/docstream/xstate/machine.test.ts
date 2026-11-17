@@ -24,7 +24,7 @@ describe("XState diagrams", () => {
       active: { initial: "waiting", states: { waiting: { after: { 1000: "ready" } }, ready: { always: "#done" } } },
       done: { id: "done", type: "final" },
     } }))
-    expect(diagram).toContain("after 1000")
+    expect(diagram).toContain("after 1,000 ms")
     expect(diagram).toContain("always")
     expect(diagram).toContain("[*] --> s1")
     expect(diagram).toContain("s4 --> [*]")
@@ -66,17 +66,17 @@ describe("XState diagrams", () => {
     const drawn = (code: string) => {
       const diagram = xstateToMermaid(code)
       const names = new Map([...diagram.matchAll(/state "([^"]*)" as (s\d+)/g)].map((m) => [m[2], m[1].replace(/<br\/>.*/, "")]))
-      return [...diagram.matchAll(/(s\d+) --> (s\d+): (.*)/g)].map((m) => `${names.get(m[1])} --> ${names.get(m[2])}: ${m[3]}`)
+      return [...diagram.matchAll(/(s\d+) --> (s\d+): (.*)/g)].map((m) => `${names.get(m[1])} --> ${names.get(m[2])}: ${m[3]!.replaceAll("&#58;", ":")}`)
     }
 
     it("draws all 36 edges of the spike's machine, with the 14 from what it invokes", () => {
       const edges = drawn(spike)
       expect(edges).toHaveLength(36)
-      expect(edges.filter((e) => e.endsWith(": done") || e.includes(": done ["))).toHaveLength(9)
-      expect(edges.filter((e) => e.endsWith(": error") || e.includes(": error ["))).toHaveLength(7)
-      expect(edges).toContain("authenticating --> checkingQuota: done")
-      expect(edges).toContain("authenticating --> rejected: error")
-      expect(edges).toContain("committing --> backingOff: error")
+      expect(edges.filter((e) => /: done($| \[| \/)/.test(e))).toHaveLength(9)
+      expect(edges.filter((e) => /: error($| \[| \/)/.test(e))).toHaveLength(7)
+      expect(edges).toContain("authenticating --> checkingQuota: verifyToken: done")
+      expect(edges).toContain("authenticating --> rejected: verifyToken: error")
+      expect(edges).toContain("committing --> backingOff: putObject: error")
       expect(edges.filter((e) => e.includes("always"))).toHaveLength(7)
       expect(edges.filter((e) => e.includes(": after "))).toHaveLength(5)
       expect(edges).toContain("checkingQuota --> streaming: always [withinQuota]")
@@ -117,7 +117,7 @@ describe("XState diagrams", () => {
       expect(diagram).toContain('state "b<br/>invoke actor"')
       expect(diagram).toContain('state "c<br/>invoke actor, named"')
       expect(diagram).toContain('state "d<br/>invoke fetch"')
-      expect(drawn(code)).toEqual(expect.arrayContaining(["a --> b: done", "b --> c: done", "b --> a: error", "c --> d: done", "d --> d: snapshot"]))
+      expect(drawn(code)).toEqual(expect.arrayContaining(["a --> b: logic: done / inline", "b --> c: actor: done", "b --> a: actor: error", "c --> d: actor: done", "d --> d: fetch: snapshot"]))
       expect(parseXState(code)).not.toHaveProperty("states.a.invoke.input")
     })
 
@@ -128,7 +128,7 @@ describe("XState diagrams", () => {
       const parsed = parseXState(code) as { states: { b: { invoke: { src: string; id?: string }[] } } }
       expect(parsed.states.b.invoke.map((i) => i.src)).toEqual(["load", "other"])
       expect(parsed.states.b.invoke[1]!.id).toBe("second")
-      expect(drawn(code)).toEqual(expect.arrayContaining(["a --> b: done", "b --> b: done", "b --> a: error"]))
+      expect(drawn(code)).toEqual(expect.arrayContaining(["a --> b: load: done", "b --> b: load: done", "b --> a: other: error"]))
     })
 
     it("refuses an invoke it can't read, rather than guessing", () => {
@@ -154,7 +154,7 @@ describe("XState diagrams", () => {
         after: {},
         failed: {},
       } })`
-      expect(drawn(code)).toEqual(expect.arrayContaining(["outer --> after: done", "inner --> end: done [ok]", "inner --> failed: error"]))
+      expect(drawn(code)).toEqual(expect.arrayContaining(["outer --> after: done", "inner --> end: deep: done [ok]", "inner --> failed: deep: error"]))
     })
 
     it("treats a state called invoke as a state, and an event too", () => {
@@ -164,7 +164,7 @@ describe("XState diagrams", () => {
 
     it("reads JSON the same way", () => {
       const json = JSON.stringify({ id: "m", initial: "a", states: { a: { invoke: { src: "load", input: { x: 1 }, onDone: "b", onError: "c" } }, b: {}, c: {} } })
-      expect(drawn(json)).toEqual(["a --> b: done", "a --> c: error"])
+      expect(drawn(json)).toEqual(["a --> b: load: done", "a --> c: load: error"])
       expect(xstateToMermaid(json)).toContain("invoke load")
     })
   })
@@ -246,7 +246,7 @@ describe("XState diagrams", () => {
         } },
         b: { always: { guard: "ready", target: "a" } },
       }`))
-      for (const text of ["ONE [named]", "TWO [withParams]", "THREE [not]", "FOUR [guard]", "FIVE [someGuard]", "SIX [check]", "always [ready]"]) expect(diagram).toContain(text)
+      for (const text of ["ONE [named]", "TWO [withParams]", "THREE [not x]", "FOUR [inline]", "FIVE [someGuard]", "SIX [check]", "always [ready]"]) expect(diagram).toContain(text)
     })
 
     it("names a guard in JSON, as an object too", () => {

@@ -3,14 +3,14 @@ import { CloudflareDiagram } from '@/components/ui/cloudflare-diagram'
 import { sharedServices, validateSystem, type CloudflareSystem } from '@/lib/cloudflare-system'
 
 const ROOM = { id: 'room', initial: 'empty', states: { empty: { on: { JOIN: 'full' } }, full: { on: { LEAVE: 'empty' } } } }
-const SHARED = { id: 'room', kind: 'durable-objects', label: 'Room', machine: ROOM, at: { x: 340, y: 0 } }
+const SHARED = { id: 'room', kind: 'durable-objects', label: 'Room', machine: ROOM }
 
 const SITE: CloudflareSystem = {
-  services: [{ id: 'site', kind: 'workers', label: 'Site', at: { x: 0, y: 0 } }, SHARED],
+  services: [{ id: 'site', kind: 'workers', label: 'Site' }, SHARED],
   edges: [{ id: 'site-room', from: 'site', to: 'room', via: 'durable_objects', binding: 'ROOM', events: ['JOIN'] }],
 }
 const ADMIN: CloudflareSystem = {
-  services: [{ id: 'admin', kind: 'workers', label: 'Admin', at: { x: 0, y: 0 } }, SHARED],
+  services: [{ id: 'admin', kind: 'workers', label: 'Admin' }, SHARED],
   edges: [{ id: 'admin-room', from: 'admin', to: 'room', via: 'durable_objects', binding: 'ROOMS', events: ['LEAVE'] }],
 }
 

@@ -3,15 +3,15 @@ import { Diagram, DiagramToolbar } from '@/components/ui/diagram'
 import type { DiagramEdge, DiagramNode, DiagramSelection } from '@/lib/diagram-model'
 
 const NODES: DiagramNode[] = [
-  { id: 'draft', label: 'Draft', x: 0, y: 0, w: 120, h: 40 },
-  { id: 'review', label: 'Review', x: 200, y: 0, w: 120, h: 40 },
-  { id: 'published', label: 'Published', x: 400, y: 0, w: 120, h: 40 },
-  { id: 'archived', label: 'Archived', x: 200, y: 110, w: 120, h: 40 },
+  { id: 'draft', title: 'Draft', x: 0, y: 0, w: 120, h: 40 },
+  { id: 'review', title: 'Review', x: 200, y: 0, w: 120, h: 40 },
+  { id: 'published', title: 'Published', x: 400, y: 0, w: 120, h: 40 },
+  { id: 'archived', title: 'Archived', x: 200, y: 110, w: 120, h: 40 },
 ]
 const EDGES: DiagramEdge[] = [
-  { id: 'submit', from: 'draft', to: 'review', label: 'submit' },
-  { id: 'approve', from: 'review', to: 'published', label: 'approve' },
-  { id: 'shelve', from: 'review', to: 'archived', label: 'shelve' },
+  { id: 'submit', from: 'draft', to: 'review', title: 'submit' },
+  { id: 'approve', from: 'review', to: 'published', title: 'approve' },
+  { id: 'shelve', from: 'review', to: 'archived', title: 'shelve' },
 ]
 
 // Tab to the board, then Home and the arrows: focus is a ring past a gap. Draft and Review are selected (a tint and a

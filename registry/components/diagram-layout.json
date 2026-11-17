@@ -1,7 +1,7 @@
 {
   "name": "diagram-layout",
   "title": "Diagram layout",
-  "description": "Places a Diagram's nodes and routes its edges with ELK, in a Web Worker, measuring their words first. ELK is 442 KB gzipped and licensed EPL-2.0 OR GPL-3.0-or-later, so it's only loaded when a layout's first asked for, and this item is what installs it.",
+  "description": "Places a Diagram's nodes and routes its edges with ELK, in a Web Worker, measuring every part of every card first: top to bottom by default, labels on their routes, self-loops in room of their own. ELK is 442 KB gzipped and licensed EPL-2.0 OR GPL-3.0-or-later, so it's only loaded when a layout's first asked for, and this item is what installs it.",
   "page": "diagram",
   "files": [
     "lib/diagram-layout/index.ts",
@@ -15,12 +15,14 @@
     "fromElkGraph",
     "DiagramLayoutError",
     "DIAGRAM_ELK_OPTIONS",
+    "diagramElkOptions",
     "useDiagramLayout"
   ],
   "types": [
     "DiagramDraft",
     "DiagramDraftNode",
     "DiagramDirection",
+    "DiagramLayoutDensity",
     "DiagramLayoutEngine",
     "DiagramLayoutOptions",
     "DiagramLayoutResult",

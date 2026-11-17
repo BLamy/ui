@@ -31,7 +31,7 @@ import { Diagram, DiagramToolbar } from '@brett_lamy/ui/diagram'
 {% endtab %}
 {% endtabs %}
 
-{% demo src="diagram/machine" %}
+{% demo src="diagram/statechart-like" %}
 
 {% hint style="info" %}
 **One contract for the family** (Diagram, [DiagramFrame](#/diagram-frame), [StateDiagram](#/state-diagram), [CloudflareDiagram](#/cloudflare-diagram)):
@@ -50,11 +50,11 @@ A node is a box in board units, and an edge joins two of them. Everything in a d
 
 ```tsx
 const nodes = [
-  { id: 'inbox', label: 'Inbox', x: 0, y: 0, w: 110, h: 36 },
-  { id: 'review', kind: 'group', label: 'Review', x: 200, y: -40, w: 280, h: 140 },
-  { id: 'read', parent: 'review', label: 'Read', x: 240, y: 0, w: 110, h: 36 },
+  { id: 'inbox', title: 'Inbox', x: 0, y: 0, w: 110, h: 36 },
+  { id: 'review', kind: 'group', title: 'Review', x: 200, y: -40, w: 280, h: 140 },
+  { id: 'read', parent: 'review', title: 'Read', x: 240, y: 0, w: 110, h: 36 },
 ]
-const edges = [{ id: 'open', from: 'inbox', to: 'read', label: 'open' }]
+const edges = [{ id: 'open', from: 'inbox', to: 'read', title: 'open' }]
 
 <div className="relative h-96">
   <Diagram nodes={nodes} edges={edges} aria-label="A small workflow" />
@@ -70,7 +70,13 @@ Like the library's other containers, it fills the nearest positioned box. With n
 | `kind` | What it is: a `node` (the default), a `group` that holds others, a `region` (a lane of a group, with a line between it and the next), the `root` that holds everything (background: it can't be selected), or a small round `marker`. |
 | `variant` | Its border: `default`, `dashed` or `double`. A statechart's final state is a `double` node and its parallel state a `dashed` group: [StateDiagram](#/state-diagram) sets those. |
 | `parent` | The node it sits in. Positions are absolute, not relative to it, and it moves with its parent. |
-| `label`, `detail` | Its name, and a quieter second line. |
+| `title` | The header strip's words. A node with nothing but a title is just its header: small. |
+| `icon` | A glyph at the start of the header: any of the kit's [icons](#/icon) by name, or a few characters, `{ text: 'H*' }`. |
+| `trailing` | Short words at the end of the header, as a quiet badge (`Worker`, `parallel`). |
+| `description` | A quiet paragraph under the header. |
+| `sections` | Labelled sections of items under the header. See [The anatomy](#the-anatomy). |
+| `entry` | The entry marker: a dot with a curved arrow into the node's corner, for where things start. |
+| `tone` | A colored accent on its header: `success`, `warning`, `destructive`, `muted`. |
 | `ports` | Named places on its sides, for edges to join. See [Ports](#ports-and-connecting). |
 | `data` | Anything of yours, for `renderNode`. |
 
@@ -81,7 +87,9 @@ Like the library's other containers, it fills the nearest positioned box. With n
 | `fromPort`, `toPort` | Which ports it joins. |
 | `route` | `elbow`, `straight` or `curve`, when it has no `points`. |
 | `points` | A route already worked out, from start to tip. |
-| `label`, `labelBox` | Its label, and where a layout put it. Without `labelBox` it finds a place beside the line. |
+| `title`, `icon` | Its label: a pill on the line. |
+| `sections` | Items under the title, which make the label a small card. |
+| `labelBox` | Where the label sits: a layout puts it on the route, and the line runs into it and out of it. Without it, a place is found on the route. |
 | `variant` | Its line: `default`, `dashed`, `dotted` or `strong`. |
 | `tone` | `destructive` for something that's wrong with it: the destructive color, and dashed as well, as a color isn't enough on its own. |
 
@@ -89,15 +97,38 @@ The looks say nothing about what a diagram is of. StateDiagram draws an `always`
 
 An edge with no `points` works out its route from where its ends are. Edges that leave the same side of a node share it out, a node's self-loops nest, and an edge between a group and its own child runs from the nearest wall. When the ends face away from each other (a port on a card's right to a port on the left of a card to its left), the route goes around the two cards, through the gap between them or past both, never behind them.
 
-A label keeps off the nodes, the words on them and the other labels: where a layout put it if that's clear, or else the first clear place along its route, either side of the line.
+A label is an object on its edge, and part of it: pressing it presses the edge, and focus on the edge rings it. A layout puts it on the route. Without one, it goes on its route where that's clear of the nodes, the words on them and the other labels, then beside the line.
 
 {% demo src="diagram/labels" %}
+
+## The anatomy
+
+Everything a statechart or a system of services has to say is drawn with a few generic parts. Nothing in Diagram knows what it's a diagram of: [StateDiagram](#/state-diagram) and [CloudflareDiagram](#/cloudflare-diagram) map their models onto these.
+
+| Part | Data | How it's drawn | A statechart's | A system's |
+| --- | --- | --- | --- | --- |
+| Header strip | `title`, `icon`, `trailing`, `tone` | A filled strip along the card's top: glyph, title in semibold, a quiet badge at the end | the state's name; a final state's square (`icon: 'stop'`), history's `{ text: 'H*' }` | the service's name, its product as `trailing`, its icon |
+| Description | `description` | A quiet paragraph under the header | the state's `description` | a note |
+| Sections | `sections: [{ title, variant, items }]` | A quiet caption over a column of items | Entry actions, Exit actions, Invoke, Tags | Exposes, Bindings, Triggers, Settings |
+| Item | `{ title, description, icon, tone, port }` | A chip (bordered, raised, leading glyph, medium weight), or with `variant: 'list'` / `'code'` a row of text (mono for `code`) | an action (`icon: 'bolt'`), a context key and its type | a handler, a binding (`port` puts its port on the row), a cron schedule |
+| Container | `kind: 'group'` / `'root'` / `'region'` + the same header and sections | A frame with the header strip across its top, its sections under it, and what it holds below | a compound or parallel state; the machine with its Context | a Worker and its Durable Object classes; the system and what's account-wide |
+| Entry marker | `entry: true` | A dot and a curved arrow into the top-start corner | the initial state | where requests, schedules and messages come in |
+| Edge label | edge `title`, `icon`, `sections` | A pill for a title alone, a card with the title over its chips: on the route, the line runs into it and out of it, the arrowhead at the target | an event; its actions, guard (`if canRetry`), delay (`after 500ms`, `icon: 'clock'`) | a binding's name and the operations it uses |
+| Self-loop | an edge `from === to` | A loop below the node (beside it, in a layout that runs across), its label on the loop | a self-transition | a service calling itself |
+
+{% demo src="diagram/system-like" %}
+
+A card is sized from its real, measured content: the header, the description, each caption and item, the badge and the glyphs (`nodeSize`, `edgeLabelSize`), so a layout leaves exactly the room it needs and a container's children start under its sections.
+
+**Pressing an item.** In an `editable` diagram with `onAction`, items can be pressed: a press, or Enter on one, calls `onAction({ kind, id, section, item }, { reason })`, where `section` is the section's `id` (or its index) and `item` the item's `id` (or its title). Its card is selected too. Read-only, items are words, and nothing more is a tab stop.
+
+**Restyling.** `DiagramNodeBody` draws all of it, and takes `className`; for a card laid out your own way, `renderNode` can compose `DiagramNodeHeader`, `DiagramSections` and `DiagramEntryMarker`. The chips are `diagramItemVariants`, the labels `diagramEdgeLabelVariants`, and every part has a `data-slot` to aim a selector at (below).
 
 Lines and arrowheads keep their thickness on screen at any zoom. Text that would be too small to read hides: an edge's label below 40%, and a node's below 25%. It's the same `Canvas` underneath, so scrolling pans, a pinch or ⌘-scroll zooms, and ⌘0 fits.
 
 ## Laying it out
 
-`useDiagramLayout` takes the same nodes without their places and sizes. It measures their words in the real font, and ELK places them in a Web Worker, so even 2,000 nodes don't stop the page.
+`useDiagramLayout` takes the same nodes without their places and sizes. It measures every part of every card in the real font, and ELK places them in a Web Worker, so even 2,000 nodes don't stop the page. It runs **top to bottom** unless you pass `direction` (`down`, `right`, `up`, `left`): that's what reads on a portrait frame, a phone and a column of docs, and about ten states with their actions fit 800 × 1000 at 100%. `density` (`compact`, `default`, `comfortable`) sets the room between things: `compact` for big generated graphs. Routes are square with rounded corners and keep off the cards and apart from each other; labels sit on their routes; an `entry` node comes first in what holds it; self-loops get room of their own below their node.
 
 {% demo src="diagram/layout" %}
 
@@ -106,7 +137,7 @@ import { useDiagramLayout } from '@/lib/diagram-layout/react'
 
 function Map({ draft }) {
   const host = useRef(null)
-  const laid = useDiagramLayout(draft, { host, direction: 'right' })
+  const laid = useDiagramLayout(draft, { host })
   return (
     <div ref={host} className="relative h-96">
       <Diagram nodes={laid.nodes} edges={laid.edges} loading={laid.status === 'pending'} />
@@ -125,7 +156,7 @@ The worker is `lib/diagram-layout/layout-worker.js`, started with `new Worker(ne
 
 ## Sizes from text
 
-`autoSize` sizes each node to its words, around its center, for when you've got your own positions.
+`autoSize` sizes each node to its content, around its center, for when you've got your own positions: a hand-placed diagram gets the same cards, rounded routes and labels on them as a laid-out one.
 
 {% demo src="diagram/sized-text" %}
 
@@ -210,7 +241,8 @@ What has focus, what's selected and what's current are drawn three ways, none of
 | Tab | To the diagram, and on out of it. |
 | Arrows | To a neighbour that way, along an edge if one goes that way, or else to whatever's nearest that way. On an edge, to either end. |
 | `[` and `]` | Through a node's edges, and from an edge to the next one from the same node. |
-| Alt + ↓ and ↑ | Into what a node holds, and out to what holds it. |
+| Alt + ↓ and ↑ | Into a card's or an edge label's items, when they can be pressed, and then into what a node holds; out again to what holds it. |
+| On an item: arrows, Enter, Escape | To the next or the last item of the same card or label; presses it (`onAction` with `reason: 'enter-key'`); back to its card. Focus stays on the card, the item gets the ring, and it's said aloud ("onPause, Entry actions, in Paused"). |
 | Page Down, Page Up | Through every node and edge in turn. |
 | Home, End | The first and last node. |
 | Enter | Selects what's focused and calls `onAction(item, details)`, as a double click does. |
@@ -221,7 +253,7 @@ What has focus, what's selected and what's current are drawn three ways, none of
 | ⌘Z, ⇧⌘Z (⌘Y) | Undo and redo, of the diagram's history or the one it was handed. |
 | ⌘A | Selects everything. |
 | C | Starts a connection. See below. |
-| Escape | Drops what's going on, then the selection, then goes back to the diagram. |
+| Escape | Out of an item, then drops what's going on, then the selection, then goes back to the diagram. |
 
 Those that edit need `editable`. Those that select need `selectable`, which is on unless you turn it off, read-only too. On Windows and Linux, ⌘ is Ctrl, and the board's description says so.
 
@@ -315,12 +347,12 @@ With no nodes, the shared [EmptyState](#/empty-state) shows over the board ("Not
 | `createEdge` | an id and its ends | The edge for a new connection. |
 | `selection`, `defaultSelection`, `onSelectionChange(selection, details)` | nothing | What's selected, as `{ nodes, edges }`. `details.reason`: `press`, `marquee`, `keyboard`, `select-all`, `escape-key`, `delete`, `imperative`. |
 | `current` | nothing | Where things are now, apart from what's selected, as `{ nodes, edges }`: where a machine is, and how it got there. Written as `aria-current` and `data-current`. |
-| `onAction(item, details)` | — | Enter on what's focused, or a double click. `item` is `{ kind: 'node' \| 'edge', id }`; `details.reason` is `enter-key` or `double-click`. |
+| `onAction(item, details)` | — | Enter on what's focused, a double click, or in an `editable` diagram a press on an item. `item` is `{ kind: 'node' \| 'edge', id }`, with `section` and `item` for an item; `details.reason` is `enter-key`, `double-click` or `press`. Given in an editable diagram, it makes items pressable. |
 | `controller` | — | From `createDiagramController()`: select, delete, connect, move, undo and redo from outside. |
 | `emptyState` | `<EmptyState>` | What shows with no nodes. |
 | `loading` | `false` | The data isn't here yet: a status, and no empty state. |
 | `error` | — | Why it can't be drawn: an alert under the toolbar's row, in place of the empty state. |
-| `autoSize` | `false` | Size each node to its words, around its center. |
+| `autoSize` | `false` | Size each node to its content (header, description, sections), around its center. |
 | `cull` | above 200 | Draw only what's near the view. |
 | `minimap` | `false` | `CanvasMiniMap` in a corner, or its props (`side`, `align`). |
 | `renderNode` | `DiagramNodeBody` | Draws a node's insides. Keep it stable, as nodes memoize on it. |
@@ -328,7 +360,7 @@ With no nodes, the shared [EmptyState](#/empty-state) shows over the board ("Not
 | `noun` | `node` | What a node is called, in what's said: a state, a service. |
 | `viewport`, `defaultViewport`, `onViewportChange(viewport, details)` | fits | As on `Canvas`. |
 | `fitPadding` | `24` | Air around what's fitted, in px, for the first fit and ⌘0: one number, or `{ top, right, bottom, left }`. The toolbar, the minimap and a frame's bar are added to it. |
-| `background`, `panning`, `autoFocus` | as on `Canvas` | Passed to it. A resting cursor is a class: `className="cursor-crosshair"`. |
+| `background`, `panning`, `autoFocus` | as on `Canvas` | Passed to it: `background` is `dots` (the default), `grid` (quiet lines, the board the anatomy demos use) or `none`. A resting cursor is a class: `className="cursor-crosshair"`. |
 | `overlay` | — | Over the board in screen space, outside its keys: a `DiagramToolbar`, a status. `useDiagram()` works here. |
 | `children` | — | More of the board layer. `useCanvas` works here, and `--canvas-zoom` is set (in steps) for Canvas overlay parts. |
 | `aria-label` | "Diagram" | Its name; the board is "<name> board". |
@@ -345,13 +377,16 @@ With no nodes, the shared [EmptyState](#/empty-state) shows over the board ("Not
 
 ### `<DiagramNodeBody>`
 
-How a node looks by its `kind` and `variant`: what `renderNode` draws by default. Use it in your own `renderNode` to add to the node rather than replace it.
+How a node looks by its `kind` and `variant`, with its header strip, description and sections: what `renderNode` draws by default. Use it in your own `renderNode` to add to the node rather than replace it.
 
 | Prop | Default | Effect |
 | --- | --- | --- |
-| `node` | — | The node it draws: its kind, variant, label and detail. |
-| `children` | — | More inside the body, after its words: a badge, a port's name. |
+| `node` | — | The node it draws. |
+| `pressable`, `focusedItem` | the diagram's | Whether its items can be pressed, and which one the keys are on (`section\0item`). Inside a Diagram they come from it. |
+| `children` | — | More inside the card, after its sections. |
 | `className`, `style` | — | Merged onto the body. |
+
+`DiagramNodeHeader` (`node`, `children`, `className`) is the header strip on its own, `DiagramSections` (`sections`, `owner`, `pressable`, `focused`, `className`) the sections, and `DiagramEntryMarker` the marker, for a `renderNode` that arranges a card its own way.
 
 ```tsx
 const renderNode = (node) => (
@@ -372,14 +407,15 @@ const renderNode = (node) => (
 
 ### Data attributes
 
-The root is `data-slot="diagram"` with `data-editable`, `data-selectable` and `data-empty`. Under it: `diagram-layer` (with `data-zoom`: `near`, `mid`, `far`), `diagram-node` (`data-node`, `data-kind`, `data-variant`, `data-selected`, `data-current`), `diagram-node-body`, `diagram-node-label`, `diagram-node-detail`, `diagram-edges`, `diagram-edge` (`data-edge`, `data-variant`, `data-tone`, `data-selected`, `data-current`), `diagram-edge-focus`, `diagram-edge-label`, `diagram-divider`, `diagram-port`, `diagram-edge-end`, `diagram-ring` (`data-focused` for the keyboard's, `data-selected`), `diagram-current`, `diagram-connection` (`data-invalid`), `diagram-connection-target`, `diagram-overlay`, `diagram-empty`, `diagram-loading`, `diagram-error`, `diagram-keys` and `diagram-status`.
+The root is `data-slot="diagram"` with `data-editable`, `data-selectable` and `data-empty`. Under it: `diagram-layer` (with `data-zoom`: `near`, `mid`, `far`), `diagram-node` (`data-node`, `data-kind`, `data-variant`, `data-selected`, `data-current`), `diagram-node-body`, `diagram-node-header` (`data-tone`), `diagram-node-icon`, `diagram-node-title`, `diagram-node-trailing`, `diagram-node-description`, `diagram-node-content`, `diagram-sections`, `diagram-section` (`data-section`, `data-variant`), `diagram-section-title`, `diagram-item` (`data-section`, `data-item`, `data-tone`, `data-pressable`, `data-focused`), `diagram-entry`, `diagram-edges`, `diagram-edge` (`data-edge`, `data-variant`, `data-tone`, `data-selected`, `data-current`), `diagram-edge-focus`, `diagram-edge-label` (`data-shape`: `pill` or `card`; `data-selected`, `data-focused`, `data-current`), `diagram-edge-label-title`, `diagram-divider`, `diagram-port`, `diagram-edge-end`, `diagram-ring` (`data-focused` for the keyboard's, `data-selected`), `diagram-current`, `diagram-connection` (`data-invalid`), `diagram-connection-target`, `diagram-overlay`, `diagram-empty`, `diagram-loading`, `diagram-error`, `diagram-keys` and `diagram-status`.
 
 ### `useDiagramLayout(draft, options)`
 
 | Option | Effect |
 | --- | --- |
 | `host` | A ref to measure text in. |
-| `direction` | `right` (the default), `down`, `left` or `up`. |
+| `direction` | `down` (the default), `right`, `left` or `up`. |
+| `density` | `default`, `compact` or `comfortable`: the room between things. |
 | `elk` | ELK options, over `DIAGRAM_ELK_OPTIONS`. |
 | `worker` | A function that starts the worker yourself. |
 | `initial` | A layout done ahead of time, to show until this one's ready. |
@@ -406,10 +442,10 @@ relative size-full
 
 | Value | Adds |
 | --- | --- |
-| `node` (default) | `flex flex-col items-center justify-center rounded-ctl border border-border bg-card px-3 py-2 text-card-foreground shadow-hairline` |
-| `group` | `rounded-card border border-border bg-secondary` |
-| `region` | `rounded-card` |
-| `root` | `rounded-card border border-border` |
+| `node` (default) | `flex flex-col overflow-hidden rounded-ctl border border-border bg-card text-card-foreground shadow-hairline` |
+| `group` | `flex flex-col overflow-hidden rounded-card border border-border bg-secondary/35 text-card-foreground` |
+| `region` | `flex flex-col rounded-card text-card-foreground` |
+| `root` | `flex flex-col overflow-hidden rounded-card border border-border bg-background/60 text-card-foreground` |
 | `marker` | `rounded-full bg-foreground` |
 
 **`variant`** — default `default`
@@ -445,3 +481,53 @@ fill-none ${LINE}
 | `destructive` | `stroke-destructive` |
 
 1 compound variant — see the source.
+
+### `diagramItemVariants`
+
+Defined in `@/components/ui/diagram`. Base classes:
+
+```text
+flex max-w-full min-w-0 items-center gap-1.5
+```
+
+**`variant`** — default `default`
+
+| Value | Adds |
+| --- | --- |
+| `default` (default) | `rounded-md border border-border bg-background px-2 py-0.5 text-foreground shadow-hairline` |
+| `list` | `text-foreground` |
+| `code` | `text-foreground` |
+
+**`tone`** — default `default`
+
+| Value | Adds |
+| --- | --- |
+| `default` (default) | `[&_[data-part=glyph]]:text-muted-foreground` |
+| `success` | `border-success/40 [&_[data-part=glyph]]:text-success` |
+| `warning` | `border-warning/50 [&_[data-part=glyph]]:text-warning` |
+| `destructive` | `border-destructive/40 text-destructive [&_[data-part=glyph]]:text-destructive` |
+| `muted` | `text-muted-foreground [&_[data-part=glyph]]:text-muted-foreground` |
+
+**`pressable`** — default `false`
+
+| Value | Adds |
+| --- | --- |
+| `true` | `pointer-events-auto cursor-pointer transition-colors hover:bg-accent active:bg-secondary-strong` |
+| `false` (default) | — |
+
+1 compound variant — see the source.
+
+### `diagramEdgeLabelVariants`
+
+Defined in `@/components/ui/diagram`. Base classes:
+
+```text
+absolute border border-border bg-card text-card-foreground shadow-hairline
+```
+
+**`shape`** — default `pill`
+
+| Value | Adds |
+| --- | --- |
+| `pill` (default) | `flex items-center justify-center gap-1 rounded-full px-2.5 py-1 whitespace-nowrap` |
+| `card` | `flex flex-col items-start gap-1.5 rounded-ctl px-2.5 pt-1.5 pb-2` |

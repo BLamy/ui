@@ -5,10 +5,10 @@ import { useDiagramLayout } from '@/lib/diagram-layout/react'
 import type { DiagramEdge, DiagramNode } from '@/lib/diagram-model'
 
 const NODES: DiagramNode[] = [
-  { id: 'one', label: 'A node sized to its words', x: 0, y: 0, w: 1, h: 1 },
-  { id: 'two', label: 'And another', detail: 'with a second line', x: 320, y: 0, w: 1, h: 1 },
+  { id: 'one', title: 'A node sized to its words', x: 0, y: 0, w: 1, h: 1 },
+  { id: 'two', title: 'And another', description: 'with a second line', x: 320, y: 0, w: 1, h: 1 },
 ]
-const EDGES: DiagramEdge[] = [{ id: 'e', from: 'one', to: 'two', label: 'next' }]
+const EDGES: DiagramEdge[] = [{ id: 'e', from: 'one', to: 'two', title: 'next' }]
 
 // A tab that isn't showing has no size and no text to measure. Both of these work it out when it's shown.
 export default function Hidden() {

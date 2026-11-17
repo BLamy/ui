@@ -142,6 +142,43 @@ describe('a config with stand-ins', () => {
   });
 });
 
+describe('the context while it runs', () => {
+  it('starts with the machine’s context when that’s data, and changes it where an assign writes values out', () => {
+    const s = sim({
+      id: 'm', initial: 'a', context: { n: 0, name: '', list: [] as number[] },
+      states: {
+        a: { on: { GO: { target: 'b', actions: xstate.assign({ n: 5, name: ({ context }: { context: { name: string } }) => `${context.name}!` }) } } },
+        b: { entry: [{ type: 'xstate.assign', params: { keys: ['name'], values: { name: 'from source' } } }] },
+      },
+    });
+    expect(s.get().context).toEqual({ n: 0, name: '', list: [] });
+    s.send('GO');
+    // The value written out is set; the one that's code isn't run.
+    expect(s.get().context).toEqual({ n: 5, name: 'from source', list: [] });
+  });
+
+  it('has none when the context is made by code, or there isn’t one', () => {
+    expect(sim({ id: 'm', initial: 'a', context: () => ({ n: 1 }), states: { a: {} } }).get().context).toBeNull();
+    expect(sim({ id: 'm', initial: 'a', states: { a: {} } }).get().context).toBeNull();
+  });
+
+  it('stands in for a built-in parseXState wrote, rather than naming it as one of the machine’s own', () => {
+    const { names } = standInConfig({ id: 'm', initial: 'a', states: { a: { entry: [{ type: 'xstate.raise', params: { event: 'E' } }, { type: 'xstate.inline' }, 'mine'] } } });
+    expect(names.actions).toEqual(['mine']);
+  });
+
+  it('answers a guard made of others as one, named by what it says', () => {
+    const c = { id: 'm', initial: 'a', states: { a: { on: { GO: { target: 'b', guard: xstate.and(['x', xstate.not('y')]) } } }, b: {} } };
+    const s = sim(c);
+    expect(Object.keys(s.get().guards)).toEqual(['x and not y']);
+    s.setGuard('x and not y', false);
+    expect(s.get().events).toEqual([]);
+    s.setGuard('x and not y', true);
+    s.send('GO');
+    expect(s.get().now).toEqual(['b']);
+  });
+});
+
 describe('where it is', () => {
   const m = createMachine({ id: 'm', type: 'parallel', states: { r1: { initial: 'a', states: { a: {}, b: {} } }, r2: { initial: 'c', states: { c: { initial: 'd', states: { d: {} } } } } } });
   const root = (m as unknown as { root: never }).root;
@@ -433,7 +470,7 @@ describe('running the spike’s machine', () => {
     const s = sim(c, { guards: { first: false } });
     s.send('GO');
     expect(s.get().taken).toEqual(['m.a:GO->m.b#1']);
-    expect(machineToDraft(createMachine(c as never) as never).edges.find((e) => e.id === 'm.a:GO->m.b#1')?.data?.guard).toBe('second');
+    expect(machineToDraft(createMachine(c as never) as never).edges.find((e) => e.id === 'm.a:GO->m.b#1')?.data?.guard?.name).toBe('second');
   });
 
   it('tells whoever’s listening, and stops telling them', () => {

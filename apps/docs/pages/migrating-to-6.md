@@ -2627,6 +2627,13 @@ Diagram, DiagramFrame, StateDiagram, CloudflareDiagram and docstream's capnp fen
 | type `DiagramModel` | `DiagramData` (the same `{ nodes, edges }`) |
 | `fitPadding: number` | `number \| { top, right, bottom, left }`; the toolbar, minimap and a DiagramFrameBar are added to it, and `DiagramToolbar` defaults to `top` in a DiagramFrame |
 | `direction: 'RIGHT' \| 'DOWN' \| …` (useDiagramLayout, StateDiagram) | `'right' \| 'down' \| 'left' \| 'up'` |
+| `DiagramNode.label`, `DiagramNode.detail` | `title`, `description` (the kit's row anatomy); a node also takes `icon`, `trailing`, `sections`, `entry`, `tone` |
+| `DiagramEdge.label` (text beside the line) | `title`: the label is a pill on the route, or with `sections` a card of chips; `icon` before the title |
+| `nodeTextSize(node, text)`, `NODE_PADDING`, `NODE_MIN_SIZE` | `nodeSize(node, text)` and `edgeLabelSize(edge, text)`, which measure the whole card (`DIAGRAM_CARD` has its measures) |
+| `DiagramTextKind` `'label' \| 'detail' \| 'title' \| 'edge'` | `'title' \| 'description' \| 'caption' \| 'item' \| 'code' \| 'trailing' \| 'edge'` |
+| useDiagramLayout / `layoutDiagram` `direction` default `right` | default `down`; pass `direction: 'right'` for the old run; new `density` |
+| A self-loop over the node's top | beside it (no layout) or below it in its own room (a layout), its label on the loop |
+| `onAction(item, details)`, `details.reason` `enter-key` \| `double-click` | also `press`; `item` has `section` and `item` for a pressed item (an `editable` diagram with `onAction`) |
 | `NOTHING_SELECTED`, `addConnection`, `checkConnection`, `deleteItems`, `diagramBounds`, `indexDiagram`, `moveEdgeEnd`, `moveNodes`, types `ConnectorRoute`, `DiagramIndex` from `@brett_lamy/ui` | `@brett_lamy/ui/lib/diagram-model` (`@/lib/diagram-model`), the same names; the data types Diagram's props take (`DiagramNode`, `DiagramEdge`, `DiagramSelection`…) stay on the root |
 | `layoutDiagram`, `useDiagramLayout`, `createDiagramLayoutEngine`, `DIAGRAM_ELK_OPTIONS`… and their types from `@brett_lamy/ui` | from the engine's own entries only: `@brett_lamy/ui/lib/diagram-layout` (`@/lib/diagram-layout`) and `@brett_lamy/ui/lib/diagram-layout/react` for `useDiagramLayout` |
 | `<DiagramFrame host size title panel status cover onBoardKeyDown>{(bar) => …}</DiagramFrame>` | Flat parts: `DiagramFrame`, `DiagramFrameBoard` (takes `onKeyDown`, and a `ref` for a layout's `host`), `DiagramFrameBar` (the status), `DiagramFramePanel` (`title`), `DiagramFrameCover`, `DiagramFrameTrigger`, `useDiagramFrame` |
@@ -2649,6 +2656,14 @@ Diagram, DiagramFrame, StateDiagram, CloudflareDiagram and docstream's capnp fen
 | `machineToDraft` node `kind` `compound`, `parallel`, `final`, `initial`; edge `kind` `event`, `always`, `after`, `done`, `invoke`, `initial` | Diagram's generic looks, the `STATE_NODE_LOOK` / `STATE_EDGE_LOOK` preset; what a state or a way out is, as XState has it, is `data.type` / `data.transition` |
 | `parseXState` from `@brett_lamy/ui/docstream/xstate/machine` | `@brett_lamy/ui/lib/state-diagram-source`; the xstate fence draws with it and `machineToDraft` |
 | The panel's Segmented between Edit and Run | Tabs (`TabsList`, `TabsTab`, `TabsPanel keepMounted`) |
+| `machineToDraft`: an initial marker node (`<id>.__initial`, `kind: 'marker'`) and its `strong` edge; `data.type` `initial`, `data.transition` `initial`; `STATE_NODE_LOOK.initial`, `STATE_EDGE_LOOK.initial` | `entry: true` on the state it starts in (Diagram's entry marker); the parent's `data.initial` names it |
+| `machineToDraft` node `label` / `detail` (`invoke x`, `parallel`, `history`), edge `label` (`EVENT [guard]`) | Diagram's `title`, `icon`, `trailing`, `description`, `sections`: Invoke, Entry actions, Exit actions, Tags, Meta, and the root's Context, as sections; `parallel` as `trailing`; history as `icon` `H` / `H*`; final as `icon: 'stop'`; an edge's `title` is its event, its guard and actions are chips; `transitionNotation(edge.data)` writes `EVENT [guard] / action` |
+| `StateNodeData.invokes: string[]` | `StateNodeData.invoke: StateInvoke[]` (`src`, `id`, `input`), and `entry`, `exit`, `tags`, `description`, `meta`, `history`, `initial`, `context` |
+| `StateEdgeData.guard: string` | `StateEdgeData.guard: StateGuard` (`name`, `text`, `params`, `composed`), and `name`, `actions`, `delay`, `actor`, `reenter`, `targets` |
+| Edge names `after 5000`, `done` / `error` for an actor | `after 5,000 ms`; `verifyToken: done` / `verifyToken: error` |
+| StateDiagram `direction` default `right` | `down`; `background` defaults to `grid` |
+| `parseXState` leaving out actions, `context`, `tags`, `meta`, `description`, `input` | kept, as data: inline code is `{ type: 'xstate.inline' }`, built-ins `{ type: 'xstate.assign' \| … , params }`, composed guards `{ type: 'xstate.and' \| 'xstate.or' \| 'xstate.not' \| 'xstate.stateIn', params }`; `types.context` as `types: { context: { key: 'type' } }` |
+| The xstate fence drawn by Pele from `xstateToMermaid` | A read-only StateDiagram (`@brett_lamy/ui/state-diagram`, loaded when shown); `xstateToMermaid` is its text form and fallback, in UML notation |
 
 ### CloudflareDiagram and Cloudflare Studio
 
@@ -2659,13 +2674,21 @@ Diagram, DiagramFrame, StateDiagram, CloudflareDiagram and docstream's capnp fen
 | `defaultSelection` only | `selection` / `defaultSelection` / `onSelectionChange(selection, details)` |
 | `defaultPanelOpen` | `panelOpen` / `defaultPanelOpen` / `onPanelOpenChange`, and `panelPresentation` (`column`, `drawer`, `push`, from the frame's own size class) |
 | `defaultMachine` | `openMachine` / `defaultOpenMachine` / `onOpenMachineChange(id, details)` |
-| `direction: 'RIGHT' \| 'DOWN' \| …` | `direction: 'right' \| 'down' \| 'left' \| 'up'` |
+| `direction: 'RIGHT' \| 'DOWN' \| …`, default `RIGHT` | `direction: 'down' \| 'right' \| 'up' \| 'left'`, default `down`: a system runs top to bottom |
 | `camera` / `defaultCamera` / `onCameraChange` | `viewport` / `defaultViewport` / `onViewportChange`, as on Diagram |
 | `panelExtra` | `panelHeader`: what's at the top of the panel |
 | — | `emptyState` (an `EmptyState` by default) |
 | The panel's Undo / Redo buttons | The `DiagramToolbar`'s undo and redo, beside zoom and fit, and the Diagram's ⌘Z, driving the system's history through `<Diagram history>` |
-| `serviceNode(service)` | `cloudflareServiceNode(service)` |
-| — | `cloudflareBoardProps(system, { icon, issues })`: the board as a Diagram preset, `<Diagram {...cloudflareBoardProps(system)} />` |
+| `serviceNode(service)` | `cloudflareBoardData(system, { editable?, issues?, title? })`: the whole system as Diagram nodes and edges, in Diagram's anatomy |
+| `CloudflareServiceNode`, `cloudflareServiceVariants`, `CloudflareServiceNodeProps` | Gone: a service's card is Diagram's own `DiagramNodeBody` (header, sections of chips, entry marker), filled in from the system. An app's own icons are still `icon` |
+| A card that listed every port, with its name, always | A card with sections (Handlers, Bindings, Triggers, Settings, Machine). Ports only with `editable`, on the card's Connect section, a row each; read-only, there are none |
+| `SERVICE_NODE`, `serviceNodeHeight`, a port's `at` from `servicePorts` | Gone: a card is as big as what it says (Diagram's `nodeSize`), and the Connect section places its ports |
+| Edge labels as text, `FILES: put, get +1` | A label card: `FILES`, then a chip per operation; a pill with none. Consumers, producers, event notifications, entrypoints and machine events say what they are |
+| `placeInLayers(system)`, left to right, from `lib/cloudflare-system` | `placeInLayers(system, { editable? })`, top to bottom, inside what holds what, from `@brett_lamy/ui/cloudflare` (`lib/cloudflare-board`) |
+| — | `cloudflareBoardProps(system, { icon, issues, editable, title })`: the board as a Diagram preset, `<Diagram {...cloudflareBoardProps(system)} />`, with the lined board |
+| — | `title`, `accountId`: the system's name and account, in its header (`onDataChange` gives them back as `name`, `accountId`) |
+| A service: `id`, `kind`, `label`, `at`, `binding`, `resource`, `machine` | And `handlers`, `triggers`, `settings`, `vars`, `migrations`, `host` (the Worker a class is drawn in), `environment`; an edge also `entrypoint`, `deliveryDelay`, `consumer`; a system `name`, `accountId`. All read from and written to `wrangler.jsonc` |
+| `readWrangler` drew bindings only | It reads the Worker's settings, triggers, vars, migrations, consumer and binding settings and the account too, and writes them back; `readWranglerEnvironments(text)` reads every env section into one system; a difference can be `kind: 'setting'` |
 | `@brett_lamy/ui/cloudflare-diagram` | `@brett_lamy/ui/cloudflare`, the one path for the diagram, its parts and the catalog |
 | Edge `kind: 'problem'` on what's wrong | `tone: 'destructive'` |
 | `data-slot="cloudflare-refusal"` under a binding name | The field's `FieldError` (`data-part="refusal"`), and the field is invalid |
@@ -2675,7 +2698,8 @@ Diagram, DiagramFrame, StateDiagram, CloudflareDiagram and docstream's capnp fen
 | The catalog search, a SearchField and a ListBox | A Combobox; also exported as `CloudflareServiceSearch` (`onAction(product, details)`, `details.reason` `item-press` or `enter-key`) |
 | `data-slot="cloudflare-delete"`, `cloudflare-undo`, `cloudflare-machine-open`… on buttons | `data-action="delete"`, `undo`, `open-machine`…: kit parts keep their own `data-slot` |
 | `[data-slot=cloudflare-label] input` and the other panel fields | `[data-field=label]`, `binding-name`, `events` |
-| `data-slot="cloudflare-service-machine"` | `data-part="machine"` (a Badge) |
+| `data-slot="cloudflare-service-machine"` | The card's Machine section, `[data-slot=diagram-section][data-section=machine]` |
+| `data-slot="cloudflare-service"` (`data-kind`, `data-problem`), `cloudflare-service-name`, `cloudflare-port-label` | Diagram's node, `[data-slot=diagram-node][data-node=<id>]`; `diagram-node-title`; a problem is `[data-slot=diagram-node-header][data-tone=destructive]`; ports are `diagram-port`, editable only |
 
 The block's export is a Dialog (a sheet at a phone's size), and its buttons are `data-action="new"`, `open`, `export`, `download`, `download-all`.
 

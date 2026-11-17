@@ -323,7 +323,7 @@ Beyond these, Pele draws requirement, C4, block, packet, kanban, architecture, r
 
 ## XState statecharts
 
-An `xstate` fence accepts a JSON machine config or static TypeScript `createMachine(...)` source. Docstream reads its structure without running imports, actions, guards or context initializers. Dynamic state definitions, computed keys and spreads show an inline error. XState resolves nested and `#id` targets, and Pele draws the chart using the page theme.
+An `xstate` fence accepts a JSON machine config or static TypeScript `createMachine(...)` / `setup(...).createMachine(...)` source, and draws it with the library's [StateDiagram](https://blamy.github.io/ui/#/state-diagram), read-only: the same reading and the same picture as a StateDiagram in an app. Docstream reads the machine without running imports, actions, guards or context initializers. Dynamic state definitions, computed keys and spreads show an inline error. XState resolves nested and `#id` targets, ELK lays it out top to bottom, and the board follows the page theme.
 
 ```xstate
 import { createMachine } from "xstate"
@@ -332,17 +332,17 @@ export const request = createMachine({
   id: "request",
   initial: "idle",
   states: {
-    idle: { on: { FETCH: "loading" } },
-    loading: { invoke: { src: "fetchPage", onDone: "success", onError: "failure" } },
-    failure: { on: { RETRY: "loading" } },
+    idle: { on: { FETCH: { target: "loading", actions: "showSpinner" } } },
+    loading: { entry: "trackRequest", tags: ["busy"], invoke: { src: "fetchPage", onDone: "success", onError: "failure" } },
+    failure: { on: { RETRY: { target: "loading", guard: "canRetry" } } },
     success: { type: "final" }
   }
 })
 ```
 
-A state's `invoke` shows on a second line, with its `onDone` and `onError` as `done` and `error` edges. An actor written inline, like `fromPromise(...)`, is only called `actor`, and neither it nor its `input` runs. `after`, `always`, guards, parallel regions and history states are all drawn too, the same as a [`StateDiagram`](https://blamy.github.io/ui/#/state-diagram).
+The machine is a container with its name and its context (with the types `setup({ types })` gives it); a state is a card whose header is its name, with sections of chips for its entry and exit actions, what it invokes, its tags and meta; a transition's label is a pill with its event, or a card with its guard ("if canRetry") and actions under it. `after` has a clock, `always` a dashed line, an actor's `onDone` and `onError` say whose they are (`fetchPage: done`), and parallel regions, history states (H, H*) and final states (a square) are drawn too. An actor written inline, like `fromPromise(...)`, is only called `actor`, and neither it nor its `input` runs. The page on [StateDiagram](https://blamy.github.io/ui/#/state-diagram) has the table of what's drawn for each part of a machine.
 
-Import `XStateDiagram` or the result-only `XStatePreview` from `@brett_lamy/ui/docstream/xstate` to use them directly. The parser and XState load only when a statechart is displayed. To read a config yourself, `parseXState` is on `@brett_lamy/ui/lib/state-diagram-source`, and `xstateToMermaid` on `@brett_lamy/ui/docstream/xstate/machine`, which loads Babel and XState straight away. A [StateDiagram](https://blamy.github.io/ui/#/state-diagram) takes the same source as `source`, to run and edit it.
+Import `XStateDiagram` or the result-only `XStatePreview` from `@brett_lamy/ui/docstream/xstate` to use them directly (`appearance`: `auto`, `light` or `dark`). The diagram (`@brett_lamy/ui/state-diagram`), the parser, ELK and XState load only when a statechart is displayed; the board is styled by `@brett_lamy/ui/styles.css`. Where the diagram can't load, the fence shows its text form, a Mermaid statechart in UML's notation (`entry / onPlay` in a state, `event [guard] / action` on a transition), which `xstateToMermaid` on `@brett_lamy/ui/docstream/xstate/machine` writes. To read a config yourself, `parseXState` is on `@brett_lamy/ui/lib/state-diagram-source`. A StateDiagram takes the same source as `source`, to run and edit it.
 
 ## Workerd configs
 

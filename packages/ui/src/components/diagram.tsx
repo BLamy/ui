@@ -15,10 +15,10 @@ import { useContainerSize } from '@/lib/container';
 import { connectionOf, connectionTargetAt, hitTestDiagram, movableNodes, offerConnection, stepDiagramGesture, type DiagramConnectionEnd, type DiagramGesture, type DiagramGestureEvent, type DiagramHit } from '@/lib/diagram-gesture';
 import { DiagramChromeProvider, useDiagramChrome, useDiagramChromeInset, useDiagramChromeScope, type DiagramInsets } from '@/lib/diagram-chrome';
 import type { DiagramHistory } from '@/lib/diagram-history';
-import { describeEdge, describeNode, edgesByNode, fitViewport, nearestNode, stepFocus, viewportToShow, type DiagramItem, type DiagramStep } from '@/lib/diagram-keyboard';
+import { describeEdge, describeItem, describeNode, edgesByNode, fitViewport, nearestNode, stepFocus, viewportToShow, type DiagramItem, type DiagramStep } from '@/lib/diagram-keyboard';
 import {
-  DIAGRAM_SIDES, NOTHING_SELECTED, anchorNormal, anchorPoint, connectorPath, diagramBounds, diagramTextRuns, edgeGeometries, edgeGeometry, holdsNodes, indexDiagram, labelBoxAvoiding, moveNodes, nearestSide, portPoint, rectIndex, regionDividers, renderWindow, sizeNodesToText,
-  type ConnectorEnd, type ConnectorGeometry, type DiagramConnection, type DiagramDivider, type DiagramEdge, type DiagramEdgeTone, type DiagramEdgeVariant, type DiagramIndex, type DiagramNode, type DiagramNodeKind, type DiagramNodeVariant, type DiagramPort, type DiagramSelection, type DiagramSide,
+  DIAGRAM_SIDES, NOTHING_SELECTED, anchorNormal, anchorPoint, connectorPath, diagramBounds, diagramTextRuns, edgeGeometries, edgeGeometry, edgeLabelSize, hasEdgeLabel, holdsNodes, indexDiagram, itemKey, labelBoxAvoiding, moveNodes, nearestSide, nodeAnatomy, portPoint, rectIndex, regionDividers, renderWindow, roundedPolylineD, sectionKey, sizeNodesToText,
+  type ConnectorEnd, type ConnectorGeometry, type DiagramConnection, type DiagramDivider, type DiagramEdge, type DiagramEdgeTone, type DiagramEdgeVariant, type DiagramGlyph, type DiagramIndex, type DiagramNode, type DiagramNodeKind, type DiagramNodeVariant, type DiagramPort, type DiagramSection, type DiagramSelection, type DiagramSide, type DiagramTone,
 } from '@/lib/diagram-model';
 import {
   diagram, type DiagramController, type DiagramData, type DiagramDataChangeDetails, type DiagramDataChangeReason, type DiagramOptions, type DiagramSelectionChangeDetails, type DiagramSelectionChangeReason,
@@ -66,10 +66,10 @@ const LINE = '[stroke-width:calc(1.25px/var(--diagram-z))] [stroke-linejoin:roun
 export const diagramNodeVariants = cva('relative size-full', {
   variants: {
     kind: {
-      node: 'flex flex-col items-center justify-center rounded-ctl border border-border bg-card px-3 py-2 text-card-foreground shadow-hairline',
-      group: 'rounded-card border border-border bg-secondary',
-      region: 'rounded-card',
-      root: 'rounded-card border border-border',
+      node: 'flex flex-col overflow-hidden rounded-ctl border border-border bg-card text-card-foreground shadow-hairline',
+      group: 'flex flex-col overflow-hidden rounded-card border border-border bg-secondary/35 text-card-foreground',
+      region: 'flex flex-col rounded-card text-card-foreground',
+      root: 'flex flex-col overflow-hidden rounded-card border border-border bg-background/60 text-card-foreground',
       marker: 'rounded-full bg-foreground',
     },
     variant: {
@@ -130,53 +130,219 @@ const nodeBodyClass = once((key: string) => {
 });
 
 const isContainer = holdsNodes;
+const nodeWrapClass = once((radius: string) => cn('absolute outline-none', radius));
 
 /** The zoom below which each kind of text hides: under about 3 px for a node's, and 4.4 px for an edge label's. */
 const NODE_TEXT_ZOOM = 0.25;
 const EDGE_LABEL_ZOOM = 0.4;
-/** The strip along a group's top that its title takes, which an edge label keeps off. */
-const GROUP_TITLE_ROOM = 28;
+/** The strip along a group's top that its title takes, which an edge label keeps off, when it has nothing measured. */
+const GROUP_TITLE_ROOM = 30;
+/** How far a route's corners are rounded, in board units. */
+const ROUTE_RADIUS = 8;
 
-const TITLE_CLASS = cn('absolute top-1.5 left-3 whitespace-nowrap text-foreground/70 group-data-[zoom=far]/diagram:hidden', DIAGRAM_TEXT_CLASS.title);
-const LABEL_CLASS = cn('max-w-full text-center [overflow-wrap:anywhere] group-data-[zoom=far]/diagram:hidden', DIAGRAM_TEXT_CLASS.label);
-const DETAIL_CLASS = cn('max-w-full text-center text-foreground/70 [overflow-wrap:anywhere] group-data-[zoom=far]/diagram:hidden', DIAGRAM_TEXT_CLASS.detail);
-const EDGE_LABEL_CLASS = cn('absolute rounded-xs bg-background/85 whitespace-nowrap text-foreground/70 group-data-[zoom=far]/diagram:hidden group-data-[zoom=mid]/diagram:hidden', DIAGRAM_TEXT_CLASS.edge);
-const nodeWrapClass = once((radius: string) => cn('absolute outline-none', radius));
+const FAR_HIDDEN = 'group-data-[zoom=far]/diagram:invisible';
+
+/** An item's look: a chip (the default), or a row of text in a `list` or `code` section; its `tone`; and whether it can be
+ *  pressed (then it has hover and press looks). */
+export const diagramItemVariants = cva('flex max-w-full min-w-0 items-center gap-1.5', {
+  variants: {
+    variant: {
+      default: 'rounded-md border border-border bg-background px-2 py-0.5 text-foreground shadow-hairline',
+      list: 'text-foreground',
+      code: 'text-foreground',
+    },
+    tone: {
+      default: '[&_[data-part=glyph]]:text-muted-foreground',
+      success: 'border-success/40 [&_[data-part=glyph]]:text-success',
+      warning: 'border-warning/50 [&_[data-part=glyph]]:text-warning',
+      destructive: 'border-destructive/40 text-destructive [&_[data-part=glyph]]:text-destructive',
+      muted: 'text-muted-foreground [&_[data-part=glyph]]:text-muted-foreground',
+    },
+    pressable: {
+      true: 'pointer-events-auto cursor-pointer transition-colors hover:bg-accent active:bg-secondary-strong',
+      false: '',
+    },
+  },
+  compoundVariants: [
+    { variant: ['list', 'code'], pressable: true, className: 'rounded-xs hover:bg-accent' },
+  ],
+  defaultVariants: { variant: 'default', tone: 'default', pressable: false },
+});
+
+/** An edge's label: a fully rounded `pill` for a title alone, or a small `card` with its items under the title. */
+export const diagramEdgeLabelVariants = cva('absolute border border-border bg-card text-card-foreground shadow-hairline', {
+  variants: {
+    shape: {
+      pill: 'flex items-center justify-center gap-1 rounded-full px-2.5 py-1 whitespace-nowrap',
+      card: 'flex flex-col items-start gap-1.5 rounded-ctl px-2.5 pt-1.5 pb-2',
+    },
+  },
+  defaultVariants: { shape: 'pill' },
+});
+
+const TONE_ACCENT: Record<DiagramTone, string> = {
+  default: '',
+  success: '[box-shadow:inset_0_2px_0_var(--success)] [&>[data-slot=diagram-node-icon]]:text-success',
+  warning: '[box-shadow:inset_0_2px_0_var(--warning)] [&>[data-slot=diagram-node-icon]]:text-warning',
+  destructive: '[box-shadow:inset_0_2px_0_var(--destructive)] [&>[data-slot=diagram-node-icon]]:text-destructive',
+  muted: 'text-muted-foreground',
+};
 
 /* ── A node ── */
 
+/** A glyph: one of the kit's icons, or a few characters. */
+function Glyph({ glyph, size }: { glyph: DiagramGlyph; size: number }) {
+  if (typeof glyph === 'string') return <Icon name={glyph} size={size} />;
+  return <span className={cn('px-0.5 text-center', DIAGRAM_TEXT_CLASS.trailing)}>{glyph.text}</span>;
+}
+
+export interface DiagramNodeHeaderProps {
+  /** The node whose header strip it draws: its `icon`, `title`, `trailing` and `tone`. */
+  node: Pick<DiagramNode<unknown>, 'title' | 'icon' | 'trailing' | 'tone' | 'kind'>;
+  /** More at the end of the strip, after `trailing`. */
+  children?: ReactNode;
+  className?: string;
+}
+
+/** A card's header strip: a glyph, the title, and a quiet badge at the end. `DiagramNodeBody` draws it; use it in a
+ *  `renderNode` that lays a card out its own way. */
+export function DiagramNodeHeader({ node, children, className }: DiagramNodeHeaderProps) {
+  return (
+    <div
+      data-slot="diagram-node-header"
+      data-tone={node.tone && node.tone !== 'default' ? node.tone : undefined}
+      className={cn('flex min-w-0 items-center gap-1.5 px-2.5 py-1.5', TONE_ACCENT[node.tone ?? 'default'], className)}
+    >
+      {node.icon ? (
+        <span data-slot="diagram-node-icon" className={cn('flex min-w-3.5 shrink-0 items-center justify-center text-muted-foreground', FAR_HIDDEN)}>
+          <Glyph glyph={node.icon} size={14} />
+        </span>
+      ) : null}
+      {node.title ? (
+        <span data-slot="diagram-node-title" className={cn('min-w-0 flex-1 [overflow-wrap:anywhere]', DIAGRAM_TEXT_CLASS.title, FAR_HIDDEN)}>{node.title}</span>
+      ) : <span className="flex-1" />}
+      {node.trailing ? (
+        <span data-slot="diagram-node-trailing" className={cn('ms-0.5 shrink-0 rounded-full bg-foreground/8 px-1.5 py-px whitespace-nowrap text-muted-foreground', DIAGRAM_TEXT_CLASS.trailing, FAR_HIDDEN)}>{node.trailing}</span>
+      ) : null}
+      {children}
+    </div>
+  );
+}
+
+export interface DiagramSectionsProps {
+  sections: readonly DiagramSection[];
+  /** Whose they are, for `data-` addresses and presses. */
+  owner: { kind: 'node' | 'edge'; id: string };
+  /** Whether the items can be pressed: an editable diagram with `onAction`. */
+  pressable?: boolean;
+  /** The item the keys are on, as `section\0item`. */
+  focused?: string;
+  className?: string;
+}
+
+/** Labelled sections of items: a quiet caption over a column of chips or rows. */
+export function DiagramSections({ sections, owner, pressable = false, focused, className }: DiagramSectionsProps) {
+  return (
+    <div data-slot="diagram-sections" className={cn('flex min-w-0 flex-col items-stretch gap-2.5', className)}>
+      {sections.map((s, si) => {
+        if (!s.items.length && !s.title) return null;
+        const key = sectionKey(s, si);
+        const variant = s.variant ?? 'default';
+        return (
+          <div key={key} data-slot="diagram-section" data-section={key} data-variant={variant} className="flex min-w-0 flex-col items-start">
+            {s.title ? <div data-slot="diagram-section-title" className={cn('text-muted-foreground', s.items.length && 'mb-1', DIAGRAM_TEXT_CLASS.caption, FAR_HIDDEN)}>{s.title}</div> : null}
+            <div className={cn('flex min-w-0 flex-col items-start', variant === 'default' ? 'gap-1' : 'gap-0.5')}>
+              {s.items.map((it) => {
+                const k = itemKey(it);
+                const tone = it.tone ?? 'default';
+                return (
+                  <div
+                    key={k}
+                    data-slot="diagram-item"
+                    data-owner={owner.id}
+                    data-section={key}
+                    data-item={k}
+                    data-tone={tone === 'default' ? undefined : tone}
+                    data-pressable={pressable ? '' : undefined}
+                    data-focused={focused === `${key}\0${k}` ? '' : undefined}
+                    aria-hidden="true"
+                    className={cn(diagramItemVariants({ variant, tone, pressable }), ITEM_FOCUS, FAR_HIDDEN)}
+                  >
+                    {it.icon ? <span data-part="glyph" className="flex min-w-3 shrink-0 items-center justify-center"><Glyph glyph={it.icon} size={12} /></span> : null}
+                    <span className={cn('min-w-0 [overflow-wrap:anywhere]', variant === 'code' ? DIAGRAM_TEXT_CLASS.code : DIAGRAM_TEXT_CLASS.item)}>{it.title}</span>
+                    {it.description ? <span className={cn('min-w-0 text-muted-foreground [overflow-wrap:anywhere]', variant === 'code' ? DIAGRAM_TEXT_CLASS.code : DIAGRAM_TEXT_CLASS.description)}>{it.description}</span> : null}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/** The keys' ring on an item: the same ring as a node's, past a gap. */
+const ITEM_FOCUS = 'data-[focused]:[box-shadow:0_0_0_2px_var(--background),0_0_0_4px_var(--ring)]';
+
+/** The entry marker: a dot, and a curved arrow from it into the node's header, from above its start corner. */
+export function DiagramEntryMarker({ className }: { className?: string }) {
+  return (
+    <svg data-slot="diagram-entry" aria-hidden="true" width={1} height={1} className={cn('pointer-events-none absolute top-0 left-0 overflow-visible', className)}>
+      <circle cx={-16} cy={-10} r={4} className="fill-foreground" />
+      <path d="M-16 -6C-16 6 -12 14 -4 14" className="fill-none stroke-foreground [stroke-width:1.5]" />
+      <path d="M-1 14L-6 11L-6 17Z" className="fill-foreground" />
+    </svg>
+  );
+}
+
 export interface DiagramNodeBodyProps {
-  /** The node it draws: its kind, variant, label and detail. */
+  /** The node it draws: its kind, variant, header (`icon`, `title`, `trailing`), `description` and `sections`. */
   node: DiagramNode<unknown>;
-  /** More inside the body, after its words: a badge, a port's name. */
+  /** Whether its items can be pressed (an editable diagram with `onAction`). */
+  pressable?: boolean;
+  /** The item the keys are on, as `section\0item`. */
+  focusedItem?: string;
+  /** More inside the card, after its sections: a badge, a port's name. */
   children?: ReactNode;
   className?: string;
   style?: CSSProperties;
 }
 
-/** How a node looks, by its kind and variant. Use it in `renderNode` to add to what's drawn rather than replacing it. */
-export function DiagramNodeBody({ node, children, className, style }: DiagramNodeBodyProps) {
+/** How a node looks, by its kind and variant: a header strip, then its description and its sections. Use it in
+ *  `renderNode` to add to what's drawn rather than replacing it. */
+export function DiagramNodeBody({ node, pressable: pressableProp, focusedItem: focusedProp, children, className, style }: DiagramNodeBodyProps) {
+  const items = useContext(ItemState);
+  const pressable = pressableProp ?? items.pressable;
+  const focusedItem = focusedProp ?? items.focused;
   const kind = node.kind ?? 'node';
   const look = nodeBodyClass(`${kind}:${node.variant ?? 'default'}`);
   const classes = className ? cn(look, className) : look;
   if (kind === 'marker') return <div data-slot="diagram-node-body" className={classes} style={style}>{children}</div>;
-  if (isContainer(node)) {
-    return (
-      <div data-slot="diagram-node-body" className={classes} style={style}>
-        {node.label ? (
-          <div data-slot="diagram-node-label" className={TITLE_CLASS}>
-            {node.label}
-            {node.detail ? <span data-slot="diagram-node-detail" className="font-normal"> ({node.detail})</span> : null}
-          </div>
-        ) : null}
-        {children}
-      </div>
-    );
-  }
+  const sections = node.sections?.some((s) => s.items.length || s.title) ? node.sections : undefined;
+  const body = node.description || sections;
+  const hasHeader = !!(node.title || node.icon || node.trailing);
+  const container = isContainer(node);
   return (
     <div data-slot="diagram-node-body" className={classes} style={style}>
-      <div data-slot="diagram-node-label" className={LABEL_CLASS}>{node.label}</div>
-      {node.detail ? <div data-slot="diagram-node-detail" className={DETAIL_CLASS}>{node.detail}</div> : null}
+      {hasHeader || !container ? (
+        <DiagramNodeHeader
+          node={node}
+          className={cn(
+            body && kind !== 'region' && 'border-b border-border',
+            kind === 'region' ? 'text-muted-foreground' : container ? 'bg-secondary' : 'bg-secondary/70',
+            // A card that's only its header fills its box, however big it's drawn.
+            !body && !container && 'flex-1 justify-center [&>[data-slot=diagram-node-title]]:flex-initial [&>[data-slot=diagram-node-title]]:text-center',
+            kind === 'region' && '[&>[data-slot=diagram-node-title]]:font-medium',
+          )}
+        />
+      ) : null}
+      {body ? (
+        <div data-slot="diagram-node-content" className="flex min-w-0 flex-col gap-2 px-2.5 pt-2 pb-2.5">
+          {node.description ? <div data-slot="diagram-node-description" className={cn('[overflow-wrap:anywhere] text-muted-foreground', DIAGRAM_TEXT_CLASS.description, FAR_HIDDEN)}>{node.description}</div> : null}
+          {sections ? <DiagramSections sections={sections} owner={{ kind: 'node', id: node.id }} pressable={pressable} focused={focusedItem} /> : null}
+        </div>
+      ) : null}
       {children}
     </div>
   );
@@ -189,8 +355,15 @@ interface NodeViewProps {
   selectable?: boolean;
   current?: boolean;
   label: string;
+  /** Whether its items can be pressed. */
+  pressable?: boolean;
+  /** The item the keys are on, as `section\0item`. */
+  focusedItem?: string;
   renderNode?: (node: DiagramNode<any>) => ReactNode;
 }
+
+/** What a node's items are doing, for a `DiagramNodeBody` that `renderNode` draws without being told. */
+const ItemState = createContext<{ pressable: boolean; focused?: string }>({ pressable: false });
 
 /** What's selected, what has focus, and what's current, each drawn its own way, so they don't rely on color (the kit's
  *  `--ring` and `--primary` are one blue), and the same thickness on screen at any zoom. The kit's rows are the model:
@@ -217,13 +390,16 @@ const nodeRadius = (n: DiagramNode<any>) => (isContainer(n) ? 'rounded-card' : n
 /** The same node drawn the same, though it's a new object: new data from a layout or an owner's state is mostly what was
  *  there, and redrawing thousands of nodes for it would take a frame of its own. */
 const sameNode = (a: DiagramNode<unknown>, b: DiagramNode<unknown>) => a === b || (
-  a.id === b.id && a.x === b.x && a.y === b.y && a.w === b.w && a.h === b.h && a.kind === b.kind && a.variant === b.variant && a.label === b.label
-  && a.detail === b.detail && a.parent === b.parent && a.data === b.data && a.ports === b.ports
+  a.id === b.id && a.x === b.x && a.y === b.y && a.w === b.w && a.h === b.h && a.kind === b.kind && a.variant === b.variant && a.title === b.title
+  && a.description === b.description && a.icon === b.icon && a.trailing === b.trailing && a.sections === b.sections && a.entry === b.entry && a.tone === b.tone
+  && a.parent === b.parent && a.data === b.data && a.ports === b.ports
 );
 const sameNodeView = (a: NodeViewProps, b: NodeViewProps) =>
-  a.selected === b.selected && a.selectable === b.selectable && a.current === b.current && a.label === b.label && a.renderNode === b.renderNode && sameNode(a.node, b.node);
+  a.selected === b.selected && a.selectable === b.selectable && a.current === b.current && a.label === b.label && a.renderNode === b.renderNode
+  && a.pressable === b.pressable && a.focusedItem === b.focusedItem && sameNode(a.node, b.node);
 
-const NodeView = memo(function NodeView({ node, selected, selectable, current, label, renderNode }: NodeViewProps) {
+const NodeView = memo(function NodeView({ node, selected, selectable, current, label, pressable = false, focusedItem, renderNode }: NodeViewProps) {
+  const items = useMemo(() => ({ pressable, focused: focusedItem }), [pressable, focusedItem]);
   return (
     <div
       data-slot="diagram-node"
@@ -241,7 +417,10 @@ const NodeView = memo(function NodeView({ node, selected, selectable, current, l
       className={nodeWrapClass(nodeRadius(node))}
       style={{ left: node.x, top: node.y, width: node.w, height: node.h }}
     >
-      {renderNode ? renderNode(node) : <DiagramNodeBody node={node} />}
+      <ItemState.Provider value={items}>
+        {renderNode ? renderNode(node) : <DiagramNodeBody node={node} />}
+      </ItemState.Provider>
+      {node.entry ? <DiagramEntryMarker /> : null}
     </div>
   );
 }, sameNodeView);
@@ -277,20 +456,57 @@ const EdgeView = memo(function EdgeView({ edge, d, arrow, selected, selectable, 
   );
 }, sameEdgeView);
 
-const sameEdgeLabel = (a: { edge: DiagramEdge<unknown>; box: Rect }, b: { edge: DiagramEdge<unknown>; box: Rect }) =>
-  a.edge.id === b.edge.id && a.edge.label === b.edge.label && a.box.x === b.box.x && a.box.y === b.box.y;
+interface EdgeLabelProps {
+  edge: DiagramEdge<unknown>;
+  box: Rect;
+  selected?: boolean;
+  focused?: boolean;
+  current?: boolean;
+  pressable?: boolean;
+  focusedItem?: string;
+}
 
-const EdgeLabel = memo(function EdgeLabel({ edge, box }: { edge: DiagramEdge<unknown>; box: Rect }) {
+const sameEdgeLabel = (a: EdgeLabelProps, b: EdgeLabelProps) =>
+  a.edge.id === b.edge.id && a.edge.title === b.edge.title && a.edge.icon === b.edge.icon && a.edge.sections === b.edge.sections && a.edge.tone === b.edge.tone
+  && a.box.x === b.box.x && a.box.y === b.box.y && a.box.w === b.box.w && a.box.h === b.box.h
+  && a.selected === b.selected && a.focused === b.focused && a.current === b.current && a.pressable === b.pressable && a.focusedItem === b.focusedItem;
+
+const LABEL_SELECTED = 'border-primary [box-shadow:0_0_0_1px_var(--primary)]';
+const LABEL_FOCUSED = '[box-shadow:0_0_0_2px_var(--background),0_0_0_4px_var(--ring)]';
+const LABEL_FOCUSED_SELECTED = 'border-primary [box-shadow:0_0_0_1px_var(--primary),0_0_0_3px_var(--background),0_0_0_5px_var(--ring)]';
+
+/** An edge's label: a pill, or a card with its items. It's part of its edge: pressing it presses the edge, and the edge's
+ *  name says what it says. */
+const EdgeLabel = memo(function EdgeLabel({ edge, box, selected, focused, current, pressable = false, focusedItem }: EdgeLabelProps) {
+  const sections = edge.sections?.some((s) => s.items.length || s.title) ? edge.sections : undefined;
+  const shape = sections ? 'card' : 'pill';
   return (
     <div
       data-slot="diagram-edge-label"
       data-edge={edge.id}
+      data-shape={shape}
+      data-tone={edge.tone}
+      data-selected={selected ? '' : undefined}
+      data-focused={focused ? '' : undefined}
+      data-current={current ? '' : undefined}
       // The edge's own name says this, along with what it joins.
       aria-hidden="true"
-      className={EDGE_LABEL_CLASS}
-      style={{ left: box.x, top: box.y }}
+      className={cn(
+        diagramEdgeLabelVariants({ shape }),
+        'group-data-[zoom=far]/diagram:hidden group-data-[zoom=mid]/diagram:hidden',
+        edge.tone === 'destructive' && 'border-dashed border-destructive/60',
+        current && 'border-primary',
+        focused && selected ? LABEL_FOCUSED_SELECTED : focused ? LABEL_FOCUSED : selected ? LABEL_SELECTED : '',
+      )}
+      style={{ left: box.x, top: box.y, width: box.w, height: box.h }}
     >
-      {edge.label}
+      {edge.title || edge.icon ? (
+        <div data-slot="diagram-edge-label-title" className={cn('flex min-w-0 items-center gap-1 whitespace-nowrap', DIAGRAM_TEXT_CLASS.edge, edge.tone === 'destructive' && 'text-destructive')}>
+          {edge.icon ? <span data-part="glyph" className="flex min-w-3 shrink-0 items-center justify-center text-muted-foreground"><Glyph glyph={edge.icon} size={12} /></span> : null}
+          {edge.title}
+        </div>
+      ) : null}
+      {sections ? <DiagramSections sections={sections} owner={{ kind: 'edge', id: edge.id }} pressable={pressable} focused={focusedItem} className="gap-2 self-stretch" /> : null}
     </div>
   );
 }, sameEdgeLabel);
@@ -354,26 +570,32 @@ interface Laid<N, E> {
   edgesAt: ReturnType<typeof edgesByNode>;
   containers: DiagramNode<N>[];
   leaves: DiagramNode<N>[];
-  edges: { edge: DiagramEdge<E>; geometry: ConnectorGeometry; box: Rect }[];
+  /** Each edge with its route, the route's bounds, and its path data (corners rounded). */
+  edges: { edge: DiagramEdge<E>; geometry: ConnectorGeometry; box: Rect; d: string }[];
   labels: { edge: DiagramEdge<E>; box: Rect }[];
   dividers: DiagramDivider[];
   bounds: Rect | null;
 }
+
+/** A route's path data: a curve as it is, and anything square with its corners rounded. */
+const routeD = (edge: DiagramEdge<unknown>, g: ConnectorGeometry) => ((edge.route === 'curve' && !edge.points) ? g.d : roundedPolylineD(g.pts, ROUTE_RADIUS));
 
 function layOut<N, E>(nodes: readonly DiagramNode<N>[], edges: readonly DiagramEdge<E>[], text: TextMeasurer): Laid<N, E> {
   const index = indexDiagram(nodes);
   const geometries = edgeGeometries(edges, index);
   const drawn: Laid<N, E>['edges'] = [];
   const labels: Laid<N, E>['labels'] = [];
-  // A label keeps off the nodes (a card's own words, its ports' names) and off the labels already placed (two edges on
-  // one route) and off the other routes, so it isn't read as theirs: where a layout put it if that's clear, or else the
-  // first clear place along its route, or else where it covers least. A group is only in the way along its title.
+  // A label sits on its route, the edge running into it and out of it: where a layout put it if that's clear, or else
+  // the first clear place along the route, then beside it, or else where it covers least. It keeps off the nodes, off
+  // the labels already placed (two edges on one route) and off the other routes, so it isn't read as theirs. A group is
+  // only in the way along its header and sections.
   for (const edge of edges) {
     const geometry = geometries.get(edge.id);
-    if (geometry) drawn.push({ edge, geometry, box: rectOf(geometry.pts) });
+    if (geometry) drawn.push({ edge, geometry, box: rectOf(geometry.pts), d: routeD(edge, geometry) });
   }
-  if (drawn.some((d) => d.edge.label)) {
-    const room = rectIndex(nodes.flatMap((n) => (n.kind === 'root' || n.kind === 'region' || n.kind === 'marker' ? [] : holdsNodes(n) ? [{ x: n.x, y: n.y, w: n.w, h: GROUP_TITLE_ROOM }] : [n])));
+  if (drawn.some((d) => hasEdgeLabel(d.edge))) {
+    const room = rectIndex(nodes.flatMap((n) => (n.kind === 'root' || n.kind === 'region' || n.kind === 'marker' ? []
+      : holdsNodes(n) ? [{ x: n.x, y: n.y, w: n.w, h: n.title || n.sections?.length ? Math.max(GROUP_TITLE_ROOM, nodeAnatomy(n, text).top) : GROUP_TITLE_ROOM }] : [n])));
     const routes = new Map<string, Set<Rect>>();
     for (const { edge, geometry } of drawn) {
       const own = new Set<Rect>();
@@ -386,9 +608,11 @@ function layOut<N, E>(nodes: readonly DiagramNode<N>[], edges: readonly DiagramE
       routes.set(edge.id, own);
     }
     for (const { edge, geometry } of drawn) {
-      if (!edge.label) continue;
+      if (!hasEdgeLabel(edge)) continue;
       const own = routes.get(edge.id)!;
-      const box = labelBoxAvoiding(geometry.pts, edge.labelBox ?? text(edge.label, 'edge'), (b) => room.overlap(b, (r) => own.has(r)), edge.labelBox);
+      const size = edge.labelBox ?? edgeLabelSize(edge, text)!;
+      // A route and a label a layout worked out together stay together: the route runs through the label.
+      const box = edge.labelBox && edge.points && edge.points.length >= 2 ? edge.labelBox : labelBoxAvoiding(geometry.pts, size, (b) => room.overlap(b, (r) => own.has(r)), edge.labelBox);
       room.add(box);
       labels.push({ edge, box });
     }
@@ -397,9 +621,11 @@ function layOut<N, E>(nodes: readonly DiagramNode<N>[], edges: readonly DiagramE
   const depth = (n: DiagramNode<N>) => index.depth.get(n.id) ?? 0;
   const containers = nodes.filter(isContainer).map((n, i) => ({ n, i })).sort((a, b) => depth(a.n) - depth(b.n) || a.i - b.i).map(({ n }) => n);
   const leaves = nodes.filter((n) => !isContainer(n));
+  // An entry marker stands out past its node's corner.
+  const entries = nodes.filter((n) => n.entry).map((n) => ({ x: n.x - 22, y: n.y - 16, w: 22, h: 16 }));
   return {
     index, geometries, edgesAt: edgesByNode(drawn.map((d) => d.edge)), containers, leaves, edges: drawn, labels, dividers: regionDividers(index),
-    bounds: diagramBounds(nodes, geometries.values(), labels.map((l) => l.box)),
+    bounds: diagramBounds([...nodes, ...entries], geometries.values(), labels.map((l) => l.box)),
   };
 }
 
@@ -482,7 +708,9 @@ export interface DiagramProps<N = unknown, E = unknown> extends Pick<CanvasProps
   /** Makes the edge for a new connection. The default's an edge with only its ends and an id. */
   createEdge?: (connection: DiagramConnection) => DiagramEdge<E>;
   /** Enter on a focused node or edge, or a double click. */
-  onAction?: (item: DiagramItem, details: { reason: 'enter-key' | 'double-click'; event: Event }) => void;
+  /** Enter on a focused node, edge or item, a double click, or (`press`) a press on an item of an `editable` diagram,
+   *  whose items are pressable when this is given. An item comes with its `section` and `item` addresses. */
+  onAction?: (item: DiagramItem, details: { reason: 'enter-key' | 'double-click' | 'press'; event: Event }) => void;
   /** What a screen reader calls a node (default `node`): a state, a service. */
   noun?: string;
   /** What a screen reader says for a node. The default says what it is, what it's in and what it connects to. */
@@ -591,7 +819,9 @@ export function Diagram<N = unknown, E = unknown>({
   const [status, setStatus] = useState('');
 
   const shown = draft ?? data;
-  const text = useDiagramText(ref, shown.nodes, shown.edges, !!autoSize || shown.edges.some((e) => e.label && !e.labelBox));
+  const text = useDiagramText(ref, shown.nodes, shown.edges, !!autoSize || shown.edges.some((e) => !e.labelBox && hasEdgeLabel(e)));
+  /** Items can be pressed in an editable diagram that says what a press does. */
+  const pressable = editable && !!onAction;
   const nodes = useMemo(() => (autoSize ? sizeNodesToText(shown.nodes, text) : shown.nodes), [autoSize, shown.nodes, text]);
   const laid = useMemo(() => layOut(nodes, shown.edges, text), [nodes, shown.edges, text]);
 
@@ -642,7 +872,9 @@ export function Diagram<N = unknown, E = unknown>({
     },
   } : undefined;
   const gestureContext = () => ({ index: laid.index, selection: selectionRef.current, zoom: viewport.zoom, editable: movable, connect: connectContext });
-  const nameOf = (id: string) => laid.index.byId.get(id)?.label || id;
+  const nameOf = (id: string) => laid.index.byId.get(id)?.title || id;
+  /** A press that started on an item, to report if it ends without a drag. */
+  const pressedItem = useRef<{ item: DiagramItem; at: Pt } | null>(null);
   const send = (event: DiagramGestureEvent, cause?: Event) => {
     // A view that's still fitting the content stops at the first press, or dragging would move the view under the pointer.
     if (event.type === 'down' && !controlled && !own) setOwn(viewport);
@@ -691,6 +923,12 @@ export function Diagram<N = unknown, E = unknown>({
   const pointerProps: Pick<CanvasProps, 'onCanvasPointerDown' | 'onCanvasPointerMove' | 'onCanvasPointerUp' | 'onNavigationStart'> = interactive ? {
     onCanvasPointerDown: (e: PointerEvent, { board, screen }: CanvasPointerInfo) => {
       const hit = hitAt(board, true);
+      const chip = pressable ? (e.target as Element | null)?.closest?.('[data-slot=diagram-item][data-pressable]') : null;
+      const owner = chip?.closest('[data-slot=diagram-node],[data-slot=diagram-edge-label]');
+      pressedItem.current = chip && owner ? {
+        item: { kind: owner.getAttribute('data-slot') === 'diagram-node' ? 'node' : 'edge', id: owner.getAttribute(owner.getAttribute('data-slot') === 'diagram-node' ? 'data-node' : 'data-edge') ?? '', section: chip.getAttribute('data-section') ?? '', item: chip.getAttribute('data-item') ?? '' },
+        at: { x: e.clientX, y: e.clientY },
+      } : null;
       // A press ends connecting by keyboard, and the keys carry on from what was pressed.
       cancel();
       setRingOn(null);
@@ -698,7 +936,13 @@ export function Diagram<N = unknown, E = unknown>({
       send({ type: 'down', hit, board, screen, additive: e.shiftKey || e.metaKey || e.ctrlKey }, e);
     },
     onCanvasPointerMove: (e: PointerEvent, { board, screen }: CanvasPointerInfo) => { if (gesture.current.k !== 'idle') send({ type: 'move', board, screen, noSnap: e.metaKey || e.ctrlKey }, e); },
-    onCanvasPointerUp: (e: PointerEvent) => send(e.type === 'pointercancel' ? { type: 'cancel' } : { type: 'up' }, e),
+    onCanvasPointerUp: (e: PointerEvent) => {
+      send(e.type === 'pointercancel' ? { type: 'cancel' } : { type: 'up' }, e);
+      const pressed = pressedItem.current;
+      pressedItem.current = null;
+      // An item pressed without a drag: the owner's selected by the press, and the item is what's reported.
+      if (pressed && e.type !== 'pointercancel' && Math.hypot(e.clientX - pressed.at.x, e.clientY - pressed.at.y) < 6) onAction?.(pressed.item, { reason: 'press', event: e });
+    },
     onNavigationStart: cancel,
   } : {};
 
@@ -742,6 +986,12 @@ export function Diagram<N = unknown, E = unknown>({
       const next = viewportToShow(viewport, box, size);
       if (next !== viewport) canvas.setViewport(next, { reason: 'move-key', event });
     }
+    // An item keeps focus on its owner, which has a name of its own: the item is said aloud instead.
+    if (item.item !== undefined) {
+      const owner = item.kind === 'node' ? laid.index.byId.get(item.id) : laid.edges.find((d) => d.edge.id === item.id)?.edge;
+      const whose = item.kind === 'node' ? nameOf(item.id) : (owner as DiagramEdge<E> | undefined)?.title || 'edge';
+      setStatus(`${describeItem(item, owner?.sections, whose)}.${pressable ? ' Enter presses it.' : ''}`);
+    }
     focusEl(item);
   };
   /** Focus that's nowhere yet starts on what's selected, or else on what's nearest the middle of the view. */
@@ -755,7 +1005,7 @@ export function Diagram<N = unknown, E = unknown>({
   const go = (step: DiagramStep, event?: Event) => {
     const from = focus.current;
     const here = from && (from.kind === 'node' ? laid.index.byId.has(from.id) : laid.geometries.has(from.id)) ? from : null;
-    const ctx = { index: laid.index, edges: laid.edges.map((d) => d.edge) };
+    const ctx = { index: laid.index, edges: laid.edges.map((d) => d.edge), items: pressable };
     const next = here ? stepFocus(here, step, ctx) : step === 'first' || step === 'last' ? stepFocus(null, step, ctx) : startFocus();
     if (next) moveFocus(next, event);
     if (next?.kind === 'node') offerByKeyboard({ node: next.id });
@@ -853,6 +1103,7 @@ export function Diagram<N = unknown, E = unknown>({
     }
     if (key === 'escape') {
       if (gesture.current.k !== 'idle') { cancel(); setStatus('Cancelled.'); }
+      else if (focus.current?.item !== undefined) go('out', e);
       else if (selection.nodes.length || selection.edges.length) select(NOTHING_SELECTED, 'escape-key', e);
       else focusEl(null);
       return;
@@ -884,6 +1135,12 @@ export function Diagram<N = unknown, E = unknown>({
       const f = focus.current;
       if (!f) { go('first', e); return; }
       e.preventDefault();
+      if (f.item !== undefined) {
+        // An item: its owner's selected, and the item's what's reported.
+        if (selectable) select(f.kind === 'node' ? { nodes: [f.id], edges: [] } : { nodes: [], edges: [f.id] }, 'keyboard', e);
+        onAction?.(f, { reason: 'enter-key', event: e });
+        return;
+      }
       if (selectable) {
         const sel = selectionRef.current;
         const list = f.kind === 'node' ? sel.nodes : sel.edges;
@@ -917,12 +1174,12 @@ export function Diagram<N = unknown, E = unknown>({
   const drawn = useMemo(() => (drawWindow ? within(laid, drawWindow, kept) : laid), [laid, drawWindow, kept]);
   // Each kept in a memo, so a view that only moves changes none of them, and what depends on the zoom is one attribute.
   const nodeView = (n: DiagramNode<any>) => (
-    <NodeView key={n.id} node={n} selected={selectedSets.nodes.has(n.id)} selectable={selectable} current={currentSets.nodes.has(n.id)} renderNode={renderNode as NodeViewProps['renderNode']} label={(nodeLabel as DiagramProps<any, any>['describeNode'])?.(n) ?? describeNode(n, laid.index, laid.edgesAt.get(n.id), noun)} />
+    <NodeView key={n.id} node={n} selected={selectedSets.nodes.has(n.id)} selectable={selectable} current={currentSets.nodes.has(n.id)} pressable={pressable} focusedItem={ringOn?.kind === 'node' && ringOn.id === n.id && ringOn.item !== undefined ? `${ringOn.section}\0${ringOn.item}` : undefined} renderNode={renderNode as NodeViewProps['renderNode']} label={(nodeLabel as DiagramProps<any, any>['describeNode'])?.(n) ?? describeNode(n, laid.index, laid.edgesAt.get(n.id), noun)} />
   );
   const containers = useMemo(() => drawn.containers.map(nodeView),
-    [drawn.containers, selectedSets.nodes, currentSets.nodes, selectable, renderNode, nodeLabel, noun, laid.edgesAt]);
+    [drawn.containers, selectedSets.nodes, currentSets.nodes, selectable, pressable, ringOn, renderNode, nodeLabel, noun, laid.edgesAt]);
   const leaves = useMemo(() => drawn.leaves.map(nodeView),
-    [drawn.leaves, selectedSets.nodes, currentSets.nodes, selectable, renderNode, nodeLabel, noun, laid.edgesAt]);
+    [drawn.leaves, selectedSets.nodes, currentSets.nodes, selectable, pressable, ringOn, renderNode, nodeLabel, noun, laid.edgesAt]);
   const lines = useMemo(() => (
     <>
       <defs>
@@ -940,10 +1197,18 @@ export function Diagram<N = unknown, E = unknown>({
           className="stroke-border [stroke-dasharray:calc(6px/var(--diagram-z))_calc(4px/var(--diagram-z))] [stroke-width:calc(1px/var(--diagram-z))]"
         />
       ))}
-      {drawn.edges.map(({ edge, geometry }) => <EdgeView key={edge.id} edge={edge} d={geometry.d} arrow={arrow} selected={selectedSets.edges.has(edge.id)} selectable={selectable} current={currentSets.edges.has(edge.id)} label={(edgeLabel as DiagramProps<any, any>['describeEdge'])?.(edge) ?? describeEdge(edge, laid.index)} />)}
+      {drawn.edges.map(({ edge, d }) => <EdgeView key={edge.id} edge={edge} d={d} arrow={arrow} selected={selectedSets.edges.has(edge.id)} selectable={selectable} current={currentSets.edges.has(edge.id)} label={(edgeLabel as DiagramProps<any, any>['describeEdge'])?.(edge) ?? describeEdge(edge, laid.index)} />)}
     </>
   ), [drawn.dividers, drawn.edges, arrow, selectedSets.edges, currentSets.edges, selectable, edgeLabel, laid.index]);
-  const labelViews = useMemo(() => drawn.labels.map(({ edge, box }) => <EdgeLabel key={edge.id} edge={edge} box={box} />), [drawn.labels]);
+  const labelViews = useMemo(() => drawn.labels.map(({ edge, box }) => {
+    const on = ringOn?.kind === 'edge' && ringOn.id === edge.id ? ringOn : null;
+    return (
+      <EdgeLabel
+        key={edge.id} edge={edge} box={box} selected={selectedSets.edges.has(edge.id)} current={currentSets.edges.has(edge.id)} pressable={pressable}
+        focused={!!on && on.item === undefined} focusedItem={on && on.item !== undefined ? `${on.section}\0${on.item}` : undefined}
+      />
+    );
+  }), [drawn.labels, selectedSets.edges, currentSets.edges, pressable, ringOn]);
   const rings = useMemo(() => {
     const all = drawn.containers.concat(drawn.leaves);
     // Current first, so that a selection's line goes over it.
@@ -957,7 +1222,7 @@ export function Diagram<N = unknown, E = unknown>({
         style={{ left: n.x, top: n.y, width: n.w, height: n.h }}
       />
     ));
-    const focusedOn = (n: DiagramNode<N>) => ringOn?.kind === 'node' && ringOn.id === n.id;
+    const focusedOn = (n: DiagramNode<N>) => ringOn?.kind === 'node' && ringOn.id === n.id && ringOn.item === undefined;
     const ringed = all.filter((n) => selectedSets.nodes.has(n.id) || focusedOn(n));
     return currentUp.concat(ringed.map((n) => (
       <span
@@ -972,7 +1237,7 @@ export function Diagram<N = unknown, E = unknown>({
       />
     )));
   }, [drawn.containers, drawn.leaves, selectedSets.nodes, currentSets.nodes, ringOn]);
-  const focusedEdge = ringOn?.kind === 'edge' ? laid.geometries.get(ringOn.id)?.d ?? null : null;
+  const focusedEdge = ringOn?.kind === 'edge' && ringOn.item === undefined ? laid.edges.find((d) => d.edge.id === ringOn.id)?.d ?? null : null;
   const marks = useMemo<CanvasMiniMapItem[]>(() => (minimap ? nodes.filter((n) => n.kind !== 'root').map((n) => ({ id: n.id, x: n.x, y: n.y, w: n.w, h: n.h })) : []), [minimap, nodes]);
   const zoom = viewport.zoom < NODE_TEXT_ZOOM ? 'far' : viewport.zoom < EDGE_LABEL_ZOOM ? 'mid' : 'near';
   // Changing this restyles every line drawn, so it moves in steps of about 9%, a few frames apart, which keeps a line of

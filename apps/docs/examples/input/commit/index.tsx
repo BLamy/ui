@@ -28,7 +28,7 @@ export default function Commit() {
         <FieldDescription>Capitals, digits and _.</FieldDescription>
         <FieldError>{refused}</FieldError>
       </Field>
-      <p className="m-0 text-footnote text-muted-foreground" data-demo-commits={log.join(' | ')}>
+      <p className="m-0 font-mono text-footnote text-foreground" data-demo-commits={log.join(' | ')}>
         env.{name}
       </p>
     </div>

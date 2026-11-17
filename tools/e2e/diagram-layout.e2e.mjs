@@ -1,8 +1,10 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { test, expect } from '@playwright/test';
 
-/* ELK, in a worker, through the docs demo. A busy machine can't be held to a fixed frame budget, so what's asked of a layout
-   is measured against the same page doing nothing, just before. It prints what it saw. */
+/* ELK, in a worker, through the docs demo. What a layout mustn't do is block the page's main thread, so that's what's
+   measured: the Long Tasks API's tasks (50 ms or more of the main thread, by the browser's own clock), not the gaps
+   between frames, which a machine running other browsers stretches when it takes the renderer off the CPU. A real block
+   (60 ms of work put in the layout's path) fails it; the frame gaps are printed beside it. */
 
 /** Keeps track of workers, and of the gap between every two animation frames. */
 const INSTRUMENT = () => {
@@ -24,6 +26,10 @@ const INSTRUMENT = () => {
       super.terminate();
     }
   };
+  window.__longTasks = [];
+  try {
+    new PerformanceObserver((list) => { for (const e of list.getEntries()) window.__longTasks.push([e.startTime, e.duration]); }).observe({ type: 'longtask', buffered: true });
+  } catch { /* no Long Tasks API: the frame gaps still print */ }
   window.__gaps = [];
   let last = performance.now();
   const tick = () => {
@@ -90,6 +96,9 @@ test('2,000 nodes lay out without stopping the page', async ({ page }, info) => 
       drawing: Math.round(Math.max(...inRange(answered, answered + 3000), 0)),
       // The longest gaps while it laid out: how far in they started, of how long, and how long they lasted.
       longest: window.__gaps.filter(([at]) => at >= pressed && at < answered).sort((x, y) => y[1] - x[1]).slice(0, 3).map(([at, g]) => [Math.round(at - pressed), Math.round(g)]),
+      // The main thread's long tasks while it laid out (from the press to ELK's answer), and when the page was idle.
+      blocked: window.__longTasks.filter(([at]) => at >= pressed && at < answered).map(([at, d]) => [Math.round(at - pressed), Math.round(d)]),
+      blockedIdle: window.__longTasks.filter(([at]) => at >= idleFrom && at < pressed).map(([, d]) => Math.round(d)),
     };
   }, { idleFrom, pressed });
   const text = await status(page).textContent();
@@ -99,8 +108,8 @@ test('2,000 nodes lay out without stopping the page', async ({ page }, info) => 
   expect((await workers(page)).length).toBe(before);
   // At least one frame in every stretch of ELK's work, so this really did run while the page went on.
   expect(seen.layingOut.frames).toBeGreaterThan(seen.ms / 200);
-  // No gap longer than a frame or two, or than this page does anyway when it's doing nothing on this machine.
-  expect(seen.layingOut.max).toBeLessThanOrEqual(Math.max(50, seen.idle.max * 2));
+  // Nothing held the main thread for a long task (50 ms, the browser's own line) while ELK worked.
+  expect(seen.blocked, 'long tasks while laying out: [ms after the press, ms long]').toEqual([]);
 });
 
 test('a layout started while another is running stops the first', async ({ page }) => {

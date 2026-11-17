@@ -1,7 +1,6 @@
 'use client';
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import type { ChangeDetails } from '@ui-sdk/core';
-import { cva, type VariantProps } from 'class-variance-authority';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useCanvas } from '@/components/ui/canvas';
@@ -9,7 +8,7 @@ import { Checkbox, CheckboxGroup } from '@/components/ui/checkbox';
 import {
   Combobox, ComboboxContent, ComboboxEmpty, ComboboxInput, ComboboxInputGroup, ComboboxItem, ComboboxList,
 } from '@/components/ui/combobox';
-import { Diagram, DiagramToolbar, type DiagramProps } from '@/components/ui/diagram';
+import { Diagram, DiagramNodeBody, DiagramToolbar, type DiagramItem, type DiagramProps } from '@/components/ui/diagram';
 import {
   DiagramFrame, DiagramFrameBar, DiagramFrameBoard, DiagramFrameCover, DiagramFrameCoverHeader, DiagramFramePanel, DiagramFrameSection,
   type DiagramFrameProps,
@@ -19,14 +18,18 @@ import { Field, FieldError, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { StateDiagram } from '@/components/ui/state-diagram';
+import {
+  cloudflareBoardData, cloudflareProblems, placeInLayers,
+  type CloudflareServiceEdgeData, type CloudflareServiceNodeData,
+} from '@/lib/cloudflare-board';
 import { CLOUDFLARE_CATALOG } from '@/lib/cloudflare-catalog.generated';
 import type { CatalogProduct } from '@/lib/cloudflare-catalog';
 import {
-  catalogBinding, catalogProduct, linkBetween, linkOf, methodSignature, newEdge, runsCode, SERVICE_NODE, serviceIconName, serviceNodeHeight, servicePorts,
+  catalogBinding, catalogProduct, linkBetween, methodSignature, newEdge, runsCode, serviceIconName, servicePorts,
   type CloudflareEdge, type CloudflareService, type ServiceLink,
 } from '@/lib/cloudflare-services';
 import {
-  addService, BINDING_NAME, checkMachines, edgeBinding, machineEvents, machinesPast, placeInLayers, removeServices, searchCatalog, serviceName, validateSystem,
+  addService, BINDING_NAME, checkMachines, edgeBinding, machineEvents, machinesPast, removeServices, searchCatalog, serviceName, validateSystem,
   type CloudflareSystem, type SystemIssue,
 } from '@/lib/cloudflare-system';
 import { useControllableChange } from '@/lib/controllable-state';
@@ -39,18 +42,19 @@ import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
 
 /* ══ CloudflareDiagram — Cloudflare's services on a Diagram ══
-   Each service is a node with what it can call and receive as ports, from the catalog, and a connection can only be one the
-   catalog says there is: a Worker to R2 offers R2's real methods, and R2 to D1 says why not.
+   A system drawn the way a statechart is: the system is a container with its name and what's account-wide; an environment
+   is a box in it, and a Worker holds its Durable Object classes; each service is a card with a header (its name, its
+   product's glyph, its product) and labelled sections of chips (what it handles, its names on `env`, its triggers, its
+   settings, its machine); a connection's label is a card with its name on `env` and what it uses; where requests,
+   schedules and messages come in there's an entry marker. What's drawn is `lib/cloudflare-board`, as data.
 
-   What's given is a system, as data: services, what each is bound as, which have a machine, and which events cross which edge.
-   It says what's wrong with one, which can have come from a file. With `editable`, a search of the catalog adds a service,
-   and a service's machine opens in a `StateDiagram`, over the board. Without it, it's a picture you can select in and read:
-   nothing moves, connects or is deleted, and the panel only reads.
+   A connection can only be one the catalog says there is: a Worker to R2 offers R2's real methods, and R2 to D1 says why
+   not. Ports are only for connecting: with `editable`, each card has a "Connect" section whose rows carry them; read-only,
+   there are none, and the picture is cards, sections and labelled edges.
 
    The parts: `CloudflareDiagram` composes `DiagramFrame` (board, bar, panel, cover) around a `Diagram`. The board half is a
    Diagram preset, `cloudflareBoardProps(system)`: a plain `<Diagram {...cloudflareBoardProps(system)} />` draws a system the
-   same way, with the catalog's connection rule. A service's look is `CloudflareServiceNode` (`cloudflareServiceVariants`); the
-   catalog search is `CloudflareServiceSearch`, for a toolbar of your own.
+   same way, with the catalog's connection rule. The catalog search is `CloudflareServiceSearch`, for a toolbar of your own.
 
    There's no Cloudflare artwork, as their trademark page asks for written permission: names in words, the library's own icons,
    and an `icon` prop for an app that has its own permission. It comes with the catalog, which is about 150 KB, from
@@ -69,6 +73,10 @@ export interface CloudflareDiagramProps
   edges?: readonly CloudflareEdge[];
   defaultServices?: readonly CloudflareService[];
   defaultEdges?: readonly CloudflareEdge[];
+  /** The system's name, in its header. Default "Cloudflare". */
+  title?: string;
+  /** The account it's on, in its header with what else is account-wide. */
+  accountId?: string;
   /** The whole system after a change, and why. `details.cancel()` refuses it when uncontrolled; controlled, what you pass
    *  back decides. */
   onDataChange?: (data: CloudflareSystem, details: CloudflareDiagramChangeDetails) => void;
@@ -89,7 +97,7 @@ export interface CloudflareDiagramProps
   openMachine?: string | null;
   defaultOpenMachine?: string | null;
   onOpenMachineChange?: (id: string | null, details: ChangeDetails<CloudflareMachineChangeReason>) => void;
-  /** Which way a layout runs, when none of the services say where they are. Default `right`. */
+  /** Which way a layout runs, when none of the services say where they are. Default `down`. */
   direction?: DiagramDirection;
   /** What to draw for a product, instead of the library's own icon, for an app with permission to use Cloudflare's. */
   icon?: (product: CatalogProduct) => ReactNode;
@@ -106,90 +114,14 @@ const NO_XSTATE = 'Checking its machines needs xstate, an optional peer of @bret
 const NO_SERVICES: readonly CloudflareService[] = [];
 const NO_EDGES: readonly CloudflareEdge[] = [];
 
-/** What a service's node carries on a Diagram. */
-export interface CloudflareServiceNodeData {
-  service: CloudflareService;
-  product: CatalogProduct | undefined;
-  /** Something's wrong with it. */
-  problem?: boolean;
-}
-
-/** What a connection's edge carries on a Diagram. */
-export interface CloudflareServiceEdgeData {
-  edge: CloudflareEdge;
-  link: ServiceLink | null;
-  /** Why it isn't what it says it is, if it isn't. */
-  problem: string | null;
-}
-
-/** A service as a Diagram node: its size and ports from the catalog, and its place if it has one. */
-export function cloudflareServiceNode(service: CloudflareService): Omit<DiagramNode<CloudflareServiceNodeData>, 'x' | 'y'> & { x?: number; y?: number } {
-  const product = catalogProduct(service.kind);
-  const ports = servicePorts(service.kind);
-  const ins = ports.filter((p) => p.direction === 'in').length, outs = ports.length - ins;
+/** What's wrong, drawn on what's been laid out: as it isn't anything to lay out again for. */
+function markProblems(board: { nodes: DiagramNode<CloudflareServiceNodeData>[]; edges: DiagramEdge<CloudflareServiceEdgeData>[] }, issues: readonly SystemIssue[]) {
+  const wrong = cloudflareProblems(issues);
   return {
-    id: service.id,
-    label: service.label ?? product?.name ?? service.kind,
-    detail: !product ? 'not in the catalog' : service.label ? product.name : undefined,
-    kind: 'node',
-    w: SERVICE_NODE.w,
-    h: serviceNodeHeight(ins, outs),
-    ports,
-    data: { service, product },
-    ...(service.at ? { x: service.at.x, y: service.at.y } : null),
+    nodes: board.nodes.map((n) => (wrong.services.has(n.id) && n.data ? { ...n, tone: 'destructive' as const, data: { ...n.data, problem: true } } : n)),
+    edges: board.edges.map((e) => (wrong.edges.has(e.id) ? { ...e, tone: 'destructive' as const } : e)),
   };
 }
-
-/** What an edge says on the board: what it's bound as, and which of what's on offer it uses. */
-function edgeLabel(edge: CloudflareEdge, to: CloudflareService | undefined, link: ServiceLink | null): string {
-  const name = edgeBinding(edge, to) ?? link?.label ?? edge.via;
-  const used = edge.operations ?? [];
-  if (!used.length) return name;
-  const shown = used.slice(0, 3).join(', ');
-  return `${name}: ${shown}${used.length > 3 ? ` +${used.length - 3}` : ''}`;
-}
-
-const toEdge = (edge: CloudflareEdge, byId: ReadonlyMap<string, CloudflareService>): DiagramEdge<CloudflareServiceEdgeData> => {
-  const to = byId.get(edge.to);
-  const check = linkOf(edge, byId.get(edge.from)?.kind ?? '', to?.kind ?? '');
-  const link = check.ok ? check.link : null;
-  return {
-    id: edge.id,
-    from: edge.from,
-    to: edge.to,
-    ...(link ? { fromPort: link.fromPort, toPort: link.toPort } : null),
-    label: edgeLabel(edge, to, link),
-    data: { edge, link, problem: check.ok ? null : check.reason },
-  };
-};
-
-/** Where a service with no place of its own goes, among those that have one: in a column to the right of them. */
-function placeNew<N>(nodes: (Partial<DiagramNode<N>> & { id: string; w?: number; h?: number })[]): DiagramNode<N>[] {
-  const placed = nodes.filter((n) => n.x !== undefined && n.y !== undefined);
-  const right = placed.reduce((m, n) => Math.max(m, (n.x ?? 0) + (n.w ?? 0)), 0);
-  const gap = 48;
-  let y = placed.reduce((m, n) => Math.min(m, n.y ?? 0), Number.POSITIVE_INFINITY);
-  if (!Number.isFinite(y)) y = 0;
-  return nodes.map((n) => {
-    if (n.x !== undefined && n.y !== undefined) return n as DiagramNode<N>;
-    const at = { ...n, x: right + gap, y };
-    y += (n.h ?? 0) + gap;
-    return at as DiagramNode<N>;
-  });
-}
-
-/** Only what isn't so is drawn as wrong: a service, or a connection, with an error. */
-function problemsOf(issues: readonly SystemIssue[]) {
-  return {
-    edges: new Set(issues.flatMap((i) => (i.severity === 'error' && i.edge ? [i.edge] : []))),
-    services: new Set(issues.flatMap((i) => (i.severity === 'error' && i.service && !i.edge ? [i.service] : []))),
-  };
-}
-
-const markServices = (nodes: readonly DiagramNode<CloudflareServiceNodeData>[], wrong: ReadonlySet<string>) =>
-  nodes.map((n) => (wrong.has(n.id) && n.data ? { ...n, data: { ...n.data, problem: true } } : n));
-const markEdges = (edges: readonly DiagramEdge<CloudflareServiceEdgeData>[], wrong: ReadonlySet<string>) =>
-  edges.map((e) => (wrong.has(e.id) ? { ...e, tone: 'destructive' as const } : e));
 
 /** Whether the catalog says two ports can join, as a Diagram's `isValidConnection`: true, or why not. */
 const catalogConnection = (byId: ReadonlyMap<string, CloudflareService>) => (c: DiagramConnection): boolean | string => {
@@ -197,104 +129,62 @@ const catalogConnection = (byId: ReadonlyMap<string, CloudflareService>) => (c: 
   return check.ok ? true : check.reason;
 };
 
+/** The far-zoom rule the Diagram's own parts follow: past a zoom where words can't be read, they aren't drawn. */
+const FAR_HIDDEN = 'group-data-[zoom=far]/diagram:hidden';
+
+/** A card drawn with an app's own glyph for its product, in the header's glyph's place. */
+function ServiceWithOwnIcon({ node, icon }: { node: DiagramNode<CloudflareServiceNodeData>; icon: (product: CatalogProduct) => ReactNode }) {
+  const product = node.data?.product;
+  if (!product) return <DiagramNodeBody node={node} />;
+  return (
+    <DiagramNodeBody node={node} className="relative [&_[data-slot=diagram-node-icon]>*]:invisible">
+      <span aria-hidden="true" data-part="own-icon" className={cn('pointer-events-none absolute top-1.5 left-2.5 flex size-3.5 items-center justify-center overflow-hidden text-muted-foreground [&>*]:max-h-full [&>*]:max-w-full', FAR_HIDDEN)}>
+        {icon(product)}
+      </span>
+    </DiagramNodeBody>
+  );
+}
+
 export interface CloudflareBoardOptions {
   /** What to draw for a product, instead of the library's own icon. */
   icon?: (product: CatalogProduct) => ReactNode;
   /** What's wrong with it, drawn as wrong. Default `validateSystem(system)`; add `checkMachines` to it to have the machines
    *  checked, with XState. */
   issues?: readonly SystemIssue[];
+  /** With ports to connect by, on each card's "Connect" section. Default `false`. */
+  editable?: boolean;
+  /** The system's header. Default its `name`, or "Cloudflare". */
+  title?: string;
 }
 
 /** What `cloudflareBoardProps` gives a Diagram. */
 export interface CloudflareBoardProps {
   nodes: DiagramNode<CloudflareServiceNodeData>[];
   edges: DiagramEdge<CloudflareServiceEdgeData>[];
-  renderNode: (node: DiagramNode<CloudflareServiceNodeData>) => ReactNode;
   isValidConnection: (connection: DiagramConnection) => boolean | string;
   portsOnly: true;
+  autoSize: true;
+  background: 'grid';
   noun: string;
+  renderNode?: (node: DiagramNode<CloudflareServiceNodeData>) => ReactNode;
 }
 
-/** A system as a plain Diagram's props: each service a node with its ports (placed where it says, the rest in a column
- *  beside them, or in layers by what reaches what when none says), each connection an edge labelled with what it's bound
- *  as and uses, what's wrong drawn as wrong, `CloudflareServiceNode` for each, and the catalog's rule for connecting.
- *  `<Diagram {...cloudflareBoardProps(system)} />`. Memoize it on the system, as `renderNode` is new each call. */
-export function cloudflareBoardProps(system: CloudflareSystem, { icon, issues }: CloudflareBoardOptions = {}): CloudflareBoardProps {
-  const placed = system.services.some((s) => s.at) ? system : placeInLayers(system);
-  const byId = new Map(placed.services.map((s) => [s.id, s]));
-  const wrong = problemsOf(issues ?? validateSystem(system));
-  // An edge with an end that isn't there has nowhere to be drawn. It's still in the system, and it's said to be wrong.
-  const edges = placed.edges.filter((e) => byId.has(e.from) && byId.has(e.to)).map((e) => toEdge(e, byId));
+/** A system as a plain Diagram's props: the system a container with its name and what's account-wide, each service a card
+ *  (placed where it says, the rest top to bottom with `placeInLayers`), each connection an edge whose label says what it's
+ *  bound as and uses, what's wrong drawn as wrong, the lined board, and the catalog's rule for connecting.
+ *  `<Diagram {...cloudflareBoardProps(system)} />`. Memoize it on the system. */
+export function cloudflareBoardProps(system: CloudflareSystem, { icon, issues, editable = false, title }: CloudflareBoardOptions = {}): CloudflareBoardProps {
+  const placed = placeInLayers(system, { editable });
+  const board = cloudflareBoardData(placed, { editable, issues: issues ?? validateSystem(system), title });
   return {
-    nodes: markServices(placeNew<CloudflareServiceNodeData>(placed.services.map(cloudflareServiceNode) as never), wrong.services),
-    edges: markEdges(edges, wrong.edges),
-    renderNode: (node) => <CloudflareServiceNode node={node} icon={icon} />,
-    isValidConnection: catalogConnection(byId),
+    ...board,
+    isValidConnection: catalogConnection(new Map(placed.services.map((s) => [s.id, s]))),
     portsOnly: true,
+    autoSize: true,
+    background: 'grid',
     noun: 'service',
+    ...(icon ? { renderNode: (node: DiagramNode<CloudflareServiceNodeData>) => (node.data ? <ServiceWithOwnIcon node={node} icon={icon} /> : <DiagramNodeBody node={node} />) } : null),
   };
-}
-
-/* ── A service, drawn ── */
-
-/** A service's card: a hairline box on the card surface, red-edged when something's wrong with it. */
-export const cloudflareServiceVariants = cva('absolute inset-0 overflow-hidden rounded-ctl border bg-card text-card-foreground', {
-  variants: {
-    tone: {
-      default: 'border-border',
-      destructive: 'border-destructive',
-    },
-  },
-  defaultVariants: { tone: 'default' },
-});
-
-const portLabelClass = 'absolute -translate-y-1/2 truncate text-caption text-foreground/70 group-data-[zoom=far]/diagram:hidden group-data-[zoom=mid]/diagram:hidden';
-
-export interface CloudflareServiceNodeProps extends VariantProps<typeof cloudflareServiceVariants> {
-  node: DiagramNode<CloudflareServiceNodeData>;
-  /** What to draw for its product, instead of the library's own icon. */
-  icon?: (product: CatalogProduct) => ReactNode;
-  className?: string;
-}
-
-/** A service as a Diagram node's body: its icon, its name and what it is, whether it has a machine, and its ports named.
- *  `renderNode={(node) => <CloudflareServiceNode node={node} />}` on a plain Diagram draws services the same way. */
-export function CloudflareServiceNode({ node, icon, tone, className }: CloudflareServiceNodeProps) {
-  const product = node.data?.product;
-  const ports = node.ports ?? [];
-  const problem = tone ? tone === 'destructive' : !!node.data?.problem;
-  return (
-    <div
-      data-slot="cloudflare-service"
-      data-kind={node.data?.service.kind}
-      data-problem={problem || undefined}
-      className={cn(cloudflareServiceVariants({ tone: problem ? 'destructive' : 'default' }), className)}
-    >
-      <div className="flex h-[46px] items-center gap-2 px-3 group-data-[zoom=far]/diagram:hidden">
-        <span aria-hidden="true" className="grid size-6 shrink-0 place-items-center text-foreground/70">
-          {icon && product ? icon(product) : <Icon name={serviceIconName(product)} size={18} />}
-        </span>
-        <span className="min-w-0 flex-1">
-          <span data-slot="cloudflare-service-name" className="block truncate text-subhead font-semibold">{node.label}</span>
-          {node.detail ? <span className="block truncate text-caption text-foreground/70">{node.detail}</span> : null}
-        </span>
-        {node.data?.service.machine ? <Badge data-part="machine" variant="secondary" size="sm">machine</Badge> : null}
-      </div>
-      {ports.map((p) => (
-        <span
-          key={p.id}
-          aria-hidden="true"
-          data-slot="cloudflare-port-label"
-          data-side={p.side === 'left' ? 'start' : 'end'}
-          className={cn(portLabelClass, p.side === 'left' ? 'left-3 max-w-[58%] text-left' : 'right-3 max-w-[38%] text-right')}
-          // Where along its side the port is, which the catalog's ports say as a fraction.
-          style={{ top: `${(p.at ?? 0.5) * 100}%` }}
-        >
-          {p.label}
-        </span>
-      ))}
-    </div>
-  );
 }
 
 /** Services to bring into view once they've been placed again. `after` is the placing they were in when it was asked
@@ -310,7 +200,7 @@ function RevealWhenPlaced({ nodes, placing, want, onDone }: { nodes: readonly Di
   const { reveal } = useCanvas();
   useEffect(() => {
     if (!want || placing === want.after) return;
-    const shown = nodes.filter((n) => want.ids.includes(n.id));
+    const shown = nodes.filter((n) => n.data && want.ids.includes(n.id));
     if (shown.length < want.ids.length) return;
     const x = Math.min(...shown.map((n) => n.x)), y = Math.min(...shown.map((n) => n.y));
     const w = Math.max(...shown.map((n) => n.x + n.w)) - x, h = Math.max(...shown.map((n) => n.y + n.h)) - y;
@@ -321,29 +211,61 @@ function RevealWhenPlaced({ nodes, placing, want, onDone }: { nodes: readonly Di
   return null;
 }
 
+/** Below this a card's words are too small to read. */
+const LEGIBLE = 0.66;
+const EDGE = 16;
+/** Room at the top for the board's toolbar, so the system's name isn't under it. */
+const TOOLBAR_ROOM = 64;
+/** A board narrower than this is a phone's: wider, the whole system is fitted, as on any Diagram. */
+const COMPACT = 600;
+
+/** On a phone's board, once the system's placed, if the whole of it would only fit at a size that can't be read, the board
+ *  starts at the top, where things come in, at the least size that can be, across the whole width if that fits. The rest is
+ *  a drag, Fit, or a press in the panel away. Only the first time, and only when the app didn't say where to start. */
+function LegibleStart({ nodes, enabled }: { nodes: readonly DiagramNode<CloudflareServiceNodeData>[]; enabled: boolean }) {
+  const { setViewport, size } = useCanvas();
+  const done = useRef(false);
+  useEffect(() => {
+    if (done.current || !enabled || !nodes.length || size.width <= 0 || size.height <= 0 || size.width >= COMPACT) return;
+    done.current = true;
+    const x0 = Math.min(...nodes.map((n) => n.x)), y0 = Math.min(...nodes.map((n) => n.y));
+    const w = Math.max(...nodes.map((n) => n.x + n.w)) - x0, h = Math.max(...nodes.map((n) => n.y + n.h)) - y0;
+    const roomW = size.width - EDGE * 2, roomH = size.height - EDGE - TOOLBAR_ROOM;
+    if (Math.min(1, roomW / w, roomH / h) >= LEGIBLE) return;
+    const zoom = Math.max(LEGIBLE, Math.min(1, roomW / w));
+    const x = w * zoom <= roomW ? size.width / 2 - (x0 + w / 2) * zoom : EDGE - x0 * zoom;
+    setViewport({ zoom, x, y: TOOLBAR_ROOM - y0 * zoom }, { reason: 'imperative' });
+  }, [nodes, enabled, size, setViewport]);
+  return null;
+}
+
 /* ── The diagram ── */
 
-const sameSystem = (a: CloudflareSystem, b: CloudflareSystem) => a.services === b.services && a.edges === b.edges;
+const sameSystem = (a: CloudflareSystem, b: CloudflareSystem) => a.services === b.services && a.edges === b.edges && a.name === b.name && a.accountId === b.accountId;
+const DEAD_LETTER = 'dead-letter:';
 
 export function CloudflareDiagram({
-  services: servicesProp, edges: edgesProp, defaultServices = NO_SERVICES, defaultEdges = NO_EDGES, onDataChange,
+  services: servicesProp, edges: edgesProp, defaultServices = NO_SERVICES, defaultEdges = NO_EDGES, title, accountId, onDataChange,
   editable = false, selection: selectionProp, defaultSelection = NOTHING_SELECTED, onSelectionChange,
   panelOpen, defaultPanelOpen, onPanelOpenChange, panelPresentation, panelHeader,
-  openMachine: openMachineProp, defaultOpenMachine = null, onOpenMachineChange,
-  direction = 'right', icon, emptyState, className, style, 'aria-label': ariaLabel = 'Cloudflare services', ...diagram
+  openMachine: openMachineProp, defaultOpenMachine = null, onOpenMachineChange, onAction,
+  direction = 'down', icon, emptyState, className, style, 'aria-label': ariaLabel = 'Cloudflare services', ...diagram
 }: CloudflareDiagramProps) {
   const boardRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
 
   /* ── The system: controlled by `services` / `edges`, or the diagram's own ── */
   const controlled = servicesProp !== undefined;
+  const named = useMemo(() => ({ ...(title !== undefined ? { name: title } : null), ...(accountId !== undefined ? { accountId } : null) }), [title, accountId]);
   const given = useMemo<CloudflareSystem | undefined>(
-    () => (controlled ? { services: servicesProp, edges: edgesProp ?? NO_EDGES } : undefined),
-    [controlled, servicesProp, edgesProp],
+    () => (controlled ? { services: servicesProp, edges: edgesProp ?? NO_EDGES, ...named } : undefined),
+    [controlled, servicesProp, edgesProp, named],
   );
-  const [system, setSystem] = useControllableChange<CloudflareSystem, CloudflareDiagramChangeReason>(
+  const [own, setSystem] = useControllableChange<CloudflareSystem, CloudflareDiagramChangeReason>(
     given, { services: defaultServices, edges: defaultEdges }, onDataChange,
   );
+  // The name and account are the props', whoever holds the rest.
+  const system = useMemo(() => (controlled ? own : { ...own, ...named }), [controlled, own, named]);
   const { services, edges } = system;
   const byId = useMemo(() => new Map(services.map((s) => [s.id, s])), [services]);
 
@@ -363,25 +285,24 @@ export function CloudflareDiagram({
     return found;
   }, [system, xstate, hasMachine]);
 
-  /* ── The board: the preset, laid out by ELK when none of the services says where it is ── */
+  /* ── The board: the preset where anything has a place; laid out by ELK, top to bottom, where nothing has ── */
   const anyPlaced = services.some((s) => s.at);
-  const board = useMemo(() => cloudflareBoardProps(anyPlaced ? system : { services, edges: [] }, { icon, issues }), [anyPlaced, system, services, icon, issues]);
-  const draftEdges = useMemo(() => edges.filter((e) => byId.has(e.from) && byId.has(e.to)).map((e) => toEdge(e, byId)), [edges, byId]);
-  const nothing = useMemo(() => ({ nodes: [], edges: [] }), []);
-  const draft = useMemo(() => (anyPlaced ? nothing : { nodes: services.map(cloudflareServiceNode), edges: draftEdges }), [anyPlaced, nothing, services, draftEdges]);
-  const laid = useDiagramLayout<CloudflareServiceNodeData, CloudflareServiceEdgeData>(draft as never, { host: boardRef, direction });
+  const board = useMemo(() => cloudflareBoardProps(anyPlaced ? system : { ...system, services: [], edges: [] }, { icon, issues, editable }), [anyPlaced, system, icon, issues, editable]);
+  const draft = useMemo(() => (anyPlaced ? { nodes: [], edges: [] } : cloudflareBoardData(system, { editable })), [anyPlaced, system, editable]);
+  const laid = useDiagramLayout<CloudflareServiceNodeData, CloudflareServiceEdgeData>(draft, { host: boardRef, direction });
   // What's wrong goes on after laying out, as it isn't anything to lay out again for.
-  const wrong = useMemo(() => problemsOf(issues), [issues]);
-  const laidNodes = useMemo(() => markServices(laid.nodes, wrong.services), [laid.nodes, wrong]);
-  const laidEdges = useMemo(() => markEdges(laid.edges, wrong.edges), [laid.edges, wrong]);
-  const nodes = anyPlaced ? board.nodes : laidNodes;
-  const shownEdges = anyPlaced ? board.edges : laidEdges;
+  const laidBoard = useMemo(() => markProblems({ nodes: laid.nodes, edges: laid.edges }, issues), [laid.nodes, laid.edges, issues]);
+  const nodes = anyPlaced ? board.nodes : laidBoard.nodes;
+  const shownEdges = anyPlaced ? board.edges : laidBoard.edges;
+  const isValidConnection = useMemo(() => catalogConnection(byId), [byId]);
 
   /* ── Selection, and what's open ── */
   const [selection, setSelection] = useControllableChange<DiagramSelection, DiagramSelectionChangeReason>(selectionProp, defaultSelection, onSelectionChange);
   const select = (next: DiagramSelection) => setSelection(next, { reason: 'imperative' });
   const selectedService = selection.nodes.length === 1 && !selection.edges.length ? byId.get(selection.nodes[0] ?? '') : undefined;
-  const selectedEdge = selection.edges.length === 1 && !selection.nodes.length ? edges.find((e) => e.id === selection.edges[0]) : undefined;
+  const selectedId = selection.edges.length === 1 && !selection.nodes.length ? selection.edges[0] ?? '' : '';
+  // Where a consumer sends what it gives up on is drawn from the consumer's settings: selecting it is selecting those.
+  const selectedEdge = edges.find((e) => e.id === (selectedId.startsWith(DEAD_LETTER) ? selectedId.slice(DEAD_LETTER.length) : selectedId));
   // What's to come into view once it's placed: something added, or both ends of a new connection, which ELK may move.
   const placing: unknown = anyPlaced ? board.nodes : laid.bounds;
   const [toReveal, setToReveal] = useState<Reveal | null>(null);
@@ -396,7 +317,7 @@ export function CloudflareDiagram({
     { isEqual: sameSystem },
   );
   const send = (next: Partial<CloudflareSystem>, reason: CloudflareDiagramChangeReason, event?: Event) => {
-    const after = { services: [...(next.services ?? services)], edges: [...(next.edges ?? edges)] };
+    const after = { ...system, services: [...(next.services ?? services)], edges: [...(next.edges ?? edges)] };
     if (setSystem(after, { reason, event })) history.record(system, after);
   };
 
@@ -404,16 +325,18 @@ export function CloudflareDiagram({
     const keepPlaces = details.reason === 'move' || anyPlaced;
     const nextServices = data.nodes.flatMap((n) => {
       const s = byId.get(n.id);
-      return s ? [keepPlaces ? { ...s, at: { x: n.x, y: n.y } } : s] : [];
+      return s ? [keepPlaces ? { ...s, at: { x: Math.round(n.x), y: Math.round(n.y) } } : s] : [];
     });
-    const had = new Set(edges.map((e) => e.id));
+    const had = new Set(shownEdges.map((e) => e.id));
     const stillThere = new Set(data.edges.map((e) => e.id));
     const left = new Set(nextServices.map((s) => s.id));
     const kept = edges.filter((e) => stillThere.has(e.id)
       // What the board can't draw isn't its to lose.
       || !byId.has(e.from) || !byId.has(e.to)
       // What carries events stays when its service goes, to say that something's still sending there.
-      || (!!e.events?.length && (!left.has(e.from) || !left.has(e.to))));
+      || (!!e.events?.length && (!left.has(e.from) || !left.has(e.to))))
+      // A dead-letter queue's edge that's gone takes the consumer's setting with it.
+      .map((e) => (had.has(`${DEAD_LETTER}${e.id}`) && !stillThere.has(`${DEAD_LETTER}${e.id}`) && e.consumer ? { ...e, consumer: { ...e.consumer, deadLetterQueue: undefined } } : e));
     const made = data.edges.flatMap((e): CloudflareEdge[] => {
       if (had.has(e.id)) return [];
       const edge = newEdge(services, edges, e);
@@ -433,13 +356,18 @@ export function CloudflareDiagram({
   };
   const removeService = (id: string) => {
     select(NOTHING_SELECTED);
-    send(removeServices({ services, edges }, [id]), 'delete');
+    send(removeServices(system, [id]), 'delete');
   };
   const addFromCatalog = (product: CatalogProduct) => {
-    const { system: next, id } = addService({ services, edges }, product.id);
+    const { system: next, id } = addService(system, product.id);
     send(next, 'add');
     select({ nodes: [id], edges: [] });
     setToReveal({ ids: [id], after: placing });
+  };
+  // A service's machine chip opens its machine.
+  const onItemAction = (item: DiagramItem, details: Parameters<NonNullable<DiagramProps['onAction']>>[1]) => {
+    if (item.kind === 'node' && item.section === 'machine' && byId.get(item.id)?.machine) setOpenId(item.id, { reason: 'press' });
+    onAction?.(item, details);
   };
 
   /* ── A machine, over the board ── */
@@ -465,7 +393,8 @@ export function CloudflareDiagram({
     setOpenId(null, { reason: 'press' });
   };
 
-  const selectedDraft = selectedEdge ? draftEdges.find((e) => e.id === selectedEdge.id) : undefined;
+  const selectedLink = selectedEdge ? shownEdges.find((e) => e.id === selectedEdge.id)?.data : undefined;
+  const onBoard = new Set(shownEdges.map((e) => e.id));
   const count = `${services.length} ${services.length === 1 ? 'service' : 'services'}`;
   const status = `${selectedService ? serviceName(selectedService) : count}${issues.length ? `, ${issues.length} ${issues.length === 1 ? 'problem' : 'problems'}` : ''}`;
   const empty = emptyState ?? (
@@ -492,9 +421,11 @@ export function CloudflareDiagram({
           {...board}
           nodes={nodes}
           edges={shownEdges}
+          isValidConnection={isValidConnection}
           aria-label={ariaLabel}
           selection={selection}
           onSelectionChange={setSelection}
+          onAction={onItemAction}
           emptyState={empty}
           loading={!anyPlaced && services.length > 0 && !laid.nodes.length && laid.status !== 'error'}
           error={!anyPlaced && laid.error ? laid.error.message : undefined}
@@ -503,6 +434,7 @@ export function CloudflareDiagram({
           {...diagram}
         >
           <RevealWhenPlaced nodes={nodes} placing={placing} want={toReveal} onDone={revealed} />
+          <LegibleStart nodes={nodes} enabled={diagram.viewport === undefined && diagram.defaultViewport === undefined} />
         </Diagram>
         <DiagramFrameBar>
           <span data-slot="cloudflare-status" className="min-w-0 truncate">{status}</span>
@@ -517,10 +449,10 @@ export function CloudflareDiagram({
               key={selectedEdge.id}
               edge={selectedEdge}
               to={byId.get(selectedEdge.to)}
-              link={selectedDraft?.data?.link ?? null}
-              problem={selectedDraft?.data?.problem ?? null}
+              link={selectedLink?.link ?? null}
+              problem={selectedLink?.problem ?? null}
               eventIssues={issues.filter((i) => i.edge === selectedEdge.id && i.code.startsWith('event-'))}
-              receivable={[...new Set(machinesPast({ services, edges }, selectedEdge).flatMap((m) => machineEvents(m.machine).events))]}
+              receivable={[...new Set(machinesPast(system, selectedEdge).flatMap((m) => machineEvents(m.machine).events))]}
               editable={editable}
               onChange={(patch) => changeEdge(selectedEdge.id, patch)}
               onRemove={() => removeEdge(selectedEdge.id)}
@@ -542,10 +474,10 @@ export function CloudflareDiagram({
             />
           ) : (
             <p data-slot="cloudflare-hint" className="m-0 text-footnote text-foreground/70">
-              Select a service or a connection to see what it does.{editable ? ' To connect two, drag from a dot on the right of one to a dot on the left of another.' : ''}
+              Select a service or a connection to see what it does.{editable ? ' To connect two, drag from a dot on an “out” row of one card’s Connect section, like env, to a dot on an “in” row of another’s.' : ''}
             </p>
           )}
-          {issues.length ? <IssueList issues={issues} edgesOnBoard={new Set(draftEdges.map((e) => e.id))} editable={editable} onShow={select} onRemoveEdge={removeEdge} /> : null}
+          {issues.length ? <IssueList issues={issues} edgesOnBoard={onBoard} editable={editable} onShow={select} onRemoveEdge={removeEdge} /> : null}
           <p data-slot="cloudflare-attribution" className="m-0 text-caption text-foreground/70">
             Names and descriptions from Cloudflare’s docs, CC-BY-4.0. Cloudflare is a trademark of Cloudflare, Inc., and doesn’t endorse this.
           </p>

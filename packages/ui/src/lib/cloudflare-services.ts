@@ -18,6 +18,62 @@ export const runsCode = (kind: string) => RUNNERS.has(kind);
 /** Everything someone would draw as a node. */
 export const SERVICE_PRODUCTS: readonly CatalogProduct[] = C.products.filter((p) => p.class === 'service');
 
+/** Where something from outside the system comes in to a service: a request on a route, a custom domain or `workers.dev`, a
+ *  schedule, or (in a workerd config) a socket. `email` is mail sent to an address routed to it. */
+export type CloudflareTrigger =
+  | { kind: 'route'; pattern: string; /** The zone it's on, by name. */ zone?: string; /** A custom domain, rather than a route on a zone. */ customDomain?: boolean }
+  | { kind: 'workers-dev' }
+  | { kind: 'cron'; schedule: string }
+  | { kind: 'socket'; name: string; address?: string }
+  | { kind: 'email'; address: string };
+
+/** One step of a Worker's Durable Object class history (wrangler's `migrations`). */
+export interface CloudflareMigration {
+  tag: string;
+  /** Classes that start here, with SQLite storage. */
+  newSqliteClasses?: string[];
+  /** Classes that start here, with key-value storage. */
+  newClasses?: string[];
+  renamedClasses?: { from: string; to: string }[];
+  deletedClasses?: string[];
+}
+
+/** What's worth seeing about a service that isn't a connection: how its code runs. Each is optional, and one that isn't
+ *  given isn't said, or written. */
+export interface CloudflareSettings {
+  /** The module that runs (`main`). */
+  main?: string;
+  compatibilityDate?: string;
+  compatibilityFlags?: string[];
+  /** Smart Placement, as `smart`. */
+  placement?: string;
+  /** CPU time a request can have, in milliseconds. */
+  cpuMs?: number;
+  /** How many subrequests one can make. */
+  subrequests?: number;
+  /** Whether its logs and traces are kept (`observability.enabled`). */
+  observability?: boolean;
+  /** What share of requests are logged, 0 to 1. */
+  headSamplingRate?: number;
+  logpush?: boolean;
+}
+
+/** A queue consumer's settings, on the edge from a Queue to the Worker that consumes it. */
+export interface CloudflareConsumerSettings {
+  /** Messages in a batch, at most. */
+  batchSize?: number;
+  /** Seconds to wait to fill a batch. */
+  batchTimeout?: number;
+  /** Times a message is retried before it's given up on, or sent to the dead-letter queue. */
+  retries?: number;
+  /** Seconds before a retry. */
+  retryDelay?: number;
+  /** Where messages go when they've run out of retries: a queue's name. */
+  deadLetterQueue?: string;
+  /** Batches at once, at most. */
+  concurrency?: number;
+}
+
 /** A service on a diagram. `kind` is its id in the catalog. */
 export interface CloudflareService {
   id: string;
@@ -28,10 +84,24 @@ export interface CloudflareService {
   at?: { x: number; y: number };
   /** What a binding to it is called on `env`, unless its edge says otherwise. */
   binding?: string;
-  /** What's behind it at Cloudflare: a bucket's name, a queue's. */
+  /** What's behind it at Cloudflare: a bucket's name, a queue's, a Durable Object's class. */
   resource?: string;
   /** What it does, as a machine's config, in JSON. Its implementations stay out of it, by name. */
   machine?: Record<string, unknown>;
+  /** The handlers its code has, by name (`fetch`, `scheduled`, `alarm`…), past those its triggers and connections already
+   *  say it has. */
+  handlers?: string[];
+  /** Where requests and schedules come in to it. `[]` says there are none; left out, nothing's said either way. */
+  triggers?: CloudflareTrigger[];
+  settings?: CloudflareSettings;
+  /** Plain values and secrets on its `env`, by name (wrangler's `vars`). Their values aren't a system's to hold. */
+  vars?: string[];
+  /** Its Durable Object class history, on a Worker. */
+  migrations?: CloudflareMigration[];
+  /** The service whose code it's a class of, by id: a Durable Object's or a Workflow's Worker. It's drawn inside it. */
+  host?: string;
+  /** Which environment it's in, by name (wrangler's `env.<name>`). Each is drawn as a box of its own. */
+  environment?: string;
 }
 
 /** One service reaching another. `via` says how: a binding key, a row of `receives`, `surface:<Type>`, or `events`. */
@@ -46,6 +116,19 @@ export interface CloudflareEdge {
   operations?: string[];
   /** The machine events that cross it, which a machine it reaches has to be able to receive. */
   events?: string[];
+  /** A service binding's entrypoint: the class it calls in the Worker it reaches, rather than its default export. */
+  entrypoint?: string;
+  /** How long a Queue holds what's sent through this binding before it's delivered, in seconds. */
+  deliveryDelay?: number;
+  /** A queue consumer's settings, on a `queue-consumer` edge. */
+  consumer?: CloudflareConsumerSettings;
+}
+
+/** The handlers each kind that runs code can have, by name, from the catalog's types. */
+export function handlerNames(kind: string): string[] {
+  const runner = RUNNERS.get(kind);
+  if (!runner) return [];
+  return [...new Set(C.handlers.filter((h) => runner.handlerTypes.includes(h.type)).flatMap((h) => h.handlers.map((m) => m.name)))];
 }
 
 /** How two ports are joined, and what's on offer across it. */
@@ -89,34 +172,28 @@ const ownBindings = (kind: string) => C.bindings.filter((b) => b.product === kin
 const reachedThrough = (kind: string) => PRODUCTS.get(kind)?.alsoReachedThrough ?? [];
 const surfaces = (kind: string) => C.nonBindingSurface.filter((s) => s.product === kind);
 
-/** What a node's made of: how big it is, and which rows its ports sit on. */
-export const SERVICE_NODE = { w: 224, head: 46, row: 19, foot: 8, minH: 58 } as const;
-
-/** A service's ports, in, then out, each on its own row. A kind that isn't in the catalog, or is but has nothing to connect, has none. */
+/** A service's ports, in (on the left) then out (on the right). Where along its side each sits is the card's to say: a row of
+ *  its own on the card's "Connect" section. A kind that isn't in the catalog, or is but has nothing to connect, has none. */
 export function servicePorts(kind: string): DiagramPort[] {
   const product = PRODUCTS.get(kind);
   if (!product) return [];
-  const ins: Omit<DiagramPort, 'side' | 'at'>[] = [
+  const ins: Omit<DiagramPort, 'side'>[] = [
     ...ownBindings(kind).map((b) => ({ id: `binding:${b.key}`, label: b.friendlyName ?? b.key })),
     ...reachedThrough(kind).map((through) => ({ id: `binding:${through}`, label: through })),
     ...surfaces(kind).map((s) => ({ id: `surface:${s.type}`, label: s.type })),
     ...(takesEvents(kind) ? [{ id: EVENTS_PORT, label: 'events' }] : []),
     ...[...new Set(handlerRows(kind).map((r) => memberOf(r.handler)))].map((member) => ({ id: `on:${member}`, label: member })),
   ];
-  const outs: Omit<DiagramPort, 'side' | 'at'>[] = [
+  const outs: Omit<DiagramPort, 'side'>[] = [
     ...(runsCode(kind) ? [{ id: ENV_PORT, label: 'env' }] : []),
     ...sendRows(kind).map((r) => ({ id: `sends:${r.id}`, label: sendLabel(r) })),
     ...(sendsEvents(kind) ? [{ id: `out:${EVENTS_PORT}`, label: 'events' }] : []),
   ];
-  const h = serviceNodeHeight(ins.length, outs.length);
-  const at = (i: number) => (SERVICE_NODE.head + SERVICE_NODE.row * (i + 0.5)) / h;
   return [
-    ...ins.map((p, i): DiagramPort => ({ ...p, side: 'left', at: at(i), direction: 'in' })),
-    ...outs.map((p, i): DiagramPort => ({ ...p, side: 'right', at: at(i), direction: 'out' })),
+    ...ins.map((p): DiagramPort => ({ ...p, side: 'left', direction: 'in' })),
+    ...outs.map((p): DiagramPort => ({ ...p, side: 'right', direction: 'out' })),
   ];
 }
-
-export const serviceNodeHeight = (ins: number, outs: number) => Math.max(SERVICE_NODE.minH, SERVICE_NODE.head + SERVICE_NODE.row * Math.max(ins, outs) + SERVICE_NODE.foot);
 
 /* ── What can join what ── */
 

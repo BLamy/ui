@@ -5,7 +5,7 @@
 
    A machine can loop through `always` for ever, which would hang the page. Each `always` here goes through a guard that counts,
    and past a limit it stops the machine and says so. */
-import { describeEvent, machineEdgeIds, type StateMachineLike, type StateMachineNode, type StateMachineTransition } from '@/lib/state-diagram-model';
+import { describeEvent, describeGuard, machineEdgeIds, type StateMachineLike, type StateMachineNode, type StateMachineTransition } from '@/lib/state-diagram-model';
 
 /* ── The clock ── */
 
@@ -65,28 +65,50 @@ const SETTLE = '__bl_settle';
 const INLINE_GUARD = '__bl_inline_guard';
 const INLINE_ACTION = '__bl_inline_action';
 const INLINE_ACTOR = '__bl_inline_actor';
+const ASSIGN = '__bl_assign';
 
 const isPlain = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
+
+/** Data all the way down: no function anywhere in it. */
+const isData = (v: unknown): boolean => (typeof v === 'function' ? false : Array.isArray(v) ? v.every(isData) : isPlain(v) ? Object.values(v).every(isData) : true);
+
+/** What an `assign` sets that's written as a value rather than as code: from XState's `assign({…})`, or as `parseXState`
+ *  writes it (`{ type: 'xstate.assign', params: { values } }`). */
+function assignedValues(action: unknown): Record<string, unknown> | null {
+  const a = action as { type?: unknown; assignment?: unknown; params?: { values?: unknown } } | null;
+  if (!a || a.type !== 'xstate.assign') return null;
+  const given = typeof action === 'function' ? a.assignment : a.params?.values;
+  if (!isPlain(given)) return null;
+  const values = Object.fromEntries(Object.entries(given).filter(([, v]) => isData(v)));
+  return Object.keys(values).length ? values : null;
+}
 
 /**
  * A config that can run with nothing real behind it, and what it names. Every `always` goes through the guard that counts, so
  * it can't loop for ever, and whatever's written inline, which is code, is taken out and given a stand-in with a name of its
- * own, so that the same transitions are still there. Context and output go too, as they can be code, and nothing's left to
- * read them. The original's left alone.
+ * own, so that the same transitions are still there. XState's built-ins do nothing, but for what an `assign` sets to a value
+ * written out, which it sets, so that the context shown while simulating is the machine's own as far as it can be without
+ * running code. A context that's data stays; one made by code goes, as does output. A guard made of others (`and`, `or`,
+ * `not`, `stateIn`) answers as one, by what it says (`a and b`). The original's left alone.
  */
 export function standInConfig(config: unknown): { config: Record<string, unknown>; names: MachineNames } {
   const names: { guards: Set<string>; actions: Set<string>; actors: Set<string>; delays: Set<string> } = { guards: new Set(), actions: new Set(), actors: new Set(), delays: new Set() };
   const guardRef = (g: unknown): unknown => {
     if (typeof g === 'string') { names.guards.add(g); return g; }
-    if (isPlain(g) && typeof g.type === 'string') { names.guards.add(g.type); return { type: g.type }; }
-    return g ? INLINE_GUARD : undefined;
+    const said = describeGuard(g);
+    if (!said) return undefined;
+    if (said.composed) { names.guards.add(said.text); return said.text; }
+    if (isPlain(g) && typeof g.type === 'string' && g.type !== 'xstate.inline') { names.guards.add(g.type); return { type: g.type }; }
+    return INLINE_GUARD;
   };
   const actionsOf = (a: unknown): unknown => {
     const list = Array.isArray(a) ? a : a === undefined ? [] : [a];
     // One written inline still counts: an event with only that to do can still be taken.
     return list.map((x) => {
+      const values = assignedValues(x);
+      if (values) return { type: ASSIGN, params: { values } };
       const name = typeof x === 'string' ? x : isPlain(x) && typeof x.type === 'string' ? x.type : null;
-      if (!name) return INLINE_ACTION;
+      if (!name || name.startsWith('xstate.')) return INLINE_ACTION;
       names.actions.add(name);
       return name;
     });
@@ -109,8 +131,9 @@ export function standInConfig(config: unknown): { config: Record<string, unknown
   };
   const state = (s: unknown): unknown => {
     if (!isPlain(s)) return s;
-    const { context: _context, output: _output, ...rest } = s;
+    const { context, output: _output, ...rest } = s;
     const out: Record<string, unknown> = rest;
+    if (context !== undefined && isPlain(context) && isData(context)) out.context = context;
     if (isPlain(s.initial)) out.initial = transition(s.initial);
     if (s.entry !== undefined) out.entry = actionsOf(s.entry);
     if (s.exit !== undefined) out.exit = actionsOf(s.exit);
@@ -223,6 +246,9 @@ export interface SimulationState {
   next: number | null;
   /** The answer each named guard gives. */
   guards: Readonly<Record<string, boolean>>;
+  /** The machine's context as it is now, when it has one that's data (nothing in it is code). Actions that are code don't
+   *  run, so only an `assign` of values written out changes it. */
+  context: Readonly<Record<string, unknown>> | null;
   /** What's named, and so what's being stood in for. */
   names: MachineNames;
   /** The edges the last event took, by the ids `machineToDraft` gives them. */
@@ -252,7 +278,7 @@ export interface Simulation {
   stop(): void;
 }
 
-type XState = Pick<typeof import('xstate'), 'createActor' | 'createMachine' | 'fromPromise'>;
+type XState = Pick<typeof import('xstate'), 'createActor' | 'createMachine' | 'fromPromise' | 'assign'>;
 
 interface InspectedEvent {
   type: string;
@@ -288,7 +314,11 @@ export function createSimulation(xstate: XState, config: unknown, standIns: Simu
         return params?.guard ? guards[params.guard] ?? true : true;
       },
     },
-    actions: { ...Object.fromEntries(names.actions.map((a) => [a, () => undefined])), [INLINE_ACTION]: () => undefined },
+    actions: {
+      ...Object.fromEntries(names.actions.map((a) => [a, () => undefined])),
+      [INLINE_ACTION]: () => undefined,
+      [ASSIGN]: xstate.assign((_args: unknown, params: { values: Record<string, unknown> }) => params.values),
+    },
     actors: { ...Object.fromEntries(names.actors.map((a) => [a, wait])), [INLINE_ACTOR]: wait, ...standIns.actors },
     delays: Object.fromEntries(names.delays.map((d) => [d, delayOf(d)])),
   } as never) as unknown as StateMachineLike & { events: string[] };
@@ -339,7 +369,7 @@ export function createSimulation(xstate: XState, config: unknown, standIns: Simu
     return describeEvent(event).name;
   };
   const read = (): SimulationState => {
-    const snapshot = actor?.getSnapshot() as unknown as (Can & { value?: unknown; status: string; error?: unknown }) | undefined;
+    const snapshot = actor?.getSnapshot() as unknown as (Can & { value?: unknown; status: string; error?: unknown; context?: unknown }) | undefined;
     const active = activeStateIds(machine.root, snapshot?.value);
     const failed = snapshot?.status === 'error' ? (snapshot.error instanceof Error ? snapshot.error.message : String(snapshot.error)) : halted;
     const running = snapshot?.status === 'active' && !failed ? snapshot : null;
@@ -355,6 +385,7 @@ export function createSimulation(xstate: XState, config: unknown, standIns: Simu
       time: clock.now,
       next: running ? clock.nextDue() : null,
       guards: { ...guards },
+      context: isPlain(snapshot?.context) && Object.keys(snapshot.context).length ? (state?.context === snapshot.context ? state.context : snapshot.context) : null,
       names,
       taken,
       log,

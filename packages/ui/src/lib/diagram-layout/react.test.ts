@@ -9,26 +9,26 @@ import { onLayout, useDiagramLayout } from '@/lib/diagram-layout/react';
 describe('onLayout', () => {
   const laid = {
     nodes: [
-      { id: 'a', label: 'Workers', x: 10, y: 20, w: 224, h: 80, data: { machine: false }, ports: [{ id: 'env', side: 'right' as const, at: 0.4 }] },
-      { id: 'b', label: 'R2', x: 400, y: 20, w: 224, h: 60 },
+      { id: 'a', title: 'Workers', x: 10, y: 20, w: 224, h: 80, data: { machine: false }, ports: [{ id: 'env', side: 'right' as const, at: 0.4 }] },
+      { id: 'b', title: 'R2', x: 400, y: 20, w: 224, h: 60 },
     ],
-    edges: [{ id: 'e', from: 'a', to: 'b', label: 'FILES', points: [{ x: 234, y: 52 }, { x: 400, y: 52 }], labelBox: { x: 300, y: 40, w: 40, h: 12 } }],
+    edges: [{ id: 'e', from: 'a', to: 'b', title: 'FILES', points: [{ x: 234, y: 52 }, { x: 400, y: 52 }], labelBox: { x: 300, y: 40, w: 40, h: 12 } }],
   };
 
   it('takes where things are from the layout, and the rest from the draft', () => {
     const draft = {
       nodes: [
-        { id: 'a', label: 'API', w: 224, h: 80, data: { machine: true }, ports: [{ id: 'env', side: 'right' as const, label: 'env' }] },
-        { id: 'b', label: 'Files' },
+        { id: 'a', title: 'API', w: 224, h: 80, data: { machine: true }, ports: [{ id: 'env', side: 'right' as const, label: 'env' }] },
+        { id: 'b', title: 'Files' },
       ],
-      edges: [{ id: 'e', from: 'a', to: 'b', label: 'UPLOADS', labelBox: { x: 0, y: 0, w: 1, h: 1 } }],
+      edges: [{ id: 'e', from: 'a', to: 'b', title: 'UPLOADS', labelBox: { x: 0, y: 0, w: 1, h: 1 } }],
     };
     const { nodes, edges } = onLayout(draft, laid);
     expect(nodes).toEqual([
-      { id: 'a', label: 'API', x: 10, y: 20, w: 224, h: 80, data: { machine: true }, ports: [{ id: 'env', side: 'right', label: 'env', at: 0.4 }] },
-      { id: 'b', label: 'Files', x: 400, y: 20, w: 224, h: 60 },
+      { id: 'a', title: 'API', x: 10, y: 20, w: 224, h: 80, data: { machine: true }, ports: [{ id: 'env', side: 'right', label: 'env', at: 0.4 }] },
+      { id: 'b', title: 'Files', x: 400, y: 20, w: 224, h: 60 },
     ]);
-    expect(edges).toEqual([{ id: 'e', from: 'a', to: 'b', label: 'UPLOADS', points: laid.edges[0].points, labelBox: laid.edges[0].labelBox }]);
+    expect(edges).toEqual([{ id: 'e', from: 'a', to: 'b', title: 'UPLOADS', points: laid.edges[0].points, labelBox: laid.edges[0].labelBox }]);
   });
 
   it('leaves out what the layout hasn’t placed yet, and what the draft doesn’t have any more', () => {

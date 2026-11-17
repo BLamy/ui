@@ -15,11 +15,11 @@ const ROOM = {
 
 const START: CloudflareSystem = {
   services: [
-    { id: 'api', kind: 'workers', label: 'API', at: { x: 0, y: 40 } },
-    { id: 'files', kind: 'r2', label: 'Files', binding: 'FILES', at: { x: 340, y: 0 } },
-    { id: 'jobs', kind: 'queues', at: { x: 340, y: 120 } },
-    { id: 'consumer', kind: 'workers', label: 'Consumer', at: { x: 680, y: 60 } },
-    { id: 'room', kind: 'durable-objects', label: 'Room', machine: ROOM, at: { x: 1020, y: 60 } },
+    { id: 'api', kind: 'workers', label: 'API' },
+    { id: 'files', kind: 'r2', label: 'Files', binding: 'FILES' },
+    { id: 'jobs', kind: 'queues' },
+    { id: 'consumer', kind: 'workers', label: 'Consumer' },
+    { id: 'room', kind: 'durable-objects', label: 'Room', machine: ROOM },
   ],
   edges: [
     { id: 'upload', from: 'api', to: 'files', via: 'r2_buckets', operations: ['put'] },

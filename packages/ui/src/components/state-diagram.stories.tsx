@@ -1,7 +1,9 @@
 import type { ReactNode } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { and, not } from 'xstate';
 import { StateDiagram } from '@/components/ui/state-diagram';
 import { BLProvider, type AppearancePreference } from '@/lib/theme';
+import { AUDIO_PLAYER_SOURCE } from '../stories/audio-player-machine';
 import { uploadMachine } from '../stories/upload-machine';
 
 const meta: Meta<typeof StateDiagram> = {
@@ -13,9 +15,9 @@ export default meta;
 type Story = StoryObj<typeof StateDiagram>;
 
 /** The story's whole canvas, as an app's page would have it (`layout: 'fullscreen'`), or a phone's or a tablet's width of it. */
-function Page({ children, appearance, w }: { children?: ReactNode; appearance?: AppearancePreference; w?: number }) {
+function Page({ children, appearance, w, h }: { children?: ReactNode; appearance?: AppearancePreference; w?: number; h?: number }) {
   return (
-    <div style={{ position: 'relative', width: w ?? '100%', height: '100dvh', overflow: 'hidden' }}>
+    <div style={{ position: 'relative', width: w ?? '100%', height: h ?? '100dvh', overflow: 'hidden' }}>
       <BLProvider appearance={appearance}>{children}</BLProvider>
     </div>
   );
@@ -85,7 +87,7 @@ export const FromSource: Story = {
   render: () => <Page><StateDiagram source={SOURCE} simulate /></Page>,
 };
 
-/** History states say which kind they are. */
+/** History states carry their glyph: H for shallow, H* for deep. */
 export const History: Story = {
   render: () => <Page><StateDiagram config={HISTORY} /></Page>,
 };
@@ -166,4 +168,141 @@ export const EditingAndRunning: Story = {
 
 export const EditingPhone: Story = {
   render: () => <Page w={390}><StateDiagram defaultConfig={DOOR} direction="down" editable defaultPanelOpen defaultSelection={{ nodes: ['door.open'], edges: [] }} /></Page>,
+};
+
+/* ── What's drawn: the anatomy, piece by piece ── */
+
+/** The "Audio Player" from XState's visualizer, from its source, in the reference's 800 x 1000 frame: the machine's
+ *  context under its name, entry actions as chips, transitions as pills or, with actions, cards, and Playing's loops. */
+export const AudioPlayer: Story = {
+  render: () => <Page w={800} h={1000}><StateDiagram source={AUDIO_PLAYER_SOURCE} aria-label="Audio Player" /></Page>,
+};
+
+export const AudioPlayerDark: Story = {
+  render: () => <Page w={800} h={1000} appearance="dark"><StateDiagram source={AUDIO_PLAYER_SOURCE} aria-label="Audio Player" /></Page>,
+};
+
+/** Running it: where it is is marked, and each transition it can take now is a button on its label (a play glyph and a
+ *  primary outline), which sends its event. */
+export const AudioPlayerSimulating: Story = {
+  render: () => <Page w={800} h={1000} appearance="dark"><StateDiagram source={AUDIO_PLAYER_SOURCE} simulate defaultPanelOpen={false} aria-label="Audio Player" /></Page>,
+};
+
+export const AudioPlayerPhone: Story = {
+  render: () => <Page w={390} h={844}><StateDiagram source={AUDIO_PLAYER_SOURCE} aria-label="Audio Player" /></Page>,
+};
+
+/** Each kind of state: atomic (a header and nothing more), one with entry and exit actions, one that invokes an actor (with
+ *  its done and error), tags, a description and meta, a compound state with its start marked, a final state's square. */
+const STATE_KINDS = {
+  id: 'kinds',
+  initial: 'atomic',
+  states: {
+    atomic: { on: { NEXT: 'acting' } },
+    acting: { entry: ['startTimer', { type: 'track', params: { screen: 'acting' } }], exit: 'stopTimer', on: { NEXT: 'fetching' } },
+    fetching: {
+      description: 'Loads the profile',
+      tags: ['busy', 'network'],
+      meta: { owner: 'profile', retries: 3 },
+      invoke: { id: 'profile', src: 'fetchProfile', input: { user: 'me' }, onDone: 'compound', onError: 'failed' },
+    },
+    compound: { initial: 'first', states: { first: { on: { NEXT: 'second' } }, second: { on: { NEXT: '#kinds.done' } } } },
+    failed: { on: { RETRY: 'fetching' } },
+    done: { type: 'final' },
+  },
+};
+
+export const StateKinds: Story = {
+  render: () => <Page><StateDiagram config={STATE_KINDS} aria-label="Each kind of state" /></Page>,
+};
+
+/** Each form of transition: an event alone (a pill); with a guard (with params, and composed), actions, both; `after` a
+ *  number and a named delay (a clock); `always`; `reenter`; a targetless one that only runs actions; the wildcard; several
+ *  targets; and `on` at the machine's root. */
+const TRANSITION_FORMS = {
+  id: 'forms',
+  initial: 'idle',
+  on: { RESET: { target: '.idle', actions: 'clearAll' } },
+  states: {
+    idle: {
+      on: {
+        GO: 'busy',
+        TRY: { target: 'busy', guard: 'canTry' },
+        SAVE: { target: 'busy', guard: { type: 'isAbove', params: { min: 3 } }, actions: ['save', 'notify'] },
+        PING: { actions: 'pong' },
+        '*': 'unknown',
+      },
+      after: { 500: 'busy', IDLE_TIMEOUT: 'away' },
+    },
+    busy: {
+      on: { AGAIN: { target: 'busy', reenter: true, actions: 'restart' }, SPLIT: { target: ['#forms.both.left.on', '#forms.both.right.on'] } },
+      always: { guard: and(['isDone', not('isLocked')]), target: 'idle' },
+    },
+    both: {
+      type: 'parallel',
+      states: { left: { initial: 'off', states: { off: {}, on: {} } }, right: { initial: 'off', states: { off: {}, on: {} } } },
+    },
+    away: {},
+    unknown: {},
+  },
+};
+
+export const TransitionForms: Story = {
+  render: () => <Page><StateDiagram config={TRANSITION_FORMS} aria-label="Each form of transition" /></Page>,
+};
+
+export const TransitionFormsDark: Story = {
+  render: () => <Page appearance="dark"><StateDiagram config={TRANSITION_FORMS} aria-label="Each form of transition" /></Page>,
+};
+
+/** A parallel machine: its regions side by side in a dashed container, each with its own start. */
+const PARALLEL = {
+  id: 'editor',
+  type: 'parallel',
+  states: {
+    bold: { initial: 'off', states: { off: { on: { TOGGLE_BOLD: 'on' } }, on: { on: { TOGGLE_BOLD: 'off' } } } },
+    italic: { initial: 'off', states: { off: { on: { TOGGLE_ITALIC: 'on' } }, on: { on: { TOGGLE_ITALIC: 'off' } } } },
+    list: { initial: 'none', states: { none: { on: { BULLETS: 'bullets', NUMBERS: 'numbers' } }, bullets: { on: { NONE: 'none', NUMBERS: 'numbers' } }, numbers: { on: { NONE: 'none', BULLETS: 'bullets' } } } },
+  },
+};
+
+export const Parallel: Story = {
+  render: () => <Page><StateDiagram config={PARALLEL} aria-label="A text editor's toolbar" /></Page>,
+};
+
+/** A long list of actions: the card grows to hold them, and its edges still leave from its sides. */
+const LONG_ACTIONS = {
+  id: 'checkout',
+  initial: 'cart',
+  context: { items: [], total: 0, coupon: null, address: '', paid: false },
+  states: {
+    cart: { on: { CHECKOUT: { target: 'paying', actions: ['validateCart', 'reserveStock', 'applyCoupon', 'computeTax', 'computeShipping', 'logCheckout'] } } },
+    paying: {
+      entry: ['showSpinner', 'lockForm', { type: 'track', params: { step: 'pay' } }, { type: 'xstate.assign', params: { keys: ['paid'], values: { paid: false } } }, 'startPaymentTimeout'],
+      exit: ['hideSpinner', 'unlockForm', 'clearPaymentTimeout'],
+      on: { PAID: 'done', DECLINED: 'cart' },
+    },
+    done: { type: 'final' },
+  },
+};
+
+export const LongActionList: Story = {
+  render: () => <Page><StateDiagram config={LONG_ACTIONS} aria-label="Checkout" /></Page>,
+};
+
+/** A machine with only names: states are their headers, transitions are pills, and that's all there is to draw. */
+const ONLY_NAMES = { id: 'light', initial: 'green', states: { green: { on: { TIMER: 'yellow' } }, yellow: { on: { TIMER: 'red' } }, red: { on: { TIMER: 'green' } } } };
+
+export const OnlyNames: Story = {
+  render: () => <Page><StateDiagram config={ONLY_NAMES} aria-label="A traffic light" /></Page>,
+};
+
+/** Editing on the new anatomy: a state's entry and exit actions, a transition's guard and actions, and with nothing selected,
+ *  the machine's context. Pressing a chip opens it in the panel. */
+export const EditingActions: Story = {
+  render: () => <Page><StateDiagram source={AUDIO_PLAYER_SOURCE} editable defaultSelection={{ nodes: ['Audio Player.Active.Playing'], edges: [] }} aria-label="Audio Player" /></Page>,
+};
+
+export const EditingContext: Story = {
+  render: () => <Page appearance="dark"><StateDiagram source={AUDIO_PLAYER_SOURCE} editable aria-label="Audio Player" /></Page>,
 };

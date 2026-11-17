@@ -5,16 +5,16 @@ import type { DiagramEdge, DiagramNode } from '@/lib/diagram-model'
 // for a port on the left of a card to its left, so the route goes around the two cards rather than behind them, and the
 // long label beside the consumer keeps off its port names, moving along its route until it's clear.
 const NODES: DiagramNode[] = [
-  { id: 'files', label: 'Files', detail: 'R2', x: 0, y: 0, w: 200, h: 90, ports: [{ id: 'events', side: 'right', label: 'events', direction: 'out' }] },
-  { id: 'jobs', label: 'Jobs', detail: 'Queue', x: 0, y: 170, w: 200, h: 90, ports: [{ id: 'events', side: 'left', at: 0.35, label: 'events', direction: 'in' }, { id: 'batch', side: 'right', label: 'batch', direction: 'out' }] },
-  { id: 'consumer', label: 'Consumer', detail: 'Worker', x: 400, y: 140, w: 200, h: 150, ports: [{ id: 'queue', side: 'left', at: 0.32, label: 'queue', direction: 'in' }, { id: 'email', side: 'left', label: 'email', direction: 'in' }, { id: 'env', side: 'right', label: 'env', direction: 'out' }] },
-  { id: 'uploads', label: 'Uploads', detail: 'D1', x: 720, y: 160, w: 200, h: 90, ports: [{ id: 'in', side: 'left', label: 'queries', direction: 'in' }] },
+  { id: 'files', title: 'Files', description: 'R2', x: 0, y: 0, w: 200, h: 90, ports: [{ id: 'events', side: 'right', label: 'events', direction: 'out' }] },
+  { id: 'jobs', title: 'Jobs', description: 'Queue', x: 0, y: 170, w: 200, h: 90, ports: [{ id: 'events', side: 'left', at: 0.35, label: 'events', direction: 'in' }, { id: 'batch', side: 'right', label: 'batch', direction: 'out' }] },
+  { id: 'consumer', title: 'Consumer', description: 'Worker', x: 400, y: 140, w: 200, h: 150, ports: [{ id: 'queue', side: 'left', at: 0.32, label: 'queue', direction: 'in' }, { id: 'email', side: 'left', label: 'email', direction: 'in' }, { id: 'env', side: 'right', label: 'env', direction: 'out' }] },
+  { id: 'uploads', title: 'Uploads', description: 'D1', x: 720, y: 160, w: 200, h: 90, ports: [{ id: 'in', side: 'left', label: 'queries', direction: 'in' }] },
 ]
 
 const EDGES: DiagramEdge[] = [
-  { id: 'events', from: 'files', fromPort: 'events', to: 'jobs', toPort: 'events', label: 'events' },
-  { id: 'batch', from: 'jobs', fromPort: 'batch', to: 'consumer', toPort: 'queue', label: 'message batch from a Queue' },
-  { id: 'db', from: 'consumer', fromPort: 'env', to: 'uploads', toPort: 'in', label: 'env.DB' },
+  { id: 'events', from: 'files', fromPort: 'events', to: 'jobs', toPort: 'events', title: 'events' },
+  { id: 'batch', from: 'jobs', fromPort: 'batch', to: 'consumer', toPort: 'queue', title: 'message batch from a Queue' },
+  { id: 'db', from: 'consumer', fromPort: 'env', to: 'uploads', toPort: 'in', title: 'env.DB' },
 ]
 
 // Stable, as nodes memoize on it.

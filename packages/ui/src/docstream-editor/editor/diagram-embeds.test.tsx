@@ -16,6 +16,8 @@ let host: HTMLDivElement
 let root: Root
 beforeEach(() => { host = document.createElement("div"); document.body.append(host); root = createRoot(host) })
 afterEach(() => { act(() => root.unmount()); host.remove() })
+/** The fence's board: the library's StateDiagram. */
+const board = () => host.querySelector<HTMLElement>("[data-docstream-xstate] .docs-xstate-board")
 async function until(check: () => boolean) {
   for (let i = 0; i < 150 && !check(); i++) await act(() => new Promise((r) => setTimeout(r, 20)))
   expect(check()).toBe(true)
@@ -33,30 +35,30 @@ describe("live diagram code blocks", () => {
     let editor!: Editor
     let saved = ""
     await act(async () => root.render(<GitbookEditor markdown={fence("xstate", machine)} onChange={(md) => { saved = md }} onEditorReady={(instance) => { if (instance) editor = instance }} />))
-    await until(() => !!host.querySelector("[data-docstream-xstate] .docs-mermaid svg"))
+    await until(() => !!host.querySelector("[data-docstream-xstate] [data-slot=diagram-node]"))
     const block = editor.state.doc.firstChild!
     await act(async () => { editor.commands.insertContentAt({ from: 1, to: block.nodeSize - 1 }, { type: "text", text: machine.replaceAll("working", "finished") }) })
-    await until(() => !!host.querySelector(".docs-mermaid svg")?.textContent?.includes("finished"))
+    await until(() => !!board()?.textContent?.includes("finished"))
     expect(saved).toContain("finished")
     expect(host.querySelector('.gb-diagram-result')?.getAttribute("contenteditable")).toBe("false")
     await act(async () => { editor.commands.insertContentAt({ from: 1, to: editor.state.doc.firstChild!.nodeSize - 1 }, { type: "text", text: "{" }) })
     await until(() => !!host.querySelector('[role="alert"]'))
     await act(async () => { editor.commands.insertContentAt({ from: 1, to: editor.state.doc.firstChild!.nodeSize - 1 }, { type: "text", text: machine }) })
-    await until(() => !!host.querySelector(".docs-mermaid svg"))
-    expect(host.querySelector('[role="alert"]')).toBeNull()
+    await until(() => !host.querySelector('[role="alert"]') && !!board()?.textContent?.includes("working"))
   })
 
   it("authors a machine that invokes something: its edges and what it invokes show as it's typed", async () => {
     let editor!: Editor
     let saved = ""
     await act(async () => root.render(<GitbookEditor markdown={fence("xstate", machine)} onChange={(md) => { saved = md }} onEditorReady={(instance) => { if (instance) editor = instance }} />))
-    await until(() => !!host.querySelector("[data-docstream-xstate] .docs-mermaid svg"))
+    await until(() => !!host.querySelector("[data-docstream-xstate] [data-slot=diagram-node]"))
     const invoking = JSON.stringify({ initial: "idle", states: { idle: { invoke: { src: "load", onDone: "ready", onError: "failed" } }, ready: {}, failed: {} } })
     await act(async () => { editor.commands.insertContentAt({ from: 1, to: editor.state.doc.firstChild!.nodeSize - 1 }, { type: "text", text: invoking }) })
-    await until(() => !!host.querySelector(".docs-mermaid svg")?.textContent?.includes("invoke load"))
-    const drawn = host.querySelector(".docs-mermaid svg")!.textContent!
-    expect(drawn).toContain("done")
-    expect(drawn).toContain("error")
+    // What it invokes is a section of its state's card, and how the actor finishes labels its edges.
+    await until(() => !!board()?.querySelector("[data-slot=diagram-section]")?.textContent?.includes("load"))
+    const drawn = board()!.textContent!
+    expect(drawn).toContain("load: done")
+    expect(drawn).toContain("load: error")
     expect(saved).toContain('"invoke"')
     // Saved, it's what was typed, with nothing taken out or added.
     expect(saved).toBe(fence("xstate", invoking))
@@ -72,8 +74,8 @@ describe("live diagram code blocks", () => {
   it("starts a new diagram with something that invokes, so that you can see how it's written, and it draws", async () => {
     expect(JSON.parse(XSTATE_STARTER).states.loading.invoke.src).toBe("fetchPage")
     await act(async () => root.render(<GitbookEditor markdown={fence("xstate", XSTATE_STARTER)} />))
-    await until(() => !!host.querySelector(".docs-mermaid svg")?.textContent?.includes("invoke fetchPage"))
-    const drawn = host.querySelector(".docs-mermaid svg")!.textContent!
+    await until(() => !!board()?.querySelector("[data-slot=diagram-section]")?.textContent?.includes("fetchPage"))
+    const drawn = board()!.textContent!
     for (const text of ["FETCH", "done", "error", "RETRY"]) expect(drawn).toContain(text)
     expect(host.querySelector('[role="alert"]')).toBeNull()
   })

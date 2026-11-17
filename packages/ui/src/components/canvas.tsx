@@ -151,9 +151,10 @@ export function Canvas({
 
   const bgStyle = useMemo<CSSProperties>(() => {
     if (background === 'none') return {};
-    let step = (background === 'dots' ? 24 : 40) * view.zoom;
+    let step = (background === 'dots' ? 24 : 32) * view.zoom;
     while (step < 12) step *= 2;
-    const ink = 'color-mix(in srgb, var(--muted-foreground) 34%, transparent)';
+    // Lines cover far more of the board than dots do, so they're quieter.
+    const ink = `color-mix(in srgb, var(--muted-foreground) ${background === 'dots' ? 34 : 14}%, transparent)`;
     const pos = `${view.x}px ${view.y}px`;
     return background === 'dots'
       ? { backgroundImage: `radial-gradient(${ink} 1.1px, transparent 1.4px)`, backgroundSize: `${step}px ${step}px`, backgroundPosition: pos }

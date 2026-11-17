@@ -6,7 +6,7 @@
    The text format is Cap'n Proto's: `using Workerd = import "/workerd/workerd.capnp";`, then `const name :Type = value;`,
    where a value is a struct `( field = value, … )`, a list `[ value, … ]`, a string, a number, `true`/`false`, an enum
    name, `.name` for another const, or `embed "file"`. `#` starts a comment. */
-import type { CloudflareEdge, CloudflareService } from '@/lib/cloudflare-services';
+import type { CloudflareEdge, CloudflareService, CloudflareSettings } from '@/lib/cloudflare-services';
 import type { CloudflareSystem } from '@/lib/cloudflare-system';
 
 export type CapnpValue =
@@ -184,6 +184,26 @@ export function parseCapnp(text: string): CapnpConst[] {
 
 /* ── The config ── */
 
+/** A Worker's settings that a workerd config says: its compatibility date and flags, and its first module, which is what runs. */
+function workerSettings(worker: Extract<CapnpValue, { kind: 'struct' }>, deref: (v: CapnpValue | undefined) => CapnpValue | undefined): CloudflareSettings | undefined {
+  const out: CloudflareSettings = {};
+  const date = deref(worker.fields.get('compatibilityDate'));
+  if (date?.kind === 'string') out.compatibilityDate = date.value;
+  const flags = deref(worker.fields.get('compatibilityFlags'));
+  if (flags?.kind === 'list') {
+    const names = flags.items.flatMap((f) => (f.kind === 'string' ? [f.value] : []));
+    if (names.length) out.compatibilityFlags = names;
+  }
+  const modules = deref(worker.fields.get('modules'));
+  const first = modules?.kind === 'list' ? deref(modules.items[0]) : undefined;
+  if (first?.kind === 'struct' && first.fields.get('name')?.kind === 'string') out.main = (first.fields.get('name') as { value: string }).value;
+  else {
+    const script = deref(worker.fields.get('serviceWorkerScript'));
+    if (script?.kind === 'embed') out.main = script.path;
+  }
+  return Object.keys(out).length ? out : undefined;
+}
+
 const isStruct = (v: CapnpValue | undefined): v is Extract<CapnpValue, { kind: 'struct' }> => v?.kind === 'struct';
 const text = (v: CapnpValue | undefined): string | undefined => (v?.kind === 'string' ? v.value : undefined);
 
@@ -250,7 +270,8 @@ export function readWorkerdConfig(source: string): WorkerdRead {
     if (isStruct(worker)) {
       workers.set(name, worker);
       kindOf.set(name, 'worker');
-      addService({ id: name, kind: 'workers', label: name });
+      const settings = workerSettings(worker, deref);
+      addService({ id: name, kind: 'workers', label: name, ...(settings ? { settings } : null) });
     } else {
       const what = ['disk', 'external', 'network'].find((k) => s.fields.has(k)) ?? 'something else';
       kindOf.set(name, what);
@@ -258,7 +279,7 @@ export function readWorkerdConfig(source: string): WorkerdRead {
     }
   }
 
-  const classService = (worker: string, className: string) => addService({ id: `${worker}.${className}`, kind: 'durable-objects', label: className });
+  const classService = (worker: string, className: string) => addService({ id: `${worker}.${className}`, kind: 'durable-objects', label: className, ...(kindOf.get(worker) === 'worker' ? { host: worker } : null) });
   for (const [name, worker] of workers) {
     const namespaces = deref(worker.fields.get('durableObjectNamespaces'));
     for (const ns of namespaces?.kind === 'list' ? namespaces.items.map((n) => deref(n)).filter(isStruct) : []) {
@@ -321,6 +342,9 @@ export function readWorkerdConfig(source: string): WorkerdRead {
     if (address) socket.address = address;
     if (to) socket.service = to;
     sockets.push(socket);
+    // What comes in on a socket is a request into the service it's for.
+    const into = to ? services.get(to) : undefined;
+    if (into) into.triggers = [...(into.triggers ?? []), { kind: 'socket', name: socket.name, ...(address ? { address } : null) }];
     notes.push({ code: 'socket', ...(to ? { service: to } : null), message: `${socket.name} listens${address ? ` on ${address}` : ''}${to ? ` for ${to}` : ''}.` });
   }
 

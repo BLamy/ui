@@ -2136,6 +2136,32 @@ details[open] > .docstream-tui__source-trigger .docstream-tui__caret {
   grid-template-columns: minmax(0, 1fr);
 }
 
+/* An xstate fence stacks its source over its board, so the machine has the card's width to be read at. */
+.docs-xstate-preview .docs-split-grid {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+/* An xstate fence's board: the library's StateDiagram, read-only, fitted to the machine (XStateDiagram.tsx). */
+.docs-xstate-board {
+  position: relative;
+  height: 520px;
+  overflow: hidden;
+  border: 1px solid var(--gb-border);
+  border-radius: calc(var(--gb-radius, 12px) - 2px);
+}
+
+.docs-xstate-board.docs-mermaid {
+  padding: 0;
+}
+
+.docs-xstate-result > .docs-mermaid-error {
+  margin: 0;
+  padding: 0;
+  border-radius: 0;
+  background: none;
+  color: var(--gb-danger);
+}
+
 /* The board starts with the whole system in view, between the zoom tools and the frame's bar; on a narrow card, at a
    size that can be read, from the first services (CapnpDiagram.tsx, startView). */
 .docs-capnp-board {

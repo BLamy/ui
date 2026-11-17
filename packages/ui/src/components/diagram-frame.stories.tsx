@@ -1,10 +1,14 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Diagram, DiagramToolbar } from '@/components/ui/diagram';
 import { DiagramFrame, DiagramFrameBar, DiagramFrameBoard, DiagramFrameCover, DiagramFrameCoverHeader, DiagramFramePanel, DiagramFrameSection, type DiagramFrameProps } from '@/components/ui/diagram-frame';
 import { Field, FieldError, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
+import { useDiagramLayout } from '@/lib/diagram-layout/react';
+import type { DiagramItem } from '@/lib/diagram-keyboard';
+import type { DiagramSelection } from '@/lib/diagram-model';
+import { STATECHART_LIKE } from '../stories/diagram-anatomy';
 import { Phone } from '../stories/frame';
 
 const meta: Meta<typeof DiagramFrame> = {
@@ -16,10 +20,10 @@ export default meta;
 type Story = StoryObj<typeof DiagramFrame>;
 
 const NODES = [
-  { id: 'a', label: 'One', x: 40, y: 60, w: 120, h: 56 },
-  { id: 'b', label: 'Two', x: 240, y: 60, w: 120, h: 56 },
+  { id: 'a', title: 'One', x: 40, y: 60, w: 120, h: 56 },
+  { id: 'b', title: 'Two', x: 240, y: 60, w: 120, h: 56 },
 ];
-const EDGES = [{ id: 'ab', from: 'a', to: 'b', label: 'then' }];
+const EDGES = [{ id: 'ab', from: 'a', to: 'b', title: 'then' }];
 
 function Example({ cover: coverAtFirst, refused, ...props }: Partial<DiagramFrameProps> & { cover?: boolean; refused?: boolean }) {
   const [name, setName] = useState('One');
@@ -120,4 +124,41 @@ export const Dark: Story = {
 export const PhoneOpenDark: Story = {
   ...phone,
   render: () => <Phone w={390} h={844} appearance="dark"><Example defaultOpen /></Phone>,
+};
+
+/** A machine drawn with the Diagram's anatomy in a frame: the panel says what's selected, and which of its chips was
+ *  pressed (the board is editable, so the chips are pressable). */
+function Cards() {
+  const host = useRef<HTMLDivElement>(null);
+  const laid = useDiagramLayout(STATECHART_LIKE, { host });
+  const [selection, setSelection] = useState<DiagramSelection>({ nodes: ['paused'], edges: [] });
+  const [pressed, setPressed] = useState<DiagramItem | null>(null);
+  const node = laid.nodes.find((n) => n.id === selection.nodes[0]);
+  return (
+    <DiagramFrame>
+      <DiagramFrameBoard>
+        <div ref={host} className="absolute inset-0">
+          <Diagram nodes={laid.nodes} edges={laid.edges} background="grid" editable movable={false} connectable={false} selection={selection} onSelectionChange={setSelection} onAction={setPressed} aria-label="Audio Player" overlay={<DiagramToolbar />} />
+        </div>
+        <DiagramFrameBar>{node ? node.title : 'Audio Player'}</DiagramFrameBar>
+      </DiagramFrameBoard>
+      <DiagramFramePanel title="State">
+        <DiagramFrameSection title={node?.title ?? 'Nothing selected'}>
+          {node?.sections?.map((s) => (
+            <p key={s.title} className="m-0 text-footnote text-foreground">{s.title}: {s.items.map((i) => i.title).join(', ')}</p>
+          )) ?? null}
+          <p className="m-0 text-footnote text-foreground/70">{pressed?.item ? `Pressed ${pressed.item}.` : 'Press a chip on the board.'}</p>
+        </DiagramFrameSection>
+      </DiagramFramePanel>
+    </DiagramFrame>
+  );
+}
+
+export const WithCards: Story = {
+  ...phone,
+  render: () => <Phone w={1200} h={900}><Cards /></Phone>,
+};
+export const WithCardsDark: Story = {
+  ...phone,
+  render: () => <Phone w={1200} h={900} appearance="dark"><Cards /></Phone>,
 };

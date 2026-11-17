@@ -39,7 +39,8 @@ const main :Workerd.Worker = (
 );`
 const fence = (code: string) => `\`\`\`capnp\n${code}\n\`\`\``
 
-const nodes = () => [...host.querySelectorAll("[data-docstream-capnp] [data-slot=diagram-node]")].map((n) => n.getAttribute("data-node"))
+// The services' cards: not the system's own box around them.
+const nodes = () => [...host.querySelectorAll('[data-docstream-capnp] [data-slot=diagram-node]:not([data-node^="cloudflare:"])')].map((n) => n.getAttribute("data-node"))
 
 describe("capnp", () => {
   it("draws a workerd config fence as its services, says what it doesn't draw, and keeps the source a press away", async () => {
@@ -49,6 +50,10 @@ describe("capnp", () => {
     await until(() => nodes().length === 2)
     expect(nodes().sort()).toEqual(["main", "main.ProofAccount"])
     expect(host.querySelector("[data-docstream-capnp] [data-slot=diagram-edge]")).not.toBeNull()
+    // The system is the config, by its name; its class is inside its Worker; its socket is where requests come in.
+    expect(host.querySelector('[data-docstream-capnp] [data-node="cloudflare:system"] [data-slot=diagram-node-title]')?.textContent).toBe("workerd config")
+    expect(host.querySelector('[data-docstream-capnp] [data-node="main"]')?.getAttribute("data-kind")).toBe("group")
+    expect(host.querySelector('[data-docstream-capnp] [data-node="main"] [data-slot=diagram-entry]')).not.toBeNull()
     expect(host.querySelector("[data-docstream-capnp]")?.classList.contains("docs-split-card")).toBe(true)
     expect(host.querySelector("[data-docstream-capnp-notes]")?.textContent).toContain("listens on 127.0.0.1:19610 for main")
     // The board is read-only: nothing on it offers to change the system.

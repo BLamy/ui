@@ -39,7 +39,7 @@ describe('Diagram', () => {
   });
 
   it('has a data-slot on the root and each part, and merges className and style last', () => {
-    for (const slot of ['diagram', 'canvas', 'canvas-board', 'diagram-layer', 'diagram-node', 'diagram-node-body', 'diagram-node-label', 'diagram-node-detail', 'diagram-edges', 'diagram-edge', 'diagram-edge-label', 'diagram-divider']) {
+    for (const slot of ['diagram', 'canvas', 'canvas-board', 'diagram-layer', 'diagram-node', 'diagram-node-body', 'diagram-node-header', 'diagram-node-title', 'diagram-node-description', 'diagram-edges', 'diagram-edge', 'diagram-edge-label', 'diagram-divider']) {
       expect(html).toContain(`data-slot="${slot}"`);
     }
     const root = renderToString(<Diagram nodes={[]} className="absolute-not inset-4 mine" style={{ opacity: 0.5 }} />);
@@ -60,24 +60,24 @@ describe('Diagram', () => {
   });
 
   it('keeps an edge whose end is missing out of the picture, rather than failing', () => {
-    const out = renderToString(<Diagram nodes={[{ id: 'a', x: 0, y: 0, w: 10, h: 10 }]} edges={[{ id: 'e', from: 'a', to: 'gone', label: 'lost' }]} />);
+    const out = renderToString(<Diagram nodes={[{ id: 'a', x: 0, y: 0, w: 10, h: 10 }]} edges={[{ id: 'e', from: 'a', to: 'gone', title: 'lost' }]} />);
     expect(count(out, /data-slot="diagram-edge"/g)).toBe(0);
     expect(out).not.toContain('lost');
   });
 
   it('places a label it was given, and works one out when it wasn’t', () => {
     const nodes: DiagramNode[] = [{ id: 'a', x: 0, y: 0, w: 100, h: 40 }, { id: 'b', x: 300, y: 0, w: 100, h: 40 }];
-    const given: DiagramEdge = { id: 'e', from: 'a', to: 'b', label: 'SUBMIT', labelBox: { x: 170, y: 7, w: 40, h: 11 } };
+    const given: DiagramEdge = { id: 'e', from: 'a', to: 'b', title: 'SUBMIT', labelBox: { x: 170, y: 7, w: 40, h: 11 } };
     expect(renderToString(<Diagram nodes={nodes} edges={[given]} />)).toMatch(/left:170px;top:7px/);
     // A place given on top of a node isn't kept: the label goes where it can be read.
     const onNode = renderToString(<Diagram nodes={nodes} edges={[{ ...given, labelBox: { x: 7, y: 9, w: 40, h: 11 } }]} />);
     expect(onNode).not.toMatch(/left:7px;top:9px/);
-    const found = renderToString(<Diagram nodes={nodes} edges={[{ id: 'e', from: 'a', to: 'b', label: 'SUBMIT' }]} />);
-    const m = /data-slot="diagram-edge-label"[^>]*style="left:([\d.]+)px;top:([\d.]+)px"/.exec(found)!;
-    // Above the middle of the line, which runs along y = 20.
-    expect(Number(m[2])).toBeLessThan(20);
-    expect(Number(m[1])).toBeGreaterThan(150);
-    expect(Number(m[1])).toBeLessThan(250);
+    const found = renderToString(<Diagram nodes={nodes} edges={[{ id: 'e', from: 'a', to: 'b', title: 'SUBMIT' }]} />);
+    const m = /data-slot="diagram-edge-label"[^>]*style="left:([\d.]+)px;top:([\d.]+)px;width:([\d.]+)px;height:([\d.]+)px"/.exec(found)!;
+    // On the line, which runs along y = 20, in the middle of the gap: a pill the edge runs into and out of.
+    expect(Number(m[2]) + Number(m[4]) / 2).toBe(20);
+    expect(Number(m[1]) + Number(m[3]) / 2).toBe(200);
+    expect(found).toContain('data-shape="pill"');
   });
 
   it('draws custom nodes, gives children the canvas, and hides nothing in the data', () => {
@@ -86,7 +86,7 @@ describe('Diagram', () => {
       return <span data-testid="readout">{zoom}</span>;
     }
     const custom = renderToString(
-      <Diagram nodes={[{ id: 'a', label: 'hi', x: 0, y: 0, w: 10, h: 10, data: { n: 7 } }]} defaultViewport={{ x: 0, y: 0, zoom: 2 }} renderNode={(n) => <i data-custom={(n.data as { n: number }).n}><DiagramNodeBody node={n} /></i>}>
+      <Diagram nodes={[{ id: 'a', title: 'hi', x: 0, y: 0, w: 10, h: 10, data: { n: 7 } }]} defaultViewport={{ x: 0, y: 0, zoom: 2 }} renderNode={(n) => <i data-custom={(n.data as { n: number }).n}><DiagramNodeBody node={n} /></i>}>
         <Readout />
       </Diagram>,
     );
@@ -117,7 +117,7 @@ describe('Diagram', () => {
   });
 
   it('gives the zoom only to what needs it, so a zoom doesn’t restyle every node', () => {
-    const out = renderToString(<Diagram nodes={[{ id: 'a', label: 'hi', x: 0, y: 0, w: 10, h: 10 }]} defaultViewport={{ x: 0, y: 0, zoom: 0.5 }} />);
+    const out = renderToString(<Diagram nodes={[{ id: 'a', title: 'hi', x: 0, y: 0, w: 10, h: 10 }]} defaultViewport={{ x: 0, y: 0, zoom: 0.5 }} />);
     expect(/data-slot="diagram-layer"[^>]*--diagram-z/.test(out)).toBe(false);
     expect(/data-slot="canvas-board"[^>]*--diagram-z/.test(out)).toBe(false);
     expect(/data-slot="diagram-node"[^>]*--diagram-z/.test(out)).toBe(false);
@@ -125,7 +125,7 @@ describe('Diagram', () => {
   });
 
   it('rings what’s selected, in a layer of its own', () => {
-    const out = renderToString(<Diagram defaultNodes={[{ id: 'a', label: 'hi', x: 1, y: 2, w: 10, h: 10 }, { id: 'b', x: 50, y: 0, w: 10, h: 10 }]} editable defaultSelection={{ nodes: ['a'], edges: [] }} defaultViewport={{ x: 0, y: 0, zoom: 0.5 }} />);
+    const out = renderToString(<Diagram defaultNodes={[{ id: 'a', title: 'hi', x: 1, y: 2, w: 10, h: 10 }, { id: 'b', x: 50, y: 0, w: 10, h: 10 }]} editable defaultSelection={{ nodes: ['a'], edges: [] }} defaultViewport={{ x: 0, y: 0, zoom: 0.5 }} />);
     expect(out.match(/data-slot="diagram-ring"/g)).toHaveLength(1);
     expect(out).toContain('data-ring-of="a"');
     expect(out).toMatch(/data-slot="diagram-rings"[^>]*--diagram-z:0\.5/);
@@ -152,9 +152,9 @@ describe('Diagram', () => {
   });
 
   describe('drawing only what’s near the view', () => {
-    const far = (id: string, x: number): DiagramNode => ({ id, label: id, x, y: 0, w: 100, h: 40 });
+    const far = (id: string, x: number): DiagramNode => ({ id, title: id, x, y: 0, w: 100, h: 40 });
     const nodes = [far('left', -5000), far('here', 100), far('right', 5000)];
-    const crossing: DiagramEdge = { id: 'across', from: 'left', to: 'right', label: 'far', points: [{ x: -4900, y: 20 }, { x: 5000, y: 20 }], labelBox: { x: 4000, y: 0, w: 20, h: 11 } };
+    const crossing: DiagramEdge = { id: 'across', from: 'left', to: 'right', title: 'far', points: [{ x: -4900, y: 20 }, { x: 5000, y: 20 }], labelBox: { x: 4000, y: 0, w: 20, h: 11 } };
     const at = { x: 0, y: 0, zoom: 1 };
 
     it('leaves out what’s far away, when asked', () => {

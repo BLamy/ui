@@ -1,7 +1,7 @@
 {
   "name": "state-diagram-model",
   "title": "StateDiagram logic",
-  "description": "StateDiagram's logic as plain functions: an XState machine's source read without running it (parseXState), a machine as Diagram nodes and edges (machineToDraft), a simulation with stand-ins for everything it names, and edits to a machine's config that XState checks. Babel reads the source; XState is handed in, never imported.",
+  "description": "StateDiagram's logic as plain functions: an XState machine's source read without running it (parseXState), everything a machine says (its context, each state's entry and exit actions, invokes, tags, meta, each transition's guard, actions and delay) read and drawn as Diagram nodes and edges with sections of chips (machineToDraft), a simulation with stand-ins for everything it names, and edits to a machine's config (states, transitions, actions, context) that XState checks. Babel reads the source; XState is handed in, never imported.",
   "page": "state-diagram",
   "files": [
     "lib/state-diagram-model.ts",
@@ -29,7 +29,26 @@
     "removeItems",
     "missingImplementations",
     "inlineCodeIn",
-    "StateEditRefused"
+    "StateEditRefused",
+    "describeMachine",
+    "describeAction",
+    "describeActions",
+    "describeGuard",
+    "describeEvent",
+    "describeContextValue",
+    "stateSections",
+    "transitionSections",
+    "transitionNotation",
+    "STATE_GLYPHS",
+    "addAction",
+    "renameAction",
+    "removeAction",
+    "actionNameProblem",
+    "addContextKey",
+    "renameContextKey",
+    "setContextValue",
+    "removeContextKey",
+    "contextKeyProblem"
   ],
   "types": [
     "StateMachineLike",
@@ -40,6 +59,13 @@
     "StateTransitionKind",
     "TransitionPlace",
     "Simulation",
-    "SimulationStandIns"
+    "SimulationStandIns",
+    "StateAction",
+    "StateActionKind",
+    "StateGuard",
+    "StateInvoke",
+    "StateContextEntry",
+    "StateMachineSummary",
+    "ActionsPlace"
   ]
 }
