@@ -172,8 +172,9 @@ const ownBindings = (kind: string) => C.bindings.filter((b) => b.product === kin
 const reachedThrough = (kind: string) => PRODUCTS.get(kind)?.alsoReachedThrough ?? [];
 const surfaces = (kind: string) => C.nonBindingSurface.filter((s) => s.product === kind);
 
-/** A service's ports, in (on the left) then out (on the right). Where along its side each sits is the card's to say: a row of
- *  its own on the card's "Connect" section. A kind that isn't in the catalog, or is but has nothing to connect, has none. */
+/** A service's ports, in (on the left) then out (on the right). Where along its side each sits is the card's to say: a
+ *  handler's on its row, the rest at either end of the header strip. A kind that isn't in the catalog, or is but has nothing
+ *  to connect, has none. */
 export function servicePorts(kind: string): DiagramPort[] {
   const product = PRODUCTS.get(kind);
   if (!product) return [];

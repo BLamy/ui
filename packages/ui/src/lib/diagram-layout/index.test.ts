@@ -468,12 +468,20 @@ describe('wrapDiagram (J1)', () => {
     expect(wrapped.bounds.w / wrapped.bounds.h).toBeGreaterThan(laid.bounds.w / laid.bounds.h * 2);
     for (const a of steps) for (const b of steps) if (a !== b) expect(overlap(a, b)).toBe(false);
     for (const e of wrapped.edges) expect(square(e.points!)).toBe(true);
-    // Each edge still runs from its card to the next.
+    // Each edge still runs from its card to the next, on one of its sides.
+    const onSide = (p: Pt, r: { x: number; y: number; w: number; h: number }) => Math.abs(p.y - r.y) < 1 || Math.abs(p.y - (r.y + r.h)) < 1 || Math.abs(p.x - r.x) < 1 || Math.abs(p.x - (r.x + r.w)) < 1;
     for (const e of wrapped.edges) {
       const from = steps.find((n) => n.id === e.from)!, to = steps.find((n) => n.id === e.to)!;
-      const [p, q] = [e.points![0], e.points![e.points!.length - 1]];
-      expect(Math.abs(p.y - (from.y + from.h)) < 1 || Math.abs(p.x - from.x) < 1 || Math.abs(p.x - (from.x + from.w)) < 1).toBe(true);
-      expect(Math.abs(q.y - to.y) < 1 || Math.abs(q.x - to.x) < 1 || Math.abs(q.x - (to.x + to.w)) < 1).toBe(true);
+      const pts = e.points!;
+      const [p, q] = [pts[0], pts[pts.length - 1]];
+      expect(onSide(p, from) && onSide(q, to)).toBe(true);
+      // From one column to the next, no U-turn round the drawing: no longer than half again its ends' distance, and a bit.
+      let len = 0;
+      for (let i = 1; i < pts.length; i++) len += Math.abs(pts[i].x - pts[i - 1].x) + Math.abs(pts[i].y - pts[i - 1].y);
+      expect(len).toBeLessThanOrEqual(1.5 * (Math.abs(q.x - p.x) + Math.abs(q.y - p.y)) + 200);
+      // Its label is on it.
+      const l = e.labelBox!;
+      expect(pts.some((a, i) => i > 0 && Math.max(a.x, pts[i - 1].x) >= l.x && Math.min(a.x, pts[i - 1].x) <= l.x + l.w && Math.max(a.y, pts[i - 1].y) >= l.y && Math.min(a.y, pts[i - 1].y) <= l.y + l.h)).toBe(true);
     }
     const root = wrapped.nodes.find((n) => n.id === 'root')!;
     for (const n of steps) expect(inside(n, root)).toBe(true);

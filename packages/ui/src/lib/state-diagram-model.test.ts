@@ -4,6 +4,9 @@ import { toDirectedGraph } from 'xstate/graph';
 import { uploadMachine } from '../stories/upload-machine';
 import { describeAction, describeEvent, describeGuard, describeMachine, machineToDraft, stateSections, transitionNotation, transitionSections, type StateMachineLike } from './state-diagram-model';
 import { parseXState } from './state-diagram-source';
+import { layoutDiagram } from './diagram-layout';
+import { nodeAnatomy } from './diagram-model';
+import { estimateText } from './diagram-text';
 
 const draftOf = (m: unknown) => machineToDraft(m as StateMachineLike);
 const text = (e: { data?: Parameters<typeof transitionNotation>[0] }) => transitionNotation(e.data);
@@ -365,6 +368,46 @@ describe('everything a machine says', () => {
   }
 });
 
+describe('every form of transition, laid out', () => {
+  const FORMS = {
+    id: 'forms', initial: 'idle', on: { RESET: { target: '.idle', actions: 'clearAll' } },
+    states: {
+      idle: { on: { GO: 'busy', TRY: { target: 'busy', guard: 'canTry' }, SAVE: { target: 'busy', guard: { type: 'isAbove', params: { min: 3 } }, actions: ['save', 'notify'] }, PING: { actions: 'pong' }, '*': 'unknown' }, after: { 500: 'busy', IDLE_TIMEOUT: 'away' } },
+      busy: { on: { AGAIN: { target: 'busy', reenter: true, actions: 'restart' }, SPLIT: { target: ['#forms.both.left.on', '#forms.both.right.on'] } }, always: { guard: and(['isDone', not('isLocked')]), target: 'idle' } },
+      both: { type: 'parallel', states: { left: { initial: 'off', states: { off: {}, on: {} } }, right: { initial: 'off', states: { off: {}, on: {} } } } },
+      away: {}, unknown: {},
+    },
+  };
+  type R = { x: number; y: number; w: number; h: number };
+  const hits = (a: { x: number; y: number }, b: { x: number; y: number }, r: R, inset = 0) =>
+    Math.max(a.x, b.x) > r.x + inset && Math.min(a.x, b.x) < r.x + r.w - inset && Math.max(a.y, b.y) > r.y + inset && Math.min(a.y, b.y) < r.y + r.h - inset;
+
+  it('several targets are one label that forks: each label on its own route, and no route through a box’s header', async () => {
+    const draft = machineToDraft(createMachine(FORMS as never) as never);
+    const [one, two] = draft.edges.filter((e) => e.title === 'SPLIT');
+    expect(one.forkOf).toBeUndefined();
+    expect(two.forkOf).toBe(one.id);
+    const out = await layoutDiagram(draft, { text: estimateText });
+    for (const e of out.edges) {
+      const pts = e.points ?? [];
+      if (e.labelBox) expect(pts.some((a, i) => i > 0 && hits(pts[i - 1], a, e.labelBox!, -1)), `${e.id}'s label is on its route`).toBe(true);
+      for (const n of out.nodes) {
+        if (!n.title || !(n.kind === 'group' || n.kind === 'region')) continue;
+        // A group's header strip runs across it; a region has a caption, at its start.
+        const a = nodeAnatomy(n, estimateText);
+        const head = { x: n.x, y: n.y, w: n.kind === 'region' ? Math.min(n.w, a.w) : n.w, h: a.header };
+        expect(pts.some((a, i) => i > 0 && hits(pts[i - 1], a, head, 1)), `${e.id} through ${n.id}'s header`).toBe(false);
+      }
+    }
+    // The second leaves the first's label, from the side the first leaves it by; only the first has a label.
+    const a = out.edges.find((e) => e.id === one.id)!, b = out.edges.find((e) => e.id === two.id)!;
+    expect(b.labelBox).toBeUndefined();
+    const l = a.labelBox!, start = b.points![0];
+    expect(Math.abs(start.x - l.x) < 1 || Math.abs(start.x - (l.x + l.w)) < 1 || Math.abs(start.y - l.y) < 1 || Math.abs(start.y - (l.y + l.h)) < 1).toBe(true);
+    expect(start.x >= l.x - 1 && start.x <= l.x + l.w + 1 && start.y >= l.y - 1 && start.y <= l.y + l.h + 1).toBe(true);
+  });
+});
+
 describe('a machine with only names', () => {
   it('is states as headers and transitions as pills: nothing more to draw', () => {
     const { nodes, edges } = draftOf(createMachine({ id: 'light', initial: 'green', states: { green: { on: { NEXT: 'yellow' } }, yellow: { on: { NEXT: 'red' } }, red: { on: { NEXT: 'green' } } } }));
@@ -382,6 +425,29 @@ describe('the pieces', () => {
     expect(describeGuard(undefined)).toBeUndefined();
     expect(describeGuard({ type: 'xstate.not', params: { guards: [{ type: 'xstate.and', params: { guards: ['a', 'b'] } }] } })?.text).toBe('not (a and b)');
     expect(describeGuard({ type: 'xstate.inline' })).toEqual({ name: 'inline', text: 'inline' });
+  });
+
+  it('reads composed guards from a minified production build of XState the same as in development', async () => {
+    // Bundle XState's production entry with every name mangled, as an app's build does, and read guards made by it.
+    const { build } = await import('esbuild');
+    const out = await build({
+      stdin: { contents: "export { and, or, not, stateIn, createMachine } from 'xstate';", resolveDir: process.cwd(), loader: 'js' },
+      bundle: true, minify: true, keepNames: false, format: 'esm', write: false, platform: 'neutral', conditions: ['production'], mainFields: ['module', 'main'],
+    });
+    const code = out.outputFiles[0].text;
+    expect(code).not.toMatch(/function and\(/);
+    const url = `data:text/javascript;base64,${Buffer.from(code).toString('base64')}`;
+    const prod = (await import(/* @vite-ignore */ url)) as typeof import('xstate');
+    const guard = prod.and(['isDone', prod.not(prod.or(['isLocked', prod.stateIn('#m.busy')]))]);
+    expect([prod.and([]).name, prod.or([]).name, prod.not('x').name]).not.toEqual(['and', 'or', 'not']);
+    const text = 'isDone and not (isLocked or in #m.busy)';
+    expect(describeGuard(guard)).toEqual({ name: text, text, composed: true });
+    // In a machine built by that bundle, as the model reads it.
+    const machine = prod.createMachine({ id: 'm', initial: 'idle', states: { idle: { on: { GO: { target: 'busy', guard } } }, busy: {} } });
+    const go = machineToDraft(machine as never).edges.find((e) => e.title === 'GO')!;
+    expect(go.sections?.[0]?.items[0]?.title).toBe(`if ${text}`);
+    // And development's own functions read the same.
+    expect(describeGuard(and(['isDone', not(or(['isLocked', stateIn('#m.busy')]))]))?.text).toBe(text);
   });
 
   it('gives a machine’s title from meta when it has one', () => {

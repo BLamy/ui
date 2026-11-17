@@ -1,5 +1,5 @@
 'use client';
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode, type RefObject } from 'react';
 import type { ChangeDetails } from '@ui-sdk/core';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -34,7 +34,7 @@ import {
 } from '@/lib/cloudflare-system';
 import { useControllableChange } from '@/lib/controllable-state';
 import { useDiagramHistory } from '@/lib/diagram-history';
-import type { DiagramDirection, DiagramLayoutDensity } from '@/lib/diagram-layout';
+import type { DiagramBoardSize, DiagramDirection, DiagramLayoutDensity } from '@/lib/diagram-layout';
 import { useDiagramLayout } from '@/lib/diagram-layout/react';
 import { NOTHING_SELECTED, type DiagramConnection, type DiagramEdge, type DiagramNode, type DiagramPort, type DiagramSelection } from '@/lib/diagram-model';
 import type { DiagramDataChangeReason, DiagramSelectionChangeDetails, DiagramSelectionChangeReason } from '@/lib/diagram-primitive';
@@ -49,8 +49,9 @@ import { cn } from '@/lib/utils';
    schedules and messages come in there's an entry marker. What's drawn is `lib/cloudflare-board`, as data.
 
    A connection can only be one the catalog says there is: a Worker to R2 offers R2's real methods, and R2 to D1 says why
-   not. Ports are only for connecting: with `editable`, each card has a "Connect" section whose rows carry them; read-only,
-   there are none, and the picture is cards, sections and labelled edges.
+   not. Ports are only for connecting: with `editable`, a handler's is a dot on its row and the rest are dots at either end of
+   the header strip, so an editable card is the same card as a read-only one; read-only, there are none, and the picture is
+   cards, sections and labelled edges.
 
    The parts: `CloudflareDiagram` composes `DiagramFrame` (board, bar, panel, cover) around a `Diagram`. The board half is a
    Diagram preset, `cloudflareBoardProps(system)`: a plain `<Diagram {...cloudflareBoardProps(system)} />` draws a system the
@@ -156,7 +157,7 @@ export interface CloudflareBoardOptions {
   /** What's wrong with it, drawn as wrong. Default `validateSystem(system)`; add `checkMachines` to it to have the machines
    *  checked, with XState. */
   issues?: readonly SystemIssue[];
-  /** With ports to connect by, on each card's "Connect" section. Default `false`. */
+  /** With ports to connect by: dots on each card's handler rows and at either end of its header. Default `false`. */
   editable?: boolean;
   /** The system's header. Default its `name`, or "Cloudflare". */
   title?: string;
@@ -216,6 +217,26 @@ function RevealWhenPlaced({ nodes, placing, want, onDone }: { nodes: readonly Di
   return null;
 }
 
+/** How big an element is, in steps of 40 px, once it's been measured: the board a layout wraps to fill. */
+function useFrameSize(ref: RefObject<HTMLElement | null>): DiagramBoardSize | null {
+  const [size, setSize] = useState<DiagramBoardSize | null>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || typeof ResizeObserver === 'undefined') return undefined;
+    const step = (v: number) => Math.round(v / 40) * 40;
+    const read = () => {
+      const r = el.getBoundingClientRect();
+      if (!r.width || !r.height) return;
+      setSize((was) => (was && was.width === step(r.width) && was.height === step(r.height) ? was : { width: step(r.width), height: step(r.height) }));
+    };
+    read();
+    const observer = new ResizeObserver(read);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [ref]);
+  return size;
+}
+
 /* ── The diagram ── */
 
 const sameSystem = (a: CloudflareSystem, b: CloudflareSystem) => a.services === b.services && a.edges === b.edges && a.name === b.name && a.accountId === b.accountId;
@@ -229,6 +250,7 @@ export function CloudflareDiagram({
   direction = 'down', density, minimap = 'auto', icon, emptyState, className, style, 'aria-label': ariaLabel = 'Cloudflare services', ...diagram
 }: CloudflareDiagramProps) {
   const boardRef = useRef<HTMLDivElement>(null);
+  const frameRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
 
   /* ── The system: controlled by `services` / `edges`, or the diagram's own ── */
@@ -266,7 +288,10 @@ export function CloudflareDiagram({
   const anyPlaced = services.some((s) => s.at);
   const board = useMemo(() => cloudflareBoardProps(anyPlaced ? system : { ...system, services: [], edges: [] }, { icon, issues, editable }), [anyPlaced, system, icon, issues, editable]);
   const draft = useMemo(() => (anyPlaced ? { nodes: [], edges: [] } : cloudflareBoardData(system, { editable })), [anyPlaced, system, editable]);
-  const laid = useDiagramLayout<CloudflareServiceNodeData, CloudflareServiceEdgeData>(draft, { host: boardRef, direction, density });
+  // Wrapped to fill the frame, not what its panel leaves of it: the panel opens on a selection, and what was just pressed
+  // mustn't move. The view pans to keep it in sight instead (Diagram keeps what's selected in view).
+  const frameBoard = useFrameSize(frameRef);
+  const laid = useDiagramLayout<CloudflareServiceNodeData, CloudflareServiceEdgeData>(draft, { host: boardRef, direction, density, ...(frameBoard ? { board: frameBoard } : null) });
   // What's wrong goes on after laying out, as it isn't anything to lay out again for.
   const laidBoard = useMemo(() => markProblems({ nodes: laid.nodes, edges: laid.edges }, issues), [laid.nodes, laid.edges, issues]);
   const nodes = anyPlaced ? board.nodes : laidBoard.nodes;
@@ -387,6 +412,7 @@ export function CloudflareDiagram({
 
   return (
     <DiagramFrame
+      ref={frameRef}
       data-cloudflare-diagram=""
       open={panelOpen}
       // Closed until there's something to show: a hint takes a quarter of the board and says nothing about the system.
@@ -457,7 +483,7 @@ export function CloudflareDiagram({
             />
           ) : (
             <p data-slot="cloudflare-hint" className="m-0 text-footnote text-foreground/70">
-              Select a service or a connection to see what it does.{editable ? ' To connect two, drag from a dot on an “out” row of one card’s Connect section, like env, to a dot on an “in” row of another’s.' : ''}
+              Select a service or a connection to see what it does.{editable ? ' To connect two, drag from the dot at the end of one card’s header to another card: the catalog picks how they connect, or says why they can’t. A handler’s own dot is on its row.' : ''}
             </p>
           )}
           {issues.length ? <IssueList issues={issues} edgesOnBoard={onBoard} editable={editable} onShow={select} onRemoveEdge={removeEdge} /> : null}

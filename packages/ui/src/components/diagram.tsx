@@ -15,9 +15,9 @@ import { useContainerSize } from '@/lib/container';
 import { connectionOf, connectionTargetAt, hitTestDiagram, movableNodes, offerConnection, stepDiagramGesture, type DiagramConnectionEnd, type DiagramGesture, type DiagramGestureEvent, type DiagramHit } from '@/lib/diagram-gesture';
 import { DiagramChromeProvider, useDiagramChrome, useDiagramChromeInset, useDiagramChromeScope, type DiagramInsets } from '@/lib/diagram-chrome';
 import type { DiagramHistory } from '@/lib/diagram-history';
-import { describeEdge, describeItem, describeNode, edgesByNode, fitViewport, nearestNode, stepFocus, viewportToShow, type DiagramItem, type DiagramStep } from '@/lib/diagram-keyboard';
+import { describeEdge, describeItem, describeNode, edgesByNode, fitViewport, nearestNode, stepFocus, viewportToKeep, viewportToShow, type DiagramItem, type DiagramStep } from '@/lib/diagram-keyboard';
 import {
-  DIAGRAM_CARD, DIAGRAM_LEGIBLE_ZOOM, DIAGRAM_SIDES, NOTHING_SELECTED, anchorNormal, codeKey, anchorPoint, connectorPath, diagramBounds, diagramTextRuns, edgeGeometries, edgeGeometry, edgeLabelSize, facePorts, hasEdgeLabel, holdsNodes, indexDiagram, isInside, itemKey, labelBoxAvoiding, moveNodes, nearestSide, nodeAnatomy, portPoint, rectIndex, regionDividers, renderWindow, roundedPolylineD, sectionKey, sizeNodesToText,
+  DIAGRAM_CARD, DIAGRAM_LEGIBLE_ZOOM, DIAGRAM_SIDES, NOTHING_SELECTED, anchorNormal, codeKey, anchorPoint, connectorPath, diagramBounds, diagramTextRuns, edgeGeometries, edgeGeometry, edgeLabelSize, facePorts, hasEdgeLabel, holdsNodes, indexDiagram, isInside, itemKey, labelBoxAvoiding, moveNodes, nearestSide, nodeAnatomy, portPoint, rectIndex, regionDividers, renderWindow, roundedPolylineD, sectionKey, sizeNodesToText, growNodesToText, loopsBeside,
   type ConnectorEnd, type ConnectorGeometry, type DiagramConnection, type DiagramDivider, type DiagramEdge, type DiagramEdgeTone, type DiagramEdgeVariant, type DiagramGlyph, type DiagramIndex, type DiagramNode, type DiagramNodeKind, type DiagramNodeVariant, type DiagramPort, type DiagramSection, type DiagramSelection, type DiagramSide, type DiagramTone,
 } from '@/lib/diagram-model';
 import {
@@ -632,7 +632,8 @@ const AVOID_UP_TO = 200;
 /** Up to this many, edges between ports, and any that would run along another, get lanes of their own (`routeInLanes`). */
 const LANES_UP_TO = 120;
 
-function layOut<N, E>(given: readonly DiagramNode<N>[], edges: readonly DiagramEdge<E>[], text: TextMeasurer, moving = false): Laid<N, E> {
+function layOut<N, E>(given: readonly DiagramNode<N>[], givenEdges: readonly DiagramEdge<E>[], text: TextMeasurer, moving = false): Laid<N, E> {
+  const edges = placeLoops(given, givenEdges, text);
   // A port on a card's row sits at the end of the row that faces where its edges go.
   const nodes = facePorts(given, edges);
   const index = indexDiagram(nodes);
@@ -706,6 +707,20 @@ function layOut<N, E>(given: readonly DiagramNode<N>[], edges: readonly DiagramE
     index, geometries, edgesAt: edgesByNode(drawn.map((d) => d.edge)), containers, leaves, edges: drawn, labels, dividers: regionDividers(index), origins,
     bounds: diagramBounds([...nodes, ...entries], geometries.values(), labels.map((l) => l.box)),
   };
+}
+
+/** A placed card's self-loops with no route of their own, each beside it with its label on it (`loopsBeside`). */
+function placeLoops<N, E>(nodes: readonly DiagramNode<N>[], edges: readonly DiagramEdge<E>[], text: TextMeasurer): readonly DiagramEdge<E>[] {
+  const loops = new Map<string, DiagramEdge<E>[]>();
+  for (const e of edges) if (e.from === e.to && !e.points) loops.set(e.from, [...(loops.get(e.from) ?? []), e]);
+  if (!loops.size) return edges;
+  const placed = new Map<string, { points: Pt[]; labelBox?: Rect }>();
+  for (const n of nodes) {
+    const list = loops.get(n.id);
+    if (!list || holdsNodes(n) || n.kind === 'marker') continue;
+    for (const [id, at] of loopsBeside(n, list.map((e) => ({ id: e.id, size: edgeLabelSize(e, text) })))) placed.set(id, at);
+  }
+  return placed.size ? edges.map((e) => { const at = placed.get(e.id); return at ? { ...e, ...at } : e; }) : edges;
 }
 
 /** How many nodes and edges a diagram can have before what's out of view stops being drawn. A small one's cheap to draw all
@@ -931,14 +946,15 @@ export function Diagram<N = unknown, E = unknown>({
   const [status, setStatus] = useState('');
 
   const shown = draft ?? data;
-  const text = useDiagramText(ref, shown.nodes, shown.edges, !!autoSize || shown.edges.some((e) => !e.labelBox && hasEdgeLabel(e)));
+  const text = useDiagramText(ref, shown.nodes, shown.edges, !!autoSize || shown.nodes.length <= AVOID_UP_TO || shown.edges.some((e) => !e.labelBox && hasEdgeLabel(e)));
   /** What can be pressed: chips in an editable diagram that says what a press does, and whatever `pressable` names. */
   const chipsEverywhere = (editable && !!onAction) || pressableProp === true;
   const pressSets = useMemo(() => (typeof pressableProp === 'object' ? { nodes: new Set(pressableProp.nodes), edges: new Set(pressableProp.edges) } : null), [pressableProp]);
   const chipsOf = (id: string) => chipsEverywhere || !!pressSets?.nodes.has(id);
   const labelPressable = (id: string) => pressableProp === true || !!pressSets?.edges.has(id);
   const pressable = chipsEverywhere || !!pressSets?.nodes.size;
-  const nodes = useMemo(() => (autoSize ? sizeNodesToText(shown.nodes, text) : shown.nodes), [autoSize, shown.nodes, text]);
+  // A card given a size is drawn that size, unless what it says needs more (a diagram this small: past it, as given).
+  const nodes = useMemo(() => (autoSize ? sizeNodesToText(shown.nodes, text) : shown.nodes.length <= AVOID_UP_TO ? growNodesToText(shown.nodes, text) : shown.nodes), [autoSize, shown.nodes, text]);
   const laid = useMemo(() => layOut(nodes, shown.edges, text, !!draft), [nodes, shown.edges, text, draft]);
 
   /* ── The chrome over the board (its toolbar, its minimap, a frame's bar) and the room a fit leaves for it ── */
@@ -976,7 +992,34 @@ export function Diagram<N = unknown, E = unknown>({
     }
     return best ? { x: best.x - 22, y: best.y - 16, w: best.w + 22, h: best.h + 16 } : null;
   }, [laid.index]);
-  const viewport = controlled ?? own ?? firstView(laid.bounds, size, fitPad, start);
+  // What has the eye: what's selected, or else what's current (a machine's state), whichever changed last. It's kept in the
+  // part of the board nothing covers: in the first view, and from then on as the board's room changes (a panel opening beside
+  // or over it), as it changes, and as it moves; by as little a pan as does that, never a new fit.
+  const selectionKey = `${selection.nodes.join('\0')}\0\0${selection.edges.join('\0')}`;
+  const currentKey = `${current.nodes.join('\0')}\0\0${current.edges.join('\0')}`;
+  const watch = useRef<{ selection: string; current: string; on: 'selection' | 'current' }>({ selection: selectionKey, current: currentKey, on: selection.nodes.length || selection.edges.length ? 'selection' : 'current' });
+  if (watch.current.selection !== selectionKey) watch.current = { ...watch.current, selection: selectionKey, on: selection.nodes.length || selection.edges.length ? 'selection' : 'current' };
+  if (watch.current.current !== currentKey) watch.current = { ...watch.current, current: currentKey, on: 'current' };
+  const eyeOn = watch.current.on === 'selection' && (selection.nodes.length || selection.edges.length) ? selection : current;
+  const eye = useMemo(() => {
+    const rects: Rect[] = [];
+    // The innermost of them: a state, not the box around it that's current as well.
+    const set = new Set(eyeOn.nodes);
+    const holdsOne = new Set<string>();
+    for (const id of eyeOn.nodes) for (let p = laid.index.parent.get(id); p; p = laid.index.parent.get(p) ?? null) { if (set.has(p)) holdsOne.add(p); }
+    for (const id of eyeOn.nodes) { const n = laid.index.byId.get(id); if (n && !holdsOne.has(id)) rects.push(n); }
+    for (const id of eyeOn.edges) {
+      const l = laid.labels.find((x) => x.edge.id === id)?.box;
+      const g = l ? null : laid.geometries.get(id);
+      if (l) rects.push(l);
+      else if (g) rects.push({ x: g.mid.x - 1, y: g.mid.y - 1, w: 2, h: 2 });
+    }
+    if (!rects.length) return null;
+    const x = Math.min(...rects.map((r) => r.x)), y = Math.min(...rects.map((r) => r.y));
+    return { x, y, w: Math.max(...rects.map((r) => r.x + r.w)) - x, h: Math.max(...rects.map((r) => r.y + r.h)) - y };
+  }, [eyeOn, laid]);
+  const opening = firstView(laid.bounds, size, fitPad, start);
+  const viewport = controlled ?? own ?? (eye ? viewportToKeep(opening, eye, size, fitPad) : opening);
   const viewportRef = useRef(viewport);
   viewportRef.current = viewport;
   /** Every move of the view comes through the canvas, ours included (the keys following focus go through its
@@ -985,6 +1028,20 @@ export function Diagram<N = unknown, E = unknown>({
     onViewportChange?.(next, details);
     if (!details.canceled) setOwn(next);
   };
+
+  // After the first view, what has the eye is kept in view by a pan, once the board has settled after a change to it.
+  const eyeKey = eye ? `${Math.round(eye.x)},${Math.round(eye.y)},${Math.round(eye.w)},${Math.round(eye.h)}|${size.width}x${size.height}|${fitKey}` : null;
+  const keptFor = useRef<string | null>(null);
+  useEffect(() => {
+    if (!eyeKey || keptFor.current === eyeKey) return;
+    keptFor.current = eyeKey;
+    // Not while something's dragged (it's under the pointer), nor in the first view, which keeps it itself.
+    if (!eye || draft || gesture.current.k !== 'idle' || (!controlled && !own)) return;
+    const v = viewportRef.current;
+    const next = viewportToKeep(v, eye, size, fitPad);
+    if (next !== v) canvas.setViewport(next, { reason: 'imperative' });
+    // `eyeKey` stands for `eye`, `size` and `fitPad`.
+  }, [eyeKey, draft]);
 
   const selectionRef = useRef(selection);
   selectionRef.current = selection;

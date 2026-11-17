@@ -7,7 +7,7 @@
    a layout's first asked for, and an app with fixed positions never loads it. Nothing at module scope touches a browser
    API, so this is safe to import on a server. `lib/diagram-layout/react` has the hook. */
 import type { Pt, Rect } from '@/lib/canvas-math';
-import { CONTAINER_PADDING, DIAGRAM_LEGIBLE_ZOOM, ancestorsOf, descendantsOf, diagramBounds, edgeLabelSize, facePorts, hasEdgeLabel, holdsNodes, indexDiagram, isInside, itemKey, laneRoutes, nodeAnatomy, placeItemPorts, rerouteOrthogonal, sectionKey, simplifyRoute, type ConnectorEnd, type DiagramEdge, type DiagramNode, type DiagramSide } from '@/lib/diagram-model';
+import { CONTAINER_PADDING, DIAGRAM_LEGIBLE_ZOOM, ancestorsOf, descendantsOf, diagramBounds, edgeLabelSize, facePorts, hasEdgeLabel, holdsNodes, indexDiagram, isInside, itemKey, laneRoutes, nodeAnatomy, placeItemPorts, rerouteOrthogonal, sectionKey, sideLoopRoute, simplifyRoute, type ConnectorEnd, type DiagramEdge, type DiagramNode, type DiagramSide } from '@/lib/diagram-model';
 import { estimateText, type TextMeasurer } from '@/lib/diagram-text';
 
 /* ── What goes in and what comes out ── */
@@ -194,6 +194,8 @@ export function toElkGraph<N, E>(draft: DiagramDraft<N, E>, options: Pick<Diagra
       // A port an item names sits on the item's row, which is known from the top, though the box's height isn't yet.
       const rows: Record<string, number> = {};
       n.sections?.forEach((sec, si) => sec.items.forEach((it) => { if (it.port) { const y = anatomy.rows.get(`${sectionKey(sec, si)}\0${itemKey(it)}`); if (y !== undefined) rows[it.port] = Math.round(y * 100) / 100; } }));
+      // And one that says how far down it is, which is from the top too.
+      for (const p of n.ports ?? []) if (p.offset !== undefined && (p.side === 'left' || p.side === 'right')) rows[p.id] = p.offset;
       el.layoutOptions = {
         'elk.padding': padding({ ...air, side, top: Math.ceil(anatomy.top) + air.top }),
         [AIR_TOP]: String(air.top),
@@ -223,7 +225,8 @@ export function toElkGraph<N, E>(draft: DiagramDraft<N, E>, options: Pick<Diagra
       const known = el.width !== undefined && el.height !== undefined;
       el.layoutOptions = { ...el.layoutOptions, 'elk.portConstraints': known ? 'FIXED_POS' : 'FIXED_SIDE' };
       el.ports = n.ports.map((p) => {
-        const at = p.at ?? 0.5;
+        const length = p.side === 'left' || p.side === 'right' ? el.height ?? 0 : el.width ?? 0;
+        const at = p.offset !== undefined ? Math.min(1, p.offset / (length || 1)) : p.at ?? 0.5;
         const place = !known ? null : p.side === 'left' ? { x: 0, y: at * el.height! } : p.side === 'right' ? { x: el.width!, y: at * el.height! } : p.side === 'top' ? { x: at * el.width!, y: 0 } : { x: at * el.width!, y: el.height! };
         return { id: portId(n.id, p.id), width: 0, height: 0, ...place, layoutOptions: { 'elk.port.side': SIDE[p.side] } };
       });
@@ -323,7 +326,7 @@ export function fromElkGraph<N, E>(draft: DiagramDraft<N, E>, out: ElkGraph): Pi
         if (got?.y !== undefined) portMoves.set(`${n.id}\0${p.id}`, { x: 0, y: row - got.y });
         return { ...p, at: round(row / (box.h || 1)) };
       }
-      if (p.at !== undefined || got?.x === undefined || got.y === undefined) return p;
+      if (p.at !== undefined || p.offset !== undefined || got?.x === undefined || got.y === undefined) return p;
       return { ...p, at: round(side ? got.y / (box.h || 1) : got.x / (box.w || 1)) };
     });
     nodes.push({ ...n, ...box, ...(ports ? { ports } : null) } as DiagramNode<N>);
@@ -427,6 +430,8 @@ export function fromElkGraph<N, E>(draft: DiagramDraft<N, E>, out: ElkGraph): Pi
       return simplifyRoute(out);
     };
     const headOf = new Map(heads.map((h) => [h.n.id, h]));
+    /** What ELK had for each route this takes round a box's head, which is where its ends are. */
+    const was = new Map<string, readonly Pt[]>();
     for (let i = 0; i < edges.length && heads.length; i++) {
       const e = edges[i];
       if (e.from === e.to || !e.points || e.points.length < 2) continue;
@@ -441,7 +446,49 @@ export function fromElkGraph<N, E>(draft: DiagramDraft<N, E>, out: ElkGraph): Pi
         // Into it going down, and out of it going up (the same, the other way round).
         pts = under([...under(pts, h.n, h.top, h.air)].reverse(), h.n, h.top, h.air).reverse();
       }
-      if (pts !== e.points) edges[i] = { ...e, points: pts };
+      if (pts !== e.points) { was.set(e.id, e.points); edges[i] = { ...e, points: pts }; }
+    }
+    // Those are routed again, with their labels, which were on the way ELK had them: in a lane of their own, round every
+    // box's head, into a box through its wall below that (`laneRoutes`). Too many to route, they keep the way round.
+    // Only those whose label the way round left behind (few: the rest keep the way round, a label put back on it), as each
+    // is a search round everything.
+    const offRoute = (e: DiagramEdge<E>) => {
+      const l = e.labelBox, pts = e.points ?? [];
+      if (!l) return false;
+      const mid = { x: l.x + l.w / 2, y: l.y + l.h / 2 };
+      return !pts.some((p, i) => i > 0 && onRun(pts[i - 1], p, mid));
+    };
+    const again = new Set(edges.filter((e) => was.has(e.id) && offRoute(e)).map((e) => e.id));
+    for (let i = 0; i < edges.length; i++) {
+      const e = edges[i];
+      if (was.has(e.id) && e.labelBox && (!again.has(e.id) || again.size > REROUTE_AT_MOST || nodes.length + edges.length > SEARCH_UP_TO)) edges[i] = { ...e, labelBox: seatLabel(e.points!, e.labelBox) };
+    }
+    if (again.size && again.size <= REROUTE_AT_MOST && nodes.length + edges.length <= SEARCH_UP_TO) {
+      const lane = edges.filter((e) => again.has(e.id));
+      const others = edges.filter((e) => !again.has(e.id));
+      const ends = new Map(lane.map((e) => {
+        const o = was.get(e.id)!, n = o.length;
+        return [e.id, { from: { p: o[0], n: wayOf(o[0], o[1]) }, to: { p: o[n - 1], n: wayOf(o[n - 1], o[n - 2]) } }];
+      }));
+      const routed = laneRoutes(index, lane, {
+        headOf: (n) => Math.max(0, (innerTop(placed.get(n.id), n) ?? n.y) - n.y),
+        captionOf: (n) => nodeAnatomy(n, estimateText).w,
+        around: others.map((e) => e.points ?? []),
+        labels: others.flatMap((e) => (e.labelBox ? [e.labelBox] : [])),
+        labelSize: (e) => (e.labelBox ? { w: e.labelBox.w, h: e.labelBox.h } : null),
+      }, ends);
+      const blocks = heads.map((h) => ({ x: h.n.x, y: h.n.y, w: h.n.kind === 'region' ? Math.min(h.n.w, nodeAnatomy(h.n, estimateText).w) : h.n.w, h: h.top - h.n.y }));
+      for (let i = 0; i < edges.length; i++) {
+        const e = edges[i];
+        if (!again.has(e.id)) continue;
+        const r = routed.get(e.id);
+        // Where there's no way in but through a head (no room under it to come into what it holds), the way round stays,
+        // and its label goes on it.
+        const through = !r || r.pts.some((p, j) => j > 0 && blocks.some((b) => runCrosses(r.pts[j - 1], p, b)));
+        const { labelBox: label, ...rest } = e;
+        if (!through) { edges[i] = { ...rest, points: r!.pts, ...(r!.label ? { labelBox: r!.label } : null) }; continue; }
+        edges[i] = { ...rest, points: e.points, ...(label ? { labelBox: seatLabel(e.points!, label) } : null) };
+      }
     }
   }
   const bounds = diagramBounds(nodes, edges.map((e) => ({ pts: e.points ?? [] })), edges.flatMap((e) => (e.labelBox ? [e.labelBox] : []))) ?? { x: 0, y: 0, w: 0, h: 0 };
@@ -485,31 +532,6 @@ function loopRoute(node: Rect, label: Rect, direction: 'DOWN' | 'UP' | 'RIGHT' |
     ? [{ x: L.x + L.w, y: mid }, { x, y: mid }, { x, y: foot }]
     : [{ x: L.x + L.w, y: mid }, { x: Math.max(x, n.x + n.w + 14), y: mid }, { x: Math.max(x, n.x + n.w + 14), y: n.y + n.h / 2 }, { x: n.x + n.w, y: n.y + n.h / 2 }];
   return [...out, ...back].map((p) => { const q = from({ x: fx(p.x), y: p.y }); return { x: round(q.x), y: round(q.y) }; });
-}
-
-/** A leaf's self-loop through its label beside it: out of the card's side, across into the label's near side, out of the
- *  label's foot and back up the gap between them into the card's side, lower down, where the arrow lands. Each loop has a
- *  side (or a place on one) of its own, so two never cross. Worked out as if the layers ran down: a label to the left or the
- *  right of its card; with the layers running across, above or below it. */
-function sideLoopRoute(node: Rect, label: Rect, direction: 'DOWN' | 'UP' | 'RIGHT' | 'LEFT' = 'DOWN'): Pt[] {
-  // Across the layers is x when they run down or up, and y when they run across: work in a frame where it's x.
-  const across = direction === 'RIGHT' || direction === 'LEFT';
-  const t = (p: Pt): Pt => (across ? { x: p.y, y: p.x } : p);
-  const tb = (r: Rect): Rect => (across ? { x: r.y, y: r.x, w: r.h, h: r.w } : r);
-  const n = tb(node), l = tb(label);
-  const before = l.x + l.w / 2 < n.x + n.w / 2;
-  const sideX = before ? n.x : n.x + n.w;
-  const nearX = before ? l.x + l.w : l.x;
-  const gapX = (sideX + nearX) / 2;
-  const lc = l.x + l.w / 2;
-  // Out at a third of the way down the card, or the label's middle if that's higher and on the card; back in near its foot.
-  const top = Math.max(n.y + 8, l.y + 8);
-  const y1 = Math.min(Math.max(top, n.y + n.h * 0.3), n.y + n.h - 18, l.y + l.h - 8);
-  const y2 = Math.max(y1 + 10, n.y + n.h - Math.min(10, n.h / 4));
-  const foot = Math.max(l.y + l.h + 12, y2 + 12);
-  const pts: Pt[] = [{ x: sideX, y: y1 }, { x: nearX, y: y1 }, { x: lc, y: y1 }, { x: lc, y: foot }, { x: gapX, y: foot }, { x: gapX, y: y2 }, { x: sideX, y: y2 }];
-  // In through the label's side, out through its foot: the two are one route, the label on it.
-  return pts.map((p) => { const q = t(p); return { x: round(q.x), y: round(q.y) }; });
 }
 
 function stretchRegions<N>(nodes: DiagramNode<N>[]): void {
@@ -625,8 +647,10 @@ export function wrapDiagram<N, E>(laid: Pick<DiagramLayoutResult<N, E>, 'nodes' 
     let y = (bands[i].bottom + b.top) / 2;
     // A route running along the cut would be cut lengthwise: move off it.
     while (routes.some(({ pts }) => pts.some((p, j) => j > 0 && Math.abs(p.y - y) < 0.5 && Math.abs(pts[j - 1].y - y) < 0.5))) y += 1;
-    const crossing = routes.filter(({ pts }) => pts.some((p, j) => j > 0 && (pts[j - 1].y - y) * (p.y - y) < 0)).length;
-    return { y, crossing };
+    const across = routes.filter(({ pts }) => pts.some((p, j) => j > 0 && (pts[j - 1].y - y) * (p.y - y) < 0));
+    // Room between the columns either side of it: for its routes side by side, and for the widest label among them.
+    const gap = Math.max(WRAP_GAP + across.length * WRAP_LANE, ...across.map(({ e }) => (e.labelBox ? tr(e.labelBox).w + WRAP_LABEL_AIR : 0)));
+    return { y, crossing: across.length, gap };
   });
   const width = (lo: number, hi: number) => {
     let x0 = Infinity, x1 = -Infinity;
@@ -677,8 +701,7 @@ export function wrapDiagram<N, E>(laid: Pick<DiagramLayoutResult<N, E>, 'nodes' 
       w += span.x1 - span.x0;
       h = Math.max(h, bands[(c === k - 1 ? bands.length : cuts[c]) - 1].bottom - bands[c === 0 ? 0 : cuts[c - 1]].top);
     }
-    const lanes = cuts.reduce((sum, i) => sum + cutAt[i - 1].crossing, 0);
-    w += (k - 1) * WRAP_GAP + lanes * WRAP_LANE;
+    w += cuts.reduce((sum, i) => sum + cutAt[i - 1].gap, 0);
     h += 2 * (Math.max(...cuts.map((i) => cutAt[i - 1].crossing)) * WRAP_LANE + WRAP_LANE);
     const zoom = zoomOf(w, h);
     // Only for a real gain, to a size that can be read.
@@ -702,11 +725,24 @@ export function wrapDiagram<N, E>(laid: Pick<DiagramLayoutResult<N, E>, 'nodes' 
     return list.sort((u, v) => v.x - u.x);
   });
   const spans = Array.from({ length: k }, (_, c) => width(c === 0 ? start - 1 : lines[c - 1], c === k - 1 ? end + 1 : lines[c]));
+  // Between two columns, room for the routes that go from one to the next, side by side, and for the widest of their labels
+  // on the run across (each column's head level with the first's: the routes go straight across, not round).
+  const labelAcross = (c: number) => Math.max(0, ...crossings[c].map((x0) => { const l = laid.edges.find((e) => e.id === x0.edge)?.labelBox; return l ? tr(l).w : 0; }));
+  const gapAfter = (c: number) => (c < crossings.length ? Math.max(WRAP_GAP + crossings[c].length * WRAP_LANE, labelAcross(c) + WRAP_LABEL_AIR) : 0);
+  // A column's head is its first card: the label of an edge from the column before, which ELK put above it, goes with
+  // that edge's new route.
+  const crossingLabels = new Set(crossings.flatMap((list) => list.map((c) => c.edge)));
+  const headOfColumn = (c: number) => {
+    const lo = lines[c - 1], hi = c < lines.length ? lines[c] : Infinity;
+    const tops = [...box.values()].filter((r) => r.y + r.h / 2 > lo && r.y + r.h / 2 <= hi).map((r) => r.y)
+      .concat(labelBlocks.filter((l) => !crossingLabels.has(l.edge) && l.r.y + l.r.h / 2 > lo && l.r.y + l.r.h / 2 <= hi).map((l) => l.r.y));
+    return tops.length ? Math.min(...tops) : lo;
+  };
   const offsets: Pt[] = [];
   let x = spans[0].x0;
   for (let c = 0; c < k; c++) {
-    offsets.push({ x: x - spans[c].x0, y: c === 0 ? 0 : start - lines[c - 1] + WRAP_LANE * crossings[c - 1].length + 8 });
-    x += spans[c].x1 - spans[c].x0 + WRAP_GAP + (c < crossings.length ? crossings[c].length * WRAP_LANE : 0);
+    offsets.push({ x: x - spans[c].x0, y: c === 0 ? 0 : start - headOfColumn(c) });
+    x += spans[c].x1 - spans[c].x0 + gapAfter(c);
   }
   const move = (p: Pt, c: number): Pt => ({ x: round(p.x + offsets[c].x), y: round(p.y + offsets[c].y) });
   const moveRect = (r: Rect, c: number): Rect => ({ ...r, ...move(r, c) });
@@ -720,7 +756,7 @@ export function wrapDiagram<N, E>(laid: Pick<DiagramLayoutResult<N, E>, 'nodes' 
   });
   // Edges: each piece of a route in its column, and between columns a way down the foot of one, up the gap and into the
   // head of the next (the other way round for a route going up).
-  const edges = laid.edges.map((e) => {
+  const moved = laid.edges.map((e) => {
     const pts = (e.points ?? []).map(tp);
     if (!pts.length || !blockOf.has(e.from)) return e;
     const out: Pt[] = [];
@@ -750,6 +786,10 @@ export function wrapDiagram<N, E>(laid: Pick<DiagramLayoutResult<N, E>, 'nodes' 
     const labelBox = label ? tr(moveRect(label, columnOfY(label.y + label.h / 2))) : undefined;
     return { ...e, points: simplifyRoute(out.map(tp)), ...(labelBox ? { labelBox } : null) };
   });
+  // An edge from one column to another doesn't keep ELK's way, which went down a layer: it's routed again between where its
+  // ends are now, in a lane of its own, its label on a run of its own (`laneRoutes`), so it goes across, not round.
+  const crossed = new Set(crossings.flatMap((list) => list.map((c) => c.edge)));
+  const edges = rerouteAcross(nodes, moved, crossed, tr, tp);
   // The container grows around its columns.
   let outNodes = nodes;
   if (holder) {
@@ -764,6 +804,72 @@ export function wrapDiagram<N, E>(laid: Pick<DiagramLayoutResult<N, E>, 'nodes' 
   }
   const bounds = diagramBounds(outNodes, edges.map((e) => ({ pts: e.points ?? [] })), edges.flatMap((e) => (e.labelBox ? [e.labelBox] : []))) ?? laid.bounds;
   return { nodes: outNodes, edges, bounds };
+}
+
+/** Room either side of a label on the run between two columns. */
+const WRAP_LABEL_AIR = 40;
+
+/**
+ * Edges that go from one wrapped column to another, routed again from where their ends are now (worked out as if the layers
+ * ran down), each by the cheapest of the ways it could go: out of the source's foot into the target's head (or side) when
+ * the target is lower down; straight across, out of the side of one into the side of the other, where the two are level;
+ * out of the source's side into the target's foot when the target is higher up; side to side. Ports, where an edge has
+ * them, are its ends. Every other route and label stays, and these
+ * keep a lane from them. Nothing changes past `SEARCH_UP_TO` nodes and edges.
+ */
+function rerouteAcross<N, E>(nodes: DiagramNode<N>[], edges: DiagramEdge<E>[], ids: ReadonlySet<string>, tr: (r: Rect) => Rect, tp: (p: Pt) => Pt): DiagramEdge<E>[] {
+  if (!ids.size || nodes.length + edges.length > SEARCH_UP_TO) return edges;
+  const index = indexDiagram(nodes);
+  const lane = edges.filter((e) => ids.has(e.id) && e.from !== e.to && index.byId.has(e.from) && index.byId.has(e.to));
+  if (!lane.length) return edges;
+  const others = edges.filter((e) => !lane.includes(e));
+  const tops = new Map<string, number>();
+  const headOf = (n: DiagramNode<N>) => { let t = tops.get(n.id); if (t === undefined) { t = nodeAnatomy(n, estimateText).top; tops.set(n.id, t); } return t; };
+  const options = {
+    headOf,
+    captionOf: (n: DiagramNode<N>) => nodeAnatomy(n, estimateText).w,
+    around: others.map((e) => e.points ?? []),
+    labels: others.flatMap((e) => (e.labelBox ? [e.labelBox] : [])),
+    labelSize: (e: DiagramEdge<E>) => (e.labelBox ? { w: e.labelBox.w, h: e.labelBox.h } : null),
+  };
+  const ends = new Map<string, { from: ConnectorEnd; to: ConnectorEnd }>();
+  for (const e of lane) {
+    const s = tr(index.byId.get(e.from)!), t = tr(index.byId.get(e.to)!);
+    const end = (p: Pt, n: Pt): ConnectorEnd => ({ p: tp({ x: round(p.x), y: round(p.y) }), n: tp(n) });
+    const right = t.x + t.w / 2 >= s.x + s.w / 2;
+    const level = Math.min(s.y + s.h, t.y + t.h) - Math.max(s.y, t.y);
+    const sideOf = (r: Rect, out: boolean, y: number) => end({ x: (right === out) ? r.x + r.w : r.x, y }, { x: (right === out) ? 1 : -1, y: 0 });
+    const foot = (r: Rect) => end({ x: r.x + r.w / 2, y: r.y + r.h }, { x: 0, y: 1 });
+    const head = (r: Rect) => end({ x: r.x + r.w / 2, y: r.y }, { x: 0, y: -1 });
+    const middle = (r: Rect) => r.y + Math.min(r.h / 2, 24);
+    // The ways it could go: out of the foot into the head when the target's lower down; across, level, where they're
+    // both; out of the side into the foot when it's higher up; out of the foot into the side, and side to side.
+    const ways: { from: ConnectorEnd; to: ConnectorEnd }[] = [];
+    if (t.y >= s.y + s.h + WRAP_LANE * 2) ways.push({ from: foot(s), to: head(t) }, { from: foot(s), to: sideOf(t, false, middle(t)) });
+    if (level >= 24) { const y = Math.max(s.y, t.y) + level / 2; ways.push({ from: sideOf(s, true, y), to: sideOf(t, false, y) }); }
+    if (t.y + t.h + WRAP_LANE * 2 <= s.y + s.h) ways.push({ from: sideOf(s, true, middle(s)), to: foot(t) });
+    ways.push({ from: sideOf(s, true, middle(s)), to: sideOf(t, false, middle(t)) });
+    // The cheapest of them on its own: length, a turn's worth for each turn, and more for a label that found no clear run.
+    let best = ways[0], cost = Infinity;
+    if (ways.length > 1) {
+      for (const way of ways) {
+        const r = laneRoutes(index, [e], options, new Map([[e.id, way]])).get(e.id);
+        if (!r) continue;
+        let c = 0;
+        for (let i = 1; i < r.pts.length; i++) c += Math.abs(r.pts[i].x - r.pts[i - 1].x) + Math.abs(r.pts[i].y - r.pts[i - 1].y);
+        c += 40 * Math.max(0, r.pts.length - 2) + (e.labelBox && !r.clear ? 400 : 0);
+        if (c < cost) { cost = c; best = way; }
+      }
+    }
+    ends.set(e.id, best);
+  }
+  const routed = laneRoutes(index, lane, options, ends);
+  return edges.map((e) => {
+    const r = routed.get(e.id);
+    if (!r) return e;
+    const { labelBox: _was, ...rest } = e;
+    return { ...rest, points: r.pts, ...(r.label ? { labelBox: r.label } : null) };
+  });
 }
 
 interface PackInput<N> {
@@ -869,7 +975,7 @@ function packParts<N, E>(laid: Pick<DiagramLayoutResult<N, E>, 'nodes' | 'edges'
 /* ── Routes between ports, again ── */
 
 /**
- * Edges between ports that items name (a card's rows: an editable system's Connect section), routed again once ELK has placed
+ * Edges between ports that items name (a card's rows: an editable system's handlers), or that sit at a fixed place on a side (its header), routed again once ELK has placed
  * everything: each port on the end of its row that faces where its edges go, each edge in a lane of its own from end to end,
  * those that share a port side by side out of it, and each label on a straight run only its edge uses, which the routes after
  * it keep clear of (`routeInLanes`). ELK can only route a port on a box's side from where it put it, and in a layered layout
@@ -919,7 +1025,7 @@ export function routePortEdges<N, E>(laid: Pick<DiagramLayoutResult<N, E>, 'node
   const ids = new Set(lane.map((e) => e.id));
   const others = laid.edges.filter((e) => !ids.has(e.id));
   // An end that isn't a port leaves the way ELK had it leave.
-  const way = (a: { x: number; y: number }, b: { x: number; y: number }) => (Math.abs(b.x - a.x) >= Math.abs(b.y - a.y) ? { x: Math.sign(b.x - a.x) || 1, y: 0 } : { x: 0, y: Math.sign(b.y - a.y) || 1 });
+  const way = wayOf;
   const ends = new Map<string, { from: ConnectorEnd; to: ConnectorEnd }>(lane.map((e) => {
     const pts = e.points!, n = pts.length;
     const to = { p: pts[n - 1], n: way(pts[n - 1], pts[n - 2]) };
@@ -931,6 +1037,7 @@ export function routePortEdges<N, E>(laid: Pick<DiagramLayoutResult<N, E>, 'node
   }));
   const routed = laneRoutes(index, lane, {
     headOf: (n) => headOf(n).top,
+    captionOf: (n) => nodeAnatomy(n, text).w,
     around: others.map((e) => e.points ?? []),
     labels: others.flatMap((e) => (e.labelBox ? [e.labelBox] : [])),
     labelSize: (e) => edgeLabelSize(e, text),
@@ -947,8 +1054,106 @@ export function routePortEdges<N, E>(laid: Pick<DiagramLayoutResult<N, E>, 'node
   return { nodes, edges, bounds };
 }
 
+/** At most this many edges a box's head turned away are routed again with their labels; past that, a label goes on the way round. */
+const REROUTE_AT_MOST = 4;
+/** Up to this many nodes and edges, the routes a layout's own passes re-make are searched for (the lane router's cost grows fast with both). */
+const SEARCH_UP_TO = 120;
+
 /** Up to this many nodes and edges, `routePortEdges` routes again. */
 const ROUTE_AGAIN_UP_TO = 300;
+
+/** Which way a route goes from `a` to `b`, the nearer of the four. */
+const wayOf = (a: Pt, b: Pt): Pt => (Math.abs(b.x - a.x) >= Math.abs(b.y - a.y) ? { x: Math.sign(b.x - a.x) || 1, y: 0 } : { x: 0, y: Math.sign(b.y - a.y) || 1 });
+
+/**
+ * Edges that share another's label (`forkOf`: a transition to several targets) drawn from that label: along the route of the
+ * one they fork from, out of the label the way it goes, as far as the turn from where a square way to their own target is
+ * shortest and clear of every card, box head and label, and on from there. So the one label has one line out of it, which
+ * splits. Where no such way is clear, a fork gets a lane of its own from the label (`laneRoutes`). The rest stays as it is.
+ * Nothing changes past `ROUTE_AGAIN_UP_TO` nodes and edges, or for a fork whose label has no place.
+ */
+export function routeForks<N, E>(laid: Pick<DiagramLayoutResult<N, E>, 'nodes' | 'edges' | 'bounds'>, text: TextMeasurer = estimateText): Pick<DiagramLayoutResult<N, E>, 'nodes' | 'edges' | 'bounds'> {
+  const forks = laid.edges.filter((e) => e.forkOf && e.from !== e.to && (e.points?.length ?? 0) >= 2);
+  if (!forks.length || laid.nodes.length + laid.edges.length > ROUTE_AGAIN_UP_TO) return laid;
+  const byId = new Map(laid.edges.map((e) => [e.id, e]));
+  const index = indexDiagram(laid.nodes);
+  const tops = new Map<string, number>();
+  const headOf = (n: DiagramNode<N>) => { let t = tops.get(n.id); if (t === undefined) { t = nodeAnatomy(n, text).top; tops.set(n.id, t); } return t; };
+  // What a way out of the trunk mustn't go through: every card, each box's head (a region's caption), every label.
+  const blocks: { id: string; r: Rect }[] = [];
+  for (const n of laid.nodes) {
+    if (n.kind === 'marker' || n.kind === 'root') continue;
+    if (!holdsNodes(n)) blocks.push({ id: n.id, r: n });
+    else if (n.kind === 'region') { if (n.title) blocks.push({ id: n.id, r: { x: n.x, y: n.y, w: Math.min(n.w, nodeAnatomy(n, text).w), h: Math.min(n.h, headOf(n)) } }); }
+    else blocks.push({ id: n.id, r: { x: n.x, y: n.y, w: n.w, h: Math.min(n.h, headOf(n)) } });
+  }
+  for (const e of laid.edges) if (e.labelBox) blocks.push({ id: `\0label:${e.id}`, r: e.labelBox });
+  const clear = (a: Pt, b: Pt, to: string) => blocks.every(({ id, r }) => id === to || !runCrosses(a, b, { x: r.x - 4, y: r.y - 4, w: r.w + 8, h: r.h + 8 }));
+  const out = new Map<string, Pt[]>();
+  const fallback = new Map<string, { from: ConnectorEnd; to: ConnectorEnd }>();
+  for (const f of forks) {
+    const o = byId.get(f.forkOf!), l = o?.labelBox, op = o?.points;
+    if (!l || !op || op.length < 2) continue;
+    // The run of its route the label's on, and which way that goes.
+    let at = -1, dir: Pt | null = null;
+    for (let i = 1; i < op.length && at < 0; i++) {
+      const a = op[i - 1], b = op[i];
+      const hits = Math.max(a.x, b.x) >= l.x && Math.min(a.x, b.x) <= l.x + l.w && Math.max(a.y, b.y) >= l.y && Math.min(a.y, b.y) <= l.y + l.h;
+      if (hits && (Math.abs(a.x - b.x) > 0.5 || Math.abs(a.y - b.y) > 0.5)) { at = i; dir = wayOf(a, b); }
+    }
+    if (!dir) continue;
+    const exit = dir.x ? { x: dir.x > 0 ? l.x + l.w : l.x, y: op[at].y } : { x: op[at].x, y: dir.y > 0 ? l.y + l.h : l.y };
+    const fp = f.points!, end = fp[fp.length - 1], into = wayOf(fp[fp.length - 2], end);
+    // The trunk: from the label on, the other's route but its last stretch, into its own target.
+    const trunk = [exit, ...op.slice(at, -1)];
+    let best: { pts: Pt[]; len: number } | null = null;
+    let along = 0;
+    for (let k = 0; k < trunk.length; k++) {
+      if (k) along += Math.abs(trunk[k].x - trunk[k - 1].x) + Math.abs(trunk[k].y - trunk[k - 1].y);
+      const v = trunk[k];
+      // Square from there into its end, arriving the way its end faces: across, then along it, or the other way round.
+      const corner = into.y ? { x: end.x, y: v.y } : { x: v.x, y: end.y };
+      if ((into.y && Math.sign(end.y - v.y) !== into.y) || (into.x && Math.sign(end.x - v.x) !== into.x)) continue;
+      if (!clear(v, corner, f.to) || !clear(corner, end, f.to)) continue;
+      const len = along + Math.abs(corner.x - v.x) + Math.abs(corner.y - v.y) + Math.abs(end.x - corner.x) + Math.abs(end.y - corner.y);
+      if (!best || len < best.len) best = { pts: simplifyRoute([...trunk.slice(0, k + 1), corner, end]), len };
+    }
+    if (best) out.set(f.id, best.pts);
+    else fallback.set(f.id, { from: { p: exit, n: dir }, to: { p: end, n: { x: -into.x, y: -into.y } } });
+  }
+  if (fallback.size && laid.nodes.length + laid.edges.length <= SEARCH_UP_TO) {
+    const others = laid.edges.filter((e) => !fallback.has(e.id) && !out.has(e.id));
+    const routed = laneRoutes(index, forks.filter((f) => fallback.has(f.id)), {
+      headOf,
+      captionOf: (n) => nodeAnatomy(n, text).w,
+      around: [...others.map((e) => e.points ?? []), ...out.values()],
+      labels: others.flatMap((e) => (e.labelBox ? [e.labelBox] : [])),
+    }, fallback);
+    for (const [id, r] of routed) out.set(id, r.pts);
+  }
+  if (!out.size) return laid;
+  const edges = laid.edges.map((e) => {
+    const pts = out.get(e.id);
+    if (!pts) return e;
+    const { labelBox: _none, ...rest } = e;
+    return { ...rest, points: pts };
+  });
+  const bounds = diagramBounds(laid.nodes, edges.map((e) => ({ pts: e.points ?? [] })), edges.flatMap((e) => (e.labelBox ? [e.labelBox] : []))) ?? laid.bounds;
+  return { nodes: laid.nodes, edges, bounds };
+}
+
+/** A label moved onto a route, if it's no longer on it: centered on the longest straight run. */
+function seatLabel(pts: readonly Pt[], label: Rect): Rect {
+  const mid = { x: label.x + label.w / 2, y: label.y + label.h / 2 };
+  if (pts.some((p, i) => i > 0 && onRun(pts[i - 1], p, mid))) return label;
+  let best = 1, len = -1;
+  for (let i = 1; i < pts.length; i++) {
+    const l = Math.abs(pts[i].x - pts[i - 1].x) + Math.abs(pts[i].y - pts[i - 1].y);
+    if (l > len) { len = l; best = i; }
+  }
+  const a = pts[best - 1], b = pts[best];
+  return { ...label, x: round((a.x + b.x) / 2 - label.w / 2), y: round((a.y + b.y) / 2 - label.h / 2) };
+}
 
 /** Whether a level or upright run goes through a card. */
 const runCrosses = (a: Pt, b: Pt, r: Rect) => Math.max(a.x, b.x) > r.x + 0.5 && Math.min(a.x, b.x) < r.x + r.w - 0.5 && Math.max(a.y, b.y) > r.y + 0.5 && Math.min(a.y, b.y) < r.y + r.h - 0.5;
@@ -1092,6 +1297,6 @@ export async function runLayout<N, E>(draft: DiagramDraft<N, E>, options: Diagra
   const ms = (typeof performance !== 'undefined' ? performance.now() : Date.now()) - start;
   const laid = fromElkGraph(draft, out);
   const wrapped = options.board ? wrapDiagram(laid, options.board, options.direction) : laid;
-  return { ...(routePorts ? routePortEdges(wrapped, options.text) : wrapped), engine: where, ms };
+  return { ...(routePorts ? routeForks(routePortEdges(wrapped, options.text), options.text) : wrapped), engine: where, ms };
 }
 

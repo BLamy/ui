@@ -34,11 +34,13 @@ describe('CloudflareDiagram, on a server', () => {
     expect(html).not.toContain('data-section="connect"');
   });
 
-  it('editable, each card has its ports, on the rows of its Connect section', () => {
+  it('editable, each card is its read-only card, with its ports as dots on its header and its handler rows', () => {
     const html = renderToString(<CloudflareDiagram services={placed} edges={edges} editable />);
-    expect(html).toContain('data-owner="w" data-section="connect" data-item="env"');
-    expect(html).toContain('data-owner="r" data-section="connect" data-item="binding:r2_buckets"');
+    const sections = (h: string) => [...h.matchAll(/data-slot="diagram-section" data-section="([^"]+)"/g)].map((m) => m[1]);
+    expect(sections(html)).toEqual(sections(renderToString(<CloudflareDiagram services={placed} edges={edges} />)));
+    expect(html).not.toContain('data-section="connect"');
     expect(html).toMatch(/data-slot="diagram-port" data-port-of="w" data-port="env"/);
+    expect(html).toMatch(/data-slot="diagram-port" data-port-of="r" data-port="binding:r2_buckets"/);
   });
 
   it('says which have a machine, and draws what’s wrong as wrong', () => {

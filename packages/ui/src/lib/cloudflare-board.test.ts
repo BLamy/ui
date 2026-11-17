@@ -3,6 +3,8 @@ import { CLOUDFLARE_SYSTEM_NODE, cloudflareBoardData as cloudflareBoard, cloudfl
 import type { CloudflareSystem } from './cloudflare-system';
 import { readWorkerdConfig } from './cloudflare-workerd';
 import { intersects } from './canvas-math';
+import { nodeAnatomy } from './diagram-model';
+import { estimateText } from './diagram-text';
 
 const ORDERS = `using Workerd = import "/workerd/workerd.capnp";
 const config :Workerd.Config = (
@@ -76,17 +78,26 @@ describe('a service, drawn', () => {
     expect(db.w).toBeGreaterThan(60);
   });
 
-  it('has ports only when it can be edited, each on a row of its “Connect” section, in on the left and out on the right', () => {
+  it('has ports only when it can be edited: a handler’s on its row, the rest at either end of the header, and nothing else changes', () => {
     expect(node(UPLOAD, 'consumer').ports).toBeUndefined();
     expect(cloudflareBoard(UPLOAD).edges.every((e) => !e.fromPort && !e.toPort)).toBe(true);
-    const editing = node(UPLOAD, 'consumer', true);
-    const connect = editing.sections!.find((s) => s.id === 'connect')!;
-    expect(connect.items.find((i) => i.title === 'env')).toMatchObject({ port: 'env', description: 'out' });
+    const reading = node(UPLOAD, 'consumer'), editing = node(UPLOAD, 'consumer', true);
+    // The same card: the same sections, the same size.
+    expect(editing.sections?.map((s) => s.id)).toEqual(reading.sections?.map((s) => s.id));
+    expect([editing.w, editing.h]).toEqual([reading.w, reading.h]);
+    expect(editing.sections!.find((s) => s.id === 'handlers')!.items.find((i) => i.title === 'queue')).toMatchObject({ port: 'on:queue' });
+    const header = nodeAnatomy(editing, estimateText).header / 2;
     for (const p of editing.ports!) {
-      expect(p.at, p.id).toBeGreaterThan(0);
-      expect(p.at, p.id).toBeLessThan(1);
+      if (p.id === 'on:queue') continue;
+      expect(p.offset, p.id).toBe(Math.round(header));
+      expect(p.side, p.id).toBe(p.direction === 'in' ? 'left' : 'right');
     }
-    expect(cloudflareBoard(UPLOAD, { editable: true }).edges.find((e) => e.id === 'consumer-db')).toMatchObject({ fromPort: 'env', toPort: 'binding:d1_databases' });
+    const board = cloudflareBoard(UPLOAD, { editable: true });
+    expect(board.edges.find((e) => e.id === 'consumer-db')).toMatchObject({ fromPort: 'env', toPort: 'binding:d1_databases' });
+    // A Worker's own binding to its class starts under its sections, as read-only, not out of its header and back in.
+    const own = cloudflareBoard({ ...UPLOAD, edges: [...UPLOAD.edges, { id: 'api-room', from: 'api', to: 'room', via: 'durable_objects', binding: 'ROOM' }] }, { editable: true });
+    expect(own.edges.find((e) => e.id === 'api-room')?.fromPort).toBeUndefined();
+    expect(own.edges.find((e) => e.id === 'consumer-room')?.fromPort).toBe('env');
   });
 
   it('a kind the catalog doesn’t know says so, and one with an error is drawn as wrong', () => {

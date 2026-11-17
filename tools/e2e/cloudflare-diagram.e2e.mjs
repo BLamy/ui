@@ -769,8 +769,11 @@ test.describe('a system', () => {
     await page.locator('[data-demo-json]').fill(JSON.stringify({ services: [{ id: 'far', kind: 'r2', at: { x: 1e308, y: -1e308 } }, { id: 'near', kind: 'r2', at: { x: 0, y: 0 } }], edges: [] }));
     await page.locator('[data-demo-load]').click();
     await expect(page.locator('[data-demo-load-issues] li')).toContainText(['far: `at`']);
+    // Drawn at a size that can be read, not shrunk to a speck to fit the far one in: its name at 11 px or more.
     const box = await service(page, 'near').boundingBox();
-    expect(box.width).toBeGreaterThan(100);
+    expect(box.width).toBeGreaterThan(50);
+    const title = await service(page, 'near').locator('[data-slot=diagram-node-title]').boundingBox();
+    expect(title.height).toBeGreaterThanOrEqual(11);
   });
 
   test('two systems sharing a service are each their own', async ({ page }) => {
@@ -807,6 +810,51 @@ test.describe('a system', () => {
     await side('Site').locator('[data-action=undo]').click();
     await expect(side('Site')).toHaveAttribute('data-demo-services', 'site room');
     await expect(side('Site')).toHaveAttribute('data-demo-problems', '');
+  });
+});
+
+test.describe('the upload system, wrapped into columns', () => {
+  /** Each connection's route in board units: its length, and how far apart its ends are, across plus down. */
+  const routes = (page) => page.locator('[data-slot=diagram-edge]').evaluateAll((els) => els.map((el) => {
+    const n = el.getTotalLength(), a = el.getPointAtLength(0), b = el.getPointAtLength(n);
+    return { id: el.getAttribute('data-edge'), length: n, apart: Math.abs(b.x - a.x) + Math.abs(b.y - a.y) };
+  }));
+  for (const [width, height] of [[1280, 800], [800, 1000]]) {
+    test(`at ${width} × ${height}, no connection goes round the drawing: each is no longer than half again the distance between its ends, and a bit`, async ({ page }) => {
+      await page.setViewportSize({ width, height });
+      await page.goto('/?demo=cloudflare-diagram/upload&theme=light', { waitUntil: 'load' });
+      await cards(page).first().waitFor({ timeout: 30_000 });
+      await settle(page);
+      const all = await routes(page);
+      expect(all.length).toBe(6);
+      for (const r of all) expect(r.length, `${r.id}: ${Math.round(r.length)} long, ends ${Math.round(r.apart)} apart`).toBeLessThanOrEqual(1.5 * r.apart + 200);
+    });
+  }
+
+  test('pressing a service opens the panel and keeps it where it was, wholly on the board, without laying out again', async ({ page }) => {
+    await page.setViewportSize({ width: 800, height: 1000 });
+    await page.goto('/?demo=cloudflare-diagram/upload&theme=light', { waitUntil: 'load' });
+    await cards(page).first().waitFor({ timeout: 30_000 });
+    await settle(page);
+    const before = await service(page, 'consumer').boundingBox();
+    const title = await nameOf(page, 'consumer').boundingBox();
+    await page.mouse.click(title.x + title.width / 2, title.y + title.height / 2);
+    await expect(panel(page)).toBeVisible();
+    await settle(page);
+    const board = await page.locator('[data-slot=canvas]').first().boundingBox();
+    const after = await service(page, 'consumer').boundingBox();
+    // The same place in the drawing (the same size, the same height: only panned), and all of it inside the board.
+    expect(Math.abs(after.width - before.width)).toBeLessThan(1);
+    expect(Math.abs(after.y - before.y)).toBeLessThan(1);
+    expect(after.x).toBeGreaterThanOrEqual(board.x);
+    expect(after.x + after.width).toBeLessThanOrEqual(board.x + board.width);
+    expect(after.y + after.height).toBeLessThanOrEqual(board.y + board.height);
+    // A connection's label too.
+    await pressLabel(page, 'consumer-db');
+    await settle(page);
+    const label = await page.locator('[data-slot=diagram-edge-label][data-edge="consumer-db"]').boundingBox();
+    const board2 = await page.locator('[data-slot=canvas]').first().boundingBox();
+    expect(label.x >= board2.x && label.x + label.width <= board2.x + board2.width && label.y >= board2.y && label.y + label.height <= board2.y + board2.height).toBe(true);
   });
 });
 

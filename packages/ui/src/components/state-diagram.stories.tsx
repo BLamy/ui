@@ -255,6 +255,32 @@ export const TransitionFormsDark: Story = {
   render: () => <Page appearance="dark"><StateDiagram config={TRANSITION_FORMS} aria-label="Each form of transition" /></Page>,
 };
 
+/** A transition to several targets at once (one in each region of a parallel state): one label, and the line out of it
+ *  splits to each, entering the parallel state through its side, under its header. */
+const SEVERAL_TARGETS = {
+  id: 'player',
+  initial: 'stopped',
+  states: {
+    stopped: { on: { PLAY: { target: ['#player.playing.audio.on', '#player.playing.video.on'], actions: 'startClock' } } },
+    playing: {
+      type: 'parallel',
+      on: { STOP: 'stopped' },
+      states: {
+        audio: { initial: 'off', states: { off: { on: { UNMUTE: 'on' } }, on: { on: { MUTE: 'off' } } } },
+        video: { initial: 'off', states: { off: { on: { SHOW: 'on' } }, on: { on: { HIDE: 'off' } } } },
+      },
+    },
+  },
+};
+
+export const SeveralTargets: Story = {
+  render: () => <Page><StateDiagram config={SEVERAL_TARGETS} aria-label="A transition to several targets" /></Page>,
+};
+
+export const SeveralTargetsDark: Story = {
+  render: () => <Page appearance="dark"><StateDiagram config={SEVERAL_TARGETS} aria-label="A transition to several targets" /></Page>,
+};
+
 /** A parallel machine: its regions side by side in a dashed container, each with its own start. */
 const PARALLEL = {
   id: 'editor',

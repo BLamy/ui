@@ -1,10 +1,9 @@
 'use client';
-import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties, type RefObject } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties } from 'react';
 import type { ChangeDetails } from '@ui-sdk/core';
 import { Button } from '@/components/ui/button';
-import { useCanvas } from '@/components/ui/canvas';
 import { Diagram, DiagramToolbar, type DiagramData, type DiagramDataChangeDetails, type DiagramItem, type DiagramProps, type DiagramSelectionChangeDetails, type DiagramSelectionChangeReason } from '@/components/ui/diagram';
-import { DiagramFrame, DiagramFrameBar, DiagramFrameBoard, DiagramFramePanel, DiagramFrameSection, useDiagramFrame, type DiagramFrameProps } from '@/components/ui/diagram-frame';
+import { DiagramFrame, DiagramFrameBar, DiagramFrameBoard, DiagramFramePanel, DiagramFrameSection, type DiagramFrameProps } from '@/components/ui/diagram-frame';
 import { Field, FieldError, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
@@ -14,7 +13,6 @@ import { changeDetails } from '@/lib/change-details';
 import { useControllableChange } from '@/lib/controllable-state';
 import { useDiagramHistory } from '@/lib/diagram-history';
 import type { DiagramDirection, DiagramLayoutDensity, DiagramLayoutResult } from '@/lib/diagram-layout';
-import type { Rect } from '@/lib/canvas-math';
 import { useDiagramLayout } from '@/lib/diagram-layout/react';
 import { NOTHING_SELECTED, type DiagramConnection, type DiagramEdge, type DiagramNode, type DiagramSelection } from '@/lib/diagram-model';
 import { Icon } from '@/lib/icon';
@@ -217,94 +215,6 @@ function describeState(node: DiagramNode<StateNodeData>, byId: ReadonlyMap<strin
   const coming = into.filter((e) => e.from !== node.id).map((e) => `${transitionNotation(e.data)} from ${nameOf(e.from)}`);
   const list = (items: string[], what: string) => (items.length ? ` ${items.length} ${what}: ${items.join(', ')}.` : '');
   return `${node.title ?? node.id}, ${kind}${where}.${does}${starts}${list(going, 'going out')}${list(coming, 'coming in')}`;
-}
-
-/** How long a drawer takes to slide in, and a frame more. */
-const DRAWER_SETTLES = 360;
-
-/** While the panel is a drawer over the board, what's current comes out from under it, into the part of the board it leaves. */
-function RevealCurrent({ nodes, ids, board }: { nodes: readonly DiagramNode<StateNodeData>[]; ids: readonly string[]; board: RefObject<HTMLDivElement | null> }) {
-  const { viewport, setViewport } = useCanvas();
-  const { open, presentation } = useDiagramFrame();
-  const key = open && presentation === 'drawer' && ids.length ? ids.join('\0') : null;
-  const now = useRef({ viewport, nodes, ids });
-  now.current = { viewport, nodes, ids };
-  useEffect(() => {
-    if (!key) return undefined;
-    // Once the drawer's in place: it slides in, and where it's going is what counts.
-    const reveal = () => {
-      const host = board.current;
-      const drawer = host?.closest('[data-slot=diagram-frame]')?.querySelector('[data-slot=diagram-frame-panel-body]');
-      if (!host || !drawer) return;
-      const b = host.getBoundingClientRect(), d = drawer.getBoundingClientRect();
-      // The board that's left: beside the drawer, on whichever side it isn't.
-      const atEnd = d.left - b.left > b.right - d.right;
-      const room = atEnd ? { from: 0, to: d.left - b.left } : { from: d.right - b.left, to: b.width };
-      const { viewport: v, nodes: all, ids: want } = now.current;
-      const shown = all.filter((n) => want.includes(n.id));
-      if (!shown.length) return;
-      const x0 = Math.min(...shown.map((n) => n.x)), x1 = Math.max(...shown.map((n) => n.x + n.w));
-      const left = x0 * v.zoom + v.x, right = x1 * v.zoom + v.x, margin = 24;
-      if (left >= room.from + margin && right <= room.to - margin) return;
-      const x = right - left + margin * 2 > room.to - room.from ? room.from + margin - x0 * v.zoom : room.to - margin - x1 * v.zoom;
-      setViewport({ ...v, x }, { reason: 'imperative' });
-    };
-    const settled = setTimeout(reveal, DRAWER_SETTLES);
-    return () => clearTimeout(settled);
-  }, [key, board, setViewport]);
-  return null;
-}
-
-/** What's selected comes into view, in the part of the board nothing covers (the toolbar, the bar, a drawer), when it's
- *  selected from outside the board (the panel, `selection`, `defaultSelection`): something selected on the board is in
- *  view already, and stays where it is. */
-function RevealSelected({ nodes, edges, selection, board }: { nodes: readonly DiagramNode<StateNodeData>[]; edges: readonly DiagramEdge<StateEdgeData>[]; selection: DiagramSelection; board: RefObject<HTMLDivElement | null> }) {
-  const { viewport, setViewport } = useCanvas();
-  const key = [...selection.nodes, '', ...selection.edges].join('\0');
-  const now = useRef({ viewport, nodes, edges, selection });
-  now.current = { viewport, nodes, edges, selection };
-  // What was last brought into view (or was in view already), so that a new layout doesn't move the view again.
-  const done = useRef<string | null>(null);
-  const placed = nodes.length > 0;
-  useEffect(() => {
-    if (!placed || done.current === key) return undefined;
-    done.current = key;
-    if (key === '\0') return undefined;
-    // At once, unless a drawer's sliding in: then once it's where it's going.
-    const drawerOpen = !!board.current?.closest('[data-slot=diagram-frame][data-presentation=drawer][data-open]');
-    const settled = setTimeout(() => {
-      const host = board.current;
-      const { viewport: v, nodes: all, edges: lines, selection: sel } = now.current;
-      if (!host) return;
-      const rects: Rect[] = [
-        ...all.filter((n) => sel.nodes.includes(n.id)),
-        ...lines.filter((e) => sel.edges.includes(e.id)).flatMap((e) => (e.labelBox ? [e.labelBox] : [])),
-      ];
-      if (!rects.length) return;
-      const x0 = Math.min(...rects.map((r) => r.x)), y0 = Math.min(...rects.map((r) => r.y));
-      const x1 = Math.max(...rects.map((r) => r.x + r.w)), y1 = Math.max(...rects.map((r) => r.y + r.h));
-      // The part of the board nothing covers.
-      const b = host.getBoundingClientRect();
-      const free = { left: 24, top: 24, right: b.width - 24, bottom: b.height - 24 };
-      const tools = host.querySelector('[data-slot=diagram-overlay] [data-slot=toolbar]')?.getBoundingClientRect();
-      if (tools) free.top = Math.max(free.top, tools.bottom - b.top + 12);
-      const bar = host.querySelector('[data-slot=diagram-frame-bar]')?.getBoundingClientRect();
-      if (bar) free.bottom = Math.min(free.bottom, bar.top - b.top - 12);
-      const drawer = host.closest('[data-slot=diagram-frame][data-presentation=drawer][data-open]')?.querySelector('[data-slot=diagram-frame-panel-body]')?.getBoundingClientRect();
-      if (drawer && drawer.width) {
-        if (drawer.left - b.left > b.right - drawer.right) free.right = Math.min(free.right, drawer.left - b.left - 24);
-        else free.left = Math.max(free.left, drawer.right - b.left + 24);
-      }
-      const left = x0 * v.zoom + v.x, right = x1 * v.zoom + v.x, top = y0 * v.zoom + v.y, bottom = y1 * v.zoom + v.y;
-      if (left >= free.left && right <= free.right && top >= free.top && bottom <= free.bottom) return;
-      // In the middle of what's free, or from its top-start corner when it's bigger than that.
-      const x = right - left > free.right - free.left ? free.left - x0 * v.zoom : (free.left + free.right) / 2 - ((x0 + x1) / 2) * v.zoom;
-      const y = bottom - top > free.bottom - free.top ? free.top - y0 * v.zoom : (free.top + free.bottom) / 2 - ((y0 + y1) / 2) * v.zoom;
-      setViewport({ ...v, x, y }, { reason: 'imperative' });
-    }, drawerOpen ? DRAWER_SETTLES : 0);
-    return () => clearTimeout(settled);
-  }, [key, placed, board, setViewport]);
-  return null;
 }
 
 /* ── The panel ── */
@@ -822,8 +732,6 @@ export function StateDiagram({
   const simState = useSyncExternalStore(sim ? sim.subscribe : noSubscribe, () => sim?.get() ?? null, () => null);
   const rootId = machine?.root.id;
   const where = useMemo(() => ({ nodes: active.filter((id) => id !== rootId), edges: [...taken] }), [active, taken, rootId]);
-  // The states it's in that hold none it's in: what to bring out from under a drawer.
-  const leaves = useMemo(() => where.nodes.filter((id) => !draft.nodes.some((n) => n.parent === id && where.nodes.includes(n.id))), [where, draft]);
   // What it can take now, which a press on the board sends.
   // The same set while it says the same, so time going by doesn't redraw the board.
   const enabledIds = [...enabledEdges(laid.edges, simState)].join('\0');
@@ -956,8 +864,6 @@ export function StateDiagram({
           minimap={minimap}
           {...diagram}
         >
-          <RevealCurrent nodes={laid.nodes} ids={leaves} board={board} />
-          <RevealSelected nodes={laid.nodes} edges={laid.edges} selection={selection} board={board} />
         </Diagram>
         {panel ? <DiagramFrameBar>{status}</DiagramFrameBar> : null}
       </DiagramFrameBoard>

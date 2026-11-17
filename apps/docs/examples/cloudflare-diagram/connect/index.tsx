@@ -7,11 +7,12 @@ const SERVICES: CloudflareService[] = [
   { id: 'r2', kind: 'r2', at: { x: 420, y: 20 } },
   { id: 'd1', kind: 'd1', at: { x: 420, y: 160 } },
   { id: 'queue', kind: 'queues', at: { x: 420, y: 280 } },
-  { id: 'consumer', kind: 'workers', label: 'Consumer', at: { x: 40, y: 360 } },
+  { id: 'consumer', kind: 'workers', label: 'Consumer', handlers: ['fetch', 'queue'], at: { x: 40, y: 360 } },
   { id: 'dlp', kind: 'dlp', at: { x: 420, y: 450 } },
 ]
 
-// Drag from `env` to something a Worker can bind to, and it offers what that can do. What can't connect says why not.
+// Drag from the dot at the end of a card's header to another card, and the catalog picks how they connect, then offers what
+// that can do; a handler's own dot is on its row. What can't connect says why not.
 export default function Connect() {
   const [services, setServices] = useState<readonly CloudflareService[]>(SERVICES)
   const [edges, setEdges] = useState<readonly CloudflareEdge[]>([])

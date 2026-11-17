@@ -1281,6 +1281,24 @@ test.describe('StateDiagram', () => {
 });
 
 test.describe('StateDiagram simulates', () => {
+  test('with the panel beside the board, what it’s in stays on the board, as the panel opens and as it moves', async ({ page }) => {
+    await page.setViewportSize({ width: 800, height: 1000 });
+    await page.goto('/?demo=state-diagram/audio-player&theme=dark', { waitUntil: 'load' });
+    await expect.poll(() => page.locator('[data-slot=diagram-node]').count(), { timeout: 30_000 }).toBeGreaterThan(5);
+    await page.locator('[data-diagram-frame-trigger]').first().click();
+    await expect(page.locator('[data-slot=simulation-panel]')).toBeVisible();
+    const inBoard = async (selector) => {
+      await page.waitForTimeout(400);
+      const board = await page.locator('[data-slot=canvas]').first().boundingBox(), r = await page.locator(selector).first().boundingBox();
+      return r.x >= board.x - 0.5 && r.x + r.width <= board.x + board.width + 0.5 && r.y >= board.y - 0.5 && r.y + r.height <= board.y + board.height + 0.5;
+    };
+    expect(await inBoard('[data-slot=diagram-node][data-node="Audio Player.Init"]')).toBe(true);
+    await page.locator('[data-slot=simulation-panel] button', { hasText: 'init-error' }).first().click();
+    await expect(page.locator('[data-slot=diagram-node][data-node="Audio Player.Error"]')).toHaveAttribute('aria-current', 'true');
+    expect(await inBoard('[data-slot=diagram-node][data-node="Audio Player.Error"]')).toBe(true);
+    expect(await inBoard('[data-slot=diagram-edge-label][data-edge="Audio Player.Init:init-error->Audio Player.Error"]')).toBe(true);
+  });
+
   const lit = (page) => page.locator('[data-slot=diagram-current]').evaluateAll((els) => els.map((el) => el.getAttribute('data-current-of')).sort());
   const offered = (page) => page.locator('[data-action=send]').evaluateAll((els) => els.map((el) => el.getAttribute('data-event')).sort());
   const event = (page, name) => page.locator(`[data-action=send][data-event="${name}"]`);

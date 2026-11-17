@@ -48,10 +48,10 @@ const KINDS: DiagramNode[] = [
   { id: 'compound', kind: 'group', parent: 'root', title: 'A group', x: 40, y: 140, w: 320, h: 240 },
   { id: 'inner', kind: 'node', parent: 'compound', title: 'Inside', x: 90, y: 200, w: 110, h: 36 },
   { id: 'parallel', kind: 'group', variant: 'dashed', parent: 'root', title: 'A dashed group', description: 'of regions', x: 400, y: 140, w: 460, h: 240 },
-  { id: 'r1', kind: 'region', parent: 'parallel', title: 'A region', x: 412, y: 170, w: 436, h: 90 },
-  { id: 'r2', kind: 'region', parent: 'parallel', title: 'Another', x: 412, y: 276, w: 436, h: 90 },
-  { id: 'r1a', kind: 'node', parent: 'r1', title: 'One', x: 560, y: 195, w: 100, h: 36 },
-  { id: 'r2a', kind: 'node', parent: 'r2', title: 'Two', x: 560, y: 300, w: 100, h: 36 },
+  { id: 'r1', kind: 'region', parent: 'parallel', title: 'A region', x: 412, y: 204, w: 436, h: 80 },
+  { id: 'r2', kind: 'region', parent: 'parallel', title: 'Another', x: 412, y: 292, w: 436, h: 80 },
+  { id: 'r1a', kind: 'node', parent: 'r1', title: 'One', x: 560, y: 228, w: 100, h: 36 },
+  { id: 'r2a', kind: 'node', parent: 'r2', title: 'Two', x: 560, y: 316, w: 100, h: 36 },
 ];
 
 /** Every kind of node (`node`, `group`, `region`, `root`, `marker`) and border (`default`, `dashed`, `double`). */
@@ -82,9 +82,9 @@ const EDGE_NODES: DiagramNode[] = [
   { id: 'el2', title: 'target', x: 800, y: 190, w: 110, h: 36 },
   { id: 'cu', title: 'curve', x: 520, y: 200, w: 110, h: 36 },
   { id: 'cu2', title: 'target', x: 800, y: 290, w: 110, h: 36 },
-  { id: 'loop', title: 'self-loops', x: 540, y: 340, w: 130, h: 36 },
-  { id: 'p', title: 'parallel', x: 730, y: 370, w: 110, h: 90 },
-  { id: 'p2', title: 'edges', x: 950, y: 370, w: 110, h: 90 },
+  { id: 'loop', title: 'self-loops', x: 600, y: 470, w: 130, h: 36 },
+  { id: 'p', title: 'parallel', x: 560, y: 340, w: 110, h: 90 },
+  { id: 'p2', title: 'edges', x: 850, y: 340, w: 110, h: 90 },
   { id: 'box', kind: 'group', title: 'to and from its own child', x: 0, y: 420, w: 420, h: 120 },
   { id: 'kid', parent: 'box', title: 'child', x: 120, y: 470, w: 110, h: 36 },
 ];

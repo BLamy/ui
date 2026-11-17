@@ -93,7 +93,7 @@ Every part of an XState v5 machine has a drawn form. The machine runs top to bot
 | `*` | An edge labelled `*` |
 | `reenter: true` | A quiet `reenters` line under its chips; to itself, a loop |
 | A transition with no target | A loop on its state with a quiet `no target` line under its chips: it stays and only runs its actions |
-| Several targets | An edge to each, each with a quiet `2 targets` line under its chips |
+| Several targets | One label (with a quiet `2 targets` line under its chips) that forks: the line runs from the state into the label and out of it, and splits to each target; the edges past the first share its label (Diagram's `forkOf`) |
 | `on` at the machine's root | Edges from the machine's container: each starts at a dot on the line under its Context, where its sections end |
 
 {% demo src="state-diagram/anatomy" %}
@@ -169,7 +169,7 @@ With `simulate`, a copy of the machine runs in the page, with stand-ins for ever
 
 {% demo src="state-diagram/simulate-awkward" %}
 
-It opens readable from its top-start corner, where the machine's name and Context are, in the part of the board the panel and the bar leave, and follows the panel opening and closing until the view's moved. A state or a transition selected from outside the board (the panel's Add state, `selection`, `defaultSelection`) is brought into view, clear of the toolbar, the bar and a drawer; one selected on the board is in view already, and stays where it is. In the panel, a context key's field is over its value's, each as wide as the panel, so a key reads whole.
+It opens readable from its top-start corner, where the machine's name and Context are, in the part of the board the panel and the bar leave. What has the eye stays in that part of the board: what's selected, or while simulating the state(s) it's in and the transition it just took (whichever changed last). When the panel opens or closes beside or over the board, when the machine moves, or when something's selected from outside the board (the panel's Add state, `selection`, `defaultSelection`), the view pans by the least that brings it wholly into view; it never refits, and something already in view doesn't move. In the panel, a context key's field is over its value's, each as wide as the panel, so a key reads whole. In the panel, a context key's field is over its value's, each as wide as the panel, so a key reads whole.
 
 The panel is a [DiagramFrame](#/diagram-frame)'s: a column beside the board from 720 px wide, a drawer over the board that doesn't dim it from 440 px, so the machine stays in sight while you press its events, and on a phone a page pushed over the board with a back button to it. While it's closed, a bar on the board says where the machine is and opens it. `panelPresentation` forces one, and `panelOpen` / `onPanelOpenChange` control it. The drawer and the push keep to reduced motion. Editing and running at once, the panel has two tabs, **Edit** and **Run**; the run goes on while you look at Edit.
 

@@ -7,7 +7,9 @@
    - where requests, schedules and messages come in to the system, the service has an entry marker;
    - a connection's label is a card: what it's called on `env`, then what it uses as chips; a queue's producer and consumer, an
      R2 event notification and a service binding's entrypoint each say what they are;
-   - ports are only there to connect by: with `editable`, a card has a "Connect" section whose rows carry them.
+   - ports are only there to connect by: with `editable`, a handler's is a dot on its row, and the rest are dots at either end
+     of the header strip (what reaches it at its start, what it reaches with at its end), so an editable card is the same
+     card as a read-only one.
    Nothing here renders, so a server, a layout and a test read it as it is. */
 import type { CatalogProduct } from '@/lib/cloudflare-catalog';
 import {
@@ -45,7 +47,8 @@ export interface CloudflareServiceEdgeData {
 }
 
 export interface CloudflareBoardDataOptions {
-  /** With ports to connect by, on a "Connect" section of each card. Default `false`: cards, sections and labelled edges. */
+  /** With ports to connect by: dots on each card's handler rows and at either end of its header. Default `false`: cards,
+   *  sections and labelled edges. */
   editable?: boolean;
   /** What's wrong with it, drawn as wrong. Default: what `validateSystem` would say isn't drawn here; pass it. */
   issues?: readonly SystemIssue[];
@@ -131,15 +134,19 @@ function parentOf(service: CloudflareService, byId: ReadonlyMap<string, Cloudfla
 function serviceNode(system: CloudflareSystem, service: CloudflareService, byId: ReadonlyMap<string, CloudflareService>, editable: boolean, problem: boolean): DiagramNode<CloudflareServiceNodeData> {
   const product = catalogProduct(service.kind);
   const title = serviceName(service);
-  const sections = sectionsOf(serviceFacts(system, service));
-  const ports = editable ? servicePorts(service.kind) : [];
-  if (ports.length) {
-    sections.push({
-      id: 'connect',
-      title: 'Connect',
-      items: ports.map((p) => ({ id: p.id, title: p.label ?? p.id, description: p.direction === 'in' ? 'in' : 'out', icon: p.direction === 'in' ? 'arrow-down-to-line' : 'arrow-up-right', port: p.id })),
-    });
+  let sections = sectionsOf(serviceFacts(system, service));
+  const all = editable ? servicePorts(service.kind) : [];
+  // A handler's port is on its row, where what it handles comes in. Every other port is on the header strip: what reaches
+  // it on its start side, what it reaches with on its end side. Ports at one place are one place to connect, and the catalog
+  // says which of them a connection is between.
+  const rows = new Set(all.flatMap((p) => (p.id.startsWith('on:') ? [p.id] : [])));
+  if (rows.size) {
+    sections = sections.map((sec) => (sec.id !== 'handlers' ? sec : {
+      ...sec,
+      items: sec.items.map((it) => (rows.has(`on:${it.title}`) ? { ...it, port: `on:${it.title}` } : it)),
+    }));
   }
+  const onRow = new Set(sections.flatMap((sec) => sec.items.flatMap((it) => (it.port ? [it.port] : []))));
   const holds = system.services.some((s) => s.host === service.id && s.id !== service.id);
   const node: DiagramNode<CloudflareServiceNodeData> = {
     id: service.id,
@@ -152,7 +159,6 @@ function serviceNode(system: CloudflareSystem, service: CloudflareService, byId:
     ...(sections.length ? { sections } : null),
     ...(serviceEntries(service).length ? { entry: true } : null),
     ...(problem ? { tone: 'destructive' as const } : !product ? { tone: 'warning' as const } : null),
-    ...(ports.length ? { ports } : null),
     data: { service, product, ...(problem ? { problem } : null) },
     x: service.at?.x ?? 0,
     y: service.at?.y ?? 0,
@@ -160,8 +166,17 @@ function serviceNode(system: CloudflareSystem, service: CloudflareService, byId:
     h: 0,
   };
   const a = nodeAnatomy(node, text);
+  const header = Math.round(a.header / 2);
+  const ports = all.map((p) => (onRow.has(p.id) ? p : { ...p, offset: header }));
+  const withPorts = ports.length ? { ...node, ports, w: a.w, h: a.h } : { ...node, w: a.w, h: a.h };
   // A box's height is what it holds and isn't known yet: its item ports go on their rows once it's laid out (or enclosed).
-  return holds ? { ...node, w: a.w, h: a.h } : placeItemPorts({ ...node, w: a.w, h: a.h }, a, a.h);
+  return holds ? withPorts : placeItemPorts(withPorts, a, a.h);
+}
+
+/** Whether `inner` is held by `outer`: a Worker's Durable Object class, or one held by one of those. */
+function holdsService(outer: string, inner: string, byId: ReadonlyMap<string, CloudflareService>): boolean {
+  for (let s = byId.get(inner), guard = 0; s?.host !== undefined && s.host !== s.id && guard < byId.size; s = byId.get(s.host), guard++) if (s.host === outer) return true;
+  return false;
 }
 
 /** Only what isn't so is drawn as wrong: a service, or a connection, with an error. */
@@ -204,7 +219,9 @@ export function cloudflareBoardData(system: CloudflareSystem, { editable = false
       id: e.id,
       from: e.from,
       to: e.to,
-      ...(editable && link ? { fromPort: link.fromPort, toPort: link.toPort } : null),
+      // A box's own connection to what it holds starts under its sections, as it does read-only: not out of its header
+      // and back in through its wall.
+      ...(editable && link && !holdsService(e.from, e.to, byId) && !holdsService(e.to, e.from, byId) ? { fromPort: link.fromPort, toPort: link.toPort } : null),
       ...cloudflareEdgeLabel(e, to, link),
       ...(link?.kind === 'events' ? { variant: 'dashed' as const } : null),
       ...(wrong.edges.has(e.id) ? { tone: 'destructive' as const } : null),

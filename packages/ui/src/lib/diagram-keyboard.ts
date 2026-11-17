@@ -265,6 +265,23 @@ export function viewportToShow<V extends Viewport>(viewport: V, box: Rect, size:
   return dx || dy ? { ...viewport, x: viewport.x + dx, y: viewport.y + dy } : viewport;
 }
 
+/** The viewport moved by as little as brings all of `box` into what `insets` leave of the board (each side's px), or, when it
+ *  can't fit there, its start into view when none of it is in view (and nothing when some is). The same viewport when it's
+ *  in view already. */
+export function viewportToKeep<V extends Viewport>(viewport: V, box: Rect, size: { width: number; height: number }, insets: { top: number; right: number; bottom: number; left: number }): V {
+  const axis = (start: number, length: number, from: number, to: number) => {
+    const end = start + length;
+    if (length > to - from) return end < from || start > to ? from - start : 0;
+    if (start < from) return from - start;
+    if (end > to) return to - end;
+    return 0;
+  };
+  const z = viewport.zoom;
+  const dx = axis(box.x * z + viewport.x, box.w * z, insets.left, size.width - insets.right);
+  const dy = axis(box.y * z + viewport.y, box.h * z, insets.top, size.height - insets.bottom);
+  return Math.abs(dx) >= 0.5 || Math.abs(dy) >= 0.5 ? { ...viewport, x: viewport.x + dx, y: viewport.y + dy } : viewport;
+}
+
 /** The viewport that shows all of `box`, centered in what's left once `padding` px are taken from each side (one number
  *  for all four, or each), and no closer than 100%: what a diagram shows until its view is moved. With nothing to show,
  *  the origin is in the middle of that room at 100%. */

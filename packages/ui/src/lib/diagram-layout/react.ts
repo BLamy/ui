@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import { diagramTextRuns, type DiagramNode } from '@/lib/diagram-model';
-import { createDiagramLayoutEngine, routePortEdges, runLayout, toElkGraph, wrapDiagram, type DiagramBoardSize, type DiagramDraft, type DiagramLayoutEngine, type DiagramLayoutError, type DiagramLayoutOptions, type DiagramLayoutResult } from '@/lib/diagram-layout';
+import { createDiagramLayoutEngine, routeForks, routePortEdges, runLayout, toElkGraph, wrapDiagram, type DiagramBoardSize, type DiagramDraft, type DiagramLayoutEngine, type DiagramLayoutError, type DiagramLayoutOptions, type DiagramLayoutResult } from '@/lib/diagram-layout';
 import { estimateText, measureTextGently, nextFrame, type TextMeasurer } from '@/lib/diagram-text';
 import { useFontVersion, useShownVersion } from '@/lib/use-font-version';
 
@@ -48,8 +48,8 @@ export function useDiagramLayout<N = unknown, E = unknown>(draft: DiagramDraft<N
   const elkKey = useMemo(() => JSON.stringify(elk ?? null), [elk]);
   // What a layout depends on: not positions, which it's about to replace, nor anything else in a node's data.
   const key = useMemo(() => JSON.stringify([
-    draft.nodes.map((n) => [n.id, n.parent ?? null, n.kind ?? null, n.variant ?? null, n.title ?? null, n.icon ?? null, n.trailing ?? null, n.description ?? null, n.sections ?? null, n.w ?? null, n.h ?? null, n.ports?.map((p) => [p.id, p.side, p.at ?? null]) ?? null]),
-    (draft.edges ?? NOTHING).map((e) => [e.id, e.from, e.to, e.fromPort ?? null, e.toPort ?? null, e.title ?? null, e.icon ?? null, e.sections ?? null]),
+    draft.nodes.map((n) => [n.id, n.parent ?? null, n.kind ?? null, n.variant ?? null, n.title ?? null, n.icon ?? null, n.trailing ?? null, n.description ?? null, n.sections ?? null, n.w ?? null, n.h ?? null, n.ports?.map((p) => [p.id, p.side, p.at ?? null, p.offset ?? null]) ?? null]),
+    (draft.edges ?? NOTHING).map((e) => [e.id, e.from, e.to, e.fromPort ?? null, e.toPort ?? null, e.title ?? null, e.icon ?? null, e.sections ?? null, e.forkOf ?? null]),
     direction ?? null, density ?? null, elkKey,
   ]), [draft.nodes, draft.edges, direction, density, elkKey]);
   const latest = useRef(draft);
@@ -118,9 +118,9 @@ export function useDiagramLayout<N = unknown, E = unknown>(draft: DiagramDraft<N
   if (result && (fresh || shownDraft.current?.result !== result)) shownDraft.current = { draft, result };
   const showing = shownDraft.current?.draft;
   // Wrapped to fill the board, which is quick: only a new size brings it, not a new layout. Then the routes between ports,
-  // in lanes of their own, from where things ended up.
+  // in lanes of their own, from where things ended up, and those that fork from another's label.
   const text = state.text;
-  const shaped = useMemo(() => (result ? { ...result, ...routePortEdges(board ? wrapDiagram(result, board, direction) : result, text) } : result), [result, board, direction, text]);
+  const shaped = useMemo(() => (result ? { ...result, ...routeForks(routePortEdges(board ? wrapDiagram(result, board, direction) : result, text), text) } : result), [result, board, direction, text]);
   const now = useMemo(() => (shaped && showing ? onLayout(showing, shaped) : null), [showing?.nodes, showing?.edges, shaped]);
   return {
     nodes: now?.nodes ?? NOTHING, edges: now?.edges ?? NOTHING,
@@ -161,7 +161,7 @@ export function onLayout<N, E>(draft: DiagramDraft<N, E>, laid: Pick<DiagramLayo
     if (!at) continue;
     const ports = n.ports?.map((p) => {
       const placed = at.ports?.find((q) => q.id === p.id)?.at;
-      return p.at !== undefined || placed === undefined ? p : { ...p, at: placed };
+      return p.at !== undefined || p.offset !== undefined || placed === undefined ? p : { ...p, at: placed };
     });
     nodes.push({ ...n, x: at.x, y: at.y, w: at.w, h: at.h, ...(ports ? { ports } : null) } as DiagramNode<N>);
   }

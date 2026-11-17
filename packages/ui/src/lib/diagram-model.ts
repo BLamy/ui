@@ -25,6 +25,9 @@ export interface DiagramPort {
   side: DiagramSide;
   /** How far along the side, from 0 at its top or left end to 1 at the other (default 0.5). */
   at?: number;
+  /** How far along the side in board units, from its top or left end, instead of `at`: a port that stays where it is however
+   *  big its node grows (on a card's header strip, say). */
+  offset?: number;
   label?: string;
   /** What it carries. By default a connection can only join ports of the same kind. */
   kind?: string;
@@ -125,6 +128,10 @@ export interface DiagramEdge<D = unknown> {
   sections?: readonly DiagramSection[];
   /** Where the label sits, in board units: a layout puts it on the route. Without it, one is found. */
   labelBox?: Rect;
+  /** Another edge's id, whose label this one shares: it has no label of its own, and a layout starts it from that label, so
+   *  one label forks to several targets (a transition that goes to several at once). Its `title` is still what it's called
+   *  to a screen reader. */
+  forkOf?: string;
   variant?: DiagramEdgeVariant;
   tone?: DiagramEdgeTone;
   data?: D;
@@ -135,8 +142,8 @@ export const sectionKey = (section: DiagramSection, index: number): string => se
 /** An item's address in its section: its `id`, or its title. */
 export const itemKey = (item: DiagramSectionItem): string => item.id ?? item.title;
 
-/** Whether an edge has a label to draw. */
-export const hasEdgeLabel = (edge: Pick<DiagramEdge<unknown>, 'title' | 'sections'>): boolean => !!edge.title || !!edge.sections?.some((s) => s.items.length);
+/** Whether an edge has a label to draw: one that shares another's (`forkOf`) hasn't. */
+export const hasEdgeLabel = (edge: Pick<DiagramEdge<unknown>, 'title' | 'sections' | 'forkOf'>): boolean => !edge.forkOf && (!!edge.title || !!edge.sections?.some((s) => s.items.length));
 
 /* ── Nesting ── */
 
@@ -259,7 +266,9 @@ export function nearestAnchor(p: Pt, boxes: readonly (DiagramBox & { id: string 
 
 /** A port's place and which way it faces. */
 export function portPoint(box: DiagramBox, port: DiagramPort): ConnectorEnd {
-  return { p: anchorPoint(box, port.side, port.at ?? 0.5), n: anchorNormal(box, port.side) };
+  const length = port.side === 'left' || port.side === 'right' ? box.h : box.w;
+  const at = port.offset !== undefined ? Math.min(1, Math.max(0, port.offset / (length || 1))) : port.at ?? 0.5;
+  return { p: anchorPoint(box, port.side, at), n: anchorNormal(box, port.side) };
 }
 
 /* ── Connector geometry ── */
@@ -1173,13 +1182,19 @@ function labelOnRoute(pts: readonly Pt[], size: { w: number; h: number }, overla
 /** The edges of a diagram that `routeInLanes` routes: its obstacles are every card, the head of every box (its header and
  *  sections, `headOf` long), every box's border as a wall, and `labels` (labels already placed); `around` are the routes it
  *  keeps a lane from. Shorter edges go first, as they have the fewest ways to go. */
-export function laneRoutes<N, E>(index: DiagramIndex<N>, edges: readonly DiagramEdge<E>[], { headOf, around = [], labels = [], labelSize }: { headOf: (n: DiagramNode<N>) => number; around?: readonly (readonly Pt[])[]; labels?: readonly Rect[]; labelSize?: (e: DiagramEdge<E>) => { w: number; h: number } | null }, ends?: ReadonlyMap<string, { from: ConnectorEnd; to: ConnectorEnd }>): Map<string, LaneRoute> {
+export function laneRoutes<N, E>(index: DiagramIndex<N>, edges: readonly DiagramEdge<E>[], { headOf, captionOf, around = [], labels = [], labelSize }: {
+  headOf: (n: DiagramNode<N>) => number;
+  /** A region's caption (it has no header strip): its width, from its start; routes go round it, and into the region beside it. */
+  captionOf?: (n: DiagramNode<N>) => number;
+  around?: readonly (readonly Pt[])[]; labels?: readonly Rect[]; labelSize?: (e: DiagramEdge<E>) => { w: number; h: number } | null;
+}, ends?: ReadonlyMap<string, { from: ConnectorEnd; to: ConnectorEnd }>): Map<string, LaneRoute> {
   const obstacles: LaneObstacle[] = [];
   for (const n of index.nodes) {
     if (n.kind === 'marker') continue;
     if (holdsNodes(n)) {
       obstacles.push({ id: n.id, r: rectOf2(n), kind: 'wall' });
       if (n.kind !== 'root' && n.kind !== 'region') obstacles.push({ id: `${n.id}\0head`, r: { x: n.x, y: n.y, w: n.w, h: Math.min(n.h, headOf(n)) }, kind: 'block' });
+      else if (n.kind === 'region' && n.title && captionOf) obstacles.push({ id: `${n.id}\0head`, r: { x: n.x, y: n.y, w: Math.min(n.w, captionOf(n)), h: Math.min(n.h, headOf(n)) }, kind: 'block' });
     } else obstacles.push({ id: n.id, r: rectOf2(n), kind: 'block' });
   }
   labels.forEach((r, i) => obstacles.push({ id: `\0label${i}`, r, kind: 'block' }));
@@ -1218,15 +1233,18 @@ function routesShareLane(p: readonly Pt[], q: readonly Pt[], min = DIAGRAM_LANE)
   return false;
 }
 
-/** The ports that items name, on the side of their card that faces where their edges go: a row runs across the card, so
- *  its port can be at either end, and the one nearer what it joins is a route that doesn't go round the card. A port with
+/** The ports that items name (and those at a fixed place along a side: a header's), on the side of their card that faces
+ *  where their edges go: a row runs across the card, so its port can be at either end, and the one nearer what it joins is
+ *  a route that doesn't go round the card. A port with
  *  no edges stays where it's declared. Nodes whose ports don't move are the same objects. */
 export function facePorts<N, E>(nodes: readonly DiagramNode<N>[], edges: readonly DiagramEdge<E>[]): DiagramNode<N>[] {
   const named = new Map<string, Set<string>>();
   for (const n of nodes) {
-    if (!n.ports?.length || !n.sections?.length) continue;
+    if (!n.ports?.length) continue;
     const ids = new Set<string>();
-    for (const s of n.sections) for (const it of s.items) if (it.port) ids.add(it.port);
+    for (const s of n.sections ?? []) for (const it of s.items) if (it.port) ids.add(it.port);
+    // A port at a fixed place along a side (a header's) can be at either end of it too.
+    for (const p of n.ports) if (p.offset !== undefined) ids.add(p.id);
     if (ids.size) named.set(n.id, ids);
   }
   if (!named.size) return nodes as DiagramNode<N>[];
@@ -1247,7 +1265,19 @@ export function facePorts<N, E>(nodes: readonly DiagramNode<N>[], edges: readonl
   return nodes.map((n) => {
     if (!named.has(n.id)) return n;
     let changed = false;
+    // Ports at a fixed place go as a group, so that one at each end of a header never land on one another: the two ends
+    // swap when both would, and an end with nothing at the other goes where its edges do.
+    const group = (side: DiagramSide) => n.ports!.filter((p) => p.offset !== undefined && p.side === side);
+    const sum = (list: readonly DiagramPort[]) => list.reduce((t, p) => t + (votes.get(`${n.id}\0${p.id}`) ?? 0), 0);
+    const left = group('left'), right = group('right');
+    const vl = sum(left), vr = sum(right);
+    const swap = (left.length && right.length && vl > 0 && vr < 0) || (!right.length && vl > 0) || (!left.length && vr < 0);
     const ports = n.ports!.map((p) => {
+      if (p.offset !== undefined) {
+        if (!swap || (p.side !== 'left' && p.side !== 'right')) return p;
+        changed = true;
+        return { ...p, side: p.side === 'left' ? 'right' as const : 'left' as const };
+      }
       const v = votes.get(`${n.id}\0${p.id}`) ?? 0;
       if ((p.side !== 'left' && p.side !== 'right') || !v) return p;
       const side: DiagramSide = v < 0 ? 'left' : 'right';
@@ -1338,6 +1368,11 @@ export function edgeGeometries<N, E>(edges: readonly DiagramEdge<E>[], index: Di
       const g = out.get(e.id)!;
       if (rest.slice(0, i).some((o) => !inLane.has(o.id) && routesShareLane(g.pts, out.get(o.id)!.pts))) { lane.push(e); inLane.add(e.id); }
     });
+    // And edges between the same two nodes that have labels: side by side, their labels would stack on one another's lines.
+    const pair = (e: DiagramEdge<E>) => (e.from < e.to ? `${e.from}\0${e.to}` : `${e.to}\0${e.from}`);
+    const labelled = new Map<string, DiagramEdge<E>[]>();
+    for (const e of rest) if (!e.points && e.from !== e.to && e.route !== 'curve' && e.route !== 'straight' && hasEdgeLabel(e)) labelled.set(pair(e), [...(labelled.get(pair(e)) ?? []), e]);
+    for (const list of labelled.values()) if (list.length > 1) for (const e of list) if (!inLane.has(e.id)) { lane.push(e); inLane.add(e.id); }
     if (lane.length) {
       const ends = new Map(lane.map((e) => {
         const g = out.get(e.id)!;
@@ -1596,7 +1631,7 @@ export function nodeSize(node: Pick<DiagramNode<unknown>, 'kind' | 'variant' | '
 }
 
 /** The size of an edge's label: a pill for a title alone, a card with sections. Null when it has none. */
-export function edgeLabelSize(edge: Pick<DiagramEdge<unknown>, 'title' | 'icon' | 'sections'>, text: TextOf): { w: number; h: number } | null {
+export function edgeLabelSize(edge: Pick<DiagramEdge<unknown>, 'title' | 'icon' | 'sections' | 'forkOf'>, text: TextOf): { w: number; h: number } | null {
   if (!hasEdgeLabel(edge)) return null;
   const C = DIAGRAM_CARD;
   const t = edge.title ? text(edge.title, 'edge') : NONE;
@@ -1620,7 +1655,7 @@ export function placeItemPorts<N extends Pick<DiagramNode<unknown>, 'ports' | 's
   let changed = false;
   const ports = node.ports.map((p) => {
     const y = rowOf.get(p.id);
-    if (p.at !== undefined || y === undefined || y < 0 || (p.side !== 'left' && p.side !== 'right')) return p;
+    if (p.at !== undefined || p.offset !== undefined || y === undefined || y < 0 || (p.side !== 'left' && p.side !== 'right')) return p;
     changed = true;
     return { ...p, at: Math.round((y / (h || 1)) * 1000) / 1000 };
   });
@@ -1668,6 +1703,62 @@ export function sizeNodesToText<N>(nodes: readonly DiagramNode<N>[], text: TextO
     if (a.w === n.w && a.h === n.h && placed === n) return n;
     return { ...placed, x: n.x + (n.w - a.w) / 2, y: n.y + (n.h - a.h) / 2, w: a.w, h: a.h };
   });
+}
+
+/** A leaf's self-loop through its label beside it: out of the card's side, across into the label's near side, out of the
+ *  label's foot and back up the gap between them into the card's side, lower down, where the arrow lands. Each loop has a
+ *  side (or a place on one) of its own, so two never cross. Worked out as if the layers ran down: a label to the left or the
+ *  right of its card; with the layers running across, above or below it. */
+export function sideLoopRoute(node: Rect, label: Rect, direction: 'DOWN' | 'UP' | 'RIGHT' | 'LEFT' = 'DOWN'): Pt[] {
+  // Across the layers is x when they run down or up, and y when they run across: work in a frame where it's x.
+  const across = direction === 'RIGHT' || direction === 'LEFT';
+  const t = (p: Pt): Pt => (across ? { x: p.y, y: p.x } : p);
+  const tb = (r: Rect): Rect => (across ? { x: r.y, y: r.x, w: r.h, h: r.w } : r);
+  const n = tb(node), l = tb(label);
+  const before = l.x + l.w / 2 < n.x + n.w / 2;
+  const sideX = before ? n.x : n.x + n.w;
+  const nearX = before ? l.x + l.w : l.x;
+  const gapX = (sideX + nearX) / 2;
+  const lc = l.x + l.w / 2;
+  // Out at a third of the way down the card, or the label's middle if that's higher and on the card; back in near its foot.
+  const top = Math.max(n.y + 8, l.y + 8);
+  const y1 = Math.min(Math.max(top, n.y + n.h * 0.3), n.y + n.h - 18, l.y + l.h - 8);
+  const y2 = Math.max(y1 + 10, n.y + n.h - Math.min(10, n.h / 4));
+  const foot = Math.max(l.y + l.h + 12, y2 + 12);
+  const pts: Pt[] = [{ x: sideX, y: y1 }, { x: nearX, y: y1 }, { x: lc, y: y1 }, { x: lc, y: foot }, { x: gapX, y: foot }, { x: gapX, y: y2 }, { x: sideX, y: y2 }];
+  // In through the label's side, out through its foot: the two are one route, the label on it.
+  return pts.map((p) => { const q = t(p); return { x: round2(q.x), y: round2(q.y) }; });
+}
+
+/** Where a placed card's self-loops go, with no layout: each beside the card, its label on it (`sideLoopRoute`), the first
+ *  on its end side, the next on its start side, and so on outward, each a lane past the one before on its side. */
+export function loopsBeside(node: Rect, loops: readonly { id: string; size: { w: number; h: number } | null }[]): Map<string, { points: Pt[]; labelBox?: Rect }> {
+  const out = new Map<string, { points: Pt[]; labelBox?: Rect }>();
+  const reach = { after: node.x + node.w, before: node.x };
+  loops.forEach((l, i) => {
+    const size = l.size ?? { w: 16, h: 8 };
+    const after = i % 2 === 0;
+    const x = after ? reach.after + 32 : reach.before - 32 - size.w;
+    const label = { x: round2(x), y: round2(node.y + node.h / 2 - size.h / 2), w: size.w, h: size.h };
+    if (after) reach.after = label.x + label.w; else reach.before = label.x;
+    out.set(l.id, { points: sideLoopRoute(node, label), ...(l.size ? { labelBox: label } : null) });
+  });
+  return out;
+}
+
+/** Each card given a size too small for what it says grown to that, around its center: a placed card never draws its words
+ *  past its edge. One big enough stays as it is (the same object). */
+export function growNodesToText<N>(nodes: readonly DiagramNode<N>[], text: TextOf): DiagramNode<N>[] {
+  let changed = false;
+  const out = nodes.map((n) => {
+    if (holdsNodes(n) || n.kind === 'marker' || !(n.title || n.description || n.sections?.length)) return n;
+    const a = nodeAnatomy(n, text);
+    const w = Math.max(n.w, a.w), h = Math.max(n.h, a.h);
+    if (w - n.w < 0.5 && h - n.h < 0.5) return n;
+    changed = true;
+    return { ...n, x: n.x - (w - n.w) / 2, y: n.y - (h - n.h) / 2, w, h };
+  });
+  return changed ? out : (nodes as DiagramNode<N>[]);
 }
 
 /* ── Moving things ── */

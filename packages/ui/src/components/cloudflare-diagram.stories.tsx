@@ -117,7 +117,7 @@ export const Larger: Story = {
   render: (args) => <Page><CloudflareDiagram {...args} services={PLATFORM} edges={PLATFORM_EDGES} title="Docs search" accountId="4f1b9c2e7a" defaultPanelOpen={false} aria-label="Docs search, in production and staging" /></Page>,
 };
 
-/** Editing, uncontrolled: each card has a Connect section whose rows carry its ports. Search the catalog to add a service,
+/** Editing, uncontrolled: each card has dots to connect by, at either end of its header and on its handler rows. Search the catalog to add a service,
  *  drag from `env` to connect, change a connection in the panel, undo and redo. */
 export const Editing: Story = {
   args: { editable: true },

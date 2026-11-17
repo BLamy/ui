@@ -107,9 +107,37 @@ export function startConnection(hit: Extract<NonNullable<DiagramHit>, { kind: 'p
   return { k: 'connect', fixed: hit.end === 'to' ? ends.from : ends.to, edge: hit.id, end: hit.end, at, over: null, valid: null };
 }
 
-/** A connection gesture, offered `over`. */
+/** The ends a connection could use instead of `end`: ports at the same place as its port (they're one place to connect), or
+ *  every port of its node when it names none (a press or a drop on the card itself). `end` first. */
+function endsLike(end: DiagramConnectionEnd, ctx: DiagramGestureContext): DiagramConnectionEnd[] {
+  const n = ctx.index.byId.get(end.node);
+  if (!n?.ports?.length) return [end];
+  const own = end.port ? n.ports.find((p) => p.id === end.port) : undefined;
+  if (end.port && !own) return [end];
+  const here = own ? portPoint(n, own).p : null;
+  const like = n.ports.filter((p) => p.id !== end.port && (!here || dist(portPoint(n, p).p, here) < 0.5));
+  return [end, ...like.map((p) => ({ node: end.node, port: p.id }))];
+}
+
+/** A connection gesture, offered `over`. Where the ports it's between aren't a connection the rule allows, but others at the
+ *  same places are (or `over` is a node, and one of its ports is), it's offered between those: the first the rule takes. */
 export function offerConnection(g: Extract<DiagramGesture, { k: 'connect' }>, at: Pt, over: DiagramConnectionEnd | null, ctx: DiagramGestureContext): Extract<DiagramGesture, { k: 'connect' }> {
-  return { ...g, at, over, valid: over && ctx.connect ? ctx.connect.check(connectionOf(g, over)) : null };
+  if (!over || !ctx.connect) return { ...g, at, over, valid: null };
+  const check = ctx.connect.check;
+  const valid = check(connectionOf(g, over));
+  if (valid === true) return { ...g, at, over, valid };
+  // An edge's end that's being moved keeps the other end it has.
+  const fixeds = g.edge ? [g.fixed] : endsLike(g.fixed, ctx);
+  const overs = endsLike(over, ctx);
+  for (const fixed of fixeds) {
+    for (const o of overs) {
+      if (fixed === g.fixed && o === over) continue;
+      const tried = { ...g, fixed };
+      if (check(connectionOf(tried, o)) === true) return { ...tried, at, over: o, valid: true };
+    }
+  }
+  // Why not: as it was offered, or, for a node with ports, as its first port would be.
+  return { ...g, at, over, valid: over.port || !overs[1] ? valid : check(connectionOf(g, overs[1])) };
 }
 
 /**

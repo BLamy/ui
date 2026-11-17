@@ -199,26 +199,63 @@ export const describeActions = (actions: unknown): StateAction[] => listOf(actio
 /** What JavaScript names a function written straight under a config's key: no name of the author's. */
 const INFERRED = new Set(['', 'anonymous', 'entry', 'exit', 'actions', 'guard', 'cond', 'src']);
 
-const COMPOSED: Record<string, 'and' | 'or' | 'not'> = { and: 'and', or: 'or', not: 'not', 'xstate.and': 'and', 'xstate.or': 'or', 'xstate.not': 'not' };
+const COMPOSED: Record<string, 'and' | 'or' | 'not'> = { 'xstate.and': 'and', 'xstate.or': 'or', 'xstate.not': 'not' };
 
-/** A guard as a condition. Reads a name, `{ type, params }`, `and` / `or` / `not` / `stateIn` (XState's functions, or as
- *  `parseXState` writes them: `{ type: 'xstate.and', params: { guards } }`), or code written inline. */
+/** A snapshot just big enough for XState's composed guards to evaluate inline parts against. */
+const PROBE_SNAPSHOT = { machine: { implementations: { guards: {} } } };
+const PROBE_ARGS = { context: undefined, event: undefined };
+const yes = () => true;
+const no = () => false;
+
+/** Which of XState's `and` / `or` / `not` a guard function is. XState v5 gives each a `check` evaluator and its parts as
+ *  `guards`; a production build renames the functions, so it's told by what `check` does with two inline parts:
+ *  [true, false] then [false, true] gives `and` false, false; `or` true, true; `not` (which reads the first) false, true. */
+function composedOp(r: Record<string, unknown>): 'and' | 'or' | 'not' | undefined {
+  if (typeof r.type === 'string') return COMPOSED[r.type];
+  if (typeof r.check !== 'function' || !Array.isArray(r.guards)) return undefined;
+  const check = r.check as (snapshot: unknown, args: unknown, params: unknown) => unknown;
+  try {
+    const a = !!check(PROBE_SNAPSHOT, PROBE_ARGS, { guards: [yes, no] });
+    const b = !!check(PROBE_SNAPSHOT, PROBE_ARGS, { guards: [no, yes] });
+    if (!a && !b) return 'and';
+    if (a && b) return 'or';
+    if (!a && b) return 'not';
+  } catch {
+    // Not one of XState's: read it as all of its parts.
+  }
+  return 'and';
+}
+
+/** `stateIn(…)`: XState's function carries its `stateValue` and a `check`; `parseXState` writes `xstate.stateIn`. */
+function stateInValue(r: Record<string, unknown>): string | undefined {
+  const p = isPlainObject(r.params) ? r.params : {};
+  if (r.type === 'xstate.stateIn') return typeof p.state === 'string' ? p.state : undefined;
+  if (typeof r.check === 'function' && !Array.isArray(r.guards) && 'stateValue' in r) {
+    return typeof r.stateValue === 'string' ? r.stateValue : JSON.stringify(r.stateValue);
+  }
+  return undefined;
+}
+
+/** A guard as a condition. Reads a name, `{ type, params }`, `and` / `or` / `not` / `stateIn` (XState's functions, told
+ *  apart by what they do rather than by name, so a minified build reads the same; or as `parseXState` writes them:
+ *  `{ type: 'xstate.and', params: { guards } }`), or code written inline. */
 export function describeGuard(guard: unknown): StateGuard | undefined {
   if (guard === undefined || guard === null || guard === false) return undefined;
+  const recordOf = (g: unknown) => (typeof g === 'function' || isPlainObject(g) ? g : {}) as Record<string, unknown>;
   const text = (g: unknown, inner: boolean): string => {
     if (typeof g === 'string') return g;
-    const r = (typeof g === 'function' || isPlainObject(g) ? g : {}) as Record<string, unknown>;
+    const r = recordOf(g);
     const p = isPlainObject(r.params) ? r.params : {};
     const fnName = typeof g === 'function' ? g.name : undefined;
-    const op = COMPOSED[(typeof r.type === 'string' ? r.type : fnName) ?? ''];
     const parts = Array.isArray(r.guards) ? r.guards : Array.isArray(p.guards) ? p.guards : null;
+    const op = parts ? composedOp(r) : undefined;
     if (op && parts) {
       if (op === 'not') return `not ${text(parts[0], true)}`;
       const joined = parts.map((x) => text(x, true)).join(` ${op} `);
       return inner && parts.length > 1 ? `(${joined})` : joined;
     }
-    const state = typeof r.stateValue === 'string' ? r.stateValue : r.type === 'xstate.stateIn' && typeof p.state === 'string' ? p.state : undefined;
-    if ((fnName === 'stateIn' || r.type === 'xstate.stateIn') && state) return `in ${state}`;
+    const state = stateInValue(r);
+    if (state !== undefined) return `in ${state}`;
     if (r.type === 'xstate.inline') return typeof p.name === 'string' ? p.name : 'inline';
     if (typeof r.type === 'string') {
       const args = paramsText(r.params);
@@ -226,11 +263,13 @@ export function describeGuard(guard: unknown): StateGuard | undefined {
     }
     return fnName && !INFERRED.has(fnName) ? fnName : 'inline';
   };
-  const r = (typeof guard === 'function' || isPlainObject(guard) ? guard : {}) as Record<string, unknown>;
+  if (typeof guard === 'string') return { name: guard, text: guard };
+  const r = recordOf(guard);
+  const p = isPlainObject(r.params) ? r.params : {};
   const said = text(guard, false);
   const fnName = typeof guard === 'function' ? guard.name : undefined;
-  const composed = !!COMPOSED[(typeof r.type === 'string' ? r.type : fnName) ?? ''] || fnName === 'stateIn' || r.type === 'xstate.stateIn';
-  if (typeof guard === 'string') return { name: guard, text: guard };
+  const hasParts = Array.isArray(r.guards) || Array.isArray(p.guards);
+  const composed = (hasParts && !!composedOp(r)) || stateInValue(r) !== undefined;
   if (composed) return { name: said, text: said, composed: true };
   if (r.type === 'xstate.inline') return { name: said, text: said };
   if (typeof r.type === 'string') return { name: r.type, text: said, ...(isPlainObject(r.params) ? { params: r.params } : null) };
@@ -316,7 +355,8 @@ export interface StateEdgeData {
   reenter?: boolean;
   /** The transition has no target: it stays where it is and only runs its actions. */
   internal?: boolean;
-  /** How many targets the transition has, when it has more than one (each is an edge of its own). */
+  /** How many targets the transition has, when it has more than one: each is an edge of its own, and the first's label is
+   *  the one they all go from (`DiagramEdge.forkOf`). */
   targets?: number;
 }
 
@@ -468,10 +508,12 @@ export function machineToDraft(machine: StateMachineLike, onEdge?: (transition: 
       ...((t.target?.length ?? 0) > 1 ? { targets: t.target!.length } : null),
     };
   };
-  const edgeOf = (id: string, from: StateMachineNode, to: StateMachineNode, data: StateEdgeData): DiagramEdge<StateEdgeData> => {
+  /** One edge of a transition. Past its first target, an edge shares the first's label: one label, forking to each. */
+  const edgeOf = (id: string, from: StateMachineNode, to: StateMachineNode, data: StateEdgeData, forkOf?: string): DiagramEdge<StateEdgeData> => {
     const sections = transitionSections(data);
     return {
       id, from: from.id, to: to.id, ...STATE_EDGE_LOOK[data.transition], title: data.name,
+      ...(forkOf ? { forkOf } : null),
       ...(data.transition === 'after' ? { icon: STATE_GLYPHS.delay } : null),
       ...(sections.length ? { sections } : null),
       data,
@@ -514,18 +556,22 @@ export function machineToDraft(machine: StateMachineLike, onEdge?: (transition: 
       const { name, kind } = describeEvent(event);
       list.forEach((t, index) => {
         const said = transitionData(n, t, kind, event, name);
+        let first: string | undefined;
         (said.internal ? [n] : t.target!).forEach((to, target) => {
           const id = edgeId(`${n.id}:${event}->${to.id}`);
-          edges.push(edgeOf(id, n, to, said));
+          edges.push(edgeOf(id, n, to, said, first));
+          first ??= id;
           onEdge?.(t, id, { state: path, stateId: n.id, event, index, target });
         });
       });
     }
     (n.always ?? []).forEach((t, index) => {
       const said = transitionData(n, t, 'always', undefined, 'always');
+      let first: string | undefined;
       (said.internal ? [n] : t.target!).forEach((to, target) => {
         const id = edgeId(`${n.id}:always->${to.id}`);
-        edges.push(edgeOf(id, n, to, said));
+        edges.push(edgeOf(id, n, to, said, first));
+        first ??= id;
         onEdge?.(t, id, { state: path, stateId: n.id, event: null, index, target });
       });
     });
@@ -536,7 +582,7 @@ export function machineToDraft(machine: StateMachineLike, onEdge?: (transition: 
 }
 
 /** Which edges each of a machine's transitions is drawn as, by the ids `machineToDraft` gives them. A transition with two
- *  targets is two edges. */
+ *  targets is two edges, the second forking from the first's label. */
 export function machineEdgeIds(machine: StateMachineLike): Map<StateMachineTransition, string[]> {
   const out = new Map<StateMachineTransition, string[]>();
   machineToDraft(machine, (transition, id) => {
