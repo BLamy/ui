@@ -8,6 +8,7 @@ import {
 } from '@ui-sdk/react/toolbar';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { buttonVariants, type ButtonSize, type ButtonVariant } from '@/components/ui/button';
+import { Toggle, type ToggleProps, type ToggleSize, type ToggleVariant } from '@/components/ui/toggle';
 import { barSurface, pressableFocusRing } from '@/lib/primitives';
 import { cn, cx } from '@/lib/utils';
 
@@ -147,6 +148,29 @@ export function ToolbarButton({ variant, size, tone = 'default', className, ...p
   return (
     <SdkToolbarButton
       className={cx(toolbarButtonVariants({ toolbar: toolbar.variant, variant, size: size ?? toolbar.size, tone }), className)}
+      {...props}
+    />
+  );
+}
+
+export type ToolbarToggleProps = Omit<ToggleProps, 'variant' | 'size'> & {
+  /** Toggle's looks. Default: `quiet`, the ToolbarButton's look with a grey fill while pressed. */
+  variant?: ToggleVariant;
+  /** Toggle's sizes. Default: the Toolbar's `size`. Icon-only tools take `icon-sm` (28px), `icon` (36px) or `icon-lg` (44px). */
+  size?: ToggleSize;
+};
+
+/** A tool that stays on (Bold, a pane, a mode): UI SDK's Toggle (`pressed` / `defaultPressed` /
+    `onPressedChange`, `aria-pressed`), which joins the toolbar's arrow-key order, drawn like a ToolbarButton and
+    filled while pressed. Give an icon-only one an `aria-label`. */
+export function ToolbarToggle({ variant = 'quiet', size, className, ...props }: ToolbarToggleProps) {
+  const toolbar = useToolbar();
+  const s = size ?? toolbar.size;
+  return (
+    <Toggle
+      variant={variant}
+      size={s}
+      className={cx(cn(iconCorners[s], variant !== 'secondary' && unfilledDisabled), className)}
       {...props}
     />
   );

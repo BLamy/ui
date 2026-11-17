@@ -10,7 +10,8 @@ import {
   DialogTitle, DialogTrigger, DialogView, createConfirm, type DialogProps,
 } from '@/components/ui/dialog';
 import { BLProvider } from '@/lib/theme';
-import { SizeClassProvider, type SizeClass } from '@/lib/container';
+import { SizeClassProvider } from '@/lib/container';
+import type { SizeClass } from '@/lib/size-class';
 
 declare global { var __UI_SDK_STRICT__: boolean | undefined }
 globalThis.__UI_SDK_STRICT__ = true;

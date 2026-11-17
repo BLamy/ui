@@ -22,7 +22,7 @@ import {
   type Bug, type Severity,
 } from './data';
 import { PageActions } from './header';
-import { EnvBadge, KindLabel, Panel, SEVERITY_TONE, SectionLabel, pillVariants, Pressable } from './parts';
+import { EnvBadge, KindLabel, Panel, Pill, SEVERITY_TONE, SectionLabel, pillVariants, Pressable } from './parts';
 import { useLoopQA } from './state';
 
 export function BugPage({ value, id }: { value: string; id: string }) {
@@ -64,7 +64,7 @@ export function BugPage({ value, id }: { value: string; id: string }) {
 
           <div className="grid items-start gap-5 @5xl:grid-cols-[1fr_280px]!">
             <div className="flex min-w-0 flex-col gap-5">
-              <ReplayPreview events={replayDemoEvents} initialTime={featured ? 8400 : 2250} ref={player} title={`Replay of ${b.id}`} />
+              <ReplayPreview events={replayDemoEvents} defaultTime={featured ? 8400 : 2250} ref={player} title={`Replay of ${b.id}`} />
 
               <Tabs variant="underline" defaultValue="network">
                 <TabsList aria-label="Logs">
@@ -141,9 +141,9 @@ function SeverityMenu({ bug: b }: { bug: Bug }) {
     <DropdownMenu>
       <DropdownMenuTrigger render={<Pressable />} aria-label={`Severity: ${SEVERITY_LABEL[b.severity]}`}
         className="h-auto cursor-pointer rounded-full p-0 active:not-aria-expanded:not-data-disabled:scale-95">
-        <span className={pillVariants({ tone: SEVERITY_TONE[b.severity] })}>
+        <Pill {...SEVERITY_TONE[b.severity]}>
           {SEVERITY_LABEL[b.severity]}<Icon name="chevron-down" size={10} sw={2.6} className="-ml-0.5 opacity-70" />
-        </span>
+        </Pill>
       </DropdownMenuTrigger>
       <DropdownMenuContent side="bottom" align="start">
         <DropdownMenuRadioGroup value={b.severity} onValueChange={(next) => {
@@ -194,15 +194,15 @@ function Chronology({ bug: b, onSeek }: { bug: Bug; onSeek: (ms: number) => void
             <div className="flex min-w-0 flex-1 flex-col gap-3 @2xl:flex-row!">
               <Pressable onClick={() => onSeek(c.time)} aria-label={`Show ${formatReplayTime(c.time)} in the replay`}
                 className="relative w-full shrink-0 cursor-pointer overflow-hidden rounded-ctl border border-border p-0 hover:ring-2 hover:ring-primary/40 @2xl:w-[200px]!">
-                <ReplayPreview events={replayDemoEvents} chrome="none" controls={false} initialTime={c.time} className="pointer-events-none w-full" title={`Frame at ${formatReplayTime(c.time)}`} />
+                <ReplayPreview events={replayDemoEvents} chrome="none" controls={false} defaultTime={c.time} className="pointer-events-none w-full" title={`Frame at ${formatReplayTime(c.time)}`} />
                 <span className="absolute right-1.5 bottom-1.5 rounded-md bg-foreground/80 px-1.5 py-0.5 font-mono text-[10.5px] text-background">{formatReplayTime(c.time)}.{String(Math.floor((c.time % 1000) / 100))}</span>
               </Pressable>
               <div className="min-w-0 flex-1">
                 <p className="m-0 text-[13.5px] leading-[20px]">{c.text}</p>
                 <div className="mt-2.5 flex flex-wrap gap-1.5">
-                  <span className={pillVariants({ tone: 'neutral' })}><Icon name={c.tag === 'click' ? 'hand' : c.tag === 'network' ? 'network' : c.tag === 'console' ? 'terminal' : 'textformat'} size={11} sw={2.2} />{c.tag}</span>
+                  <span className={pillVariants({ tone: 'muted' })}><Icon name={c.tag === 'click' ? 'hand' : c.tag === 'network' ? 'network' : c.tag === 'console' ? 'terminal' : 'textformat'} size={11} sw={2.2} />{c.tag}</span>
                   {c.evidence.map((e) => (
-                    <span key={e.label} className={pillVariants({ tone: 'outline' })}>
+                    <span key={e.label} className={pillVariants({ tone: 'muted', variant: 'outline' })}>
                       <Icon name={e.kind === 'Screenshot' ? 'photo' : e.kind === 'Request' ? 'globe' : e.kind === 'Console' ? 'terminal' : 'doc-text'} size={11} sw={2.2} />
                       <span className="font-medium text-foreground">{e.kind}</span><span className="font-normal">{e.label}</span>
                     </span>

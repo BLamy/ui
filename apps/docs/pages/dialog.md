@@ -2,6 +2,13 @@
 
 Modal dialogs on [UI SDK](https://ui-sdk.dev): a scrim, a card and a focus trap. `Dialog` is the general-purpose modal for a short task (a form, a confirmation with detail, a flow of a few steps). It is **responsive by default**: a centered card while the container it is written in is medium or regular, a sheet you can drag down while it is compact (a phone, a narrow window, a split column), with `variant="tray"` for the floating tray look. `AlertDialog` is the centered iOS alert, a question with two or three short answers, and it stays centered everywhere. The focus trap, Esc, focus return, the inert page behind, `aria-modal`, the swipe that dismisses a sheet and the keyboard inset under it come from UI SDK.
 
+Which one to use:
+
+- **Dialog**: a task that interrupts and needs finishing: a rename or create form, a confirmation that needs a sentence of detail, a short flow (share → QR code → done; plan → checkout → paid). It adapts by itself: a card where there is room, a sheet or a tray where there isn't. Give the root a `view` and it becomes a flow, the card springing its height between steps (see [Credenza: the responsive dialog](#credenza-the-responsive-dialog)).
+- **AlertDialog**: a yes-or-no question with short answers ("Delete this photo?"). A small centered card at every size, `role="alertdialog"`, and a press on the scrim never closes it.
+- **[Sheet](https://blamy.github.io/ui/#/sheet)**: a modal that belongs to an edge at every size: a bottom card sheet with snap points for pickers and filters, side panels for settings or a detail, a drop-down from the top. Choose it when the content is larger than a dialog, or should feel attached to an edge even on a desktop.
+- [AdaptivePane](https://blamy.github.io/ui/#/adaptive-pane) — an inspector that can stay docked beside content; [FloatingSheet](https://blamy.github.io/ui/#/floating-sheet) — a surface that lives beside the page and leaves it usable; [CommandMenu](https://blamy.github.io/ui/#/command-menu) — a searchable ⌘K palette that presents as a dialog. Use [Popover](https://blamy.github.io/ui/#/popover) for light, anchored content that should not block the page.
+
 {% tabs title="Installation" sync="install" %}
 {% tab title="shadcn CLI" %}
 {% command %}npx shadcn@latest add https://blamy.github.io/ui/r/dialog.json{% endcommand %}
@@ -49,13 +56,6 @@ import {
   </DialogContent>
 </Dialog>
 ```
-
-## Dialog, AlertDialog or Sheet?
-
-- **Dialog**: a task that interrupts and needs finishing: a rename or create form, a confirmation that needs a sentence of detail, a short flow (share → QR code → done; plan → checkout → paid). It adapts by itself: a card where there is room, a sheet or a tray where there isn't. Give the root a `view` and it becomes a flow, the card springing its height between steps (see [Credenza: the responsive dialog](#credenza-the-responsive-dialog)).
-- **AlertDialog**: a yes-or-no question with short answers ("Delete this photo?"). A small centered card at every size, `role="alertdialog"`, and a press on the scrim never closes it.
-- **[Sheet](https://blamy.github.io/ui/#/sheet)**: a modal that belongs to an edge at every size: a bottom card sheet with snap points for pickers and filters, side panels for settings or a detail, a drop-down from the top. Choose it when the content is larger than a dialog, or should feel attached to an edge even on a desktop.
-- [AdaptivePane](https://blamy.github.io/ui/#/adaptive-pane) — an inspector that can stay docked beside content; [FloatingSheet](https://blamy.github.io/ui/#/floating-sheet) — a surface that lives beside the page and leaves it usable; [CommandMenu](https://blamy.github.io/ui/#/command-menu) — a searchable ⌘K palette that presents as a dialog. Use [Popover](https://blamy.github.io/ui/#/popover) for light, anchored content that should not block the page.
 
 ## Alerts
 

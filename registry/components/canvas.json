@@ -10,6 +10,7 @@
     "CanvasMarquee",
     "CanvasGuides",
     "CanvasMiniMap",
+    "canvasFrameVariants",
     "useCanvas",
     "createCanvasController"
   ],

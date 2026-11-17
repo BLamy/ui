@@ -6,6 +6,7 @@ import { Segmented, SegmentedItem } from '@/components/ui/segmented';
 import { Tabs, TabsBar, TabsList, TabsTab } from '@/components/ui/tabs';
 import { Workspace, type WorkspaceLayoutInput } from '@/components/ui/workspace';
 import { SizeClassProvider, useSizeClass } from '@/lib/container';
+import type { SizeClass } from '@/lib/size-class';
 import { type LogRow } from '@/lib/log-list-model';
 import {
   useMemo,
@@ -102,15 +103,9 @@ function ConsolePart({
     </div>
   );
 }
-function StackPart({
-  model,
-  compact,
-}: {
-  model: DebuggerModel;
-  compact: boolean;
-}) {
+function StackPart({ model, sizeClass }: { model: DebuggerModel; sizeClass: SizeClass | undefined }) {
   const [section, setSection] = useState<Section>('stack');
-  if (compact) {
+  if (sizeClass === 'compact') {
     return (
       <div
         className="debugger-stack flex flex-col flex-1 h-full min-w-0 min-h-0 overflow-hidden"
@@ -240,11 +235,11 @@ export function ReplayDebugger({
       return (
         <DebuggerCode
           model={model}
-          toolbar={<DebuggerToolbar model={model} compact={narrow} />}
+          toolbar={<DebuggerToolbar model={model} sizeClass={sizeClass} />}
         />
       );
     if (id === 'console') return <ConsolePart model={model} logged={logged} />;
-    return <StackPart model={model} compact={narrow} />;
+    return <StackPart model={model} sizeClass={sizeClass} />;
   };
   return (
     <div

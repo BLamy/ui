@@ -26,12 +26,12 @@ type Story = StoryObj<typeof ReplayPreview>;
 const paused = { events: replayDemoEvents, mounted: true } as const;
 
 /** The browser frame, paused just before checkout fails. */
-export const Default: Story = { args: { ...paused, initialTime: 6400 } };
+export const Default: Story = { args: { ...paused, defaultTime: 6400 } };
 
-export const Dark: Story = { args: { ...paused, initialTime: 6400 }, parameters: { dark: true } };
+export const Dark: Story = { args: { ...paused, defaultTime: 6400 }, parameters: { dark: true } };
 
 /** The recording's own moments on a rail above the seek bar: clicks, the failed request, the error, navigations. */
-export const Markers: Story = { args: { ...paused, initialTime: 6400, markers: true } };
+export const Markers: Story = { args: { ...paused, defaultTime: 6400, markers: true } };
 
 const findings: ReplayMarker[] = [
   { id: 'finding-1', time: 2250, kind: 'custom', label: 'Promo field accepts any text' },
@@ -39,19 +39,19 @@ const findings: ReplayMarker[] = [
 ];
 
 /** Your own markers (an agent's findings), with a fixed URL and no window buttons. */
-export const CustomMarkers: Story = { args: { ...paused, initialTime: 8400, markers: findings, url: 'https://shop.example/checkout', trafficLights: false } };
+export const CustomMarkers: Story = { args: { ...paused, defaultTime: 8400, markers: findings, url: 'https://shop.example/checkout', trafficLights: false } };
 
 /** The DevTools panel open on the Network tab, cut at the playhead. */
-export const DevtoolsOpen: Story = { args: { ...paused, initialTime: 8600, defaultDevtoolsTab: 'network' } };
+export const DevtoolsOpen: Story = { args: { ...paused, defaultTime: 8600, defaultDevtoolsTab: 'network' } };
 
 /** `chrome="minimal"`: a card, no browser frame. */
-export const Minimal: Story = { args: { ...paused, initialTime: 6400, chrome: 'minimal' } };
+export const Minimal: Story = { args: { ...paused, defaultTime: 6400, chrome: 'minimal' } };
 
 /** Before the player mounts (`mounted={false}`): the same frame with the page-shaped skeleton at the recording's
  *  aspect ratio. */
 export const Poster: Story = { args: { events: replayDemoEvents, mounted: false } };
 
 /** DevTools open in the dark: the panel's bars and rows are opaque, so the page doesn't show through. */
-export const DevtoolsDark: Story = { args: { ...paused, initialTime: 8600, defaultDevtoolsTab: 'network' }, parameters: { dark: true } };
+export const DevtoolsDark: Story = { args: { ...paused, defaultTime: 8600, defaultDevtoolsTab: 'network' }, parameters: { dark: true } };
 
-export const PhoneFrame: Story = { args: { ...paused, initialTime: 6400 }, parameters: { phone: true } };
+export const PhoneFrame: Story = { args: { ...paused, defaultTime: 6400 }, parameters: { phone: true } };

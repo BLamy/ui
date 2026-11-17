@@ -4,6 +4,7 @@ import { Fragment, createContext, memo, useCallback, useContext, useId, useLayou
 import { createPortal } from 'react-dom';
 import { createParts, usePart, usePrimitive, type PartProps } from '@ui-sdk/react/primitive';
 import { Resizable, ResizableHandle, ResizablePanel } from '@ui-sdk/react/resizable';
+import { Button as SdkButton } from '@ui-sdk/react/button';
 import { Tabs, TabsList, TabsPanel, TabsTab } from '@ui-sdk/react/tabs';
 import { SizeClassProvider, useSizeClass } from '@/lib/container';
 import { Icon } from '@/lib/icon';
@@ -360,11 +361,13 @@ function TabsView({ tabsets, currentTabsetId }: { tabsets: AnyTabset[]; currentT
   const closable = (tab: AnyTab) => !disabled && !tab.disableClose;
   const active = tabsets.find((tabset) => tabset.id === currentTabsetId) ?? tabsets.find((tabset) => tabset.tabs.length);
   const tabs = tabsets.flatMap((tabset) => tabset.tabs.map((tab) => ({ tab, tabsetId: tabset.id })));
+  const shownId = active?.selectedId ?? tabs[0]?.tab.id ?? null;
+  const shown = tabs.find(({ tab }) => tab.id === shownId)?.tab;
   return (
     <KitTabs
       variant="plain"
       side="bottom"
-      value={active?.selectedId ?? tabs[0]?.tab.id ?? null}
+      value={shownId}
       onValueChange={(value, details) => {
         if (value === null) return;
         const owner = tabsets.find((tabset) => tabset.tabs.some((tab) => tab.id === value));
@@ -406,6 +409,23 @@ function TabsView({ tabsets, currentTabsetId }: { tabsets: AnyTabset[]; currentT
             </div>
           ))}
         </KitTabsList>
+        {/* The buttons over the tabs are for a finger and hidden from assistive tech (a tablist owns only tabs); on a
+            phone with VoiceOver and no keyboard there is no Delete either. So the shown tab's close is also here,
+            after the tablist: named, in reading order, and drawn only while it has keyboard focus. Select a tab,
+            then this closes it. */}
+        {shown && closable(shown) ? (
+          <SdkButton
+            data-action="close-shown-tab"
+            aria-label={`Close ${shown.title ?? shown.id}`}
+            onClick={(event) => void api.closeTab(shown.id, { reason: 'remove-press', event: event.nativeEvent })}
+            className={cn(
+              TAB_CLOSE,
+              'not-focus-visible:sr-only focus-visible:me-2 focus-visible:size-7 focus-visible:bg-background focus-visible:text-foreground',
+            )}
+          >
+            <Icon name="xmark" size={12} />
+          </SdkButton>
+        ) : null}
       </TabsBar>
       <div className={TAB_PANELS}>
         {tabs.map(({ tab }) => (

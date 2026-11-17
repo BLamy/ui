@@ -8,7 +8,8 @@ import {
   type AdaptivePaneController, type AdaptivePaneOpenChangeDetails, type AdaptivePanePresentation,
 } from '@/components/ui/adaptive-pane';
 import { buttonVariants } from '@/components/ui/button';
-import { SizeClassProvider, useSizeClass, type SizeClass, type SizeClassBreakpoints } from '@/lib/container';
+import { SizeClassProvider, useSizeClass } from '@/lib/container';
+import type { SizeClass, SizeClassBreakpoints } from '@/lib/size-class';
 import { DiagramChromeProvider, useDiagramChromeInset, useDiagramChromeScope } from '@/lib/diagram-chrome';
 import { BackLabel, backName, barBackButton, barTitle, useBackFit } from '@/lib/nav-bar';
 import { barSurface, sectionLabelVariants } from '@/lib/primitives';

@@ -1,6 +1,6 @@
 # Combobox
 
-A text field with a list of suggestions under it. Type to narrow the options, move with the arrow keys, press Enter to commit, Esc to close the list. It is UI SDK's `Combobox` drawn as one iOS filled field with a disclosure chevron at its end. Use it when the option set is long enough to search — people, cities, labels; for a short fixed set use [Select](https://blamy.github.io/ui/#/select), and for a command palette use [CommandMenu](https://blamy.github.io/ui/#/command-menu).
+A text field with a list of suggestions under it. Type to narrow the options, move with the arrow keys, press Enter to commit, Esc to close the list. It is UI SDK's `Combobox` drawn as one iOS filled field with a disclosure chevron at its end. Use it when the option set is long enough to search — people, cities, labels; for a short fixed set use [Select](https://blamy.github.io/ui/#/select), for options shown in place with no popup [Listbox](https://blamy.github.io/ui/#/listbox), and for a command palette use [CommandMenu](https://blamy.github.io/ui/#/command-menu).
 
 {% tabs title="Installation" sync="install" %}
 {% tab title="shadcn CLI" %}

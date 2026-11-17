@@ -1,8 +1,8 @@
-import { lazy, Suspense, useEffect, useId, useRef, useState, useSyncExternalStore, type CSSProperties, type Ref } from "react"
+import { lazy, Suspense, useEffect, useId, useRef, useState, useSyncExternalStore, type CSSProperties, type Ref, type ComponentPropsWithoutRef } from "react"
 import type { ChangeDetails } from "@ui-sdk/core"
 import { Glyph } from "../ui/glyph"
 import { HighlightedCode } from "../docs/HighlightedCode"
-import { changeDetails } from "../ui/change-details"
+import { changeDetails } from "@brett_lamy/ui/lib/change-details"
 import type { StrudelRackChangeDetails } from "./rack-types"
 import { Panel, PanelTrigger, usePanel } from "./panel"
 import {
@@ -30,7 +30,8 @@ export type StrudelCodeChangeDetails = ChangeDetails<"rack-edit" | "revert"> & {
   rack?: StrudelRackChangeDetails
 }
 
-export interface StrudelPlayerProps {
+/** The root `<figure>` takes the rest of its element's props (`id`, `data-*`, `aria-describedby`, handlers). */
+export interface StrudelPlayerProps extends Omit<ComponentPropsWithoutRef<"figure">, "children" | "title"> {
   /** Strudel pattern code (what you would type at strudel.cc). */
   code?: string
   /** URL of a `.strudel` file to load when `code` is absent. */
@@ -175,6 +176,7 @@ export function StrudelPlayer({
   defaultCodeOpen,
   onCodeOpenChange,
   onCodeChange,
+  ...rest
 }: StrudelPlayerProps) {
   const id = useId()
   const [source, setSource] = useState<Source>(() => (code !== undefined ? { kind: "ready", code } : { kind: "loading" }))
@@ -239,7 +241,7 @@ export function StrudelPlayer({
   }, [toPlay])
 
   const edit = (next: string, reason: StrudelCodeChangeDetails["reason"], { event, rack }: { event?: Event; rack?: StrudelRackChangeDetails } = {}) => {
-    const details: StrudelCodeChangeDetails = Object.assign(changeDetails(reason, event), rack ? { rack } : {})
+    const details: StrudelCodeChangeDetails = Object.assign(changeDetails({ reason, event }), rack ? { rack } : {})
     onCodeChange?.(next, details)
     if (!details.canceled) setEdited(next)
   }
@@ -295,7 +297,7 @@ export function StrudelPlayer({
             ? `Cycle ${cycle}`
             : "Strudel"
   return (
-    <figure ref={ref} className={`docstream-strudel ${className ?? ""}`.trim()} style={style} aria-label={ariaLabel ?? label} data-state={status}>
+    <figure {...rest} ref={ref} className={`docstream-strudel ${className ?? ""}`.trim()} style={style} aria-label={ariaLabel ?? label} data-state={status}>
       <div className="docstream-strudel__bar">
         {/* A press while the sounds load stops it, so this stays a plain button rather than one that waits. */}
         <button

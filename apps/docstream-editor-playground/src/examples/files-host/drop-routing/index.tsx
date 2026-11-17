@@ -81,7 +81,7 @@ export default function DropRouting({ variant = "both" }: { variant?: string }) 
         <GitbookEditor
           key={variant}
           markdown={markdown}
-          onChange={setMarkdown}
+          onValueChange={setMarkdown}
           toolbar={false}
           documentProperties={false}
           resolveAsset={project.resolveAsset}

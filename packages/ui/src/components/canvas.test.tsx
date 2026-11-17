@@ -378,7 +378,7 @@ describe('Canvas overlay parts', () => {
       renders++;
       return (
         <>
-          <CanvasFrame frame={{ x: 10, y: 10, w: 100, h: 50, rot: 0 }} dashed />
+          <CanvasFrame frame={{ x: 10, y: 10, w: 100, h: 50, rot: 0 }} variant="dashed" />
           <CanvasHandles handles={[{ id: 'nw', pt: { x: 10, y: 10 } }]} />
           <CanvasMarquee rect={{ x: 0, y: 0, w: 20, h: 20 }} />
         </>

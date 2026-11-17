@@ -61,7 +61,7 @@ Docstream renders it as a compact **Properties** sheet above the body, collapsed
 
 ### Editing properties
 
-The read-only sheet is the `DocumentProperties` component; give it an `onChange` and it becomes an editor — inputs per type, **Add property**, and a remove button per row. Each change hands you a new properties node; put it on the document and serialize:
+The read-only sheet is the `DocumentProperties` component; give it an `onValueChange` and it becomes an editor — inputs per type, **Add property**, and a remove button per row. Each change hands you a new properties node; put it on the document and serialize:
 
 ```tsx title="PropertiesEditor.tsx"
 import { useMemo, useState } from "react"
@@ -76,7 +76,7 @@ export function PropertiesEditor({ initial }: { initial: string }) {
         <DocumentProperties
           properties={doc.properties}
           defaultOpen
-          onChange={(properties) => setSource(serializeMarkdown({ ...doc, properties }))}
+          onValueChange={(properties) => setSource(serializeMarkdown({ ...doc, properties }))}
         />
       ) : null}
       <DocsRenderer doc={doc} documentProperties={false} />
@@ -105,7 +105,7 @@ if (!error) {
 | `readDocumentProperties(node)` | root, `/gitbook` | `{ values, error? }` — JSON-like values; never throws |
 | `setDocumentProperty(node, key, value)` | root, `/gitbook` | New node with one key set or added; throws on invalid YAML |
 | `removeDocumentProperty(node, key)` | root, `/gitbook` | New node without the key |
-| `DocumentProperties` | root, `/properties` | The sheet; editable with `onChange` |
+| `DocumentProperties` | root, `/properties` | The sheet; editable with `onValueChange` |
 
 The sheet's styles ship in `@brett_lamy/ui/docstream/styles.css`; hosts that use only the `/properties` entry can import `@brett_lamy/ui/docstream/properties/styles.css` instead.
 
@@ -204,7 +204,7 @@ The pieces are exported for task UIs outside a document:
 
 | Export | Entry | What it is |
 | --- | --- | --- |
-| `TaskCheckbox` | root, `/tasks` | The checkbox: `state`, `onChange?`, `label?` — tooltip and state menu included |
+| `TaskCheckbox` | root, `/tasks` | The checkbox: `state`, `onValueChange?`, `label?` — tooltip and state menu included |
 | `TASK_STATE_ICONS` | root, `/tasks` | The icon component for each state |
 | `TASK_STATES` | root, `/gitbook` | `[{ id, marker, label }]` in menu order |
 | `getTaskState(item)` | root, `/gitbook` | An item's state (`pending` when unmarked) |
@@ -218,7 +218,7 @@ import type { TaskState } from "@brett_lamy/ui/docstream"
 
 export function StatusPicker() {
   const [state, setState] = useState<TaskState>("in-progress")
-  return <TaskCheckbox state={state} onChange={setState} label="Release 1.19" />
+  return <TaskCheckbox state={state} onValueChange={setState} label="Release 1.19" />
 }
 ```
 

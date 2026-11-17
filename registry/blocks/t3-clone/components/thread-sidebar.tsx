@@ -40,7 +40,7 @@ const rowBtn = cn(press, 'flex cursor-pointer items-center gap-2 rounded-lg bord
 function useCloseDrawer() {
   const shell = useOptionalWorkbenchShell();
   return () => {
-    if (shell?.compact) shell.setSidebarOpen(false);
+    if (shell?.sizeClass === 'compact') shell.setSidebarOpen(false);
   };
 }
 

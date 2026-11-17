@@ -2,6 +2,7 @@
 import { createContext, useCallback, useContext, useMemo, useRef, useSyncExternalStore, type ComponentProps, type CSSProperties, type ReactNode, type Ref } from 'react';
 import type { Viewport } from '@ui-sdk/core';
 import { usePart, usePrimitive } from '@ui-sdk/react/primitive';
+import { cva, type VariantProps } from 'class-variance-authority';
 import { useContainerSize } from '@/lib/container';
 import { toBoard, toScreen, type Frame, type Guide, type Handle, type Pt, type Rect } from '@/lib/canvas-math';
 import { canvas, miniMapLayout, type CanvasController, type CanvasOptions, type CanvasPointerInfo } from '@/lib/canvas-primitive';
@@ -172,7 +173,9 @@ export function Canvas({
   // Dragging the view shows the hand over any resting cursor the caller set (a class or `style`).
   const grab = state.grabbing ? 'cursor-grabbing!' : state.spaceHeld || panning ? 'cursor-grab!' : undefined;
   const board = usePart(handle, 'board', {}, { className: 'pointer-events-auto absolute top-0 left-0 text-foreground', children }, 'div');
-  const pane = usePart(handle, 'pane', {}, { className: 'pointer-events-none absolute inset-0 touch-none overflow-scroll [scrollbar-width:none]', children: board }, 'div');
+  // Its overflow is hidden: still a scroller that focus, find in page and a link to an id scroll (which pans), but not one a
+  // person scrolls, which is the canvas's job (its wheel, its keys). So it isn't a second scroll region to reach by keyboard.
+  const pane = usePart(handle, 'pane', {}, { className: 'pointer-events-none absolute inset-0 touch-none overflow-hidden', children: board }, 'div');
   const root = usePart(handle, 'root', {}, {
     ...rest,
     ref: rootRef,
@@ -206,25 +209,30 @@ interface OverlayPartProps {
   style?: CSSProperties;
 }
 
-export interface CanvasFrameProps extends OverlayPartProps {
+/** The outline of a CanvasFrame: `default` is solid, `dashed` marks an item that is not the plain selection (a
+    locked item, a second instance of the selected one). */
+export const canvasFrameVariants = cva(
+  'pointer-events-none absolute rounded-(--canvas-frame-radius) outline-(length:--canvas-frame-line) outline-offset-(--canvas-frame-offset) outline-primary',
+  {
+    variants: { variant: { default: 'outline-solid', dashed: 'outline-dashed' } },
+    defaultVariants: { variant: 'default' },
+  },
+);
+
+export interface CanvasFrameProps extends OverlayPartProps, VariantProps<typeof canvasFrameVariants> {
   frame: Frame;
-  /** A dashed outline (a locked item). */
-  dashed?: boolean;
   /** Air between the frame and its outline, in screen px (default 3). */
   offset?: number;
 }
 
 /** An outline around a (rotated) frame, in the theme's primary color. Put it in the board layer. */
-export function CanvasFrame({ frame, dashed, offset = 3, className, style }: CanvasFrameProps) {
+export function CanvasFrame({ frame, variant, offset = 3, className, style }: CanvasFrameProps) {
   return (
     <div
       data-slot="canvas-frame"
+      data-variant={variant ?? 'default'}
       aria-hidden="true"
-      className={cn(
-        'pointer-events-none absolute rounded-(--canvas-frame-radius) outline-(length:--canvas-frame-line) outline-offset-(--canvas-frame-offset) outline-primary',
-        dashed ? 'outline-dashed' : 'outline-solid',
-        className,
-      )}
+      className={cn(canvasFrameVariants({ variant }), className)}
       style={{
         left: frame.x, top: frame.y, width: frame.w, height: frame.h,
         transform: frame.rot ? `rotate(${frame.rot}deg)` : undefined,

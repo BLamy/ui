@@ -397,7 +397,6 @@ export const STATE_GLYPHS = {
   invoke: 'play-circle',
   tag: 'tag',
   final: 'stop',
-  reenter: 'arrow-clockwise',
 } as const satisfies Record<string, DiagramGlyph>;
 
 /** An action as a chip: its name, and what it's given or does. */
@@ -423,10 +422,12 @@ export function transitionSections(data: StateEdgeData): DiagramSection[] {
   const items: DiagramSectionItem[] = [];
   if (data.guard) items.push({ id: 'guard', title: `if ${data.guard.text}`, icon: STATE_GLYPHS.guard });
   (data.actions ?? []).forEach((a, i) => items.push({ ...actionItem(a, i), id: `action-${i}` }));
-  if (data.reenter) items.push({ id: 'reenter', title: 'reenters', icon: STATE_GLYPHS.reenter, tone: 'muted' });
-  if (data.internal) items.push({ id: 'internal', title: 'no target', tone: 'muted' });
-  if (data.targets) items.push({ id: 'targets', title: `${data.targets} targets`, description: 'at once', tone: 'muted' });
-  return items.length ? [{ id: 'label', items }] : [];
+  // How it goes is a modifier, not something it does: a quiet line of text under its chips, not a chip.
+  const how: DiagramSectionItem[] = [];
+  if (data.reenter) how.push({ id: 'reenter', title: 'reenters', tone: 'muted' });
+  if (data.internal) how.push({ id: 'internal', title: 'no target', tone: 'muted' });
+  if (data.targets) how.push({ id: 'targets', title: `${data.targets} targets`, description: 'at once', tone: 'muted' });
+  return [...(items.length ? [{ id: 'label', items }] : []), ...(how.length ? [{ id: 'how', variant: 'list' as const, items: how }] : [])];
 }
 
 /** A transition in statechart notation, `event [guard] / action, action`: what a Mermaid statechart writes, and a screen

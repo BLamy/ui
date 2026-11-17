@@ -408,9 +408,8 @@ export function MapChatDemo({
         id: place.id,
         position: place.position,
         label: place.name,
-        color: stop ? undefined : meta.color,
-        icon: meta.icon,
-        badge: stop,
+        tint: stop ? undefined : meta.color,
+        icon: stop ?? meta.icon,
         kind: stop ? 'stop' : 'place',
         selected: place.id === selectedId,
       };

@@ -90,12 +90,29 @@ subscribeStrudel(() => getStrudelSnapshot()) // { owner, status: 'idle' | 'loadi
 | `onCodeChange` | — | `(code, details)` after each rack edit and after Revert. `details` is UI SDK's `ChangeDetails`: `reason` is `rack-edit` or `revert`, `details.cancel()` keeps the code as it was, and for a rack edit `details.rack` says which control made it. |
 | `samples` | dirt-samples | Sample banks to load before the first play. |
 | `className` · `style` · `ref` | — | On the root `<figure>`. |
+| `id`, `data-*`, `aria-describedby`… | — | The rest of a `<figure>`'s props reach the root. |
 | `aria-label` | `title` | The figure's accessible name; defaults to the title, then the file name, then "Strudel pattern". |
 
 ```tsx
 const [rackOpen, setRackOpen] = useState(false)
 <StrudelPlayer code={code} title="Four on the floor" rackOpen={rackOpen} onRackOpenChange={setRackOpen} onCodeChange={(next, { reason }) => save(next, reason)} />
 ```
+
+## Accessibility
+
+- The root is a `figure` named by `aria-label`, else the title, the file name, or "Strudel pattern".
+- The play button is named "Play <title>", and "Stop <title>" while it loads or plays. The line under the title (loading, "Cycle 12") is a polite live region; an error in the pattern is an `alert`.
+- **Equipment** and **Code** are disclosure buttons (`aria-expanded`), their hints "Show equipment" / "Hide code" in `title`. On a touch screen each reaches a 44px hit area.
+- The code panel is a focusable `region` named "<title> code", so it can be scrolled from the keyboard.
+- The rack's knobs and faders are ARIA sliders and its steps are toggle buttons, with the keyboard described under [The hardware on its own](#the-hardware-on-its-own).
+- The piano roll is decoration (`aria-hidden`): what plays is announced by the cycle count.
+
+## Data attributes
+
+| Attribute | On | Values |
+| --- | --- | --- |
+| `data-state` | the root `figure` (`.docstream-strudel`) | `idle`, `loading`, `playing` |
+| `data-open` / `data-closed` | the Equipment and Code buttons and their panels | while the panel is open / closed |
 
 ## The rack
 

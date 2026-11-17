@@ -3,7 +3,7 @@ import { distToPolyline, type Pt, type Rect } from '@/lib/canvas-math';
 import {
   ARROW_BROAD, ARROW_SLIM, anchorNormal, anchorPoint, ancestorsOf, arrowHead, closedD, connectorBounds, connectorPath, curvePath, descendantsOf, dirOf, distToConnector,
   addConnection, checkConnection, deleteItems, diagramBounds, elbowAround, labelBoxAvoiding, rectIndex, edgeAt, edgeGeometries, edgeGeometry, edgesAtPoint, facingCurve, facingSides, indexDiagram, isInside, labelBox, loopingCurve, moveEdgeEnd, moveNodes, nearestAnchor, nearestSide, nodeAt, pointAlong, polygonPoints,
-  polylinePath, portPoint, regionDividers, renderWindow, rerouteLabel, rerouteOrthogonal, selfLoopPath, simplifyRoute, type ConnectorGeometry, type DiagramEdge, type DiagramNode,
+  polylinePath, portPoint, regionDividers, renderWindow, rerouteLabel, rerouteOrthogonal, selfLoopPath, simplifyRoute, codeKey, type ConnectorGeometry, type DiagramEdge, type DiagramNode,
 } from './diagram-model';
 
 const node = (id: string, x: number, y: number, w = 100, h = 40, extra: Partial<DiagramNode> = {}): DiagramNode => ({ id, x, y, w, h, ...extra });
@@ -816,5 +816,43 @@ describe('routes and labels that keep clear of the nodes', () => {
     room.add({ x: 500, y: 0, w: 10, h: 10 });
     expect(room.overlap({ x: 500, y: 0, w: 5, h: 5 })).toBe(25);
     expect(room.overlap({ x: 0, y: 20, w: 5, h: 5 })).toBe(0);
+  });
+});
+
+describe('hand-placed routes (J1)', () => {
+  const hits = (pts: readonly Pt[], r: Rect) => pts.some((p, i) => i > 0 && Math.max(p.x, pts[i - 1].x) > r.x + 0.5 && Math.min(p.x, pts[i - 1].x) < r.x + r.w - 0.5 && Math.max(p.y, pts[i - 1].y) > r.y + 0.5 && Math.min(p.y, pts[i - 1].y) < r.y + r.h - 0.5);
+
+  it('goes round a card in its way, square, from the sides it faces', () => {
+    // Top to bottom, with a card in the middle of the straight run.
+    const nodes = [node('a', 0, 0), node('mid', -20, 120, 140, 60), node('b', 0, 300)];
+    const edge: DiagramEdge = { id: 'e', from: 'a', to: 'b' };
+    const plain = edgeGeometries([edge], indexDiagram(nodes)).get('e')!;
+    expect(hits(plain.pts, nodes[1])).toBe(true);
+    const around = edgeGeometries([edge], indexDiagram(nodes), { avoid: true }).get('e')!;
+    expect(hits(around.pts, nodes[1])).toBe(false);
+    square(around.pts);
+    expect(around.start).toEqual(plain.start);
+    expect(around.end).toEqual(plain.end);
+  });
+
+  it('turns a fan next to its crowded end, so each label has its own run', () => {
+    const nodes = [node('api', 200, 0), node('a', 0, 200), node('b', 200, 200), node('c', 400, 200)];
+    const edges: DiagramEdge[] = ['a', 'b', 'c'].map((t) => ({ id: t, from: 'api', to: t, title: t.toUpperCase() }));
+    const routes = edgeGeometries(edges, indexDiagram(nodes));
+    // The turn is next to the API, so the long runs are next to each target, apart.
+    for (const id of ['a', 'c']) {
+      const pts = simplifyRoute(routes.get(id)!.pts);
+      expect(pts[1].y).toBeLessThan(80);
+    }
+    // A label goes on the run into its end.
+    const run = simplifyRoute(routes.get('a')!.pts);
+    const box = labelBoxAvoiding(run, { w: 40, h: 30 }, () => 0);
+    expect(box.x + box.w / 2).toBeCloseTo(50);
+  });
+
+  it('writes a code row’s key with a colon when it has a type or value after it', () => {
+    expect(codeKey({ title: 'audioRef', description: 'string' }, true)).toBe('audioRef:');
+    expect(codeKey({ title: 'audioRef' }, true)).toBe('audioRef');
+    expect(codeKey({ title: 'onPlay', description: 'x' }, false)).toBe('onPlay');
   });
 });

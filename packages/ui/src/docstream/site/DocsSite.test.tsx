@@ -54,7 +54,7 @@ describe("DocsSite", () => {
       "blocks/music.md": "# Music\n\nPlay.",
     }
     const tabs = [{ title: "Components", path: "" }, { title: "Blocks", path: "blocks" }]
-    await render(<DocsSite files={files} tabs={tabs} routing="memory" initialPath="button" />)
+    await render(<DocsSite files={files} tabs={tabs} routing="memory" defaultPath="button" />)
     const tabLinks = () => [...host.querySelectorAll(".ds-site-tabs-header .ds-site-tab")]
     expect(tabLinks().map((a) => a.textContent)).toEqual(["Components", "Blocks"])
     expect(tabLinks()[0]!.getAttribute("aria-current")).toBe("page")
@@ -133,7 +133,7 @@ describe("DocsSite", () => {
   })
 
   it("shows a not-found page for unknown paths", async () => {
-    await render(<DocsSite files={FILES} routing="memory" initialPath="nope" />)
+    await render(<DocsSite files={FILES} routing="memory" defaultPath="nope" />)
     expect(host.querySelector(".ds-site-page-title")?.textContent).toBe("Page not found")
   })
 
@@ -195,7 +195,7 @@ describe("DocsSite", () => {
         "docs/api/specs/pets.json": JSON.stringify(spec),
         "docs/img/logo.svg": "<svg xmlns=\"http://www.w3.org/2000/svg\"/>",
       }
-      await render(<DocsSite files={files} routing="memory" initialPath="api/pets" />)
+      await render(<DocsSite files={files} routing="memory" defaultPath="api/pets" />)
       await act(async () => {
         await new Promise((r) => setTimeout(r, 20))
       })

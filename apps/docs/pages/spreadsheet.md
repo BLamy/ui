@@ -46,7 +46,7 @@ const [rows, setRows] = useState(() => parseCsv(text).rows)
 
 Cells are strings and are shown as written: `1,234.50` stays `1,234.50`. A column whose values all read as numbers (thousands commas, a currency sign, `%` and `(12)` negatives included) or as ISO dates is right-aligned, sorts by value and gets a histogram. Any other column sorts as text, in natural order ("file 2" before "file 10"), ignoring case. Empty cells sort last in both directions.
 
-With titles and no rows, the titles stay and `emptyState` shows under them: a `status` region beside the grid, not in it (a grid owns only rows). Paste cells or press Add Row to start.
+With titles and no rows, the titles stay and `emptyState` shows under them: a `status` region beside the grid, not in it (a grid owns only rows). To start, press Add Row, or paste: an empty sheet's grid is itself the tab stop (Tab to it, or click the empty region), described by the empty state, and ⌘V / Ctrl+V there writes the clipboard's cells from the first one. A read-only empty sheet takes no focus.
 
 {% demo src="spreadsheet/empty" %}
 
@@ -82,7 +82,7 @@ Sorting is a view: `onValueChange` always gets rows in the file's order, and edi
 
 ## Keyboard
 
-The grid is one tab stop. Inside it:
+The grid is one tab stop: the active cell, or, while the sheet has no rows, the grid itself, which takes a paste. Inside it:
 
 | Keys | Action |
 | --- | --- |

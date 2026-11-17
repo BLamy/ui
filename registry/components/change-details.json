@@ -1,0 +1,14 @@
+{
+  "name": "change-details",
+  "title": "Change details",
+  "description": "What a kit callback's on<Key>Change(value, details) or onValueChange(value, details) receives for state that is not a UI SDK primitive's (a FilterBar's filters, a FontPicker's family, docstream's task and property editors): UI SDK's ChangeDetails, with reason, event, source (read from the event, programmatic without one), cancel() and canceled. Call the consumer first and write your own state only when the change wasn't canceled.",
+  "exports": [
+    "changeDetails"
+  ],
+  "imports": [
+    "changeDetails"
+  ],
+  "types": [
+    "ChangeGiven"
+  ]
+}

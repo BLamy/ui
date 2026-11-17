@@ -1,4 +1,5 @@
 {
   "title": "CloudflareDiagram · a small system: one Worker, KV and D1",
-  "status": "Live"
+  "status": "Live",
+  "bleed": true
 }

@@ -1,0 +1,14 @@
+{
+  "name": "back",
+  "title": "Platform back",
+  "description": "bindBack(el, { onBack }): the platform's back (the browser's back button and gesture, Android's back, a mouse's back button) as one callback while the element is mounted, without leaving the page.",
+  "exports": [
+    "bindBack"
+  ],
+  "imports": [
+    "bindBack"
+  ],
+  "types": [
+    "BindBackOptions"
+  ]
+}

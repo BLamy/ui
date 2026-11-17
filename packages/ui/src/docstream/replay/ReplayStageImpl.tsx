@@ -18,13 +18,13 @@ const useIsoLayoutEffect = typeof window === 'undefined' ? useEffect : useLayout
 const ReplayStageImpl = forwardRef<ReplayStageHandle, ReplayStageProps>(function ReplayStageImpl(
   {
     events,
-    autoplay = false,
+    autoPlay = false,
     loop = false,
     speed = 1,
     skipInactive = true,
-    initialTime = 0,
+    defaultTime = 0,
     fit = 'width',
-    showMouse = true,
+    cursor = true,
     overlay,
     className,
     style,
@@ -44,8 +44,8 @@ const ReplayStageImpl = forwardRef<ReplayStageHandle, ReplayStageProps>(function
   const rafRef = useRef(0)
   const callbacks = useRef({ onReady, onTimeUpdate, onPlayingChange, onFinish, onLayout })
   callbacks.current = { onReady, onTimeUpdate, onPlayingChange, onFinish, onLayout }
-  const options = useRef({ autoplay, loop, speed, skipInactive, initialTime })
-  options.current = { autoplay, loop, speed, skipInactive, initialTime }
+  const options = useRef({ autoPlay, loop, speed, skipInactive, defaultTime })
+  options.current = { autoPlay, loop, speed, skipInactive, defaultTime }
 
   const prepared = useMemo(
     () =>
@@ -154,7 +154,7 @@ const ReplayStageImpl = forwardRef<ReplayStageHandle, ReplayStageProps>(function
     if (!hasSnapshot || !hostRef.current) return
 
     if (!rrwebRef.current) {
-      const { autoplay, speed, skipInactive, initialTime } = options.current
+      const { autoPlay, speed, skipInactive, defaultTime } = options.current
       const replayer = new Replayer(prepared, {
         root: hostRef.current,
         liveMode: false,
@@ -182,7 +182,7 @@ const ReplayStageImpl = forwardRef<ReplayStageHandle, ReplayStageProps>(function
       // rrweb applies only events stamped before the pause point, so pausing at 0 would leave out the
       // mutations recorded with the first snapshot (a trimmed recording stamps everything before its
       // window there): 1ms in, the first frame is the page as recorded at the start.
-      replayer.pause(Math.max(initialTime, 1))
+      replayer.pause(Math.max(defaultTime, 1))
       rrwebRef.current = replayer
       fedCountRef.current = prepared.length
       let duration = meta.duration
@@ -192,8 +192,8 @@ const ReplayStageImpl = forwardRef<ReplayStageHandle, ReplayStageProps>(function
         // keep the event-derived duration
       }
       callbacks.current.onReady?.({ duration, width: meta.width, height: meta.height })
-      callbacks.current.onTimeUpdate?.(initialTime)
-      if (autoplay) handle.play(initialTime)
+      callbacks.current.onTimeUpdate?.(defaultTime)
+      if (autoPlay) handle.play(defaultTime)
     } else if (prepared.length > fedCountRef.current) {
       for (let i = fedCountRef.current; i < prepared.length; i++) rrwebRef.current.addEvent(prepared[i]!)
       fedCountRef.current = prepared.length
@@ -221,7 +221,7 @@ const ReplayStageImpl = forwardRef<ReplayStageHandle, ReplayStageProps>(function
   // rrweb's own cursor element; hosts drawing their own pointer overlay hide it.
   useEffect(() => {
     const mouse = hostRef.current?.querySelector<HTMLElement>('.replayer-mouse')
-    if (mouse) mouse.style.visibility = showMouse ? '' : 'hidden'
+    if (mouse) mouse.style.visibility = cursor ? '' : 'hidden'
   })
 
   useIsoLayoutEffect(() => {

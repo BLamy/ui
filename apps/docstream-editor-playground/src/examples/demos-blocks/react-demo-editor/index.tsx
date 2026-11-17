@@ -34,7 +34,7 @@ export default function ReactDemoEditorDemo({ variant = "live" }: { variant?: st
           height={160}
           {...(variant === "none" ? {} : { liveRenderer: toyLiveRenderer })}
           autoPreview={variant !== "manual"}
-          onChange={(files) => log(`onChange({ ${Object.entries(files).map(([p, c]) => `"${p}": ${c.length} chars`).join(", ")} })`)}
+          onValueChange={(files) => log(`onChange({ ${Object.entries(files).map(([p, c]) => `"${p}": ${c.length} chars`).join(", ")} })`)}
         />
       </Pane>
       <LogPane entries={entries} empty="Edit a file: onChange fires on every keystroke." />

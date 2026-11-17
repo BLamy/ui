@@ -3,6 +3,8 @@
 import { useEffect, useId, useMemo, useRef, useState } from "react"
 import { EditorContent, useEditor, useEditorState, type Editor as TiptapEditor } from "@tiptap/react"
 import type { AnyExtension } from "@tiptap/core"
+import type { ChangeDetails } from "@ui-sdk/core"
+import { changeDetails } from "@brett_lamy/ui/lib/change-details"
 import { Glyph } from "./glyph"
 
 import { Button } from "@ui-sdk/react/button"
@@ -57,6 +59,11 @@ export type { EditorAttachment } from "./attachments"
 export type { FilePicker, FilePickKind, FileUploader } from "./runtime"
 export type { AssetResolver } from "@brett_lamy/ui/docstream/assets"
 
+/** Why the markdown changed: an edit in the editor (typing, paste, drop, a toolbar or "/" command). A `markdown` the
+    host passes in is not reported. */
+export type GitbookEditorValueChangeReason = "input-change"
+export type GitbookEditorValueChangeDetails = ChangeDetails<GitbookEditorValueChangeReason>
+
 export interface GitbookEditorProps {
   /** Editable YAML frontmatter, shown as document properties above the body (default true). */
   documentProperties?: boolean | { defaultOpen?: boolean }
@@ -67,8 +74,11 @@ export interface GitbookEditorProps {
   envHost?: DocstreamEnvHost
   /** Markdown source. When provided, the editor stays in sync with it (controlled). */
   markdown?: string
-  /** Called with serialized GitBook markdown on every edit. */
-  onChange?: (markdown: string) => void
+  /**
+   * Called with the serialized GitBook markdown on every edit, and why (`details.reason`, the DOM `details.event`
+   * behind it when there is one, `details.source`). `details.cancel()` puts the document back as it was.
+   */
+  onValueChange?: (markdown: string, details: GitbookEditorValueChangeDetails) => void
   /** Show the built-in formatting toolbar (default true). */
   toolbar?: boolean
   /** Built-in "/" slash menu: true (default), false, or a custom item list. */
@@ -85,7 +95,7 @@ export interface GitbookEditorProps {
   /** Class applied to the editor wrapper. */
   className?: string
   /** Focus the editor on mount. */
-  autofocus?: boolean
+  autoFocus?: boolean
   /**
    * Disable StarterKit's undo/redo — required when supplying a Yjs Collaboration
    * extension via `extensions`, which manages shared history itself.
@@ -244,7 +254,7 @@ function LinkTool({ editor, active }: { editor: TiptapEditor; active: boolean })
         aria-label="Link"
         title="Link"
         className={active ? "gb-tool gb-tool-active" : "gb-tool"}
-        data-active={active ? "" : undefined}
+        data-pressed={active ? "" : undefined}
         // Bold and the others say they're on with aria-pressed; a popup trigger can't, so it says so in its description.
         aria-describedby={active ? linkedId : undefined}
       >
@@ -323,7 +333,7 @@ function FormattingToolbar({ editor }: { editor: TiptapEditor }) {
 
 export function GitbookEditor({
   markdown,
-  onChange,
+  onValueChange,
   toolbar = true,
   documentProperties = true,
   envHost,
@@ -332,7 +342,7 @@ export function GitbookEditor({
   editable = true,
   placeholder,
   className,
-  autofocus = false,
+  autoFocus = false,
   disableHistory,
   extensions,
   onKeyDown,
@@ -365,7 +375,7 @@ export function GitbookEditor({
   const [ownVFS] = useState(() => createDemoVFS())
   const vfs = demoVFS ?? ownVFS
   // Tracks the markdown the editor itself produced, so external updates
-  // (file switches) reset content but our own onChange echoes don't.
+  // (file switches) reset content but our own onValueChange echoes don't.
   const lastEmitted = useRef<string | null>(null)
   // PM JSON has nowhere to carry doc-level citation definitions; remember the
   // ones from the last applied markdown and reattach them on serialize.
@@ -374,8 +384,11 @@ export function GitbookEditor({
   // Ids of the attachment chips in the document, to report removals.
   const attachmentIds = useRef<Set<string>>(new Set())
   // Latest callbacks for handlers the editor captured at creation.
-  const latest = useRef({ onPaste, imagePaste, onAttachmentAdd, onAttachmentRemove, markdownPaste, vfs, demoResolver, pastedDemoFiles, demoClipboard, onDropEmbeds, uploadFile })
-  latest.current = { onPaste, imagePaste, onAttachmentAdd, onAttachmentRemove, markdownPaste, vfs, demoResolver, pastedDemoFiles, demoClipboard, onDropEmbeds, uploadFile }
+  const latest = useRef({ onValueChange, onPaste, imagePaste, onAttachmentAdd, onAttachmentRemove, markdownPaste, vfs, demoResolver, pastedDemoFiles, demoClipboard, onDropEmbeds, uploadFile })
+  latest.current = { onValueChange, onPaste, imagePaste, onAttachmentAdd, onAttachmentRemove, markdownPaste, vfs, demoResolver, pastedDemoFiles, demoClipboard, onDropEmbeds, uploadFile }
+  // The DOM event behind the edit being reported (a key, a paste, a toolbar press), for `details.event`.
+  const lastInput = useRef<Event | undefined>(undefined)
+  const rootRef = useRef<HTMLDivElement | null>(null)
   const editorRef = useRef<TiptapEditor | null>(null)
 
   // Pasted/dropped files that aren't images go to the host's `uploadFile`; each URL it returns is embedded.
@@ -508,7 +521,7 @@ export function GitbookEditor({
 
   const editor = useEditor({
     editable,
-    autofocus,
+    autofocus: autoFocus,
     extensions: createGitbookExtensions({
       ...(placeholder !== undefined ? { placeholder } : {}),
       slashMenu,
@@ -607,12 +620,22 @@ export function GitbookEditor({
       const removed = [...attachmentIds.current].filter((id) => !ids.has(id))
       attachmentIds.current = ids
       if (removed.length) latest.current.onAttachmentRemove?.(removed)
-      if (!onChange) return
+      const report = latest.current.onValueChange
+      if (!report) return
       const ast = tiptapToAst(editor.getJSON() as PMNode)
       if (citationsRef.current?.length) ast.citations = citationsRef.current
       const md = serializeEditorMarkdown(ast)
+      // An uncontrolled editor starts empty; a controlled one has applied its `markdown` by the first edit.
+      const previous = lastEmitted.current ?? ""
+      const details = changeDetails<GitbookEditorValueChangeReason>({ reason: "input-change", event: lastInput.current })
+      report(md, details)
+      if (details.canceled) {
+        // Put the document back as it was, without reporting that as a change.
+        editor.commands.setContent(astToTiptap(parseAndTrack(previous)), { emitUpdate: false })
+        attachmentIds.current = collectAttachmentIds(editor.state.doc)
+        return
+      }
       lastEmitted.current = md
-      onChange(md)
     },
   })
 
@@ -638,6 +661,23 @@ export function GitbookEditor({
   useEffect(() => {
     if (editor && editor.isEditable !== editable) editor.setEditable(editable)
   }, [editor, editable])
+
+  useEffect(() => {
+    const root = rootRef.current
+    if (!root) return
+    let clear: ReturnType<typeof setTimeout> | undefined
+    const seen = (event: Event) => {
+      lastInput.current = event
+      clearTimeout(clear)
+      clear = setTimeout(() => (lastInput.current = undefined))
+    }
+    const types = ["keydown", "beforeinput", "input", "paste", "drop", "cut", "click"]
+    for (const type of types) root.addEventListener(type, seen, true)
+    return () => {
+      clearTimeout(clear)
+      for (const type of types) root.removeEventListener(type, seen, true)
+    }
+  }, [editor])
 
   useEffect(() => {
     onEditorReady?.(editor ?? null)
@@ -681,7 +721,7 @@ export function GitbookEditor({
   if (!editor) return null
 
   return (
-    <div className={className ? `gb ${className}` : "gb"}>
+    <div ref={rootRef} className={className ? `gb ${className}` : "gb"}>
       {documentProperties ? <DocumentPropertiesEditor editor={editor} defaultOpen={typeof documentProperties === "object" && documentProperties.defaultOpen} /> : null}
       {toolbar && <FormattingToolbar editor={editor} />}
       <EditorRuntimeProvider value={runtime}>

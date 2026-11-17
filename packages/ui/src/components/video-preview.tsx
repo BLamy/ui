@@ -4,7 +4,7 @@ import { Toolbar, ToolbarButton, type ToolbarProps } from '@/components/ui/toolb
 import { Icon } from '@/lib/icon';
 import { usePlaybackState, type Playback } from '@/lib/playback';
 import { cn } from '@/lib/utils';
-import { clipDuration, clipEnd, formatTimecode, lookCss, type Timeline, type TimelineClip, type TimelineFormat, type TimelineMedia, type TimelineTrack } from '@/lib/video-timeline-model';
+import { clipDuration, clipEnd, formatTimecode, lookCss, type Timeline, type TimelineClip, type TimelineFormat, type VideoTimelineMedia, type TimelineTrack } from '@/lib/video-timeline-model';
 
 /* ══ VideoPreview — a timeline played live in the page ══
    Nothing is rendered ahead of time: every clip near the playhead is a <video>, <audio> or <img> of its media, laid out
@@ -23,7 +23,7 @@ import { clipDuration, clipEnd, formatTimecode, lookCss, type Timeline, type Tim
 export interface VideoPreviewProps extends Omit<ComponentProps<'div'>, 'children'> {
   timeline: Timeline;
   /** The media clips play, by the ids clips use: the same map VideoTimeline takes (it reads `kind` and `url`). */
-  media: Record<string, TimelineMedia | undefined>;
+  media: Record<string, VideoTimelineMedia | undefined>;
   /** The shared playback clock (`usePlaybackClock`) the picture follows. */
   playback: Playback;
   /** The output's size (only its aspect matters here). */

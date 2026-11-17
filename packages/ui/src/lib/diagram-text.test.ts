@@ -84,7 +84,8 @@ describe('a card’s anatomy, from its text', () => {
     const list = nodeSize({ title: 't', sections: [{ variant: 'list', items: [{ title: 'abc' }] }] }, text);
     expect(chips.h - list.h).toBe(C.chipY * 2 + 2);
     expect(diagramTextRuns([{ id: 'n', x: 0, y: 0, w: 1, h: 1, sections: [{ variant: 'code', items: [{ title: 'a', description: 'string' }] }] }])).toEqual([
-      { text: 'a', kind: 'code' }, { text: 'string', kind: 'code' },
+      // A key with a type or value after it is drawn, and so measured, as `key:`.
+      { text: 'a:', kind: 'code' }, { text: 'string', kind: 'code' },
     ]);
   });
 

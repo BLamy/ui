@@ -1,0 +1,23 @@
+{
+  "name": "container",
+  "title": "Size-class scope",
+  "description": "The React side of size classes: useSizeClass() measures a container (bindSizeClass), SizeClassProvider makes it the scope for what it renders (context crosses portals), useSizeClassScope() reads the nearest one, and usePresentation resolves a component's presentation=\"auto\" from it. useContainerWidth / useContainerSize measure a box.",
+  "exports": [
+    "useSizeClass",
+    "useSizeClassScope",
+    "SizeClassProvider",
+    "usePresentation",
+    "useMountPresentationKey",
+    "useContainerWidth",
+    "useContainerSize"
+  ],
+  "imports": [
+    "useSizeClass",
+    "SizeClassProvider",
+    "useSizeClassScope"
+  ],
+  "types": [
+    "UseSizeClassOptions",
+    "ContainerSize"
+  ]
+}

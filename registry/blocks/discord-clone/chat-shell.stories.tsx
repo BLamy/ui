@@ -33,7 +33,8 @@ function Frame({ width, height, children }: { width: number; height: number; chi
 }
 
 function DemoMain() {
-  const { width, compact, setNavOpen } = useChatShell();
+  const { width, sizeClass, setNavOpen } = useChatShell();
+  const compact = sizeClass === 'compact';
   return (
     <ChatShellMain className="font-sans">
       <div className="flex h-[46px] shrink-0 items-center gap-[9px] border-b border-border px-4">
@@ -93,7 +94,7 @@ const meta: Meta<FrameArgs> = {
     docs: {
       description: {
         component:
-          'ChatShell is a thin layout root (width → compact, nav drawer state, --ck-* tokens). Its regions — ChatShellNav, ChatShellSidebar, ChatShellMain, ChatShellHeader, ChatShellFooter, ChatShellAside, ChatShellPanel — are ordinary elements; leave out what a layout does not need.',
+          'ChatShell is a thin layout root (width → size class, nav drawer state, --ck-* tokens). Its regions — ChatShellNav, ChatShellSidebar, ChatShellMain, ChatShellHeader, ChatShellFooter, ChatShellAside, ChatShellPanel — are ordinary elements; leave out what a layout does not need.',
       },
     },
   },

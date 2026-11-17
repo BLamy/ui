@@ -41,7 +41,7 @@ export interface ReplayElementsSource {
 /** What the player gives a stage of your own. `ReplayStageProps`, less what's only about rrweb. */
 export type ReplayCustomStageProps = Pick<
   ReplayStageProps,
-  'autoplay' | 'loop' | 'speed' | 'initialTime' | 'overlay' | 'className' | 'style' | 'onReady' | 'onTimeUpdate' | 'onPlayingChange' | 'onFinish'
+  'autoPlay' | 'loop' | 'speed' | 'defaultTime' | 'overlay' | 'className' | 'style' | 'onReady' | 'onTimeUpdate' | 'onPlayingChange' | 'onFinish'
 > & RefAttributes<ReplayStageHandle>
 
 /**
@@ -76,21 +76,22 @@ export interface ReplayStageLayout {
 export interface ReplayStageProps {
   /** rrweb events; appended events are fed to the running player. */
   events: ReplayEvent[]
-  autoplay?: boolean
+  /** Start playing once loaded. */
+  autoPlay?: boolean
   loop?: boolean
   /** Playback rate (1 = real time). */
   speed?: number
   /** Fast-forward idle stretches longer than 5s (rrweb `skipInactive`). Default true. */
   skipInactive?: boolean
   /** Where the paused player starts (ms). */
-  initialTime?: number
+  defaultTime?: number
   /**
    * `width` (default): scale down to the box width, height follows the recording's aspect.
    * `contain`: fill the box (give it a height) and letterbox the viewport inside it.
    */
   fit?: 'width' | 'contain'
-  /** rrweb's own cursor. Hide it when drawing a pointer overlay. Default true. */
-  showMouse?: boolean
+  /** Draw rrweb's recorded pointer (default true), as the player's `cursor` does. Turn it off when you draw your own over the page. */
+  cursor?: boolean
   /**
    * Rendered over the page, in recorded-viewport coordinates (a box of `width × height` px
    * scaled with the page). `var(--replay-scale)` holds the scale, so an overlay can

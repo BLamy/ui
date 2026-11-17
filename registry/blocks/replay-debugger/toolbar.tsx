@@ -6,6 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Toggle } from '@/components/ui/toggle';
 import { useState } from 'react';
+import { useSizeClassScope } from '@/lib/container';
+import type { SizeClass } from '@/lib/size-class';
 import type { NavigationKind, StepLink } from './host';
 import { frameName, sourceName, type DebuggerModel } from './model';
 import { useModel } from './use-model';
@@ -194,13 +196,16 @@ const DevToolsOpenTitle =
 /** The way into Chrome DevTools: it opens attached to this recording, and other CDP clients can use the address. */
 export function DevToolsControl({
   model,
-  compact = false,
+  sizeClass,
   className,
   style,
 }: DebuggerPartProps & {
   model: DebuggerModel;
-  compact?: boolean;
+  /** A compact size class shortens the button's label. Default: the size-class scope it's in. */
+  sizeClass?: SizeClass;
 }) {
+  const scope = useSizeClassScope();
+  const compact = (sizeClass ?? scope) === 'compact';
   const clients = useModel(model, (m) => m.devToolsClients);
   const address = useModel(model, (m) => m.devToolsAddress);
   const [busy, setBusy] = useState(false);
@@ -292,15 +297,19 @@ export function DevToolsControl({
 /** What goes over the code: stepping, where this is, and the way into DevTools. */
 export function DebuggerToolbar({
   model,
-  compact = false,
+  sizeClass,
   devTools = true,
   className,
   style,
 }: DebuggerPartProps & {
   model: DebuggerModel;
-  compact?: boolean;
+  /** A compact size class wraps the position onto its own line and drops the engine line. Default: the size-class
+      scope it's in. */
+  sizeClass?: SizeClass;
   devTools?: boolean;
 }) {
+  const scope = useSizeClassScope();
+  const compact = (sizeClass ?? scope) === 'compact';
   const warning = useModel(model, (m) => m.summary?.timeline.warning ?? null);
   const engine = useModel(model, (m) => m.debugStatus());
   const applicationCodeOnly = useModel(model, (m) => m.applicationCodeOnly);
@@ -327,7 +336,7 @@ export function DebuggerToolbar({
       >
         {applicationCodeOnly ? 'App code' : 'All code'}
       </Toggle>
-      {devTools ? <DevToolsControl model={model} compact={compact} /> : null}
+      {devTools ? <DevToolsControl model={model} sizeClass={sizeClass ?? scope} /> : null}
       {unavailable ? (
         <span role="status">
           No application code in this indexed part. Choose All code to inspect

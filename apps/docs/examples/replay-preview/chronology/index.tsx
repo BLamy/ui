@@ -28,7 +28,7 @@ export default function Chronology() {
     >
       <ReplayPreview
         events={replayDemoEvents}
-        initialTime={2300}
+        defaultTime={2300}
         chrome="minimal"
         ref={player}
         onTimeUpdate={setTime}

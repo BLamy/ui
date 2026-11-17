@@ -15,7 +15,7 @@ import {
 } from './data';
 import { APPS as DESKTOP_APPS } from './apps';
 import { useDesktop } from './desktop';
-import { AppTile, CalcGlyph, ClipGlyph, FileGlyph, Tile } from './parts';
+import { AppTile, CalcGlyph, ClipGlyph, FileGlyph, Tile, type TileName } from './parts';
 import { useAlfred } from './state';
 import { EmptyState } from '@/components/ui/empty-state';
 
@@ -54,9 +54,9 @@ export const APPS = [
 ] as const;
 
 export function appTile(tone: string, icon?: string, size = 30) {
-  if (tone === 'calc') return <Tile tone="calc" size={size} glyph={<CalcGlyph size={Math.round(size * 0.6)} />} />;
-  if (tone === 'emoji') return <Tile tone="emoji" size={size} glyph={<span className="leading-none" style={{ fontSize: size * 0.62 }}>😊</span>} />;
-  return <Tile tone={tone as 'files'} size={size} icon={icon} />;
+  if (tone === 'calc') return <Tile variant="calc" size={size} glyph={<CalcGlyph size={Math.round(size * 0.6)} />} />;
+  if (tone === 'emoji') return <Tile variant="emoji" size={size} glyph={<span className="leading-none" style={{ fontSize: size * 0.62 }}>😊</span>} />;
+  return <Tile variant={tone as TileName} size={size} icon={icon} />;
 }
 
 export function RootPage() {
@@ -336,20 +336,20 @@ function SystemItems() {
       <CommandMenuItem
         value="Toggle Dark Mode" keywords={['appearance', 'light mode', 'theme']} title={(a.appearance === 'dark') ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
         description="Appearance"
-        icon={<Swap effect="pop" value={(a.appearance === 'dark') ? 'light' : 'dark'}>{(a.appearance === 'dark') ? <Tile tone="light" icon="sun-fill" size={28} /> : <Tile tone="dark" icon="moon-fill" size={28} />}</Swap>}
+        icon={<Swap effect="pop" value={(a.appearance === 'dark') ? 'light' : 'dark'}>{(a.appearance === 'dark') ? <Tile variant="light" icon="sun-fill" size={28} /> : <Tile variant="dark" icon="moon-fill" size={28} />}</Swap>}
         onSelect={() => { a.toggleAppearance(); a.hud(a.appearance === 'dark' ? 'Light Mode' : 'Dark Mode', a.appearance === 'dark' ? 'sun-fill' : 'moon-fill'); }}
       />
-      <CommandMenuItem value="Lock Screen" keywords={['lock']} title="Lock Screen" icon={<Tile tone="lock" icon="lock-fill" size={28} />} trailing={<CommandMenuShortcut shortcut="ctrl+mod+q" />} onSelect={() => { a.close(); a.setPower('lock'); }} />
-      <CommandMenuItem value="Sleep" keywords={['sleep', 'display']} title="Sleep" icon={<Tile tone="sleep" icon="moon-fill" size={28} />} onSelect={() => { a.close(); a.setPower('sleep'); }} />
+      <CommandMenuItem value="Lock Screen" keywords={['lock']} title="Lock Screen" icon={<Tile variant="lock" icon="lock-fill" size={28} />} trailing={<CommandMenuShortcut shortcut="ctrl+mod+q" />} onSelect={() => { a.close(); a.setPower('lock'); }} />
+      <CommandMenuItem value="Sleep" keywords={['sleep', 'display']} title="Sleep" icon={<Tile variant="sleep" icon="moon-fill" size={28} />} onSelect={() => { a.close(); a.setPower('sleep'); }} />
       <CommandMenuItem
-        value="Empty Trash" keywords={['trash', 'delete', 'bin']} title="Empty Trash" icon={<Tile tone="trash" icon={a.trash ? 'trash-fill' : 'trash'} size={28} />}
+        value="Empty Trash" keywords={['trash', 'delete', 'bin']} title="Empty Trash" icon={<Tile variant="trash" icon={a.trash ? 'trash-fill' : 'trash'} size={28} />}
         description={a.trash ? `${a.trash} items · ${TRASH.size}` : 'Trash is empty'} dimmed={!a.trash} page={a.trash ? 'confirm:trash' : undefined}
         onSelect={a.trash ? undefined : () => a.hud('Trash is already empty', 'trash')}
       />
-      <CommandMenuItem value="Restart" keywords={['reboot']} title="Restart…" icon={<Tile tone="system" icon="arrow-clockwise" size={28} />} page="confirm:restart" />
-      <CommandMenuItem value="Shut Down" keywords={['power off', 'turn off']} title="Shut Down…" icon={<Tile tone="power" icon="power" size={28} />} page="confirm:shutdown" />
-      <CommandMenuItem value="Log Out" keywords={['sign out', 'user']} title="Log Out Brett Lamy…" icon={<Tile tone="system" icon="person-fill" size={28} />} page="confirm:logout" />
-      <CommandMenuItem value="Eject All" keywords={['eject', 'unmount', 'drives']} title="Eject All Volumes" icon={<Tile tone="system" icon="arrow-up-circle" size={28} />} onSelect={() => a.hud('Ejected 2 volumes', 'arrow-up-circle')} />
+      <CommandMenuItem value="Restart" keywords={['reboot']} title="Restart…" icon={<Tile variant="system" icon="arrow-clockwise" size={28} />} page="confirm:restart" />
+      <CommandMenuItem value="Shut Down" keywords={['power off', 'turn off']} title="Shut Down…" icon={<Tile variant="power" icon="power" size={28} />} page="confirm:shutdown" />
+      <CommandMenuItem value="Log Out" keywords={['sign out', 'user']} title="Log Out Brett Lamy…" icon={<Tile variant="system" icon="person-fill" size={28} />} page="confirm:logout" />
+      <CommandMenuItem value="Eject All" keywords={['eject', 'unmount', 'drives']} title="Eject All Volumes" icon={<Tile variant="system" icon="arrow-up-circle" size={28} />} onSelect={() => a.hud('Ejected 2 volumes', 'arrow-up-circle')} />
     </>
   );
 }
@@ -378,7 +378,7 @@ export function ConfirmPage({ id }: { id: ConfirmId }) {
   return (
     <CommandMenuPage value={`confirm:${id}`} title={c.title} placeholder="Confirm or go back…" filter={false} numbered>
       <div className="flex items-center gap-3.5 px-3 pt-3 pb-2">
-        <Tile tone={c.tone} icon={c.icon} size={40} />
+        <Tile variant={c.tone} icon={c.icon} size={40} />
         <p className="m-0 text-detail leading-[20px] text-muted-foreground">{c.body}</p>
       </div>
       <CommandMenuGroup>
@@ -392,12 +392,12 @@ export function ConfirmPage({ id }: { id: ConfirmId }) {
 /* ══ Web search ══ */
 
 const ENGINE_TILE: Record<string, ReactNode> = {
-  google: <Tile tone="google" size={28} glyph={<span className="text-body font-bold" style={{ color: '#4285F4' }}>G</span>} />,
-  github: <Tile tone="github" size={28} icon="branch" />,
-  wikipedia: <Tile tone="wikipedia" size={28} dark glyph={<span className="font-serif text-body font-semibold">W</span>} />,
-  youtube: <Tile tone="youtube" size={28} icon="play" />,
-  maps: <Tile tone="maps" size={28} icon="mappin-fill" />,
-  amazon: <Tile tone="amazon" size={28} icon="cart" />,
+  google: <Tile variant="google" size={28} glyph={<span className="text-body font-bold" style={{ color: '#4285F4' }}>G</span>} />,
+  github: <Tile variant="github" size={28} icon="branch" />,
+  wikipedia: <Tile variant="wikipedia" size={28} foreground="dark" glyph={<span className="font-serif text-body font-semibold">W</span>} />,
+  youtube: <Tile variant="youtube" size={28} icon="play" />,
+  maps: <Tile variant="maps" size={28} icon="mappin-fill" />,
+  amazon: <Tile variant="amazon" size={28} icon="cart" />,
 };
 
 function EngineItem({ engine, q, value }: { engine: Engine; q: string; value?: string }) {
@@ -432,8 +432,8 @@ function WorkflowItems() {
   const a = useAlfred();
   return (
     <>
-      <CommandMenuItem value="Create GitHub Issue" keywords={['github', 'bug', 'issue', 'new']} title="Create GitHub Issue" description="Repository → title → label → create" icon={<Tile tone="github" icon="branch" size={28} />} page="gh-repo" onSelect={() => a.setIssue({ title: undefined, label: undefined })} />
-      <CommandMenuItem value="Start Timer" keywords={['timer', 'pomodoro', 'focus']} title="Start Timer" description="Length → label → start" icon={<Tile tone="timer" icon="clock-fill" size={28} />} page="timer" />
+      <CommandMenuItem value="Create GitHub Issue" keywords={['github', 'bug', 'issue', 'new']} title="Create GitHub Issue" description="Repository → title → label → create" icon={<Tile variant="github" icon="branch" size={28} />} page="gh-repo" onSelect={() => a.setIssue({ title: undefined, label: undefined })} />
+      <CommandMenuItem value="Start Timer" keywords={['timer', 'pomodoro', 'focus']} title="Start Timer" description="Length → label → start" icon={<Tile variant="timer" icon="clock-fill" size={28} />} page="timer" />
     </>
   );
 }
@@ -450,7 +450,7 @@ export function RepoPage() {
         {REPOS.map((r) => (
           <CommandMenuItem
             key={r.name} value={r.name} keywords={[r.lang]} title={r.name} description={`${r.description} · ★ ${r.stars}`}
-            icon={<Tile tone="github" icon="branch" size={28} />} page="gh-title" onSelect={() => a.setIssue({ repo: r.name })}
+            icon={<Tile variant="github" icon="branch" size={28} />} page="gh-title" onSelect={() => a.setIssue({ repo: r.name })}
             trailing={<span className="ml-auto inline-flex shrink-0 items-center gap-1.5 pl-3 text-[12.5px] text-muted-foreground"><span className="size-2.5 rounded-full" style={{ background: r.langColor }} />{r.lang}</span>}
           />
         ))}
@@ -523,7 +523,7 @@ export function TimerPage() {
         {TIMERS.map((t) => (
           <CommandMenuItem
             key={t.minutes} value={`${t.minutes} minutes`} keywords={[t.name]} title={`${t.minutes} minutes`} description={t.name}
-            icon={<Tile tone="timer" size={28} glyph={<span className="text-caption font-bold tabular-nums">{t.minutes}</span>} />}
+            icon={<Tile variant="timer" size={28} glyph={<span className="text-caption font-bold tabular-nums">{t.minutes}</span>} />}
             page="timer-name" onSelect={() => a.setTimerDraft(t.minutes)}
           />
         ))}
@@ -540,7 +540,7 @@ export function TimerNamePage() {
     <CommandMenuPage value="timer-name" title={`${a.timerDraft} min`} placeholder="What are you working on?" filter={false}>
       <CommandMenuGroup><CommandMenuGroupLabel>Start</CommandMenuGroupLabel>
         <CommandMenuItem
-          value="start" icon={<Tile tone="timer" icon="clock-fill" size={28} />} title={`Start ${a.timerDraft}-minute timer`} description={name}
+          value="start" icon={<Tile variant="timer" icon="clock-fill" size={28} />} title={`Start ${a.timerDraft}-minute timer`} description={name}
           onSelect={() => { a.startTimer(a.timerDraft, name); a.hud(`${a.timerDraft}:00 — ${name}`, 'clock-fill'); a.reset(); }}
         />
       </CommandMenuGroup>

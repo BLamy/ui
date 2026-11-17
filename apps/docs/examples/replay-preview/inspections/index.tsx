@@ -13,7 +13,7 @@ const inspections: ReplayInspection[] = [
 export default function Inspections() {
   return (
     <div style={{ width: '100%', maxWidth: 760 }}>
-      <ReplayPreview events={replayDemoEvents} initialTime={6000} inspections={inspections} />
+      <ReplayPreview events={replayDemoEvents} defaultTime={6000} inspections={inspections} />
     </div>
   )
 }

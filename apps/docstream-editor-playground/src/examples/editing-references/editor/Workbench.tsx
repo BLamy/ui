@@ -135,7 +135,7 @@ export function Workbench({ sample, height = 440 }: { sample: Sample; height?: n
               // Props are read when the editor mounts: a new variant or a reset mounts a fresh one.
               key={generation}
               markdown={markdown}
-              onChange={setMarkdown}
+              onValueChange={setMarkdown}
               onEditorReady={setEditor}
               {...sample.props}
             />

@@ -29,7 +29,7 @@ export default function Primitives({ variant = "code" }: { variant?: string }) {
     return (
       <div style={{ display: "grid", gap: 14 }}>
         <label style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <TaskCheckbox state={state} onChange={setState} label="Ship it" />
+          <TaskCheckbox state={state} onValueChange={setState} label="Ship it" />
           Interactive — click, or right-click for the state menu. Now: <code>{state}</code>
         </label>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 14 }}>

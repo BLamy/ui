@@ -16,5 +16,5 @@ export const Primary = {
 }
 
 export function ReplayExample() {
-  return <ReplayPreview events={replayDemoEvents} initialTime={6400} title="Kitchen sink replay" />
+  return <ReplayPreview events={replayDemoEvents} defaultTime={6400} title="Kitchen sink replay" />
 }

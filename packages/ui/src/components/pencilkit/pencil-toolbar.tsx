@@ -304,6 +304,8 @@ export function PencilInkPicker({ value, defaultValue, onValueChange, inks = pen
               className={cn(
                 swatchClass,
                 'cursor-pointer p-0 outline-offset-2 outline-primary focus-visible:outline-2 data-pressed:outline-2 data-pressed:outline-solid',
+                // A 22px disc: on a touch screen its hit area reaches 44px (11px around it), as ColorPicker's swatches do.
+                "relative pointer-coarse:after:absolute pointer-coarse:after:-inset-[11px] pointer-coarse:after:rounded-full pointer-coarse:after:content-['']",
               )}
               // the swatch color is data
               style={{ '--ink': ink.value } as React.CSSProperties}

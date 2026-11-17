@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react"
+import { useEffect, useMemo, useState, type ReactNode } from "react"
 import { Glyph } from "../ui/glyph"
 import { useAsset } from "../asset-resolver"
 import { HighlightedCode } from "../docs/HighlightedCode"
@@ -69,70 +69,14 @@ function useCloudflare(): Cloudflare | Error | null {
 const DEFAULT_NAME = "workerd config"
 
 type System = ReturnType<Cloudflare["placeInLayers"]>
-interface Size { width: number; height: number }
-interface View { x: number; y: number; zoom: number }
 
-// The air at a board's edge.
-const EDGE = 20
-// Below this a service's words are too small to read. A board too small for the whole system at this size (a phone)
-// starts here, at the top, where requests come in, and the rest is a drag, Fit, or the Services panel away. Services
-// run top to bottom, so a narrow board shows the whole width when it can, and scrolls down.
-const LEGIBLE = 0.66
-
-/** The box around the drawing, the system's, from its places and its cards' sizes. */
-function boundsOf(cloudflare: Cloudflare, system: System) {
-  const box = cloudflare.cloudflareBoardBounds(system)
-  return box ? { x0: box.x, y0: box.y, x1: box.x + box.w, y1: box.y + box.h } : null
-}
-
-/** Where the board starts when the whole system wouldn't be legible: at its top, at the smallest size that can be read,
- *  in the middle if it's as wide as the board or less. Undefined when it would be, and then the Diagram fits it, in the
- *  room its toolbar and bar leave. */
-function startView(box: { x0: number; y0: number; x1: number; y1: number }, size: Size): View | undefined {
-  if (size.width <= 0 || size.height <= 0) return undefined
-  const w = size.width - EDGE * 2, h = size.height - EDGE * 2
-  const fit = Math.min(1, w / (box.x1 - box.x0), h / (box.y1 - box.y0))
-  if (fit >= LEGIBLE) return undefined
-  const zoom = Math.max(LEGIBLE, Math.min(1, w / (box.x1 - box.x0)))
-  const wide = (box.x1 - box.x0) * zoom
-  return { zoom, x: wide <= w ? size.width / 2 - ((box.x0 + box.x1) / 2) * zoom : EDGE - box.x0 * zoom, y: EDGE - box.y0 * zoom }
-}
-
-/** The element's size, as it changes. */
-function useSize(): [(element: HTMLElement | null) => void, Size | null] {
-  const [element, setElement] = useState<HTMLElement | null>(null)
-  const [size, setSize] = useState<Size | null>(null)
-  useEffect(() => {
-    if (!element) return
-    const read = () => {
-      const { width, height } = element.getBoundingClientRect()
-      setSize((s) => (s && s.width === width && s.height === height ? s : { width, height }))
-    }
-    read()
-    if (typeof ResizeObserver !== "function") return
-    const observer = new ResizeObserver(read)
-    observer.observe(element)
-    return () => observer.disconnect()
-  }, [element])
-  return [setElement, size]
-}
-
-/** The board: the system on a read-only CloudflareDiagram, once the board's size says where it starts. */
+/** The board: the system on a read-only CloudflareDiagram. Where it starts is the diagram's: all of it when that can be read,
+ *  else across its width from the top, where requests come in, clear of its toolbar and its bar. */
 function Board({ cloudflare, system, name, appearance }: { cloudflare: Cloudflare; system: System; name: string; appearance: CapnpAppearance | undefined }) {
   const [measureScheme, scheme] = useColorScheme(appearance)
-  const [measureSize, size] = useSize()
-  const ref = useCallback((element: HTMLElement | null) => { measureScheme(element); measureSize(element) }, [measureScheme, measureSize])
-  const box = useMemo(() => boundsOf(cloudflare, system), [cloudflare, system])
-  const view = useMemo(() => (size && box ? startView(box, size) : undefined), [box, size])
-  // Whether it all fits: a board that starts to, or stops, starts again from its own view; one that's been moved and only
-  // changes size a little keeps where it was put.
-  const whole = !view || !box || view.zoom * (box.x1 - box.x0) <= (size?.width ?? 0)
   return (
-    <div ref={ref} className={`docs-capnp-board ${scheme}`} data-appearance={scheme} data-whole={whole ? "" : undefined}>
-      {size ? (
-        <cloudflare.CloudflareDiagram key={whole ? "whole" : "part"} services={system.services} edges={system.edges} title={name} defaultPanelOpen={false}
-          {...(view ? { defaultViewport: view } : {})} aria-label={`${name}, as Cloudflare services`} />
-      ) : null}
+    <div ref={measureScheme} className={`docs-capnp-board ${scheme}`} data-appearance={scheme}>
+      <cloudflare.CloudflareDiagram services={system.services} edges={system.edges} title={name} defaultPanelOpen={false} aria-label={`${name}, as Cloudflare services`} />
     </div>
   )
 }

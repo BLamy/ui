@@ -113,12 +113,12 @@ A typical `sourceRenderer` is `(ref) => <SourcePreview reference={ref} client={c
 import { DocumentProperties } from "@brett_lamy/ui/docstream" // also /properties (+ /properties/styles.css)
 ```
 
-The property sheet the renderers show for frontmatter — a collapsible `<details>` with a count. With `onChange` it becomes an editor: text, number and boolean fields, a YAML textarea for lists and maps, add and remove buttons. Edits go through `setDocumentProperty` / `removeDocumentProperty`, so comments, key order and quoting survive. Invalid YAML shows the parse error (and, when editable, a raw YAML textarea).
+The property sheet the renderers show for frontmatter — a collapsible `<details>` with a count. With `onValueChange` it becomes an editor: text, number and boolean fields, a YAML textarea for lists and maps, add and remove buttons. Edits go through `setDocumentProperty` / `removeDocumentProperty`, so comments, key order and quoting survive. Invalid YAML shows the parse error (and, when editable, a raw YAML textarea).
 
 | Prop | Type | Default | Purpose |
 | --- | --- | --- | --- |
 | `properties` | `DocumentPropertiesNode` | — | Required — `doc.properties`. |
-| `onChange` | `(properties: DocumentPropertiesNode) => void` | — | Omit for read-only. |
+| `onValueChange` | `(properties: DocumentPropertiesNode, details: DocumentPropertiesValueChangeDetails) => void` | — | Omit for read-only. `details.reason`: `property-change`, `property-add`, `property-remove` or `yaml-change`. |
 | `defaultOpen` | `boolean` | `false` | Start expanded. |
 | `className` | `string` | — | Appended to `docs-document-properties`. |
 
@@ -128,12 +128,12 @@ The property sheet the renderers show for frontmatter — a collapsible `<detail
 import { TaskCheckbox, TASK_STATE_ICONS } from "@brett_lamy/ui/docstream" // also /tasks (+ /tasks/styles.css)
 ```
 
-An accessible eight-state checkbox. A normal click clears any marked state, and on a pending box sets `verified`; right-click or Shift+F10 opens a keyboard-navigable state menu (arrows, Home/End, Escape). Hover or focus shows the state's label. Without `onChange` it is read-only.
+An accessible eight-state checkbox. A normal click clears any marked state, and on a pending box sets `verified`; right-click or Shift+F10 opens a keyboard-navigable state menu (arrows, Home/End, Escape). Hover or focus shows the state's label. Without `onValueChange` it is read-only.
 
 | Prop | Type | Default | Purpose |
 | --- | --- | --- | --- |
 | `state` | `TaskState` | — | Required. |
-| `onChange` | `(state: TaskState) => void` | — | Makes it interactive. |
+| `onValueChange` | `(state: TaskState, details: TaskCheckboxValueChangeDetails) => void` | — | Makes it interactive. `details.reason`: `press` (the box) or `item-press` (the state menu). |
 | `label` | `string` | `"Task"` | Accessible name prefix (`"Ship it: In progress"`). |
 | `className` | `string` | — | Appended to `docs-task-control`. |
 

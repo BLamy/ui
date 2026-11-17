@@ -267,9 +267,24 @@
   color: var(--gb-muted-foreground);
 }
 
+/* Text for screen readers only (a hint's kind). */
+.docs-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* The icon sits on the first line and the box hugs the text, as a callout does: the body's first and last blocks
+   lose their outer margins. */
 .docs-hint {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 12px;
   padding: 14px 16px;
   border-radius: 12px;
@@ -280,6 +295,7 @@
   width: 18px;
   height: 18px;
   flex-shrink: 0;
+  margin-top: calc((1lh - 18px) / 2);
 }
 
 .docs-hint > div {
@@ -287,11 +303,11 @@
   min-width: 0;
 }
 
-.docs-hint > div > :first-child {
+.docs-hint [data-docstream-blocks] > :first-child {
   margin-top: 0;
 }
 
-.docs-hint > div > :last-child {
+.docs-hint [data-docstream-blocks] > :last-child {
   margin-bottom: 0;
 }
 
@@ -490,9 +506,17 @@ summary:is(.docs-expandable-trigger, .oas-response-trigger)::-webkit-details-mar
   }
 }
 
+/* An `ol` of `li`s for assistive tech; the rail draws the numbers. */
+:is([data-docstream], .docs-article) ol.docs-stepper,
+.docs-stepper {
+  list-style: none;
+  padding: 0;
+}
+
 .docs-stepper .docs-step {
   display: flex;
   gap: 14px;
+  margin-block: 0;
 }
 
 .docs-step-rail {
@@ -527,9 +551,14 @@ summary:is(.docs-expandable-trigger, .oas-response-trigger)::-webkit-details-mar
   padding-bottom: 20px;
 }
 
-.docs-step-title {
+/* A heading element at its authored level, drawn as the step's title whatever the level. */
+.docs-stepper .docs-step-title {
+  font-size: inherit;
   font-weight: 600;
+  line-height: inherit;
   margin: 4px 0 6px;
+  padding: 0;
+  border: 0;
 }
 
 /* A step's body starts at the top, so a step without a title has its first line beside its number. */
@@ -796,6 +825,7 @@ summary:is(.docs-expandable-trigger, .oas-response-trigger)::-webkit-details-mar
   color: var(--gb-code-fg);
   padding: 12px 14px;
   overflow-x: auto;
+  font-family: var(--font-mono, "SF Mono", ui-monospace, Menlo, monospace);
   font-size: 13px;
   white-space: pre;
 }
@@ -926,7 +956,7 @@ summary:is(.docs-expandable-trigger, .oas-response-trigger)::-webkit-details-mar
   overflow-wrap: anywhere;
 }
 
-.docstream-tui__status[data-tone="error"] {
+.docstream-tui__status[data-tone="destructive"] {
   display: flex;
   align-items: flex-start;
   gap: 8px;
@@ -1029,11 +1059,11 @@ details[open] > .docstream-tui__source-trigger .docstream-tui__caret {
     min-height: 44px;
   }
 
-  .docstream-stl__reset {
-    min-height: 44px;
-    min-width: 44px;
-    top: 6px;
-    right: 6px;
+  /* The pill keeps its size; an invisible target around it reaches 44px (StrudelPlayer's toggles do the same). */
+  .docstream-stl__reset::after {
+    content: "";
+    position: absolute;
+    inset: -11px -4px;
   }
 }
 
@@ -1849,20 +1879,27 @@ details[open] > .docstream-tui__source-trigger .docstream-tui__caret {
   min-width: 0;
 }
 
+/* A fence is the kit's code card (CodeEditor's `bl-syntax-card` and header): the same surface, hairline, radius and
+   header fill through the --bl-syntax-* properties, so a chat reply holding both shows one look. The fallbacks keep
+   docstream's own look where the kit's tokens aren't there. */
 .docs-code {
-  border: 1px solid var(--gb-border);
-  border-radius: 12px;
+  border: 1px solid var(--bl-syntax-border, var(--gb-border));
+  border-radius: var(--bl-syntax-radius, 12px);
   overflow: hidden;
+  background: var(--bl-syntax-surface, var(--card, var(--gb-code-bg)));
 }
 
 .docs-code-header {
   display: flex;
   justify-content: space-between;
+  min-height: 40px;
+  box-sizing: border-box;
   padding: 7px 14px;
-  background: var(--gb-muted);
-  border-bottom: 1px solid var(--gb-border);
+  background: var(--bl-syntax-header-bg, color-mix(in srgb, var(--gb-panel-foreground) 3.5%, transparent));
+  border-bottom: 1px solid var(--bl-syntax-border, var(--gb-border));
   font-size: 12.5px;
   font-weight: 500;
+  color: var(--gb-muted-foreground);
 }
 
 .docs-code-lang {
@@ -1874,10 +1911,10 @@ details[open] > .docstream-tui__source-trigger .docstream-tui__caret {
   margin: 0;
   padding: 13px 15px;
   overflow-x: auto;
-  font-family: ui-monospace, Menlo, monospace;
+  font-family: var(--bl-syntax-font, var(--font-mono, ui-monospace, Menlo, monospace));
   font-size: 13px;
   line-height: 1.55;
-  background: var(--gb-code-bg);
+  background: transparent;
   color: var(--gb-code-fg);
 }
 
@@ -3188,6 +3225,12 @@ details[open] > .oas-response-trigger .oas-response-caret {
 .docs-code-header > span:first-child {
   flex: 1;
   min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  /* The file name in the code's own family, as CodeEditorTitle sets it. */
+  font-family: var(--bl-syntax-font, var(--font-mono, ui-monospace, Menlo, monospace));
+  color: var(--gb-panel-foreground);
 }
 
 .docs-code-header .docs-copy {
@@ -5723,6 +5766,7 @@ details[open] > .oas-response-trigger .oas-response-caret {
     display: flex;
     flex: 1 1 0%;
     min-height: 0;
+    container-type: inline-size;
   }
 
   :where([data-slot="replay-devtools-table-wrap"]) {
@@ -5781,6 +5825,27 @@ details[open] > .oas-response-trigger .oas-response-caret {
 
   :where([data-slot="replay-devtools-table"] th[data-col="waterfall"]) {
     width: 22%;
+  }
+
+  /* A narrow panel (a phone) drops Method and Type, as Chrome's DevTools hides columns, rather than cutting the
+     headers mid-word; what still doesn't fit ends in an ellipsis. */
+  :where([data-slot="replay-devtools-table"] th) {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  @container (max-width: 480px) {
+    :where([data-slot="replay-devtools-table"] :is(th, td):is([data-col="method"], [data-col="type"])) {
+      display: none;
+    }
+
+    :where([data-part="replay-devtools-pane"]:not([data-detail]) [data-slot="replay-devtools-table"] th[data-col="name"]) {
+      width: 40%;
+    }
+
+    :where([data-part="replay-devtools-pane"]:not([data-detail]) [data-slot="replay-devtools-table"] th:is([data-col="status"], [data-col="time"])) {
+      width: 19%;
+    }
   }
 
   :where([data-slot="replay-devtools-table"] td) {

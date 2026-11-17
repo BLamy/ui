@@ -56,6 +56,7 @@ export function Landing() {
           </p>
           <div className="flex flex-wrap items-center gap-2">
             <Button size="lg" render={<a href="#/libraries" />} className="no-underline">Browse the libraries</Button>
+            <Button size="lg" variant="outline" render={<a href="#/introduction#find-a-component" />} className="no-underline">Components</Button>
             <Button size="lg" variant="ghost" render={<a href="#/introduction" />} className="no-underline">
               Read the docs <Icon name="arrow-right" size={16} />
             </Button>

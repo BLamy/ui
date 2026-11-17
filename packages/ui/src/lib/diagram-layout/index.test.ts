@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { DIAGRAM_ELK_OPTIONS, DiagramLayoutError, createDiagramLayoutEngine, fromElkGraph, layoutDiagram, toElkGraph, type DiagramDraft, type ElkGraph } from '@/lib/diagram-layout';
-import type { DiagramNode } from '@/lib/diagram-model';
+import { DIAGRAM_ELK_OPTIONS, DiagramLayoutError, createDiagramLayoutEngine, fromElkGraph, layoutDiagram, toElkGraph, wrapDiagram, type DiagramDraft, type ElkGraph } from '@/lib/diagram-layout';
+import type { DiagramEdge, DiagramNode } from '@/lib/diagram-model';
+import type { Pt } from '@/lib/canvas-math';
 
 const text = (t: string) => ({ w: t.length * 10, h: 15 });
 const inside = (a: DiagramNode, b: DiagramNode) => a.x >= b.x && a.y >= b.y && a.x + a.w <= b.x + b.w + 0.01 && a.y + a.h <= b.y + b.h + 0.01;
@@ -386,5 +387,116 @@ describe('without the peer', () => {
     expect(error.code).toBe('peer');
     expect(error.message).toContain('npm install elkjs');
     expect(error.cause).toBeDefined();
+  });
+});
+
+/** Whether two orthogonal routes cross (a point where a run of one goes through a run of the other, ends aside). */
+const crosses = (p: readonly Pt[], q: readonly Pt[]) => {
+  for (let i = 1; i < p.length; i++) for (let j = 1; j < q.length; j++) {
+    const a = p[i - 1], b = p[i], c = q[j - 1], d = q[j];
+    const v1 = a.x === b.x, v2 = c.x === d.x;
+    if (v1 === v2) continue;
+    const [v, h] = v1 ? [[a, b], [c, d]] : [[c, d], [a, b]];
+    const x = v[0].x, y = h[0].y;
+    if (x > Math.min(h[0].x, h[1].x) + 0.5 && x < Math.max(h[0].x, h[1].x) - 0.5 && y > Math.min(v[0].y, v[1].y) + 0.5 && y < Math.max(v[0].y, v[1].y) - 0.5) return true;
+  }
+  return false;
+};
+const square = (pts: readonly Pt[]) => pts.every((p, i) => !i || Math.abs(p.x - pts[i - 1].x) < 0.5 || Math.abs(p.y - pts[i - 1].y) < 0.5);
+
+describe('the anatomy, laid out (J1)', () => {
+  it('gives a self-loop each its own side of its card, its label there, the two loops apart', async () => {
+    const out = await layoutDiagram({
+      nodes: [{ id: 'm', kind: 'root', title: 'M' }, { id: 'a', parent: 'm', title: 'Paused' }, { id: 'b', parent: 'm', title: 'Playing', sections: [{ title: 'Entry actions', items: [{ title: 'onPlay', icon: 'bolt' }] }] }],
+      edges: [{ id: 'go', from: 'a', to: 'b', title: 'play' }, { id: 'r', from: 'b', to: 'b', title: 'restart', sections: [{ items: [{ title: 'onRestart' }] }] }, { id: 't', from: 'b', to: 'b', title: 'time', sections: [{ items: [{ title: 'onUpdateTime' }] }] }],
+    }, { text });
+    const b = out.nodes.find((n) => n.id === 'b')!;
+    const r = out.edges.find((e) => e.id === 'r')!, t = out.edges.find((e) => e.id === 't')!;
+    // One on each side, beside it, not over it.
+    expect(r.labelBox!.x + r.labelBox!.w).toBeLessThanOrEqual(b.x);
+    expect(t.labelBox!.x).toBeGreaterThanOrEqual(b.x + b.w);
+    for (const e of [r, t]) {
+      expect(square(e.points!)).toBe(true);
+      // Out of the card and back into it.
+      expect(Math.abs(e.points![0].x - (e === r ? b.x : b.x + b.w))).toBeLessThan(0.5);
+      expect(Math.abs(e.points![e.points!.length - 1].x - (e === r ? b.x : b.x + b.w))).toBeLessThan(0.5);
+    }
+    expect(crosses(r.points!, t.points!)).toBe(false);
+  });
+
+  it('makes a box as wide as its own header and sections, and starts its edge to what it holds under them', async () => {
+    const long = 'api.example.com/uploads/everything/*';
+    const out = await layoutDiagram({
+      nodes: [{ id: 'w', kind: 'group', title: 'API', sections: [{ title: 'Triggers', items: [{ title: long }] }] }, { id: 'c', parent: 'w', title: 'Room' }],
+      edges: [{ id: 'own', from: 'w', to: 'c', title: 'ROOM' }],
+    }, { text });
+    const w = out.nodes.find((n) => n.id === 'w')!, c = out.nodes.find((n) => n.id === 'c')!;
+    expect(w.w).toBeGreaterThanOrEqual(long.length * 10);
+    const own = out.edges.find((e) => e.id === 'own')!;
+    // Header (15 + padding) and the section (caption and chip) are above where it starts, and the child below it.
+    expect(own.points![0].y).toBeGreaterThan(w.y + 40);
+    expect(own.points![0].y).toBeLessThanOrEqual(c.y);
+  });
+
+  it('brings an edge into what a box holds in under its header, not across it', async () => {
+    const out = await layoutDiagram({
+      nodes: [{ id: 'x', title: 'Outside' }, { id: 'g', kind: 'group', title: 'Box', sections: [{ title: 'About it', items: [{ title: 'one' }, { title: 'two' }] }] }, { id: 'in', parent: 'g', title: 'Inside' }],
+      edges: [{ id: 'e', from: 'x', to: 'in' }],
+    }, { text });
+    const g = out.nodes.find((n) => n.id === 'g')!;
+    const pts = out.edges.find((e) => e.id === 'e')!.points!;
+    const head = { x: g.x, y: g.y, w: g.w, h: 70 };
+    for (let i = 1; i < pts.length; i++) {
+      const a = pts[i - 1], b = pts[i];
+      const through = Math.max(a.x, b.x) > head.x + 1 && Math.min(a.x, b.x) < head.x + head.w - 1 && Math.max(a.y, b.y) > head.y + 1 && Math.min(a.y, b.y) < head.y + head.h - 1;
+      expect(through).toBe(false);
+    }
+  });
+});
+
+describe('wrapDiagram (J1)', () => {
+  const chain = (n: number): DiagramDraft => ({
+    nodes: [{ id: 'root', kind: 'root', title: 'Pipeline' }, ...Array.from({ length: n }, (_, i) => ({ id: `s${i}`, parent: 'root', title: `step ${i}`, w: 200, h: 120 }))],
+    edges: Array.from({ length: n - 1 }, (_, i): DiagramEdge => ({ id: `e${i}`, from: `s${i}`, to: `s${i + 1}`, title: `E${i}` })),
+  });
+
+  it('wraps a long run into columns on a wide board, every route still square and nothing on anything', async () => {
+    const laid = await layoutDiagram(chain(9), { text });
+    const wrapped = wrapDiagram(laid, { width: 1280, height: 800 });
+    const steps = wrapped.nodes.filter((n) => n.id.startsWith('s'));
+    expect(new Set(steps.map((n) => Math.round(n.x))).size).toBeGreaterThan(1);
+    expect(wrapped.bounds.w / wrapped.bounds.h).toBeGreaterThan(laid.bounds.w / laid.bounds.h * 2);
+    for (const a of steps) for (const b of steps) if (a !== b) expect(overlap(a, b)).toBe(false);
+    for (const e of wrapped.edges) expect(square(e.points!)).toBe(true);
+    // Each edge still runs from its card to the next.
+    for (const e of wrapped.edges) {
+      const from = steps.find((n) => n.id === e.from)!, to = steps.find((n) => n.id === e.to)!;
+      const [p, q] = [e.points![0], e.points![e.points!.length - 1]];
+      expect(Math.abs(p.y - (from.y + from.h)) < 1 || Math.abs(p.x - from.x) < 1 || Math.abs(p.x - (from.x + from.w)) < 1).toBe(true);
+      expect(Math.abs(q.y - to.y) < 1 || Math.abs(q.x - to.x) < 1 || Math.abs(q.x - (to.x + to.w)) < 1).toBe(true);
+    }
+    const root = wrapped.nodes.find((n) => n.id === 'root')!;
+    for (const n of steps) expect(inside(n, root)).toBe(true);
+  });
+
+  it('keeps one column on a phone, and leaves what fits alone', async () => {
+    const laid = await layoutDiagram(chain(9), { text });
+    expect(wrapDiagram(laid, { width: 390, height: 844 })).toBe(laid);
+    const small = await layoutDiagram(chain(3), { text });
+    expect(wrapDiagram(small, { width: 1280, height: 800 })).toBe(small);
+  });
+
+  it('arranges parts nothing joins to fill the board, the biggest first, each from the top', async () => {
+    const laid = await layoutDiagram({
+      nodes: [{ id: 'root', kind: 'root', title: 'Account' }, { id: 'big', parent: 'root', kind: 'group', title: 'production' }, ...Array.from({ length: 6 }, (_, i) => ({ id: `p${i}`, parent: 'big', title: `p${i}`, w: 220, h: 140 })), { id: 'small', parent: 'root', kind: 'group', title: 'staging' }, { id: 'q', parent: 'small', title: 'q', w: 220, h: 140 }],
+      // A fan: production is wide.
+      edges: Array.from({ length: 5 }, (_, i): DiagramEdge => ({ id: `e${i}`, from: 'p0', to: `p${i + 1}` })),
+    }, { text });
+    const wide = wrapDiagram(laid, { width: 2400, height: 900 });
+    const tall = wrapDiagram(laid, { width: 700, height: 1600 });
+    const at = (r: typeof wide, id: string) => r.nodes.find((n) => n.id === id)!;
+    // Side by side, tops lined up, on a wide board; one over the other on a tall one, the biggest on top.
+    expect(Math.abs(at(wide, 'big').y - at(wide, 'small').y)).toBeLessThan(1);
+    expect(at(tall, 'small').y).toBeGreaterThan(at(tall, 'big').y + at(tall, 'big').h - 1);
   });
 });

@@ -225,7 +225,7 @@ UI SDK's `FileInput` root, fed by a `useFileUpload`. Takes every option of `useF
 | `disabled` | `false` | Disables choosing, dropping and pasting (`data-disabled`). |
 | `name`, `form`, `required` | — | Submit the files with a form. |
 | `children` | zone + list | Nodes, or `(api) => node` with the context. |
-| `className`, `style` | — | Merged onto the root (`data-slot="file-upload"`, `data-busy` while anything is queued or sending): one element that is both FileInput's root and the `fileUpload` primitive's. |
+| `className`, `style` | — | Merged onto the root (`data-slot="file-upload"`, `data-pending` while anything is queued or sending): one element that is both FileInput's root and the `fileUpload` primitive's. |
 | `id`, `ref`, `aria-*`, `data-*`, `announcement` | — | FileInput's other props, on the same element. |
 
 ### `<FileUploadDropzone>`
@@ -255,7 +255,7 @@ FileInput's trigger with the `Button` look (`variant`, `size`). Inside a `FileUp
 
 ### `useFileUploadContext()`
 
-The nearest `FileUpload`'s state, or `null` outside one: the same value `children` receives as a function, for a part of your own placed anywhere inside (a count in a header, a Clear button in a footer). It holds `files`, `counts`, `busy`, `rules`, `add`, `remove`, `retry`, `clear`, `uploadAll`, `inputController` (`open()` the picker from any button), and the root's `disabled`, `multiple` and `directory`. Its type is `FileUploadContextValue`.
+The nearest `FileUpload`'s state, or `null` outside one: the same value `children` receives as a function, for a part of your own placed anywhere inside (a count in a header, a Clear button in a footer). It holds `files`, `counts`, `pending`, `rules`, `add`, `remove`, `retry`, `clear`, `uploadAll`, `inputController` (`open()` the picker from any button), and the root's `disabled`, `multiple` and `directory`. Its type is `FileUploadContextValue`.
 
 ```tsx
 import { useFileUploadContext } from '@/components/ui/file-upload'
@@ -283,7 +283,7 @@ The list and its queue are a UI SDK primitive, `fileUpload` (`lib/file-upload-pr
 | `onAdd(added, rejected, details?)`, `onRemove`, `onUploaded`, `onUploadError` | — | Events. |
 | `controller` | — | A `createFileUploadController()` handle. |
 
-It returns `{ files, add, remove, retry, clear, uploadAll, busy, counts, rules, inputController, inputProps }`. A file is `{ id, file, path, status, progress, error?, reason?, url? }` with `status` `queued`, `uploading`, `done`, `error` or `rejected`.
+It returns `{ files, add, remove, retry, clear, uploadAll, pending, counts, rules, inputController, inputProps }`. A file is `{ id, file, path, status, progress, error?, reason?, url? }` with `status` `queued`, `uploading`, `done`, `error` or `rejected`.
 
 - `inputProps` goes on UI SDK's `FileInput` root (`<FileInput {...up.inputProps}>`), which `FileUpload` does for you. Its `render` makes FileInput's element the primitive's root, which is what puts the list on the page (for agents) and lets it abort its requests when it leaves. `inputController` is FileInput's controller (`open()`, `focus()`).
 - `add(files)` takes `File`s or a `FileList`, runs them through the same FileInput's checks and returns `{ added, rejected }`. It works while that FileInput is mounted.

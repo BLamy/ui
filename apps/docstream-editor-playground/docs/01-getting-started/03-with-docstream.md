@@ -27,7 +27,7 @@ graph LR
 | AST → Markdown | `serializeEditorMarkdown(doc)` | `@brett_lamy/ui/docstream-editor` / `…/convert` |
 | AST → Markdown (renderer side) | `serializeMarkdown(doc)` | `@brett_lamy/ui/docstream/gitbook` |
 
-`GitbookEditor` runs exactly this chain. When the `markdown` prop changes it calls `parseMarkdown` → `astToTiptap`. On every edit it calls `tiptapToAst(editor.getJSON())`, then `serializeEditorMarkdown`, then `onChange`.
+`GitbookEditor` runs exactly this chain. When the `markdown` prop changes it calls `parseMarkdown` → `astToTiptap`. On every edit it calls `tiptapToAst(editor.getJSON())`, then `serializeEditorMarkdown`, then `onValueChange`.
 
 ## Byte for byte
 

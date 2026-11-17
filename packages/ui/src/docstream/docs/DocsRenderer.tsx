@@ -155,6 +155,9 @@ const HINT_ICONS = {
   danger: "xmark-circle",
 } as const satisfies Record<string, IconName>
 
+/** What a screen reader hears before a hint's text. */
+const HINT_KINDS = { info: "Note", success: "Success", warning: "Warning", danger: "Danger" } as const
+
 function embedSrc(url: string): string | null {
   const yt = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]+)/)
   return yt ? `https://www.youtube.com/embed/${yt[1]}` : null
@@ -399,10 +402,12 @@ function BlockView({ block, liveRenderer, sourceRenderer }: { block: Block } & R
       )
     case "hint": {
       const hintIcon = HINT_ICONS[block.style as keyof typeof HINT_ICONS] ?? "info"
+      // A note whose kind is read out first ("Warning: …"), not shown by its color and a hidden glyph alone.
       return (
-        <div className={`docs-hint docs-hint-${block.style}`}>
+        <div className={`docs-hint docs-hint-${block.style}`} role="note">
           <Glyph name={hintIcon} className="docs-hint-icon" size={24} />
           <div>
+            <span className="docs-visually-hidden">{HINT_KINDS[block.style as keyof typeof HINT_KINDS] ?? HINT_KINDS.info}: </span>
             <Blocks blocks={block.children} liveRenderer={liveRenderer} sourceRenderer={sourceRenderer} />
           </div>
         </div>
@@ -428,17 +433,18 @@ function BlockView({ block, liveRenderer, sourceRenderer }: { block: Block } & R
       )
     case "stepper":
       return (
-        <div className="docs-stepper">
+        // A list of steps (its numbers are the list's), each titled by the heading its author wrote.
+        <ol className="docs-stepper">
           {block.steps.map((s, i) => (
-            <div key={i} className="docs-step">
-              <div className="docs-step-rail">
+            <li key={i} className="docs-step">
+              <div className="docs-step-rail" aria-hidden="true">
                 <div className="docs-step-badge">{i + 1}</div>
                 {i < block.steps.length - 1 && <div className="docs-step-line" />}
               </div>
               <StepMain step={s} liveRenderer={liveRenderer} sourceRenderer={sourceRenderer} />
-            </div>
+            </li>
           ))}
-        </div>
+        </ol>
       )
     case "embed": {
       if (isReplayQaUrl(block.url)) {
@@ -520,7 +526,7 @@ function BlockView({ block, liveRenderer, sourceRenderer }: { block: Block } & R
           {block.items.map((item, i) => (
             <li key={i} data-task-state={block.task ? getTaskState(item) : undefined}>
               {block.task && <TaskCheckbox state={getTaskState(item)} label={item.children.filter((b) => b.type === "paragraph").map((b) => b.type === "paragraph" ? plainText(b.children) : "").join(" ") || "Task"}
-                onChange={onTaskStateChange ? (state) => onTaskStateChange(item, state) : undefined} />}
+                onValueChange={onTaskStateChange ? (state) => onTaskStateChange(item, state) : undefined} />}
               <Blocks blocks={item.children} inline liveRenderer={liveRenderer} sourceRenderer={sourceRenderer} />
             </li>
           ))}
@@ -610,6 +616,12 @@ function isReactLanguage(language: string | null): boolean {
   return language === "jsx" || language === "tsx" || language === "react"
 }
 
+/** The level of a step's title heading: the number of `#` its author wrote, `###` when it was the default. */
+function stepHeadingLevel(heading: string | undefined): 1 | 2 | 3 | 4 | 5 | 6 {
+  const hashes = heading?.trimStart().match(/^(#{1,6})\s/)?.[1].length
+  return (hashes ?? 3) as 1 | 2 | 3 | 4 | 5 | 6
+}
+
 /**
  * A step's title and body. A title heading that opens with a thumbnail image puts the image in a column
  * of its own, with the title and the body beside it.
@@ -621,10 +633,12 @@ function StepMain({ step, liveRenderer, sourceRenderer }: { step: StepNode } & R
     return heading?.type === "heading" ? leadingThumbnail(heading.children) : null
   }, [step.heading])
   const body = <Blocks blocks={step.children} liveRenderer={liveRenderer} sourceRenderer={sourceRenderer} />
+  // The title is a heading at the level written (`### title` unless the step's heading says otherwise).
+  const Title = `h${stepHeadingLevel(step.heading)}` as "h3"
   if (!lead) {
     return (
       <div className="docs-step-main">
-        {step.title && <div className="docs-step-title">{step.title}</div>}
+        {step.title && <Title className="docs-step-title">{step.title}</Title>}
         {body}
       </div>
     )
@@ -634,9 +648,9 @@ function StepMain({ step, liveRenderer, sourceRenderer }: { step: StepNode } & R
       <ImageThumbnail image={lead.image} label={lead.label} />
       <div className="docs-step-media-body">
         {step.title && (
-          <div className="docs-step-title">
+          <Title className="docs-step-title">
             <InlineText nodes={lead.rest} />
-          </div>
+          </Title>
         )}
         {body}
       </div>

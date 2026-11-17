@@ -32,7 +32,7 @@ export default function CustomChrome() {
           ref={stage}
           events={replayDemoEvents}
           speed={speed}
-          showMouse={false}
+          cursor={false}
           onReady={({ duration }) => setDuration(duration)}
           onTimeUpdate={setTime}
           onPlayingChange={setPlaying}

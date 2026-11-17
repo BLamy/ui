@@ -5,7 +5,8 @@ import { Toggle as ToggleButton, ToggleGroup, type ToggleGroupValueChangeReason 
 import type { ChangeDetails } from '@ui-sdk/core';
 import { AdaptivePane, AdaptivePaneTrigger, createAdaptivePaneController, type AdaptivePaneController, type AdaptivePanePresentation } from '@/components/ui/adaptive-pane';
 import { FloatingSheet, FloatingSheetBody } from '@/components/ui/floating-sheet';
-import { SizeClassProvider, useSizeClass, type SizeClass } from '@/lib/container';
+import { SizeClassProvider, useSizeClass } from '@/lib/container';
+import type { SizeClass } from '@/lib/size-class';
 import { Icon, type IconName } from '@/lib/icon';
 import { type Appearance, ThemeScope, useScopeAppearance } from '@/lib/theme';
 import { cn } from '@/lib/utils';
@@ -38,7 +39,6 @@ export type WorkbenchSizeClass = SizeClass;
 export interface WorkbenchShellContextValue {
   /** the shell's size class (`data-size-class` on the root) */
   sizeClass: WorkbenchSizeClass;
-  compact: boolean;
   appearance: Appearance;
   /** column visible (regular/medium) or drawer open (compact) */
   sidebarOpen: boolean;
@@ -128,7 +128,6 @@ export function WorkbenchShell({
   };
   const ctx: WorkbenchShellContextValue = {
     sizeClass,
-    compact,
     appearance,
     sidebarOpen,
     setSidebarOpen,
@@ -184,7 +183,8 @@ export interface WorkbenchSidebarProps {
 export function WorkbenchSidebar({ width = 242, drawerWidth = 280, children }: WorkbenchSidebarProps) {
   const shell = useOptionalWorkbenchShell();
   if (!shell) return <>{children}</>;
-  const { compact, sidebarOpen, setSidebarOpen, sidebarPane } = shell;
+  const { sidebarOpen, setSidebarOpen, sidebarPane } = shell;
+  const compact = shell.sizeClass === 'compact';
   return (
     <AdaptivePane
       controller={sidebarPane}
@@ -252,15 +252,15 @@ export function WorkbenchSidebarTrigger({ onClick, className, style }: TriggerPr
   const shell = useOptionalWorkbenchShell();
   if (!shell) return null;
   return (
-    <PaneTrigger controller={shell.sidebarPane} label={shell.compact ? 'Menu' : 'Sidebar'} onClick={onClick} className={className} style={style}>
-      <Icon name={shell.compact ? 'line-3-horizontal' : 'sidebar-left'} size={18} sw={1.7} />
+    <PaneTrigger controller={shell.sidebarPane} label={shell.sizeClass === 'compact' ? 'Menu' : 'Sidebar'} onClick={onClick} className={className} style={style}>
+      <Icon name={shell.sizeClass === 'compact' ? 'line-3-horizontal' : 'sidebar-left'} size={18} sw={1.7} />
     </PaneTrigger>
   );
 }
 /** Closes the compact sidebar drawer; renders nothing at wider widths. */
 export function WorkbenchSidebarClose({ onClick, className, style }: TriggerProps) {
   const shell = useOptionalWorkbenchShell();
-  if (!shell?.compact) return null;
+  if (shell?.sizeClass !== 'compact') return null;
   return (
     <Button
       variant="quiet"
@@ -392,7 +392,7 @@ export function WorkbenchDock({ snaps = [0.52, 0.93], minHeight = 110, maxHeight
   const shell = useOptionalWorkbenchShell();
   const dockRef = React.useContext(WorkbenchMainContext);
   const h = shell ? shell.dockHeight : 190;
-  if (shell?.compact) {
+  if (shell?.sizeClass === 'compact') {
     const lowest = Math.min(...snaps);
     const highest = Math.max(...snaps);
     const middle = snaps.filter((f) => f > lowest && f < highest);
@@ -505,7 +505,8 @@ export function WorkbenchPanel({ className, style, children }: WorkbenchPanelPro
     </div>
   );
   if (!shell) return body;
-  const { compact, sizeClass, panelOpen, panelFullscreen, setPanelOpen, panelPane } = shell;
+  const { sizeClass, panelOpen, panelFullscreen, setPanelOpen, panelPane } = shell;
+  const compact = sizeClass === 'compact';
   const mode: AdaptivePanePresentation = compact || panelFullscreen ? 'cover' : sizeClass === 'medium' ? 'drawer' : 'column';
   const pane = (
     <AdaptivePane
@@ -530,7 +531,7 @@ export function WorkbenchPanel({ className, style, children }: WorkbenchPanelPro
 /** Header toggle for the panel, filled while it shows; hidden at compact width, where the tab bar switches views. */
 export function WorkbenchPanelTrigger({ onClick, className, style }: TriggerProps) {
   const shell = useOptionalWorkbenchShell();
-  if (!shell || shell.compact) return null;
+  if (!shell || shell.sizeClass === 'compact') return null;
   return (
     <PaneTrigger controller={shell.panelPane} label="Right panel" filled onClick={onClick} className={className} style={style}>
       <Icon name="sidebar-right" size={18} sw={1.7} />
@@ -561,7 +562,7 @@ export function WorkbenchPanelTitle({ icon, className, children }: { icon?: Icon
     `pressed`/`onClick` for use outside a shell. */
 export function WorkbenchPanelFullscreen({ pressed, onClick, className }: TriggerProps & { pressed?: boolean }) {
   const shell = useOptionalWorkbenchShell();
-  if (shell?.compact) return null;
+  if (shell?.sizeClass === 'compact') return null;
   const full = pressed ?? !!shell?.panelFullscreen;
   return (
     <HeaderToggle label="Full screen" pressed={full} onPressedChange={(next) => (onClick ? onClick() : shell?.setPanelFullscreen(next))} className={className}>
@@ -610,7 +611,7 @@ export interface WorkbenchTabBarProps {
  */
 export function WorkbenchTabBar({ value, onValueChange, mainTab = 'chat', className, style, children }: WorkbenchTabBarProps) {
   const shell = useOptionalWorkbenchShell();
-  if (shell && !shell.compact) return null;
+  if (shell && shell.sizeClass !== 'compact') return null;
   const selected = shell && !shell.panelOpen ? mainTab : (value ?? '');
   return (
     <ToggleGroup

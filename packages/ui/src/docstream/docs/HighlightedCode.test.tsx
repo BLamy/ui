@@ -7,8 +7,14 @@ import { HighlightedCode } from "./HighlightedCode"
 import { FALLBACK_MAX_LENGTH, fallbackSpans } from "@brett_lamy/ui/lib/syntax-lexer"
 
 /* gpu-lexer, three ways: the real module (no WebGPU in happy-dom, so its parse() rejects), a parse() that rejects
-   outright, and one that resolves with its own spans. */
-const gpu = vi.hoisted(() => ({ mode: "actual" as "actual" | "reject" | "resolve", calls: 0 }))
+   outright, and one that resolves with its own spans. The kit's lib/syntax drives it, after its adapter probe
+   (lib/webgpu): happy-dom has no adapter, so a test that wants the GPU path says the probe found a hardware one. */
+const gpu = vi.hoisted(() => ({ mode: "actual" as "actual" | "reject" | "resolve", calls: 0, adapter: "none" as "none" | "hardware" }))
+vi.mock("@/lib/webgpu", () => ({
+  navigatorGpu: () => (gpu.adapter === "none" ? undefined : {}),
+  probeWebGPU: async () => gpu.adapter,
+  webgpuProbeResult: () => gpu.adapter,
+}))
 vi.mock("gpu-lexer", async (importActual) => {
   const actual = await importActual<typeof import("gpu-lexer")>()
   return {
@@ -24,6 +30,7 @@ vi.mock("gpu-lexer", async (importActual) => {
 afterEach(() => {
   gpu.mode = "actual"
   gpu.calls = 0
+  gpu.adapter = "none"
 })
 
 const TS = 'import { useState } from "react"\n// the count\nexport const count: number = 42\nfunction App() { return useState(count) }'
@@ -39,7 +46,8 @@ describe("HighlightedCode without WebGPU", () => {
     await tick(20)
     const code = view.host.querySelector("code")!
     expect(code.getAttribute("data-highlighter")).toBe("fallback")
-    expect(gpu.calls).toBe(1)
+    // Without an adapter gpu-lexer is never loaded.
+    expect(gpu.calls).toBe(0)
     expect(tokens(code)).toEqual(expect.arrayContaining([
       "keyword:import", "keyword:from", 'string:"react"', "comment:// the count", "keyword:export", "keyword:const",
       "type:number", "number:42", "keyword:function", "function:App", "function:useState",
@@ -52,6 +60,7 @@ describe("HighlightedCode without WebGPU", () => {
 
   it("keeps the fallback's colors when parse() rejects", async () => {
     gpu.mode = "reject"
+    gpu.adapter = "hardware"
     const view = await mount(<pre><HighlightedCode code={TS} language="tsx" /></pre>)
     await tick(20)
     const code = view.host.querySelector("code")!
@@ -78,6 +87,7 @@ describe("HighlightedCode without WebGPU", () => {
 
   it("lets gpu-lexer's spans replace the fallback's when it resolves", async () => {
     gpu.mode = "resolve"
+    gpu.adapter = "hardware"
     const view = await mount(<pre><HighlightedCode code={TS} language="ts" /></pre>)
     await tick(20)
     const code = view.host.querySelector("code")!

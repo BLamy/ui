@@ -20,7 +20,7 @@ The demo wires all of them to an in-memory project folder. The STL model, the se
 ```tsx title="DocumentEditor.tsx"
 <GitbookEditor
   markdown={markdown}
-  onChange={setMarkdown}
+  onValueChange={setMarkdown}
   // "./models/bracket.stl" as written → a URL the browser can load
   resolveAsset={(url) => project.blobUrl(url)}
   // "Choose file…" on embeds, "Choose image…" on figures

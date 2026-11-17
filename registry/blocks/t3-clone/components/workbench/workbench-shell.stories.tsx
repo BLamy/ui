@@ -98,7 +98,7 @@ function ThreadNav({
               current={t.id === current}
               onClick={() => {
                 onPick?.(t.id);
-                if (shell?.compact) shell.setSidebarOpen(false);
+                if (shell?.sizeClass === 'compact') shell.setSidebarOpen(false);
               }}
             />
           ))}

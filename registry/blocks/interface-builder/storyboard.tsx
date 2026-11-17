@@ -682,7 +682,7 @@ export function Storyboard({ viewport, onViewportChange, controller, appearance,
             {hoverRect ? <HoverFrame rect={hoverRect} /> : null}
             {selectedIds.map((id) => {
               const main = rectOf(id);
-              return (m.nodes.get(id) ?? []).map((r, i) => <CanvasFrame key={`${id}-${i}`} frame={{ ...r, rot: 0 }} offset={1} dashed={r !== main} />);
+              return (m.nodes.get(id) ?? []).map((r, i) => <CanvasFrame key={`${id}-${i}`} frame={{ ...r, rot: 0 }} offset={1} variant={r !== main ? 'dashed' : 'default'} />);
             })}
             {primary ? <NameTag doc={doc} at={primary} rect={rectAt(m, primary)} /> : null}
             {selection.kind === 'scene' || selection.kind === 'responder' || selection.kind === 'exit' ? (

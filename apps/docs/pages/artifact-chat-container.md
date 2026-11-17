@@ -60,7 +60,7 @@ The container fills its parent (`h-full w-full`): give the parent a size.
 
 ## Presentations
 
-`presentation="auto"` (the default) reads the container's **own** width, not the viewport's: at `breakpoint` (760px) and above it docks the chat, below it floats it. The root carries `data-size-class` and `data-presentation`, and it is the size-class scope of what it renders, so dialogs and popovers opened inside with `presentation="auto"` follow it too. `presentation="split"` always docks; `presentation="floating"` always floats, the right choice for maps, canvases and other full-bleed artifacts. On a wide container the floating chat keeps the chat's width (`chatWidth`) and rests on the `chatSide` edge, as a Maps card does on an iPad, instead of stretching across the artifact; on a phone it spans the width.
+`presentation="auto"` (the default) reads the container's **own** width, not the viewport's: at `breakpoints.medium` (640px, as every size-class scope) and above it docks the chat, below it floats it. The root carries `data-size-class` and `data-presentation`, and it is the size-class scope of what it renders, so dialogs and popovers opened inside with `presentation="auto"` follow it too. `presentation="split"` always docks; `presentation="floating"` always floats, the right choice for maps, canvases and other full-bleed artifacts. On a wide container the floating chat keeps the chat's width (`chatWidth`) and rests on the `chatSide` edge, as a Maps card does on an iPad, instead of stretching across the artifact; on a phone it spans the width.
 
 Drag the width across the breakpoint: the column slides away, the composer flies to the floating sheet's foot and the artifact grows into the room, keeping the draft.
 
@@ -111,7 +111,7 @@ Write the three parts as direct children, in any order. React context reaches th
 | Prop | Type | Default | Effect |
 | --- | --- | --- | --- |
 | `presentation` | `'auto' \| 'split' \| 'floating'` | `'auto'` | Docked, floating, or decided by the container's width. |
-| `breakpoint` | `number` | `760` | Container width, px, below which `auto` floats the chat (the container's size class is `compact` under it). |
+| `breakpoints` | `{ medium?: number; regular?: number }` | `{ medium: 640, regular: 1024 }` | Where the container's own size classes start, px, the same spelling and defaults as SplitView's and Sidebar's: below `medium` it is `compact` and `auto` floats the chat. With a wide `chatWidth`, raise `medium` (`{ medium: 760 }`) so the artifact keeps a phone's width beside the docked chat. |
 | `chatWidth` | `number \| string` | `400` | Width of the docked column, and of the floating chat on a wide container. |
 | `chatSide` | `'start' \| 'end'` | `'start'` | The inline edge the docked column sits on. |
 | `chatLabel` | `string` | `'Chat'` | Accessible name of the column, the floating sheet and (with "Open ") its FAB. |

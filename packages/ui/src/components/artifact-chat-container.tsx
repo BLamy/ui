@@ -18,7 +18,7 @@ import { animate } from 'framer-motion';
 import { Button as SdkButton } from '@ui-sdk/react/button';
 import type { ChangeDetails } from '@ui-sdk/core';
 import { cva } from 'class-variance-authority';
-import type { SizeClass } from '@/lib/size-class';
+import type { SizeClass, SizeClassBreakpoints } from '@/lib/size-class';
 import { SizeClassProvider, useSizeClass } from '@/lib/container';
 import { springs } from '@/lib/motion';
 import { usePresence } from '@/lib/presence';
@@ -76,7 +76,7 @@ export type ArtifactChatContainerComposingChangeReason = 'trigger-press' | 'hand
 export type ArtifactChatContainerComposingChangeDetails = ChangeDetails<ArtifactChatContainerComposingChangeReason>;
 
 export interface ArtifactChatContainerContextValue {
-  /** The container's own size class (`compact` below `breakpoint`). */
+  /** The container's own size class (`compact` below `breakpoints.medium`). */
   sizeClass: SizeClass;
   /** The resolved presentation. */
   presentation: ArtifactChatContainerPresentation;
@@ -144,14 +144,16 @@ export const artifactChatContainerVariants = cva(
 
 export interface ArtifactChatContainerProps extends Omit<ComponentProps<'div'>, 'children'> {
   /**
-   * `auto` (default) docks the chat beside the content while the container is at least `breakpoint` wide and floats
+   * `auto` (default) docks the chat beside the content while the container is at least `breakpoints.medium` wide and floats
    * it below. `floating` always floats it over the content (maps, canvases, full-bleed artifacts); `split` always
    * docks it.
    */
   presentation?: 'auto' | ArtifactChatContainerPresentation;
-  /** The container width, px, below which `auto` floats the chat: the container's size class is `compact` under it
-      (`data-size-class` on the root, and the size-class scope popups inside follow). Default 760. */
-  breakpoint?: number;
+  /** Where the container's own size classes start, px, as on SplitView and Sidebar: below `medium` it is `compact`
+      and `auto` floats the chat (`data-size-class` on the root, and the size-class scope popups inside follow).
+      Default `{ medium: 640, regular: 1024 }`, every scope's; pass `{ medium: 760 }` to keep a phone's width beside
+      a docked 400px chat. */
+  breakpoints?: SizeClassBreakpoints;
   /** Width of the docked chat column. Default 400. */
   chatWidth?: number | string;
   /** Which inline edge the docked column sits on. Default `start`; `end` for an assistant beside an app's page. */
@@ -202,7 +204,7 @@ export interface ArtifactChatContainerProps extends Omit<ComponentProps<'div'>, 
  */
 export function ArtifactChatContainer({
   presentation: requestedPresentation = 'auto',
-  breakpoint = 760,
+  breakpoints,
   chatWidth = 400,
   chatSide = 'start',
   chatLabel = 'Chat',
@@ -231,7 +233,9 @@ export function ArtifactChatContainer({
   ...props
 }: ArtifactChatContainerProps) {
   // Its own box's size class, starting from the enclosing scope's until measured.
-  const [rootRef, sizeClass] = useSizeClass<HTMLDivElement>({ breakpoints: { medium: breakpoint, regular: Math.max(breakpoint + 1, 1024) } });
+  const [rootRef, sizeClass] = useSizeClass<HTMLDivElement>({
+    breakpoints: { medium: breakpoints?.medium ?? 640, regular: breakpoints?.regular ?? 1024 },
+  });
   // The first layout has painted: a layout before it is where the container starts, not a switch to animate.
   const [ready, setReady] = useState(false);
   useEffect(() => {

@@ -1,5 +1,6 @@
 import { createContext, useContext } from 'react';
 import type { AdaptivePaneController, AdaptivePaneOpenChangeDetails } from '@/components/ui/adaptive-pane';
+import type { SizeClass } from '@/lib/size-class';
 
 /** Why the compact navigation drawer opened or closed: the AdaptivePane's own details (Escape, the scrim, a swipe…),
     `trigger-press` from ChatShellNavTrigger, or `imperative` from code. */
@@ -8,8 +9,8 @@ export type ChatShellNavOpenChangeDetails = AdaptivePaneOpenChangeDetails;
 export interface ChatShellContextValue {
   /** measured width of the shell (the container, not the viewport) */
   width: number;
-  /** `width < breakpoint`: the navigation lives in a drawer */
-  compact: boolean;
+  /** The shell's size class, on its own box: in a `compact` one the navigation lives in a drawer. */
+  sizeClass: SizeClass;
   /** compact navigation drawer visibility */
   navOpen: boolean;
   /** Opens or closes it: tells `onNavOpenChange` first with `details` (default reason `imperative`) and moves only if

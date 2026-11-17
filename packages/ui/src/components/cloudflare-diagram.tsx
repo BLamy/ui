@@ -211,34 +211,6 @@ function RevealWhenPlaced({ nodes, placing, want, onDone }: { nodes: readonly Di
   return null;
 }
 
-/** Below this a card's words are too small to read. */
-const LEGIBLE = 0.66;
-const EDGE = 16;
-/** Room at the top for the board's toolbar, so the system's name isn't under it. */
-const TOOLBAR_ROOM = 64;
-/** A board narrower than this is a phone's: wider, the whole system is fitted, as on any Diagram. */
-const COMPACT = 600;
-
-/** On a phone's board, once the system's placed, if the whole of it would only fit at a size that can't be read, the board
- *  starts at the top, where things come in, at the least size that can be, across the whole width if that fits. The rest is
- *  a drag, Fit, or a press in the panel away. Only the first time, and only when the app didn't say where to start. */
-function LegibleStart({ nodes, enabled }: { nodes: readonly DiagramNode<CloudflareServiceNodeData>[]; enabled: boolean }) {
-  const { setViewport, size } = useCanvas();
-  const done = useRef(false);
-  useEffect(() => {
-    if (done.current || !enabled || !nodes.length || size.width <= 0 || size.height <= 0 || size.width >= COMPACT) return;
-    done.current = true;
-    const x0 = Math.min(...nodes.map((n) => n.x)), y0 = Math.min(...nodes.map((n) => n.y));
-    const w = Math.max(...nodes.map((n) => n.x + n.w)) - x0, h = Math.max(...nodes.map((n) => n.y + n.h)) - y0;
-    const roomW = size.width - EDGE * 2, roomH = size.height - EDGE - TOOLBAR_ROOM;
-    if (Math.min(1, roomW / w, roomH / h) >= LEGIBLE) return;
-    const zoom = Math.max(LEGIBLE, Math.min(1, roomW / w));
-    const x = w * zoom <= roomW ? size.width / 2 - (x0 + w / 2) * zoom : EDGE - x0 * zoom;
-    setViewport({ zoom, x, y: TOOLBAR_ROOM - y0 * zoom }, { reason: 'imperative' });
-  }, [nodes, enabled, size, setViewport]);
-  return null;
-}
-
 /* ── The diagram ── */
 
 const sameSystem = (a: CloudflareSystem, b: CloudflareSystem) => a.services === b.services && a.edges === b.edges && a.name === b.name && a.accountId === b.accountId;
@@ -434,7 +406,6 @@ export function CloudflareDiagram({
           {...diagram}
         >
           <RevealWhenPlaced nodes={nodes} placing={placing} want={toReveal} onDone={revealed} />
-          <LegibleStart nodes={nodes} enabled={diagram.viewport === undefined && diagram.defaultViewport === undefined} />
         </Diagram>
         <DiagramFrameBar>
           <span data-slot="cloudflare-status" className="min-w-0 truncate">{status}</span>

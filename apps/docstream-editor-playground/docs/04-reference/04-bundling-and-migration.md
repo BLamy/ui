@@ -101,7 +101,7 @@ Every release since 1.3 has been additive. Only 1.3 changed behavior you might d
 ```tsx lineNumbers="false"
 import { almostNodeLiveRenderer } from "@brett_lamy/ui/docstream/playground"
 
-<GitbookEditor markdown={md} onChange={setMd} liveRenderer={almostNodeLiveRenderer} />
+<GitbookEditor markdown={md} onValueChange={setMd} liveRenderer={almostNodeLiveRenderer} />
 ```
 
 `ReactDemoEditor` takes the same `liveRenderer` prop. Without it, the files stay editable and a short note replaces the preview. Install `@agent-wasm/core` yourself if you use the playground.

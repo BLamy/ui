@@ -645,10 +645,7 @@ input:where([data-slot] *,[data-slot]):where(:not(.gb *))::placeholder{color:var
 
 /* ── FloatingSheet ─────────────────────────────────────────────────────────────────────────
    Geometry, surface and material live on the component (utilities; an `appearance` is the bl-theme's `sheet` scope). What
-   stays here: the rules for whatever the host puts in the body, and the peek masks. */
-.ck-floating-sheet__body>*{box-sizing:border-box;width:100%;min-height:100%;background:transparent!important}
-/* Bottom-anchored bodies let short content sit against the foot so the newest lines peek out. */
-.ck-floating-sheet[data-body-align="end"] .ck-floating-sheet__body>*{min-height:0;max-height:100%}
+   stays here: the peek masks. */
 /* A peeking body fades its cut edge so clipped lines read as "more here" rather than a hard
    crop: the top edge for a bottom-pinned transcript, the bottom edge for a top-pinned card. */
 .ck-floating-sheet[data-body-align="end"] .ck-floating-sheet__surface[data-peeking] .ck-floating-sheet__reveal{-webkit-mask-image:linear-gradient(to bottom,transparent,#000 34px);mask-image:linear-gradient(to bottom,transparent,#000 34px)}
@@ -694,7 +691,7 @@ input:where([data-slot] *,[data-slot]):where(:not(.gb *))::placeholder{color:var
 [data-theme-scope="workbench"].light [data-theme-scope="terminal"] .wb-scroll{scrollbar-color:rgba(140,140,155,.3) transparent}
 [data-theme-scope="workbench"].light [data-theme-scope="terminal"] .wb-scroll::-webkit-scrollbar-thumb{background:rgba(140,140,155,.28)}
 
-/* ── MarkdownView (.wb-md) — reads the theme: code surfaces are --code / --code-foreground, hairlines --border ── */
+/* ── MarkdownView (.wb-md) — reads the theme: a bare pre is --code / --code-foreground, a fence is CodeEditor's card, hairlines --border ── */
 .wb-md{line-height:1.6;font-size:14px}
 .wb-md :where(h1){font-size:20px;font-weight:700;margin:18px 0 8px;letter-spacing:-.2px}
 .wb-md :where(h2){font-size:16.5px;font-weight:650;margin:18px 0 6px}
@@ -703,9 +700,9 @@ input:where([data-slot] *,[data-slot]):where(:not(.gb *))::placeholder{color:var
 .wb-md :where(ul,ol){margin:8px 0;padding-left:22px}
 .wb-md :where(li){margin:3px 0}
 .wb-md :where(code:not(.bl-syntax-code)){font-family:ui-monospace,'SF Mono',Menlo,Consolas,monospace;font-size:.86em;background:var(--secondary);padding:2px 5px;border-radius:5px}
-.wb-md :where(pre:not(.bl-syntax-pre)){background:var(--code, var(--muted));color:var(--code-foreground, var(--foreground));border-radius:10px;padding:12px 14px;overflow:auto;font-size:12.5px;line-height:1.55;margin:10px 0}
+.wb-md :where(pre:not(.bl-syntax-pre,.docs-code>pre)){background:var(--code, var(--muted));color:var(--code-foreground, var(--foreground));border-radius:10px;padding:12px 14px;overflow:auto;font-size:12.5px;line-height:1.55;margin:10px 0}
 /* Keep copy controls beside the scrolling code so long lines cannot run underneath them. */
-.wb-md .docs-code:has(> .docs-code-copy-float){display:grid;grid-template-columns:minmax(0,1fr) 3rem;background:var(--gb-code-bg,var(--code,var(--muted)))}
+.wb-md .docs-code:has(> .docs-code-copy-float){display:grid;grid-template-columns:minmax(0,1fr) 3rem;background:var(--bl-syntax-surface,var(--card))}
 .wb-md .docs-code:has(> .docs-code-copy-float)>pre{grid-area:1/1;min-width:0;margin:0;border-radius:0;background:transparent}
 .wb-md .docs-code>.docs-code-copy-float{position:static;grid-area:1/2;align-self:start;justify-self:center;margin-block-start:9px}
 /* Docstream's source-and-result cards (Mermaid, math) are already a panel: their source pane isn't a code box. */

@@ -1,0 +1,18 @@
+{
+  "name": "stack",
+  "title": "Page stack",
+  "description": "createPageStack(context, options): the behavior of a navigation stack inside a UI SDK primitive. Pages cover each other and are pushed and popped with focus, Escape, the platform back and an edge swipe; every change goes through your set with a reason and can be canceled. Built on UI SDK's bindLayer (its when option) and animateIn / animateOut.",
+  "exports": [
+    "createPageStack"
+  ],
+  "imports": [
+    "createPageStack"
+  ],
+  "types": [
+    "PageStack",
+    "PageStackExit",
+    "PageStackOptions",
+    "PageStackReason",
+    "PageStackChangeOptions"
+  ]
+}

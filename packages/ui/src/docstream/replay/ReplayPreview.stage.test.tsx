@@ -208,7 +208,7 @@ describe("DevTools as data", () => {
     // Lazy, so rrweb's stage isn't rendered here: the buttons are all that's being looked at.
     expect(renderToString(<ReplayPreview events={replayDemoEvents} />)).toContain("replay-devtools-buttons")
     expect(renderToString(<ReplayPreview events={replayDemoEvents} devtools={{ console: [], network: [] }} />)).not.toContain("replay-devtools-buttons")
-    expect(renderToString(<ReplayPreview events={replayDemoEvents} initialTime={500} devtools={data} />)).toContain("Network: 1 request, 0 failed")
+    expect(renderToString(<ReplayPreview events={replayDemoEvents} defaultTime={500} devtools={data} />)).toContain("Network: 1 request, 0 failed")
   })
 
   it("new data can come at any time", async () => {

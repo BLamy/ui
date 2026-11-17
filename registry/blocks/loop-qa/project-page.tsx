@@ -51,7 +51,7 @@ export function ProjectPage({ value, project: p }: { value: string; project: Pro
             <Icon name="globe" size={13} sw={2} />{host(p.url)}<Icon name="arrow-up-right" size={11} sw={2.2} />
           </a>
           <span className="text-tertiary-foreground">·</span>
-          <Pill tone={p.status === 'active' ? 'success' : 'neutral'} dot>{p.status === 'active' ? 'Active' : 'Paused'}</Pill>
+          <Pill tone={p.status === 'active' ? 'success' : 'muted'} dot>{p.status === 'active' ? 'Active' : 'Paused'}</Pill>
           <span className="inline-flex items-center gap-1"><Icon name="clock" size={13} sw={2} />{p.schedule}</span>
           <span className="text-tertiary-foreground">·</span>
           <span>Last run {relativeTime(p.lastRun)}</span>

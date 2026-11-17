@@ -82,7 +82,7 @@ Switching the appearance (or the page's theme, with `auto`) while a program runs
 | `[data-slot="tui-preview"]`, `.docstream-tui` | The root, with `data-tui-state` and `data-appearance`. |
 | `.docstream-tui__toolbar`, `__title`, `__button[data-variant="primary" \| "secondary"]` | The toolbar and its buttons. |
 | `[data-slot="tui-preview-terminal"]`, `.docstream-tui__placeholder` | The terminal screen, and what it shows before Run. |
-| `[data-slot="tui-preview-status"]`, `[data-tone="error"]` | The status line; an error is an alert. |
+| `[data-slot="tui-preview-status"]`, `[data-tone="destructive"]` | The status line; an error is an alert. |
 | `[data-slot="tui-preview-source"]`, `.docstream-tui__source-trigger`, `__code` | The source disclosure. |
 | `--docstream-tui-border` | The hairline color (2.0.0's hook, still read). |
 

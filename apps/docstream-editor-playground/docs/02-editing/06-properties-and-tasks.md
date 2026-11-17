@@ -4,7 +4,7 @@ description: YAML frontmatter as an editable property sheet that keeps your comm
 
 # Properties and tasks
 
-Two pieces of document state have their own controls in the editor. The **properties sheet** edits a page's YAML frontmatter, and **task boxes** carry one of eight states. Both are docstream's own components (`DocumentProperties` and `TaskCheckbox`), the same ones the renderer shows. Both write back through `onChange`, and both are part of undo and redo.
+Two pieces of document state have their own controls in the editor. The **properties sheet** edits a page's YAML frontmatter, and **task boxes** carry one of eight states. Both are docstream's own components (`DocumentProperties` and `TaskCheckbox`), the same ones the renderer shows. Both write back through `onValueChange`, and both are part of undo and redo.
 
 ## Document properties
 
@@ -89,7 +89,7 @@ Both are editor commands too, so a host can drive them from its own UI:
 | Command | Does |
 | --- | --- |
 | `editor.commands.setTaskState(state)` | Sets the state of the task at the caret (`"blocked"`, `"verified"`, …). |
-| `editor.commands.setDocumentProperties(properties)` | Replaces the frontmatter (`{ yaml }`, or `null` to remove it). It goes through undo and `onChange` like any edit. |
+| `editor.commands.setDocumentProperties(properties)` | Replaces the frontmatter (`{ yaml }`, or `null` to remove it). It goes through undo and `onValueChange` like any edit. |
 
 ```tsx title="StatusButton.tsx"
 import { setDocumentProperty } from "@brett_lamy/ui/docstream/gitbook"

@@ -1,0 +1,16 @@
+{
+  "name": "pull-to-refresh",
+  "title": "Pull to refresh",
+  "description": "bindPullToRefresh(el, options): pull a scroller past its top to refresh, with a rubber band, a threshold, an announcement and reduced motion respected; onRefresh returns the work, and the indicator stays until it settles.",
+  "exports": [
+    "bindPullToRefresh"
+  ],
+  "imports": [
+    "bindPullToRefresh"
+  ],
+  "types": [
+    "BindPullToRefreshOptions",
+    "PullToRefreshDetails",
+    "PullToRefresh"
+  ]
+}

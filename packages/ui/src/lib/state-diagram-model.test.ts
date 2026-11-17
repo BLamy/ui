@@ -75,7 +75,7 @@ describe('the spike’s machine', () => {
   it('keeps what simulating needs on each edge', () => {
     const chunk = edges.find((e) => e.title === 'CHUNK')!;
     expect(chunk.data).toEqual({ transition: 'event', event: 'CHUNK', name: 'CHUNK', actions: [{ kind: 'named', name: 'countBytes' }], internal: true });
-    expect(chunk.sections?.[0]?.items.map((i) => i.title)).toEqual(['countBytes', 'no target']);
+    expect(chunk.sections?.map((sec) => sec.items.map((i) => i.title))).toEqual([['countBytes'], ['no target']]);
     expect(edges.find((e) => text(e) === 'always [withinQuota]')?.data?.transition).toBe('always');
     expect(chunk.from).toBe(chunk.to);
     const backoff = edges.find((e) => text(e).startsWith('after BACKOFF [retriesLeft]'))!;
@@ -133,11 +133,12 @@ describe('the awkward ones', () => {
     expect([again.from, again.to]).toEqual(['m.s', 'm.s']);
     expect(again.data?.internal).toBeUndefined();
     expect(again.data?.reenter).toBe(true);
-    expect(again.sections?.[0]?.items.map((i) => i.title)).toEqual(['reenters']);
+    // How it goes is a quiet line (a `list` section), not a chip.
+    expect(again.sections?.map((sec) => [sec.variant ?? 'default', sec.items.map((i) => i.title)])).toEqual([['list', ['reenters']]]);
     expect([stay.from, stay.to]).toEqual(['m.s', 'm.s']);
     expect(stay.data?.internal).toBe(true);
     // An arrow written in `actions` is named `actions` by JavaScript, which says nothing.
-    expect(stay.sections?.[0]?.items.map((i) => i.title)).toEqual(['inline', 'no target']);
+    expect(stay.sections?.map((sec) => sec.items.map((i) => i.title))).toEqual([['inline'], ['no target']]);
   });
 
   it('marks a deep history state and a shallow one', () => {
@@ -336,7 +337,7 @@ describe('everything a machine says', () => {
         const go = edge('GO');
         expect(go.data?.guard).toEqual({ name: 'canRetry and (isAbove(min: 5) or not canRetry)', text: 'canRetry and (isAbove(min: 5) or not canRetry)', composed: true });
         expect(go.data?.reenter).toBe(true);
-        expect(go.sections?.[0]?.items.map((i) => i.title)).toEqual(['if canRetry and (isAbove(min: 5) or not canRetry)', 'onPlay', 'reenters']);
+        expect(go.sections?.map((sec) => sec.items.map((i) => i.title))).toEqual([['if canRetry and (isAbove(min: 5) or not canRetry)', 'onPlay'], ['reenters']]);
         expect(edge('IN').data?.guard?.text).toBe('in #Audio Player.ready');
         const always = edges.find((e) => e.data?.transition === 'always')!;
         expect(always.title).toBe('always');

@@ -36,7 +36,7 @@ export default function EditableDocument() {
     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 16 }}>
       <div>
         {doc.properties ? (
-          <DocumentProperties properties={doc.properties} onChange={setProperties} defaultOpen />
+          <DocumentProperties properties={doc.properties} onValueChange={setProperties} defaultOpen />
         ) : null}
         <DocsRenderer
           doc={doc}

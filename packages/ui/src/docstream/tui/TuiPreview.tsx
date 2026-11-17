@@ -290,7 +290,7 @@ function TuiSession({
       </div>
       {failed ? (
         // An error is announced at once and drawn in the danger tone; the other states are polite status text.
-        <div id={`${id}-status`} role="alert" data-slot="tui-preview-status" data-tone="error" className="docstream-tui__status">
+        <div id={`${id}-status`} role="alert" data-slot="tui-preview-status" data-tone="destructive" className="docstream-tui__status">
           <Glyph name="exclamation-circle" className="docstream-tui__status-icon" size={14} />
           <span>{status}</span>
         </div>

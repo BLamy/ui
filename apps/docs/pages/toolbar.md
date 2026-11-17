@@ -85,6 +85,15 @@ The bar sits in the flow. To float it over a scrolling list, as iOS does, positi
 
 ## Menus, toggles and fields
 
+A tool that stays on (Bold, a pane, a mode) is a `ToolbarToggle`: UI SDK's Toggle (`pressed`, `defaultPressed`, `onPressedChange`, `aria-pressed`) drawn like a ToolbarButton at the toolbar's size, and filled while pressed. Never put `aria-pressed` on a ToolbarButton: it would be pressed to a screen reader and drawn like the others.
+
+```tsx
+<Toolbar aria-label="Formatting" size="sm">
+  <ToolbarToggle size="icon-sm" aria-label="Bold" pressed={bold} onPressedChange={setBold}><b>B</b></ToolbarToggle>
+  <ToolbarToggle size="icon-sm" aria-label="Italic" pressed={italic} onPressedChange={setItalic}><i>I</i></ToolbarToggle>
+</Toolbar>
+```
+
 A [Toggle](https://blamy.github.io/ui/#/toggle) or a `ToggleGroup` inside a Toolbar joins its arrow-key order by itself. A menu or popover trigger joins through `ToolbarButton`'s `render`, and keeps the toolbar button's look:
 
 ```tsx
@@ -110,7 +119,7 @@ A text field joins through UI SDK's `ToolbarInput` (`@ui-sdk/react/toolbar`), st
 
 ## Accessibility
 
-The root is `role="toolbar"`: name it with `aria-label`, and give every icon-only button its own `aria-label`. One tab stop; ←/→ (↑/↓ when vertical), Home and End move, wrapping at the ends unless `loop={false}`. A disabled button (or every item, with `disabled` on the root or a `ToolbarGroup`) stays focusable with `aria-disabled` and ignores presses; `focusableWhenDisabled={false}` on a button skips it instead. `ToolbarText` is not focusable. `createToolbarController()` gives the toolbar a `focus()` for an Alt+F10-style shortcut.
+The root is `role="toolbar"`: name it with `aria-label`, and give every icon-only button its own `aria-label`. One tab stop; ←/→ (↑/↓ when vertical), Home and End move, wrapping at the ends unless `loop={false}`. A disabled button (or every item, with `disabled` on the root or a `ToolbarGroup`) stays focusable with `aria-disabled` and ignores presses; `focusableWhenDisabled={false}` on a button skips it instead. `ToolbarText` is not focusable. A `ToolbarToggle` is a `button` with `aria-pressed` and `data-pressed`; moving focus onto it never presses it. `createToolbarController()` gives the toolbar a `focus()` for an Alt+F10-style shortcut.
 
 ## Props
 
@@ -133,6 +142,15 @@ UI SDK's ToolbarButton props (`onClick`, `disabled`, `focusableWhenDisabled`, `r
 | `variant` | `quiet` | Any [Button](https://blamy.github.io/ui/#/button) variant. In a `bar` toolbar, leaving it out gives the bar's tinted text action. |
 | `size` | the Toolbar's | Any Button size; icon-only tools take `icon-sm`, `icon` or `icon-lg`. |
 | `tone` | `default` | `success`, `warning` or `destructive` colors the label or glyph while the tool is available. Unavailable, an unfilled tool (`quiet`, `ghost`, `plain`, `outline`, the bar's actions) goes grey at full opacity in every look, never a faded tint; filled looks keep Button's dimmed fill. |
+
+### ToolbarToggle
+
+UI SDK's Toggle props (`pressed`, `defaultPressed`, `onPressedChange(pressed, details)`, `disabled`, `controller`), plus:
+
+| Prop | Default | Effect |
+| --- | --- | --- |
+| `variant` | `quiet` | Any [Toggle](https://blamy.github.io/ui/#/toggle) variant. `quiet` is a ToolbarButton's look with a grey fill while pressed. |
+| `size` | the Toolbar's | Any Toggle size; icon-only tools take `icon-sm`, `icon` or `icon-lg`, drawn as rounded squares. |
 
 ### ToolbarGroup, ToolbarSeparator, ToolbarText
 

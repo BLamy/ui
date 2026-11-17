@@ -101,7 +101,7 @@ The pure engine: `parseMarkdown`, `parseBlocks`, `parseInline`, `serializeMarkdo
 
 ### `/properties` and `/tasks`
 
-`DocumentProperties` (the YAML frontmatter sheet, editable with `onChange`) and `TaskCheckbox` (the eight-state task control) as standalone components, each with its own stylesheet entry. The full `styles.css` already includes both stylesheets.
+`DocumentProperties` (the YAML frontmatter sheet, editable with `onValueChange`) and `TaskCheckbox` (the eight-state task control) as standalone components, each with its own stylesheet entry. The full `styles.css` already includes both stylesheets.
 
 **Use them** in an editor or app UI that shows properties or task states outside a rendered document.
 

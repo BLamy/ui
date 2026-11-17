@@ -413,8 +413,8 @@ export const canvas = definePrimitive({
         focusout: (_event, { api }) => api.internal.focusout(),
       },
     }),
-    // Fills the frame and scrolls, so find in page and focus can bring board items into view; it holds only the board.
-    // Not a tab stop: Chrome makes a scroller keyboard-focusable when nothing in it is, and the canvas is the one stop.
+    // Fills the frame and scrolls (programmatically: its overflow is hidden), so find in page and focus can bring board items
+    // into view; it holds only the board. Not a tab stop: the canvas is the one stop, and it pans.
     pane: slot({
       attrs: () => ({ tabindex: '-1' }),
       bind: (el, { api }) => api.internal.bindFindable(el),

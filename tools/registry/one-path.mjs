@@ -18,20 +18,43 @@ import { ROOT, SRC } from './graph.mjs';
 const AGGREGATES = new Set(['.', './docstream', './docstream-editor']);
 const isDocstream = (key) => /^\.\/docstream(-editor)?\//.test(key);
 
+/** What each Docstream widget's kit module (rule 16) and MarkdownView may re-export from docstream: a fixed list, so a
+ *  shim's re-export list never widens without this table changing too. MarkdownView's are types only. */
+export const SHIM_NAMES = {
+  './replay-preview': [
+    'ReplayPreview', 'ReplayPreviewProps', 'ReplayPreviewHandle', 'ReplayChrome', 'ReplayDevtools', 'ReplayDevtoolsTab', 'ReplayEvent',
+    'ReplayInspection', 'ReplayInspectionTab', 'ReplayMarker', 'ReplayMarkerKind', 'ReplaySource',
+  ],
+  './tui-preview': ['TuiPreview', 'TuiPreviewProps', 'TuiPreviewOptions', 'TuiPreviewState', 'TuiAppearance', 'TuiTheme'],
+  './stl-viewer': ['StlViewer', 'StlViewerProps'],
+  './strudel-player': [
+    'StrudelPlayer', 'StrudelPlayerProps', 'StrudelCodeChangeDetails', 'StrudelPanelChangeReason', 'StrudelSnapshot',
+    'getStrudelSnapshot', 'playStrudel', 'stopStrudel', 'subscribeStrudel', 'updateStrudel',
+  ],
+  './markdown-view': ['CodeBlockNode', 'CodeBlockRenderDetails', 'ReferenceNode'],
+};
+const TYPES_ONLY = new Set(['./markdown-view']);
+const SURFACE = `${SRC}/lib/surface.ts`;
+
 /** Entries allowed to share a name, each with the rule that says so. A set of entries passes when one rule covers
- *  all of them (`type`: the name is a type, declared once). */
+ *  all of them (`name`; `ids`: the declarations behind it; `type`: the name is a type, declared once). */
 export const SHARED = [
   {
     why: 'a component re-exports the types its props take from its own model (`./data-table` with `./lib/data-table-model`): types only, declared once',
     covers: (keys, { type }) => type && keys.length === 2 && keys.some((k) => keys.some((m) => m !== k && m.startsWith(`./lib/${k.slice(2)}-`))),
   },
   {
-    why: "rule 16: a Docstream widget's kit module re-exports the widget from docstream's entry; MarkdownView re-exports the docstream types its props take",
-    covers: (keys) => keys.filter((k) => !isDocstream(k)).length === 1 && keys.some((k) => /^\.\/(replay-preview|tui-preview|stl-viewer|strudel-player|markdown-view)$/.test(k)),
+    why: "rule 16: a Docstream widget's kit module re-exports the widget from docstream's entry, the names in SHIM_NAMES only; MarkdownView re-exports the docstream types its props take",
+    covers: (keys, { name, type }) => {
+      const kit = keys.filter((k) => !isDocstream(k));
+      return kit.length === 1 && !!SHIM_NAMES[kit[0]]?.includes(name) && (type || !TYPES_ONLY.has(kit[0]));
+    },
   },
   {
-    why: 'rule 15: the surface recipes live in lib/surface, re-exported by dialog and sheet',
-    covers: (keys) => keys.every((k) => ['./lib/surface', './dialog', './sheet'].includes(k)),
+    why: 'rule 15: the surface recipes live in lib/surface, re-exported by dialog and sheet: one declaration, in lib/surface.ts',
+    covers: (keys, { ids }) =>
+      keys.includes('./lib/surface') && keys.every((k) => ['./lib/surface', './dialog', './sheet'].includes(k)) &&
+      ids.size === 1 && [...ids][0].startsWith(`${SURFACE}#`),
   },
   {
     why: "docstream's entries among themselves: the 2.0.1 package's shape, kept as it was published",
@@ -148,7 +171,7 @@ export function onePathErrors(exportsMap) {
   for (const [name, { entries, ids, type }] of entryNames(exportsMap)) {
     if (entries.size < 2) continue;
     const keys = [...entries].sort();
-    if (SHARED.some((rule) => rule.covers(keys, { type }))) continue;
+    if (SHARED.some((rule) => rule.covers(keys, { name, ids, type }))) continue;
     const what = ids.size > 1 ? `${ids.size} different declarations under one name` : 'one declaration on two import paths';
     errors.push(`"${name}" is exported by ${keys.join(', ')} (${what}): a name has one entry (CONVENTIONS, "The package surface")`);
   }

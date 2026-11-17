@@ -39,6 +39,22 @@ function City(props: Partial<ComponentProps<typeof Combobox<string>>>) {
 }
 
 describe('Combobox', () => {
+  it('as a sheet, the field behind it keeps its face: the input\'s placeholder or the chosen label, and the open edge', async () => {
+    const { rerender } = render(<City presentation="sheet" />);
+    await settle();
+    const group = document.querySelector<HTMLElement>('[data-slot=combobox-input-group]')!;
+    const ghost = group.querySelector<HTMLElement>('[data-part=ghost]')!;
+    expect(ghost.getAttribute('aria-hidden')).toBe('true');
+    expect(ghost.textContent).toBe('Search cities');
+    // Shown by the group only while it holds no input (a sheet has taken it into its header).
+    expect(group.className).toContain('[&:not(:has([data-slot=combobox-input],[data-slot=combobox-chips]))>[data-part=ghost]]:flex');
+    expect(group.className).toContain('has-[[data-slot=combobox-trigger][aria-expanded=true]]:shadow-[inset_0_0_0_1.5px_var(--primary)]');
+    expect(screen.getByRole('button', { name: 'Show options' }).className).toContain('ms-auto');
+    rerender(<City presentation="sheet" value="Lisbon" />);
+    await settle();
+    expect(document.querySelector('[data-part=ghost]')!.textContent).toBe('Lisbon');
+  });
+
   it('is a labelled combobox input with a disclosure button out of the tab order', async () => {
     render(<City />);
     await settle();

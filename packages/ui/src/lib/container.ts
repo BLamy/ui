@@ -12,8 +12,6 @@ import { bindSizeClass, type SizeClass, type SizeClassBreakpoints } from '@/lib/
    React context crosses portals, so a popup rendered into BLProvider's root from inside a compact SplitView column
    still sees "compact": the kit's popup wrappers resolve `presentation="auto"` from it (`usePresentation`). ══ */
 
-export type { SizeClass, SizeClassBreakpoints };
-
 const SizeClassContext = createContext<SizeClass | undefined>(undefined);
 
 /** Makes `value` the size class of everything rendered inside, popups included. `undefined` (not measured yet)

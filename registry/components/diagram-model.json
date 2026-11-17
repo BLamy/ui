@@ -16,7 +16,9 @@
     "nodeAt",
     "edgeAt",
     "nodeSize",
-    "edgeLabelSize"
+    "edgeLabelSize",
+    "codeKey",
+    "DIAGRAM_LEGIBLE_ZOOM"
   ],
   "imports": [
     "indexDiagram",

@@ -201,7 +201,8 @@ export const floatingSheetVariants = cva(
   'ck-floating-sheet pointer-events-none absolute inset-0 z-40 overflow-clip font-sans text-foreground [contain:layout]',
 );
 
-export interface FloatingSheetProps {
+/** The root layer element is a `div`: `id`, `data-*`, `title`, its events and the rest of a div's props reach it. */
+export interface FloatingSheetProps extends Omit<ComponentProps<'div'>, 'children' | 'className' | 'style' | 'ref' | 'aria-label'> {
   /** Controlled state for the fully grown sheet. */
   open?: boolean;
   defaultOpen?: boolean;
@@ -317,6 +318,7 @@ export function FloatingSheet({
   className,
   surfaceClassName,
   style,
+  ...rootProps
 }: FloatingSheetProps) {
   // `auto` follows the page; an explicit appearance is the bl-theme's `sheet` scope in it, published to popups opened
   // inside (a scope above is passed through unchanged otherwise).
@@ -479,6 +481,7 @@ export function FloatingSheet({
       <PartsContext.Provider value={parts}>
         <ThemeScopeContext.Provider value={scope}>
           <div
+            {...rootProps}
             ref={rootRef}
             data-slot="floating-sheet"
             data-variant={variant}
@@ -603,12 +606,15 @@ export function FloatingSheetBody({ className, children, ...props }: FloatingShe
       className="ck-floating-sheet__reveal relative min-h-0 w-full flex-1 overflow-hidden"
     >
       {/* `end` pins it to the foot so a transcript grows upward out of the cap; `start` keeps a card's header against
-          the cap. ck-floating-sheet__body stays as a hook for the child rules in styles.css. */}
+          the cap. Its children stack as written, so a flow's SheetHeader and SheetView go straight in, one after the
+          other: with `start`, the last one takes the rest of the window (a lone child fills it); with `end`, they keep
+          their own height up to the window's. ck-floating-sheet__body stays as a hook for the transcript rule in
+          styles.css. */}
       <div
         data-slot="floating-sheet-body"
         className={cn(
-          'ck-floating-sheet__body absolute right-0 left-0 flex h-(--ck-sheet-body-height) min-w-0 flex-col overflow-hidden',
-          bodyAlign === 'end' ? 'bottom-0 justify-end' : 'top-0',
+          'ck-floating-sheet__body absolute right-0 left-0 flex h-(--ck-sheet-body-height) min-w-0 flex-col overflow-hidden *:box-border *:min-w-0',
+          bodyAlign === 'end' ? 'bottom-0 justify-end *:min-h-0 *:max-h-full' : 'top-0 *:shrink-0 *:last:grow',
           className,
         )}
         {...props}

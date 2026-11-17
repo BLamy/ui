@@ -181,7 +181,7 @@ export default function ResizeBreakpoint() {
         </span>
       </div>
       <Frame width={width}>
-        <ArtifactChatContainer breakpoint={620} chatWidth={280}>
+        <ArtifactChatContainer breakpoints={{ medium: 620 }} chatWidth={280}>
           <ArtifactChatContainerChat>
             <Transcript />
           </ArtifactChatContainerChat>

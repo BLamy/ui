@@ -43,7 +43,7 @@ A `jsx`, `tsx` or `react` fence with `live="true"` runs as a React preview in do
 import { GitbookEditor } from "@brett_lamy/ui/docstream-editor"
 import { almostNodeLiveRenderer } from "@brett_lamy/ui/docstream/playground"
 
-<GitbookEditor markdown={md} onChange={setMd} liveRenderer={almostNodeLiveRenderer} />
+<GitbookEditor markdown={md} onValueChange={setMd} liveRenderer={almostNodeLiveRenderer} />
 ```
 
 The entry defaults to `/src/main.tsx` for `tsx` and `/src/main.jsx` otherwise. Live fences and the `{% demo %}` blocks they relate to are covered in [Demo blocks](../03-files-and-demos/04-demo-blocks.md).

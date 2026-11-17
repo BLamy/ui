@@ -10,7 +10,9 @@ import type { ReplayPreviewHandle } from "./ReplayPreview"
 import type { ReplayStageHandle, ReplayStageProps } from "./stage-types"
 
 
-// gpu-lexer needs WebGPU: a stand-in that marks `const` a keyword and identifiers before "(" functions.
+// gpu-lexer needs WebGPU: a stand-in that marks `const` a keyword and identifiers before "(" functions, behind a probe
+// (the kit's lib/webgpu, which lib/syntax asks first) that finds a hardware adapter.
+vi.mock("@/lib/webgpu", () => ({ navigatorGpu: () => ({}), probeWebGPU: async () => "hardware", webgpuProbeResult: () => "hardware" }))
 vi.mock("gpu-lexer", () => ({
   parse: async (code: string) =>
     [...code.matchAll(/\bconst\b|\w+(?=\()/g)].map((m) => ({ type: m[0] === "const" ? "keyword" : "function", start: m.index!, end: m.index! + m[0].length })),
@@ -410,7 +412,7 @@ describe("player behaviour", () => {
     const props = () => stage.props as ReplayStageProps
     const tick = (ms: number) => act(async () => { stage.time = ms; props().onTimeUpdate?.(ms) })
     const playing = (p: boolean) => act(async () => props().onPlayingChange?.(p))
-    expect(props().initialTime).toBe(3000)
+    expect(props().defaultTime).toBe(3000)
     expect(props().loop).toBe(false)
     // The window's place is set on the scrubber, where the band and the played fill both read it.
     expect(el.querySelector('[data-slot="replay-preview-window"]')).not.toBeNull()

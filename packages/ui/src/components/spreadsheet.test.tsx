@@ -234,6 +234,26 @@ describe('Spreadsheet', () => {
     expect(document.querySelector('[data-slot=spreadsheet-footer]')).toBeNull();
   });
 
+  it('an empty sheet is one tab stop that takes a paste; a press on its empty region focuses it; read-only is not', async () => {
+    const onRows = vi.fn();
+    render(<Spreadsheet engine="fallback" aria-label="Empty" defaultValue={[['Name', 'Qty']]} onValueChange={onRows} />);
+    expect(grid().getAttribute('tabindex')).toBe('0');
+    const empty = document.querySelector<HTMLElement>('[data-slot=spreadsheet-empty]')!;
+    expect(grid().getAttribute('aria-describedby')).toBe(empty.id);
+    fireEvent.pointerDown(empty);
+    expect(focused()).toBe(grid());
+    fireEvent.paste(grid(), { clipboardData: { getData: () => 'kiwi\t1\nlime\t2' } });
+    expect(onRows).toHaveBeenLastCalledWith([['Name', 'Qty'], ['kiwi', '1'], ['lime', '2']], expect.objectContaining({ reason: 'paste' }));
+    await flush();
+    // With rows, a cell holds the tab stop again.
+    expect(grid().hasAttribute('tabindex')).toBe(false);
+    expect(document.querySelector('[data-slot=spreadsheet-empty]')).toBeNull();
+    cleanup();
+    render(<Spreadsheet engine="fallback" aria-label="Empty" readOnly defaultValue={[['Name', 'Qty']]} />);
+    expect(grid().hasAttribute('tabindex')).toBe(false);
+    expect(grid().hasAttribute('aria-describedby')).toBe(false);
+  });
+
   it('keeps the sort buttons out of the Tab order, and Add Row adds a row and moves to it', async () => {
     const onRows = vi.fn();
     render(<Harness onRows={onRows} />);

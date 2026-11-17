@@ -6,6 +6,7 @@ Reach for a sibling instead when:
 
 - the rows are **chosen** (a picker, a multi-select, an option list): [Listbox](https://blamy.github.io/ui/#/listbox) (`listbox` / `option`, selection state, typeahead);
 - the data is a **hierarchy**: [Tree](https://blamy.github.io/ui/#/tree);
+- it is **records in columns** to sort, resize and select: [DataTable](https://blamy.github.io/ui/#/data-table), or [Spreadsheet](https://blamy.github.io/ui/#/spreadsheet) for cells you edit;
 - it is a **log or a grid of data** with columns, virtualized rows and a moving marker: [LogList](https://blamy.github.io/ui/#/log-list);
 - it is an app's **sidebar** navigation: [Sidebar](https://blamy.github.io/ui/#/sidebar) or a SplitView column.
 

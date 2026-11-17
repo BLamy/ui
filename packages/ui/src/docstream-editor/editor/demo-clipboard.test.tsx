@@ -64,7 +64,7 @@ async function mountTwo(a: Partial<GitbookEditorProps>, b: Partial<GitbookEditor
             slashMenu={false}
             references={false}
             markdown={props.markdown ?? ""}
-            onChange={(md) => (markdown[i] = md)}
+            onValueChange={(md) => (markdown[i] = md)}
             onEditorReady={(ed) => {
               if (ed) editors[i] = ed
             }}

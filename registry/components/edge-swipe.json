@@ -1,0 +1,16 @@
+{
+  "name": "edge-swipe",
+  "title": "Edge swipe",
+  "description": "bindEdgeSwipe(el, options): a swipe from a screen edge (the inline start by default, mirrored in RTL) with UIKit's rubber band, velocity projection and settle, for a page that pops or a drawer that opens.",
+  "exports": [
+    "bindEdgeSwipe"
+  ],
+  "imports": [
+    "bindEdgeSwipe"
+  ],
+  "types": [
+    "BindEdgeSwipeOptions",
+    "EdgeSwipeDetails",
+    "EdgeSwipeEndDetails"
+  ]
+}

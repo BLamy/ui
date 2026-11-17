@@ -12,7 +12,7 @@ import { bindPullToRefresh } from '@/lib/pull-to-refresh'
 import { usePresence, usePresenceList, useEnterExit } from '@/lib/presence'
 ```
 
-With the npm package they are all exported from `@brett_lamy/ui`; with the registry, `npx shadcn@latest add https://blamy.github.io/ui/r/stack.json` (and `size-class`, `container`, `edge-swipe`, `back`, `pull-to-refresh`, `presence`) copies one into `@/lib`. Use the `bind…` and `create…` ones inside a primitive's slots, or on an element in an effect.
+With the npm package each has its own entry, the same path under the package name (`@/lib/stack` is `@brett_lamy/ui/lib/stack`), and as the kit's foundation they are on the root, `@brett_lamy/ui`, too; with the registry, `npx shadcn@latest add https://blamy.github.io/ui/r/stack.json` (and `size-class`, `container`, `edge-swipe`, `back`, `pull-to-refresh`, `scroll-edge`, `presence`, `controllable-state`) copies one into `@/lib`. Use the `bind…` and `create…` ones inside a primitive's slots, or on an element in an effect.
 
 ## Already done for you
 
@@ -86,7 +86,7 @@ The frame is a layer host too (`data-layer-host` with `contain: layout`), so the
 | `key`, `exiting` | The state keys of the pages (`string[]`) and of the pages leaving (`PageStackExit[]`, start `[]`). |
 | `set(value, details)` | Writes the pages; pass `createChange`'s. Return `false` to refuse. |
 | `back` | Pass `bindBack` for the platform back (it is passed in, so a stack without it doesn't bundle it). |
-| `active` | Whether it is a stack right now (default always). While it returns `false` the pages stay rendered, nothing pops, the swipe is refused, a change of pages plays no exit and moves no focus, and nothing is covered: a split view's columns are a stack only while compact. Read on every store change. |
+| `when` | Whether it is a stack right now (default always), as `bindLayer`'s `when`. While it returns `false` the pages stay rendered, nothing pops, the swipe is refused, a change of pages plays no exit and moves no focus, and nothing is covered: a split view's columns are a stack only while compact. Read on every store change. |
 | `persistent` | The pages never unmount: the layout's CSS moves them (a split view's columns). A page that leaves records no exit and plays no `animateIn` / `animateOut` (whose reset would clear the `inert` its attrs keep); only focus moves with the pages. Default `false`. |
 
 | Member | What it does |

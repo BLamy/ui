@@ -101,6 +101,15 @@ describe('MarkdownEditor', () => {
     act(() => { ref.current!.editor!.commands.selectAll(); });
     act(() => { fireEvent.click(italic); });
     await waitFor(() => expect(ref.current!.getMarkdown()).toMatch(/[*_]plain words[*_]/));
+    // Pressed is drawn, not only announced: the toggle wears data-pressed and the kit Toggle's pressed fill.
+    await waitFor(() => expect(italic.getAttribute('aria-pressed')).toBe('true'));
+    expect(italic.hasAttribute('data-pressed')).toBe(true);
+    expect(italic.className).toContain('data-pressed:bg-secondary');
+    const bold = slot.querySelector<HTMLButtonElement>('button[aria-label=Bold]')!;
+    expect(bold.getAttribute('aria-pressed')).toBe('false');
+    expect(bold.hasAttribute('data-pressed')).toBe(false);
+    // The link trigger is a popup trigger, not a toggle: no aria-pressed.
+    expect(slot.querySelector('button[aria-label=Link]')!.hasAttribute('aria-pressed')).toBe(false);
   });
 
   it('uncontrolled: setMarkdown replaces the document, reports Markdown and submits it with the form', async () => {

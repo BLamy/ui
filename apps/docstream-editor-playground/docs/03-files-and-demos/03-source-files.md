@@ -38,7 +38,7 @@ const sourceClient = createViteSourceClient() // talks to docstreamSources() in 
 
 <GitbookEditor
   markdown={markdown}
-  onChange={setMarkdown}
+  onValueChange={setMarkdown}
   sourceClient={sourceClient}
   onSourceSaved={(snapshot) => toast(`Saved ${snapshot.provenance.path}`)}
   onSourceError={(error) => console.error(error)}

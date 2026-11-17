@@ -11,7 +11,24 @@ const service = (page, id) => page.locator(`[data-slot=diagram-node][data-node="
 const services = (page) => page.locator('[data-slot=diagram-node]:not([data-node^="cloudflare:"])');
 /** The catalog search: its combobox, by name (the Combobox also renders a hidden form input). */
 const catalogSearch = (page) => page.getByRole('combobox', { name: 'Search Cloudflare’s services' });
+/** What's to be pressed or dragged, in view: a board opens at a readable size, from its top, so what's far down or across
+ *  may be past its edge, and then the board's Fit shows it all, as a person would. */
+const inView = async (page, locator) => {
+  const board = await locator.evaluate((el) => {
+    const b = el.closest('[data-slot=canvas]')?.getBoundingClientRect(), r = el.getBoundingClientRect();
+    // Nor under what floats over the board: its toolbar, a frame's bar.
+    const over = [...(el.closest('[data-slot=diagram-frame-board], [data-slot=diagram]')?.querySelectorAll('[data-slot=diagram-overlay] [data-slot=toolbar], [data-slot=diagram-frame-bar]') ?? [])].map((o) => o.getBoundingClientRect());
+    const under = over.some((o) => r.left < o.right && r.right > o.left && r.top < o.bottom && r.bottom > o.top);
+    return !b || (!under && r.left >= b.left && r.right <= b.right && r.top >= b.top && r.bottom <= b.bottom - 60);
+  });
+  if (board) return;
+  // Its own board's Fit, where a page has more than one.
+  await locator.locator('xpath=ancestor::*[@data-slot="diagram"][1]').locator('[data-slot=diagram-overlay] [data-action=fit]').first().click();
+  // A fit glides there: what's pressed next is where it ends up.
+  await settle(page);
+};
 const port = async (page, node, name) => {
+  await inView(page, page.locator(`[data-slot=diagram-port][data-port-of="${node}"][data-port="${name}"]`));
   const b = await page.locator(`[data-slot=diagram-port][data-port-of="${node}"][data-port="${name}"]`).boundingBox();
   return { x: b.x + b.width / 2, y: b.y + b.height / 2 };
 };
@@ -33,7 +50,9 @@ const settle = async (page) => {
 const connect = async (page, a, ap, b, bp) => {
   const lines = await page.locator('[data-slot=diagram-edge]').count();
   await settle(page);
-  const from = await port(page, a, ap), to = await port(page, b, bp);
+  // Bringing the second into view can move the first: where each is is read once both are in view.
+  await port(page, a, ap);
+  const to = await port(page, b, bp), from = await port(page, a, ap);
   await page.mouse.move(from.x, from.y);
   await page.mouse.down();
   await page.mouse.move(to.x, to.y, { steps: 8 });
@@ -43,6 +62,7 @@ const connect = async (page, a, ap, b, bp) => {
 /** A press on a service's name, which nothing's drawn over. */
 const press = async (page, id) => {
   await settle(page);
+  await inView(page, service(page, id).locator('[data-slot=diagram-node-title]').first());
   const box = await service(page, id).locator('[data-slot=diagram-node-title]').first().boundingBox();
   await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
 };

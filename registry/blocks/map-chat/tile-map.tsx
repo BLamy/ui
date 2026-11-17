@@ -32,15 +32,16 @@ import { tileMap, type TileMapViewportChangeDetails } from './tile-map-primitive
 
 export type { TileMapViewportChangeDetails, TileMapViewportReason } from './tile-map-primitive';
 
+const isMapIconName = (icon: unknown): icon is MapIconName => typeof icon === 'string' && Object.hasOwn(MAP_ICONS, icon);
+
 export interface MapPin {
   id: string;
   position: LatLng;
   label?: string;
-  /** Pin fill colour; defaults per kind. */
-  color?: string;
-  icon?: MapIconName;
-  /** Replaces the icon — used for numbered route stops. */
-  badge?: ReactNode;
+  /** Pin fill (a CSS color); defaults per kind. */
+  tint?: string;
+  /** What the pin shows: one of the map's icons by name, or your own content (a numbered route stop's number). */
+  icon?: MapIconName | ReactNode;
   /** Short bubble anchored above the marker, like an ETA. */
   callout?: ReactNode;
   kind?: 'place' | 'stop' | 'user';
@@ -49,7 +50,8 @@ export interface MapPin {
 
 export interface MapRoute {
   points: LatLng[];
-  color?: string;
+  /** The line's color (a CSS color); default the theme's primary. */
+  tint?: string;
 }
 
 export type TileUrlFn = (z: number, x: number, y: number) => string;
@@ -390,7 +392,7 @@ export function TileMap({
             strokeWidth={4.5}
             strokeLinecap="round"
             strokeLinejoin="round"
-            {...(route.color ? { stroke: route.color } : { className: 'stroke-[color:var(--primary)]' })}
+            {...(route.tint ? { stroke: route.tint } : { className: 'stroke-[color:var(--primary)]' })}
             points={routePoints}
           />
         </svg>
@@ -415,7 +417,7 @@ export function TileMap({
               ),
               style: {
                 transform: `translate3d(${s.x}px, ${s.y}px, 0)`,
-                '--ck-pin-color': pin.color ?? (kind === 'stop' ? 'var(--primary)' : TILE_MAP_USER_BLUE),
+                '--ck-pin-color': pin.tint ?? (kind === 'stop' ? 'var(--primary)' : TILE_MAP_USER_BLUE),
               } as CSSProperties,
               'aria-label': pin.label ?? pin.id,
               onClick: (e: ReactMouseEvent<HTMLButtonElement>) => {
@@ -444,12 +446,12 @@ export function TileMap({
                     pin.selected && '[transform:scale(1.18)]',
                   )}
                 >
-                  {user ? null : pin.badge != null ? (
-                    <span className="text-footnote leading-none font-bold tracking-[-.02em]">{pin.badge}</span>
-                  ) : (
+                  {user ? null : pin.icon == null || isMapIconName(pin.icon) ? (
                     <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                       <path d={MAP_ICONS[pin.icon ?? 'pin']} />
                     </svg>
+                  ) : (
+                    <span className="text-footnote leading-none font-bold tracking-[-.02em]">{pin.icon}</span>
                   )}
                 </span>
                 {pin.label && !user && (

@@ -764,6 +764,9 @@ export const spreadsheet = definePrimitive({
           'aria-multiselectable': 'true',
           'aria-readonly': state.readOnly ? 'true' : undefined,
           'aria-busy': state.sorting ? 'true' : undefined,
+          // A grid always has one tab stop (APG). With no rows there is no cell to hold it, so the grid takes it: it
+          // has the paste listener, so ⌘V there writes from the first cell.
+          tabindex: body === 0 && !state.readOnly ? '0' : undefined,
           // Focus that scrolls a cell in keeps it clear of the sticky titles and row numbers.
           style: css({
             '--row': `${rowHeight}px`, '--gutter': `${gutter}px`, '--head': `${head}px`, '--hist': `${HISTOGRAM_HEIGHT}px`,

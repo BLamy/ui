@@ -414,7 +414,7 @@ export function BoardSurface({ viewport, onViewportChange, controller, tool, set
         {/* Selection */}
         {selected.map((it) => (it.kind === 'connector'
           ? <ConnectorHighlight key={it.id} item={it} byId={byId} z={z} />
-          : <CanvasFrame key={it.id} frame={it} dashed={it.locked} />))}
+          : <CanvasFrame key={it.id} frame={it} variant={it.locked ? 'dashed' : 'default'} />))}
         {selected.length > 1 && sel.frame ? <CanvasFrame frame={sel.frame} offset={6} /> : null}
         <CanvasHandles handles={sel.handles} />
         {ui.anchors ? <Anchors id={ui.anchors.id} side={ui.anchors.side} byId={byId} z={z} /> : null}

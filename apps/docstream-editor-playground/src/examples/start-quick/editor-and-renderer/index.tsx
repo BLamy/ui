@@ -18,7 +18,7 @@ export default function EditorAndRenderer() {
   return (
     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 16 }}>
       <style>{".gb.qs-editor { max-width: none; padding: 4px 16px 16px; border: 1px solid var(--border); border-radius: 12px }"}</style>
-      <GitbookEditor markdown={markdown} onChange={setMarkdown} className="qs-editor" />
+      <GitbookEditor markdown={markdown} onValueChange={setMarkdown} className="qs-editor" />
       <div style={{ minWidth: 0, padding: "0 16px", border: "1px dashed var(--border)", borderRadius: 12 }}>
         <MarkdownContent markdown={markdown} />
       </div>

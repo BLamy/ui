@@ -34,7 +34,7 @@ describe("live diagram code blocks", () => {
   it("updates an XState preview from real editor transactions, reports syntax errors, and recovers", async () => {
     let editor!: Editor
     let saved = ""
-    await act(async () => root.render(<GitbookEditor markdown={fence("xstate", machine)} onChange={(md) => { saved = md }} onEditorReady={(instance) => { if (instance) editor = instance }} />))
+    await act(async () => root.render(<GitbookEditor markdown={fence("xstate", machine)} onValueChange={(md) => { saved = md }} onEditorReady={(instance) => { if (instance) editor = instance }} />))
     await until(() => !!host.querySelector("[data-docstream-xstate] [data-slot=diagram-node]"))
     const block = editor.state.doc.firstChild!
     await act(async () => { editor.commands.insertContentAt({ from: 1, to: block.nodeSize - 1 }, { type: "text", text: machine.replaceAll("working", "finished") }) })
@@ -50,7 +50,7 @@ describe("live diagram code blocks", () => {
   it("authors a machine that invokes something: its edges and what it invokes show as it's typed", async () => {
     let editor!: Editor
     let saved = ""
-    await act(async () => root.render(<GitbookEditor markdown={fence("xstate", machine)} onChange={(md) => { saved = md }} onEditorReady={(instance) => { if (instance) editor = instance }} />))
+    await act(async () => root.render(<GitbookEditor markdown={fence("xstate", machine)} onValueChange={(md) => { saved = md }} onEditorReady={(instance) => { if (instance) editor = instance }} />))
     await until(() => !!host.querySelector("[data-docstream-xstate] [data-slot=diagram-node]"))
     const invoking = JSON.stringify({ initial: "idle", states: { idle: { invoke: { src: "load", onDone: "ready", onError: "failed" } }, ready: {}, failed: {} } })
     await act(async () => { editor.commands.insertContentAt({ from: 1, to: editor.state.doc.firstChild!.nodeSize - 1 }, { type: "text", text: invoking }) })
@@ -83,7 +83,7 @@ describe("live diagram code blocks", () => {
   it("edits circuit source while preserving the runtime frame", async () => {
     let editor!: Editor
     let saved = ""
-    await act(async () => root.render(<GitbookEditor markdown={fence("tscircuit", 'circuit.add(<resistor resistance="1k" />)')} onChange={(md) => { saved = md }} onEditorReady={(instance) => { if (instance) editor = instance }} />))
+    await act(async () => root.render(<GitbookEditor markdown={fence("tscircuit", 'circuit.add(<resistor resistance="1k" />)')} onValueChange={(md) => { saved = md }} onEditorReady={(instance) => { if (instance) editor = instance }} />))
     const frame = host.querySelector("[data-docstream-tscircuit] iframe")!
     expect(frame).not.toBeNull()
     await act(async () => { editor.commands.insertContentAt({ from: 1, to: editor.state.doc.firstChild!.nodeSize - 1 }, { type: "text", text: 'circuit.add(<resistor resistance="2k" />)' }) })

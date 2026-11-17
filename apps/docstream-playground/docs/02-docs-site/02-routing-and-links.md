@@ -23,7 +23,7 @@ Real paths — `/docs/guides/install#npm` — through the History API. Your serv
 
 {% tab title="memory" %}
 ```tsx
-<DocsSite files={files} routing="memory" initialPath="guides/install" height={560} />
+<DocsSite files={files} routing="memory" defaultPath="guides/install" height={560} />
 ```
 
 No URL at all, for a site embedded in another page — a preview pane, a playground, a modal. Theme changes stay on the site element, `document.title` is left alone, and ⌘K only answers while the site has focus. The playground on the [overview](README.md#five-lines) runs this way.

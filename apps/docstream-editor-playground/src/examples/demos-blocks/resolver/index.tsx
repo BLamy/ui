@@ -43,7 +43,7 @@ export default function ResolverDemo() {
         <GitbookEditor
           key={`${withResolver}-${withRuntime}`}
           markdown={markdown}
-          onChange={setMarkdown}
+          onValueChange={setMarkdown}
           toolbar={false}
           documentProperties={false}
           {...(withResolver ? { demoResolver } : {})}

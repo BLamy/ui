@@ -267,7 +267,7 @@ export default function SplitToFloating({
           }}
         >
           <ArtifactChatContainer
-            breakpoint={760}
+            breakpoints={{ medium: 760 }}
             working={working}
             workingLabel="Working on the artifact…"
             onComposingChange={(composing) => {

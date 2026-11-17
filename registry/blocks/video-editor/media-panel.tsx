@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { FileUploadDropzone } from '@/components/ui/file-upload';
 import { HoverCard, HoverCardContent, HoverCardHeader, HoverCardTrigger, createHoverCardController, type HoverCardController } from '@/components/ui/hover-card';
 import { Spinner } from '@/components/ui/spinner';
-import { timelineMediaType } from '@/components/ui/video-timeline';
+import { videoTimelineMediaType } from '@/components/ui/video-timeline';
 import { Waveform } from '@/components/ui/waveform';
 import { useMediaFrames, useMediaPeaks } from '@/lib/ffmpeg/react';
 import { formatFileSize } from '@/lib/file-size';
@@ -108,7 +108,7 @@ function MediaCard({ item: m, previews, onAdd, onRemove }: { item: MediaItem; pr
   return (
     <HoverCardTrigger controller={previews} payload={m.id} render={
       <li draggable={ready} aria-label={m.name}
-        onDragStart={(e) => { previews.close(); e.dataTransfer.setData(timelineMediaType, m.id); e.dataTransfer.effectAllowed = 'copy'; }}
+        onDragStart={(e) => { previews.close(); e.dataTransfer.setData(videoTimelineMediaType, m.id); e.dataTransfer.effectAllowed = 'copy'; }}
         className={cn('group/card relative overflow-hidden rounded-ctl bg-secondary shadow-hairline', ready && 'cursor-grab active:cursor-grabbing')} />
     }>
       <div className="relative aspect-video overflow-hidden bg-black">

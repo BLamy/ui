@@ -105,8 +105,10 @@ describe("thumbnail images", () => {
     expect(out).toContain('class="docs-step-main docs-step-media"')
     expect(out).toContain('docs-thumb-badge">0:39.8<')
     // The title and the body sit together beside the image.
-    expect(out).toMatch(/docs-step-media-body"><div class="docs-step-title"><span>Overview loads with Unauthorized<\/span><\/div>.*The ticker shows the fallback/)
-    expect(out).toContain('<div class="docs-step-title">Plain step</div>')
+    expect(out).toMatch(/docs-step-media-body"><h3 class="docs-step-title"><span>Overview loads with Unauthorized<\/span><\/h3>.*The ticker shows the fallback/)
+    // The steps are a list, each titled by a heading at its authored level.
+    expect(out).toContain('<h3 class="docs-step-title">Plain step</h3>')
+    expect(out).toMatch(/<ol class="docs-stepper"><li class="docs-step">/)
     expect(serializeMarkdown(doc)).toBe(md)
   })
 })

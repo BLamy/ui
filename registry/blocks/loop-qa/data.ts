@@ -249,12 +249,12 @@ export const LIVE_PLAN: { title: string; steps: number; status: Journey['status'
   { title: 'Footer and legal links', steps: 5, status: 'passed' },
 ];
 
-export interface Exploration { id: string; title: string; summary: string; initialTime: number; pages: number; actions: number }
+export interface Exploration { id: string; title: string; summary: string; startTime: number; pages: number; actions: number }
 /** Three explorations of the same recorded tour, each opening at its own moment. */
 export const EXPLORATIONS: Exploration[] = [
-  { id: 'ex-1', title: 'Collection grid and header navigation', summary: 'Toured the header links and hovered every product card; no errors.', initialTime: 2600, pages: 3, actions: 18 },
-  { id: 'ex-2', title: 'Add to cart from the grid', summary: 'Added Merino Crew and Summit Shell; the badge counted 2.', initialTime: 4300, pages: 2, actions: 9 },
-  { id: 'ex-3', title: 'Cart drawer', summary: 'Opened the drawer; both line items and the total ($297) are listed.', initialTime: 5900, pages: 1, actions: 6 },
+  { id: 'ex-1', title: 'Collection grid and header navigation', summary: 'Toured the header links and hovered every product card; no errors.', startTime: 2600, pages: 3, actions: 18 },
+  { id: 'ex-2', title: 'Add to cart from the grid', summary: 'Added Merino Crew and Summit Shell; the badge counted 2.', startTime: 4300, pages: 2, actions: 9 },
+  { id: 'ex-3', title: 'Cart drawer', summary: 'Opened the drawer; both line items and the total ($297) are listed.', startTime: 5900, pages: 1, actions: 6 },
 ];
 
 export interface SiteNode { path: string; title: string; visits: number; bugs: number; status: 'covered' | 'bugs' | 'unvisited'; children?: SiteNode[] }

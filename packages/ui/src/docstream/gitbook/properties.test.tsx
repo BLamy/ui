@@ -55,7 +55,7 @@ describe("first-party document properties", () => {
     expect(html).toContain("<h2")
     expect(html).not.toContain("# Task metadata")
     expect(renderToStaticMarkup(<MarkdownContent markdown={source} documentProperties={false} />)).not.toContain("data-document-properties")
-    const editable = renderToStaticMarkup(<DocumentProperties properties={parseMarkdown(source).properties!} onChange={() => {}} defaultOpen />)
+    const editable = renderToStaticMarkup(<DocumentProperties properties={parseMarkdown(source).properties!} onValueChange={() => {}} defaultOpen />)
     expect(editable).toContain('aria-label="priority"')
     expect(editable).toContain('type="number"')
     expect(editable).toContain('type="checkbox"')

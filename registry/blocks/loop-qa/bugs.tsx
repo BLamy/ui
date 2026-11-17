@@ -14,7 +14,7 @@ import {
   ENVIRONMENTS, KINDS, SEVERITIES, SEVERITY_LABEL, STATUSES, STATUS_LABEL, bugReport, relativeTime, severityRank,
   type Bug, type BugStatus, type Project,
 } from './data';
-import { EnvBadge, Empty, KindLabel, SEVERITY_COLOR, STATUS_TONE, SeverityBadge, pillVariants, Pressable } from './parts';
+import { EnvBadge, Empty, KindLabel, SEVERITY_COLOR, STATUS_TONE, SeverityBadge, Pill, Pressable } from './parts';
 import { useLoopQA } from './state';
 
 const FIELDS: FilterField[] = [
@@ -124,11 +124,10 @@ export function StatusMenu({ bug: b, className }: { bug: Bug; className?: string
     <DropdownMenu>
       <DropdownMenuTrigger render={<Pressable />} aria-label={`Status: ${STATUS_LABEL[b.status]}`}
         className={cn('h-auto cursor-pointer gap-0.5 rounded-full p-0 active:not-aria-expanded:not-data-disabled:scale-95', className)}>
-        <span className={pillVariants({ tone: STATUS_TONE[b.status] })}>
-          <span className="size-1.5 rounded-full bg-current" />
+        <Pill {...STATUS_TONE[b.status]} dot>
           {STATUS_LABEL[b.status]}
           <Icon name="chevron-down" size={10} sw={2.6} className="-ml-0.5 opacity-70" />
-        </span>
+        </Pill>
       </DropdownMenuTrigger>
       <DropdownMenuContent side="bottom" align="end">
         <DropdownMenuRadioGroup value={b.status} onValueChange={(next) => {

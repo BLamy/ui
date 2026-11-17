@@ -19,7 +19,7 @@ export default function InspectDemo() {
     <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) 240px", gap: 16, alignItems: "start" }}>
       <ReplayPreview
         events={replayDemoEvents}
-        initialTime={6000}
+        defaultTime={6000}
         inspections={chronology}
         ref={player}
         onTimeUpdate={setTime}

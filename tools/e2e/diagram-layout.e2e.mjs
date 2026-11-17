@@ -65,6 +65,10 @@ test('lays out in a worker, in the order it was asked', async ({ page }) => {
   expect(list.filter((w) => !w.terminated)).toHaveLength(1);
   expect(list[0].url).toContain('layout-worker');
   await expect(page.locator('[data-slot=diagram-node]').first()).toBeVisible();
+  // It opens at a readable size, from the top: all of it, to count, is ⌘0 away.
+  await page.locator('[data-slot=canvas]').first().focus();
+  await page.keyboard.press('ControlOrMeta+0');
+  await expect.poll(() => page.locator('[data-slot=diagram-node]').count()).toBeGreaterThan(90);
   const placed = await page.locator('[data-slot=diagram-node]').evaluateAll((els) => els.filter((e) => e.style.left !== '0px' || e.style.top !== '0px').length);
   expect(placed).toBeGreaterThan(90);
   const lines = await page.locator('[data-slot=diagram-edge]').count();

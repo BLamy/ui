@@ -73,7 +73,7 @@ function App(props: Partial<ArtifactChatContainerProps>) {
 describe('ArtifactChatContainer', () => {
   it('docks the chat beside the content above its breakpoint, measured on its own box, and provides that size class', () => {
     width = 900;
-    render(<App breakpoint={760} />);
+    render(<App breakpoints={{ medium: 760 }} />);
     expect(root().getAttribute('data-size-class')).toBe('medium');
     expect(root().getAttribute('data-presentation')).toBe('split');
     expect(scope).toBe('medium');
@@ -86,12 +86,12 @@ describe('ArtifactChatContainer', () => {
 
   it('switches to the floating chat below its breakpoint without remounting the composer or the content', async () => {
     width = 700;
-    const { rerender } = render(<App breakpoint={600} />);
+    const { rerender } = render(<App breakpoints={{ medium: 600 }} />);
     const message = screen.getByRole<HTMLTextAreaElement>('textbox', { name: 'Message' });
     const content = document.querySelector('[data-slot=artifact-chat-content]');
     message.value = 'half a thought';
     // The breakpoint now lies above the container's width.
-    rerender(<App breakpoint={760} />);
+    rerender(<App breakpoints={{ medium: 760 }} />);
     await settle();
     expect(root().getAttribute('data-size-class')).toBe('compact');
     expect(root().getAttribute('data-presentation')).toBe('floating');
@@ -106,7 +106,7 @@ describe('ArtifactChatContainer', () => {
     // The column played its exit and went.
     expect(column()).toBeNull();
     // And back: the column slides in (it didn't on first paint) and takes the composer again.
-    rerender(<App breakpoint={600} />);
+    rerender(<App breakpoints={{ medium: 600 }} />);
     expect(column()?.hasAttribute('data-starting-style')).toBe(true);
     await settle();
     expect(screen.getByRole('textbox', { name: 'Message' })).toBe(message);
@@ -154,14 +154,14 @@ describe('ArtifactChatContainer', () => {
   });
 
   it('docks the column on the end edge and names it', () => {
-    render(<App breakpoint={600} chatSide="end" chatLabel="Ask QA" />);
+    render(<App breakpoints={{ medium: 600 }} chatSide="end" chatLabel="Ask QA" />);
     expect(root().getAttribute('data-chat-side')).toBe('end');
     expect(column()?.className).toContain('col-start-2');
     expect(screen.getByRole('complementary', { name: 'Ask QA' })).toBeTruthy();
   });
 
   it("doesn't animate the column in on first paint", () => {
-    render(<App breakpoint={600} />);
+    render(<App breakpoints={{ medium: 600 }} />);
     expect(column()?.hasAttribute('data-starting-style')).toBe(false);
   });
 

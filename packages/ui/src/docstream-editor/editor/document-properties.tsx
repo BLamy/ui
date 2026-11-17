@@ -35,7 +35,7 @@ export function DocumentPropertiesEditor({ editor, defaultOpen = false }: { edit
   const state = useEditorState({ editor, selector: ({ editor }) => ({ properties: editor.state.doc.attrs.properties as DocumentPropertiesNode | null, editable: editor.isEditable }) })
   if (!state.properties) return null
   return <DocumentProperties properties={state.properties} defaultOpen={defaultOpen}
-    onChange={state.editable ? (properties) => { editor.commands.setDocumentProperties(properties) } : undefined} />
+    onValueChange={state.editable ? (properties) => { editor.commands.setDocumentProperties(properties) } : undefined} />
 }
 
 /**

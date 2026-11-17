@@ -11,7 +11,7 @@ import { fieldSurfaceVariants } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Toolbar, ToolbarButton, ToolbarText, type ToolbarButtonProps } from '@/components/ui/toolbar';
+import { Toolbar, ToolbarButton, ToolbarText, ToolbarToggle, type ToolbarButtonProps, type ToolbarToggleProps } from '@/components/ui/toolbar';
 import { Icon } from '@/lib/icon';
 import { changeDetails } from '@/lib/change-details';
 import { cn } from '@/lib/utils';
@@ -341,8 +341,9 @@ export type MarkdownEditorToolbarButtonProps = Omit<ToolbarButtonProps, 'onClick
   attributes?: Record<string, unknown>;
 };
 
-/** A ToolbarButton for a MarkdownEditor's own `toolbar`: runs `command` on the editor and, given a `mark`, is a toggle
-    that is pressed while the selection is in it. Give an icon-only one an `aria-label`. */
+/** A ToolbarButton for a MarkdownEditor's own `toolbar`: runs `command` on the editor and, given a `mark`, is a
+    ToolbarToggle that is pressed (`aria-pressed`, filled) while the selection is in it. Give an icon-only one an
+    `aria-label`. */
 export function MarkdownEditorToolbarButton({ command, mark, attributes, size = 'icon-sm', ...props }: MarkdownEditorToolbarButtonProps) {
   const editor = React.useContext(EditorContext);
   const subscribe = React.useCallback((notify: () => void) => {
@@ -351,19 +352,28 @@ export function MarkdownEditorToolbarButton({ command, mark, attributes, size = 
     return () => { editor.off('transaction', notify); };
   }, [editor, mark]);
   const pressed = React.useSyncExternalStore(subscribe, () => (editor && mark ? editor.isActive(mark, attributes) : false), () => false);
-  return (
-    <ToolbarButton
-      size={size}
-      disabled={!editor}
-      aria-pressed={mark ? pressed : undefined}
-      data-pressed={(mark && pressed) || undefined}
-      {...props}
-      onClick={() => {
-        const chain = editor?.chain().focus() as unknown as Record<string, (() => { run: () => boolean }) | undefined> | undefined;
-        chain?.[command]?.().run();
-      }}
-    />
-  );
+  const run = () => {
+    const chain = editor?.chain().focus() as unknown as Record<string, (() => { run: () => boolean }) | undefined> | undefined;
+    chain?.[command]?.().run();
+  };
+  if (mark) {
+    // A toggle: the editor's selection decides `pressed`; a press runs the command, which moves it.
+    // A ToolbarButton's look (`variant`, `tone`) isn't a toggle's: the toggle keeps the toolbar's quiet look.
+    const rest: Record<string, unknown> = { ...props };
+    delete rest.variant;
+    delete rest.tone;
+    const toggleSize = size === 'pill' ? undefined : size;
+    return (
+      <ToolbarToggle
+        size={toggleSize}
+        disabled={!editor}
+        {...(rest as Omit<ToolbarToggleProps, 'size'>)}
+        pressed={pressed}
+        onPressedChange={run}
+      />
+    );
+  }
+  return <ToolbarButton size={size} disabled={!editor} {...props} onClick={run} />;
 }
 
 /** The link button of the built-in toolbar: a popover with the URL, Apply and Remove (pressed while the caret is in a
@@ -378,6 +388,7 @@ function MarkdownEditorLinkButton() {
     return () => { editor.off('transaction', notify); };
   }, [editor]);
   const inLink = React.useSyncExternalStore(subscribe, () => (editor ? editor.isActive('link') : false), () => false);
+  const inLinkId = React.useId();
   const close = () => setOpen(false);
   const chain = () => editor?.chain().focus() as unknown as { setLink(a: { href: string }): { run(): boolean }; unsetLink(): { run(): boolean } } | undefined;
   return (
@@ -388,15 +399,19 @@ function MarkdownEditorLinkButton() {
         setOpen(next);
       }}
     >
+      {/* A popup trigger can't also be a toggle (`aria-pressed`): it is filled like a pressed ToolbarToggle while the
+          caret is in a link, and says so in its description. */}
       <ToolbarButton
         size="icon-sm"
         disabled={!editor}
         aria-label="Link"
-        aria-pressed={inLink}
+        aria-describedby={inLink ? inLinkId : undefined}
         data-pressed={inLink || undefined}
+        className="data-pressed:bg-secondary data-pressed:text-foreground"
         render={<PopoverTrigger />}
       >
         <Icon name="link" size={16} />
+        <span id={inLinkId} hidden>In a link</span>
       </ToolbarButton>
       <PopoverContent aria-label="Link" className="w-72 p-2">
         <form
@@ -742,7 +757,7 @@ export function MarkdownEditor({
       ) : null}
       <GitbookEditor
         markdown={markdown}
-        onChange={handleChange}
+        onValueChange={handleChange}
         toolbar={false}
         documentProperties={documentProperties}
         slashMenu={slashMenu}
@@ -753,7 +768,7 @@ export function MarkdownEditor({
         demoDependencies={demo?.dependencies}
         editable={editable}
         {...(placeholder !== undefined ? { placeholder } : {})}
-        autofocus={autoFocus}
+        autoFocus={autoFocus}
         className="bl-mde-doc"
         onKeyDown={handleKeyDown}
         onPaste={handlePaste}

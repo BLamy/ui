@@ -59,7 +59,7 @@ export const GbTaskItem = TaskItem.extend({
           scheduled = false
           if (disposed) return
           root.render(<TaskCheckbox state={getTaskState(node.attrs)} label={node.textContent || "Task"}
-            onChange={editor.isEditable ? (state) => {
+            onValueChange={editor.isEditable ? (state) => {
               if (!editor.isEditable) return
               const position = typeof getPos === "function" ? getPos() : undefined
               if (typeof position !== "number") return

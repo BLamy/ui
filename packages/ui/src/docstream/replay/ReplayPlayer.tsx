@@ -18,7 +18,7 @@ import {
   type PointerEvent as ReactPointerEvent, type ReactNode, type Ref,
 } from 'react'
 import type { ChangeDetails } from '@ui-sdk/core'
-import { changeDetails } from '../ui/change-details'
+import { changeDetails } from '@brett_lamy/ui/lib/change-details'
 import { useReducedMotion } from 'framer-motion'
 import { Slider, SliderControl, SliderIndicator, SliderThumb, SliderTrack } from '@ui-sdk/react/slider'
 import { Toggle } from '@ui-sdk/react/toggle'
@@ -68,11 +68,12 @@ export interface ReplayPlayerOwnOptions {
   trafficLights?: boolean
   /** Play/pause, scrubber, speed and fullscreen (default true). */
   controls?: boolean
-  autoplay?: boolean
+  /** Start playing once loaded (React's `autoPlay`, as on `<video>`). */
+  autoPlay?: boolean
   /** Restart at the end (with a `timeWindow`, at the window's end, from its start). */
   loop?: boolean
   /** Where the player starts, in ms from the start (default 0, or the `timeWindow`'s start). */
-  initialTime?: number
+  defaultTime?: number
   /** `[start, end]` in ms: the segment that matters. The player opens at `start` with the segment highlighted on the
    *  scrubber, and playing from inside it stops at `end` (play again to replay it). Scrub or seek outside it and
    *  playback runs on through the rest of the recording. */
@@ -146,7 +147,7 @@ export interface ReplayPlayerOptions
 
 /** Every key of `ReplayPlayerOwnOptions`, to tell the player's options from the root element's props. */
 const OWN_OPTION_KEYS = [
-  'url', 'title', 'chrome', 'trafficLights', 'controls', 'autoplay', 'loop', 'initialTime', 'timeWindow', 'speeds',
+  'url', 'title', 'chrome', 'trafficLights', 'controls', 'autoPlay', 'loop', 'defaultTime', 'timeWindow', 'speeds',
   'markers', 'markerKinds', 'devtools', 'elements', 'defaultDevtoolsTab', 'inspections', 'har', 'consoleLog',
   'autoCloseDevtools', 'inspectionDwell', 'evidence', 'captions', 'cursor', 'fit', 'poster', 'mounted', 'ref',
   'onTimeUpdate', 'onPlayingChange', 'onMarkerAction',
@@ -245,7 +246,7 @@ const MARKER_NOUN: Record<ReplayMarkerKind, string> = {
 
 export function ReplayPlayer({
   events: recordingEvents, stage: customStage, har, consoleLog, evidence, captions, url, title = 'Session replay', chrome = 'browser', trafficLights = true, controls = true,
-  autoplay = false, loop = false, initialTime: initialTimeProp, timeWindow, speeds = DEFAULT_PLAYER_SPEEDS, markers, markerKinds,
+  autoPlay = false, loop = false, defaultTime: defaultTimeProp, timeWindow, speeds = DEFAULT_PLAYER_SPEEDS, markers, markerKinds,
   cursor = true, devtools = true, elements: elementsSource, defaultDevtoolsTab, inspections, autoCloseDevtools = 5000, inspectionDwell = 2500, fit = 'width', poster, mounted = 'visible', ref, onTimeUpdate, onPlayingChange, onMarkerAction,
   className, style, onKeyDown: onRootKeyDown, onPointerDown: onRootPointerDown, ...rest
 }: ReplayPlayerOptions & { events: ReplayEvent[]; stage?: ReplayCustomStage }) {
@@ -305,13 +306,13 @@ export function ReplayPlayer({
     const end = Math.max(start, Math.min(timeWindow[1], meta.duration))
     return end - start >= 1 ? { start, end } : null
   }, [timeWindow, meta.duration])
-  const initialTime = initialTimeProp ?? span?.start ?? 0
+  const defaultTime = defaultTimeProp ?? span?.start ?? 0
 
   const [near, setNear] = useState(false)
   const visible = mounted === true || (mounted === 'visible' && near)
   const [ready, setReady] = useState(false)
   const [posterGone, setPosterGone] = useState(false)
-  const [time, setTime] = useState(initialTime)
+  const [time, setTime] = useState(defaultTime)
   const [playing, setPlaying] = useState(false)
   const [finished, setFinished] = useState(false)
   // Stopped at the window's end: the center button replays the segment.
@@ -350,11 +351,11 @@ export function ReplayPlayer({
   // The window, the playhead and the play state, for the handle (which never re-creates) and onTime.
   const spanRef = useRef(span)
   spanRef.current = span
-  const timeRef = useRef(initialTime)
+  const timeRef = useRef(defaultTime)
   const playingRef = useRef(false)
   // Whether playback is held to the window: it is when it starts (or is moved) inside it.
   const inWindow = (ms: number) => !!spanRef.current && ms >= spanRef.current.start && ms < spanRef.current.end
-  const held = useRef(inWindow(initialTime))
+  const held = useRef(inWindow(defaultTime))
   const handle = useMemo<ReplayPreviewHandle>(() => {
     const play = (offset?: number) => {
       const w = spanRef.current
@@ -428,7 +429,7 @@ export function ReplayPlayer({
   }
   const jumpTo = (m: ReplayMarker, event?: Event) => {
     handle.seek(Math.max(0, m.time - 250))
-    onMarkerAction?.(m, changeDetails('item-press', event))
+    onMarkerAction?.(m, changeDetails({ reason: 'item-press', event }))
   }
 
   const onKeyDown = (e: ReactKeyboardEvent<HTMLDivElement>) => {
@@ -581,8 +582,8 @@ export function ReplayPlayer({
               ref: stage,
               speed: playSpeed,
               loop: loop && !span,
-              autoplay,
-              initialTime,
+              autoPlay,
+              defaultTime,
               className: 'replay-preview__page',
               overlay: (
                 <>
@@ -595,7 +596,7 @@ export function ReplayPlayer({
               onPlayingChange: onPlaying,
               onFinish: () => setFinished(true),
             }
-            return customStage ? <customStage.component {...shared} /> : <ReplayStage {...shared} events={recordingEvents} fit="contain" showMouse={false} />
+            return customStage ? <customStage.component {...shared} /> : <ReplayStage {...shared} events={recordingEvents} fit="contain" cursor={false} />
           })()
         ) : null}
 

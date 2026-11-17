@@ -1,4 +1,5 @@
 {
   "title": "CloudflareDiagram · a larger system: environments, a service binding, a schedule, a dead-letter queue, AI and Vectorize",
-  "status": "Live"
+  "status": "Live",
+  "bleed": true
 }

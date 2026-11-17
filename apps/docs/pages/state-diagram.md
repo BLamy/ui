@@ -29,7 +29,7 @@ import { StateDiagram } from '@brett_lamy/ui/state-diagram'
 
 ## The Audio Player
 
-The machine from XState's visualizer, written as real XState v5 and read from its source: its context (with the types `setup({ types })` gives it) under its name, Paused and Playing with their entry actions as chips, `loaded`, `play`, `pause` and `end` as pills, the transitions with actions as cards, Playing's `restart` and `time` as loops on it, and Error's final square. Run it: what it can take now is a button on its label.
+The machine from XState's visualizer, written as real XState v5 and read from its source: its context (with the types `setup({ types })` gives it) under its name, Paused and Playing with their entry actions as chips, `loaded`, `play`, `pause` and `end` as pills, the transitions with actions as cards, Playing's `restart` and `time` as loops on it, and Error's final square. Run it: the label of what it can take now can be pressed, and sends it.
 
 {% demo src="state-diagram/audio-player" %}
 
@@ -83,15 +83,15 @@ Every part of an XState v5 machine has a drawn form. The machine runs top to bot
 | A compound state | A container with the same header strip, its children inside |
 | `initial` | An entry marker on the state it starts in: a dot with a curved arrow into its corner |
 | A `parallel` state | A dashed container with a `parallel` badge, its regions side by side with a rule between them, each with its own start |
-| A `final` state | A double border, and a square in its header |
+| A `final` state | A square in its header, and a hairline inside its border in the border's color: quiet, so it isn't read as selected or focused |
 | A `history` state | `H` in its header (shallow), `H*` (deep) |
 | A transition with only an event | A fully rounded pill on the edge |
-| One with a guard, actions, or more | A small card on the edge: the event on top, then chips: the guard as a condition (`if canRetry`, `if isAbove(min: 5)`, `if a and (b or not c)`, `if in #m.on`), its actions, `reenters`, `no target`, `2 targets` |
+| One with a guard, actions, or more | A small card on the edge: the event on top, then chips: the guard as a condition (`if canRetry`, `if isAbove(min: 5)`, `if a and (b or not c)`, `if in #m.on`), its actions; and how it goes (`reenters`, `no target`, `2 targets`) as a quiet line under them, a modifier rather than a chip |
 | `after` | A dotted edge whose label has a clock: `after 500 ms`, `after BACKOFF` |
 | `always` | A dashed edge labelled `always` |
 | The state's own `onDone` | An edge labelled `done` |
 | `*` | An edge labelled `*` |
-| `reenter: true` | A `reenters` chip; to itself, a loop |
+| `reenter: true` | A quiet `reenters` line under its chips; to itself, a loop |
 | A transition with no target | A loop on its state with a `no target` chip: it stays and only runs its actions |
 | Several targets | An edge to each, each with a `2 targets` chip |
 | `on` at the machine's root | Edges from the machine's container |
@@ -143,7 +143,7 @@ A machine's config is plain data under `setup()`, with its implementations named
 
 ## Simulating
 
-With `simulate`, a copy of the machine runs in the page, with stand-ins for everything it names, so none of your code runs. Where it is becomes the diagram's `current` (a bar on the state's start side and a line, and `aria-current` for a screen reader), parallel regions included, and the edges it just took. Each transition it can take now gets a send button on its label (a primary outline and a play glyph, so not by color alone): press it, or Enter on it, and its event is sent. The panel offers the same and more: it asks `snapshot.can` about each event, with the guards answering as you've set them, and shows the machine's context as it is now.
+With `simulate`, a copy of the machine runs in the page, with stand-ins for everything it names, so none of your code runs. Where it is becomes the diagram's `current` (a bar on the state's start side and a line, and `aria-current` for a screen reader), parallel regions included, and the edges it just took. The label of each transition it can take now can be pressed (Diagram's `pressable`): it has a primary ring two lines thick and a play badge on its corner, so it isn't told by color alone, and its edge says "It can be sent now" to a screen reader. Press it, or Enter on its edge, and its event is sent. It's the Diagram's own label, so it's wherever the label is. The panel offers the same and more: it asks `snapshot.can` about each event, with the guards answering as you've set them, and shows the machine's context as it is now.
 
 {% demo src="state-diagram/simulate" %}
 
@@ -239,7 +239,7 @@ In Markdown, an ```` ```xstate ```` fence draws its machine with this component,
 | `onConfigChange(config, details)` | — | The config after each edit, undoing included, with `details.reason` (`edit`, `undo`, `redo`). With `config`, it's for you to pass it back; otherwise `details.cancel()` refuses it. |
 | `implementations` | the machine's own | What's behind the config's names, as `{ guards, actions, actors, delays }`, so that those with nothing are listed. |
 | `selection`, `defaultSelection`, `onSelectionChange(selection, details)` | nothing | What's selected, `{ nodes, edges }` by the ids `machineToDraft` gives, as on Diagram. Read-only too. |
-| `onAction(item, details)` | — | A state, a transition or a chip was activated (Enter, double-click, a press on a chip while editing), as on Diagram. Enter on a transition it can take while simulating also sends it. |
+| `onAction(item, details)` | — | A state, a transition or a chip was activated (Enter, double-click, a press on a chip while editing, a press on a label it can send), as on Diagram. A press on, or Enter on, a transition it can take while simulating also sends it. |
 | `panelOpen`, `defaultPanelOpen`, `onPanelOpenChange(open, details)` | open where it's a column | Whether the panel shows. |
 | `panelPresentation` | `auto` | `auto`, `column`, `drawer` or `push`: as on `DiagramFrame`. |
 | `background` | `grid` | The board: `grid` (lines), `dots`, `none`. |
@@ -247,7 +247,7 @@ In Markdown, an ```` ```xstate ```` fence draws its machine with this component,
 | `aria-label` | the machine's name | The diagram's name. |
 | `className`, `style` | — | Merged onto the frame. |
 
-It's a `DiagramFrame` (with `data-state-diagram`) around a `Diagram`, with a `DiagramToolbar` (zoom and fit, and while editing undo and redo, of the config), a `DiagramFrameBar` and a `DiagramFramePanel`. When XState, ELK or the source reader won't have it, that's the Diagram's `error`, its `diagram-error` alert. The panel is `simulation-panel` (with `data-status`), with `simulation-now`, `simulation-context` (a row per key, `data-key`), `simulation-time`, `simulation-guard`, `simulation-log` and `simulation-error` in it, and its buttons are marked `data-action`: `send` (with `data-event`), `finish`, `next-timer`, `run`, `reset`. On the board, a send button is `data-action="send-on-board"` with `data-edge` and `data-event`. While editing it's `edit-panel`, with `edit-refusal` (a refusal of something done on the board, on the kit's callout), `edit-hint`, `edit-missing` and `edit-inline`; its buttons are `data-action` `add-state`, `make-start`, `add-inside`, `delete`, `add-entry`, `add-exit`, `add-actions`, `add-context` and `remove`, a list of actions is `edit-actions` (`data-actions="entry|exit|actions"`) and the context `edit-context`, and its fields `data-field` `name`, `event`, `guard`, `entry:<i>`, `exit:<i>`, `actions:<i>`, `context:<key>` and `value:<key>`, each a `Field` whose `FieldError` says why an edit to it was refused. Kit parts keep their own `data-slot`.
+It's a `DiagramFrame` (with `data-state-diagram`) around a `Diagram`, with a `DiagramToolbar` (zoom and fit, and while editing undo and redo, of the config), a `DiagramFrameBar` and a `DiagramFramePanel`. When XState, ELK or the source reader won't have it, that's the Diagram's `error`, its `diagram-error` alert. The panel is `simulation-panel` (with `data-status`), with `simulation-now`, `simulation-context` (a row per key, `data-key`), `simulation-time`, `simulation-guard`, `simulation-log` and `simulation-error` in it, and its buttons are marked `data-action`: `send` (with `data-event`), `finish`, `next-timer`, `run`, `reset`. On the board, a transition it can take now is a `diagram-edge-label` with `data-pressable` (and its badge, `[data-part=press]`). While editing it's `edit-panel`, with `edit-refusal` (a refusal of something done on the board, on the kit's callout), `edit-hint`, `edit-missing` and `edit-inline`; its buttons are `data-action` `add-state`, `make-start`, `add-inside`, `delete`, `add-entry`, `add-exit`, `add-actions`, `add-context` and `remove`, a list of actions is `edit-actions` (`data-actions="entry|exit|actions"`) and the context `edit-context`, and its fields `data-field` `name`, `event`, `guard`, `entry:<i>`, `exit:<i>`, `actions:<i>`, `context:<key>` and `value:<key>`, each a `Field` whose `FieldError` says why an edit to it was refused. Kit parts keep their own `data-slot`.
 
 ## Accessibility
 

@@ -266,6 +266,11 @@
       "types": "./dist/lib/append-stream.d.ts",
       "default": "./dist/lib/append-stream.js"
     },
+    "./lib/back": {
+      "@org/source": "./src/lib/back.ts",
+      "types": "./dist/lib/back.d.ts",
+      "default": "./dist/lib/back.js"
+    },
     "./lib/call-stack-model": {
       "@org/source": "./src/lib/call-stack-model.ts",
       "types": "./dist/lib/call-stack-model.d.ts",
@@ -275,6 +280,11 @@
       "@org/source": "./src/lib/canvas-math.ts",
       "types": "./dist/lib/canvas-math.d.ts",
       "default": "./dist/lib/canvas-math.js"
+    },
+    "./lib/change-details": {
+      "@org/source": "./src/lib/change-details.ts",
+      "types": "./dist/lib/change-details.d.ts",
+      "default": "./dist/lib/change-details.js"
     },
     "./lib/code-document": {
       "@org/source": "./src/lib/code-document.ts",
@@ -290,6 +300,16 @@
       "@org/source": "./src/lib/code-editor-model.ts",
       "types": "./dist/lib/code-editor-model.d.ts",
       "default": "./dist/lib/code-editor-model.js"
+    },
+    "./lib/container": {
+      "@org/source": "./src/lib/container.ts",
+      "types": "./dist/lib/container.d.ts",
+      "default": "./dist/lib/container.js"
+    },
+    "./lib/controllable-state": {
+      "@org/source": "./src/lib/controllable-state.ts",
+      "types": "./dist/lib/controllable-state.d.ts",
+      "default": "./dist/lib/controllable-state.js"
     },
     "./lib/cron": {
       "@org/source": "./src/lib/cron.ts",
@@ -325,6 +345,11 @@
       "@org/source": "./src/lib/durable-streams.ts",
       "types": "./dist/lib/durable-streams.d.ts",
       "default": "./dist/lib/durable-streams.js"
+    },
+    "./lib/edge-swipe": {
+      "@org/source": "./src/lib/edge-swipe.ts",
+      "types": "./dist/lib/edge-swipe.d.ts",
+      "default": "./dist/lib/edge-swipe.js"
     },
     "./lib/ffmpeg": {
       "@org/source": "./src/lib/ffmpeg/index.ts",
@@ -396,26 +421,6 @@
       "types": "./dist/lib/icon.d.ts",
       "default": "./dist/lib/icon.js"
     },
-    "./lib/icon-shapes/chat": {
-      "@org/source": "./src/lib/icon-shapes/chat.ts",
-      "types": "./dist/lib/icon-shapes/chat.d.ts",
-      "default": "./dist/lib/icon-shapes/chat.js"
-    },
-    "./lib/icon-shapes/docs": {
-      "@org/source": "./src/lib/icon-shapes/docs.ts",
-      "types": "./dist/lib/icon-shapes/docs.d.ts",
-      "default": "./dist/lib/icon-shapes/docs.js"
-    },
-    "./lib/icon-shapes/pencilkit": {
-      "@org/source": "./src/lib/icon-shapes/pencilkit.ts",
-      "types": "./dist/lib/icon-shapes/pencilkit.d.ts",
-      "default": "./dist/lib/icon-shapes/pencilkit.js"
-    },
-    "./lib/icon-shapes/workbench": {
-      "@org/source": "./src/lib/icon-shapes/workbench.ts",
-      "types": "./dist/lib/icon-shapes/workbench.d.ts",
-      "default": "./dist/lib/icon-shapes/workbench.js"
-    },
     "./lib/kept-children": {
       "@org/source": "./src/lib/kept-children.ts",
       "types": "./dist/lib/kept-children.d.ts",
@@ -486,6 +491,16 @@
       "types": "./dist/lib/playback.d.ts",
       "default": "./dist/lib/playback.js"
     },
+    "./lib/presence": {
+      "@org/source": "./src/lib/presence.ts",
+      "types": "./dist/lib/presence.d.ts",
+      "default": "./dist/lib/presence.js"
+    },
+    "./lib/pull-to-refresh": {
+      "@org/source": "./src/lib/pull-to-refresh.ts",
+      "types": "./dist/lib/pull-to-refresh.d.ts",
+      "default": "./dist/lib/pull-to-refresh.js"
+    },
     "./lib/qr": {
       "@org/source": "./src/lib/qr.ts",
       "types": "./dist/lib/qr.d.ts",
@@ -496,20 +511,30 @@
       "types": "./dist/lib/request-table-model.d.ts",
       "default": "./dist/lib/request-table-model.js"
     },
+    "./lib/scroll-edge": {
+      "@org/source": "./src/lib/scroll-edge.ts",
+      "types": "./dist/lib/scroll-edge.d.ts",
+      "default": "./dist/lib/scroll-edge.js"
+    },
     "./lib/session-recorder": {
       "@org/source": "./src/lib/session-recorder.ts",
       "types": "./dist/lib/session-recorder.d.ts",
       "default": "./dist/lib/session-recorder.js"
     },
-    "./lib/spreadsheet-gpu": {
-      "@org/source": "./src/lib/spreadsheet-gpu.ts",
-      "types": "./dist/lib/spreadsheet-gpu.d.ts",
-      "default": "./dist/lib/spreadsheet-gpu.js"
+    "./lib/size-class": {
+      "@org/source": "./src/lib/size-class.ts",
+      "types": "./dist/lib/size-class.d.ts",
+      "default": "./dist/lib/size-class.js"
     },
     "./lib/spreadsheet-model": {
       "@org/source": "./src/lib/spreadsheet-model.ts",
       "types": "./dist/lib/spreadsheet-model.d.ts",
       "default": "./dist/lib/spreadsheet-model.js"
+    },
+    "./lib/stack": {
+      "@org/source": "./src/lib/stack.ts",
+      "types": "./dist/lib/stack.d.ts",
+      "default": "./dist/lib/stack.js"
     },
     "./lib/state-diagram-edit": {
       "@org/source": "./src/lib/state-diagram-edit.ts",
@@ -600,11 +625,6 @@
       "@org/source": "./src/lib/theme.tsx",
       "types": "./dist/lib/theme.d.ts",
       "default": "./dist/lib/theme.js"
-    },
-    "./lib/trace-timeline-draw": {
-      "@org/source": "./src/lib/trace-timeline-draw.ts",
-      "types": "./dist/lib/trace-timeline-draw.d.ts",
-      "default": "./dist/lib/trace-timeline-draw.js"
     },
     "./lib/trace-timeline-model": {
       "@org/source": "./src/lib/trace-timeline-model.ts",

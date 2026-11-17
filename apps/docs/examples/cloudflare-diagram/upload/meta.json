@@ -1,4 +1,5 @@
 {
   "title": "CloudflareDiagram · a file upload's services",
-  "status": "Live"
+  "status": "Live",
+  "bleed": true
 }

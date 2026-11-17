@@ -1,8 +1,9 @@
-import { useEffect, useId, useRef, useState, type CSSProperties, type Ref } from "react"
+import { useEffect, useId, useRef, useState, type ComponentPropsWithoutRef, type CSSProperties, type Ref } from "react"
 import { OrbitCanvas, useOrbit } from "./orbit-parts"
 import { parseStl, type StlMesh } from "./parse"
 
-export interface StlViewerProps {
+/** The root `<figure>` takes the rest of its element's props (`id`, `data-*`, `aria-describedby`, handlers). */
+export interface StlViewerProps extends Omit<ComponentPropsWithoutRef<"figure">, "children" | "title"> {
   /** URL of a binary or ASCII `.stl` file. */
   src: string
   /** The model's name, shown in the caption and used in the viewer's label. Defaults to the file name. */
@@ -131,7 +132,7 @@ type Status = { kind: "loading" } | { kind: "error"; message: string } | { kind:
 
 /** Interactive WebGL preview of an `.stl` model: drag to orbit, pinch / ⌘-scroll or +/− to zoom, double-click to reset.
  *  The canvas is the `orbit` primitive (orbit.ts), which holds the view; this draws it. */
-export function StlViewer({ src, title, className, style, ref, "aria-label": ariaLabel, tint, autoRotate = true }: StlViewerProps) {
+export function StlViewer({ src, title, className, style, ref, "aria-label": ariaLabel, tint, autoRotate = true, ...rest }: StlViewerProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [status, setStatus] = useState<Status>({ kind: "loading" })
   const spinning = useRef(autoRotate)
@@ -252,7 +253,7 @@ export function StlViewer({ src, title, className, style, ref, "aria-label": ari
   const name = ariaLabel ?? label
   return (
     // Without `aria-label` the figcaption (the file link) names the figure, as in 2.0.0.
-    <figure ref={ref} className={`docstream-stl ${className ?? ""}`.trim()} style={style} aria-label={ariaLabel} data-state={status.kind}>
+    <figure {...rest} ref={ref} className={`docstream-stl ${className ?? ""}`.trim()} style={style} aria-label={ariaLabel} data-state={status.kind}>
       <div className="docstream-stl__stage">
         {mesh ? (
           <>

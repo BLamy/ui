@@ -42,7 +42,7 @@ The seek bar is plain by default. With `markers` (this demo has it), a rail abov
 {% demo src="replay-preview/browser-frame" %}
 
 ```tsx
-<ReplayPreview events={events} initialTime={6400} markers />
+<ReplayPreview events={events} defaultTime={6400} markers />
 ```
 
 Keys work anywhere inside the player: **Space** / **K** play and pause, **←** **→** seek 5 s, **J** / **L** 10 s, **<** **>** change speed, **F** full screen, **Home** / **End** jump to the ends. rrweb and its stylesheet load the first time a player mounts, and with `mounted="visible"` (the default) that happens only once the frame nears the viewport.
@@ -54,7 +54,7 @@ The top bar's Console and Network buttons show what had happened by the playhead
 {% demo src="replay-preview/devtools" %}
 
 ```tsx
-<ReplayPreview events={events} initialTime={8000} defaultDevtoolsTab="network" />
+<ReplayPreview events={events} defaultTime={8000} defaultDevtoolsTab="network" />
 ```
 
 The panel reads rrweb's console and network plugins (`rrweb/console@1`, `rrweb/network@1`) and custom events: `network` with `{ method, url, status, … }`, `error` with `{ label, message, stack? }`, and `console` with `{ level, message }`. The buttons show only when the recording has messages, requests or inspections, and `devtools={false}` removes them. The panel, its tab strip, filter row and column header are opaque, on the card color, in light and dark. `getReplayDevtools(events)` and `replayDevtoolsAt(tools, ms)` (from `@brett_lamy/ui/docstream/replay`) give you the same lists and counts for your own UI.
@@ -126,12 +126,12 @@ const steps = getReplayMarkers(events).filter((m) => m.kind !== 'click')
 
 ## Still frames
 
-With `chrome="none"` and `controls={false}` the player is a still frame of the page at `initialTime`, with the pointer and any click ripple. Loop QA uses these as a bug's screenshot evidence: they are the page itself, not an image of it.
+With `chrome="none"` and `controls={false}` the player is a still frame of the page at `defaultTime`, with the pointer and any click ripple. Loop QA uses these as a bug's screenshot evidence: they are the page itself, not an image of it.
 
 {% demo src="replay-preview/evidence-frames" %}
 
 ```tsx
-<ReplayPreview events={events} chrome="none" controls={false} initialTime={8350} />
+<ReplayPreview events={events} chrome="none" controls={false} defaultTime={8350} />
 ```
 
 ## Your own markers
@@ -169,7 +169,7 @@ const [events, setEvents] = useState<ReplayEvent[]>()
 
 <FileUploadDropzone multiple={false} rules={{ accept: ['.rrweb', '.json'] }}
   onFiles={async ([{ file }]) => setEvents(JSON.parse(await file.text()))}>
-  {events ? () => <ReplayPreview key={events.length} events={events} autoplay /> : undefined}
+  {events ? () => <ReplayPreview key={events.length} events={events} autoPlay /> : undefined}
 </FileUploadDropzone>
 ```
 
@@ -190,8 +190,8 @@ The [Replay Canvas](https://blamy.github.io/ui/#/blocks/replay-canvas) block lay
 | `url` | the recording's | Address in the URL bar. |
 | `title` | `Session replay` | The player's accessible name. |
 | `controls` | `true` | Play/pause, scrubber, speed and fullscreen. |
-| `autoplay` · `loop` | `false` | Start playing on load; restart at the end. |
-| `initialTime` | `0`, or the window's start | Where the player starts (ms). |
+| `autoPlay` · `loop` | `false` | Start playing on load; restart at the end. |
+| `defaultTime` | `0`, or the window's start | Where the player starts (ms). |
 | `timeWindow` | — | `[start, end]` (ms): the segment to open at, highlight and play; scrubbing outside it plays on. |
 | `speeds` | `[1, 2, 4, 0.5]` | What the speed button cycles through; the first is the initial speed. |
 | `markers` | `false` | A marker rail above the seek bar: `true` reads them from the recording, or pass `ReplayMarker[]`. Off by default since docstream 1.26. |

@@ -106,7 +106,7 @@ export interface DocsSiteProps extends Omit<DocRenderOptions, "pageActions"> {
    *  or the hash prefix for `routing="hash"` (`"docs"` → `#/docs/guides/install`), so one app can host several sites. */
   basePath?: string
   /** First page for `routing="memory"` (a slug, e.g. `"guides/install"`). */
-  initialPath?: string
+  defaultPath?: string
   /** Called after every navigation. */
   onNavigate?: (page: DocsPage, hash: string) => void
   /** Light or dark, controlled. Pair it with `onAppearanceChange`. */
@@ -193,10 +193,10 @@ function readHistoryLocation(basePath: string): { slug: string; hash: string } {
   return { slug: decode(underBase(trimSlashes(window.location.pathname), basePath)), hash: decode(window.location.hash.slice(1)) }
 }
 
-function useDocsRouter(tree: DocsTree, routing: DocsSiteRouting, basePath: string, initialPath: string | undefined) {
+function useDocsRouter(tree: DocsTree, routing: DocsSiteRouting, basePath: string, defaultPath: string | undefined) {
   const read = useCallback((): { slug: string; hash: string } => {
     if (routing === "memory" || typeof window === "undefined") {
-      const [slug, hash = ""] = trimSlashes(initialPath ?? "").split("#")
+      const [slug, hash = ""] = trimSlashes(defaultPath ?? "").split("#")
       return { slug: slug ?? "", hash }
     }
     return routing === "history" ? readHistoryLocation(basePath) : readHashLocation(tree, basePath)
@@ -433,7 +433,7 @@ export function DocsSite(props: DocsSiteProps) {
     tabs,
     routing = "hash",
     basePath = "",
-    initialPath,
+    defaultPath,
     onNavigate,
     appearanceToggle = true,
     palette = true,
@@ -462,7 +462,7 @@ export function DocsSite(props: DocsSiteProps) {
     style,
   } = props
   const tree = useMemo(() => props.tree ?? buildDocsTree(files ?? {}, treeOptions), [props.tree, files, treeOptions])
-  const { location, href, navigate } = useDocsRouter(tree, routing, basePath, initialPath)
+  const { location, href, navigate } = useDocsRouter(tree, routing, basePath, defaultPath)
   const [theme, toggleTheme] = useSiteAppearance(props, routing !== "memory")
   const applyThemeTo = props.applyAppearanceTo ?? (routing === "memory" ? "site" : "document")
   useEffect(() => {

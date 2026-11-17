@@ -105,7 +105,7 @@ interface FileUploadState {
 
 /** What the root shows: whether anything is queued or sending, and how many rows are in each status. */
 export interface FileUploadRootState {
-  busy: boolean;
+  pending: boolean;
   counts: Record<FileStatus, number>;
 }
 
@@ -117,7 +117,7 @@ export function countFiles(files: readonly UploadFile[]): Record<FileStatus, num
 }
 
 /** Whether anything is queued or sending. */
-export const busyOf = (counts: Record<FileStatus, number>) => counts.queued + counts.uploading > 0;
+export const pendingOf = (counts: Record<FileStatus, number>) => counts.queued + counts.uploading > 0;
 
 /** The rows one FileInput change produced, and the change itself. */
 interface Batch {
@@ -501,13 +501,13 @@ export const fileUpload = definePrimitive({
     };
   },
   slots: (slot) => ({
-    // The element around the FileInput: `data-busy` while anything is queued or sending.
+    // The element around the FileInput: `data-pending` while anything is queued or sending.
     root: slot<object, FileUploadRootState>({
       state: (state) => {
         const counts = countFiles(state.value);
-        return { busy: busyOf(counts), counts };
+        return { pending: pendingOf(counts), counts };
       },
-      attrs: (state) => ({ 'data-busy': busyOf(countFiles(state.value)) ? '' : undefined }),
+      attrs: (state) => ({ 'data-pending': pendingOf(countFiles(state.value)) ? '' : undefined }),
     }),
   }),
   // The rows are its items, named by path: `remove`, `retry` take a row's id or path.

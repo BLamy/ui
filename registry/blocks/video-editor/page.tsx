@@ -14,7 +14,7 @@ import { Filmstrip } from '@/components/ui/filmstrip';
 import { Slider } from '@/components/ui/slider';
 import { Toggle, toggleVariants } from '@/components/ui/toggle';
 import { VideoPreviewControls, VideoPreview } from '@/components/ui/video-preview';
-import { fitTimelineZoom, timelineZoomRange, VideoTimeline, type TimelineMedia } from '@/components/ui/video-timeline';
+import { fitVideoTimelineZoom, videoTimelineZoomRange, VideoTimeline, type VideoTimelineMedia } from '@/components/ui/video-timeline';
 import { Waveform } from '@/components/ui/waveform';
 import { SizeClassProvider, useSizeClass } from '@/lib/container';
 import { FfmpegProvider, releaseMedia, useFfmpeg, useFfmpegSupport, useMediaFrames, useMediaPeaks } from '@/lib/ffmpeg/react';
@@ -110,7 +110,7 @@ function Shell({ samples }: { samples: boolean }) {
   };
   const fit = () => {
     const w = timelineBox.current?.clientWidth ?? 1200;
-    setZoom(fitTimelineZoom(Math.max(duration, 5), w));
+    setZoom(fitVideoTimelineZoom(Math.max(duration, 5), w));
   };
   const makeSampleMedia = async (startEdit: boolean) => {
     if (!runner) return;
@@ -131,7 +131,7 @@ function Shell({ samples }: { samples: boolean }) {
         // Fit the edit, and park on a frame under the title rather than the black of the opening fade.
         clock.setDuration(timelineDuration(starter));
         clock.seek(1.5);
-        requestAnimationFrame(() => setZoom(fitTimelineZoom(timelineDuration(starter) + 0.5, timelineBox.current?.clientWidth ?? 1200)));
+        requestAnimationFrame(() => setZoom(fitVideoTimelineZoom(timelineDuration(starter) + 0.5, timelineBox.current?.clientWidth ?? 1200)));
       }
       setSampling({ status: 'done' });
     } catch (e) {
@@ -149,7 +149,7 @@ function Shell({ samples }: { samples: boolean }) {
 
   /* ── What the viewer and the timeline see ── */
   const ready = ed.order.map((id) => ed.media[id]).filter((m): m is MediaItem => !!m);
-  const clipMedia: Record<string, TimelineMedia> = { [TITLE_MEDIA]: { duration: Infinity, kind: 'image', name: 'Title' } };
+  const clipMedia: Record<string, VideoTimelineMedia> = { [TITLE_MEDIA]: { duration: Infinity, kind: 'image', name: 'Title' } };
   for (const m of ready) {
     if (m.status !== 'ready') continue;
     clipMedia[m.id] = { url: m.url, duration: m.duration, kind: m.kind, name: m.name };
@@ -161,7 +161,7 @@ function Shell({ samples }: { samples: boolean }) {
   const root = useRef<HTMLDivElement | null>(null);
   const setRoot = useCallback((el: HTMLDivElement | null) => { root.current = el; ref(el); }, [ref]);
   const step = (by: number) => { clock.pause(); clock.seek(clock.getState().time + by); };
-  const zoomBy = (f: number) => setZoom((z) => Math.min(timelineZoomRange.max, Math.max(timelineZoomRange.min, z * f)));
+  const zoomBy = (f: number) => setZoom((z) => Math.min(videoTimelineZoomRange.max, Math.max(videoTimelineZoomRange.min, z * f)));
   const bindings: [keys: string, run: () => void, description?: string][] = [
     ['mod+z', ed.undo, 'Undo'],
     ['shift+mod+z', ed.redo, 'Redo'],
@@ -271,7 +271,7 @@ function Shell({ samples }: { samples: boolean }) {
           </Button>
           <div className="flex-1" />
           <Toggle size="sm" pressed={snap} onPressedChange={setSnap} className="h-7 px-2 text-caption">Snap</Toggle>
-          <Slider aria-label="Zoom" size="sm" className="w-28" min={Math.log(timelineZoomRange.min)} max={Math.log(timelineZoomRange.max)} step={0.01}
+          <Slider aria-label="Zoom" size="sm" className="w-28" min={Math.log(videoTimelineZoomRange.min)} max={Math.log(videoTimelineZoomRange.max)} step={0.01}
             value={Math.log(zoom)} onValueChange={(v) => setZoom(Math.exp(v))} />
           <Button variant="quiet" size="sm" className="h-7 px-2 text-caption" onClick={fit}>Fit</Button>
         </div>

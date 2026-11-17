@@ -17,19 +17,19 @@ function GitbookEditor(props: GitbookEditorProps): JSX.Element | null
 The component renders `null` until Tiptap has created the editor: always on the server, and on the client only for an instant. After that it renders `<div class="gb …">` containing the property sheet, the toolbar and the document.
 
 {% hint style="warning" %}
-**Read once, at creation:** `autofocus`, `placeholder`, `slashMenu`, `references`, `disableHistory` and `extensions` configure the Tiptap instance when it's created. Changing them later has no effect. To switch one, remount with a `key` (`<GitbookEditor key={JSON.stringify(references)} … />`). Every other prop — `editable` and the callbacks included — is read live.
+**Read once, at creation:** `autoFocus`, `placeholder`, `slashMenu`, `references`, `disableHistory` and `extensions` configure the Tiptap instance when it's created. Changing them later has no effect. To switch one, remount with a `key` (`<GitbookEditor key={JSON.stringify(references)} … />`). Every other prop — `editable` and the callbacks included — is read live.
 {% endhint %}
 
 ## Document
 
 | Prop | Type | Default | Effect |
 | --- | --- | --- | --- |
-| `markdown` | `string` | — | The document. When given, the editor is **controlled**: a new value that differs from the editor's last `onChange` output replaces the content, without emitting `onChange`. The editor's own output echoed back is ignored. Leave it out for an uncontrolled editor that starts empty. |
-| `onChange` | `(markdown: string) => void` | — | Called on every edit with the serialized Markdown (`tiptapToAst` → `serializeEditorMarkdown`, footnote definitions re-attached). |
+| `markdown` | `string` | — | The document. When given, the editor is **controlled**: a new value that differs from the editor's last `onValueChange` output replaces the content, without emitting `onValueChange`. The editor's own output echoed back is ignored. Leave it out for an uncontrolled editor that starts empty. |
+| `onValueChange` | `(markdown: string, details: GitbookEditorValueChangeDetails) => void` | — | Called on every edit with the serialized Markdown (`tiptapToAst` → `serializeEditorMarkdown`, footnote definitions re-attached). `details.reason` is `input-change`, `details.event` the DOM event behind the edit when there is one; `details.cancel()` puts the document back. |
 | `documentProperties` | `boolean \| { defaultOpen?: boolean }` | `true` | The YAML frontmatter as an editable property sheet above the body. `false` hides the sheet; the YAML is still kept. `{ defaultOpen: true }` starts it expanded. It only appears when the document has frontmatter, and is read-only when the editor is. |
 | `editable` | `boolean` | `true` | `false` gives a read-only document: no caret, no slash or chip menus, no paste or drop handling, source-file autosave off. *Read at creation.* |
 | `placeholder` | `string` | `"Write, or type / to insert a block…"` | Shown in an empty document. *Read at creation.* |
-| `autofocus` | `boolean` | `false` | Focus the editor on mount. *Read at creation.* |
+| `autoFocus` | `boolean` | `false` | Focus the editor on mount. *Read at creation.* |
 
 ## Chrome and menus
 
@@ -113,7 +113,7 @@ The GitBook extensions add three commands to `editor.commands` (get the instance
 | Command | Effect |
 | --- | --- |
 | `removeAttachment(id)` | Removes the chip(s) with that attachment id. |
-| `setDocumentProperties(properties \| null)` | Replaces the frontmatter (a docstream `DocumentPropertiesNode`). Part of undo history and `onChange`. |
+| `setDocumentProperties(properties \| null)` | Replaces the frontmatter (a docstream `DocumentPropertiesNode`). Part of undo history and `onValueChange`. |
 | `setTaskState(state)` | Sets the selected task item's state: `"pending"`, `"in-progress"`, `"implemented"`, `"blocked"`, `"parked"`, `"refuted"`, `"verified"` or `"cancelled"`. |
 
 ## Other components
@@ -142,7 +142,7 @@ A multi-file source editor with a live React preview supplied by the host.
 | `entry` | `string` | `"/src/main.jsx"` | The Vite entry file. |
 | `height` | `number \| string` | `320` | Preview height. |
 | `className` | `string` | — | Added to `gb-react-demo-editor`. |
-| `onChange` | `(files: Record<string, string>) => void` | — | Every edit, with all files. |
+| `onValueChange` | `(files: Record<string, string>, details: ReactDemoEditorValueChangeDetails) => void` | — | Every edit, with all files. `details.cancel()` keeps the file as it was. |
 | `liveRenderer` | `LivePreviewRenderer` | — | Renders the running preview, e.g. `almostNodeLiveRenderer`. Without it the files stay editable and a note replaces the preview. |
 | `autoPreview` | `boolean` | `true` | Refresh the preview as files are edited. `false` brings back a manual **Run demo** button. |
 | `previewDebounceMs` | `number` | `350` | Delay before edited files reach the preview. |

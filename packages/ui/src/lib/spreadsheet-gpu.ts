@@ -1,4 +1,4 @@
-/* Spreadsheet's WebGPU compute: a bitonic sort of exact 64-bit keys and a column histogram. lib/spreadsheet decides
+/* @internal: Spreadsheet's WebGPU compute: a bitonic sort of exact 64-bit keys and a column histogram. lib/spreadsheet decides
    when to call these (and has the CPU versions, which return the same answers); nothing here is reached without a
    WebGPU adapter. One device is shared by every Spreadsheet on the page and jobs run one at a time.
 

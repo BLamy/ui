@@ -7,7 +7,7 @@ const ROOM = {
   states: { empty: { on: { VIEWER_JOINED: 'watched' } }, watched: { on: { VIEWER_LEFT: 'empty', FILE_READY: 'watched' } } },
 }
 
-// A file upload: the API puts a file in R2, R2 tells a Queue, the consumer writes a row to D1 and tells the file's Room, a
+// A file upload: the API puts a file in R2 and a job on a Queue (its JOBS binding), R2 tells the Queue too, the consumer writes a row to D1 and tells the file's Room, a
 // Durable Object class of the consumer's with a machine, that it's ready.
 const SERVICES: CloudflareService[] = [
   {
@@ -26,6 +26,7 @@ const SERVICES: CloudflareService[] = [
 
 const EDGES: CloudflareEdge[] = [
   { id: 'api-files', from: 'api', to: 'files', via: 'r2_buckets', binding: 'FILES', operations: ['put', 'get'] },
+  { id: 'api-jobs', from: 'api', to: 'jobs', via: 'queues', binding: 'JOBS', operations: ['send'] },
   { id: 'files-jobs', from: 'files', to: 'jobs', via: 'events', operations: ['object-create'] },
   { id: 'jobs-consumer', from: 'jobs', to: 'consumer', via: 'queue-consumer', consumer: { batchSize: 10, retries: 3 } },
   { id: 'consumer-db', from: 'consumer', to: 'db', via: 'd1_databases', binding: 'DB', operations: ['prepare'] },

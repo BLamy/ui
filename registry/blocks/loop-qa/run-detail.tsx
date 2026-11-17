@@ -76,7 +76,7 @@ export function RunPage({ value, id }: { value: string; id: string }) {
           </div>
 
           <Panel title="Exploration" icon="play-outline" bodyClassName={r.explored ? 'p-4' : 'px-4 py-5'}>
-            {r.explored ? <ReplayPreview events={EXPLORATION_EVENTS} initialTime={2600} title="Run exploration" /> : (
+            {r.explored ? <ReplayPreview events={EXPLORATION_EVENTS} defaultTime={2600} title="Run exploration" /> : (
               <p className="m-0 text-footnote text-muted-foreground">No exploration ran in this run — it replayed known journeys only.</p>
             )}
           </Panel>

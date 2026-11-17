@@ -1,0 +1,17 @@
+{
+  "name": "size-class",
+  "title": "Size class",
+  "description": "A container's size class from its own width, never the viewport: sizeClassOf maps a width to compact, medium or regular (breakpoints you can move), and bindSizeClass(el, options) measures an element, writes data-size-class on it for CSS and reports changes. UI SDK's shape: bind → cleanup, framework-free.",
+  "exports": [
+    "bindSizeClass",
+    "sizeClassOf"
+  ],
+  "imports": [
+    "bindSizeClass"
+  ],
+  "types": [
+    "SizeClass",
+    "SizeClassBreakpoints",
+    "BindSizeClassOptions"
+  ]
+}

@@ -18,7 +18,7 @@ import { GitbookEditor } from "@brett_lamy/ui/docstream-editor"
 
 export function Notes() {
   const [markdown, setMarkdown] = useState("")
-  return <GitbookEditor markdown={markdown} onChange={setMarkdown} />
+  return <GitbookEditor markdown={markdown} onValueChange={setMarkdown} />
 }
 ```
 
@@ -49,7 +49,7 @@ export function Composer() {
   return (
     <GitbookEditor
       markdown={markdown}
-      onChange={setMarkdown}
+      onValueChange={setMarkdown}
       imagePaste="chip"
       attachments={attachments}
       // Once per image: { id, name, src (data URL), size, type, file }

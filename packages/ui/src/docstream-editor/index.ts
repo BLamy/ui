@@ -1,6 +1,6 @@
 export { GitbookEditor } from "./editor/Editor"
 export { embedBlockFor } from "./editor/Editor"
-export type { GitbookEditorProps, EditorAttachment, FilePicker, FilePickKind, FileUploader, AssetResolver } from "./editor/Editor"
+export type { GitbookEditorProps, GitbookEditorValueChangeDetails, GitbookEditorValueChangeReason, EditorAttachment, FilePicker, FilePickKind, FileUploader, AssetResolver } from "./editor/Editor"
 export { astToTiptap, tiptapToAst, serializeEditorMarkdown, markdownPasteContent } from "./editor/convert"
 export type { PMNode } from "./editor/convert"
 export { GbDocumentProperties, DocumentPropertiesEditor } from "./editor/document-properties"
@@ -28,7 +28,7 @@ export type {
 export { tiptapTriggerAdapter } from "./editor/trigger-adapter"
 export type { TiptapTriggerAdapterOptions, TokenToNodes } from "./editor/trigger-adapter"
 export { ReactDemoEditor } from "./editor/ReactDemoEditor"
-export type { ReactDemoEditorProps } from "./editor/ReactDemoEditor"
+export type { ReactDemoEditorProps, ReactDemoEditorValueChangeDetails, ReactDemoEditorValueChangeReason } from "./editor/ReactDemoEditor"
 export { SourceFileEditor } from "./editor/SourceFileEditor"
 export type { SourceFileEditorProps } from "./editor/SourceFileEditor"
 

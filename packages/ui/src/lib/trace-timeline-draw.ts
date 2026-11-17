@@ -1,4 +1,4 @@
-/* ══ Trace timeline — on a canvas ══
+/* ══ Trace timeline — on a canvas ══ @internal: TraceTimeline's drawing, not package API.
    One drawing for both orientations: everything here is in (along, across) px, and `orient` turns that into a canvas
    transform. The strip's along is x and its across is y. The rail swaps them, and mirrors on a right-hand rail, so across
    always starts at the outer edge and a depth bar reaches inward on either side.

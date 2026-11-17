@@ -20,6 +20,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Toggle, ToggleGroup } from '@ui-sdk/react/toggle'
 import { Tree, TreeGroup, TreeItem, TreeItemIndicator, TreeItemLabel } from '@ui-sdk/react/tree'
 import { Glyph } from "../ui/glyph"
+import { lexSyntax } from "@brett_lamy/ui/lib/syntax"
 import { DevtoolsPanelResize, DevtoolsPanelRoot, RequestRow, RequestTable, Tabs, TabsList, TabsPanel, TabsTab } from './devtools-parts'
 import type { ReplayConsoleEntry, ReplayDevtoolsState, ReplayRequest } from './devtools'
 import { sourceName, type ResolvedReplayEvidence } from './evidence'
@@ -332,12 +333,12 @@ function NetworkPane({ state, onSeek, inspected }: {
                   data-inspected={r.id === inspectedId || undefined}
                 >
                   <td title={r.url}><span data-part="name">{r.name}</span></td>
-                  <td>{statusText(r)}</td>
+                  <td data-col="status">{statusText(r)}</td>
                   {selected ? null : (
                     <>
-                      <td>{r.method}</td>
-                      <td>{r.type}</td>
-                      <td>{r.pending ? 'Pending' : duration(r.duration)}</td>
+                      <td data-col="method">{r.method}</td>
+                      <td data-col="type">{r.type}</td>
+                      <td data-col="time">{r.pending ? 'Pending' : duration(r.duration)}</td>
                       <td data-col="waterfall">
                         <span
                           data-part="bar"
@@ -417,17 +418,15 @@ const HIGHLIGHT_MAX = 64 * 1024
 
 type Span = { type: string; start: number; end: number }
 
-/** gpu-lexer's spans for `text` (loaded on first use; the same model and token colors as docstream's code blocks):
- *  null until they arrive, for empty text, and past 64 KB. */
+/** The spans of `text`, from the kit's lib/syntax (gpu-lexer on hardware WebGPU, through the page's one queue, else
+ *  the synchronous lexer; the same token colors as docstream's code blocks): null until they arrive, for empty text,
+ *  and past 64 KB. */
 function useSpans(text: string | undefined): Span[] | null {
   const [spans, setSpans] = useState<{ for: string; spans: Span[] } | null>(null)
   useEffect(() => {
     if (text === undefined || !text || text.length > HIGHLIGHT_MAX) return
     let cancelled = false
-    import('gpu-lexer')
-      .then(({ parse }) => parse(text))
-      .then((result: Span[]) => { if (!cancelled) setSpans({ for: text, spans: result }) })
-      .catch(() => {})
+    void lexSyntax(text).then((result) => { if (!cancelled) setSpans({ for: text, spans: result.spans }) })
     return () => { cancelled = true }
   }, [text])
   return spans && spans.for === text ? spans.spans : null

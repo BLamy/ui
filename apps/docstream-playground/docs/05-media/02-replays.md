@@ -229,9 +229,9 @@ Pass **either** `events` (the player API) **or** `source` (the embed API). They 
 | `url` | `string` | the recording's | Address in the URL bar. By default it follows the recording's own navigations, led by path, query and hash. |
 | `title` | `string` | `"Session replay"` | Accessible name (the iframe title for page URLs). |
 | `trafficLights` | `boolean` | `true` | The macOS window buttons in `browser` chrome. |
-| `controls` | `boolean` | `true` | Play/pause, scrubber, speed, fullscreen. `controls={false}` with `chrome="none"` is a still frame at `initialTime`. |
-| `autoplay` / `loop` | `boolean` | `false` | Start on load; restart at the end. |
-| `initialTime` | `number` | `0`, or the window's start | Where the player starts, in ms. |
+| `controls` | `boolean` | `true` | Play/pause, scrubber, speed, fullscreen. `controls={false}` with `chrome="none"` is a still frame at `defaultTime`. |
+| `autoPlay` / `loop` | `boolean` | `false` | Start on load; restart at the end. |
+| `defaultTime` | `number` | `0`, or the window's start | Where the player starts, in ms. |
 | `timeWindow` | `[number, number]` | none | The segment that matters, in ms: highlighted on the scrubber, where the player opens, and where playing from inside it stops. Scrubbing outside it plays on. |
 | `speeds` | `number[]` | `[1, 2, 4, 0.5]` | What the speed button cycles through. The first is the starting speed. |
 | `markers` | `boolean \| ReplayMarker[]` | `false` | A marker rail above the seek bar: `true` reads them from the recording, or pass your own. Off by default since 1.26. |
@@ -281,12 +281,12 @@ This demo has its own dark frame, scrubber, colored marker ticks, speed button a
 | Prop | Type | Default | Purpose |
 | --- | --- | --- | --- |
 | `events` | `ReplayEvent[]` | required | Events appended later are fed to the running player, so a live session can stream in. |
-| `autoplay` / `loop` | `boolean` | `false` | |
+| `autoPlay` / `loop` | `boolean` | `false` | |
 | `speed` | `number` | `1` | Playback rate. |
 | `skipInactive` | `boolean` | `true` | Fast-forward idle stretches longer than 5 s. |
-| `initialTime` | `number` | `0` | Where the paused player starts (ms). |
+| `defaultTime` | `number` | `0` | Where the paused player starts (ms). |
 | `fit` | `"width" \| "contain"` | `"width"` | As on `ReplayPreview`. |
-| `showMouse` | `boolean` | `true` | rrweb's own cursor. Turn it off when you draw your own. |
+| `cursor` | `boolean` | `true` | rrweb's own cursor. Turn it off when you draw your own. |
 | `overlay` | `ReactNode` | none | Drawn over the page in **recorded-viewport pixels**, scaled with it. `var(--replay-scale)` holds the scale, so an element can counter-scale to keep its on-screen size. |
 | `fallback` | `ReactNode` | `null` | Shown while the rrweb chunk loads. |
 | `onReady` | `({ duration, width, height }) => void` | none | |

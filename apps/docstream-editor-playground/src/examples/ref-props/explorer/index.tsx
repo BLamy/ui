@@ -71,7 +71,7 @@ export default function PropExplorer() {
           key={key}
           className="px-editor"
           markdown={markdown}
-          onChange={setMarkdown}
+          onValueChange={setMarkdown}
           toolbar={p.toolbar}
           editable={p.editable}
           slashMenu={p.slashMenu}

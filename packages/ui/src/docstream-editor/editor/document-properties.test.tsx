@@ -38,7 +38,7 @@ describe("document properties in the editor", () => {
     const container = document.createElement("div"); document.body.append(container)
     const root = createRoot(container)
     const changes: string[] = []
-    const render = (markdown: string) => root.render(<GitbookEditor markdown={markdown} toolbar={false} slashMenu={false} references={false} documentProperties={{ defaultOpen: true }} onChange={(value) => changes.push(value)} />)
+    const render = (markdown: string) => root.render(<GitbookEditor markdown={markdown} toolbar={false} slashMenu={false} references={false} documentProperties={{ defaultOpen: true }} onValueChange={(value) => changes.push(value)} />)
     await act(async () => { render(source) })
     const checkbox = container.querySelector<HTMLElement>('[role="checkbox"][aria-label="complete"]')!
     expect(checkbox).not.toBeNull()

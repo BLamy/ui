@@ -64,50 +64,74 @@ export function LoopMark({ size = 26, className }: { size?: number; className?: 
 }
 
 /* ── Badges ── */
+/** A pill on the kit's tone set: `tone` picks the color, `variant` the look (`soft`, the default, a tinted fill;
+    `solid` a full one; `outline` a hairline), and `tint` a caller color in place of a tone (Loop QA's info blue). */
 export const pillVariants = cva(
   'inline-flex h-[22px] shrink-0 items-center gap-1.5 rounded-full px-2 text-[11.5px] font-semibold whitespace-nowrap',
   {
     variants: {
-      tone: {
-        critical: 'bg-destructive text-white',
-        destructive: 'bg-destructive/12 text-destructive',
-        warning: 'bg-warning/14 text-warning',
-        info: 'bg-(--lq-info)/13 text-(--lq-info)',
-        success: 'bg-success/13 text-success',
-        primary: 'bg-primary/12 text-primary',
-        neutral: 'bg-secondary text-muted-foreground',
-        outline: 'text-muted-foreground shadow-hairline',
-      },
+      tone: { default: '', success: '', warning: '', destructive: '', muted: '' },
+      variant: { soft: '', solid: '', outline: 'shadow-hairline' },
     },
-    defaultVariants: { tone: 'neutral' },
+    compoundVariants: [
+      { variant: 'soft', tone: 'default', class: 'bg-primary/12 text-primary' },
+      { variant: 'soft', tone: 'success', class: 'bg-success/13 text-success' },
+      { variant: 'soft', tone: 'warning', class: 'bg-warning/14 text-warning' },
+      { variant: 'soft', tone: 'destructive', class: 'bg-destructive/12 text-destructive' },
+      { variant: 'soft', tone: 'muted', class: 'bg-secondary text-muted-foreground' },
+      { variant: 'solid', tone: 'default', class: 'bg-primary text-primary-foreground' },
+      { variant: 'solid', tone: 'success', class: 'bg-success text-white' },
+      { variant: 'solid', tone: 'warning', class: 'bg-warning text-white' },
+      { variant: 'solid', tone: 'destructive', class: 'bg-destructive text-white' },
+      { variant: 'solid', tone: 'muted', class: 'bg-muted-foreground text-background' },
+      { variant: 'outline', tone: 'default', class: 'text-primary' },
+      { variant: 'outline', tone: 'success', class: 'text-success' },
+      { variant: 'outline', tone: 'warning', class: 'text-warning' },
+      { variant: 'outline', tone: 'destructive', class: 'text-destructive' },
+      { variant: 'outline', tone: 'muted', class: 'text-muted-foreground' },
+    ],
+    defaultVariants: { tone: 'muted', variant: 'soft' },
   },
 );
 export type PillTone = NonNullable<VariantProps<typeof pillVariants>['tone']>;
+export type PillVariant = NonNullable<VariantProps<typeof pillVariants>['variant']>;
+/** A pill's color and look, as the status tables below hand them out. */
+export interface PillLook { tone?: PillTone; variant?: PillVariant; tint?: string }
 
-export function Pill({ tone, dot, className, children }: { tone?: PillTone; dot?: boolean; className?: string; children: ReactNode }) {
+const TINTED: Record<PillVariant, string> = {
+  soft: 'bg-(--pill-tint)/13 text-(--pill-tint)',
+  solid: 'bg-(--pill-tint) text-white',
+  outline: 'text-(--pill-tint)',
+};
+const pillClass = ({ tone, variant, tint }: PillLook = {}) => cn(pillVariants({ tone, variant }), tint && TINTED[variant ?? 'soft']);
+
+export function Pill({ tone, variant, tint, dot, className, children }: PillLook & { dot?: boolean; className?: string; children: ReactNode }) {
   return (
-    <span className={cn(pillVariants({ tone }), className)}>
+    <span className={cn(pillClass({ tone, variant, tint }), className)} style={tint ? ({ '--pill-tint': tint } as CSSProperties) : undefined}>
       {dot ? <span className="size-1.5 rounded-full bg-current" /> : null}
       {children}
     </span>
   );
 }
 
-export const SEVERITY_TONE: Record<Severity, PillTone> = { critical: 'critical', high: 'destructive', medium: 'warning', low: 'info' };
+const INFO: PillLook = { tint: 'var(--lq-info)' };
+export const SEVERITY_TONE: Record<Severity, PillLook> = { critical: { tone: 'destructive', variant: 'solid' }, high: { tone: 'destructive' }, medium: { tone: 'warning' }, low: INFO };
 export function SeverityBadge({ severity, className }: { severity: Severity; className?: string }) {
-  return <Pill tone={SEVERITY_TONE[severity]} className={className}>{SEVERITY_LABEL[severity]}</Pill>;
+  return <Pill {...SEVERITY_TONE[severity]} className={className}>{SEVERITY_LABEL[severity]}</Pill>;
 }
 
-export const STATUS_TONE: Record<BugStatus, PillTone> = { open: 'info', confirmed: 'primary', unconfirmed: 'outline', fixed: 'success', dismissed: 'neutral' };
+export const STATUS_TONE: Record<BugStatus, PillLook> = {
+  open: INFO, confirmed: { tone: 'default' }, unconfirmed: { tone: 'muted', variant: 'outline' }, fixed: { tone: 'success' }, dismissed: { tone: 'muted' },
+};
 export const STATUS_DOT: Record<BugStatus, string> = {
   open: 'bg-(--lq-info)', confirmed: 'bg-primary', unconfirmed: 'bg-tertiary-foreground', fixed: 'bg-success', dismissed: 'bg-muted-foreground',
 };
 export function StatusBadge({ status, className }: { status: BugStatus; className?: string }) {
-  return <Pill tone={STATUS_TONE[status]} dot className={className}>{STATUS_LABEL[status]}</Pill>;
+  return <Pill {...STATUS_TONE[status]} dot className={className}>{STATUS_LABEL[status]}</Pill>;
 }
 
 const RUN_META: Record<RunStatus, { tone: PillTone; label: string; icon?: string }> = {
-  running: { tone: 'primary', label: 'Running' },
+  running: { tone: 'default', label: 'Running' },
   completed: { tone: 'success', label: 'Completed', icon: 'check' },
   failed: { tone: 'destructive', label: 'Failed', icon: 'xmark' },
   blocked: { tone: 'warning', label: 'Blocked', icon: 'exclamation-circle' },
@@ -122,9 +146,9 @@ export function RunStatusBadge({ status, className }: { status: RunStatus; class
   );
 }
 
-const ENV_TONE: Record<Environment, PillTone> = { Production: 'success', Preview: 'warning', Staging: 'info' };
+const ENV_TONE: Record<Environment, PillLook> = { Production: { tone: 'success' }, Preview: { tone: 'warning' }, Staging: INFO };
 export function EnvBadge({ env, className }: { env: Environment; className?: string }) {
-  return <Pill tone={ENV_TONE[env]} dot className={cn('bg-transparent shadow-[inset_0_0_0_1px_color-mix(in_oklab,currentColor_32%,transparent)]', className)}>{env}</Pill>;
+  return <Pill {...ENV_TONE[env]} dot className={cn('bg-transparent shadow-[inset_0_0_0_1px_color-mix(in_oklab,currentColor_32%,transparent)]', className)}>{env}</Pill>;
 }
 
 export const KIND_ICON: Record<BugKind, string> = {

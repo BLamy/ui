@@ -7,7 +7,7 @@ import type {
 import { usePart, usePrimitive, type PartProps, type PrimitiveHandle, type RenderProp } from '@ui-sdk/react/primitive';
 import type { FileStatus, FileUploadRules, UploadFile } from '@/lib/file-upload-model';
 import {
-  countFiles, fileUpload, busyOf,
+  countFiles, fileUpload, pendingOf,
   type FileUploadAddResult, type FileUploadChangeOptions, type FileUploadOptions, type FileUploadRootState,
 } from '@/lib/file-upload-primitive';
 
@@ -65,7 +65,7 @@ export interface FileUploadState {
   /** Starts every queued file (with `autoUpload` off), respecting the concurrency limit. */
   uploadAll: () => void;
   /** Whether anything is queued or sending. */
-  busy: boolean;
+  pending: boolean;
   counts: Record<FileStatus, number>;
   /** The rules in force (for hints). */
   rules: Pick<FileUploadRules, 'accept' | 'maxSize' | 'minSize' | 'maxFiles'>;
@@ -119,7 +119,7 @@ export function useFileUpload(options: FileUploadOptions = {}): FileUploadState 
     retry: api.retry,
     clear: api.clear,
     uploadAll: api.uploadAll,
-    busy: busyOf(counts),
+    pending: pendingOf(counts),
     counts,
     rules,
     inputController: api.input,

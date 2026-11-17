@@ -60,7 +60,7 @@ Returns the extension list `GitbookEditor` itself uses, in this order:
 ```tsx
 import CharacterCount from "@tiptap/extension-character-count"
 
-<GitbookEditor markdown={markdown} onChange={setMarkdown} extensions={[CharacterCount.configure({ limit: 20000 })]} />
+<GitbookEditor markdown={markdown} onValueChange={setMarkdown} extensions={[CharacterCount.configure({ limit: 20000 })]} />
 ```
 
 {% hint style="warning" %}
@@ -81,12 +81,12 @@ const ydoc = new Y.Doc()
 <GitbookEditor
   disableHistory
   extensions={[Collaboration.configure({ document: ydoc })]}
-  onChange={(markdown) => saveSnapshot(markdown)}
+  onValueChange={(markdown) => saveSnapshot(markdown)}
 />
 ```
 
 {% hint style="info" %}
-With Collaboration the shared Y.Doc owns the content. Don't also pass a controlled `markdown` that you keep setting back, or every client resets the document. Seed the Y.Doc once (below) and treat `onChange` as an export.
+With Collaboration the shared Y.Doc owns the content. Don't also pass a controlled `markdown` that you keep setting back, or every client resets the document. Seed the Y.Doc once (below) and treat `onValueChange` as an export.
 {% endhint %}
 
 ## getGitbookSchema()
@@ -141,7 +141,7 @@ The extensions give you the schema, the blocks and their node views. `GitbookEdi
 
 - **Paste and drop.** Markdown paste (a copied docs page becomes blocks), image paste (inline or chips), the demo clipboard, `uploadFile` and `onDropEmbeds` all live in `GitbookEditor`'s `editorProps`. `markdownPasteContent(text)` turns plain-text Markdown into editor content for your own `handlePaste`.
 - **The host runtime.** Node views read `sourceClient`, `pickFile`, `uploadFile`, `attachments`, `demoResolver`, `demoRuntime` and `liveRenderer` from a React context that `GitbookEditor` provides and the package doesn't export. In a hand-built editor, source refs show their header only, embeds and figures have no Choose / Upload buttons, chips have no store, and live code fences stay plain code. Asset resolution is the exception: wrap `EditorContent` in docstream's `AssetResolverProvider` (from `@brett_lamy/ui/docstream/assets`) to give it a `resolveAsset`.
-- **Controlled Markdown** (`markdown` / `onChange`), citation definitions carried across edits, attachment removal reports, the toolbar and the properties panel.
+- **Controlled Markdown** (`markdown` / `onValueChange`), citation definitions carried across edits, attachment removal reports, the toolbar and the properties panel.
 
 If you only need a different toolbar or an extra extension, stay with `GitbookEditor` and use `toolbar={false}`, `extensions`, and `onEditorReady` to get the instance.
 

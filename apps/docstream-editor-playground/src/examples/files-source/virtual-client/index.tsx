@@ -63,7 +63,7 @@ export default function VirtualClient() {
         >
           <GitbookEditor
             markdown={markdown}
-            onChange={setMarkdown}
+            onValueChange={setMarkdown}
             toolbar={false}
             documentProperties={false}
             sourceClient={client}

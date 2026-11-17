@@ -6,7 +6,7 @@ import type { Playback } from '@/lib/playback';
 import {
   clipEnd, findClip, formatTimecode, magneticIndex, moveClip, quantize, removeClips, snapTargets, snapTime,
   timelineDuration, trimClip, updateTrack,
-  type Timeline, type TimelineClip, type TimelineMedia, type TimelineTrack,
+  type Timeline, type TimelineClip, type VideoTimelineMedia, type TimelineTrack,
 } from '@/lib/video-timeline-model';
 
 /* ══ videoTimeline — the editing behavior of a lib/video-timeline-model Timeline ══
@@ -42,8 +42,8 @@ export type VideoTimelineSelectionReason = 'item-press' | 'track-press' | 'escap
 /** Why the zoom changed: ⌘/Ctrl + wheel or a pinch, or a call from code. */
 export type VideoTimelineZoomReason = 'wheel' | 'imperative';
 
-export const timelineZoomRange = { min: 2, max: 600 } as const;
-export const clampTimelineZoom = (z: number) => Math.max(timelineZoomRange.min, Math.min(timelineZoomRange.max, z));
+export const videoTimelineZoomRange = { min: 2, max: 600 } as const;
+export const clampTimelineZoom = (z: number) => Math.max(videoTimelineZoomRange.min, Math.min(videoTimelineZoomRange.max, z));
 
 /** Seconds of empty track the lanes run past the last clip. */
 export const TIMELINE_TAIL = 8;
@@ -64,7 +64,7 @@ export interface VideoTimelineOptions {
   /** The clock the playhead follows: a trim shows the frame at the edge, and a drag pauses it. */
   playback: Pick<Playback, 'getState' | 'seek' | 'pause'>;
   /** Media lengths (trim limits) and names (clip labels), by media id. */
-  media?: Record<string, TimelineMedia | undefined>;
+  media?: Record<string, VideoTimelineMedia | undefined>;
   /** Frames per second: edits land on frames. Default 30. */
   fps?: number;
   /** Snap to clip edges, the playhead and 0. Default true. */
@@ -400,7 +400,7 @@ export const videoTimeline = definePrimitive({
         if (store.get().readOnly) return false;
         return commit(updateTrack(store.get().value, id, patch), { ...details, id, action: 'track' });
       },
-      /** Sets the zoom, in pixels per second (held within `timelineZoomRange`). */
+      /** Sets the zoom, in pixels per second (held within `videoTimelineZoomRange`). */
       setZoom: (zoom: number, details: { reason: VideoTimelineZoomReason; event?: Event } = { reason: 'imperative' }) =>
         change('zoom', clampTimelineZoom(zoom), details),
       /** The scroll position that keeps a wheel zoom's anchor still, once `zoom` is the zoom rendered; then forgets it.

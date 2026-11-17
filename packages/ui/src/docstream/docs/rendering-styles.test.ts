@@ -165,7 +165,13 @@ describe("TuiPreview and StlViewer chrome take the page's tokens", () => {
   it("touch layouts get 44px targets", () => {
     expect(coarse).toMatch(/\.docstream-tui__button \{[^}]*height: 44px;/)
     expect(coarse).toMatch(/\.docstream-tui__source-trigger \{[^}]*min-height: 44px;/)
-    expect(coarse).toMatch(/\.docstream-stl__reset \{[^}]*min-height: 44px;/)
+    // The Reset pill keeps its look: an invisible target 11px above and below its ~23px reaches 44px.
+    expect(coarse).toMatch(/\.docstream-stl__reset::after \{[^}]*inset: -11px -4px;/)
+    expect(coarse).not.toMatch(/\.docstream-stl__reset \{[^}]*min-height/)
+  })
+
+  it("the Strudel code panel uses the mono stack, not the browser's Courier", () => {
+    expect(block(".docstream-strudel__code")).toContain('font-family: var(--font-mono, "SF Mono", ui-monospace, Menlo, monospace);')
   })
 
   it("the STL Reset pill takes the card pair, not a white fallback, outside an article", () => {

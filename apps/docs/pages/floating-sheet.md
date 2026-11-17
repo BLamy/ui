@@ -2,7 +2,7 @@
 
 A card that rests over a page and grows into it along one drag: an order status over a map, a panel over a canvas, a terminal dock over an editor, the floating chat of [ArtifactChatContainer](https://blamy.github.io/ui/#/artifact-chat-container). It fills its positioned host as a pointer-transparent layer, so the page stays usable around the resting card; drag its cap up and the same surface grows taller, wider and squarer until it fills the host; drag it below rest and it folds into a FAB (or slides away). It is [UI SDK's Drawer](https://ui-sdk.dev/docs/react/components/drawer) with snap points at the peek and full height, modal only above the peek.
 
-Use [Sheet](https://blamy.github.io/ui/#/sheet) instead for a modal edge panel that must be answered (focus trap, Escape and outside press close it); [Dialog](https://blamy.github.io/ui/#/dialog) for a short task; [ArtifactChatContainer](https://blamy.github.io/ui/#/artifact-chat-container) for a chat beside an artifact (it floats on this sheet when compact).
+Use [Sheet](https://blamy.github.io/ui/#/sheet) instead for a modal edge panel that must be answered (focus trap, Escape and outside press close it); [Dialog](https://blamy.github.io/ui/#/dialog) for a short task; [AdaptivePane](https://blamy.github.io/ui/#/adaptive-pane) for a panel that is part of the layout (a docked column beside the page, a drawer or a pushed page as the host narrows); [ArtifactChatContainer](https://blamy.github.io/ui/#/artifact-chat-container) for a chat beside an artifact (it floats on this sheet when compact).
 
 {% tabs title="Installation" sync="install" %}
 {% tab title="shadcn CLI" %}
@@ -122,13 +122,11 @@ A flow in one sheet, after Family's trays, written with the same parts as a [She
 ```tsx
 <FloatingSheet view={tray.id} peek={tray.peek} variant="card" collapse="none" aria-label="Checkout">
   <FloatingSheetBody>
-    <div>
-      <SheetHeader variant="bar">
-        <SheetBack hidden={step === 0} onClick={() => setStep(step - 1)} />
-        <SheetTitle>{tray.title}</SheetTitle>
-      </SheetHeader>
-      <SheetView className="px-5 pb-5">{tray.body}</SheetView>
-    </div>
+    <SheetHeader variant="bar">
+      <SheetBack hidden={step === 0} onClick={() => setStep(step - 1)} />
+      <SheetTitle>{tray.title}</SheetTitle>
+    </SheetHeader>
+    <SheetView className="px-5 pb-5">{tray.body}</SheetView>
   </FloatingSheetBody>
 </FloatingSheet>
 ```
@@ -140,7 +138,7 @@ A flow in one sheet, after Family's trays, written with the same parts as a [She
 | Part | Role |
 | --- | --- |
 | `FloatingSheet` | The layer and its drawer. Write the parts inside it. |
-| `FloatingSheetBody` | The growing region (`div` props). Laid out at its full grown height behind a window that slides with the drag, so content never reflows mid-gesture; `inert` while the sheet rests on its cap and footer alone. |
+| `FloatingSheetBody` | The growing region (`div` props). Laid out at its full grown height behind a window that slides with the drag, so content never reflows mid-gesture; `inert` while the sheet rests on its cap and footer alone. Its children stack as written (a flow's `SheetHeader` and `SheetView` go straight in): with `bodyAlign="start"` the last one takes the rest of the window, so a lone scroller fills it; with `end` they keep their own height and sit against the footer. |
 | `FloatingSheetFooter` | Pinned to the bottom of the surface at every height (`div` props): a composer, action buttons. Write it after the Body. |
 | `FloatingSheetFab` | The round button the sheet folds into (Button props). Its children are its face and `aria-label` its name; without one the sheet shows a dot named "Open " + the sheet's name. It renders on the host's edge wherever you write it: `side` (`'top' \| 'bottom' \| 'start' \| 'end'`, default `'bottom'`; `start` / `end` are the inline edges) and `align` along it (`'start' \| 'center' \| 'end'`, default `'center'`). |
 
@@ -168,6 +166,7 @@ A flow in one sheet, after Family's trays, written with the same parts as a [She
 | `scrollRef` | `RefObject<HTMLElement>` | — | A scroller whose direction also hides and restores the resting sheet. |
 | `aria-label` | `string` | `'Sheet'` | Accessible name of the sheet. |
 | `className` / `style` | | | Merged onto the root layer. |
+| `id`, `data-*`, `ref`… | | | The root layer is a `div`: the rest of a div's props reach it. |
 | `surfaceClassName` | `string` | — | Merged onto the sheet surface (the card). |
 
 ## Hook and styling

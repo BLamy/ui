@@ -84,14 +84,11 @@ export default function Trays() {
     <Host note="Continue and the back chevron move through the trays: each has its own height, and the sheet springs between them while the content travels the way the flow moves.">
       <FloatingSheet view={tray.id} peek={tray.peek} variant="card" collapse="none" aria-label="Checkout" hideOnScroll={false}>
         <FloatingSheetBody>
-          {/* The body takes one child, the height of its window. */}
-          <div>
-            <SheetHeader variant="bar" className="pt-1">
-              <SheetBack hidden={step === 0} onClick={() => setStep(step - 1)} />
-              <SheetTitle>{tray.title}</SheetTitle>
-            </SheetHeader>
-            <SheetView className="px-5 pb-5">{tray.body}</SheetView>
-          </div>
+          <SheetHeader variant="bar" className="pt-1">
+            <SheetBack hidden={step === 0} onClick={() => setStep(step - 1)} />
+            <SheetTitle>{tray.title}</SheetTitle>
+          </SheetHeader>
+          <SheetView className="px-5 pb-5">{tray.body}</SheetView>
         </FloatingSheetBody>
         <FloatingSheetFooter>
           <div className="flex px-4 pt-2 pb-4">

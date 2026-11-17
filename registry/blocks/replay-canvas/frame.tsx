@@ -172,8 +172,8 @@ export function ScreenFrame({ events, evidence, viewport, crop, onCrop, order, o
           <ReplayStage
             ref={stage}
             events={events}
-            initialTime={evidence.time}
-            showMouse={false}
+            defaultTime={evidence.time}
+            cursor={false}
             skipInactive={false}
             onReady={() => setReady(true)}
           />

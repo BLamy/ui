@@ -49,7 +49,7 @@ export default function FromMarkdown() {
         <GitbookEditor
           key={String(resolve)}
           markdown={markdown}
-          onChange={setMarkdown}
+          onValueChange={setMarkdown}
           toolbar={false}
           documentProperties={false}
           attachments={attachments}

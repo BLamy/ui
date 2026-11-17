@@ -73,7 +73,7 @@ export default function DropARecording() {
           ? ({ dragging }) => (
               <div style={{ position: 'relative' }}>
                 {/* A new key remounts the player, so every drop starts from the top. */}
-                <ReplayPreview key={recording.id} events={recording.events} autoplay />
+                <ReplayPreview key={recording.id} events={recording.events} autoPlay />
                 {dragging ? (
                   <div className="absolute inset-0 grid place-items-center rounded-card border-2 border-dashed border-primary bg-background/80 text-subhead font-semibold">
                     Drop to play this recording instead

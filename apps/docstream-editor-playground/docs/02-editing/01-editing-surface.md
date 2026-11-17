@@ -108,7 +108,7 @@ Hosts can take keys first: `onKeyDown` sees every key before the editor's keymap
 ```tsx title="Editor.tsx"
 <GitbookEditor
   markdown={md}
-  onChange={setMd}
+  onValueChange={setMd}
   onKeyDown={(event) => {
     if ((event.metaKey || event.ctrlKey) && event.key === "s") {
       save(md)
@@ -139,7 +139,7 @@ export function MyEditor() {
     <>
       <button onClick={() => editor?.chain().focus().toggleHeading({ level: 2 }).run()}>H2</button>
       <button onClick={() => editor?.chain().focus().toggleBlockquote().run()}>Quote</button>
-      <GitbookEditor markdown={md} onChange={setMd} toolbar={false} onEditorReady={setEditor} />
+      <GitbookEditor markdown={md} onValueChange={setMd} toolbar={false} onEditorReady={setEditor} />
     </>
   )
 }
@@ -159,7 +159,7 @@ export function MyEditor() {
 | `references` | `true` | The `@` / `#` (and `$`) pickers ([References](03-references-and-citations.md)). |
 | `documentProperties` | `true` | The frontmatter sheet ([Properties](06-properties-and-tasks.md)). |
 | `placeholder` | `"Write, or type / to insert a block…"` | Shown in an empty document. |
-| `autofocus` | `false` | Focus the editor on mount. |
+| `autoFocus` | `false` | Focus the editor on mount. |
 | `className` | — | Added to the `gb` wrapper. |
 
 The full list is in [Props](../04-reference/01-props.md).

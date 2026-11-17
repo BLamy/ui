@@ -10,6 +10,7 @@ Choose by what changes:
 | The app's bottom tab bar, a side rail, a server switcher | `Tabs` with `variant="bar"`, `"rail"` or `"switcher"` (see "Bottom tab bar" below); `presentation="auto"` for a bar on a phone and a rail wider |
 | A sidebar on a tablet that is the tab bar on a phone | [SplitView](https://blamy.github.io/ui/#/split-view) with `compactPresentation="tabs"` |
 | A value or a view mode with no panels (a filter, a time range) | [Segmented](https://blamy.github.io/ui/#/segmented): a radio group, not a tablist |
+| A toolbar of on/off toggles, one or several on (bold, italic; a list or grid view) | [ToggleGroup](https://blamy.github.io/ui/#/toggle): pressed buttons, not a tablist |
 | Push and pop screens inside a tab | [NavigationStack](https://blamy.github.io/ui/#/navigation-stack) inside a `TabsPanel` |
 | Tabs the user can drag between dockable panes (an editor) | [Workspace](https://blamy.github.io/ui/#/workspace) |
 

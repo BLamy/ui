@@ -1,4 +1,4 @@
-import type { TimelineDrop } from '@/components/ui/video-timeline';
+import type { VideoTimelineDrop } from '@/components/ui/video-timeline';
 import type { Playback } from '@/lib/playback';
 import {
   clipEnd, findClip, insertClip, quantize, removeClips, splitClip, timelineDuration, timelineId,
@@ -24,7 +24,7 @@ export function useActions(clock: Playback) {
   return {
     /** Puts a library item on the timeline: where it was dropped, else pictures at the end of the main track and sound
      *  at the playhead on the first audio track. */
-    addMedia(mediaId: string, drop?: TimelineDrop) {
+    addMedia(mediaId: string, drop?: VideoTimelineDrop) {
       const m = ed.media[mediaId];
       if (!m || m.status !== 'ready') return;
       const tl = ed.project.timeline;

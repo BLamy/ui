@@ -43,7 +43,7 @@ export default function PasteModes({ variant = "inline" }: { variant?: string })
           <GitbookEditor
             key={mode}
             markdown={markdown}
-            onChange={setMarkdown}
+            onValueChange={setMarkdown}
             toolbar={false}
             documentProperties={false}
             imagePaste={mode}

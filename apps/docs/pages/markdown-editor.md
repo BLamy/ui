@@ -64,7 +64,7 @@ A controlled editor beside a `MarkdownView` of the same value. Every edit serial
 
 ### A toolbar of your own
 
-`toolbar` (`true`) shows the built-in row: bold, italic, strike, code and link. Pass a node instead to choose the tools: a kit [Toolbar](https://blamy.github.io/ui/#/toolbar) of `MarkdownEditorToolbarButton`s, each running a TipTap `command` on the editor. With a `mark` (and its `attributes`) a button is a toggle, pressed while the selection is in that mark or block. It takes ToolbarButton's props (default size `icon-sm`).
+`toolbar` (`true`) shows the built-in row: bold, italic, strike, code and link. Pass a node instead to choose the tools: a kit [Toolbar](https://blamy.github.io/ui/#/toolbar) of `MarkdownEditorToolbarButton`s, each running a TipTap `command` on the editor. With a `mark` (and its `attributes`) a button is a `ToolbarToggle`, pressed (filled, and `aria-pressed`) while the selection is in that mark or block. It takes ToolbarButton's props (default size `icon-sm`).
 
 ```tsx
 <MarkdownEditor
@@ -155,7 +155,7 @@ Fences labelled `xstate` or `tscircuit` use the same source-and-preview cards as
 - The writing area (the `contenteditable`) is the field's control, named by the `Field`'s label, or by `aria-label` / `aria-labelledby`, and described by its `FieldDescription` and `FieldError`. `aria-invalid`, `aria-readonly` and `aria-disabled` follow the Field and the props.
 - Tab and Shift+Tab move focus out of the editor, so it is never a keyboard trap; in a list item they indent and outdent it, and move focus on once the item can't move further. ⌘/Ctrl+Enter submits.
 - The "/" menu is UI SDK's trigger menu, a listbox at the caret: ↑ ↓ move, Enter picks, Escape closes it. Its groups have labels, and a search with no match says "No matching blocks".
-- The toolbar is the kit's `Toolbar` named "Formatting": one Tab stop, arrow keys between buttons, each button named ("Bold", "Inline code", "Link") and a toggle (`aria-pressed`) while the selection is in that mark. The link button opens a popover with a named URL field.
+- The toolbar is the kit's `Toolbar` named "Formatting": one Tab stop, arrow keys between buttons, each button named ("Bold", "Inline code", "Link"). Bold, italic, strikethrough and code are toggles (`ToolbarToggle`, `aria-pressed`), drawn filled while the selection is in that mark. The link button is a popup trigger, not a toggle: while the caret is in a link it is filled the same way and described as "In a link"; it opens a popover with a named URL field.
 - A checklist row's checkbox is a `button` with `role="checkbox"`, named after its item ("Snap detents: Verified" style names come from the item's text and state).
 - Read-only stays focusable and selectable (and in the tab order), so its text can be read and copied; disabled leaves the tab order.
 

@@ -88,4 +88,19 @@ mesh.min, mesh.max    // bounds, in the file's units
 | `tint` | the inherited `color` | The model's color: any CSS color. |
 | `autoRotate` | `true` | Turn slowly until the reader interacts. Off under reduced motion. |
 | `className` · `style` · `ref` | — | On the outer `<figure>`. |
+| `id`, `data-*`, `aria-describedby`… | — | The rest of a `<figure>`'s props reach the root. |
 | `aria-label` | `title` | Names the figure and its canvas, when the title isn't the name you want. |
+
+## Accessibility
+
+- The root is a `figure`, named by `aria-label` when you pass one; otherwise its caption, the file link, names it.
+- The canvas is the control: one Tab stop named "<name>: 3D model" (`aria-roledescription="3D viewer"`), described by how to use it. Drag, or ←/→ and ↑/↓, turn the model; `+` and `-` zoom; `0` puts it back. A pinch or ⌘/Ctrl-scroll zooms, and a double-click goes home; plain scrolling scrolls the page.
+- **Reset** is a button named "Reset view". On a touch screen its hit area reaches 44px while the pill keeps its size.
+- While the file loads the stage is a polite `status` ("Loading bracket.stl…"); a file that can't be read is an `alert` that says why.
+- `autoRotate` stops at the first interaction, and never starts under `prefers-reduced-motion`.
+
+## Data attributes
+
+| Attribute | On | Values |
+| --- | --- | --- |
+| `data-state` | the root `figure` (`.docstream-stl`) | `loading`, `ready`, `error` |

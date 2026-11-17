@@ -17,7 +17,7 @@ import { DiagramChromeProvider, useDiagramChrome, useDiagramChromeInset, useDiag
 import type { DiagramHistory } from '@/lib/diagram-history';
 import { describeEdge, describeItem, describeNode, edgesByNode, fitViewport, nearestNode, stepFocus, viewportToShow, type DiagramItem, type DiagramStep } from '@/lib/diagram-keyboard';
 import {
-  DIAGRAM_SIDES, NOTHING_SELECTED, anchorNormal, anchorPoint, connectorPath, diagramBounds, diagramTextRuns, edgeGeometries, edgeGeometry, edgeLabelSize, hasEdgeLabel, holdsNodes, indexDiagram, itemKey, labelBoxAvoiding, moveNodes, nearestSide, nodeAnatomy, portPoint, rectIndex, regionDividers, renderWindow, roundedPolylineD, sectionKey, sizeNodesToText,
+  DIAGRAM_LEGIBLE_ZOOM, DIAGRAM_SIDES, NOTHING_SELECTED, anchorNormal, codeKey, anchorPoint, connectorPath, diagramBounds, diagramTextRuns, edgeGeometries, edgeGeometry, edgeLabelSize, hasEdgeLabel, holdsNodes, indexDiagram, itemKey, labelBoxAvoiding, moveNodes, nearestSide, nodeAnatomy, portPoint, rectIndex, regionDividers, renderWindow, roundedPolylineD, sectionKey, sizeNodesToText,
   type ConnectorEnd, type ConnectorGeometry, type DiagramConnection, type DiagramDivider, type DiagramEdge, type DiagramEdgeTone, type DiagramEdgeVariant, type DiagramGlyph, type DiagramIndex, type DiagramNode, type DiagramNodeKind, type DiagramNodeVariant, type DiagramPort, type DiagramSection, type DiagramSelection, type DiagramSide, type DiagramTone,
 } from '@/lib/diagram-model';
 import {
@@ -34,6 +34,13 @@ export { useDiagramHistory } from '@/lib/diagram-history';
 export type { DiagramHistory, DiagramHistoryChangeDetails, DiagramHistoryOptions, UseDiagramHistory } from '@/lib/diagram-history';
 export type { DiagramController, DiagramData, DiagramDataChangeDetails, DiagramDataChangeReason, DiagramSelectionChangeDetails, DiagramSelectionChangeReason } from '@/lib/diagram-primitive';
 export type { DiagramItem } from '@/lib/diagram-keyboard';
+
+/** Why `onAction` was called, and for a press, on what: an edge's whole `label`, or an `item` (a chip). */
+export interface DiagramActionDetails {
+  reason: 'enter-key' | 'double-click' | 'press';
+  event: Event;
+  part?: 'label' | 'item';
+}
 
 /* ══ Diagram — nodes, edges, labels and regions on the Canvas ══
    Hand it nodes and edges as plain data (`@/lib/diagram-model`) and it draws them on a `Canvas`, so the view, the
@@ -75,7 +82,8 @@ export const diagramNodeVariants = cva('relative size-full', {
     variant: {
       default: '',
       dashed: 'border-dashed',
-      double: 'border-2 border-foreground outline-1 -outline-offset-4 outline-foreground',
+      // A hairline inside the border, in the border's color: quiet, so it's never read as selected or focused.
+      double: 'outline-1 -outline-offset-4 outline-border',
     },
   },
   defaultVariants: { kind: 'node', variant: 'default' },
@@ -159,7 +167,7 @@ export const diagramItemVariants = cva('flex max-w-full min-w-0 items-center gap
       muted: 'text-muted-foreground [&_[data-part=glyph]]:text-muted-foreground',
     },
     pressable: {
-      true: 'pointer-events-auto cursor-pointer transition-colors hover:bg-accent active:bg-secondary-strong',
+      true: 'pointer-events-auto cursor-pointer motion-safe:transition-colors hover:bg-accent active:bg-secondary-strong',
       false: '',
     },
   },
@@ -269,7 +277,7 @@ export function DiagramSections({ sections, owner, pressable = false, focused, c
                     className={cn(diagramItemVariants({ variant, tone, pressable }), ITEM_FOCUS, FAR_HIDDEN)}
                   >
                     {it.icon ? <span data-part="glyph" className="flex min-w-3 shrink-0 items-center justify-center"><Glyph glyph={it.icon} size={12} /></span> : null}
-                    <span className={cn('min-w-0 [overflow-wrap:anywhere]', variant === 'code' ? DIAGRAM_TEXT_CLASS.code : DIAGRAM_TEXT_CLASS.item)}>{it.title}</span>
+                    <span className={cn('min-w-0 [overflow-wrap:anywhere]', variant === 'code' ? DIAGRAM_TEXT_CLASS.code : DIAGRAM_TEXT_CLASS.item)}>{codeKey(it, variant === 'code')}</span>
                     {it.description ? <span className={cn('min-w-0 text-muted-foreground [overflow-wrap:anywhere]', variant === 'code' ? DIAGRAM_TEXT_CLASS.code : DIAGRAM_TEXT_CLASS.description)}>{it.description}</span> : null}
                   </div>
                 );
@@ -330,7 +338,8 @@ export function DiagramNodeBody({ node, pressable: pressableProp, focusedItem: f
           node={node}
           className={cn(
             body && kind !== 'region' && 'border-b border-border',
-            kind === 'region' ? 'text-muted-foreground' : container ? 'bg-secondary' : 'bg-secondary/70',
+            // A strip on a card with sections, as on a box; a card that's only its header is all strip.
+            kind === 'region' ? 'text-muted-foreground' : 'bg-secondary-strong',
             // A card that's only its header fills its box, however big it's drawn.
             !body && !container && 'flex-1 justify-center [&>[data-slot=diagram-node-title]]:flex-initial [&>[data-slot=diagram-node-title]]:text-center',
             kind === 'region' && '[&>[data-slot=diagram-node-title]]:font-medium',
@@ -462,22 +471,28 @@ interface EdgeLabelProps {
   selected?: boolean;
   focused?: boolean;
   current?: boolean;
+  /** Whether its chips can be pressed, one by one. */
   pressable?: boolean;
+  /** Whether the label as a whole can be pressed (`DiagramProps.pressable`). */
+  pressableLabel?: boolean;
   focusedItem?: string;
 }
 
 const sameEdgeLabel = (a: EdgeLabelProps, b: EdgeLabelProps) =>
   a.edge.id === b.edge.id && a.edge.title === b.edge.title && a.edge.icon === b.edge.icon && a.edge.sections === b.edge.sections && a.edge.tone === b.edge.tone
   && a.box.x === b.box.x && a.box.y === b.box.y && a.box.w === b.box.w && a.box.h === b.box.h
-  && a.selected === b.selected && a.focused === b.focused && a.current === b.current && a.pressable === b.pressable && a.focusedItem === b.focusedItem;
+  && a.selected === b.selected && a.focused === b.focused && a.current === b.current && a.pressable === b.pressable && a.pressableLabel === b.pressableLabel && a.focusedItem === b.focusedItem;
 
 const LABEL_SELECTED = 'border-primary [box-shadow:0_0_0_1px_var(--primary)]';
+/** A label that does something when pressed: a primary ring two lines thick, a play badge on its corner (so it isn't told by
+ *  color alone), and hover and press looks. */
+const LABEL_PRESSABLE = 'pointer-events-auto cursor-pointer border-primary [box-shadow:0_0_0_1px_var(--primary)] motion-safe:transition-colors hover:bg-primary/8 active:bg-primary/15';
 const LABEL_FOCUSED = '[box-shadow:0_0_0_2px_var(--background),0_0_0_4px_var(--ring)]';
 const LABEL_FOCUSED_SELECTED = 'border-primary [box-shadow:0_0_0_1px_var(--primary),0_0_0_3px_var(--background),0_0_0_5px_var(--ring)]';
 
 /** An edge's label: a pill, or a card with its items. It's part of its edge: pressing it presses the edge, and the edge's
  *  name says what it says. */
-const EdgeLabel = memo(function EdgeLabel({ edge, box, selected, focused, current, pressable = false, focusedItem }: EdgeLabelProps) {
+const EdgeLabel = memo(function EdgeLabel({ edge, box, selected, focused, current, pressable = false, pressableLabel = false, focusedItem }: EdgeLabelProps) {
   const sections = edge.sections?.some((s) => s.items.length || s.title) ? edge.sections : undefined;
   const shape = sections ? 'card' : 'pill';
   return (
@@ -489,10 +504,12 @@ const EdgeLabel = memo(function EdgeLabel({ edge, box, selected, focused, curren
       data-selected={selected ? '' : undefined}
       data-focused={focused ? '' : undefined}
       data-current={current ? '' : undefined}
-      // The edge's own name says this, along with what it joins.
+      data-pressable={pressableLabel ? '' : undefined}
+      // The edge's own name says this, along with what it joins, and Enter on the edge presses it.
       aria-hidden="true"
       className={cn(
         diagramEdgeLabelVariants({ shape }),
+        pressableLabel && LABEL_PRESSABLE,
         'group-data-[zoom=far]/diagram:hidden group-data-[zoom=mid]/diagram:hidden',
         edge.tone === 'destructive' && 'border-dashed border-destructive/60',
         current && 'border-primary',
@@ -506,7 +523,12 @@ const EdgeLabel = memo(function EdgeLabel({ edge, box, selected, focused, curren
           {edge.title}
         </div>
       ) : null}
-      {sections ? <DiagramSections sections={sections} owner={{ kind: 'edge', id: edge.id }} pressable={pressable} focused={focusedItem} className="gap-2 self-stretch" /> : null}
+      {sections ? <DiagramSections sections={sections} owner={{ kind: 'edge', id: edge.id }} pressable={pressable && !pressableLabel} focused={focusedItem} className="gap-2 self-stretch" /> : null}
+      {pressableLabel ? (
+        <span data-part="press" className="pointer-events-none absolute -top-2 -left-2 grid size-4 place-items-center rounded-full bg-primary text-primary-foreground shadow-hairline">
+          <Icon name="play" size={9} />
+        </span>
+      ) : null}
     </div>
   );
 }, sameEdgeLabel);
@@ -580,9 +602,12 @@ interface Laid<N, E> {
 /** A route's path data: a curve as it is, and anything square with its corners rounded. */
 const routeD = (edge: DiagramEdge<unknown>, g: ConnectorGeometry) => ((edge.route === 'curve' && !edge.points) ? g.d : roundedPolylineD(g.pts, ROUTE_RADIUS));
 
-function layOut<N, E>(nodes: readonly DiagramNode<N>[], edges: readonly DiagramEdge<E>[], text: TextMeasurer): Laid<N, E> {
+/** Up to this many nodes and edges, hand-placed edges go round the cards in their way (not while something's dragged). */
+const AVOID_UP_TO = 200;
+
+function layOut<N, E>(nodes: readonly DiagramNode<N>[], edges: readonly DiagramEdge<E>[], text: TextMeasurer, moving = false): Laid<N, E> {
   const index = indexDiagram(nodes);
-  const geometries = edgeGeometries(edges, index);
+  const geometries = edgeGeometries(edges, index, { avoid: !moving && nodes.length + edges.length <= AVOID_UP_TO });
   const drawn: Laid<N, E>['edges'] = [];
   const labels: Laid<N, E>['labels'] = [];
   // A label sits on its route, the edge running into it and out of it: where a layout put it if that's clear, or else
@@ -707,10 +732,13 @@ export interface DiagramProps<N = unknown, E = unknown> extends Pick<CanvasProps
   isValidConnection?: (connection: DiagramConnection) => boolean | string;
   /** Makes the edge for a new connection. The default's an edge with only its ends and an id. */
   createEdge?: (connection: DiagramConnection) => DiagramEdge<E>;
-  /** Enter on a focused node or edge, or a double click. */
-  /** Enter on a focused node, edge or item, a double click, or (`press`) a press on an item of an `editable` diagram,
-   *  whose items are pressable when this is given. An item comes with its `section` and `item` addresses. */
-  onAction?: (item: DiagramItem, details: { reason: 'enter-key' | 'double-click' | 'press'; event: Event }) => void;
+  /** Enter on a focused node, edge or item, a double click, or a press (`press`) on what `pressable` says can be: an edge's
+   *  label (`details.part` `label`, the item is the edge) or a chip (`item`, with its `section` and `item` addresses). */
+  onAction?: (item: DiagramItem, details: DiagramActionDetails) => void;
+  /** What a press acts on, read-only too: `true` for every card's chips and every edge's label as a whole; a selection for
+   *  the chips of those nodes and the labels of those edges (a simulation's transitions it can take now). A pressable label
+   *  has a primary ring and a play badge. An `editable` diagram with `onAction` has pressable chips as well. */
+  pressable?: boolean | DiagramSelection;
   /** What a screen reader calls a node (default `node`): a state, a service. */
   noun?: string;
   /** What a screen reader says for a node. The default says what it is, what it's in and what it connects to. */
@@ -768,10 +796,28 @@ function useDiagramText(host: RefObject<HTMLElement | null>, nodes: readonly Dia
   return text;
 }
 
+/** Where a diagram opens, until the view's moved: all of it, centered, when that can be read; otherwise at the least size
+ *  that can be read, from its top, across its width (centered) when that fits, to be scrolled. Never past 100%, and always
+ *  clear of the chrome. */
+function firstView(box: Rect | null, size: { width: number; height: number }, pad: DiagramInsets, start?: Rect | null): Viewport {
+  const fit = fitViewport(box, size, pad);
+  if (!box || box.w <= 0 || box.h <= 0 || fit.zoom >= DIAGRAM_LEGIBLE_ZOOM) return fit;
+  const room = Math.max(1, size.width - pad.left - pad.right);
+  const zoom = DIAGRAM_LEGIBLE_ZOOM;
+  let x = box.w * zoom <= room ? pad.left + (room - box.w * zoom) / 2 - box.x * zoom : pad.left - box.x * zoom;
+  // Wider than the board: from its start edge, unless where it starts (its first entry marker) would be past the other,
+  // and then with that in the middle, as far as the drawing goes.
+  if (start && box.w * zoom > room && (start.x + start.w) * zoom + x > pad.left + room) {
+    const centered = pad.left + room / 2 - (start.x + start.w / 2) * zoom;
+    x = Math.min(pad.left - box.x * zoom, Math.max(centered, pad.left + room - (box.x + box.w) * zoom));
+  }
+  return { zoom, x, y: pad.top - box.y * zoom };
+}
+
 /** A diagram on a `Canvas`. Sits in its host like any BL UI container: it fills the nearest positioned box. */
 export function Diagram<N = unknown, E = unknown>({
   nodes: givenNodes, edges: givenEdges, defaultNodes = EMPTY, defaultEdges = EMPTY, onDataChange, selectable = true, editable = false, movable: movableProp, history: givenHistory, portsOnly = false, connectable: connectableProp,
-  isValidConnection, createEdge, selection: selectionProp, defaultSelection = NOTHING_SELECTED, current = NOTHING_SELECTED, onSelectionChange, onAction, noun, describeNode: nodeLabel, describeEdge: edgeLabel,
+  isValidConnection, createEdge, selection: selectionProp, defaultSelection = NOTHING_SELECTED, current = NOTHING_SELECTED, onSelectionChange, onAction, pressable: pressableProp, noun, describeNode: nodeLabel, describeEdge: edgeLabel,
   viewport: controlled, defaultViewport, onViewportChange, fitPadding = 24, autoSize, cull, minimap, renderNode, emptyState, loading = false, error, controller,
   background, panning, autoFocus, 'aria-label': ariaLabel = 'Diagram', overlay, children, className, style, ref: refProp,
 }: DiagramProps<N, E>) {
@@ -820,10 +866,14 @@ export function Diagram<N = unknown, E = unknown>({
 
   const shown = draft ?? data;
   const text = useDiagramText(ref, shown.nodes, shown.edges, !!autoSize || shown.edges.some((e) => !e.labelBox && hasEdgeLabel(e)));
-  /** Items can be pressed in an editable diagram that says what a press does. */
-  const pressable = editable && !!onAction;
+  /** What can be pressed: chips in an editable diagram that says what a press does, and whatever `pressable` names. */
+  const chipsEverywhere = (editable && !!onAction) || pressableProp === true;
+  const pressSets = useMemo(() => (typeof pressableProp === 'object' ? { nodes: new Set(pressableProp.nodes), edges: new Set(pressableProp.edges) } : null), [pressableProp]);
+  const chipsOf = (id: string) => chipsEverywhere || !!pressSets?.nodes.has(id);
+  const labelPressable = (id: string) => pressableProp === true || !!pressSets?.edges.has(id);
+  const pressable = chipsEverywhere || !!pressSets?.nodes.size;
   const nodes = useMemo(() => (autoSize ? sizeNodesToText(shown.nodes, text) : shown.nodes), [autoSize, shown.nodes, text]);
-  const laid = useMemo(() => layOut(nodes, shown.edges, text), [nodes, shown.edges, text]);
+  const laid = useMemo(() => layOut(nodes, shown.edges, text, !!draft), [nodes, shown.edges, text, draft]);
 
   /* ── The chrome over the board (its toolbar, its minimap, a frame's bar) and the room a fit leaves for it ── */
   // A frame's board around it is a scope too (its bar), and in one, the board's foot is the bar's.
@@ -842,7 +892,17 @@ export function Diagram<N = unknown, E = unknown>({
   // `fitKey` stands for `fitInsets`, a new object each render.
   const fitPad = useMemo(() => fitInsets, [fitKey]);
 
-  const viewport = controlled ?? own ?? fitViewport(laid.bounds, size, fitPad);
+  // Where it starts: the first entry marker, the highest of the shallowest.
+  const start = useMemo(() => {
+    let best: DiagramNode<N> | null = null;
+    for (const n of laid.index.nodes) {
+      if (!n.entry) continue;
+      const d = laid.index.depth.get(n.id) ?? 0, bd = best ? laid.index.depth.get(best.id) ?? 0 : Infinity;
+      if (!best || d < bd || (d === bd && n.y < best.y)) best = n;
+    }
+    return best ? { x: best.x - 22, y: best.y - 16, w: best.w + 22, h: best.h + 16 } : null;
+  }, [laid.index]);
+  const viewport = controlled ?? own ?? firstView(laid.bounds, size, fitPad, start);
   const viewportRef = useRef(viewport);
   viewportRef.current = viewport;
   /** Every move of the view comes through the canvas, ours included (the keys following focus go through its
@@ -874,7 +934,7 @@ export function Diagram<N = unknown, E = unknown>({
   const gestureContext = () => ({ index: laid.index, selection: selectionRef.current, zoom: viewport.zoom, editable: movable, connect: connectContext });
   const nameOf = (id: string) => laid.index.byId.get(id)?.title || id;
   /** A press that started on an item, to report if it ends without a drag. */
-  const pressedItem = useRef<{ item: DiagramItem; at: Pt } | null>(null);
+  const pressedItem = useRef<{ item: DiagramItem; part: 'label' | 'item'; at: Pt } | null>(null);
   const send = (event: DiagramGestureEvent, cause?: Event) => {
     // A view that's still fitting the content stops at the first press, or dragging would move the view under the pointer.
     if (event.type === 'down' && !controlled && !own) setOwn(viewport);
@@ -923,12 +983,15 @@ export function Diagram<N = unknown, E = unknown>({
   const pointerProps: Pick<CanvasProps, 'onCanvasPointerDown' | 'onCanvasPointerMove' | 'onCanvasPointerUp' | 'onNavigationStart'> = interactive ? {
     onCanvasPointerDown: (e: PointerEvent, { board, screen }: CanvasPointerInfo) => {
       const hit = hitAt(board, true);
-      const chip = pressable ? (e.target as Element | null)?.closest?.('[data-slot=diagram-item][data-pressable]') : null;
+      const target = e.target as Element | null;
+      const chip = target?.closest?.('[data-slot=diagram-item][data-pressable]');
       const owner = chip?.closest('[data-slot=diagram-node],[data-slot=diagram-edge-label]');
+      const label = chip ? null : target?.closest?.('[data-slot=diagram-edge-label][data-pressable]');
       pressedItem.current = chip && owner ? {
         item: { kind: owner.getAttribute('data-slot') === 'diagram-node' ? 'node' : 'edge', id: owner.getAttribute(owner.getAttribute('data-slot') === 'diagram-node' ? 'data-node' : 'data-edge') ?? '', section: chip.getAttribute('data-section') ?? '', item: chip.getAttribute('data-item') ?? '' },
+        part: 'item',
         at: { x: e.clientX, y: e.clientY },
-      } : null;
+      } : label ? { item: { kind: 'edge', id: label.getAttribute('data-edge') ?? '' }, part: 'label', at: { x: e.clientX, y: e.clientY } } : null;
       // A press ends connecting by keyboard, and the keys carry on from what was pressed.
       cancel();
       setRingOn(null);
@@ -941,7 +1004,7 @@ export function Diagram<N = unknown, E = unknown>({
       const pressed = pressedItem.current;
       pressedItem.current = null;
       // An item pressed without a drag: the owner's selected by the press, and the item is what's reported.
-      if (pressed && e.type !== 'pointercancel' && Math.hypot(e.clientX - pressed.at.x, e.clientY - pressed.at.y) < 6) onAction?.(pressed.item, { reason: 'press', event: e });
+      if (pressed && e.type !== 'pointercancel' && Math.hypot(e.clientX - pressed.at.x, e.clientY - pressed.at.y) < 6) onAction?.(pressed.item, { reason: 'press', event: e, part: pressed.part });
     },
     onNavigationStart: cancel,
   } : {};
@@ -1174,12 +1237,12 @@ export function Diagram<N = unknown, E = unknown>({
   const drawn = useMemo(() => (drawWindow ? within(laid, drawWindow, kept) : laid), [laid, drawWindow, kept]);
   // Each kept in a memo, so a view that only moves changes none of them, and what depends on the zoom is one attribute.
   const nodeView = (n: DiagramNode<any>) => (
-    <NodeView key={n.id} node={n} selected={selectedSets.nodes.has(n.id)} selectable={selectable} current={currentSets.nodes.has(n.id)} pressable={pressable} focusedItem={ringOn?.kind === 'node' && ringOn.id === n.id && ringOn.item !== undefined ? `${ringOn.section}\0${ringOn.item}` : undefined} renderNode={renderNode as NodeViewProps['renderNode']} label={(nodeLabel as DiagramProps<any, any>['describeNode'])?.(n) ?? describeNode(n, laid.index, laid.edgesAt.get(n.id), noun)} />
+    <NodeView key={n.id} node={n} selected={selectedSets.nodes.has(n.id)} selectable={selectable} current={currentSets.nodes.has(n.id)} pressable={chipsOf(n.id)} focusedItem={ringOn?.kind === 'node' && ringOn.id === n.id && ringOn.item !== undefined ? `${ringOn.section}\0${ringOn.item}` : undefined} renderNode={renderNode as NodeViewProps['renderNode']} label={(nodeLabel as DiagramProps<any, any>['describeNode'])?.(n) ?? describeNode(n, laid.index, laid.edgesAt.get(n.id), noun)} />
   );
   const containers = useMemo(() => drawn.containers.map(nodeView),
-    [drawn.containers, selectedSets.nodes, currentSets.nodes, selectable, pressable, ringOn, renderNode, nodeLabel, noun, laid.edgesAt]);
+    [drawn.containers, selectedSets.nodes, currentSets.nodes, selectable, chipsEverywhere, pressSets, ringOn, renderNode, nodeLabel, noun, laid.edgesAt]);
   const leaves = useMemo(() => drawn.leaves.map(nodeView),
-    [drawn.leaves, selectedSets.nodes, currentSets.nodes, selectable, pressable, ringOn, renderNode, nodeLabel, noun, laid.edgesAt]);
+    [drawn.leaves, selectedSets.nodes, currentSets.nodes, selectable, chipsEverywhere, pressSets, ringOn, renderNode, nodeLabel, noun, laid.edgesAt]);
   const lines = useMemo(() => (
     <>
       <defs>
@@ -1204,11 +1267,11 @@ export function Diagram<N = unknown, E = unknown>({
     const on = ringOn?.kind === 'edge' && ringOn.id === edge.id ? ringOn : null;
     return (
       <EdgeLabel
-        key={edge.id} edge={edge} box={box} selected={selectedSets.edges.has(edge.id)} current={currentSets.edges.has(edge.id)} pressable={pressable}
+        key={edge.id} edge={edge} box={box} selected={selectedSets.edges.has(edge.id)} current={currentSets.edges.has(edge.id)} pressable={chipsEverywhere} pressableLabel={labelPressable(edge.id)}
         focused={!!on && on.item === undefined} focusedItem={on && on.item !== undefined ? `${on.section}\0${on.item}` : undefined}
       />
     );
-  }), [drawn.labels, selectedSets.edges, currentSets.edges, pressable, ringOn]);
+  }), [drawn.labels, selectedSets.edges, currentSets.edges, chipsEverywhere, pressableProp, pressSets, ringOn]);
   const rings = useMemo(() => {
     const all = drawn.containers.concat(drawn.leaves);
     // Current first, so that a selection's line goes over it.

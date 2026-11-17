@@ -80,7 +80,7 @@ export default function ProjectFolder() {
         >
           <GitbookEditor
             markdown={markdown}
-            onChange={setMarkdown}
+            onValueChange={setMarkdown}
             toolbar={false}
             documentProperties={false}
             resolveAsset={project.resolveAsset}

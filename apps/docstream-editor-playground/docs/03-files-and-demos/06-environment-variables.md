@@ -32,7 +32,7 @@ const envHost: DocstreamEnvHost = {
   request: async (names) => ({ GITHUB_TOKEN: await signInWithGitHub() }),
 }
 
-<GitbookEditor markdown={markdown} onChange={setMarkdown} demoResolver={demos} envHost={envHost} />
+<GitbookEditor markdown={markdown} onValueChange={setMarkdown} demoResolver={demos} envHost={envHost} />
 ```
 
 Inside a page that already has a host (as here), the editor uses that one. Without any host, the gate asks for the values and keeps them in memory.

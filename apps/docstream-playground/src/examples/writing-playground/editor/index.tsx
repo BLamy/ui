@@ -67,7 +67,7 @@ export default function MarkdownPlayground({ variant = "basics" }: { variant?: s
             <DocumentProperties
               properties={doc.properties}
               defaultOpen
-              onChange={(properties) => setSource(serializeMarkdown({ ...doc, properties }))}
+              onValueChange={(properties) => setSource(serializeMarkdown({ ...doc, properties }))}
             />
           ) : null}
           <DocsRenderer doc={doc} documentProperties={false} onTaskStateChange={onTaskStateChange} />

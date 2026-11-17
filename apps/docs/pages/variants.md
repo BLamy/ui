@@ -1,6 +1,6 @@
 # Variants reference
 
-Every BL UI component is a [cva](https://cva.style) recipe. This page is generated from the source (102 recipes) — the same functions you can call on any element, and the defaults you can edit in your installed copy. See [Styling and variants](https://blamy.github.io/ui/#/styling) for how to use, compose and change them.
+Every BL UI component is a [cva](https://cva.style) recipe. This page is generated from the source (103 recipes) — the same functions you can call on any element, and the defaults you can edit in your installed copy. See [Styling and variants](https://blamy.github.io/ui/#/styling) for how to use, compose and change them.
 
 ```tsx
 import { buttonVariants } from '@/components/ui/button'
@@ -204,6 +204,23 @@ flex w-fit max-w-full flex-col text-foreground data-disabled:opacity-50
 | --- | --- |
 | `plain` (default) | — |
 | `card` | `rounded-panel bg-secondary p-3` |
+
+## Canvas
+
+### `canvasFrameVariants`
+
+Defined in `@/components/ui/canvas`. Base classes:
+
+```text
+pointer-events-none absolute rounded-(--canvas-frame-radius) outline-(length:--canvas-frame-line) outline-offset-(--canvas-frame-offset) outline-primary
+```
+
+**`variant`** — default `default`
+
+| Value | Adds |
+| --- | --- |
+| `default` (default) | `outline-solid` |
+| `dashed` | `outline-dashed` |
 
 ## Card
 
@@ -460,7 +477,7 @@ relative size-full
 | --- | --- |
 | `default` (default) | — |
 | `dashed` | `border-dashed` |
-| `double` | `border-2 border-foreground outline-1 -outline-offset-4 outline-foreground` |
+| `double` | `outline-1 -outline-offset-4 outline-border` |
 
 ### `diagramEdgeVariants`
 
@@ -518,7 +535,7 @@ flex max-w-full min-w-0 items-center gap-1.5
 
 | Value | Adds |
 | --- | --- |
-| `true` | `pointer-events-auto cursor-pointer transition-colors hover:bg-accent active:bg-secondary-strong` |
+| `true` | `pointer-events-auto cursor-pointer motion-safe:transition-colors hover:bg-accent active:bg-secondary-strong` |
 | `false` (default) | — |
 
 1 compound variant — see the source.

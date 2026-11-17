@@ -7,7 +7,12 @@
    Since 2026-11-16 docstream and docstream-editor are part of @brett_lamy/ui (the owner's decision): they ship as the
    library's entries (`@brett_lamy/ui/docstream/<entry>`, `@brett_lamy/ui/docstream-editor/<entry>`), and their own npm
    packages stop at 2.0.1. They stay libraries here, with their own docs, because they are one: the core never needs
-   them to draw a button, and they never import the core.
+   them to draw a button, and they import only the foundation (Tokens, Icons) and, through the package's own entries,
+   the few core modules SPLIT_CHANGES lists (the capnp fence's lazy `@brett_lamy/ui/cloudflare`, the xstate fence's
+   readers), each of which the split replaces with an optional peer or a dependency (CONVENTIONS rule 7).
+
+   `external` is every npm package a library's own modules import that the libraries it builds on don't already
+   bring, marked "(optional peer)" when @brett_lamy/ui declares it one; libraries.test.ts checks both.
 
    Node reads this file too (type stripping), so it holds only erasable TypeScript: no enums, type-only imports. */
 import type { IconName } from '@/lib/icon';
@@ -70,9 +75,9 @@ export const LIBRARIES: Library[] = [
   {
     id: 'tokens', name: 'Tokens', npm: '@brett_lamy/tokens', category: 'foundation', status: 'planned', icon: 'drop',
     tagline: 'Design tokens, themes, size classes and the class helpers everything else uses.',
-    description: 'The single source of color, type, radius, shadow and spring timing: tokens.css generates its TypeScript twin, the bl-theme maps it onto Tailwind v4, and BLProvider, ThemeScope and `appearance` retint any subtree. The size-class scope (`compact` / `medium` / `regular`, measured on a container, never the viewport) lives here too, because the providers are what measure it, and so does the synchronous syntax lexer whose token classes the shared syntax palette colors (CodeEditor and docstream\'s fences both use it).',
-    dependsOn: ['ui-sdk'], external: ['clsx', 'tailwind-merge', 'class-variance-authority'],
-    modules: ['lib/tokens.generated.ts', 'lib/utils.ts', 'lib/theme.tsx', 'lib/theme-context.tsx', 'lib/primitives.ts', 'lib/size-class.ts', 'lib/container.ts', 'lib/syntax-lexer.ts'],
+    description: 'The single source of color, type, radius, shadow and spring timing: tokens.css generates its TypeScript twin, the bl-theme maps it onto Tailwind v4, and BLProvider, ThemeScope and `appearance` retint any subtree. The size-class scope (`compact` / `medium` / `regular`, measured on a container, never the viewport) lives here too, because the providers are what measure it, and so does syntax lexing, whose token classes the shared syntax palette colors: gpu-lexer behind one queue and adapter probe, with the synchronous lexer as its fallback (CodeEditor, docstream\'s fences, the editor and the replay DevTools all lex through it). The change details every kit callback hands out (`changeDetails`) are here too.',
+    dependsOn: ['ui-sdk'], external: ['clsx', 'tailwind-merge', 'class-variance-authority', 'gpu-lexer'],
+    modules: ['lib/tokens.generated.ts', 'lib/utils.ts', 'lib/theme.tsx', 'lib/theme-context.tsx', 'lib/primitives.ts', 'lib/size-class.ts', 'lib/container.ts', 'lib/syntax-lexer.ts', 'lib/syntax.ts', 'lib/webgpu.ts', 'lib/change-details.ts'],
     highlights: ['tokens.css → tokens.generated.ts, one source of truth', 'BLProvider, ThemeScope, `appearance` and `tint`', 'Size classes from a container\'s own box', '`cn`, `cx` and the shared focus and surface recipes'],
   },
   {
@@ -101,7 +106,7 @@ export const LIBRARIES: Library[] = [
     tagline: 'iOS-flavored components on UI SDK and Tailwind v4.',
     description: 'The core: controls, fields and pickers, the popups (Dialog with its views, Sheet, Popover, DropdownMenu, Select, Combobox, Toast) and the containers that make an app feel native — NavigationStack, SplitView, Tabs, AdaptivePane, Sidebar, List, Toolbar, DataTable — plus the workbench and debugging parts, and MarkdownView and MarkdownEditor on docstream. Every module is its own entry (`@brett_lamy/ui/dialog`) and its own shadcn registry item. After the split it keeps this core, with docstream and its editor; the libraries beside it take the rest.',
     dependsOn: ['ui-sdk', 'tokens', 'motion', 'icons', 'docstream', 'docstream-editor'],
-    external: ['class-variance-authority', '@wterm/*', 'gpu-lexer', '@vscode/codicons'],
+    external: ['class-variance-authority', '@wterm/*', '@vscode/codicons'],
     highlights: ['NavigationStack, SplitView, Tabs, AdaptivePane, Sidebar, Dialog flows', 'One spelling per concept: `size`, `variant`, `tone`, `side`, `presentation`', 'Responsive by container: a sheet in a compact column, a popover in a wide one', 'Install from npm, or copy the source with the shadcn registry'],
   },
   {
@@ -124,7 +129,7 @@ export const LIBRARIES: Library[] = [
     id: 'diagram', name: 'Diagram', npm: '@brett_lamy/diagram', category: 'ui', status: 'planned', icon: 'network',
     tagline: 'Diagrams you can edit, state machines you can run, and Cloudflare systems.',
     description: 'Diagram, an editable node-and-edge drawing on Canvas with automatic layout (elkjs) and keyboard editing; DiagramFrame, the editor chrome around it; StateDiagram, which draws an xstate machine, edits it and simulates it; and CloudflareDiagram with the Cloudflare catalog, which reads and writes wrangler and workerd configs. The catalog is about 150 KB, so it has an entry of its own (`@brett_lamy/ui/cloudflare` today).',
-    dependsOn: ['ui', 'canvas'], external: ['elkjs', 'xstate', 'jsonc-parser'],
+    dependsOn: ['ui', 'canvas'], external: ['elkjs (optional peer)', 'xstate (optional peer)', 'jsonc-parser', '@babel/parser'],
     modules: ['components/diagram*', 'components/state-diagram.tsx', 'components/cloudflare-diagram.tsx', 'lib/diagram-*', 'lib/state-diagram-*', 'lib/cloudflare-*', 'lib/use-font-version.ts', 'cloudflare.ts'],
     highlights: ['Automatic layout, keyboard editing, a minimap', 'Run an xstate machine on its own diagram', 'Cloudflare systems from wrangler.jsonc and workerd configs'],
   },
@@ -146,8 +151,9 @@ export const LIBRARIES: Library[] = [
     formerly: [{ npm: '@brett_lamy/docstream', last: '2.0.1' }],
     tagline: 'GitBook-flavored Markdown that renders while it streams.',
     description: 'A Markdown renderer for docs and AI answers: GitBook blocks (hints, tabs, steppers, cards), live React demos backed by real files, math, Mermaid, xstate machines and workerd configs drawn as diagrams, OpenAPI operations, citations, embeds, session replays and 3D models — and DocsSite, which turns a folder of Markdown into a site like this one. Part of @brett_lamy/ui since 6.0: import it from `@brett_lamy/ui/docstream` and its entries (`/site`, `/gitbook`, `/replay`…).',
-    // Its glyphs are the kit's Icon set and its fences' synchronous lexer is the kit's (lib/syntax-lexer, with Tokens).
-    dependsOn: ['ui-sdk', 'tokens', 'icons'], external: ['katex', 'yaml', 'rrweb', 'gpu-lexer', 'pele', 'acorn', '@babel/parser', 'framer-motion', 'xstate', '@strudel/web', '@brett_lamy/viz-engine (optional peer)'],
+    // Its glyphs are the kit's Icon set, and its lexing (lib/syntax) and callbacks' details (lib/change-details) are the kit's, with Tokens.
+    dependsOn: ['ui-sdk', 'tokens', 'icons'],
+    external: ['katex', 'yaml', 'rrweb', 'pele', 'acorn', 'framer-motion', 'xstate (optional peer)', '@strudel/web', '@brett_lamy/viz-engine (optional peer)', '@agent-wasm/core (optional peer)', 'vite (optional peer)'],
     modules: ['docstream/'],
     highlights: ['Streams safely: unfinished blocks render as they arrive', 'Live demos from real files, in an in-browser Vite', 'DocsSite: a GitBook-style site from a folder of Markdown', 'Byte-for-byte round trip, Markdown ↔ AST'],
   },
@@ -267,10 +273,14 @@ export const SPLIT_CHANGES: Array<{ unit: string; imports: string; change: strin
   },
   {
     unit: 'docstream/', imports: '@brett_lamy/ui/lib/state-diagram-source',
-    change: 'Docstream\'s xstate fence reads a machine\'s source with the kit\'s `parseXState`, so the fence and StateDiagram read a machine one way. After the split it comes from `@brett_lamy/diagram/state-diagram-source` (Babel only, no ELK), as a dependency of docstream\'s xstate entry.',
+    change: 'Docstream\'s xstate fence writes its text form (the Mermaid statechart it shows where the diagram can\'t load) from a machine read by the kit\'s `parseXState`, so the fence and StateDiagram read a machine one way, in a module (`xstate/machine`) the fence loads lazily. Diagram builds on ui, so docstream (in ui) can\'t depend on it: after the split that module loads `@brett_lamy/diagram/state-diagram-source` (Babel only, no ELK) as an optional peer, as the capnp fence loads the Cloudflare entry. Without it the fence shows the machine\'s source.',
   },
   {
     unit: 'docstream/', imports: '@brett_lamy/ui/lib/state-diagram-model',
-    change: 'Docstream\'s xstate fence draws from the kit\'s `machineToDraft`, so the fence and StateDiagram label a machine one way. After the split it comes from `@brett_lamy/diagram/state-diagram-model` (no React, no ELK), as a dependency of docstream\'s xstate entry.',
+    change: 'Docstream\'s xstate fence writes its text form from the kit\'s `machineToDraft`, so the fence and StateDiagram label a machine one way, in the same lazily loaded module. After the split it loads `@brett_lamy/diagram/state-diagram-model` (no React, no ELK) the same way, as an optional peer: no package of the split needs another both ways.',
+  },
+  {
+    unit: 'docstream/', imports: '@brett_lamy/ui/state-diagram',
+    change: 'Docstream\'s xstate fence draws a machine with the kit\'s StateDiagram, read-only, which it loads lazily from `@brett_lamy/ui/state-diagram` when the first fence shows. Docstream ships in @brett_lamy/ui and Diagram doesn\'t, so after the split the fence loads `@brett_lamy/diagram/state-diagram` as an optional peer, the way the capnp fence loads `@brett_lamy/diagram/cloudflare`: without it the fence shows its text form, or the machine\'s source when that can\'t load either.',
   },
 ];

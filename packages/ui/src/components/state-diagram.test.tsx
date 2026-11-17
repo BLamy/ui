@@ -120,17 +120,20 @@ describe('StateDiagram', () => {
     render(<div style={{ position: 'relative', width: 900, height: 600 }}><StateDiagram config={{ id: 'bad', initial: 'nowhere', states: { a: {} } }} aria-label="Bad" /></div>);
     expect((await screen.findByRole('alert')).textContent).toMatch(/nowhere/);
   });
-  it('sends from the board: a transition it can take now is a button on its label, and pressing it moves on', async () => {
+  it('sends from the board: the label of a transition it can take now can be pressed, and pressing it moves on', async () => {
     render(<div style={{ position: 'relative', width: 900, height: 600 }}><StateDiagram machine={doors} simulate panelPresentation="column" aria-label="Door" /></div>);
-    const send = await screen.findByRole('button', { name: 'Send OPEN' });
-    expect(screen.getByRole('button', { name: 'Send LOCK' })).toBeTruthy();
-    expect(screen.queryByRole('button', { name: 'Send CLOSE' })).toBeNull();
-    // Said on the edge too, for a screen reader.
+    const sendable = () => [...document.querySelectorAll<HTMLElement>('[data-slot=diagram-edge-label][data-pressable]')].map((l) => l.textContent?.trim());
+    await waitFor(() => expect(sendable().sort()).toEqual(['LOCK', 'OPEN']));
+    // A ring and a play badge, not color alone; and said on the edge, for a screen reader, which Enter sends.
+    expect(document.querySelector('[data-slot=diagram-edge-label][data-pressable] [data-part=press]')).not.toBeNull();
     expect(await node(/^OPEN, edge from closed to open\. It can be sent now/)).toBeTruthy();
-    act(() => { fireEvent.click(send); });
+    const open = [...document.querySelectorAll<HTMLElement>('[data-slot=diagram-edge-label][data-pressable]')].find((l) => l.textContent?.trim() === 'OPEN')!;
+    act(() => {
+      fireEvent.pointerDown(open, { pointerId: 1, button: 0, clientX: 10, clientY: 10 });
+      fireEvent.pointerUp(open, { pointerId: 1, button: 0, clientX: 10, clientY: 10 });
+    });
     await waitFor(() => expect(screen.getByRole('button', { name: /^open, state\./ }).getAttribute('aria-current')).toBe('true'));
-    expect(await screen.findByRole('button', { name: 'Send CLOSE' })).toBeTruthy();
-    expect(screen.queryByRole('button', { name: 'Send OPEN' })).toBeNull();
+    await waitFor(() => expect(sendable()).toEqual(['CLOSE']));
   });
 
   it('shows the context as it is while it runs', async () => {

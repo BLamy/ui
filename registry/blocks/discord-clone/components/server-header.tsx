@@ -14,7 +14,7 @@ export interface ServerHeaderProps extends ComponentProps<'div'> {
 /** The server / workspace name at the top of the channel sidebar. */
 export function ServerHeader({ action, onClose, className, children, ...props }: ServerHeaderProps) {
   const shell = useOptionalChatShell();
-  const close = onClose ?? (shell?.compact ? () => shell.setNavOpen(false) : undefined);
+  const close = onClose ?? (shell?.sizeClass === 'compact' ? () => shell.setNavOpen(false) : undefined);
   return (
     <div
       data-slot="server-header"

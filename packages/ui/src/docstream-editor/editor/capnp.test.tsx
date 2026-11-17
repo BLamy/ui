@@ -34,7 +34,7 @@ describe("a workerd config in the editor", () => {
   it("draws its services beside the source, and follows what's typed", async () => {
     let editor!: Editor
     let saved = ""
-    await act(async () => root.render(<GitbookEditor markdown={fence(WORKERD_STARTER)} onChange={(md) => { saved = md }} onEditorReady={(instance) => { if (instance) editor = instance }} />))
+    await act(async () => root.render(<GitbookEditor markdown={fence(WORKERD_STARTER)} onValueChange={(md) => { saved = md }} onEditorReady={(instance) => { if (instance) editor = instance }} />))
     await until(() => nodes().length === 2)
     expect(nodes()).toEqual(["main", "main.Room"])
     expect(host.querySelector(".gb-code-capnp .gb-diagram-result")?.getAttribute("contenteditable")).toBe("false")

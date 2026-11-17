@@ -259,7 +259,7 @@ function TabsView({ node, editor, getPos, updateAttributes }: NodeViewProps) {
             {tabStrip}
           </div>
         </div>
-        <NodeViewContent className="gb-tabs-content" data-active={active} />
+        <NodeViewContent className="gb-tabs-content" data-selected={active} />
       </Tabs>
     )
   }
@@ -269,7 +269,7 @@ function TabsView({ node, editor, getPos, updateAttributes }: NodeViewProps) {
       <div ref={strip} className="gb-tabs-header gb-tabs-strip" data-removable={removable ? "" : undefined} contentEditable={false}>
         {tabStrip}
       </div>
-      <NodeViewContent className="gb-tabs-content" data-active={active} />
+      <NodeViewContent className="gb-tabs-content" data-selected={active} />
     </Tabs>
   )
 }

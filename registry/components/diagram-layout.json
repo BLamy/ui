@@ -16,7 +16,8 @@
     "DiagramLayoutError",
     "DIAGRAM_ELK_OPTIONS",
     "diagramElkOptions",
-    "useDiagramLayout"
+    "useDiagramLayout",
+    "wrapDiagram"
   ],
   "types": [
     "DiagramDraft",
@@ -28,6 +29,7 @@
     "DiagramLayoutResult",
     "ElkGraph",
     "UseDiagramLayout",
-    "UseDiagramLayoutOptions"
+    "UseDiagramLayoutOptions",
+    "DiagramBoardSize"
   ]
 }

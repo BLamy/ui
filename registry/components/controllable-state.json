@@ -1,0 +1,11 @@
+{
+  "name": "controllable-state",
+  "title": "Controllable change",
+  "description": "useControllableChange: state that is controlled or uncontrolled, whose setter calls on<Key>Change(value, details) first with UI SDK-shaped change details and writes its own state only when the change wasn't canceled.",
+  "exports": [
+    "useControllableChange"
+  ],
+  "imports": [
+    "useControllableChange"
+  ]
+}

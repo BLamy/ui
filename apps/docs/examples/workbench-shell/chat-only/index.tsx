@@ -91,7 +91,7 @@ function Threads({
               current={t === current}
               onClick={() => {
                 onPick(t)
-                if (shell.compact) shell.setSidebarOpen(false)
+                if (shell.sizeClass === 'compact') shell.setSidebarOpen(false)
               }}
             />
           ))}

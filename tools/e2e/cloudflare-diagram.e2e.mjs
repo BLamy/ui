@@ -9,8 +9,25 @@ const CARD = '[data-slot=diagram-node]:not([data-node^="cloudflare:"])';
 const cards = (page) => page.locator(CARD);
 /** What a card's called: its header's title. */
 const nameOf = (page, id) => service(page, id).locator('[data-slot=diagram-node-title]').first();
+/** What's to be pressed or dragged, in view: a board opens at a readable size, from its top, so what's far down or across
+ *  may be past its edge, and then the board's Fit shows it all, as a person would. */
+const inView = async (page, locator) => {
+  const board = await locator.evaluate((el) => {
+    const b = el.closest('[data-slot=canvas]')?.getBoundingClientRect(), r = el.getBoundingClientRect();
+    // Nor under what floats over the board: its toolbar, a frame's bar.
+    const over = [...(el.closest('[data-slot=diagram-frame-board], [data-slot=diagram]')?.querySelectorAll('[data-slot=diagram-overlay] [data-slot=toolbar], [data-slot=diagram-frame-bar]') ?? [])].map((o) => o.getBoundingClientRect());
+    const under = over.some((o) => r.left < o.right && r.right > o.left && r.top < o.bottom && r.bottom > o.top);
+    return !b || (!under && r.left >= b.left && r.right <= b.right && r.top >= b.top && r.bottom <= b.bottom - 60);
+  });
+  if (board) return;
+  // Its own board's Fit, where a page has more than one.
+  await locator.locator('xpath=ancestor::*[@data-slot="diagram"][1]').locator('[data-slot=diagram-overlay] [data-action=fit]').first().click();
+  // A fit glides there: what's pressed next is where it ends up.
+  await settle(page);
+};
 /** A press on a card's name, where no edge comes in. */
 const pressName = async (page, id) => {
+  await inView(page, nameOf(page, id));
   const box = await nameOf(page, id).boundingBox();
   await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
 };
@@ -28,6 +45,7 @@ const settle = async (page) => {
 /** A press on the middle of an edge's label, which sits on its route and selects it. */
 const pressLabel = async (page, id) => {
   await settle(page);
+  await inView(page, page.locator(`[data-slot=diagram-edge-label][data-edge="${id}"]`));
   const box = await page.locator(`[data-slot=diagram-edge-label][data-edge="${id}"]`).boundingBox();
   await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
 };
@@ -41,15 +59,28 @@ const labelWords = (page, id) => page.locator(`[data-slot=diagram-edge-label][da
 /** The label whose title is this, as a locator. */
 const labelTitled = (page, title) => page.locator('[data-slot=diagram-edge-label]').filter({ has: page.locator(':scope > :first-child', { hasText: new RegExp(`^${title}$`) }) });
 const port = async (page, node, name) => {
+  await inView(page, page.locator(`[data-slot=diagram-port][data-port-of="${node}"][data-port="${name}"]`));
   const b = await page.locator(`[data-slot=diagram-port][data-port-of="${node}"][data-port="${name}"]`).boundingBox();
   return { x: b.x + b.width / 2, y: b.y + b.height / 2 };
 };
 const edges = (page) => page.locator('[data-demo-edges]').getAttribute('data-demo-edges');
 /** The catalog search: its combobox, by name (the Combobox also renders a hidden form input). */
 const catalogSearch = (page) => page.getByRole('combobox', { name: 'Search Cloudflare’s services' });
-const open = async (page, demo) => {
+/** Opens a demo. A board opens at a readable size, from its top, so a system that doesn't fit is partly past the board's
+ *  edge: these tests work on all of it, so they show all of it, with the board's Fit (`whole: false` to leave it). */
+const open = async (page, demo, { whole = true } = {}) => {
   await page.goto(`/?demo=cloudflare-diagram/${demo}&theme=light`, { waitUntil: 'load' });
   await cards(page).first().waitFor({ timeout: 30_000 });
+  if (!whole) return;
+  await settle(page);
+  const cut = await page.locator(CARD).evaluateAll((els) => els.some((el) => {
+    const b = el.closest('[data-slot=canvas]')?.getBoundingClientRect(), r = el.getBoundingClientRect();
+    return !!b && (r.left < b.left || r.right > b.right || r.top < b.top || r.bottom > b.bottom);
+  }));
+  if (cut) {
+    await page.locator('[data-slot=diagram-overlay] [data-action=fit]').first().click();
+    await settle(page);
+  }
 };
 /** A real drag from one port to another, stopping over it to see what it offers. */
 const drag = async (page, from, to, whileOver) => {
@@ -60,9 +91,16 @@ const drag = async (page, from, to, whileOver) => {
   await page.mouse.up();
   return seen;
 };
-const connect = async (page, a, ap, b, bp, whileOver) => drag(page, await port(page, a, ap), await port(page, b, bp), whileOver);
+const connect = async (page, a, ap, b, bp, whileOver) => {
+  await settle(page);
+  // Bringing the second into view can move the first: where each is is read once both are in view.
+  await port(page, a, ap);
+  const to = await port(page, b, bp), from = await port(page, a, ap);
+  return drag(page, from, to, whileOver);
+};
 /** A press on the middle of an edge's line. */
 const pressOnEdge = async (page, id) => {
+  await inView(page, page.locator(`[data-slot=diagram-edge][data-edge="${id}"]`));
   const at = await page.locator(`[data-slot=diagram-edge][data-edge="${id}"]`).evaluate((el) => {
     const p = el.getPointAtLength(el.getTotalLength() / 2);
     const m = el.getScreenCTM();
@@ -268,7 +306,9 @@ test.describe('drawing', () => {
   test('a whole system, laid out top to bottom: cards with sections, labelled edges, the system around it', async ({ page }) => {
     await open(page, 'upload');
     await expect(cards(page)).toHaveCount(6);
-    await expect(page.locator('[data-slot=diagram-edge]')).toHaveCount(5);
+    // FILES and JOBS from the API, R2's notification, the consumer, DB and ROOM.
+    await expect(page.locator('[data-slot=diagram-edge]')).toHaveCount(6);
+    expect(await labelWords(page, 'api-jobs')).toEqual(['JOBS', 'producer', 'send']);
     await expect(nameOf(page, 'api')).toHaveText('API');
     await expect(service(page, 'cloudflare:system').locator('[data-slot=diagram-node-title]').first()).toHaveText('File upload');
     expect(await labelWords(page, 'api-files')).toEqual(['FILES', 'put', 'get']);
@@ -304,11 +344,15 @@ test.describe('drawing', () => {
     await expect.poll(() => cards(page).count(), { timeout: 60_000 }).toBe(101);
     expect(await service(page, 'flagship').count()).toBe(1);
     expect(errors).toEqual([]);
-    // Nothing's connected, so they're in rows, and not in one long column you can't read at all.
+    // Nothing's connected, so they're in rows as wide as the board, read at a readable size from the top, and not in one
+    // long column you can't read at all.
     const boxes = await cards(page).evaluateAll((els) => els.map((el) => { const r = el.getBoundingClientRect(); return { x: r.x, y: r.y, r: r.right, b: r.bottom }; }));
+    const top = Math.min(...boxes.map((b) => b.y));
+    expect(boxes.filter((b) => b.y < top + 40).length).toBeGreaterThanOrEqual(3);
+    const board = await page.locator('[data-slot=canvas]').first().boundingBox();
     const wide = Math.max(...boxes.map((b) => b.r)) - Math.min(...boxes.map((b) => b.x));
-    const high = Math.max(...boxes.map((b) => b.b)) - Math.min(...boxes.map((b) => b.y));
-    expect(wide / high).toBeGreaterThan(0.8);
+    expect(wide).toBeGreaterThan(board.width * 0.7);
+    expect(await nameOf(page, 'flagship').evaluate((el) => parseFloat(getComputedStyle(el).fontSize) * el.getBoundingClientRect().height / el.offsetHeight)).toBeGreaterThanOrEqual(11);
   });
 
   test('there’s no artwork: only the library’s icons', async ({ page }) => {
@@ -357,12 +401,13 @@ test.describe('only to read', () => {
 test.describe('a system', () => {
   const json = async (page) => JSON.parse(await page.locator('[data-demo-json]').inputValue());
   const press = async (page, id) => {
+    await inView(page, service(page, id));
     const box = await service(page, id).boundingBox();
     await page.mouse.click(box.x + box.width / 2, box.y + 10);
   };
   const issues = (page) => panel(page).locator('[data-slot=cloudflare-issue]');
   const issueCodes = (page) => issues(page).evaluateAll((els) => els.map((el) => el.getAttribute('data-code')));
-  test.beforeEach(async ({ page }) => { await open(page, 'system'); });
+  test.beforeEach(async ({ page }) => { await open(page, 'system', { whole: false }); });
 
   test('a search of the catalog adds a service', async ({ page }) => {
     const search = catalogSearch(page);
@@ -674,6 +719,8 @@ test.describe('a system', () => {
     const press2 = async (name, id) => {
       const node = side(name).locator(`[data-slot=diagram-node][data-node="${id}"]`);
       await side(name).scrollIntoViewIfNeeded();
+      await settle(page);
+      await inView(page, node);
       const box = await node.boundingBox();
       await page.mouse.click(box.x + box.width / 2, box.y + 10);
     };

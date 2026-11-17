@@ -19,7 +19,7 @@ import {
   type CloudflareFact, type CloudflareFactSection, type CloudflareSystem, type SystemIssue,
 } from '@/lib/cloudflare-system';
 import {
-  CONTAINER_PADDING, edgeLabelSize, nodeAnatomy, placeItemPorts,
+  CONTAINER_PADDING, ELBOW_GAP, edgeLabelSize, nodeAnatomy, placeItemPorts,
   type DiagramEdge, type DiagramNode, type DiagramSection, type DiagramSectionItem,
 } from '@/lib/diagram-model';
 import { estimateText } from '@/lib/diagram-text';
@@ -160,7 +160,8 @@ function serviceNode(system: CloudflareSystem, service: CloudflareService, byId:
     h: 0,
   };
   const a = nodeAnatomy(node, text);
-  return placeItemPorts({ ...node, w: a.w, h: a.h }, a, a.h);
+  // A box's height is what it holds and isn't known yet: its item ports go on their rows once it's laid out (or enclosed).
+  return holds ? { ...node, w: a.w, h: a.h } : placeItemPorts({ ...node, w: a.w, h: a.h }, a, a.h);
 }
 
 /** Only what isn't so is drawn as wrong: a service, or a connection, with an error. */
@@ -224,11 +225,11 @@ export function cloudflareBoardData(system: CloudflareSystem, { editable = false
       });
     }
   }
-  return { nodes: system.services.every((s) => s.at) ? enclose(nodes) : nodes, edges };
+  return system.services.every((s) => s.at) ? enclose(nodes, edges) : { nodes, edges };
 }
 
 /** The boxes that hold others drawn around what they hold, deepest first, with room for their header and sections. */
-function enclose<N>(nodes: DiagramNode<N>[]): DiagramNode<N>[] {
+function enclose<N, E>(nodes: DiagramNode<N>[], edges: DiagramEdge<E>[]): { nodes: DiagramNode<N>[]; edges: DiagramEdge<E>[] } {
   const byId = new Map(nodes.map((n) => [n.id, n]));
   const kids = new Map<string, DiagramNode<N>[]>();
   for (const n of nodes) if (n.parent) kids.set(n.parent, [...(kids.get(n.parent) ?? []), n]);
@@ -239,16 +240,32 @@ function enclose<N>(nodes: DiagramNode<N>[]): DiagramNode<N>[] {
   };
   const holders = nodes.filter((n) => kids.has(n.id)).sort((a, b) => depth(b) - depth(a));
   const P = CONTAINER_PADDING;
+  const inside = (holder: string, id: string) => { for (let p = byId.get(id)?.parent; p; p = byId.get(p)?.parent) if (p === holder) return true; return false; };
   for (const holder of holders) {
-    const inside = kids.get(holder.id)!.map((k) => byId.get(k.id)!);
-    const x0 = Math.min(...inside.map((k) => k.x)), y0 = Math.min(...inside.map((k) => k.y));
-    const x1 = Math.max(...inside.map((k) => k.x + k.w)), y1 = Math.max(...inside.map((k) => k.y + k.h));
+    const held = kids.get(holder.id)!.map((k) => byId.get(k.id)!);
+    const x0 = Math.min(...held.map((k) => k.x)), y0 = Math.min(...held.map((k) => k.y));
+    const x1 = Math.max(...held.map((k) => k.x + k.w)), y1 = Math.max(...held.map((k) => k.y + k.h));
     const a = nodeAnatomy(holder, text);
+    const room = ownRoom(edges, holder.id, (e) => edgeLabelSize(e, text)?.h ?? 0, (to) => inside(holder.id, to));
     const w = Math.max(a.w, x1 - x0 + P.side * 2);
-    const box = { x: x0 - P.side - (w - (x1 - x0 + P.side * 2)) / 2, y: y0 - a.top - P.top, w, h: a.top + P.top + (y1 - y0) + P.bottom };
-    byId.set(holder.id, { ...holder, ...box });
+    const box = { x: x0 - P.side - (w - (x1 - x0 + P.side * 2)) / 2, y: y0 - a.top - P.top - room, w, h: a.top + P.top + room + (y1 - y0) + P.bottom };
+    byId.set(holder.id, placeItemPorts({ ...holder, ...box }, a, box.h));
   }
-  return nodes.map((n) => byId.get(n.id)!);
+  return { nodes: nodes.map((n) => byId.get(n.id)!), edges: edges.map((e) => {
+    // A box's own edge into what it holds: straight down from under its sections to the top of what it goes to.
+    const from = byId.get(e.from), to = byId.get(e.to);
+    if (!from || !to || !inside(e.from, e.to)) return e;
+    const top = from.y + nodeAnatomy(from, text).top;
+    const x = Math.round(to.x + to.w / 2);
+    return { ...e, points: [{ x, y: Math.round(top) }, { x, y: to.y }] };
+  }) };
+}
+
+/** The room a box keeps under its sections for the labels of its own edges into what it holds, and their way in. */
+function ownRoom<E extends { from: string; to: string }>(edges: readonly E[], id: string, labelOf: (e: E) => number, holds: (to: string) => boolean): number {
+  let h = 0;
+  for (const e of edges) if (e.from === id && holds(e.to)) h = Math.max(h, labelOf(e));
+  return h ? h + ELBOW_GAP + 12 : 0;
 }
 
 /** The box around a placed system's drawing, its root's, or null if anything has no place. */
@@ -364,7 +381,8 @@ export function placeInLayers(system: CloudflareSystem, { editable = false }: Pi
           const [a, b] = key.split('\0') as [string, string];
           if ((above.has(a) && row.includes(b)) || (above.has(b) && row.includes(a))) label = Math.max(label, h);
         }
-        y += Math.max(ROW_GAP, label + 32);
+        // and for the route to leave the row above and turn before it, and come into this one after it.
+        y += Math.max(ROW_GAP, label ? label + ELBOW_GAP * 2 + 16 : 0);
       }
       let x = (innerW - widths[r]!) / 2;
       const rowH = Math.max(...row.map((k) => sizes.get(k)!.h));
@@ -375,12 +393,15 @@ export function placeInLayers(system: CloudflareSystem, { editable = false }: Pi
       y += rowH;
     });
     const a = nodeAnatomy(node, text);
-    const size = { w: Math.max(a.w, innerW + P.side * 2), h: a.top + P.top + y + P.bottom };
+    // A box's own edge into what it holds (a Worker's binding to its own class) runs down from under its sections, its
+    // label in room kept for it there.
+    const room = ownRoom(board.edges, id, (e) => labelH.get(e.id) ?? 0, (to) => childIn(id, to) !== null);
+    const size = { w: Math.max(a.w, innerW + P.side * 2), h: a.top + P.top + room + y + P.bottom };
     sizes.set(id, size);
     // Where its children start, inside it: the room under its header and sections, in the middle.
     for (const k of inside) {
       const p = places.get(k)!;
-      places.set(k, { x: p.x + (size.w - innerW) / 2, y: p.y + a.top + P.top });
+      places.set(k, { x: p.x + (size.w - innerW) / 2, y: p.y + a.top + P.top + room });
     }
     return size;
   };

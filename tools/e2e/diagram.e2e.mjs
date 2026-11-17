@@ -1238,22 +1238,25 @@ test.describe('StateDiagram', () => {
     }
   });
 
-  test('sends from the board: what it can take now is a button on its label, and the context is shown as it runs', async ({ page }) => {
+  test('sends from the board: what it can take now is a label to press, and the context is shown as it runs', async ({ page }) => {
     await page.goto('/?demo=state-diagram/audio-player&theme=light', { waitUntil: 'load' });
-    const send = (event) => page.locator(`[data-action=send-on-board][data-event="${event}"]`);
+    const label = (event) => page.locator('[data-slot=diagram-edge-label]').filter({ has: page.locator('[data-slot=diagram-edge-label-title]', { hasText: new RegExp(`^${event}$`) }) });
+    const send = (event) => label(event).and(page.locator('[data-pressable]'));
     await expect(send('loading')).toBeVisible({ timeout: 30_000 });
     await expect(send('init-error')).toBeVisible();
     await expect(send('loaded')).toHaveCount(0);
-    await expect(send('loading')).toHaveAccessibleName('Send loading');
+    // Not by color alone: a play badge on its corner, and its edge says so to a screen reader.
+    await expect(send('loading').locator('[data-part=press]')).toHaveCount(1);
+    await expect(page.locator('[data-slot=diagram-edge][data-edge="Audio Player.Init:loading->Audio Player.Loading"]')).toHaveAttribute('aria-label', /It can be sent now/);
     await send('loading').click();
     await expect(send('loaded')).toBeVisible();
     await expect(send('loading')).toHaveCount(0);
     await expect(page.locator('[data-node="Audio Player.Loading"]')).toHaveAttribute('aria-current', 'true');
     await send('loaded').click();
     await expect(page.locator('[data-node="Audio Player.Active.Paused"]')).toHaveAttribute('aria-current', 'true');
-    // A send button is a button: Enter on it sends too.
-    await send('play').focus();
-    await page.keyboard.press('Enter');
+    // Where the label is is the core's: pressing it where it's drawn sends, wherever the board's been moved to.
+    await send('play').scrollIntoViewIfNeeded();
+    await send('play').click();
     await expect(page.locator('[data-node="Audio Player.Active.Playing"]')).toHaveAttribute('aria-current', 'true');
     // The panel has the context, as it is.
     await page.locator('[data-diagram-frame-trigger]').click();
@@ -1555,14 +1558,29 @@ test.describe('StateDiagram edits', () => {
     await expect.poll(() => page.locator('[data-slot=diagram-node]').count(), { timeout: 30_000 }).toBeGreaterThan(3);
   };
   /** Presses on it. A container can have something over its middle, so a press goes just inside its corner. */
+  /** Where it is once it's stopped moving (a layout can land again as fonts do). */
+  const still = async (page, id) => {
+    let was = JSON.stringify(await node(page, id).boundingBox());
+    for (let i = 0; i < 20; i++) {
+      await page.waitForTimeout(100);
+      const now = JSON.stringify(await node(page, id).boundingBox());
+      if (now === was) break;
+      was = now;
+    }
+    return JSON.parse(was);
+  };
   const select = async (page, id) => {
-    const b = await node(page, id).boundingBox();
+    // A board opens at a readable size, from its top: what's further down is brought into view as the browser would (the
+    // pane scrolls, and that pans).
+    await node(page, id).scrollIntoViewIfNeeded();
+    const b = await still(page, id);
     await page.mouse.click(b.x + Math.min(b.width / 2, 12), b.y + Math.min(b.height / 2, 12));
     await expect(node(page, id)).toHaveAttribute('data-selected', '');
   };
   /** Layers over the board don't take a press, so it goes where the pointer would. */
   const pressOn = async (page, id) => {
-    const b = await node(page, id).boundingBox();
+    await node(page, id).scrollIntoViewIfNeeded();
+    const b = await still(page, id);
     await page.mouse.click(b.x + b.width / 2, b.y + b.height / 2);
   };
   const rename = async (page, name) => {
@@ -1817,14 +1835,16 @@ test.describe('StateDiagram edits', () => {
     expect(await node(page, 'door.closed').boundingBox()).toEqual(before);
     await expect(page.locator('[data-state-diagram] [data-action=undo]')).toBeDisabled();
 
-    // Select with a press, and let the keys do the rest. ⇧ with an arrow doesn't move it.
+    // Select with a press, and let the keys do the rest. ⇧ with an arrow doesn't move it (where it is on the board, which
+    // the view following the keys doesn't change).
     await select(page, 'door.jammed');
-    const jammed = await node(page, 'door.jammed').boundingBox();
+    const place = () => node(page, 'door.jammed').evaluate((el) => `${el.style.left},${el.style.top}`);
+    const jammed = await place();
     await page.locator('[data-slot=canvas]').focus();
     await page.keyboard.press('Home');
     await page.keyboard.press('Shift+ArrowRight');
     await page.keyboard.press('Shift+ArrowDown');
-    expect(await node(page, 'door.jammed').boundingBox()).toEqual(jammed);
+    expect(await place()).toEqual(jammed);
     await expect(page.locator('[data-state-diagram] [data-action=undo]')).toBeDisabled();
     await select(page, 'door.jammed');
     await page.keyboard.press('Delete');
@@ -2004,10 +2024,11 @@ test.describe('the anatomy: a statechart and a system from the generic parts', (
     await page.locator('[data-slot=diagram-edge-label]').first().waitFor();
   };
 
-  test('ten states fit 800 × 1000 at 100%, top to bottom, with routes that run through their labels', async ({ page }) => {
+  test('ten states fit 800 × 1000 at a readable size, top to bottom, with routes that run through their labels', async ({ page }) => {
     await open(page, 'statechart-like');
     const zoom = await page.locator('[data-slot=canvas-board]').evaluate((el) => Number(/scale\(([^)]+)\)/.exec(el.style.transform)[1]));
-    expect(zoom).toBeGreaterThan(0.9);
+    // Whole, at no less than a diagram opens at (87.5%, where a chip's 12 px are about 11).
+    expect(zoom).toBeGreaterThanOrEqual(0.875);
     expect(zoom).toBeLessThanOrEqual(1);
     const seen = await page.evaluate(() => {
       const box = (el) => el.getBoundingClientRect();
@@ -2032,9 +2053,9 @@ test.describe('the anatomy: a statechart and a system from the generic parts', (
     expect(seen.throughLabels.filter((l) => l.shape === 'pill').map((l) => l.edge).sort()).toEqual(['loading-active', 'paused-playing', 'playing-end', 'playing-paused']);
     // Context (4), two entry actions, and the chips of six labels.
     expect(seen.chips).toBe(4 + 2 + 6);
-    // The text is the kit's small text: 12 px chips and 13 px titles, on screen.
+    // The text is the kit's small text, 12 px chips and 13 px titles, at no less than 87.5% (rows of 15 px, 13 on screen).
     const sizes = await page.evaluate(() => [...document.querySelectorAll('[data-slot=diagram-node-title], [data-slot=diagram-item]')].map((el) => el.getBoundingClientRect().height));
-    expect(Math.min(...sizes)).toBeGreaterThanOrEqual(14);
+    expect(Math.min(...sizes)).toBeGreaterThanOrEqual(13);
     await expect(page.locator('[data-slot=diagram-entry]')).toHaveCount(2);
     // The first fit leaves room for the toolbar at the foot.
     const machine = await page.locator('[data-slot=diagram-node][data-node=player]').boundingBox();

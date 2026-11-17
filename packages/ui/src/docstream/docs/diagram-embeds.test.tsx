@@ -19,16 +19,22 @@ const machine = JSON.stringify({ initial: "idle", states: { idle: { on: { START:
 describe("diagram fences", () => {
   it("renders XState, updates the diagram, shows an inline error and recovers", async () => {
     const show = (code: string) => act(() => root.render(<MarkdownContent markdown={`\`\`\`xstate\n${code}\n\`\`\``} />))
+    // The fence's board is the library's StateDiagram, read-only: each state a card with its name.
+    const board = () => host.querySelector<HTMLElement>("[data-docstream-xstate] .docs-xstate-board")
+    const states = () => [...(board()?.querySelectorAll("[data-slot=diagram-node] [data-slot=diagram-node-title]") ?? [])].map((t) => t.textContent)
     show(machine)
-    await until(() => !!host.querySelector("[data-docstream-xstate] .docs-mermaid svg"))
+    await until(() => states().includes("idle") && states().includes("running"))
     expect(host.querySelector(".docs-split-source")?.textContent).toContain("START")
+    // As the source streams in, the diagram follows it.
     show(machine.replaceAll("running", "finished"))
-    await until(() => !!host.querySelector(".docs-mermaid svg")?.textContent?.includes("finished"))
+    await until(() => states().includes("finished"))
+    expect(states()).not.toContain("running")
+    // A source that can't be read says why, inline, over the board.
     show("{")
-    await until(() => !!host.querySelector('[role="alert"]'))
+    await until(() => !!board()?.querySelector('[role="alert"]'))
+    expect(host.querySelector(".docs-split-source")?.textContent).toContain("{")
     show(machine)
-    await until(() => !!host.querySelector(".docs-mermaid svg"))
-    expect(host.querySelector('[role="alert"]')).toBeNull()
+    await until(() => !host.querySelector('[role="alert"]') && states().includes("running"))
   })
 
   it("keeps diagram-only tabs as rendered cards and leaves ordinary TSX as code", async () => {

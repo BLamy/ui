@@ -8,9 +8,9 @@
   ],
   "exports": [
     "VideoTimeline",
-    "timelineMediaType",
-    "fitTimelineZoom",
-    "timelineZoomRange"
+    "videoTimelineMediaType",
+    "fitVideoTimelineZoom",
+    "videoTimelineZoomRange"
   ],
   "imports": [
     "VideoTimeline",

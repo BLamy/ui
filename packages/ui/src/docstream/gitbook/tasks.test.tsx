@@ -32,7 +32,7 @@ describe("extended task states", () => {
     expect(html.match(/aria-checked="mixed"/g)).toHaveLength(6)
   })
   it("offers all icons on right click, clears any marked status on click, checks the next click and describes the state in a tooltip", async () => {
-    function Fixture() { const [state, setState] = useState<TaskState>("in-progress"); return <TaskCheckbox state={state} onChange={setState} label="Review" /> }
+    function Fixture() { const [state, setState] = useState<TaskState>("in-progress"); return <TaskCheckbox state={state} onValueChange={setState} label="Review" /> }
     const { host, unmount } = await mount(<Fixture />)
     const checkbox = () => host.querySelector<HTMLElement>('[role="checkbox"]')!
     await act(async () => { checkbox().dispatchEvent(new MouseEvent("contextmenu", { bubbles: true, cancelable: true, clientX: 40, clientY: 40 })) })
@@ -58,7 +58,7 @@ describe("extended task states", () => {
     await unmount()
   })
   it("opens the state menu on Shift+F10 itself (no contextmenu event, as on macOS), moves with the arrows and returns focus on Escape", async () => {
-    const { host, unmount } = await mount(<TaskCheckbox state="pending" onChange={() => {}} />)
+    const { host, unmount } = await mount(<TaskCheckbox state="pending" onValueChange={() => {}} />)
     const checkbox = host.querySelector<HTMLElement>('[role="checkbox"]')!
     await focus(checkbox)
     await press("F10", checkbox, { shiftKey: true })
@@ -74,7 +74,7 @@ describe("extended task states", () => {
     await unmount()
   })
   it("the context-menu key opens it too, and a browser's own contextmenu event (Windows Shift+F10) still does", async () => {
-    const { host, unmount } = await mount(<TaskCheckbox state="pending" onChange={() => {}} />)
+    const { host, unmount } = await mount(<TaskCheckbox state="pending" onValueChange={() => {}} />)
     const checkbox = host.querySelector<HTMLElement>('[role="checkbox"]')!
     await focus(checkbox)
     await press("ContextMenu", checkbox)
@@ -89,7 +89,7 @@ describe("extended task states", () => {
     await unmount()
   })
   it("opens on the current state, not the first one, from the keyboard and from a right-click", async () => {
-    const { host, unmount } = await mount(<TaskCheckbox state="blocked" onChange={() => {}} />)
+    const { host, unmount } = await mount(<TaskCheckbox state="blocked" onValueChange={() => {}} />)
     const checkbox = host.querySelector<HTMLElement>('[role="checkbox"]')!
     await focus(checkbox)
     await press("F10", checkbox, { shiftKey: true })

@@ -1,3 +1,4 @@
+import { useState, type ReactNode } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import {
   FloatingSheet,
@@ -12,6 +13,9 @@ import {
 } from '@/components/ui/floating-sheet';
 import { Button } from '@/components/ui/button';
 import { ProgressStepper } from '@/components/ui/progress-stepper';
+import { SheetBack, SheetHeader, SheetTitle, SheetView } from '@/components/ui/sheet';
+import { cn } from '@/lib/utils';
+import { Phone } from '../stories/frame';
 import { Icon } from '@/lib/icon';
 import '../styles.css';
 
@@ -151,3 +155,78 @@ export const MinimizedAtEnd: Story = { args: { defaultMinimized: true, fabSide: 
 export const WithSnapPoint: Story = { args: { peek: 120, snapPoints: [0.5] } };
 /** A dark sheet over a light page: the appearance disagrees with the page. */
 export const DarkOverLightPage: Story = { args: { appearance: 'dark', peek: 220 } };
+
+/* ── Trays: a flow in one sheet (`view`), written with Sheet's flow parts straight in the body ── */
+
+const traySteps = [
+  { id: 'placed', label: 'Placed' },
+  { id: 'preparing', label: 'Preparing' },
+  { id: 'ready', label: 'Ready' },
+];
+
+const trays: { id: string; title: string; peek: number; body: ReactNode }[] = [
+  {
+    id: 'review',
+    title: 'Review order',
+    peek: 120,
+    body: (
+      <div className="grid gap-2 text-subhead">
+        <div className="flex justify-between"><span>2× Flat white</span><strong>$9.00</strong></div>
+        <div className="flex justify-between"><span>1× Almond croissant</span><strong>$4.75</strong></div>
+      </div>
+    ),
+  },
+  {
+    id: 'pay',
+    title: 'Pay with',
+    peek: 230,
+    body: (
+      <div className="grid gap-2">
+        {['Apple Pay', 'Visa ···· 4242', 'Add a card'].map((m, i) => (
+          <div key={m} className={cn('rounded-ctl bg-secondary px-3.5 py-3 text-subhead', i === 0 && 'font-semibold')}>{m}</div>
+        ))}
+      </div>
+    ),
+  },
+  { id: 'done', title: 'Order placed', peek: 110, body: <ProgressStepper steps={traySteps} current={1} labels /> },
+];
+
+/** Each step sets its own `peek`, so the sheet springs between heights; the bar title and the view travel the way
+    the flow moves, and SheetBack folds in once there is a step to go back to. */
+function TraysDemo({ dark }: { dark?: boolean }) {
+  const [step, setStep] = useState(0);
+  const tray = trays[step];
+  const last = step === trays.length - 1;
+  return (
+    <Phone h={640} appearance={dark ? 'dark' : 'light'}>
+      <div className="absolute inset-0 overflow-hidden font-sans"><Host /></div>
+      <FloatingSheet view={tray.id} peek={tray.peek} variant="card" collapse="none" aria-label="Checkout" hideOnScroll={false}>
+        <FloatingSheetBody>
+          <SheetHeader variant="bar" className="pt-1">
+            <SheetBack hidden={step === 0} onClick={() => setStep(step - 1)} />
+            <SheetTitle>{tray.title}</SheetTitle>
+          </SheetHeader>
+          <SheetView className="px-5 pb-5">{tray.body}</SheetView>
+        </FloatingSheetBody>
+        <FloatingSheetFooter>
+          <div className="flex px-4 pt-2 pb-4">
+            <Button size="pill" className="flex-1" onClick={() => setStep(last ? 0 : step + 1)}>{last ? 'Start over' : 'Continue'}</Button>
+          </div>
+        </FloatingSheetFooter>
+      </FloatingSheet>
+    </Phone>
+  );
+}
+
+/** Presses Continue once, so the second step (taller, with its back button in the bar) shows. */
+const continueOnce: Story['play'] = async ({ canvasElement }) => {
+  const button = [...canvasElement.querySelectorAll('button')].find((b) => b.textContent === 'Continue');
+  button?.click();
+  await new Promise((resolve) => setTimeout(resolve, 600));
+};
+
+/** A flow (`view`): the first tray. */
+export const TraysFirstStep: Story = { render: () => <TraysDemo /> };
+/** The second tray, after one Continue: taller, with SheetBack in the bar. */
+export const Trays: Story = { render: () => <TraysDemo />, play: continueOnce };
+export const TraysDark: Story = { render: () => <TraysDemo dark />, play: continueOnce };

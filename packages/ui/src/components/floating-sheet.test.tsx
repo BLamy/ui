@@ -103,6 +103,14 @@ describe('FloatingSheet', () => {
     }
     render(<Flow />);
     await settle();
+    // Written straight in the body, header and view stack one after the other: the last takes the rest of the window,
+    // and no child is stretched to the window's full height.
+    const body = document.querySelector<HTMLElement>('[data-slot=floating-sheet-body]')!;
+    expect(body.children).toHaveLength(2);
+    expect(body.children[0].getAttribute('data-slot')).toBe('sheet-header');
+    expect(body.children[1].querySelector('[data-slot=dialog-view]')).toBeTruthy();
+    expect(body.className).toContain('*:last:grow');
+    expect(body.className).not.toMatch(/min-h-full|\*:min-h-full/);
     const view = () => document.querySelector<HTMLElement>('[data-slot=dialog-view]:not([inert])');
     expect(view()?.dataset.view).toBe('review');
     expect(document.querySelector('[data-slot=dialog-back]')?.hasAttribute('data-hidden')).toBe(true);
@@ -111,6 +119,17 @@ describe('FloatingSheet', () => {
     expect(screen.getByText('Pay with')).toBeTruthy();
     expect([...document.querySelectorAll<HTMLElement>('[data-slot=dialog-view]')].some((v) => v.dataset.view === 'pay')).toBe(true);
     expect(document.querySelector('[data-slot=dialog-back]')?.hasAttribute('data-hidden')).toBe(false);
+  });
+
+  it('passes the rest of a div\'s props to its root layer', async () => {
+    const ref = { current: null as HTMLDivElement | null };
+    render(<Order id="order" data-testid="order-sheet" title="Order sheet" ref={ref} />);
+    await settle();
+    const root = document.querySelector<HTMLElement>('[data-slot=floating-sheet]')!;
+    expect(root.id).toBe('order');
+    expect(root.dataset.testid).toBe('order-sheet');
+    expect(root.title).toBe('Order sheet');
+    expect(ref.current).toBe(root);
   });
 
   it('grows from its cap and reports the change with a reason', async () => {

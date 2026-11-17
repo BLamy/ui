@@ -44,17 +44,23 @@ export const TILE = {
 } as const satisfies Record<string, readonly [string, string]>;
 export type TileName = keyof typeof TILE;
 
-export function Tile({ tone, icon, glyph, size = 30, dark, className }: {
-  /** A named tile, or its two gradient stops. */
-  tone: TileName | readonly [string, string]; icon?: string; glyph?: ReactNode; size?: number; /** A dark glyph (light tiles). */ dark?: boolean; className?: string;
+export function Tile({ variant, tint, icon, glyph, size = 30, foreground = 'light', className }: {
+  /** A named tile (its gradient). */
+  variant?: TileName;
+  /** A gradient of your own, its two stops (CSS colors), in place of a named tile. */
+  tint?: readonly [string, string];
+  icon?: string; glyph?: ReactNode; size?: number;
+  /** The glyph's shade: `light` (default) on a saturated tile, `dark` on a light one. */
+  foreground?: 'light' | 'dark';
+  className?: string;
 }) {
-  const [from, to] = typeof tone === 'string' ? TILE[tone] : tone;
+  const [from, to] = tint ?? TILE[variant ?? 'system'];
   return (
     <span
       aria-hidden="true"
       className={cn(
         'relative grid shrink-0 place-items-center overflow-hidden rounded-[27%] shadow-[inset_0_.5px_0_rgba(255,255,255,.45),inset_0_0_0_.5px_rgba(0,0,0,.08),0_1px_2px_rgba(0,0,0,.18)]',
-        dark ? 'text-black/80' : 'text-white',
+        foreground === 'dark' ? 'text-black/80' : 'text-white',
         className,
       )}
       style={{ width: size, height: size, backgroundImage: `linear-gradient(180deg, ${from}, ${to})` }}
@@ -66,7 +72,7 @@ export function Tile({ tone, icon, glyph, size = 30, dark, className }: {
 
 /** An app's icon: its gradient squircle and glyph. */
 export function AppTile({ app, size = 30, className }: { app: DesktopApp; size?: number; className?: string }) {
-  return <Tile tone={app.tile} icon={app.icon} size={size} dark={app.darkGlyph} className={className} />;
+  return <Tile tint={app.tint} icon={app.icon} size={size} foreground={app.foreground} className={className} />;
 }
 
 /** A calculator keypad glyph (no stock icon draws one). */
@@ -340,7 +346,7 @@ export function Dock({ appearance, tile, onAlfred, prefs, onPrefs }: { appearanc
           <span aria-hidden="true" className={cn('mx-0.5 w-px self-center', dark ? 'bg-white/20' : 'bg-black/12')} style={{ height: tile - 4 }} />
           <SdkButton aria-label="Alfred" onClick={onAlfred} className={slot}>
             <DockLabel dark={dark}>Alfred</DockLabel>
-            <Tile tone="alfred" size={tile} glyph={<Hat size={Math.round(tile * 0.62)} />} />
+            <Tile variant="alfred" size={tile} glyph={<Hat size={Math.round(tile * 0.62)} />} />
           </SdkButton>
           <span aria-label="Trash" role="img" className={cn('group/dock relative', well)} style={{ width: tile, height: tile }}>
             <Swap effect="pop" value={trash ? 'full' : 'empty'}><Icon name={trash ? 'trash-fill' : 'trash'} size={Math.round(tile * 0.57)} sw={1.7} /></Swap>

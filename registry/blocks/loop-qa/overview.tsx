@@ -104,7 +104,7 @@ function Exploration() {
   const go = (d: number) => {
     const next = (index + d + EXPLORATIONS.length) % EXPLORATIONS.length;
     setIndex(next);
-    player.current?.pause(EXPLORATIONS[next]!.initialTime);
+    player.current?.pause(EXPLORATIONS[next]!.startTime);
   };
   return (
     <Panel
@@ -119,7 +119,7 @@ function Exploration() {
       }
       bodyClassName="grid gap-4 p-4 @5xl:grid-cols-[1fr_240px]!"
     >
-      <ReplayPreview events={EXPLORATION_EVENTS} initialTime={EXPLORATIONS[0]!.initialTime} ref={player} title="Exploration replay" />
+      <ReplayPreview events={EXPLORATION_EVENTS} defaultTime={EXPLORATIONS[0]!.startTime} ref={player} title="Exploration replay" />
       <Swap value={ex.id} direction={dir}>
         <div className="flex flex-col gap-3">
           <div>
@@ -128,7 +128,7 @@ function Exploration() {
             <p className="m-0 mt-1.5 text-footnote text-muted-foreground">{ex.summary}</p>
           </div>
           <dl className="m-0 grid grid-cols-3 gap-2 text-center">
-            {[['Pages', ex.pages], ['Actions', ex.actions], ['At', formatReplayTime(ex.initialTime)]].map(([k, v]) => (
+            {[['Pages', ex.pages], ['Actions', ex.actions], ['At', formatReplayTime(ex.startTime)]].map(([k, v]) => (
               <div key={k} className="rounded-ctl bg-muted px-2 py-2">
                 <dd className="m-0 text-subhead font-semibold tabular-nums">{v}</dd>
                 <dt className="text-caption2 text-muted-foreground">{k}</dt>

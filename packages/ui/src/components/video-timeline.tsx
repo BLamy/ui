@@ -13,7 +13,7 @@ import { usePlaybackState, type Playback } from '@/lib/playback';
 import { cn } from '@/lib/utils';
 import {
   clipDuration, clipEnd, formatTimecode, magneticIndex, quantize, timelineDuration,
-  type Timeline, type TimelineClip, type TimelineMedia, type TimelineTrack,
+  type Timeline, type TimelineClip, type VideoTimelineMedia, type TimelineTrack,
 } from '@/lib/video-timeline-model';
 import type { ChangeDetails } from '@ui-sdk/core';
 import {
@@ -23,8 +23,8 @@ import {
 import { Toggle } from '@/components/ui/toggle';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
-export { timelineZoomRange } from '@/lib/video-timeline-primitive';
-export type { TimelineMedia } from '@/lib/video-timeline-model';
+export { videoTimelineZoomRange } from '@/lib/video-timeline-primitive';
+export type { VideoTimelineMedia } from '@/lib/video-timeline-model';
 export type {
   VideoTimelineAction, VideoTimelineChangeDetails, VideoTimelineChangeReason,
   VideoTimelineSelectionReason, VideoTimelineZoomReason,
@@ -36,7 +36,7 @@ export type {
    which make room as you go; or to another track of its kind), drag either edge to trim it (the playhead follows the
    edge, so a preview shows that frame). Moves and trims land on frames and snap to clip edges, the playhead and 0
    (hold ⌥/Alt to place freely). The ruler is UI SDK's Slider for the playhead: press or drag it to scrub. ⌘/Ctrl +
-   wheel, or a pinch, zooms around the pointer. Media dragged in from elsewhere (`timelineMediaType`) is reported by
+   wheel, or a pinch, zooms around the pointer. Media dragged in from elsewhere (`videoTimelineMediaType`) is reported by
    `onDropMedia(mediaId, details)` with the lane and time it was dropped on.
 
    `value` / `defaultValue` / `onValueChange(value, details)`, once per gesture or key, so an edit is one undo step;
@@ -54,9 +54,9 @@ export type {
    <VideoTimeline value={timeline} onValueChange={(next) => push(next)} playback={playback} media={media} /> ══ */
 
 /** The MIME type a drag carries to drop media on the timeline (its data is the media id). */
-export const timelineMediaType = 'application/x-bl-timeline-media';
+export const videoTimelineMediaType = 'application/x-bl-timeline-media';
 
-export interface TimelineDrop {
+export interface VideoTimelineDrop {
   trackId: string;
   /** Timeline time under the pointer. */
   time: number;
@@ -66,7 +66,7 @@ export interface TimelineDrop {
 
 /** What `onDropMedia` gets: where the media landed, and the drop's `event` and `source`. `cancel()` refuses the drop,
  *  so the browser hears it wasn't taken. */
-export type TimelineDropDetails = ChangeDetails<'drop'> & TimelineDrop;
+export type VideoTimelineDropDetails = ChangeDetails<'drop'> & VideoTimelineDrop;
 
 /** The root is a `div`: `ref`, `id`, `data-*`, its events and the rest of a div's props reach it. */
 export interface VideoTimelineProps
@@ -80,8 +80,8 @@ export interface VideoTimelineProps
   clipClassName?: (clip: TimelineClip, track: TimelineTrack) => string | undefined;
   /** Lane height in pixels. Default 64 for a magnetic video track, 44 for other video, 40 for audio. */
   trackHeight?: (track: TimelineTrack) => number;
-  /** Media dragged in (`timelineMediaType`) was dropped on a lane. */
-  onDropMedia?: (mediaId: string, details: TimelineDropDetails) => void;
+  /** Media dragged in (`videoTimelineMediaType`) was dropped on a lane. */
+  onDropMedia?: (mediaId: string, details: VideoTimelineDropDetails) => void;
   /** Width of the track headers, px. Default 132, or 56 in a compact container. */
   headerWidth?: number;
   /** Names the timeline. Default "Timeline". */
@@ -98,7 +98,7 @@ const defaultHeight = (t: TimelineTrack) => (t.kind === 'audio' ? 40 : t.magneti
 
 /** The zoom (pixels per second) that fits `duration` seconds into a timeline `width` pixels wide, whose track headers
  *  are `headerWidth` (default 132; pass the timeline's own when you set one, or 56 for a compact one). */
-export function fitTimelineZoom(duration: number, width: number, { headerWidth = HEADER }: { headerWidth?: number } = {}): number {
+export function fitVideoTimelineZoom(duration: number, width: number, { headerWidth = HEADER }: { headerWidth?: number } = {}): number {
   return clampTimelineZoom(duration > 0 ? (width - headerWidth - 24) / duration : 60);
 }
 
@@ -166,7 +166,7 @@ interface BodyProps extends Pick<VideoTimelineProps, 'renderClip' | 'clipClassNa
   header: number;
   compact: boolean;
   fps: number;
-  media: Record<string, TimelineMedia | undefined>;
+  media: Record<string, VideoTimelineMedia | undefined>;
   trackHeight: (track: TimelineTrack) => number;
 }
 
@@ -176,7 +176,7 @@ function TimelineBody({ state, handle, clock, header: HEADER, compact, fps, medi
   const scroller = useRef<HTMLDivElement | null>(null);
   const ruler = useRef<HTMLCanvasElement | null>(null);
   const head = useRef<HTMLDivElement | null>(null);
-  const [dropAt, setDropAt] = useState<TimelineDrop | null>(null);
+  const [dropAt, setDropAt] = useState<VideoTimelineDrop | null>(null);
   const [view, setView] = useState({ w: 0, left: 0 });
   const duration = timelineDuration(shown);
   const extent = Math.max(duration + TIMELINE_TAIL, (view.w - HEADER) / zoom);
@@ -254,19 +254,19 @@ function TimelineBody({ state, handle, clock, header: HEADER, compact, fps, medi
     const r = sc.getBoundingClientRect();
     return Math.max(0, (clientX - r.left - HEADER + sc.scrollLeft) / zoom);
   };
-  const dropTarget = (e: DragEvent<HTMLElement>, track: TimelineTrack): TimelineDrop => {
+  const dropTarget = (e: DragEvent<HTMLElement>, track: TimelineTrack): VideoTimelineDrop => {
     const t = quantize(timeAtX(e.clientX), fps);
     return { trackId: track.id, time: t, index: track.magnetic ? magneticIndex(track, t) : undefined };
   };
   const onLaneDragOver = (e: DragEvent<HTMLElement>, track: TimelineTrack) => {
-    if (!onDropMedia || track.locked || readOnly || !e.dataTransfer.types.includes(timelineMediaType)) return;
+    if (!onDropMedia || track.locked || readOnly || !e.dataTransfer.types.includes(videoTimelineMediaType)) return;
     e.preventDefault();
     e.dataTransfer.dropEffect = 'copy';
     const next = dropTarget(e, track);
     setDropAt((d) => (d && d.trackId === next.trackId && d.time === next.time && d.index === next.index ? d : next));
   };
   const onLaneDrop = (e: DragEvent<HTMLElement>, track: TimelineTrack) => {
-    const id = e.dataTransfer.getData(timelineMediaType);
+    const id = e.dataTransfer.getData(videoTimelineMediaType);
     setDropAt(null);
     if (!onDropMedia || !id || track.locked || readOnly) return;
     const details = Object.assign(changeDetails({ reason: 'drop', event: e.nativeEvent }), dropTarget(e, track));

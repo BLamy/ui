@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react"
-import { parse } from "gpu-lexer"
 import { fallbackSpans } from "@brett_lamy/ui/lib/syntax-lexer"
+import { lexSyntax, peekSyntax } from "@brett_lamy/ui/lib/syntax"
 
 type Span = {
   type: "plain" | "comment" | "string" | "number" | "keyword" | "type" | "function" | "constant" | "operator"
@@ -13,7 +13,9 @@ type Span = {
 
    Two lexers, one vocabulary. The synchronous fallback (the kit's lib/syntax-lexer, which CodeEditor uses too) colors the code at once, on the
    server too, so a fence is never plain where WebGPU is missing (Safari, Firefox, headless browsers, insecure
-   contexts) or gpu-lexer's parse() rejects. When gpu-lexer resolves with spans, they replace the fallback's.
+   contexts), only software-rendered, or gpu-lexer fails. gpu-lexer runs through the kit's lib/syntax, CodeEditor's
+   driver: one queue for every fence on the page (gpu-lexer reuses its buffers, so its calls must not overlap), the
+   adapter probe and one cache. When it resolves with the GPU's spans, they replace the fallback's.
    `data-highlighter` on the <code> says which drew it: "gpu", "fallback" or "none". */
 
 function escapeHtml(value: string) {
@@ -56,15 +58,15 @@ export function HighlightedCode({ code, language, lineNumbers = false }: {
 
   useEffect(() => {
     let cancelled = false
-    // Rejects without WebGPU; the fallback's spans stay.
-    parse(code).then(
-      (result) => { if (!cancelled && result.length) setGpu({ code, spans: result }) },
-      () => {},
-    )
+    // Without hardware WebGPU the result is the fallback's, already shown.
+    void lexSyntax(code, "auto", language).then((result) => {
+      if (!cancelled && result.highlighter === "gpu" && result.spans.length) setGpu({ code, spans: result.spans })
+    })
     return () => { cancelled = true }
-  }, [code])
+  }, [code, language])
 
-  const fromGpu = gpu && gpu.code === code ? gpu.spans : null
+  const cached = peekSyntax(code)
+  const fromGpu = gpu && gpu.code === code ? gpu.spans : cached?.highlighter === "gpu" ? cached.spans : null
   const spans = fromGpu ?? fallback
   const highlighter = fromGpu ? "gpu" : spans.length ? "fallback" : "none"
   const html = useMemo(() => spans.length ? spansToHtml(code, spans) : null, [code, spans])

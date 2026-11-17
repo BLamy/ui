@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { MarkdownEditor, MarkdownEditorToolbarButton, type MarkdownEditorAttachment } from '@/components/ui/markdown-editor';
+import { MarkdownEditor, MarkdownEditorToolbarButton, type MarkdownEditorAttachment, type MarkdownEditorHandle } from '@/components/ui/markdown-editor';
 import { Toolbar, ToolbarSeparator } from '@/components/ui/toolbar';
 import { Icon } from '@/lib/icon';
 import { Field, FieldError, FieldLabel } from '@/components/ui/field';
@@ -98,6 +98,29 @@ export const ImagePaste: Story = { render: () => <ImagePasteDemo /> };
 export const ReadOnly: Story = { args: { readOnly: true, defaultValue: notes, 'aria-label': 'Read-only notes' } };
 
 export const WithToolbar: Story = { args: { toolbar: true, defaultValue: notes, 'aria-label': 'Notes with toolbar' } };
+
+/** The caret inside "tray drag": Bold is pressed, drawn filled (the kit Toggle's pressed look) and `aria-pressed`. */
+function CaretInBold({ dark }: { dark?: boolean }) {
+  const ref = useRef<MarkdownEditorHandle>(null);
+  useEffect(() => {
+    let frame = 0;
+    const place = () => {
+      const editor = ref.current?.editor;
+      if (!editor) { frame = requestAnimationFrame(place); return; }
+      let at = -1;
+      editor.state.doc.descendants((node, pos) => {
+        if (at < 0 && node.isText && node.text?.includes('tray drag')) at = pos + node.text.indexOf('tray drag') + 3;
+      });
+      if (at >= 0) editor.chain().focus().setTextSelection(at).run();
+    };
+    place();
+    return () => cancelAnimationFrame(frame);
+  }, []);
+  return <MarkdownEditor ref={ref} toolbar defaultValue={notes} aria-label={dark ? 'Notes, dark' : 'Notes'} />;
+}
+
+export const ToolbarPressed: Story = { render: () => <CaretInBold /> };
+export const ToolbarPressedDark: Story = { parameters: { dark: true }, render: () => <CaretInBold dark /> };
 
 export const InCard: Story = {
   args: { variant: 'card', toolbar: true, minHeight: 180, defaultValue: notes, 'aria-label': 'Card editor' },

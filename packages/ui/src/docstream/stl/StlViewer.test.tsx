@@ -16,6 +16,13 @@ describe("StlViewer root props", () => {
     expect(plain).toContain("<figcaption")
   })
 
+  it("spreads the rest of a figure's props on the root, under its own", () => {
+    const html = renderToStaticMarkup(
+      <StlViewer src="models/bracket.stl" id="bracket" data-testid="stl" aria-describedby="bracket-note" className="wide" />,
+    )
+    expect(html).toMatch(/^<figure id="bracket" data-testid="stl" aria-describedby="bracket-note" class="docstream-stl wide" data-state="loading">/)
+  })
+
   it("forwards ref to the figure element", async () => {
     vi.stubGlobal("fetch", vi.fn(() => new Promise(() => {})))
     const ref = createRef<HTMLElement>()

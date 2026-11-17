@@ -44,6 +44,21 @@ The sidebar groups pages by what a part does, not by how big it is. **Foundation
 
 The shells that belong to one product (the Discord-style `ChatShell`, the T3-style `WorkbenchShell`) live in [blocks](https://blamy.github.io/ui/#/blocks). Every one is built from the parts documented here, so a shell that does not fit can be recomposed from them.
 
+## Find a component
+
+Start from the job; each page opens with when to use a sibling instead.
+
+| You need | Start with |
+| --- | --- |
+| A button, a toggle, a choice of two to five | [Button](https://blamy.github.io/ui/#/button), [Toggle](https://blamy.github.io/ui/#/toggle), [Segmented](https://blamy.github.io/ui/#/segmented), [Switch](https://blamy.github.io/ui/#/switch) |
+| A field: text, a pick from a list, a date | [Field](https://blamy.github.io/ui/#/field), [Input](https://blamy.github.io/ui/#/input), [Select](https://blamy.github.io/ui/#/select), [Combobox](https://blamy.github.io/ui/#/combobox), [DatePicker](https://blamy.github.io/ui/#/date-picker) |
+| Something over the page | [Dialog](https://blamy.github.io/ui/#/dialog), [Sheet](https://blamy.github.io/ui/#/sheet), [Popover](https://blamy.github.io/ui/#/popover), [DropdownMenu](https://blamy.github.io/ui/#/dropdown-menu), [CommandMenu](https://blamy.github.io/ui/#/command-menu), [Toast](https://blamy.github.io/ui/#/toast) |
+| Rows of data | [List](https://blamy.github.io/ui/#/lists), [Tree](https://blamy.github.io/ui/#/tree), [DataTable](https://blamy.github.io/ui/#/data-table), [Spreadsheet](https://blamy.github.io/ui/#/spreadsheet) |
+| An app's frame | [NavigationStack](https://blamy.github.io/ui/#/navigation-stack), [SplitView](https://blamy.github.io/ui/#/split-view), [Sidebar](https://blamy.github.io/ui/#/sidebar), [Tabs](https://blamy.github.io/ui/#/tabs), [AdaptivePane](https://blamy.github.io/ui/#/adaptive-pane), [Toolbar](https://blamy.github.io/ui/#/toolbar) |
+| Chat around a model | [Composer](https://blamy.github.io/ui/#/composer), [Conversation](https://blamy.github.io/ui/#/conversation), [ArtifactChatContainer](https://blamy.github.io/ui/#/artifact-chat-container) |
+| Code, Markdown, a canvas | [CodeEditor](https://blamy.github.io/ui/#/code-editor), [MarkdownView](https://blamy.github.io/ui/#/markdown-view), [MarkdownEditor](https://blamy.github.io/ui/#/markdown-editor), [Canvas](https://blamy.github.io/ui/#/canvas), [Diagram](https://blamy.github.io/ui/#/diagram) |
+| Media | [VideoPreview](https://blamy.github.io/ui/#/video-preview), [VideoTimeline](https://blamy.github.io/ui/#/video-timeline), [ReplayPreview](https://blamy.github.io/ui/#/replay-preview) |
+
 ## Where to go next
 
 - [Installation](https://blamy.github.io/ui/#/installation): the registry (copy source) or npm, for Vite and Next.js.

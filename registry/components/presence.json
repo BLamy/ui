@@ -1,0 +1,19 @@
+{
+  "name": "presence",
+  "title": "Presence",
+  "description": "Enter and exit animations that finish before an element unmounts, on UI SDK's animateIn / animateOut: usePresence for one element, usePresenceList for a list whose items come and go, useEnterExit for a part that is always mounted.",
+  "exports": [
+    "usePresence",
+    "usePresenceList",
+    "useEnterExit"
+  ],
+  "imports": [
+    "usePresence",
+    "usePresenceList"
+  ],
+  "types": [
+    "Presence",
+    "PresenceEntry",
+    "PresenceOptions"
+  ]
+}

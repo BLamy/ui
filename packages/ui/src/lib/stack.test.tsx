@@ -41,7 +41,7 @@ const nav = definePrimitive({
       exiting: 'exiting',
       set: (value, details) => change('pages', value, details),
       back,
-      active: () => context.store.get().on,
+      when: () => context.store.get().on,
       persistent,
     });
     return { stack, initialFocus, persistent };
@@ -635,7 +635,7 @@ describe('createPageStack swipe', () => {
   });
 });
 
-describe('createPageStack active', () => {
+describe('createPageStack when', () => {
   it('switched off, the pages stay but nothing pops: no Escape, no back, no swipe', () => {
     const bound: unknown[] = [];
     const back: NavOptions['back'] = (_el, { onBack }) => {

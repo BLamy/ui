@@ -105,9 +105,9 @@ function ProjectCard({ project: p }: { project: Project }) {
         <SiteThumb kind={p.site} brand={p.brand} className="aspect-[16/10] w-full transition-[scale] duration-spring-smooth ease-spring-smooth group-hover:scale-[1.025] motion-reduce:transition-none" />
         <div className="absolute top-2 left-2 flex gap-1.5">
           {running ? (
-            <Pill tone="primary" className="bg-card shadow-[0_2px_8px_--alpha(black/12%)]"><span className="size-1.5 animate-pulse rounded-full bg-primary motion-reduce:animate-none" />Running</Pill>
+            <Pill tone="default" className="bg-card shadow-[0_2px_8px_--alpha(black/12%)]"><span className="size-1.5 animate-pulse rounded-full bg-primary motion-reduce:animate-none" />Running</Pill>
           ) : p.status === 'paused' ? (
-            <Pill tone="neutral" className="bg-card shadow-[0_2px_8px_--alpha(black/12%)]">Paused</Pill>
+            <Pill tone="muted" className="bg-card shadow-[0_2px_8px_--alpha(black/12%)]">Paused</Pill>
           ) : null}
         </div>
       </div>

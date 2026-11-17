@@ -502,3 +502,24 @@ it('presentation="tabs" closes a tab with its button (a finger) or Delete, and k
   fireEvent.keyDown(document.activeElement!, { key: 'Delete' });
   expect(names()).toEqual(['Notes']);
 });
+
+it('presentation="tabs": the shown tab\'s close is a named button outside the tablist, for a screen reader on a phone', async () => {
+  const onLayoutChange = vi.fn();
+  render(<Workspace aria-label="Editor" presentation="tabs" defaultLayout={layout} renderTabContent={content} onLayoutChange={onLayoutChange} />);
+  await settle();
+  const names = () => screen.getAllByRole('tab').map((t) => t.textContent);
+  // In the accessibility tree (not aria-hidden), not inside the tablist, and named after the shown tab.
+  const close = screen.getByRole('button', { name: 'Close Counter' });
+  expect(close.closest('[role=tablist]')).toBeNull();
+  expect(close.closest('[aria-hidden=true]')).toBeNull();
+  fireEvent.click(screen.getByRole('tab', { name: 'Log' }));
+  await settle();
+  fireEvent.click(screen.getByRole('button', { name: 'Close Log' }));
+  await settle();
+  expect(names()).toEqual(['Counter', 'Notes']);
+  expect(onLayoutChange).toHaveBeenLastCalledWith(expect.anything(), expect.objectContaining({ action: 'close', reason: 'remove-press', tab: 'log' }));
+  // A protected tab has none.
+  fireEvent.click(screen.getByRole('tab', { name: 'Notes' }));
+  await settle();
+  expect(screen.queryByRole('button', { name: 'Close Notes' })).toBeNull();
+});

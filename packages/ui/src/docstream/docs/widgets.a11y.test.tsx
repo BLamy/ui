@@ -215,7 +215,7 @@ describe("DocumentProperties", () => {
 
   it("is a disclosure whose sheet stays findable while closed; boolean properties are named checkboxes", async () => {
     const onChange = vi.fn()
-    const { host } = await render(<DocumentProperties properties={properties} onChange={onChange} />)
+    const { host } = await render(<DocumentProperties properties={properties} onValueChange={onChange} />)
     const trigger = q(host, ".docs-properties-trigger")
     expect(trigger.getAttribute("aria-expanded")).toBe("false")
     expect(q(host, ".docs-properties-panel").getAttribute("hidden")).toBe("until-found")

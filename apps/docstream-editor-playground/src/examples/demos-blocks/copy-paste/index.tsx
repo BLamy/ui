@@ -63,7 +63,7 @@ export default function CopyPaste({ variant = "inline" }: { variant?: string }) 
         >
           <GitbookEditor
             markdown={a}
-            onChange={setA}
+            onValueChange={setA}
             toolbar={false}
             documentProperties={false}
             demoResolver={demoResolver}
@@ -84,7 +84,7 @@ export default function CopyPaste({ variant = "inline" }: { variant?: string }) 
           <GitbookEditor
             key={`${mode}-${share}`}
             markdown={b}
-            onChange={setB}
+            onValueChange={setB}
             toolbar={false}
             documentProperties={false}
             demoRuntime={demoRuntime}

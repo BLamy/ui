@@ -89,7 +89,7 @@ import { almostNodeLiveRenderer, createAlmostNodeDemoRuntime } from "@brett_lamy
 
 const demoRuntime = createAlmostNodeDemoRuntime()
 
-<GitbookEditor markdown={md} onChange={setMd} liveRenderer={almostNodeLiveRenderer} demoRuntime={demoRuntime} />
+<GitbookEditor markdown={md} onValueChange={setMd} liveRenderer={almostNodeLiveRenderer} demoRuntime={demoRuntime} />
 ```
 
 Without them, live fences are edited as plain code, and inline-file demos open on their Code view with a "needs runtime" note. A test (`never imports the almost-node playground`) checks every source and `dist/` file, so an app that never installs `@agent-wasm/core` still typechecks and bundles cleanly. See [Code, math and diagrams](../02-editing/04-code-math-and-diagrams.md) and [Demo blocks](../03-files-and-demos/04-demo-blocks.md).
@@ -108,7 +108,7 @@ export default defineConfig({
 ```
 
 ```tsx title="Editor.tsx" lineNumbers="false"
-<GitbookEditor markdown={md} onChange={setMd} sourceClient={createViteSourceClient()} />
+<GitbookEditor markdown={md} onValueChange={setMd} sourceClient={createViteSourceClient()} />
 ```
 
 `createViteSourceClient` comes from `@brett_lamy/ui/docstream`. Any object with `read`, `write` and `importModule` works too: the playground on the home page uses an in-memory one. See [Source files](../03-files-and-demos/03-source-files.md).
@@ -135,7 +135,7 @@ import { GitbookEditor } from "@brett_lamy/ui/docstream-editor"
 
 export function Editor({ initial }: { initial: string }) {
   const [markdown, setMarkdown] = useState(initial)
-  return <GitbookEditor markdown={markdown} onChange={setMarkdown} />
+  return <GitbookEditor markdown={markdown} onValueChange={setMarkdown} />
 }
 ```
 

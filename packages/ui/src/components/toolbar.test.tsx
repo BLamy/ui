@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { Toolbar, ToolbarButton, ToolbarGroup, ToolbarSeparator, ToolbarText } from '@/components/ui/toolbar';
+import { Toolbar, ToolbarButton, ToolbarGroup, ToolbarSeparator, ToolbarText, ToolbarToggle } from '@/components/ui/toolbar';
 
 (globalThis as { __UI_SDK_STRICT__?: boolean }).__UI_SDK_STRICT__ = true;
 afterEach(cleanup);
@@ -19,6 +19,32 @@ function EditToolbar({ count, onFavorite, onDelete }: { count: number; onFavorit
 }
 
 describe('Toolbar', () => {
+  it('ToolbarToggle: a toggle in the arrow-key order, at the toolbar\'s size, drawn filled while pressed', () => {
+    const onPressedChange = vi.fn();
+    render(
+      <Toolbar aria-label="Formatting" size="sm">
+        <ToolbarButton>Undo</ToolbarButton>
+        <ToolbarToggle aria-label="Bold" defaultPressed onPressedChange={onPressedChange}>B</ToolbarToggle>
+        <ToolbarToggle size="icon-sm" aria-label="Italic">I</ToolbarToggle>
+      </Toolbar>,
+    );
+    const [undo, bold, italic] = [button('Undo'), button('Bold'), button('Italic')];
+    expect(bold.getAttribute('aria-pressed')).toBe('true');
+    expect(bold.hasAttribute('data-pressed')).toBe(true);
+    expect(bold.className).toContain('data-pressed:bg-secondary');
+    expect(bold.className).toContain('h-8');
+    expect(italic.className).toContain('rounded-lg');
+    expect([undo, bold, italic].filter((b) => b.tabIndex === 0)).toHaveLength(1);
+    act(() => undo.focus());
+    fireEvent.keyDown(undo, { key: 'ArrowRight' });
+    expect(document.activeElement).toBe(bold);
+    fireEvent.keyDown(bold, { key: 'ArrowRight' });
+    expect(document.activeElement).toBe(italic);
+    fireEvent.click(bold);
+    expect(onPressedChange).toHaveBeenCalledWith(false, expect.anything());
+    expect(bold.getAttribute('aria-pressed')).toBe('false');
+  });
+
   it('is a named toolbar with one tab stop; arrows, Home and End move between its buttons and skip its text', () => {
     render(
       <Toolbar aria-label="Formatting">

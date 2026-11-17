@@ -45,7 +45,7 @@ import "@brett_lamy/ui/docstream-editor/styles.css"
 
 export function EditorPage({ initial }: { initial: string }) {
   const [markdown, setMarkdown] = useState(initial)
-  return <GitbookEditor markdown={markdown} onChange={setMarkdown} />
+  return <GitbookEditor markdown={markdown} onValueChange={setMarkdown} />
 }
 ```
 {% endtab %}
@@ -60,7 +60,7 @@ export function SplitView({ initial }: { initial: string }) {
   const [markdown, setMarkdown] = useState(initial)
   return (
     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr" }}>
-      <GitbookEditor markdown={markdown} onChange={setMarkdown} />
+      <GitbookEditor markdown={markdown} onValueChange={setMarkdown} />
       <MarkdownContent markdown={markdown} />
     </div>
   )

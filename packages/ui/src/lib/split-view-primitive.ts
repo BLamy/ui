@@ -529,7 +529,7 @@ export const splitView = definePrimitive({
       },
       back: bindBack,
       // Tiled, the same columns are side by side: nothing pops, and a new top column moves no focus.
-      active: () => sizeClassIn(store.get()) === 'compact',
+      when: () => sizeClassIn(store.get()) === 'compact',
       // One element per column for its whole life, placed by the layout: no exits, and `inert` stays the layout's.
       persistent: true,
     });

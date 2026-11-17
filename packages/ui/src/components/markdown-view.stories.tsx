@@ -111,3 +111,69 @@ export const WorkerdConfigOnAPhone: Story = { args: { markdown: WORKERD }, param
 
 /** A config that doesn't read says where, and its source is still a press away. */
 export const WorkerdConfigUnreadable: Story = { args: { markdown: WORKERD.replace('enableSql = true) ],', 'enableSql = true ],') } };
+
+/* ── GitBook blocks: what sets MarkdownView apart from plain Markdown, and what most often regresses ── */
+const BLOCKS = `## Install
+
+{% hint style="info" %}
+**Heads up.** The tray snaps to its detents and follows reduced motion.
+{% endhint %}
+
+{% hint style="warning" %}
+Lowering the threshold below \`0.4\` closes the tray on a slow drag, which most people read as a dismissal rather than a snap back.
+{% endhint %}
+
+{% hint style="danger" %}
+This removes the old \`trayDrag\` flag.
+{% endhint %}
+
+{% hint style="success" %}
+All visual tests pass.
+{% endhint %}
+
+{% tabs %}
+{% tab title="npm" %}
+\`\`\`bash
+npm install @brett_lamy/ui
+\`\`\`
+{% endtab %}
+{% tab title="pnpm" %}
+\`\`\`bash
+pnpm add @brett_lamy/ui
+\`\`\`
+{% endtab %}
+{% tab title="Notes" %}
+Plain text in a tab.
+{% endtab %}
+{% endtabs %}
+
+{% stepper %}
+{% step %}
+### Flip the flag
+Set \`trayDrag\` to true.
+{% endstep %}
+{% step %}
+### Run the tests
+Light, dark and the phone frame.
+{% endstep %}
+{% step %}
+### Ship it
+{% endstep %}
+{% endstepper %}
+
+<details>
+<summary>Why a 0.4 threshold?</summary>
+
+Below it a slow drag reads as a dismissal; above it a flick feels sticky.
+
+</details>
+
+\`\`\`ts title="tray.ts"
+export const tray = { detents: [0.4, 1], threshold: 0.4 }
+\`\`\`
+`;
+
+/** Hints of each style, tabs (a command and a plain tab), a stepper with headings, an expandable and a titled fence. */
+export const Blocks: Story = { args: { markdown: BLOCKS } };
+export const BlocksDark: Story = { args: { markdown: BLOCKS }, parameters: { dark: true } };
+export const BlocksPhone: Story = { args: { markdown: BLOCKS }, parameters: { phone: true } };

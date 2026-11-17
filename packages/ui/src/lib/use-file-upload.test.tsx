@@ -52,7 +52,7 @@ describe('useFileUpload', () => {
     await act(async () => { result.current.add([file('a'), file('b')]); });
     expect(status(result.current.files)).toEqual({ a: 'uploading', b: 'uploading' });
     expect(calls.map((c) => c.file.name)).toEqual(['a', 'b']);
-    expect(result.current.busy).toBe(true);
+    expect(result.current.pending).toBe(true);
     await act(async () => calls[0].resolve({ url: '/a' }));
     expect(result.current.files[0]).toMatchObject({ status: 'done', progress: 1, url: '/a' });
     expect(result.current.counts).toMatchObject({ done: 1, uploading: 1 });

@@ -13,7 +13,7 @@ function EditorBasicDemo() {
   const [md, setMd] = useState('Try **bold**, `code`, or press `/` on an empty line.');
   return (
     <div>
-      <GitbookEditor markdown={md} onChange={setMd} toolbar={false} placeholder="Type here…" />
+      <GitbookEditor markdown={md} onValueChange={setMd} toolbar={false} placeholder="Type here…" />
       <pre style={{ margin: '10px 0 0', padding: 10, background: '#f7f7fa', border: '1px solid #e6e6ee', borderRadius: 8, fontFamily: MONO, fontSize: 11.5, whiteSpace: 'pre-wrap' }}>{md}</pre>
     </div>
   );
@@ -36,7 +36,7 @@ function EditorSlashDemo() {
     <GitbookEditor
       markdown=""
       toolbar={false}
-      autofocus
+      autoFocus
       placeholder="Press / to open the slash menu…"
     />
   );
@@ -53,7 +53,7 @@ function EditorReferencesDemo() {
     <div>
       <GitbookEditor
         markdown={md}
-        onChange={setMd}
+        onValueChange={setMd}
         toolbar={false}
         references={{ mentions: ['brett', 'dana'], tags: ['seasonal', 'ops'] }}
         placeholder="Type @ or # for chips, / for blocks…"

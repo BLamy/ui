@@ -9,6 +9,7 @@
     "ToolbarGroup",
     "ToolbarSeparator",
     "ToolbarText",
+    "ToolbarToggle",
     "toolbarVariants",
     "toolbarButtonVariants",
     "useToolbar",

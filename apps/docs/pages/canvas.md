@@ -104,7 +104,7 @@ A selection outline that is 1px at 100% zoom is 0.1px at 10%. These parts divide
 
 | Part | Draws |
 | --- | --- |
-| `CanvasFrame` | An outline around a (rotated) frame; `dashed` for a locked item, `offset` for the air around it. |
+| `CanvasFrame` | An outline around a (rotated) frame; `variant="dashed"` for a locked item (or `default`, solid), `offset` for the air around it. |
 | `CanvasHandles` | Resize and rotate handles. |
 | `CanvasMarquee` | The rubber band of a drag-select. |
 | `CanvasGuides` | Alignment guides from `snapMove`. |
@@ -174,3 +174,22 @@ The canvas carries `data-slot="canvas"` (with `data-panning` while Space is held
 ## Accessibility and motion
 
 A canvas is a pointer-first surface, so give people another way to do what they can do on it: keyboard commands through `onCanvasKeyDown` (arrow keys to nudge, Delete to remove, as Freeform does), and a real list or inspector for the same content. The view itself has a keyboard path (+ − 0, ⌘0, arrows), says each zoom aloud, and follows focus, so Tab through focusable items on the board brings each into view. Panning and zooming are direct manipulation and do not animate, so there is no reduced-motion variant to turn off.
+
+## cva recipes
+
+Generated from the source. Call a recipe on any element to borrow a component's look; in a registry-installed copy, change `defaultVariants` to change the default. All recipes are listed in the [Variants reference](https://blamy.github.io/ui/#/variants).
+
+### `canvasFrameVariants`
+
+Defined in `@/components/ui/canvas`. Base classes:
+
+```text
+pointer-events-none absolute rounded-(--canvas-frame-radius) outline-(length:--canvas-frame-line) outline-offset-(--canvas-frame-offset) outline-primary
+```
+
+**`variant`** — default `default`
+
+| Value | Adds |
+| --- | --- |
+| `default` (default) | `outline-solid` |
+| `dashed` | `outline-dashed` |

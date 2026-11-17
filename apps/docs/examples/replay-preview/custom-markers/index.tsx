@@ -19,7 +19,7 @@ export default function CustomMarkers() {
         markers={findings}
         url="https://shop.northwind.test/checkout"
         trafficLights={false}
-        initialTime={3450}
+        defaultTime={3450}
         onMarkerAction={setPicked}
       />
       <div style={{ fontSize: 13, color: 'var(--muted-foreground)' }}>

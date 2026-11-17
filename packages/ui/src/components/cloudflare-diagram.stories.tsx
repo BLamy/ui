@@ -57,6 +57,7 @@ const UPLOAD: CloudflareService[] = [
 ];
 const UPLOAD_EDGES: CloudflareEdge[] = [
   { id: 'api-files', from: 'api', to: 'files', via: 'r2_buckets', binding: 'FILES', operations: ['put', 'get'] },
+  { id: 'api-jobs', from: 'api', to: 'jobs', via: 'queues', binding: 'JOBS', operations: ['send'] },
   { id: 'files-jobs', from: 'files', to: 'jobs', via: 'events', operations: ['object-create'] },
   { id: 'jobs-consumer', from: 'jobs', to: 'consumer', via: 'queue-consumer', consumer: { batchSize: 10, retries: 3 } },
   { id: 'consumer-db', from: 'consumer', to: 'db', via: 'd1_databases', binding: 'DB', operations: ['prepare'] },

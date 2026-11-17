@@ -2,7 +2,7 @@ import { renderToString } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import { useCanvas } from '@/components/ui/canvas';
 import { Diagram, DiagramNodeBody, diagramEdgeVariants } from '@/components/ui/diagram';
-import type { DiagramEdge, DiagramNode } from '@/lib/diagram-model';
+import { DIAGRAM_LEGIBLE_ZOOM, type DiagramEdge, type DiagramNode } from '@/lib/diagram-model';
 import { UPLOAD_EDGES, UPLOAD_NODES } from '../stories/diagram-machine';
 
 const count = (html: string, re: RegExp) => (html.match(re) ?? []).length;
@@ -137,9 +137,12 @@ describe('Diagram', () => {
       return <output data-testid="zoom">{useCanvas().zoom}</output>;
     }
     const zoom = (html: string) => Number(/data-testid="zoom">([\d.]+)</.exec(html)![1]);
+    // The size before anything's measured is 1000 x 700, with 24 px of air. What fits whole at a readable size is fitted:
+    // (1000 - 48) / 1000.
+    expect(zoom(renderToString(<Diagram nodes={[{ id: 'a', x: 0, y: 0, w: 1000, h: 100 }]}><Zoom /></Diagram>))).toBeCloseTo(0.952);
+    // What doesn't (it would be 0.476) opens at the least readable size, from its top, never smaller.
     const nodes: DiagramNode[] = [{ id: 'a', x: 0, y: 0, w: 2000, h: 100 }];
-    // The size before anything's measured is 1000 x 700, with 24 px of air: (1000 - 48) / 2000.
-    expect(zoom(renderToString(<Diagram nodes={nodes}><Zoom /></Diagram>))).toBeCloseTo(0.476);
+    expect(zoom(renderToString(<Diagram nodes={nodes}><Zoom /></Diagram>))).toBe(DIAGRAM_LEGIBLE_ZOOM);
     expect(zoom(renderToString(<Diagram nodes={nodes} defaultViewport={{ x: 1, y: 2, zoom: 3 }}><Zoom /></Diagram>))).toBe(3);
     expect(zoom(renderToString(<Diagram nodes={nodes} viewport={{ x: 1, y: 2, zoom: 0.75 }}><Zoom /></Diagram>))).toBe(0.75);
   });

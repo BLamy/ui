@@ -87,6 +87,10 @@ describe('PencilInkPicker and PencilWidthPicker', () => {
     expect(pressedIn(screen.getByRole('group', { name: 'Ink' }))).toEqual(['Black']);
     expect(within(screen.getByRole('group', { name: 'Ink' })).getAllByRole('button').map((b) => b.getAttribute('aria-label')))
       .toEqual(['Black', 'White', 'Blue', 'Green', 'Yellow', 'Pink']);
+    // A 22px swatch reaches a 44px hit area on a touch screen.
+    for (const swatch of within(screen.getByRole('group', { name: 'Ink' })).getAllByRole('button')) {
+      expect(swatch.className).toContain('pointer-coarse:after:-inset-[11px]');
+    }
     expect(pressedIn(screen.getByRole('group', { name: 'Width' }))).toEqual(['Regular']);
   });
 });

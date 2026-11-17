@@ -3,7 +3,7 @@ import { formatReplayTime } from '@brett_lamy/ui/docstream/replay'
 import { ReplayPreview } from '@/components/ui/replay-preview'
 
 // `chrome="none"` and `controls={false}` turn the player into a still frame
-// of the recording at `initialTime` — screenshot evidence that is the page
+// of the recording at `defaultTime` — screenshot evidence that is the page
 // itself, pointer and click ripple included. Frames mount as they scroll in.
 const frames = [
   { at: 2250, label: 'Adds Trail Runner 2' },
@@ -29,7 +29,7 @@ export default function EvidenceFrames() {
               events={replayDemoEvents}
               chrome="none"
               controls={false}
-              initialTime={f.at}
+              defaultTime={f.at}
               title={`Frame at ${formatReplayTime(f.at)}`}
             />
           </div>

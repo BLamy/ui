@@ -35,7 +35,7 @@ async function mount(props: Partial<GitbookEditorProps> = {}) {
       <GitbookEditor
         toolbar={false}
         markdown={markdown}
-        onChange={(md) => (markdown = md)}
+        onValueChange={(md) => (markdown = md)}
         onEditorReady={(ed) => {
           if (ed) editor = ed
         }}

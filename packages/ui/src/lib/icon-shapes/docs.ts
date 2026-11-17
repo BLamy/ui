@@ -1,3 +1,4 @@
+/* @internal: a shape table Icon merges in (lib/icon). Draw these with <Icon name>; the table is not package API. */
 import type { IconShape } from '@/lib/icon';
 
 /** Icon geometry for documents and writing: the glyphs docstream and its editor draw (hints, file tabs, the demo

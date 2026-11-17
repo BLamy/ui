@@ -33,7 +33,7 @@ docstream's stylesheet covers the renderer pieces the editor reuses (demo previe
 {% step %}
 ### Render a controlled editor
 
-`GitbookEditor` is controlled, like an `<input>`: pass `markdown` and take the next value from `onChange`.
+`GitbookEditor` is controlled, like an `<input>`: pass `markdown` and take the next value from `onValueChange`.
 
 ```tsx title="EditorPage.tsx"
 import { useState } from "react"
@@ -48,13 +48,13 @@ Type / to insert a block.
 
 export function EditorPage() {
   const [markdown, setMarkdown] = useState(initial)
-  return <GitbookEditor markdown={markdown} onChange={setMarkdown} />
+  return <GitbookEditor markdown={markdown} onValueChange={setMarkdown} />
 }
 ```
 
-`onChange` fires on every edit with the serialized Markdown. The editor remembers the last string it emitted, so passing that string back as `markdown` doesn't reset anything: no caret jumps, no loops. Passing a *different* string (you opened another file) replaces the document, without firing `onChange`.
+`onValueChange` fires on every edit with the serialized Markdown. The editor remembers the last string it emitted, so passing that string back as `markdown` doesn't reset anything: no caret jumps, no loops. Passing a *different* string (you opened another file) replaces the document, without firing `onValueChange`.
 
-You can also leave out `markdown` for an uncontrolled editor that starts empty. It still reports edits through `onChange`.
+You can also leave out `markdown` for an uncontrolled editor that starts empty. It still reports edits through `onValueChange`.
 {% endstep %}
 
 {% step %}
@@ -69,7 +69,7 @@ export function EditorPage() {
   const [markdown, setMarkdown] = useState(initial)
   return (
     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-      <GitbookEditor markdown={markdown} onChange={setMarkdown} />
+      <GitbookEditor markdown={markdown} onValueChange={setMarkdown} />
       <MarkdownContent markdown={markdown} />
     </div>
   )
@@ -108,7 +108,7 @@ sequenceDiagram
   E->>E: tiptapToAst of the editor JSON
   E->>D: serializeEditorMarkdown(ast)
   D-->>E: markdown
-  E->>You: onChange(markdown)
+  E->>You: onValueChange(markdown, details)
   You->>E: the same string back as markdown, so no reset
   You->>D: MarkdownContent renders the string
 ```

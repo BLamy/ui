@@ -16,7 +16,8 @@ import {
   type AdaptivePaneShown,
   type AdaptivePaneSide,
 } from '@/lib/adaptive-pane-primitive';
-import { useSizeClassScope, type SizeClass } from '@/lib/container';
+import { useSizeClassScope } from '@/lib/container';
+import type { SizeClass } from '@/lib/size-class';
 import { Icon } from '@/lib/icon';
 import { useKeptChildren } from '@/lib/kept-children';
 import { BackLabel, backName, barBackButton, barTitle, useBackFit } from '@/lib/nav-bar';

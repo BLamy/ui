@@ -88,7 +88,7 @@ function Player({ recording, time, label }: { recording: Recording | undefined; 
       <ReplayPreview
         key={`${recording.id}@${time}`}
         events={recording.events}
-        initialTime={time}
+        defaultTime={time}
         chrome="minimal"
         title={label}
         devtools={false}

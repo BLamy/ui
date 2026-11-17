@@ -184,7 +184,7 @@ describe("entry boundaries", () => {
   // The capnp fence draws with the library's Cloudflare entry, which brings the diagram and the catalog, about 150 KB: only
   // when there's one to draw. Nothing of docstream's reaches either another way.
   it.each(entries)("%s (%s) loads the library's Cloudflare diagram and catalog only through a dynamic import", (_name, target) => {
-    expect([...graph(target, { dynamic: false }).bare].filter((spec) => /^@brett_lamy\/ui\/(cloudflare|cloudflare-diagram|lib\/cloudflare-)/.test(spec))).toEqual([])
+    expect([...graph(target, { dynamic: false }).bare].filter((spec) => /^@brett_lamy\/ui\/(cloudflare|lib\/cloudflare-)/.test(spec))).toEqual([])
   })
 
   // The xstate fence draws with the library's StateDiagram, which lays the machine out with ELK and makes it with XState (both
@@ -232,7 +232,7 @@ const kitTargets = KIT_ENTRIES.flatMap((name): [string, string][] => {
 })
 /** Loaded only when a page needs them: Babel, XState, acorn, rrweb, ELK, Strudel's engine, KaTeX, Pele, the Cloudflare
     diagram and catalog, and the optional peers' sub-systems. */
-const LAZY = /^(?:@babel\/parser|xstate|acorn|rrweb|elkjs|@strudel\/web|katex|pele|@agent-wasm\/core|@brett_lamy\/viz-engine|@brett_lamy\/ui\/(?:cloudflare|cloudflare-diagram|lib\/cloudflare-|lib\/diagram-layout))(?:\/|$)/
+const LAZY = /^(?:@babel\/parser|xstate|acorn|rrweb|elkjs|@strudel\/web|katex|pele|@agent-wasm\/core|@brett_lamy\/viz-engine|@brett_lamy\/ui\/(?:cloudflare|lib\/cloudflare-|lib\/diagram-layout))(?:\/|$)/
 
 describe("the kit's entries that reach docstream", () => {
   it.each(kitTargets.filter(([, target]) => target.startsWith("./dist/")))("%s (%s) imports no stylesheet from JavaScript", (_name, target) => {

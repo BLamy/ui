@@ -54,7 +54,7 @@ useEffect(() => playback.setDuration(timelineDuration(timeline)), [playback, tim
 />
 ```
 
-`media` gives each media id its length (a trim can't run past the end of the file; stills have no limit) and the name a clip shows. `selectedClips` / `defaultSelectedClips` / `onSelectedClipsChange(ids, details)` (reasons `item-press`, `track-press`, `escape-key`, `remove-press`) and `zoom` / `defaultZoom` / `onZoomChange(zoom, details)` (pixels per second, reason `wheel`) can be controlled; `readOnly` shows the edit without letting anything change it; `fitTimelineZoom(duration, width, { headerWidth })` fits an edit to a width, and `timelineZoomRange` (`{ min: 2, max: 600 }` px a second) is the range a zoom is clamped to, for your own zoom slider or buttons. `onDropMedia(id, details)` reports media dragged in from a library: put `timelineMediaType` on the drag with the media id. `details` has where it landed (`trackId`, `time` and, on a magnetic track, `index`), the drop's `event` and `source`, and `cancel()` to refuse it. ⌘/Ctrl + wheel zooms with `reason: 'wheel'`; a zoom the host refuses leaves the scroll where it was.
+`media` gives each media id its length (a trim can't run past the end of the file; stills have no limit) and the name a clip shows. `selectedClips` / `defaultSelectedClips` / `onSelectedClipsChange(ids, details)` (reasons `item-press`, `track-press`, `escape-key`, `remove-press`) and `zoom` / `defaultZoom` / `onZoomChange(zoom, details)` (pixels per second, reason `wheel`) can be controlled; `readOnly` shows the edit without letting anything change it; `fitVideoTimelineZoom(duration, width, { headerWidth })` fits an edit to a width, and `videoTimelineZoomRange` (`{ min: 2, max: 600 }` px a second) is the range a zoom is clamped to, for your own zoom slider or buttons. `onDropMedia(id, details)` reports media dragged in from a library: put `videoTimelineMediaType` on the drag with the media id. `details` has where it landed (`trackId`, `time` and, on a magnetic track, `index`), the drop's `event` and `source`, and `cancel()` to refuse it. ⌘/Ctrl + wheel zooms with `reason: 'wheel'`; a zoom the host refuses leaves the scroll where it was.
 
 ## The model
 
@@ -119,7 +119,7 @@ The timeline renders to a file with FFmpeg in the browser: see [Rendering a time
 | --- | --- | --- |
 | `value` / `defaultValue` / `onValueChange(value, details)` | — | The edit; `details` has `reason`, `id`, `action` and `cancel()`. Once per gesture or key. |
 | `playback` | required | The shared clock (`usePlaybackClock`) the playhead and the ruler follow. |
-| `media` | `{}` | `Record<id, TimelineMedia>`: each media id's `kind`, `duration` and `name` (the same map VideoPreview takes, which reads its `url`). |
+| `media` | `{}` | `Record<id, VideoTimelineMedia>`: each media id's `kind`, `duration` and `name` (the same map VideoPreview takes, which reads its `url`). |
 | `fps` | `30` | Frames per second: edits land on frames. |
 | `selectedClips` / `defaultSelectedClips` / `onSelectedClipsChange` | `[]` | The selection. |
 | `zoom` / `defaultZoom` / `onZoomChange` | `60` | Pixels per second. |
@@ -128,7 +128,7 @@ The timeline renders to a file with FFmpeg in the browser: see [Rendering a time
 | `clipClassName(clip, track)` | primary for video, success for audio | A clip's tint classes. |
 | `trackHeight(track)` | 64 magnetic video, 44 video, 40 audio | Lane height in px. |
 | `headerWidth` | 132, or 56 in a compact container | Track header width in px. In a compact container the header is the track's short code (`V1`, `V2`, `A1`, `Main` for the magnetic track) on a button named "{track} options" with the full name in its tooltip, whose menu holds Hide, Mute and Lock. In the full header the toggles are named after their track ("Hide Titles", "Mute Music", "Lock Music"). |
-| `onDropMedia(id, details)` | — | Media dragged in with `timelineMediaType`. |
+| `onDropMedia(id, details)` | — | Media dragged in with `videoTimelineMediaType`. |
 | `aria-label` | "Timeline" | Names the timeline. |
 | `className` / `style` | — | On the root. |
 | `ref` and a `div`'s other props | — | `id`, `data-*`, event handlers and the rest reach the root. |

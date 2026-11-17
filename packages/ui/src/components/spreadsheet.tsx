@@ -1,5 +1,5 @@
 'use client';
-import { memo, useSyncExternalStore, type ReactNode } from 'react';
+import { memo, useId, useSyncExternalStore, type ReactNode } from 'react';
 import type { ChangeDetails } from '@ui-sdk/core';
 import { createParts, usePart, usePrimitive, type PartProps, type PrimitiveHandle } from '@ui-sdk/react/primitive';
 import { Button as SdkButton } from '@ui-sdk/react/button';
@@ -258,18 +258,23 @@ export function Spreadsheet({
   };
   const handle = usePrimitive(spreadsheet, options);
   const { api } = handle;
+  const emptyId = useId();
 
   return usePart(handle, 'root', {}, {
     ...({ 'data-density': density ?? 'compact' } as object),
     ...props,
-    className: cx(spreadsheetVariants({ density }), className),
+    // An empty sheet's grid holds the tab stop: its ring goes around the whole sheet, titles and empty region alike.
+    className: cx(cn(spreadsheetVariants({ density }), 'has-[>[role=grid]:focus-visible]:outline-2 has-[>[role=grid]:focus-visible]:-outline-offset-2 has-[>[role=grid]:focus-visible]:outline-primary'), className),
     style,
     children: (state: SpreadsheetView) => {
       const empty = !api.internal.modelOf(state).body;
+      const pastable = empty && !state.readOnly;
       return (
       <>
         <parts.Grid
           aria-label={ariaLabel}
+          // An empty sheet's grid is the tab stop that takes a paste; the empty region beside it says so.
+          aria-describedby={pastable ? emptyId : undefined}
           className={cn(
             'bl-scroll relative min-h-0 overflow-auto overscroll-contain text-footnote outline-none select-none has-[[data-slot=spreadsheet-cell]:focus-visible]:ring-2 has-[[data-slot=spreadsheet-cell]:focus-visible]:ring-primary has-[[data-slot=spreadsheet-cell]:focus-visible]:ring-inset',
             empty ? 'shrink-0' : 'flex-1',
@@ -280,7 +285,17 @@ export function Spreadsheet({
         {/* The grid's sibling, at the box's own width: a grid owns only rows (WAI-ARIA grid), and two narrow columns would
             wrap it. The grid shrinks to its titles. */}
         {empty ? (
-          <div data-slot="spreadsheet-empty" className="bl-scroll min-h-0 flex-1 overflow-auto">
+          // A press here focuses the grid, so ⌘V right after it pastes (the region itself is not a control).
+          <div
+            id={emptyId}
+            data-slot="spreadsheet-empty"
+            className="bl-scroll min-h-0 flex-1 overflow-auto"
+            onPointerDown={pastable ? (event) => {
+              if ((event.target as Element).closest('button, a, input, textarea, select, [tabindex]')) return;
+              event.preventDefault();
+              (event.currentTarget.parentElement?.querySelector('[role=grid]') as HTMLElement | null)?.focus();
+            } : undefined}
+          >
             {renderEmptyState(emptyState, { title: 'No rows', description: state.readOnly ? undefined : 'Paste cells or add a row.' })}
           </div>
         ) : null}

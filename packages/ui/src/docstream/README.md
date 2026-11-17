@@ -173,7 +173,7 @@ The renderer shows a compact, collapsed property sheet. Use `documentProperties=
 or `documentProperties={{ defaultOpen: true }}` to expand it. Comments, key order, quoting and line
 endings survive body edits. `readDocumentProperties`, `setDocumentProperty` and
 `removeDocumentProperty` are also available from `@brett_lamy/ui/docstream/gitbook`.
-`DocumentProperties` from `@brett_lamy/ui/docstream/properties` accepts an optional `onChange`
+`DocumentProperties` from `@brett_lamy/ui/docstream/properties` accepts an optional `onValueChange`
 for an editable sheet with text, number, boolean and structured values.
 
 Task lists understand `[ ]` pending, `[~]` in progress, `[?]` implemented/evidence needed,
@@ -244,7 +244,7 @@ event array, or an events endpoint):
 import { ReplayPreview } from "@brett_lamy/ui/docstream"
 
 <ReplayPreview source="https://loop-qa.replay.io/projects/project-id/tasks/task-id" />
-<ReplayPreview events={events} initialTime={6400} />
+<ReplayPreview events={events} defaultTime={6400} />
 ```
 
 The player is a browser frame (URL bar that follows the recording's navigations, led by
@@ -254,9 +254,9 @@ moments on a rail above it (clicks, console errors, failed requests, navigations
 custom events; press one to jump), speed, fullscreen, and a drawn cursor whose clicks
 ripple. Keys work inside the player: Space/K, ←/→ (5 s), J/L (10 s), `<`/`>` speed,
 F fullscreen, Home/End. `chrome` is `"browser"` (default), `"minimal"` or `"none"`;
-`controls={false}` with `chrome="none"` is a still frame of the page at `initialTime`.
+`controls={false}` with `chrome="none"` is a still frame of the page at `defaultTime`.
 `ref` gives `{ play, pause, seek, toggle, getCurrentTime, inspect }`. Other props: `url`,
-`title`, `trafficLights`, `autoplay`, `loop`, `speeds`, `markers`, `markerKinds`,
+`title`, `trafficLights`, `autoPlay`, `loop`, `speeds`, `markers`, `markerKinds`,
 `cursor`, `fit` (`"width"` | `"contain"`), `poster`, `mounted` (`"visible"` by default, `true`, or `false` to hold
 it), `devtools` (`false` removes DevTools), `onTimeUpdate`, `onPlayingChange`, `onMarkerAction(marker, details)`, and
 the root element's props (`id`, `className`, `style`, `data-*`, `aria-*`). `formatReplayTime(ms)` gives
@@ -308,7 +308,7 @@ pure timeline helpers, none of which load rrweb:
 import { ReplayStage, getReplayMarkers, getReplayPointerTrack, replayPointerAt } from "@brett_lamy/ui/docstream/replay"
 
 const stage = useRef<ReplayStageHandle>(null)
-<ReplayStage ref={stage} events={events} fit="contain" showMouse={false}
+<ReplayStage ref={stage} events={events} fit="contain" cursor={false}
   onTimeUpdate={setTime} onPlayingChange={setPlaying} overlay={<MyCursor at={replayPointerAt(track, time)} />} />
 // markers: getReplayMarkers(events) → clicks, console errors, failed requests, navigations, custom events
 ```
@@ -968,7 +968,7 @@ import { AssetResolverProvider, MarkdownContent } from "@brett_lamy/ui/docstream
 - `VideoEmbed`: Renders direct video assets or hosted video players.
 - `StlViewer`: Interactive WebGL preview of an `.stl` model (`parseStl`, `isStlUrl` alongside).
 - `StrudelPlayer`: Audio player for a Strudel pattern (`code`) or `.strudel` file (`src`), with an optional equipment rack.
-- `StrudelRack`: Equipment generated from Strudel code (controlled: `code`, `onChange`); `parseStrudel` / `parseMini` are its syntax tree.
+- `StrudelRack`: Equipment generated from Strudel code (controlled: `value`, `onValueChange`); `parseStrudel` / `parseMini` are its syntax tree.
 - `OpenApiOperation`: Renders a parsed OpenAPI operation block.
 - `SourcePreview`: Imports and renders a mounted component or CSF story export.
 - `createViteSourceClient`: Reads, writes, and imports files exposed by the Vite plugin.

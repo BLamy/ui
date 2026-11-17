@@ -40,7 +40,7 @@ export default function Playground() {
             key={editable ? "editable" : "read-only"}
             className="pg-editor"
             markdown={markdown}
-            onChange={setMarkdown}
+            onValueChange={setMarkdown}
             toolbar={toolbar}
             editable={editable}
             documentProperties={properties}

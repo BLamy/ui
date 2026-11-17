@@ -72,7 +72,7 @@ export interface Timeline {
 
 /** A piece of media the clips use, by the id they name: one map serves the VideoPreview that plays it and the
  *  VideoTimeline that trims and labels by it, and each reads the fields it needs. */
-export interface TimelineMedia {
+export interface VideoTimelineMedia {
   kind: 'video' | 'audio' | 'image';
   /** What VideoPreview plays: an object URL or any playable URL. */
   url?: string;

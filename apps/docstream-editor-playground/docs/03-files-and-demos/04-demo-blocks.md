@@ -59,7 +59,7 @@ const demoResolver = createGlobDemoResolver({
   metas: import.meta.glob("./examples/*/*/meta.json", { eager: true, import: "default" }),
 })
 
-<GitbookEditor markdown={markdown} onChange={setMarkdown} demoResolver={demoResolver} />
+<GitbookEditor markdown={markdown} onValueChange={setMarkdown} demoResolver={demoResolver} />
 ```
 
 Pass the same resolver your docs site renders with, and the editor shows each demo exactly as the published page will. A resolver is any object with `meta(src)`, `files(src)` and `load(src)` (and optionally `list()` and `href(src)`). The demo above uses a hand-written one over two imported components; its `resolver.ts` is in the demo's **Code** tab. docstream's [Demos](https://blamy.github.io/docstream/#/interactive/demos) page covers folders, `meta.json` and variants.
@@ -128,8 +128,8 @@ import { MarkdownContent } from "@brett_lamy/ui/docstream"
 const vfs = useDemoVFS()           // one VFS for every pane
 const files = useDemoVFSFiles(vfs) // { [src]: DemoFile[] }, re-renders on change
 
-<GitbookEditor markdown={a} onChange={setA} demoResolver={demoResolver} demoVFS={vfs} />
-<GitbookEditor markdown={b} onChange={setB} demoVFS={vfs} pastedDemoFiles="vfs"
+<GitbookEditor markdown={a} onValueChange={setA} demoResolver={demoResolver} demoVFS={vfs} />
+<GitbookEditor markdown={b} onValueChange={setB} demoVFS={vfs} pastedDemoFiles="vfs"
   onDemoFilesChange={(files, change) => saveDemoFiles(files)} />
 <MarkdownContent markdown={b} demoVFS={vfs} />
 ```
@@ -186,7 +186,7 @@ export function Playground() {
       }}
       entry="/src/main.jsx"
       height={360}
-      onChange={(files) => save(files)}
+      onValueChange={(files) => save(files)}
     />
   )
 }
@@ -200,7 +200,7 @@ export function Playground() {
 | `autoPreview` | `boolean` | `true` | Send edits to the preview after a pause. `false` shows **Run demo** instead. |
 | `previewDebounceMs` | `number` | `350` | The pause. |
 | `height` | `number \| string` | `320` | Minimum height of the preview. |
-| `onChange` | `(files: Record<string, string>) => void` | none | Every edit, with all files. |
+| `onValueChange` | `(files: Record<string, string>, details) => void` | none | Every edit, with all files; `details.reason` is `input-change`, and `details.cancel()` keeps the file as it was. |
 | `className` | `string` | none | Added to `gb-react-demo-editor`. |
 
 Passing a new `files` object resets the drafts and the preview. Keep it stable (a constant or `useMemo`) unless you mean to reset. If the selected file disappears, the first file is selected.

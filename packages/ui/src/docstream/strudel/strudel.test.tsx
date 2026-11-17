@@ -4,6 +4,7 @@ import { MarkdownContent } from "../docs/DocsRenderer"
 import { parseMarkdown } from "../gitbook/parse"
 import { serializeMarkdown } from "../gitbook/serialize"
 import { isStrudelFile, isStrudelLanguage } from "./url"
+import { StrudelPlayer } from "./StrudelPlayer"
 
 describe("Strudel", () => {
   it("renders a ```strudel fence as a player, keeping the code", () => {
@@ -25,6 +26,11 @@ describe("Strudel", () => {
     const html = renderToStaticMarkup(<MarkdownContent markdown={md} />)
     expect(html).toContain("docstream-strudel")
     expect(html).toContain("Play loop.strudel")
+  })
+
+  it("spreads the rest of a figure's props on the player's root, under its own", () => {
+    const html = renderToStaticMarkup(<StrudelPlayer code={'s("bd")'} title="Beat" id="beat" data-testid="strudel" aria-describedby="beat-note" className="wide" />)
+    expect(html).toMatch(/^<figure id="beat" data-testid="strudel" aria-describedby="beat-note" class="docstream-strudel wide" aria-label="Beat"/)
   })
 
   it("detects files and fence languages", () => {

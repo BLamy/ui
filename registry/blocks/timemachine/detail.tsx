@@ -44,7 +44,7 @@ export function SessionPeek({ session }: { session: SessionInfo }) {
     <div className="flex flex-col gap-3">
       <div className="grid min-h-24 place-items-center overflow-hidden rounded-lg bg-secondary text-muted-foreground">
         {events && span !== null ? (
-          <ReplayStage events={events} autoplay={false} initialTime={span} showMouse={false} className="pointer-events-none w-full" fallback={<Spinner size={20} />} />
+          <ReplayStage events={events} autoPlay={false} defaultTime={span} cursor={false} className="pointer-events-none w-full" fallback={<Spinner size={20} />} />
         ) : load && !events ? <span className="p-4 text-footnote">{'error' in load ? load.error : null}</span> : events ? <span className="p-4 text-footnote">Nothing recorded yet</span> : <Spinner size={20} />}
       </div>
       <HoverCardHeader title={session.title || 'Untitled page'} description={host} />
@@ -94,7 +94,7 @@ export function SessionDetail({ session, onDeleted }: { session: SessionInfo; on
       </header>
       <div className="min-h-0 flex-1 overflow-y-auto p-5">
         {events && events.length > 1 ? (
-          <ReplayPreview key={`${session.id}:${version}`} events={events} title={`Session from ${fullLabel(session.startedAt)}`} autoplay={false} mounted />
+          <ReplayPreview key={`${session.id}:${version}`} events={events} title={`Session from ${fullLabel(session.startedAt)}`} autoPlay={false} mounted />
         ) : load && 'error' in load ? (
           <p className="m-0 py-16 text-center text-detail text-muted-foreground">{load.error}</p>
         ) : events ? (

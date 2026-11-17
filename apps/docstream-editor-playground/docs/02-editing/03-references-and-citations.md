@@ -43,7 +43,7 @@ const people: ReferenceOption[] = [
 
 <GitbookEditor
   markdown={md}
-  onChange={setMd}
+  onValueChange={setMd}
   references={{
     mentions: people,                                   // a static list
     tags: ["general", "launch", "design-system"],       // plain strings work too

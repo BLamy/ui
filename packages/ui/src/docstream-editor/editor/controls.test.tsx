@@ -39,7 +39,7 @@ async function mount(props: Partial<GitbookEditorProps>) {
         slashMenu={false}
         references={false}
         markdown={markdown}
-        onChange={(md) => (markdown = md)}
+        onValueChange={(md) => (markdown = md)}
         onEditorReady={(ed) => {
           if (ed) editor = ed
         }}
@@ -224,7 +224,7 @@ describe("node view controls", () => {
     const after = Array.from(container.querySelectorAll<HTMLElement>('[role="tab"]'))
     expect(after.map((tab) => tab.getAttribute("aria-selected"))).toEqual(["false", "true"])
     expect(document.activeElement).toBe(after[1])
-    expect(container.querySelector(".gb-tabs-content")!.getAttribute("data-active")).toBe("1")
+    expect(container.querySelector(".gb-tabs-content")!.getAttribute("data-selected")).toBe("1")
     // Each tab's section is a tab panel labelled by it; only the selected one shows.
     const panels = Array.from(container.querySelectorAll<HTMLElement>('[role="tabpanel"]'))
     expect(panels).toHaveLength(2)
@@ -483,7 +483,7 @@ describe("ReactDemoEditor", () => {
   it("lists the files as vertical tabs; arrows switch the file being edited", async () => {
     const onChange = vi.fn()
     await act(async () =>
-      root.render(<ReactDemoEditor files={{ "/src/main.jsx": "main()", "/src/App.jsx": "app()" }} autoPreview={false} onChange={onChange} />),
+      root.render(<ReactDemoEditor files={{ "/src/main.jsx": "main()", "/src/App.jsx": "app()" }} autoPreview={false} onValueChange={onChange} />),
     )
     await flush()
     const list = container.querySelector<HTMLElement>('[role="tablist"]')!
@@ -497,7 +497,7 @@ describe("ReactDemoEditor", () => {
     const textarea = byLabel<HTMLTextAreaElement>("Edit /src/main.jsx")!
     expect(textarea.value).toBe("main()")
     await typeInto(textarea, "main(1)")
-    expect(onChange).toHaveBeenLastCalledWith({ "/src/main.jsx": "main(1)", "/src/App.jsx": "app()" })
+    expect(onChange).toHaveBeenLastCalledWith({ "/src/main.jsx": "main(1)", "/src/App.jsx": "app()" }, expect.objectContaining({ reason: "input-change", canceled: false }))
     const run = Array.from(container.querySelectorAll("button")).find((button) => button.textContent?.includes("Run demo"))
     expect(run).toBeDefined()
   })

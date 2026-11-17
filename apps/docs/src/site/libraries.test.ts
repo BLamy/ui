@@ -3,9 +3,23 @@
    (libraries.ts) and the code disagree — fix one. */
 import { describe, expect, it } from 'vitest';
 import { LIBRARIES, LIBRARY, SPLIT_CHANGES, ownerOf, packageNames, packageOf, reach, takes } from './libraries';
-import { importsOf, listUnits, resolveImport } from './plan-graph';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { UI_ROOT, importsOf, listUnits, resolveImport } from './plan-graph';
 
 const units = listUnits();
+
+/** `jsonc-parser (optional peer)` → `jsonc-parser`. */
+const packageOfExternal = (entry: string) => entry.replace(/ \(.*\)$/, '');
+const NPM_NAME = /^(?:@[a-z0-9][\w.-]*\/)?[a-z0-9][\w.-]*$/;
+/** The npm package an import names, or null for the workspace's own (relative, aliases, UI SDK, the package itself),
+    React, Node built-ins and URLs. */
+function npmPackageOf(spec: string): string | null {
+  if (/^(?:\.|\/|@\/|@ui-sdk\/|@brett_lamy\/ui(?:\/|$)|node:|data:|virtual:|https?:)/.test(spec)) return null;
+  const pkg = spec.split('/').slice(0, spec.startsWith('@') ? 2 : 1).join('/');
+  if (!NPM_NAME.test(pkg) || pkg === 'react' || pkg === 'react-dom') return null;
+  return pkg;
+}
 
 describe('the split plan', () => {
   it('names real modules, each once', () => {
@@ -59,6 +73,31 @@ describe('the split plan', () => {
     const frozen = LIBRARIES.flatMap((l) => (l.formerly ?? []).map((f) => f.npm));
     expect(frozen.filter((n) => names.includes(n))).toEqual([]);
     for (const lib of LIBRARIES.filter((l) => l.partOf)) expect(lib.npm.startsWith(`${LIBRARY[lib.partOf ?? ''].npm}/`), lib.id).toBe(true);
+  });
+
+  it('names in `external` every npm package a library imports that the libraries it builds on don\'t bring', () => {
+    const missing: string[] = [];
+    for (const lib of LIBRARIES) {
+      const brought = [lib.id, ...reach(lib.id)].flatMap((id) => (LIBRARY[id]?.external ?? []).map(packageOfExternal));
+      const has = (pkg: string) => brought.some((e) => (e.endsWith('/*') ? pkg.startsWith(e.slice(0, -1)) : e === pkg));
+      const units = listUnits().filter((u) => ownerOf(u).id === lib.id);
+      for (const pkg of new Set(units.flatMap((u) => importsOf(u).map(({ spec }) => npmPackageOf(spec))))) {
+        if (pkg && !has(pkg)) missing.push(`${lib.id}: ${pkg}`);
+      }
+    }
+    expect(missing).toEqual([]);
+  });
+
+  it('marks "(optional peer)" exactly the optional peers of @brett_lamy/ui', () => {
+    const { peerDependenciesMeta = {} } = JSON.parse(readFileSync(join(UI_ROOT, 'package.json'), 'utf8')) as { peerDependenciesMeta?: Record<string, { optional?: boolean }> };
+    const wrong: string[] = [];
+    for (const lib of LIBRARIES.filter((l) => l.modules)) {
+      for (const entry of lib.external ?? []) {
+        const pkg = packageOfExternal(entry);
+        if (entry.endsWith(' (optional peer)') !== !!peerDependenciesMeta[pkg]?.optional) wrong.push(`${lib.id}: ${entry}`);
+      }
+    }
+    expect(wrong).toEqual([]);
   });
 
   it('lists only split changes the code still needs', () => {

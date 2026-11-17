@@ -28,8 +28,8 @@ afterEach(async () => {
   site = undefined
 })
 
-const open = async (initialPath = "") => {
-  site = await mount(<DocsSite files={FILES} routing="memory" initialPath={initialPath} title="Acme" />)
+const open = async (defaultPath = "") => {
+  site = await mount(<DocsSite files={FILES} routing="memory" defaultPath={defaultPath} title="Acme" />)
   return site.host
 }
 const tree = (host: HTMLElement) => host.querySelector<HTMLElement>('.ds-site-sidebar [role="tree"]')!

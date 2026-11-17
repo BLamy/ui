@@ -122,7 +122,7 @@ Code blocks highlighted by gpu-lexer use docstream's `--docs-tok-*` tokens, so a
 ```
 
 ```tsx lineNumbers="false"
-<div className="brand-editor"><GitbookEditor markdown={md} onChange={setMd} /></div>
+<div className="brand-editor"><GitbookEditor markdown={md} onValueChange={setMd} /></div>
 ```
 {% endtab %}
 
@@ -139,7 +139,7 @@ Code blocks highlighted by gpu-lexer use docstream's `--docs-tok-*` tokens, so a
 ```
 
 ```tsx lineNumbers="false"
-<GitbookEditor className="square" markdown={md} onChange={setMd} />
+<GitbookEditor className="square" markdown={md} onValueChange={setMd} />
 ```
 {% endtab %}
 

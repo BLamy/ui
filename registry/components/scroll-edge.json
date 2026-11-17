@@ -1,0 +1,16 @@
+{
+  "name": "scroll-edge",
+  "title": "Scroll edge",
+  "description": "bindScrollEdge(el, options) reports when a scroller leaves and reaches its edges (for a bar's hairline or a large title), and useHideOnScroll hides chrome while the reader scrolls down and brings it back on the way up.",
+  "exports": [
+    "bindScrollEdge",
+    "useHideOnScroll"
+  ],
+  "imports": [
+    "bindScrollEdge",
+    "useHideOnScroll"
+  ],
+  "types": [
+    "BindScrollEdgeOptions"
+  ]
+}

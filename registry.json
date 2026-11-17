@@ -2179,16 +2179,6 @@
             "transform": "translateY(-2px)"
           }
         },
-        ".ck-floating-sheet__body>*": {
-          "box-sizing": "border-box",
-          "width": "100%",
-          "min-height": "100%",
-          "background": "transparent !important"
-        },
-        ".ck-floating-sheet[data-body-align=\"end\"] .ck-floating-sheet__body>*": {
-          "min-height": "0",
-          "max-height": "100%"
-        },
         ".ck-floating-sheet[data-body-align=\"end\"] .ck-floating-sheet__surface[data-peeking] .ck-floating-sheet__reveal": {
           "-webkit-mask-image": "linear-gradient(to bottom,transparent,#000 34px)",
           "mask-image": "linear-gradient(to bottom,transparent,#000 34px)"
@@ -2339,7 +2329,7 @@
           "padding": "2px 5px",
           "border-radius": "5px"
         },
-        ".wb-md :where(pre:not(.bl-syntax-pre))": {
+        ".wb-md :where(pre:not(.bl-syntax-pre,.docs-code>pre))": {
           "background": "var(--code, var(--muted))",
           "color": "var(--code-foreground, var(--foreground))",
           "border-radius": "10px",
@@ -2352,7 +2342,7 @@
         ".wb-md .docs-code:has(> .docs-code-copy-float)": {
           "display": "grid",
           "grid-template-columns": "minmax(0,1fr) 3rem",
-          "background": "var(--gb-code-bg,var(--code,var(--muted)))"
+          "background": "var(--bl-syntax-surface,var(--card))"
         },
         ".wb-md .docs-code:has(> .docs-code-copy-float)>pre": {
           "grid-area": "1/1",
@@ -3139,6 +3129,7 @@
         "https://blamy.github.io/ui/r/nav-bar.json",
         "https://blamy.github.io/ui/r/primitives.json",
         "https://blamy.github.io/ui/r/sheet.json",
+        "https://blamy.github.io/ui/r/size-class.json",
         "https://blamy.github.io/ui/r/surface.json",
         "https://blamy.github.io/ui/r/theme-context.json",
         "https://blamy.github.io/ui/r/utils.json"
@@ -3316,6 +3307,23 @@
           "avatarStatusVariants"
         ]
       }
+    },
+    {
+      "name": "back",
+      "type": "registry:lib",
+      "title": "Platform back",
+      "description": "bindBack(el, { onBack }): the platform's back (the browser's back button and gesture, Android's back, a mouse's back button) as one callback while the element is mounted, without leaving the page.",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/back.ts",
+          "type": "registry:lib",
+          "target": "lib/back.ts"
+        }
+      ]
     },
     {
       "name": "badge",
@@ -3563,7 +3571,8 @@
       "description": "An infinite, pannable, zoomable surface on UI SDK's viewport: scroll to pan, pinch or ⌘-scroll to zoom, Space to drag the view, zoom and arrow keys with announcements, focus and find in page brought into view, a controller to fit and zoom from outside, a dotted or ruled background that follows the view, and pointer events handed to you in board coordinates. With selection outlines, resize and rotate handles, a marquee, alignment guides and a minimap that keep their thickness at any zoom, pointer layers (a PencilCanvas inside it is its drawing layer), and the frame math (hit tests, resize, rotate, snap) as plain functions.",
       "dependencies": [
         "@ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1",
-        "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1"
+        "@ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1",
+        "class-variance-authority@^0.7.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -3588,6 +3597,7 @@
           "CanvasMarquee",
           "CanvasGuides",
           "CanvasMiniMap",
+          "canvasFrameVariants",
           "useCanvas",
           "createCanvasController"
         ]
@@ -3654,6 +3664,25 @@
           "Celebrate"
         ]
       }
+    },
+    {
+      "name": "change-details",
+      "type": "registry:lib",
+      "title": "Change details",
+      "description": "What a kit callback's on<Key>Change(value, details) or onValueChange(value, details) receives for state that is not a UI SDK primitive's (a FilterBar's filters, a FontPicker's family, docstream's task and property editors): UI SDK's ChangeDetails, with reason, event, source (read from the event, programmatic without one), cancel() and canceled. Call the consumer first and write your own state only when the change wasn't canceled.",
+      "dependencies": [
+        "@ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/change-details.ts",
+          "type": "registry:lib",
+          "target": "lib/change-details.ts"
+        }
+      ]
     },
     {
       "name": "checkbox",
@@ -4025,7 +4054,7 @@
         "https://blamy.github.io/ui/r/utils.json"
       ],
       "css": {
-        "@import \"@brett_lamy/ui/docstream/styles.css\"": {}
+        "@import \"@brett_lamy/ui/docstream/styles.css\" layer(docstream)": {}
       },
       "files": [
         {
@@ -4089,6 +4118,44 @@
       }
     },
     {
+      "name": "container",
+      "type": "registry:lib",
+      "title": "Size-class scope",
+      "description": "The React side of size classes: useSizeClass() measures a container (bindSizeClass), SizeClassProvider makes it the scope for what it renders (context crosses portals), useSizeClassScope() reads the nearest one, and usePresentation resolves a component's presentation=\"auto\" from it. useContainerWidth / useContainerSize measure a box.",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/size-class.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/container.ts",
+          "type": "registry:lib",
+          "target": "lib/container.ts"
+        }
+      ]
+    },
+    {
+      "name": "controllable-state",
+      "type": "registry:lib",
+      "title": "Controllable change",
+      "description": "useControllableChange: state that is controlled or uncontrolled, whose setter calls on<Key>Change(value, details) first with UI SDK-shaped change details and writes its own state only when the change wasn't canceled.",
+      "dependencies": [
+        "@ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/change-details.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/controllable-state.ts",
+          "type": "registry:lib",
+          "target": "lib/controllable-state.ts"
+        }
+      ]
+    },
+    {
       "name": "conversation",
       "type": "registry:ui",
       "title": "Conversation",
@@ -4113,7 +4180,7 @@
         "https://blamy.github.io/ui/r/utils.json"
       ],
       "css": {
-        "@import \"@brett_lamy/ui/docstream/styles.css\"": {}
+        "@import \"@brett_lamy/ui/docstream/styles.css\" layer(docstream)": {}
       },
       "files": [
         {
@@ -4403,6 +4470,7 @@
         "https://blamy.github.io/ui/r/diagram-chrome.json",
         "https://blamy.github.io/ui/r/nav-bar.json",
         "https://blamy.github.io/ui/r/primitives.json",
+        "https://blamy.github.io/ui/r/size-class.json",
         "https://blamy.github.io/ui/r/surface.json",
         "https://blamy.github.io/ui/r/utils.json"
       ],
@@ -4471,7 +4539,8 @@
           "DiagramLayoutError",
           "DIAGRAM_ELK_OPTIONS",
           "diagramElkOptions",
-          "useDiagramLayout"
+          "useDiagramLayout",
+          "wrapDiagram"
         ]
       }
     },
@@ -4509,7 +4578,9 @@
           "nodeAt",
           "edgeAt",
           "nodeSize",
-          "edgeLabelSize"
+          "edgeLabelSize",
+          "codeKey",
+          "DIAGRAM_LEGIBLE_ZOOM"
         ]
       }
     },
@@ -4742,6 +4813,25 @@
           "path": "packages/ui/src/lib/durable-streams.ts",
           "type": "registry:lib",
           "target": "lib/durable-streams.ts"
+        }
+      ]
+    },
+    {
+      "name": "edge-swipe",
+      "type": "registry:lib",
+      "title": "Edge swipe",
+      "description": "bindEdgeSwipe(el, options): a swipe from a screen edge (the inline start by default, mirrored in RTL) with UIKit's rubber band, velocity projection and settle, for a page that pops or a drawer that opens.",
+      "dependencies": [
+        "@ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/edge-swipe.ts",
+          "type": "registry:lib",
+          "target": "lib/edge-swipe.ts"
         }
       ]
     },
@@ -5728,7 +5818,7 @@
         "https://blamy.github.io/ui/r/utils.json"
       ],
       "css": {
-        "@import \"@brett_lamy/ui/docstream/styles.css\"": {},
+        "@import \"@brett_lamy/ui/docstream/styles.css\" layer(docstream)": {},
         "@import \"@brett_lamy/ui/docstream-editor/styles.css\" layer(components.bl-editor)": {}
       },
       "files": [
@@ -5762,7 +5852,7 @@
         "https://blamy.github.io/ui/r/utils.json"
       ],
       "css": {
-        "@import \"@brett_lamy/ui/docstream/styles.css\"": {}
+        "@import \"@brett_lamy/ui/docstream/styles.css\" layer(docstream)": {}
       },
       "files": [
         {
@@ -6488,6 +6578,25 @@
       }
     },
     {
+      "name": "presence",
+      "type": "registry:lib",
+      "title": "Presence",
+      "description": "Enter and exit animations that finish before an element unmounts, on UI SDK's animateIn / animateOut: usePresence for one element, usePresenceList for a list whose items come and go, useEnterExit for a part that is always mounted.",
+      "dependencies": [
+        "@ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/presence.ts",
+          "type": "registry:lib",
+          "target": "lib/presence.ts"
+        }
+      ]
+    },
+    {
       "name": "progress-ring",
       "type": "registry:ui",
       "title": "ProgressRing",
@@ -6588,6 +6697,26 @@
       }
     },
     {
+      "name": "pull-to-refresh",
+      "type": "registry:lib",
+      "title": "Pull to refresh",
+      "description": "bindPullToRefresh(el, options): pull a scroller past its top to refresh, with a rubber band, a threshold, an announcement and reduced motion respected; onRefresh returns the work, and the indicator stays until it settles.",
+      "dependencies": [
+        "@ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/reduced-motion.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/pull-to-refresh.ts",
+          "type": "registry:lib",
+          "target": "lib/pull-to-refresh.ts"
+        }
+      ]
+    },
+    {
       "name": "qr-code",
       "type": "registry:ui",
       "title": "QRCode",
@@ -6680,7 +6809,7 @@
         "https://blamy.github.io/ui/r/bl-ui.json"
       ],
       "css": {
-        "@import \"@brett_lamy/ui/docstream/styles.css\"": {}
+        "@import \"@brett_lamy/ui/docstream/styles.css\" layer(docstream)": {}
       },
       "files": [
         {
@@ -6785,6 +6914,24 @@
           "createScrollAreaController"
         ]
       }
+    },
+    {
+      "name": "scroll-edge",
+      "type": "registry:lib",
+      "title": "Scroll edge",
+      "description": "bindScrollEdge(el, options) reports when a scroller leaves and reaches its edges (for a bar's hairline or a large title), and useHideOnScroll hides chrome while the reader scrolls down and brings it back on the way up.",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/theme.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/scroll-edge.ts",
+          "type": "registry:lib",
+          "target": "lib/scroll-edge.ts"
+        }
+      ]
     },
     {
       "name": "search-input",
@@ -7047,6 +7194,23 @@
       }
     },
     {
+      "name": "size-class",
+      "type": "registry:lib",
+      "title": "Size class",
+      "description": "A container's size class from its own width, never the viewport: sizeClassOf maps a width to compact, medium or regular (breakpoints you can move), and bindSizeClass(el, options) measures an element, writes data-size-class on it for CSS and reports changes. UI SDK's shape: bind → cleanup, framework-free.",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/size-class.ts",
+          "type": "registry:lib",
+          "target": "lib/size-class.ts"
+        }
+      ]
+    },
+    {
       "name": "skeleton",
       "type": "registry:ui",
       "title": "Skeleton",
@@ -7302,6 +7466,25 @@
       }
     },
     {
+      "name": "stack",
+      "type": "registry:lib",
+      "title": "Page stack",
+      "description": "createPageStack(context, options): the behavior of a navigation stack inside a UI SDK primitive. Pages cover each other and are pushed and popped with focus, Escape, the platform back and an edge swipe; every change goes through your set with a reason and can be canceled. Built on UI SDK's bindLayer (its when option) and animateIn / animateOut.",
+      "dependencies": [
+        "@ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/stack.ts",
+          "type": "registry:lib",
+          "target": "lib/stack.ts"
+        }
+      ]
+    },
+    {
       "name": "state-diagram-model",
       "type": "registry:lib",
       "title": "StateDiagram logic",
@@ -7437,7 +7620,7 @@
         "https://blamy.github.io/ui/r/bl-ui.json"
       ],
       "css": {
-        "@import \"@brett_lamy/ui/docstream/styles.css\"": {}
+        "@import \"@brett_lamy/ui/docstream/styles.css\" layer(docstream)": {}
       },
       "files": [
         {
@@ -7465,7 +7648,7 @@
         "https://blamy.github.io/ui/r/bl-ui.json"
       ],
       "css": {
-        "@import \"@brett_lamy/ui/docstream/styles.css\"": {}
+        "@import \"@brett_lamy/ui/docstream/styles.css\" layer(docstream)": {}
       },
       "files": [
         {
@@ -8074,6 +8257,7 @@
         "https://blamy.github.io/ui/r/bl-ui.json",
         "https://blamy.github.io/ui/r/button.json",
         "https://blamy.github.io/ui/r/primitives.json",
+        "https://blamy.github.io/ui/r/toggle.json",
         "https://blamy.github.io/ui/r/utils.json"
       ],
       "files": [
@@ -8091,6 +8275,7 @@
           "ToolbarGroup",
           "ToolbarSeparator",
           "ToolbarText",
+          "ToolbarToggle",
           "toolbarVariants",
           "toolbarButtonVariants",
           "useToolbar",
@@ -8266,7 +8451,7 @@
         "https://blamy.github.io/ui/r/bl-ui.json"
       ],
       "css": {
-        "@import \"@brett_lamy/ui/docstream/styles.css\"": {}
+        "@import \"@brett_lamy/ui/docstream/styles.css\" layer(docstream)": {}
       },
       "files": [
         {
@@ -8487,9 +8672,9 @@
         "page": "video-timeline",
         "exports": [
           "VideoTimeline",
-          "timelineMediaType",
-          "fitTimelineZoom",
-          "timelineZoomRange"
+          "videoTimelineMediaType",
+          "fitVideoTimelineZoom",
+          "videoTimelineZoomRange"
         ]
       }
     },
@@ -8617,23 +8802,6 @@
       ]
     },
     {
-      "name": "back",
-      "type": "registry:lib",
-      "title": "Back",
-      "description": "Back — part of BL UI's library (lib/back.ts).",
-      "dependencies": [],
-      "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json"
-      ],
-      "files": [
-        {
-          "path": "packages/ui/src/lib/back.ts",
-          "type": "registry:lib",
-          "target": "lib/back.ts"
-        }
-      ]
-    },
-    {
       "name": "breadcrumb-primitive",
       "type": "registry:lib",
       "title": "Breadcrumb Primitive",
@@ -8686,25 +8854,6 @@
           "path": "packages/ui/src/lib/canvas-primitive.ts",
           "type": "registry:lib",
           "target": "lib/canvas-primitive.ts"
-        }
-      ]
-    },
-    {
-      "name": "change-details",
-      "type": "registry:lib",
-      "title": "Change Details",
-      "description": "Change Details — part of BL UI's library (lib/change-details.ts).",
-      "dependencies": [
-        "@ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1"
-      ],
-      "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json"
-      ],
-      "files": [
-        {
-          "path": "packages/ui/src/lib/change-details.ts",
-          "type": "registry:lib",
-          "target": "lib/change-details.ts"
         }
       ]
     },
@@ -8883,44 +9032,6 @@
       ]
     },
     {
-      "name": "container",
-      "type": "registry:lib",
-      "title": "Container",
-      "description": "Container — part of BL UI's library (lib/container.ts).",
-      "dependencies": [],
-      "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json",
-        "https://blamy.github.io/ui/r/size-class.json"
-      ],
-      "files": [
-        {
-          "path": "packages/ui/src/lib/container.ts",
-          "type": "registry:lib",
-          "target": "lib/container.ts"
-        }
-      ]
-    },
-    {
-      "name": "controllable-state",
-      "type": "registry:lib",
-      "title": "Controllable State",
-      "description": "Controllable State — part of BL UI's library (lib/controllable-state.ts).",
-      "dependencies": [
-        "@ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1"
-      ],
-      "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json",
-        "https://blamy.github.io/ui/r/change-details.json"
-      ],
-      "files": [
-        {
-          "path": "packages/ui/src/lib/controllable-state.ts",
-          "type": "registry:lib",
-          "target": "lib/controllable-state.ts"
-        }
-      ]
-    },
-    {
       "name": "data-table-primitive",
       "type": "registry:lib",
       "title": "Data Table Primitive",
@@ -9050,25 +9161,6 @@
           "path": "packages/ui/src/lib/diagram-text.ts",
           "type": "registry:lib",
           "target": "lib/diagram-text.ts"
-        }
-      ]
-    },
-    {
-      "name": "edge-swipe",
-      "type": "registry:lib",
-      "title": "Edge Swipe",
-      "description": "Edge Swipe — part of BL UI's library (lib/edge-swipe.ts).",
-      "dependencies": [
-        "@ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1"
-      ],
-      "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json"
-      ],
-      "files": [
-        {
-          "path": "packages/ui/src/lib/edge-swipe.ts",
-          "type": "registry:lib",
-          "target": "lib/edge-swipe.ts"
         }
       ]
     },
@@ -9421,25 +9513,6 @@
       ]
     },
     {
-      "name": "presence",
-      "type": "registry:lib",
-      "title": "Presence",
-      "description": "Presence — part of BL UI's library (lib/presence.ts).",
-      "dependencies": [
-        "@ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1"
-      ],
-      "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json"
-      ],
-      "files": [
-        {
-          "path": "packages/ui/src/lib/presence.ts",
-          "type": "registry:lib",
-          "target": "lib/presence.ts"
-        }
-      ]
-    },
-    {
       "name": "primitives",
       "type": "registry:lib",
       "title": "Primitives",
@@ -9455,26 +9528,6 @@
           "path": "packages/ui/src/lib/primitives.ts",
           "type": "registry:lib",
           "target": "lib/primitives.ts"
-        }
-      ]
-    },
-    {
-      "name": "pull-to-refresh",
-      "type": "registry:lib",
-      "title": "Pull To Refresh",
-      "description": "Pull To Refresh — part of BL UI's library (lib/pull-to-refresh.ts).",
-      "dependencies": [
-        "@ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1"
-      ],
-      "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json",
-        "https://blamy.github.io/ui/r/reduced-motion.json"
-      ],
-      "files": [
-        {
-          "path": "packages/ui/src/lib/pull-to-refresh.ts",
-          "type": "registry:lib",
-          "target": "lib/pull-to-refresh.ts"
         }
       ]
     },
@@ -9530,24 +9583,6 @@
           "path": "packages/ui/src/lib/schedule-preview.tsx",
           "type": "registry:lib",
           "target": "lib/schedule-preview.tsx"
-        }
-      ]
-    },
-    {
-      "name": "scroll-edge",
-      "type": "registry:lib",
-      "title": "Scroll Edge",
-      "description": "Scroll Edge — part of BL UI's library (lib/scroll-edge.ts).",
-      "dependencies": [],
-      "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json",
-        "https://blamy.github.io/ui/r/theme.json"
-      ],
-      "files": [
-        {
-          "path": "packages/ui/src/lib/scroll-edge.ts",
-          "type": "registry:lib",
-          "target": "lib/scroll-edge.ts"
         }
       ]
     },
@@ -9625,23 +9660,6 @@
           "path": "packages/ui/src/lib/sidebar-primitive.ts",
           "type": "registry:lib",
           "target": "lib/sidebar-primitive.ts"
-        }
-      ]
-    },
-    {
-      "name": "size-class",
-      "type": "registry:lib",
-      "title": "Size Class",
-      "description": "Size Class — part of BL UI's library (lib/size-class.ts).",
-      "dependencies": [],
-      "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json"
-      ],
-      "files": [
-        {
-          "path": "packages/ui/src/lib/size-class.ts",
-          "type": "registry:lib",
-          "target": "lib/size-class.ts"
         }
       ]
     },
@@ -9755,25 +9773,6 @@
           "path": "packages/ui/src/lib/stack-parent.ts",
           "type": "registry:lib",
           "target": "lib/stack-parent.ts"
-        }
-      ]
-    },
-    {
-      "name": "stack",
-      "type": "registry:lib",
-      "title": "Stack",
-      "description": "Stack — part of BL UI's library (lib/stack.ts).",
-      "dependencies": [
-        "@ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1"
-      ],
-      "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json"
-      ],
-      "files": [
-        {
-          "path": "packages/ui/src/lib/stack.ts",
-          "type": "registry:lib",
-          "target": "lib/stack.ts"
         }
       ]
     },
@@ -12022,6 +12021,7 @@
         "https://blamy.github.io/ui/r/object-value.json",
         "https://blamy.github.io/ui/r/popover.json",
         "https://blamy.github.io/ui/r/segmented.json",
+        "https://blamy.github.io/ui/r/size-class.json",
         "https://blamy.github.io/ui/r/tabs.json",
         "https://blamy.github.io/ui/r/toggle.json",
         "https://blamy.github.io/ui/r/tree.json",
@@ -12442,6 +12442,7 @@
         "https://blamy.github.io/ui/r/motion.json",
         "https://blamy.github.io/ui/r/popover.json",
         "https://blamy.github.io/ui/r/primitives.json",
+        "https://blamy.github.io/ui/r/size-class.json",
         "https://blamy.github.io/ui/r/theme.json",
         "https://blamy.github.io/ui/r/toast.json",
         "https://blamy.github.io/ui/r/toggle.json",

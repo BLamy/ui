@@ -19,7 +19,7 @@ import { ChatShellContext, useChatShell, useOptionalChatShell, type ChatShellCon
 export { useChatShell, useOptionalChatShell, type ChatShellContextValue, type ChatShellNavOpenChangeDetails };
 
 /* ══ ChatShell — the layout root of a team chat, and its regions ══
-   <ChatShell>                     measures itself, provides { width, compact, navOpen } and a size-class scope, applies --ck-* tokens
+   <ChatShell>                     measures itself, provides { width, sizeClass, navOpen } and a size-class scope, applies --ck-* tokens
      <ChatShellNav>                rail + sidebar: a docked column when wide, a left drawer when compact
        <Tabs variant="switcher"><TabsBar>…   an optional workspace rail
        <ChatShellSidebar>…         the channel column (header · channel list · signed-in user)
@@ -81,7 +81,7 @@ export function ChatShell({
   // `presentation="auto"`) and its own navigation follow its box. Its pixel width answers the docking questions.
   const sizeClass = sizeClassOf(width, { medium: breakpoint, regular: Math.max(breakpoint, 1024) });
   const [navPane] = useState(createAdaptivePaneController);
-  const ctx: ChatShellContextValue = { width, compact: sizeClass === 'compact', navOpen, setNavOpen, hasNav: navs > 0, registerNav, navPane };
+  const ctx: ChatShellContextValue = { width, sizeClass, navOpen, setNavOpen, hasNav: navs > 0, registerNav, navPane };
   const scope = themeScopeProps({ scope: 'chat', appearance, tint });
   // Published too, so overlays opened inside (hover cards, menus) portal out wearing the same chat scope.
   const scopeState = useMemo(() => ({ scope: 'chat' as const, appearance, tint }), [appearance, tint]);
@@ -148,8 +148,8 @@ export interface ChatShellNavTriggerProps extends Omit<AdaptivePaneTriggerProps,
  *  the drawer shows and which element it opens (`aria-expanded`, `aria-controls`), and the shell hears
  *  `trigger-press`. Renders nothing while the navigation is docked (or when the shell has no ChatShellNav). */
 export function ChatShellNavTrigger({ className, children, ...props }: ChatShellNavTriggerProps) {
-  const { compact, hasNav, navPane } = useChatShell();
-  if (!compact || !hasNav) return null;
+  const { sizeClass, hasNav, navPane } = useChatShell();
+  if (sizeClass !== 'compact' || !hasNav) return null;
   return (
     <AdaptivePaneTrigger
       controller={navPane}
@@ -313,12 +313,12 @@ export interface ChatShellPanelProps {
 /** A trailing panel for a thread (or details): an AdaptivePane that docks beside the conversation on wide shells,
  *  slides over it below `dockWidth`, and is pushed over it like a page on a compact shell. */
 export function ChatShellPanel({ open, onOpenChange, title = 'Thread', dockWidth = 1180, width, children, className, style }: ChatShellPanelProps) {
-  const { width: w, compact } = useChatShell();
+  const { width: w, sizeClass } = useChatShell();
   const size = width ?? Math.min(360, w - 60);
   return (
     <AdaptivePane
       side="end"
-      presentation={w >= dockWidth ? 'column' : compact ? 'push' : 'drawer'}
+      presentation={w >= dockWidth ? 'column' : sizeClass === 'compact' ? 'push' : 'drawer'}
       open={open}
       onOpenChange={onOpenChange}
       columnWidth={size}

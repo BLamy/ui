@@ -6,7 +6,7 @@ import { ReplayPreview } from '@/components/ui/replay-preview'
 export default function Devtools() {
   return (
     <div style={{ width: '100%', maxWidth: 760 }}>
-      <ReplayPreview events={replayDemoEvents} initialTime={8000} defaultDevtoolsTab="network" />
+      <ReplayPreview events={replayDemoEvents} defaultTime={8000} defaultDevtoolsTab="network" />
     </div>
   )
 }

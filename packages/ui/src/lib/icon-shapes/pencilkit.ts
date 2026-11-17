@@ -1,3 +1,4 @@
+/* @internal: a shape table Icon merges in (lib/icon). Draw these with <Icon name>; the table is not package API. */
 import type { IconShape } from '@/lib/icon';
 
 /** Icon geometry merged in from the former PencilKit icon set (`PKI`; 2.0: one `Icon`). Canonical kebab-case

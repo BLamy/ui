@@ -288,7 +288,7 @@ describe("TuiPreview names and controls", () => {
     const request = vi.mocked(terminal().postMessage).mock.calls[0]![0] as { requestId: string }
     send(terminal(), { type: "opentui-example:status", status: "error", requestId: request.requestId, message: "Boom" })
     const error = host.querySelector<HTMLElement>('[data-slot="tui-preview-status"]')!
-    expect([error.getAttribute("role"), error.dataset.tone, error.textContent]).toEqual(["alert", "error", "Boom"])
+    expect([error.getAttribute("role"), error.dataset.tone, error.textContent]).toEqual(["alert", "destructive", "Boom"])
     expect(error.querySelector("svg[aria-hidden='true']")).not.toBeNull()
     expect(button("Retry").dataset.variant).toBe("primary")
   })

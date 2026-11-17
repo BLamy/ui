@@ -2,7 +2,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { useState } from 'react';
-import { fitTimelineZoom, timelineMediaType, VideoTimeline, type TimelineDropDetails, type VideoTimelineChangeDetails } from '@/components/ui/video-timeline';
+import { fitVideoTimelineZoom, videoTimelineMediaType, VideoTimeline, type VideoTimelineDropDetails, type VideoTimelineChangeDetails } from '@/components/ui/video-timeline';
 import { createPlayback } from '@/lib/playback';
 import { findClip, layoutTrack, type Timeline } from '@/lib/video-timeline-model';
 
@@ -210,12 +210,12 @@ describe('VideoTimeline', () => {
     expect(mute.innerHTML).not.toBe(before);
   });
 
-  it('takes its header width, and fitTimelineZoom fits the lanes beside it', () => {
+  it('takes its header width, and fitVideoTimelineZoom fits the lanes beside it', () => {
     const clock = createPlayback({ duration: 10 });
     const { container } = render(<VideoTimeline value={START} playback={clock} media={MEDIA} headerWidth={80} />);
     expect((container.firstElementChild as HTMLElement).style.getPropertyValue('--header')).toBe('80px');
-    expect(fitTimelineZoom(10, 1000, { headerWidth: 80 })).toBeCloseTo((1000 - 80 - 24) / 10);
-    expect(fitTimelineZoom(10, 1000)).toBeCloseTo((1000 - 132 - 24) / 10);
+    expect(fitVideoTimelineZoom(10, 1000, { headerWidth: 80 })).toBeCloseTo((1000 - 80 - 24) / 10);
+    expect(fitVideoTimelineZoom(10, 1000)).toBeCloseTo((1000 - 132 - 24) / 10);
   });
 
   it('announces a keyboard edit', async () => {
@@ -400,7 +400,7 @@ describe('VideoTimeline zoom and drops', () => {
 
   it('reports media dropped on a lane with UI SDK details, and a canceled drop is not taken', () => {
     laneRects();
-    const drops: [string, TimelineDropDetails][] = [];
+    const drops: [string, VideoTimelineDropDetails][] = [];
     let refuse = false;
     function Drops() {
       const [clock] = useState(() => createPlayback({ duration: 10 }));
@@ -411,7 +411,7 @@ describe('VideoTimeline zoom and drops', () => {
     }
     render(<Drops />);
     const lane = document.querySelector('[data-slot="video-timeline-track"]')!;
-    const dataTransfer = { types: [timelineMediaType], getData: (type: string) => (type === timelineMediaType ? 'b' : ''), dropEffect: 'none' };
+    const dataTransfer = { types: [videoTimelineMediaType], getData: (type: string) => (type === videoTimelineMediaType ? 'b' : ''), dropEffect: 'none' };
     const dropAt = (clientX: number) => {
       const event = new Event('drop', { bubbles: true, cancelable: true });
       Object.assign(event, { dataTransfer, clientX });

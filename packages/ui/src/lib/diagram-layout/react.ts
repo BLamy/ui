@@ -1,13 +1,16 @@
 'use client';
 import { useEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import { diagramTextRuns, type DiagramNode } from '@/lib/diagram-model';
-import { createDiagramLayoutEngine, runLayout, toElkGraph, type DiagramDraft, type DiagramLayoutEngine, type DiagramLayoutError, type DiagramLayoutOptions, type DiagramLayoutResult } from '@/lib/diagram-layout';
+import { createDiagramLayoutEngine, runLayout, toElkGraph, wrapDiagram, type DiagramBoardSize, type DiagramDraft, type DiagramLayoutEngine, type DiagramLayoutError, type DiagramLayoutOptions, type DiagramLayoutResult } from '@/lib/diagram-layout';
 import { measureTextGently, nextFrame } from '@/lib/diagram-text';
 import { useFontVersion, useShownVersion } from '@/lib/use-font-version';
 
 export interface UseDiagramLayoutOptions<N = unknown, E = unknown> extends Pick<DiagramLayoutOptions, 'direction' | 'density' | 'elk' | 'worker'> {
-  /** Measure text in here, so its fonts apply. Without it, measuring happens in the page's body. */
+  /** Measure text in here, so its fonts apply. Without it, measuring happens in the page's body. It's also the board the
+   *  diagram fills: a long run wraps into columns where they fit (`board`), and back as the host narrows to a phone's. */
   host?: RefObject<Element | null>;
+  /** The board to fill, in px, instead of the host's size; `null` never wraps. */
+  board?: DiagramBoardSize | null;
   /** A layout done ahead of time, on a server perhaps, to show until this one's ready. */
   initial?: DiagramLayoutResult<N, E>;
 }
@@ -25,7 +28,9 @@ const NOTHING: never[] = [];
 /** Lays a draft out, in a worker, measuring its words first. It runs again when the graph or a font changes, and a new run
  *  stops the one before it. Unmounting stops the worker. */
 export function useDiagramLayout<N = unknown, E = unknown>(draft: DiagramDraft<N, E>, options: UseDiagramLayoutOptions<N, E> = {}): UseDiagramLayout<N, E> {
-  const { direction, density, elk, worker, host, initial } = options;
+  const { direction, density, elk, worker, host, initial, board: boardProp } = options;
+  const hostSize = useHostSize(host, boardProp === undefined);
+  const board = boardProp === undefined ? hostSize : boardProp;
   const fonts = useFontVersion();
   const shown = useShownVersion(host);
   const [state, setState] = useState<{
@@ -109,12 +114,35 @@ export function useDiagramLayout<N = unknown, E = unknown>(draft: DiagramDraft<N
   const fresh = state.of === null || state.of === key;
   if (result && (fresh || shownDraft.current?.result !== result)) shownDraft.current = { draft, result };
   const showing = shownDraft.current?.draft;
-  const now = useMemo(() => (result && showing ? onLayout(showing, result) : null), [showing?.nodes, showing?.edges, result]);
+  // Wrapped to fill the board, which is quick: only a new size brings it, not a new layout.
+  const shaped = useMemo(() => (result && board ? { ...result, ...wrapDiagram(result, board, direction) } : result), [result, board, direction]);
+  const now = useMemo(() => (shaped && showing ? onLayout(showing, shaped) : null), [showing?.nodes, showing?.edges, shaped]);
   return {
     nodes: now?.nodes ?? NOTHING, edges: now?.edges ?? NOTHING,
-    bounds: result?.bounds, engine: result?.engine, ms: result?.ms,
+    bounds: shaped?.bounds, engine: result?.engine, ms: result?.ms,
     status: state.status, error: state.error,
   };
+}
+
+/** How big the host is, in steps of 40 px, so a resize only wraps again when it's grown or shrunk by a good deal. */
+function useHostSize(host: RefObject<Element | null> | undefined, on: boolean): DiagramBoardSize | null {
+  const [size, setSize] = useState<DiagramBoardSize | null>(null);
+  useEffect(() => {
+    const el = host?.current;
+    if (!on || !el || typeof ResizeObserver === 'undefined') return undefined;
+    const step = (v: number) => Math.round(v / 40) * 40;
+    const read = () => {
+      const r = el.getBoundingClientRect();
+      if (!r.width || !r.height) return;
+      const next = { width: step(r.width), height: step(r.height) };
+      setSize((was) => (was && was.width === next.width && was.height === next.height ? was : next));
+    };
+    read();
+    const observer = new ResizeObserver(read);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [host, on]);
+  return size;
 }
 
 /** A draft's nodes and edges where a layout put them: each with the layout's place, size, port places and route, and the

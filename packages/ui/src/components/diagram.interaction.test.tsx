@@ -486,6 +486,34 @@ describe('Diagram, a card’s items', () => {
     expect(onAction).toHaveBeenLastCalledWith({ kind: 'edge', id: 'play', section: '0', item: 'onPlay' }, expect.objectContaining({ reason: 'enter-key' }));
   });
 
+  it('presses what `pressable` names, read-only too: a whole label (with a ring and a badge), or a card’s chips', () => {
+    const onAction = vi.fn();
+    const { unmount } = render(<Diagram aria-label="Player" nodes={CARDS} edges={LABELLED} onAction={onAction} pressable={{ nodes: ['paused'], edges: ['play'] }} />);
+    const label = document.querySelector<HTMLElement>('[data-slot=diagram-edge-label][data-edge=play]')!;
+    expect(label.hasAttribute('data-pressable')).toBe(true);
+    // Not by color alone: a badge on its corner.
+    expect(label.querySelector('[data-part=press]')).not.toBeNull();
+    // Its chips go with it: the press is the label's.
+    expect(label.querySelector('[data-slot=diagram-item][data-pressable]')).toBeNull();
+    fireEvent.pointerDown(label, { pointerId: 1, button: 0, clientX: 300, clientY: 200 });
+    fireEvent.pointerUp(label, { pointerId: 1, button: 0, clientX: 302, clientY: 201 });
+    expect(onAction).toHaveBeenLastCalledWith({ kind: 'edge', id: 'play' }, expect.objectContaining({ reason: 'press', part: 'label' }));
+    // A drag isn't a press.
+    onAction.mockClear();
+    fireEvent.pointerDown(label, { pointerId: 1, button: 0, clientX: 300, clientY: 200 });
+    fireEvent.pointerUp(label, { pointerId: 1, button: 0, clientX: 340, clientY: 200 });
+    expect(onAction).not.toHaveBeenCalled();
+    const chip = document.querySelector<HTMLElement>('[data-slot=diagram-item][data-item=onPause]')!;
+    expect(chip.hasAttribute('data-pressable')).toBe(true);
+    fireEvent.pointerDown(chip, { pointerId: 1, button: 0, clientX: 30, clientY: 50 });
+    fireEvent.pointerUp(chip, { pointerId: 1, button: 0, clientX: 30, clientY: 50 });
+    expect(onAction).toHaveBeenLastCalledWith({ kind: 'node', id: 'paused', section: 'entry', item: 'onPause' }, expect.objectContaining({ reason: 'press', part: 'item' }));
+    unmount();
+    // `true` is every label.
+    render(<Diagram aria-label="Player" nodes={CARDS} edges={LABELLED} onAction={onAction} pressable />);
+    expect(document.querySelectorAll('[data-slot=diagram-edge-label][data-pressable]').length).toBe(document.querySelectorAll('[data-slot=diagram-edge-label]').length);
+  });
+
   it('reports a press on an item, and keeps items as words when the diagram can’t be edited', () => {
     const onAction = vi.fn();
     const { unmount } = render(<Diagram aria-label="Player" nodes={CARDS} edges={LABELLED} editable onAction={onAction} />);

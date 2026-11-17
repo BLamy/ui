@@ -39,7 +39,7 @@ A small one: a Worker on a route, with a KV namespace and a D1 database. The rou
 
 {% demo src="cloudflare-diagram/small" %}
 
-The upload pipeline: the API puts a file in R2, R2's event notification goes to a Queue, and the queue's consumer writes to D1 and tells the file's `Room`, a Durable Object class of the consumer's, drawn inside it, with a machine.
+The upload pipeline: the API puts a file in R2 and sends a job to a Queue through its `JOBS` binding, R2's event notification goes to the same Queue, and the queue's consumer writes to D1 and tells the file's `Room`, a Durable Object class of the consumer's, drawn inside it, with a machine.
 
 {% demo src="cloudflare-diagram/upload" %}
 
@@ -112,7 +112,7 @@ const edges = [
 </div>
 ```
 
-It's **read-only** unless it's `editable`, the same prop as Diagram's and StateDiagram's: without `editable`, a diagram is a picture you can select in and read, where selecting a service or a connection shows what it is in the panel, and nothing moves, connects or is deleted. With no `at` on any service they're laid out by the Diagram's layout (ELK, an optional peer), top to bottom (`direction`), with each edge's label on its route. With a place for any of them, they stay where they say, and those without one go in a column to the right. Once something's moved, each has one, which saves as plain data and needs no ELK. `placeInLayers(system)` places a system without ELK: quick and the same every time, top to bottom, but a long connection can cross a card, which the layout's routing doesn't.
+It's **read-only** unless it's `editable`, the same prop as Diagram's and StateDiagram's: without `editable`, a diagram is a picture you can select in and read, where selecting a service or a connection shows what it is in the panel, and nothing moves, connects or is deleted. With no `at` on any service they're laid out by the Diagram's layout (ELK, an optional peer), top to bottom (`direction`), with each edge's label on its route. With a place for any of them, they stay where they say, and those without one go in a column to the right. Once something's moved, each has one, which saves as plain data and needs no ELK. `placeInLayers(system)` places a system without ELK: quick and the same every time, top to bottom, with room for the labels between rows and for a Worker's own binding to its class under its sections; the Diagram then routes its connections round the cards in their way (up to 200 nodes and edges). Laid out by ELK, the system fills its board: a long pipeline wraps into columns on a wide board and stays one column, read by scrolling, on a phone's; environments nothing joins go side by side, or one under the other, by the board's shape. It opens at a size that can be read, all of it when that fits, else from the top.
 
 ## Editing
 

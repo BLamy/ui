@@ -23,6 +23,6 @@
     "ReplayInspectionTab"
   ],
   "css": {
-    "@import \"@brett_lamy/ui/docstream/styles.css\"": {}
+    "@import \"@brett_lamy/ui/docstream/styles.css\" layer(docstream)": {}
   }
 }

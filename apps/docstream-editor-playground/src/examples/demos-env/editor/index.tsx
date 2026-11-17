@@ -29,7 +29,7 @@ export default function EnvEditor() {
   const [markdown, setMarkdown] = useState(SEED)
   return (
     <div style={{ height: "100%", overflow: "auto", padding: "8px 16px" }}>
-      <GitbookEditor markdown={markdown} onChange={setMarkdown} demoResolver={resolver} documentProperties={{ defaultOpen: true }} />
+      <GitbookEditor markdown={markdown} onValueChange={setMarkdown} demoResolver={resolver} documentProperties={{ defaultOpen: true }} />
     </div>
   )
 }

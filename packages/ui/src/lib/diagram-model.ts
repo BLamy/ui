@@ -356,7 +356,7 @@ export function curvePath(start: Pt, c1: Pt, c2: Pt, end: Pt, steps = 24): Conne
 export const ELBOW_GAP = 28;
 
 /** A connector between two ends. A curve and an elbow leave along the way each end faces; a free end faces the other. */
-export function connectorPath(route: ConnectorRoute, a: ConnectorEnd, b: ConnectorEnd, gap = ELBOW_GAP): ConnectorGeometry {
+export function connectorPath(route: ConnectorRoute, a: ConnectorEnd, b: ConnectorEnd, gap = ELBOW_GAP, turn = 0.5): ConnectorGeometry {
   if (route === 'straight') return polylinePath([a.p, b.p]);
   const na = a.n ?? dominantSide(a.p, b.p);
   const nb = b.n ?? dominantSide(b.p, a.p);
@@ -369,8 +369,10 @@ export function connectorPath(route: ConnectorRoute, a: ConnectorEnd, b: Connect
   const b1 = { x: b.p.x + nb.x * gap, y: b.p.y + nb.y * gap };
   const horizA = Math.abs(na.x) > 0.5, horizB = Math.abs(nb.x) > 0.5;
   let mid: Pt[];
-  if (horizA && horizB) { const mx = (a1.x + b1.x) / 2; mid = [{ x: mx, y: a1.y }, { x: mx, y: b1.y }]; }
-  else if (!horizA && !horizB) { const my = (a1.y + b1.y) / 2; mid = [{ x: a1.x, y: my }, { x: b1.x, y: my }]; }
+  // `turn` says where between the two the middle run goes: 0 next to `a`, 1 next to `b`.
+  const between = (u: number, v: number) => (turn === 0.5 ? (u + v) / 2 : u + (v - u) * turn);
+  if (horizA && horizB) { const mx = between(a1.x, b1.x); mid = [{ x: mx, y: a1.y }, { x: mx, y: b1.y }]; }
+  else if (!horizA && !horizB) { const my = between(a1.y, b1.y); mid = [{ x: a1.x, y: my }, { x: b1.x, y: my }]; }
   else if (horizA) mid = [{ x: b1.x, y: a1.y }];
   else mid = [{ x: a1.x, y: b1.y }];
   return polylinePath([a.p, a1, ...mid, b1, b.p]);
@@ -486,6 +488,25 @@ const LABEL_TRIES: readonly { t: number; flip: boolean; step: number }[] = [
 export function labelBoxAvoiding(pts: readonly Pt[], size: { w: number; h: number }, overlap: (box: Rect) => number, given?: Rect): Rect {
   if (given && overlap(given) <= 0) return given;
   let best = given ?? null, least = given ? overlap(given) : Infinity;
+  // First, on the middle of a straight run that holds it with room to spare: the one into its end (where a fan's labels
+  // stand apart), then the one out of its start, then the longest. There it reads as the line's and leaves the turns clear.
+  const runs: number[] = [];
+  const line = simplifyRoute(pts);
+  let longest = -1, most = 0;
+  for (let i = 1; i < line.length; i++) { const l = dist(line[i - 1], line[i]); if (l > most) { most = l; longest = i; } }
+  for (const i of [line.length - 1, 1, longest]) {
+    if (i < 1 || runs.includes(i)) continue;
+    const a = line[i - 1], b = line[i];
+    const along = Math.abs(a.x - b.x) < 0.5 ? size.h : Math.abs(a.y - b.y) < 0.5 ? size.w : Infinity;
+    if (dist(a, b) >= along + 24) runs.push(i);
+  }
+  for (const i of runs) {
+    const m = { x: (line[i - 1].x + line[i].x) / 2, y: (line[i - 1].y + line[i].y) / 2 };
+    const box = { x: m.x - size.w / 2, y: m.y - size.h / 2, w: size.w, h: size.h };
+    const covered = overlap(box);
+    if (covered <= 0) return box;
+    if (covered < least) { least = covered; best = box; }
+  }
   for (const { t, flip, step } of LABEL_TRIES) {
     const box = step < 0 ? labelBoxOnRoute(pts, size, t) : labelBox(pts, size, { t, flip, gap: 2 + step * (size.h + 8) });
     const covered = overlap(box);
@@ -601,7 +622,7 @@ const ownRoutes = new WeakMap<object, ConnectorGeometry>();
 /** The route of one edge: its `points` if it has them, otherwise one that fits how its ends sit. Null when an end doesn't
  *  exist. `spread` says how far along their shared side this edge's ends sit (see `edgeGeometries`), so parallel edges
  *  don't lie on top of each other. */
-export function edgeGeometry<N, E>(edge: DiagramEdge<E>, index: DiagramIndex<N>, spread?: { from?: number; to?: number; loop?: number }): ConnectorGeometry | null {
+export function edgeGeometry<N, E>(edge: DiagramEdge<E>, index: DiagramIndex<N>, spread?: { from?: number; to?: number; loop?: number; turn?: number }): ConnectorGeometry | null {
   if (edge.points && edge.points.length >= 2) {
     // A route of its own doesn't depend on anything else, so it's only worked out once per edge object.
     let g = ownRoutes.get(edge);
@@ -637,7 +658,7 @@ export function edgeGeometry<N, E>(edge: DiagramEdge<E>, index: DiagramIndex<N>,
     const around = elbowAround(from, to, a, b, gap);
     if (around) return around;
   }
-  return connectorPath(route, from, to, gap);
+  return connectorPath(route, from, to, gap, spread?.turn);
 }
 
 /** An elbow whose ends face away from each other (a port on the right of one card to a port on the left of a card to its
@@ -669,13 +690,94 @@ export function elbowAround(from: ConnectorEnd, to: ConnectorEnd, a: Rect, b: Re
   return polylinePath([from.p, make(a1, across(from.p)), make(a1, channel), make(b1, channel), make(b1, across(to.p)), to.p]);
 }
 
+/** Whether an upright or level run from `a` to `b` goes through the inside of `r`. */
+function runHits(a: Pt, b: Pt, r: Rect): boolean {
+  const x0 = Math.min(a.x, b.x), x1 = Math.max(a.x, b.x), y0 = Math.min(a.y, b.y), y1 = Math.max(a.y, b.y);
+  return x1 > r.x + 0.5 && x0 < r.x + r.w - 0.5 && y1 > r.y + 0.5 && y0 < r.y + r.h - 0.5;
+}
+
+/** Whether a route goes through any of `boxes`. */
+function routeHits(pts: readonly Pt[], boxes: readonly Rect[]): boolean {
+  for (let i = 1; i < pts.length; i++) for (const r of boxes) if (runHits(pts[i - 1], pts[i], r)) return true;
+  return false;
+}
+
+/** How far a route around boxes keeps from them, and what a turn costs against length. */
+const AROUND_GAP = 14;
+const TURN_COST = 40;
+
+/**
+ * A square route from one end to the other that goes round `boxes` instead of through them: the shortest, with few turns,
+ * along lines a little off each box's sides and out from each end. Null when there's none (an end shut in).
+ */
+function routeAround(from: ConnectorEnd, to: ConnectorEnd, boxes: readonly Rect[], gap = ELBOW_GAP): Pt[] | null {
+  const na = from.n ?? dominantSide(from.p, to.p), nb = to.n ?? dominantSide(to.p, from.p);
+  const a1 = { x: from.p.x + na.x * gap, y: from.p.y + na.y * gap }, b1 = { x: to.p.x + nb.x * gap, y: to.p.y + nb.y * gap };
+  if (boxes.some((r) => runHits(from.p, a1, r) || runHits(b1, to.p, r))) return null;
+  const xs = new Set([a1.x, b1.x]), ys = new Set([a1.y, b1.y]);
+  for (const r of boxes) {
+    xs.add(r.x - AROUND_GAP); xs.add(r.x + r.w + AROUND_GAP);
+    ys.add(r.y - AROUND_GAP); ys.add(r.y + r.h + AROUND_GAP);
+  }
+  const X = [...xs].sort((p, q) => p - q), Y = [...ys].sort((p, q) => p - q);
+  const inside = (x: number, y: number) => boxes.some((r) => x > r.x && x < r.x + r.w && y > r.y && y < r.y + r.h);
+  const W = X.length, H = Y.length;
+  const id = (i: number, j: number, d: number) => (j * W + i) * 4 + d;
+  // Dijkstra over grid points and the way it's going (0 right, 1 down, 2 left, 3 up).
+  const cost = new Float64Array(W * H * 4).fill(Infinity);
+  const prev = new Int32Array(W * H * 4).fill(-1);
+  const si = X.indexOf(a1.x), sj = Y.indexOf(a1.y), ti = X.indexOf(b1.x), tj = Y.indexOf(b1.y);
+  const startDir = na.x > 0.5 ? 0 : na.y > 0.5 ? 1 : na.x < -0.5 ? 2 : 3;
+  const heap: [number, number][] = [];
+  const push = (c: number, k: number) => {
+    heap.push([c, k]);
+    for (let i = heap.length - 1; i > 0;) { const p = (i - 1) >> 1; if (heap[p][0] <= heap[i][0]) break; [heap[p], heap[i]] = [heap[i], heap[p]]; i = p; }
+  };
+  const pop = () => {
+    const top = heap[0], last = heap.pop()!;
+    if (heap.length) {
+      heap[0] = last;
+      for (let i = 0; ;) { const l = i * 2 + 1, r = l + 1; let m = i; if (l < heap.length && heap[l][0] < heap[m][0]) m = l; if (r < heap.length && heap[r][0] < heap[m][0]) m = r; if (m === i) break; [heap[m], heap[i]] = [heap[i], heap[m]]; i = m; }
+    }
+    return top;
+  };
+  cost[id(si, sj, startDir)] = 0;
+  push(0, id(si, sj, startDir));
+  const step = [[1, 0], [0, 1], [-1, 0], [0, -1]];
+  let end = -1;
+  while (heap.length) {
+    const [c, k] = pop();
+    if (c > cost[k]) continue;
+    const d = k % 4, cell = (k - d) / 4, i = cell % W, j = (cell - i) / W;
+    if (i === ti && j === tj) { end = k; break; }
+    for (let nd = 0; nd < 4; nd++) {
+      if (nd === (d + 2) % 4) continue;
+      const ni = i + step[nd][0], nj = j + step[nd][1];
+      if (ni < 0 || nj < 0 || ni >= W || nj >= H) continue;
+      const p = { x: X[i], y: Y[j] }, q = { x: X[ni], y: Y[nj] };
+      if (inside(q.x, q.y) || boxes.some((r) => runHits(p, q, r))) continue;
+      const nc = c + Math.abs(q.x - p.x) + Math.abs(q.y - p.y) + (nd === d ? 0 : TURN_COST);
+      const nk = id(ni, nj, nd);
+      if (nc < cost[nk]) { cost[nk] = nc; prev[nk] = k; push(nc, nk); }
+    }
+  }
+  if (end < 0) return null;
+  const path: Pt[] = [];
+  for (let k = end; k >= 0; k = prev[k]) { const cell = (k - (k % 4)) / 4; path.push({ x: X[cell % W], y: Y[(cell - (cell % W)) / W] }); }
+  path.reverse();
+  return simplifyRoute([from.p, ...path, to.p]);
+}
+
 /** The routes of many edges, by id. Edges that have no route of their own and leave the same side of a node share it out
- *  evenly, in the order of what they lead to, and a node's self-loops nest. An edge whose end doesn't exist isn't in it. */
-export function edgeGeometries<N, E>(edges: readonly DiagramEdge<E>[], index: DiagramIndex<N>): Map<string, ConnectorGeometry> {
+ *  evenly, in the order of what they lead to, and a node's self-loops nest. With `avoid`, one whose elbow would run through
+ *  a card (or a box's header) goes round instead: for a hand-placed diagram that isn't too big to work out each time. An
+ *  edge whose end doesn't exist isn't in it. */
+export function edgeGeometries<N, E>(edges: readonly DiagramEdge<E>[], index: DiagramIndex<N>, { avoid = false }: { avoid?: boolean } = {}): Map<string, ConnectorGeometry> {
   // Who's on each side of each node.
   const onSide = new Map<string, { edge: string; end: 'from' | 'to'; other: Pt }[]>();
   const loops = new Map<string, number>();
-  const spread = new Map<string, { from?: number; to?: number; loop?: number }>();
+  const spread = new Map<string, { from?: number; to?: number; loop?: number; turn?: number }>();
+  const keys = new Map<string, [string, string]>();
   for (const e of edges) {
     if ((e.points && e.points.length >= 2) || e.fromPort || e.toPort) continue;
     const a = index.byId.get(e.from), b = index.byId.get(e.to);
@@ -697,6 +799,14 @@ export function edgeGeometries<N, E>(edges: readonly DiagramEdge<E>[], index: Di
     };
     add(a, sides.from, 'from', b);
     add(b, sides.to, 'to', a);
+    keys.set(e.id, [`${a.id}\0${sides.from}`, `${b.id}\0${sides.to}`]);
+  }
+  // A fan (one side with more ends than the other) turns next to its crowded end, so each edge's long run, where its label
+  // goes, is next to the end it has to itself.
+  for (const [id, [fk, tk]] of keys) {
+    const f = onSide.get(fk)?.length ?? 0, t = onSide.get(tk)?.length ?? 0;
+    if (f === t) continue;
+    spread.set(id, { ...spread.get(id), turn: f > t ? 0 : 1 });
   }
   for (const [key, list] of onSide) {
     if (list.length < 2) continue;
@@ -710,12 +820,30 @@ export function edgeGeometries<N, E>(edges: readonly DiagramEdge<E>[], index: Di
     });
   }
   const out = new Map<string, ConnectorGeometry>();
+  // What a route mustn't go through: every card, and the strip along the top of every box that its header takes.
+  const blocks = avoid ? index.nodes.flatMap((n) => (n.kind === 'marker' || n.kind === 'region' ? [] : holdsNodes(n) ? (n.kind === 'root' ? [] : [{ id: n.id, r: { x: n.x, y: n.y, w: n.w, h: Math.min(n.h, HEADER_ROOM) } }]) : [{ id: n.id, r: rectOf2(n) }])) : [];
   for (const e of edges) {
-    const g = edgeGeometry(e, index, spread.get(e.id));
+    let g = edgeGeometry(e, index, spread.get(e.id));
+    if (g && avoid && !e.points && e.from !== e.to && e.route !== 'curve' && e.route !== 'straight') {
+      const keep = new Set([e.from, e.to, ...ancestorsOf(index, e.from), ...ancestorsOf(index, e.to)]);
+      const boxes = blocks.filter((b) => !keep.has(b.id)).map((b) => b.r);
+      if (routeHits(g.pts, boxes)) {
+        const a = g.pts[0], b = g.pts[g.pts.length - 1];
+        // Each end leaves its card the way it faces: against the way the route runs into it.
+        const around = routeAround({ p: a, n: unitOrNull({ x: -g.startDir.x, y: -g.startDir.y }) }, { p: b, n: unitOrNull({ x: -g.endDir.x, y: -g.endDir.y }) }, boxes);
+        if (around) g = polylinePath(around);
+      }
+    }
     if (g) out.set(e.id, g);
   }
   return out;
 }
+
+/** How much of a box's top an edge keeps off when going round: its header strip. */
+const HEADER_ROOM = 32;
+const rectOf2 = (n: Rect): Rect => ({ x: n.x, y: n.y, w: n.w, h: n.h });
+/** A route's way out of an end as one of the four sides' normals. */
+const unitOrNull = (d: Pt): Pt | null => (Math.abs(d.x) < 1e-6 && Math.abs(d.y) < 1e-6 ? null : Math.abs(d.x) >= Math.abs(d.y) ? { x: Math.sign(d.x), y: 0 } : { x: 0, y: Math.sign(d.y) });
 
 /* ── Hit tests ── */
 
@@ -820,6 +948,11 @@ export const DIAGRAM_CARD = {
 /** A `marker`'s size. */
 export const MARKER_SIZE = 12;
 
+/** The least zoom a diagram opens at: a chip's 12 px words stay about 11 px (10.5), a title's 13 px over 11. A diagram that
+ *  can't be seen whole at that size opens at it, from its top, to be scrolled; a layout wraps a long run into columns to
+ *  avoid that. */
+export const DIAGRAM_LEGIBLE_ZOOM = 0.875;
+
 /** The room a group keeps around what it holds, past its header and sections. */
 export const CONTAINER_PADDING = { side: 16, bottom: 16, top: 12 } as const;
 
@@ -832,10 +965,13 @@ function glyphSize(glyph: DiagramGlyph, size: number, text: TextOf): number {
   return typeof glyph === 'string' ? size : Math.max(size, text(glyph.text, 'trailing').w + 4);
 }
 
+/** An item's title as drawn: in a `code` section, a key with a value or type after it reads `key:` (`audioRef: string`). */
+export const codeKey = (item: Pick<DiagramSectionItem, 'title' | 'description'>, code: boolean): string => (code && item.description ? `${item.title}:` : item.title);
+
 function itemSize(item: DiagramSectionItem, variant: DiagramSection['variant'], text: TextOf): { w: number; h: number } {
   const C = DIAGRAM_CARD;
   const code = variant === 'code';
-  const t = text(item.title, code ? 'code' : 'item');
+  const t = text(codeKey(item, code), code ? 'code' : 'item');
   const d = item.description ? text(item.description, code ? 'code' : 'description') : NONE;
   const icon = item.icon ? glyphSize(item.icon, C.chipIcon, text) : 0;
   const w = (icon ? icon + C.chipIconGap : 0) + t.w + (item.description ? C.chipDescriptionGap + d.w : 0);
@@ -970,7 +1106,7 @@ export function diagramTextRuns(nodes: readonly DiagramNode<unknown>[], edges: r
       if (s.title) runs.push({ text: s.title, kind: 'caption' });
       const code = s.variant === 'code';
       for (const it of s.items) {
-        runs.push({ text: it.title, kind: code ? 'code' : 'item' });
+        runs.push({ text: codeKey(it, code), kind: code ? 'code' : 'item' });
         if (it.description) runs.push({ text: it.description, kind: code ? 'code' : 'description' });
         glyph(it.icon);
       }

@@ -5,8 +5,14 @@ import { Glyph } from "./glyph"
 import { Button } from "@ui-sdk/react/button"
 import { Tabs, TabsList, TabsPanel, TabsTab } from "@ui-sdk/react/tabs"
 import { Textarea } from "@ui-sdk/react/textarea"
+import type { ChangeDetails } from "@ui-sdk/core"
+import { changeDetails } from "@brett_lamy/ui/lib/change-details"
 
 import type { LivePreviewRenderer } from "@brett_lamy/ui/docstream"
+
+/** Why the files changed: a file's source was edited. `details.cancel()` keeps the file as it was. */
+export type ReactDemoEditorValueChangeReason = "input-change"
+export type ReactDemoEditorValueChangeDetails = ChangeDetails<ReactDemoEditorValueChangeReason>
 
 export interface ReactDemoEditorProps {
   /** Source files keyed by their project-relative or absolute paths. */
@@ -16,8 +22,8 @@ export interface ReactDemoEditorProps {
   /** Preview height after the user runs the demo. */
   height?: number | string
   className?: string
-  /** Called whenever a file is edited. */
-  onChange?: (files: Record<string, string>) => void
+  /** Called with every file whenever one is edited, and why. */
+  onValueChange?: (files: Record<string, string>, details: ReactDemoEditorValueChangeDetails) => void
   /**
    * Renders the running preview, e.g. `almostNodeLiveRenderer` from
    * `@brett_lamy/ui/docstream/playground` (needs `@agent-wasm/core`). The editor never loads a
@@ -40,7 +46,7 @@ export function ReactDemoEditor({
   entry = "/src/main.jsx",
   height = 320,
   className,
-  onChange,
+  onValueChange,
   autoPreview = true,
   previewDebounceMs = 350,
   liveRenderer,
@@ -65,11 +71,12 @@ export function ReactDemoEditor({
     return () => window.clearTimeout(timer)
   }, [autoPreview, draftFiles, previewDebounceMs])
 
-  const updateFile = (content: string) => {
+  const updateFile = (content: string, event?: Event) => {
     if (!selectedFile) return
     const next = { ...draftFiles, [selectedFile]: content }
-    setDraftFiles(next)
-    onChange?.(next)
+    const details = changeDetails<ReactDemoEditorValueChangeReason>({ reason: "input-change", event })
+    onValueChange?.(next, details)
+    if (!details.canceled) setDraftFiles(next)
   }
 
   const wrapperClass = className ? `gb-react-demo-editor ${className}` : "gb-react-demo-editor"
@@ -96,7 +103,7 @@ export function ReactDemoEditor({
       <Textarea
         className="gb-react-demo-textarea"
         value={selectedFile ? draftFiles[selectedFile] ?? "" : ""}
-        onValueChange={updateFile}
+        onValueChange={(content, details) => updateFile(content, details.event)}
         spellCheck={false}
         disabled={!selectedFile}
         aria-label={selectedFile ? `Edit ${selectedFile}` : "No file selected"}

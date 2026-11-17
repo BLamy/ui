@@ -270,12 +270,12 @@ export function DeliveryTrackingDemo({
   );
 
   const pins: MapPin[] = [
-    { id: 'store', position: STORE, kind: 'place', icon: 'store', color: accent, label: STORE_NAME },
+    { id: 'store', position: STORE, kind: 'place', icon: 'store', tint: accent, label: STORE_NAME },
     ...(arrived
       ? []
-      : [{ id: 'car', position: car, kind: 'place' as const, icon: 'car' as const, color: DELIVERY_MAP_INK[scheme].car, callout: `${etaMinutes} min` }]),
+      : [{ id: 'car', position: car, kind: 'place' as const, icon: 'car' as const, tint: DELIVERY_MAP_INK[scheme].car, callout: `${etaMinutes} min` }]),
   ];
-  const route: MapRoute = { points: ROUTE, color: DELIVERY_MAP_INK[scheme].route };
+  const route: MapRoute = { points: ROUTE, tint: DELIVERY_MAP_INK[scheme].route };
 
   const steps: ProgressStepperStep[] = DELIVERY_STAGES.map((s, i) => ({ id: s.id, label: s.step, icon: <Icon name={STEP_ICONS[i]} size={16} /> }));
 

@@ -47,8 +47,8 @@ export type { SimulationStandIns } from '@/lib/state-diagram-simulation';
 
    Without `editable` it's a picture you can select in and read: nothing moves, connects or is deleted. With `simulate`, it
    also runs a copy of it, with stand-ins for everything it names, so none of an app's code runs here either. Where it is
-   is `current` on the board; each transition it can take now gets a send button on its label (a play glyph, a primary
-   outline: not color alone), which sends its event, as Enter on it does; and a panel offers what it can do next, with its
+   is `current` on the board; each transition it can take now has a label that can be pressed (Diagram's `pressable`: a
+   primary ring and a play badge, not color alone), which sends its event, as Enter on it does; and a panel offers what it can do next, with its
    context as it is now: a `DiagramFramePanel`, so a column beside the board when there's the room, a drawer over it at
    medium sizes, and a pushed page on a phone.
 
@@ -519,39 +519,6 @@ function EditPanel({ refusal, addStateHere, node, edge, context, renameNode, mak
 
 /* ── Sending from the board ── */
 
-/** While simulating, a send button on each transition it can take now, over its label: pressing the label sends its event.
- *  The label gets a primary outline and a play glyph, so it isn't told by color alone. Placed in the board's own units. */
-function SendButtons({ edges, enabled, onSend }: { edges: readonly DiagramEdge<StateEdgeData>[]; enabled: ReadonlySet<string>; onSend: (event: string) => void }) {
-  return (
-    <>
-      {edges.map((e) => {
-        if (!enabled.has(e.id) || !e.labelBox || !e.data?.event) return null;
-        const box = e.labelBox, event = e.data.event;
-        return (
-          <Button
-            key={e.id}
-            data-action="send-on-board"
-            data-edge={e.id}
-            data-event={event}
-            variant="plain"
-            aria-label={`Send ${e.data.name ?? event}`}
-            className="absolute rounded-card p-0 ring-2 ring-primary hover:bg-primary/8 active:bg-primary/15"
-            style={{ left: box.x, top: box.y, width: box.w, height: box.h }}
-            // Its own press, not the board's: the board would take the pointer to select or pan.
-            onPointerDown={(pe) => pe.stopPropagation()}
-            onKeyDown={(ke) => ke.stopPropagation()}
-            onClick={() => onSend(event)}
-          >
-            <span aria-hidden="true" className="absolute -top-2 -left-2 grid size-4 place-items-center rounded-full bg-primary text-primary-foreground shadow-hairline">
-              <Icon name="play" size={9} />
-            </span>
-          </Button>
-        );
-      })}
-    </>
-  );
-}
-
 /** The transitions a simulation can take now: from a state it's in, on an event (or an actor's finish) it can take, through a
  *  guard that answers yes. */
 function enabledEdges(edges: readonly DiagramEdge<StateEdgeData>[], state: SimulationState | null): Set<string> {
@@ -802,6 +769,8 @@ export function StateDiagram({
   // The same set while it says the same, so time going by doesn't redraw the board.
   const enabledIds = [...enabledEdges(laid.edges, simState)].join('\0');
   const enabled = useMemo(() => new Set(enabledIds ? enabledIds.split('\0') : []), [enabledIds]);
+  // Their labels can be pressed, which sends: the Diagram draws them as buttons, with a ring and a play badge.
+  const sendable = useMemo(() => (sim ? { nodes: [], edges: [...enabled] } : undefined), [sim, enabled]);
 
   const byId = useMemo(() => new Map(laid.nodes.map((n) => [n.id, n])), [laid.nodes]);
   const ends = useMemo(() => {
@@ -819,7 +788,7 @@ export function StateDiagram({
   }, [byId, enabled]);
 
   const send = (event: string) => sim?.send(event);
-  /** Enter on a transition it can take sends it; a chip pressed while editing opens it in the panel. */
+  /** A press on (or Enter on) a transition it can take sends it; a chip pressed while editing opens it in the panel. */
   const act = (item: DiagramItem, details: Parameters<NonNullable<DiagramProps['onAction']>>[1]) => {
     onAction?.(item, details);
     if (item.kind === 'edge' && !item.item && enabled.has(item.id)) {
@@ -922,12 +891,12 @@ export function StateDiagram({
           onSelectionChange={setSelection}
           background={background}
           onAction={act}
+          pressable={sendable}
           {...(editable ? { editable: true, movable: false, history, onDataChange: onDiagramChange, isValidConnection: validConnection } : null)}
           overlay={<DiagramToolbar />}
           {...diagram}
         >
           <RevealCurrent nodes={laid.nodes} ids={leaves} board={board} />
-          {sim ? <SendButtons edges={laid.edges} enabled={enabled} onSend={send} /> : null}
         </Diagram>
         {panel ? <DiagramFrameBar>{status}</DiagramFrameBar> : null}
       </DiagramFrameBoard>

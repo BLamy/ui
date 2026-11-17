@@ -38,7 +38,7 @@ React and the TipTap packages (including `@tiptap/extension-code`) are peer depe
 
 YAML frontmatter is part of the document model. The editor shows a compact, editable property sheet
 above the body; `documentProperties={false}` hides it and `documentProperties={{ defaultOpen: true }}`
-expands it. Property edits use the normal `onChange` and undo/redo history. Body edits preserve the
+expands it. Property edits use the normal `onValueChange` and undo/redo history. Body edits preserve the
 original YAML, and controlled Markdown updates refresh both properties and body. Custom editors can
 use `GbDocumentProperties`, `DocumentPropertiesEditor` and `editor.commands.setDocumentProperties()`.
 
@@ -86,7 +86,7 @@ If your TypeScript app checks CSS side-effect imports, include Vite's standard e
 
 ## Usage
 
-`GitbookEditor` is a controlled component. Pass the current markdown and receive updated markdown through `onChange`.
+`GitbookEditor` is a controlled component. Pass the current markdown and receive updated markdown through `onValueChange(markdown, details)`.
 
 ```tsx
 import { useState } from "react"
@@ -107,7 +107,7 @@ export function EditorPage() {
   return (
     <GitbookEditor
       markdown={markdown}
-      onChange={setMarkdown}
+      onValueChange={setMarkdown}
     />
   )
 }
@@ -120,7 +120,7 @@ Every prop is optional.
 ```ts
 export interface GitbookEditorProps {
   markdown?: string
-  onChange?: (markdown: string) => void
+  onValueChange?: (markdown: string, details: GitbookEditorValueChangeDetails) => void
   documentProperties?: boolean | { defaultOpen?: boolean } // default true
   toolbar?: boolean // default true
   slashMenu?: boolean | { items?: SlashItem[] } // default true
@@ -128,7 +128,7 @@ export interface GitbookEditorProps {
   editable?: boolean // default true
   placeholder?: string // default "Write, or type / to insert a block…"
   className?: string
-  autofocus?: boolean // default false
+  autoFocus?: boolean // default false
   disableHistory?: boolean // default false
   extensions?: AnyExtension[]
   onEditorReady?: (editor: Editor | null) => void
@@ -162,14 +162,14 @@ export interface GitbookEditorProps {
 
 - `markdown`: Source markdown. When given, the editor is controlled; omit it for an uncontrolled
   editor that starts empty.
-- `onChange`: Called with serialized markdown whenever TipTap content changes.
+- `onValueChange`: Called with serialized markdown whenever TipTap content changes, and why (`details.reason` is `input-change`; `details.cancel()` puts the document back).
 - `documentProperties`, `toolbar`, `slashMenu`, `references`, `editable`, `placeholder`, `className`,
-  `autofocus`: the property sheet, the formatting toolbar, the `/` menu, the `@` / `#` / `$`
+  `autoFocus`: the property sheet, the formatting toolbar, the `/` menu, the `@` / `#` / `$`
   pickers (see [Mentions, channels, and codebases](#mentions-channels-and-codebases)), read-only
   mode, the empty-document placeholder, the wrapper class (`gb <className>`), focus on mount.
 - `disableHistory`, `extensions`, `onEditorReady`: Yjs-style integrations — turn off StarterKit's
   undo/redo, append TipTap extensions, receive the TipTap `Editor` (and `null` on teardown).
-- `autofocus`, `placeholder`, `slashMenu`, `references`, `disableHistory` and `extensions` are
+- `autoFocus`, `placeholder`, `slashMenu`, `references`, `disableHistory` and `extensions` are
   read when the TipTap editor is created; changing them later has no effect, so remount (e.g. with
   a `key`) to switch them. `editable` follows the prop at any time.
 - `onKeyDown` / `onPaste`: Optional host hooks that run before the built-in editor behavior;
@@ -238,7 +238,7 @@ dollar signs in ordinary prose never open a menu. Free-form entry is always offe
 ```tsx
 <GitbookEditor
   markdown={md}
-  onChange={setMd}
+  onValueChange={setMd}
   references={{
     mentions: [
       ...people.map((p) => ({ id: p.handle, label: p.name, description: p.email, group: "People" })),
@@ -267,7 +267,7 @@ const [attachments, setAttachments] = useState<EditorAttachment[]>([])
 
 <GitbookEditor
   markdown={markdown}
-  onChange={setMarkdown}
+  onValueChange={setMarkdown}
   imagePaste="chip"
   attachments={attachments}
   // once per image: { id, name, src (data URL), size, type, file }
@@ -293,7 +293,7 @@ An app that edits Markdown from a folder can plug in its own files. All four pro
 ```tsx
 <GitbookEditor
   markdown={markdown}
-  onChange={setMarkdown}
+  onValueChange={setMarkdown}
   // "./case/part.stl" as written → a URL the browser can load (blob: of the local file).
   resolveAsset={(url) => (url.startsWith("./") ? blobUrlFor(url) : null)}
   // Adds "Choose file…" to embed blocks ("Choose image…" to figures).
@@ -374,7 +374,7 @@ import { GitbookEditor } from "@brett_lamy/ui/docstream-editor"
 
 const demoResolver = createGlobDemoResolver({ /* see the Docstream README */ })
 
-<GitbookEditor markdown={markdown} onChange={setMarkdown} demoResolver={demoResolver} />
+<GitbookEditor markdown={markdown} onValueChange={setMarkdown} demoResolver={demoResolver} />
 ```
 
 ## Copy and paste demos between editors
@@ -414,8 +414,8 @@ import { GitbookEditor, useDemoVFS, useDemoVFSFiles } from "@brett_lamy/ui/docst
 const vfs = useDemoVFS()            // one VFS shared by both editors
 const files = useDemoVFSFiles(vfs)  // { [src]: DemoFile[] } — or use onDemoFilesChange
 
-<GitbookEditor markdown={a} onChange={setA} demoResolver={demoResolver} demoVFS={vfs} />
-<GitbookEditor markdown={b} onChange={setB} demoVFS={vfs} demoRuntime={demoRuntime}
+<GitbookEditor markdown={a} onValueChange={setA} demoResolver={demoResolver} demoVFS={vfs} />
+<GitbookEditor markdown={b} onValueChange={setB} demoVFS={vfs} demoRuntime={demoRuntime}
   pastedDemoFiles="vfs" onDemoFilesChange={(files) => save(files)} />
 ```
 

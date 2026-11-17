@@ -15,7 +15,7 @@ export type { NumberMorphProps } from './components/number-morph';
 export { Swap } from './components/swap';
 export type { SwapProps, SwapEffect } from './components/swap';
 export { AnimatedHeight } from './components/animated-height';
-export { Canvas, CanvasFrame, CanvasHandles, CanvasMarquee, CanvasGuides, CanvasMiniMap, useCanvas, createCanvasController } from './components/canvas';
+export { Canvas, CanvasFrame, CanvasHandles, CanvasMarquee, CanvasGuides, CanvasMiniMap, canvasFrameVariants, useCanvas, createCanvasController } from './components/canvas';
 export type {
   CanvasProps, CanvasPointerInfo, CanvasContextValue, CanvasController, CanvasFitOptions, CanvasInsets, CanvasViewportChangeDetails, CanvasViewportReason,
   CanvasFrameProps, CanvasHandlesProps, CanvasMarqueeProps, CanvasGuidesProps, CanvasMiniMapProps, CanvasMiniMapItem, CanvasPointerLayer,
@@ -25,7 +25,7 @@ export {
   diagramEdgeVariants, diagramNodeVariants, diagramItemVariants, diagramEdgeLabelVariants,
 } from './components/diagram';
 export type {
-  DiagramProps, DiagramNodeBodyProps, DiagramNodeHeaderProps, DiagramSectionsProps, DiagramToolbarProps, DiagramContextValue, DiagramController, DiagramData, DiagramItem,
+  DiagramProps, DiagramNodeBodyProps, DiagramNodeHeaderProps, DiagramSectionsProps, DiagramToolbarProps, DiagramContextValue, DiagramController, DiagramData, DiagramItem, DiagramActionDetails,
   DiagramDataChangeDetails, DiagramDataChangeReason, DiagramSelectionChangeDetails, DiagramSelectionChangeReason,
   DiagramHistory, DiagramHistoryChangeDetails, DiagramHistoryOptions, UseDiagramHistory,
 } from './components/diagram';
@@ -110,11 +110,11 @@ export type {
 export { IndexBar, indexBarAlphabetItems, indexBarVariants } from './components/index-bar';
 export type { IndexBarProps, IndexBarItem, IndexBarValue, IndexBarJumpReason, IndexBarJumpDetails } from './components/index-bar';
 export {
-  Toolbar, ToolbarButton, ToolbarGroup, ToolbarSeparator, ToolbarText, toolbarVariants, toolbarButtonVariants, useToolbar,
+  Toolbar, ToolbarButton, ToolbarGroup, ToolbarSeparator, ToolbarText, ToolbarToggle, toolbarVariants, toolbarButtonVariants, useToolbar,
   createToolbarController,
 } from './components/toolbar';
 export type {
-  ToolbarProps, ToolbarButtonProps, ToolbarGroupProps, ToolbarSeparatorProps, ToolbarTextProps, ToolbarVariant, ToolbarSize,
+  ToolbarProps, ToolbarButtonProps, ToolbarToggleProps, ToolbarGroupProps, ToolbarSeparatorProps, ToolbarTextProps, ToolbarVariant, ToolbarSize,
   ToolbarTone, ToolbarController,
 } from './components/toolbar';
 export {
@@ -632,9 +632,9 @@ export type {
 
 
 // ── Video: the editing parts (FFmpeg, the timeline model, render and playback are on @brett_lamy/ui/lib/ffmpeg, lib/video-timeline-model, …) ──
-export { VideoTimeline, timelineMediaType, fitTimelineZoom } from './components/video-timeline';
+export { VideoTimeline, videoTimelineMediaType, fitVideoTimelineZoom } from './components/video-timeline';
 export type {
-  VideoTimelineProps, TimelineMedia, TimelineDrop, TimelineDropDetails, VideoTimelineAction, VideoTimelineChangeDetails, VideoTimelineChangeReason,
+  VideoTimelineProps, VideoTimelineMedia, VideoTimelineDrop, VideoTimelineDropDetails, VideoTimelineAction, VideoTimelineChangeDetails, VideoTimelineChangeReason,
   VideoTimelineSelectionReason, VideoTimelineZoomReason,
 } from './components/video-timeline';
 export { VideoPreview, VideoPreviewControls, VideoPreviewTimecode } from './components/video-preview';

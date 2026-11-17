@@ -19,11 +19,12 @@ export const aliases = [
  * (`@brett_lamy/ui/docstream/<entry>`, generated from tools/registry/package-exports.mjs FOLDED) and `./cloudflare`, which
  * docstream's capnp fence loads, `./state-diagram`, which its xstate fence draws, `./lib/state-diagram-{model,source}`,
  * which its text form (`xstateToMermaid`) reads with, and
- * `./lib/icon` and `./lib/syntax-lexer`, its glyphs and its fences' lexer. Each → its
+ * `./lib/icon`, `./lib/syntax-lexer`, `./lib/syntax` and `./lib/change-details`: its glyphs, its fences' lexers and its
+ * callbacks' details. Each → its
  * source, from the package's own `exports`. An app in the workspace gets there through
  * the package and the `@org/source` condition; this is for what can't: the library's Vitest run, the playgrounds. */
 const ui = JSON.parse(readFileSync(`${ROOT}/packages/ui/package.json`, 'utf8'));
 const escape = (s) => s.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&');
 export const docstreamAliases = Object.entries(ui.exports)
-  .filter(([key, value]) => /^\.\/(docstream(-editor)?(\/|$)|cloudflare$|state-diagram$|lib\/state-diagram-(model|source)$|lib\/(icon|syntax-lexer)$)/.test(key) && value && typeof value === 'object' && value['@org/source'])
+  .filter(([key, value]) => /^\.\/(docstream(-editor)?(\/|$)|cloudflare$|state-diagram$|lib\/state-diagram-(model|source)$|lib\/(icon|syntax-lexer|syntax|change-details)$)/.test(key) && value && typeof value === 'object' && value['@org/source'])
   .map(([key, value]) => ({ find: new RegExp(`^${escape(`@brett_lamy/ui${key.slice(1)}`)}$`), replacement: resolve(ROOT, 'packages/ui', value['@org/source']) }));

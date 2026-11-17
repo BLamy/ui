@@ -1,5 +1,5 @@
 'use client';
-import { createContext, useContext, useState, type ComponentProps, type Dispatch, type ReactNode, type SetStateAction } from 'react';
+import { createContext, useContext, useLayoutEffect, useState, type ComponentProps, type Dispatch, type ReactNode, type SetStateAction } from 'react';
 import {
   Combobox as SdkCombobox,
   ComboboxChip as SdkComboboxChip,
@@ -105,15 +105,34 @@ const chipsHeight = {
   lg: 'has-data-[slot=combobox-chips]:min-h-[50px]',
 } as const;
 
-/* The kit's field surface, keeping its edge while the list is open (the input's `aria-expanded`). */
+/* The kit's field surface, keeping its edge while the list is open (the input's `aria-expanded`, or the trigger's once
+   a sheet has taken the input into its header). */
 const comboboxField = [
   'w-full gap-0 pe-1',
   'has-[[data-slot=combobox-input][aria-expanded=true]]:bg-transparent has-[[data-slot=combobox-input][aria-expanded=true]]:shadow-[inset_0_0_0_1.5px_var(--primary)]',
+  'has-[[data-slot=combobox-trigger][aria-expanded=true]]:bg-transparent has-[[data-slot=combobox-trigger][aria-expanded=true]]:shadow-[inset_0_0_0_1.5px_var(--primary)]',
+  // With no input (a sheet holds it) and no chips, the ghost stands in for the input's face.
+  '[&:not(:has([data-slot=combobox-input],[data-slot=combobox-chips]))>[data-part=ghost]]:flex',
   'has-[[data-slot=combobox-input][aria-invalid=true]]:shadow-[inset_0_0_0_1.5px_var(--destructive)]',
   'has-data-[slot=combobox-chips]:h-auto has-data-[slot=combobox-chips]:ps-1.5',
 ];
 
 export interface ComboboxInputGroupProps extends ComponentProps<'div'>, VariantProps<typeof fieldSurfaceVariants> {}
+
+/** The input tells its group its placeholder, for the ghost (context crosses the sheet's portal). */
+const GhostContext = createContext<Dispatch<SetStateAction<string | undefined>> | null>(null);
+
+/* While a sheet holds the input in its header, the field behind the scrim keeps its face: the chosen label, or the
+   input's placeholder, as still text where the input was. Decoration: the input in the sheet is the control. */
+function ComboboxGhost({ placeholder }: { placeholder?: string }) {
+  return (
+    <span data-part="ghost" aria-hidden="true" className="hidden h-full min-w-0 flex-1 items-center truncate">
+      <ComboboxValue>
+        {(state) => (state.labels.length ? <span className="truncate text-foreground">{state.labels.join(', ')}</span> : <span className="truncate text-tertiary-foreground">{placeholder}</span>)}
+      </ComboboxValue>
+    </span>
+  );
+}
 
 /** The field: the kit's filled field box (`fieldSurfaceVariants`, `size` sm / default / lg), which the popup hangs
  *  from and matches in width, and which keeps its edge while the list is open. Without children it is a `ComboboxInput` and a
@@ -121,31 +140,38 @@ export interface ComboboxInputGroupProps extends ComponentProps<'div'>, VariantP
  *  `ComboboxTrigger`). */
 export function ComboboxInputGroup({ className, size, children, ref, ...props }: ComboboxInputGroupProps) {
   const field = useContext(AnchorContext);
+  const [placeholder, setPlaceholder] = useState<string | undefined>();
   useReportFieldSize(size);
   return (
-    <div
-      ref={(el) => {
-        field?.[1](el);
-        if (typeof ref === 'function') return ref(el);
-        if (ref) ref.current = el;
-      }}
-      data-slot="combobox-input-group"
-      data-size={size ?? 'default'}
-      className={cn(fieldSurfaceVariants({ size }), comboboxField, chipsHeight[size ?? 'default'], className)}
-      {...props}
-    >
-      {children ?? (
-        <>
-          <ComboboxInput />
-          <ComboboxTrigger />
-        </>
-      )}
-    </div>
+    <GhostContext.Provider value={setPlaceholder}>
+      <div
+        ref={(el) => {
+          field?.[1](el);
+          if (typeof ref === 'function') return ref(el);
+          if (ref) ref.current = el;
+        }}
+        data-slot="combobox-input-group"
+        data-size={size ?? 'default'}
+        className={cn(fieldSurfaceVariants({ size }), comboboxField, chipsHeight[size ?? 'default'], className)}
+        {...props}
+      >
+        <ComboboxGhost placeholder={placeholder} />
+        {children ?? (
+          <>
+            <ComboboxInput />
+            <ComboboxTrigger />
+          </>
+        )}
+      </div>
+    </GhostContext.Provider>
   );
 }
 
 /** The text input, bare: the ComboboxInputGroup draws the box around it. In a Field the label names it. */
 export function ComboboxInput({ className, ...props }: ComponentProps<typeof SdkComboboxInput>) {
+  const ghost = useContext(GhostContext);
+  const { placeholder } = props;
+  useLayoutEffect(() => ghost?.(placeholder), [ghost, placeholder]);
   return (
     <SdkComboboxInput
       className={cx(
@@ -172,7 +198,7 @@ const fieldButton =
  *  open the list from the input). Named "Show options"; pass `aria-label` in another language. */
 export function ComboboxTrigger({ className, children, 'aria-label': ariaLabel = 'Show options', ...props }: ComponentProps<typeof SdkComboboxTrigger>) {
   return (
-    <SdkComboboxTrigger aria-label={ariaLabel} className={cx(['group/trigger', fieldButton], className)} {...props}>
+    <SdkComboboxTrigger aria-label={ariaLabel} className={cx(['group/trigger ms-auto', fieldButton], className)} {...props}>
       {children ?? (
         <Icon name="chevron-down" size={16} sw={2.2} className="transition-transform duration-spring-snappy ease-spring-snappy group-data-open/trigger:rotate-180 motion-reduce:transition-none" />
       )}

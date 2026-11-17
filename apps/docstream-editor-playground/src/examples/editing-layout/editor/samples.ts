@@ -81,7 +81,7 @@ The editor's styles mirror docstream's, so authors see what readers get.
 
 {% step %}
 ### Render the editor
-\`<GitbookEditor markdown={md} onChange={setMd} />\`
+\`<GitbookEditor markdown={md} onValueChange={setMd} />\`
 {% endstep %}
 {% endstepper %}
 `

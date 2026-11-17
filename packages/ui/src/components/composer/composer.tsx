@@ -1767,12 +1767,12 @@ export function ComposerInput({
       <GitbookEditor
         markdown={value}
         editable={!disabled}
-        onChange={(markdown) => setValue(markdown, { reason: 'input-change' })}
+        onValueChange={(markdown) => setValue(markdown, { reason: 'input-change' })}
         toolbar={false}
         slashMenu={slashMenu}
         references={references}
         placeholder={placeholder}
-        autofocus={autoFocus}
+        autoFocus={autoFocus}
         className={cn('wb-composer-doc', expanded && collapsed === 'none' && 'wb-composer-doc-expanded', collapsed === 'compact' && 'wb-composer-doc-compact')}
         onKeyDown={handleKeyDown}
         onPaste={handlePaste}

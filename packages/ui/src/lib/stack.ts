@@ -12,7 +12,7 @@ import { animateIn, animateOut, bindLayer, sourceOf, type PrimitiveContext } fro
    presses pass through and popups never nest under it) and is live (its `when`) only while it pops, so a popup open in the
    page closes first, a stack under a covered page lets Escape go on, and with stacks nested the innermost visible
    one goes first. Stacks find each other through one registry per page (`Symbol.for`), so two copies of the
-   library cooperate. `active` (an option) switches the stack off while its pages stay: a split view whose columns
+   library cooperate. `when` (an option, as on `bindLayer`) switches the stack off while its pages stay: a split view whose columns
    are a stack only while compact; `persistent` is for pages that never unmount and are moved by the layout's CSS
    (the same split view's columns): they keep their own `inert` and play no enter or exit. A swipe release keeps `data-swipe-settling` on the two pages it moved until their
    transitions finish, so CSS can settle them on a different spring than a push or a pop. ══ */
@@ -46,7 +46,7 @@ export interface PageStackOptions<State extends object, Reason extends string = 
   /** Whether it is a stack right now. While false the pages stay as they are but nothing pops (no layer, no back,
    *  swipes refused), and a change of pages moves no focus and plays no exit. Read on every store change.
    *  Default: always. */
-  active?: () => boolean;
+  when?: () => boolean;
   /** The pages are never unmounted: the layout's CSS moves them (a split view's columns). Then a page that leaves
    *  records no exit and plays no `animateIn`/`animateOut` (those would clear the `inert` the page's own attrs keep),
    *  and only focus moves with the pages. Default false. */
@@ -109,7 +109,7 @@ export function createPageStack<State extends object, Reason extends string = Pa
   const pagesOf = (state: State) => state[options.key] as string[];
   const exitsOf = (state: State) => state[options.exiting] as PageStackExit[];
   const pages = () => pagesOf(store.get());
-  const isActive = () => options.active?.() ?? true;
+  const isActive = () => options.when?.() ?? true;
   const bound = new Map<string, Page>();
   // What had focus before each page was pushed, which takes it back when the page pops.
   const openers = new Map<string, HTMLElement>();
@@ -306,7 +306,7 @@ export function createPageStack<State extends object, Reason extends string = Pa
         shown = next;
         moved(previous, next);
       }
-      // Also when only `active` changed (a split view turning compact).
+      // Also when only `when` changed (a split view turning compact).
       sync();
     }),
   );
