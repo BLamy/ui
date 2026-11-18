@@ -64,9 +64,9 @@
     },
     "ui": {
       "entry": "@brett_lamy/ui",
-      "min": 1644152,
-      "gzip": 538064,
-      "brotli": 431610,
+      "min": 1644348,
+      "gzip": 538135,
+      "brotli": 431741,
       "lazy": {
         "min": 151971,
         "gzip": 68858,
@@ -280,9 +280,9 @@
     },
     "sandbox": {
       "entry": "@brett_lamy/ui/sandbox",
-      "min": 24161,
-      "gzip": 9250,
-      "brotli": 8388,
+      "min": 28623,
+      "gzip": 10709,
+      "brotli": 9689,
       "lazy": {
         "min": 0,
         "gzip": 20,

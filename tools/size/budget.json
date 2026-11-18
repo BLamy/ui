@@ -5,7 +5,7 @@
     "tokens": 20224,
     "motion": 70656,
     "icons": 32512,
-    "ui": 564992,
+    "ui": 565248,
     "time": 103680,
     "canvas": 102144,
     "diagram": 307456,
@@ -20,7 +20,7 @@
     "pglite": 11520,
     "filter": 129792,
     "sync": 3840,
-    "sandbox": 9728,
+    "sandbox": 11264,
     "vault": 94720,
     "tailscale": 73984,
     "opencode": 56832
