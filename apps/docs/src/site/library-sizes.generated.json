@@ -40,37 +40,37 @@
     },
     "motion": {
       "entry": "@brett_lamy/ui/motion",
-      "min": 198752,
-      "gzip": 65356,
-      "brotli": 57797,
+      "min": 201612,
+      "gzip": 67139,
+      "brotli": 58716,
       "lazy": {
-        "min": 0,
-        "gzip": 20,
-        "brotli": 1
+        "min": 604,
+        "gzip": 377,
+        "brotli": 333
       },
       "peers": []
     },
     "icons": {
       "entry": "@brett_lamy/ui/icons",
-      "min": 207171,
-      "gzip": 69114,
-      "brotli": 61126,
+      "min": 85268,
+      "gzip": 30873,
+      "brotli": 26378,
       "lazy": {
-        "min": 0,
-        "gzip": 20,
-        "brotli": 1
+        "min": 86186,
+        "gzip": 30053,
+        "brotli": 27493
       },
       "peers": []
     },
     "ui": {
       "entry": "@brett_lamy/ui",
-      "min": 1640705,
-      "gzip": 535488,
-      "brotli": 430472,
+      "min": 1644152,
+      "gzip": 538064,
+      "brotli": 431610,
       "lazy": {
-        "min": 151367,
-        "gzip": 68588,
-        "brotli": 59385
+        "min": 151971,
+        "gzip": 68858,
+        "brotli": 59573
       },
       "peers": []
     },
@@ -100,13 +100,13 @@
     },
     "diagram": {
       "entry": "@brett_lamy/ui/diagram",
-      "min": 1066359,
-      "gzip": 336726,
-      "brotli": 280216,
+      "min": 929273,
+      "gzip": 292618,
+      "brotli": 241933,
       "lazy": {
-        "min": 0,
-        "gzip": 20,
-        "brotli": 1
+        "min": 86186,
+        "gzip": 30053,
+        "brotli": 27493
       },
       "peers": [
         "elkjs",
@@ -114,12 +114,12 @@
       ],
       "also": {
         "@brett_lamy/ui/cloudflare": {
-          "min": 1373396,
-          "gzip": 415162,
+          "min": 1236300,
+          "gzip": 370966,
           "lazy": {
-            "min": 1864,
-            "gzip": 997,
-            "brotli": 875
+            "min": 88050,
+            "gzip": 30902,
+            "brotli": 28223
           },
           "peers": [
             "elkjs",
@@ -154,13 +154,13 @@
     },
     "docstream": {
       "entry": "@brett_lamy/ui/docstream",
-      "min": 730675,
-      "gzip": 244179,
-      "brotli": 204600,
+      "min": 730661,
+      "gzip": 244151,
+      "brotli": 204681,
       "lazy": {
-        "min": 3184418,
-        "gzip": 1029952,
-        "brotli": 790984
+        "min": 3133625,
+        "gzip": 1014638,
+        "brotli": 776954
       },
       "peers": [
         "elkjs",
@@ -169,13 +169,13 @@
     },
     "docstream-editor": {
       "entry": "@brett_lamy/ui/docstream-editor",
-      "min": 1314465,
-      "gzip": 423496,
-      "brotli": 349871,
+      "min": 1314469,
+      "gzip": 423462,
+      "brotli": 349963,
       "lazy": {
-        "min": 3168191,
-        "gzip": 1024762,
-        "brotli": 785835
+        "min": 3117426,
+        "gzip": 1011471,
+        "brotli": 773890
       },
       "peers": [
         "elkjs",
@@ -184,13 +184,13 @@
     },
     "markdown": {
       "entry": "@brett_lamy/ui/markdown",
-      "min": 1485125,
-      "gzip": 479935,
-      "brotli": 396398,
+      "min": 1348646,
+      "gzip": 435545,
+      "brotli": 359054,
       "lazy": {
-        "min": 3015170,
-        "gzip": 975465,
-        "brotli": 743857
+        "min": 3101172,
+        "gzip": 1005794,
+        "brotli": 769130
       },
       "peers": [
         "elkjs",
@@ -199,13 +199,13 @@
     },
     "composer": {
       "entry": "@brett_lamy/ui/composer",
-      "min": 1700323,
-      "gzip": 550332,
-      "brotli": 452404,
+      "min": 1564059,
+      "gzip": 506579,
+      "brotli": 415033,
       "lazy": {
-        "min": 2940936,
-        "gzip": 948804,
-        "brotli": 723633
+        "min": 3026927,
+        "gzip": 977879,
+        "brotli": 749818
       },
       "peers": [
         "elkjs",
@@ -226,13 +226,13 @@
     },
     "sql": {
       "entry": "@brett_lamy/ui/sql",
-      "min": 566689,
-      "gzip": 192858,
-      "brotli": 163372,
+      "min": 429665,
+      "gzip": 148568,
+      "brotli": 125243,
       "lazy": {
-        "min": 41768,
-        "gzip": 14951,
-        "brotli": 13689
+        "min": 127954,
+        "gzip": 44578,
+        "brotli": 40384
       },
       "peers": [
         "@electric-sql/pglite",
@@ -256,13 +256,13 @@
     },
     "filter": {
       "entry": "@brett_lamy/ui/filter",
-      "min": 498049,
-      "gzip": 167682,
-      "brotli": 143000,
+      "min": 360999,
+      "gzip": 123377,
+      "brotli": 104712,
       "lazy": {
-        "min": 78875,
-        "gzip": 37271,
-        "brotli": 33606
+        "min": 165061,
+        "gzip": 66785,
+        "brotli": 60149
       },
       "peers": []
     },
@@ -278,27 +278,41 @@
       },
       "peers": []
     },
+    "sandbox": {
+      "entry": "@brett_lamy/ui/sandbox",
+      "min": 24161,
+      "gzip": 9250,
+      "brotli": 8388,
+      "lazy": {
+        "min": 0,
+        "gzip": 20,
+        "brotli": 1
+      },
+      "peers": [
+        "@agent-wasm/core"
+      ]
+    },
     "vault": {
       "entry": "@brett_lamy/ui/vault",
-      "min": 401346,
-      "gzip": 134388,
-      "brotli": 116528,
+      "min": 264699,
+      "gzip": 90156,
+      "brotli": 78077,
       "lazy": {
-        "min": 36605,
-        "gzip": 13086,
-        "brotli": 12012
+        "min": 122791,
+        "gzip": 42561,
+        "brotli": 38684
       },
       "peers": []
     },
     "tailscale": {
       "entry": "@brett_lamy/ui/tailscale",
-      "min": 338239,
-      "gzip": 114562,
-      "brotli": 100249,
+      "min": 201308,
+      "gzip": 70324,
+      "brotli": 61536,
       "lazy": {
-        "min": 177611,
-        "gzip": 103526,
-        "brotli": 98779
+        "min": 263797,
+        "gzip": 134155,
+        "brotli": 126454
       },
       "peers": [
         "@agent-wasm/tailscale-connect"
@@ -306,27 +320,27 @@
     },
     "opencode": {
       "entry": "@brett_lamy/ui/opencode",
-      "min": 290379,
-      "gzip": 98128,
-      "brotli": 85811,
+      "min": 153425,
+      "gzip": 53999,
+      "brotli": 47023,
       "lazy": {
-        "min": 754,
-        "gzip": 464,
-        "brotli": 369
+        "min": 86940,
+        "gzip": 30388,
+        "brotli": 27723
       },
       "peers": []
     }
   },
   "probes": {
     "Button from the root": {
-      "wide": 200224,
-      "narrow": 200232,
-      "gzip": 65935
+      "wide": 63262,
+      "narrow": 63268,
+      "gzip": 22057
     },
     "Dialog from the root": {
       "wide": 116971,
       "narrow": 116971,
-      "gzip": 40759
+      "gzip": 40757
     },
     "cn from the root": {
       "wide": 29298,
@@ -344,14 +358,14 @@
       "gzip": 43638
     },
     "MarkdownView from /markdown": {
-      "wide": 710836,
-      "narrow": 710865,
-      "gzip": 236907
+      "wide": 710842,
+      "narrow": 710871,
+      "gzip": 236881
     },
     "FilterInput from /filter": {
-      "wide": 451810,
-      "narrow": 451831,
-      "gzip": 152473
+      "wide": 314805,
+      "narrow": 314823,
+      "gzip": 108147
     },
     "usePersistentState from /sync": {
       "wide": 600,
