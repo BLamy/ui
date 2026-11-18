@@ -12981,6 +12981,59 @@
       }
     },
     {
+      "name": "library-tokens",
+      "type": "registry:item",
+      "title": "Tokens (library)",
+      "description": "Every part of the Tokens library (@brett_lamy/ui/tokens on npm): Design tokens, themes, size classes and the class helpers everything else uses.",
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/change-details.json",
+        "https://blamy.github.io/ui/r/container.json",
+        "https://blamy.github.io/ui/r/primitives.json",
+        "https://blamy.github.io/ui/r/size-class.json",
+        "https://blamy.github.io/ui/r/syntax.json",
+        "https://blamy.github.io/ui/r/syntax-lexer.json",
+        "https://blamy.github.io/ui/r/theme.json",
+        "https://blamy.github.io/ui/r/theme-context.json",
+        "https://blamy.github.io/ui/r/tokens.json",
+        "https://blamy.github.io/ui/r/utils.json",
+        "https://blamy.github.io/ui/r/webgpu.json"
+      ]
+    },
+    {
+      "name": "library-motion",
+      "type": "registry:item",
+      "title": "Motion (library)",
+      "description": "Every part of the Motion library (@brett_lamy/ui/motion on npm): iOS springs, morphs, presence and the gestures that drive them.",
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/animated-height.json",
+        "https://blamy.github.io/ui/r/celebrate.json",
+        "https://blamy.github.io/ui/r/edge-swipe.json",
+        "https://blamy.github.io/ui/r/morph.json",
+        "https://blamy.github.io/ui/r/morph-path.json",
+        "https://blamy.github.io/ui/r/motion.json",
+        "https://blamy.github.io/ui/r/number-morph.json",
+        "https://blamy.github.io/ui/r/presence.json",
+        "https://blamy.github.io/ui/r/pull-to-refresh.json",
+        "https://blamy.github.io/ui/r/reduced-motion.json",
+        "https://blamy.github.io/ui/r/swap.json",
+        "https://blamy.github.io/ui/r/text-morph.json",
+        "https://blamy.github.io/ui/r/title-flight.json"
+      ]
+    },
+    {
+      "name": "library-icons",
+      "type": "registry:item",
+      "title": "Icons (library)",
+      "description": "Every part of the Icons library (@brett_lamy/ui/icons on npm): An SF Symbols–style icon set as typed React components.",
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/file-icons.json",
+        "https://blamy.github.io/ui/r/icon.json"
+      ]
+    },
+    {
       "name": "library-ui",
       "type": "registry:item",
       "title": "UI (library)",
@@ -13107,59 +13160,6 @@
         "https://blamy.github.io/ui/r/workspace.json",
         "https://blamy.github.io/ui/r/workspace-model.json",
         "https://blamy.github.io/ui/r/workspace-primitive.json"
-      ]
-    },
-    {
-      "name": "library-tokens",
-      "type": "registry:item",
-      "title": "Tokens (library)",
-      "description": "Every part of the Tokens library (@brett_lamy/ui/tokens on npm): Design tokens, themes, size classes and the class helpers everything else uses.",
-      "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json",
-        "https://blamy.github.io/ui/r/change-details.json",
-        "https://blamy.github.io/ui/r/container.json",
-        "https://blamy.github.io/ui/r/primitives.json",
-        "https://blamy.github.io/ui/r/size-class.json",
-        "https://blamy.github.io/ui/r/syntax.json",
-        "https://blamy.github.io/ui/r/syntax-lexer.json",
-        "https://blamy.github.io/ui/r/theme.json",
-        "https://blamy.github.io/ui/r/theme-context.json",
-        "https://blamy.github.io/ui/r/tokens.json",
-        "https://blamy.github.io/ui/r/utils.json",
-        "https://blamy.github.io/ui/r/webgpu.json"
-      ]
-    },
-    {
-      "name": "library-motion",
-      "type": "registry:item",
-      "title": "Motion (library)",
-      "description": "Every part of the Motion library (@brett_lamy/ui/motion on npm): iOS springs, morphs, presence and the gestures that drive them.",
-      "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json",
-        "https://blamy.github.io/ui/r/animated-height.json",
-        "https://blamy.github.io/ui/r/celebrate.json",
-        "https://blamy.github.io/ui/r/edge-swipe.json",
-        "https://blamy.github.io/ui/r/morph.json",
-        "https://blamy.github.io/ui/r/morph-path.json",
-        "https://blamy.github.io/ui/r/motion.json",
-        "https://blamy.github.io/ui/r/number-morph.json",
-        "https://blamy.github.io/ui/r/presence.json",
-        "https://blamy.github.io/ui/r/pull-to-refresh.json",
-        "https://blamy.github.io/ui/r/reduced-motion.json",
-        "https://blamy.github.io/ui/r/swap.json",
-        "https://blamy.github.io/ui/r/text-morph.json",
-        "https://blamy.github.io/ui/r/title-flight.json"
-      ]
-    },
-    {
-      "name": "library-icons",
-      "type": "registry:item",
-      "title": "Icons (library)",
-      "description": "Every part of the Icons library (@brett_lamy/ui/icons on npm): An SF Symbols–style icon set as typed React components.",
-      "registryDependencies": [
-        "https://blamy.github.io/ui/r/bl-ui.json",
-        "https://blamy.github.io/ui/r/file-icons.json",
-        "https://blamy.github.io/ui/r/icon.json"
       ]
     },
     {
@@ -13363,6 +13363,21 @@
         "https://blamy.github.io/ui/r/tailscale-fake.json",
         "https://blamy.github.io/ui/r/tailscale-roots.json",
         "https://blamy.github.io/ui/r/tailscale-router.json"
+      ]
+    },
+    {
+      "name": "library-opencode",
+      "type": "registry:item",
+      "title": "OpenCode (library)",
+      "description": "Every part of the OpenCode library (@brett_lamy/ui/opencode on npm): The OpenCode agent, running in the page.",
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/open-code.json",
+        "https://blamy.github.io/ui/r/open-code-browser.json",
+        "https://blamy.github.io/ui/r/open-code-browser-agent.json",
+        "https://blamy.github.io/ui/r/open-code-host.json",
+        "https://blamy.github.io/ui/r/open-code-keychain.json",
+        "https://blamy.github.io/ui/r/open-code-preview.json"
       ]
     }
   ]

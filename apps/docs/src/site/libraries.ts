@@ -281,7 +281,7 @@ export const LIBRARIES: Library[] = [
   {
     id: 'opencode', name: 'OpenCode', npm: '@brett_lamy/ui/opencode', partOf: 'ui', category: 'platform', status: 'new', icon: 'terminal',
     tagline: 'The OpenCode agent, running in the page.',
-    description: 'OpenCode in a component: its runtime in the browser (almost-node or agent-wasm), a preview of what it builds, and provider keys kept in a passkey Vault. Its entry, `@brett_lamy/ui/opencode`, is written by hand, because the runtime is large and loads only when the component mounts.',
+    description: 'OpenCode in a component: its runtime in the browser (almost-node or agent-wasm), a preview of what it builds, and provider keys kept in a passkey Vault. The runtime is large and loads only when the component mounts; the component alone is also `@brett_lamy/ui/open-code`.',
     dependsOn: ['ui', 'vault'],
     modules: ['components/open-code.tsx', 'lib/open-code-*', 'opencode.ts'],
     highlights: ['A coding agent with no server of its own', 'Live preview of the app it writes', 'Keys locked behind a passkey'],

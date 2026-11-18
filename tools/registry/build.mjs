@@ -17,8 +17,9 @@
  *                    registryDependencies point at our own items by URL (never shadcn's stock ones of the same name).
  *   <block>          registry:block — registry/blocks/<slug>/meta.json; files land in components/blocks/<slug>/.
  *                    A block may import another's entry by ../<slug>/page; that block becomes a registryDependency.
- *   library-<entry>  registry:item — a whole library of the plan (apps/docs/src/site/libraries.ts): no files of its
- *                    own, every item of the library as a registryDependency. `library-ui` is the core.
+ *   library-<name>   registry:item — a whole library of the plan (apps/docs/src/site/libraries.ts), named by its entry
+ *                    (`library-audio`; `library-ui` is the core): no files of its own, every item of the library as a
+ *                    registryDependency.
  *
  * UI SDK and docstream are not copied: the package ships them (`@brett_lamy/ui/sdk/…`, `@brett_lamy/ui/docstream/…`),
  * so an item whose files use either installs `@brett_lamy/ui` from npm, and `--static` writes each copied file with its
@@ -36,7 +37,7 @@ import { dirname, join, relative, resolve } from 'node:path';
 import postcss from 'postcss';
 import ts from 'typescript';
 import { ROOT, SRC, buildGraph, importsOf, isPackageSpecifier, isUpstreamSdkSpecifier, sdkSpecifier, uiVersion, resolveModule, npmVersion, moduleExports } from './graph.mjs';
-import { ENTRY_LIBRARIES, HAND_ENTRY, LIBRARY, ROOT_LIBRARIES, carriedBy, libraryEntries, libraryModules, libraryOf, packageModules, sdkShims, withPackageExports } from './package-exports.mjs';
+import { ENTRY_LIBRARIES, HAND_ENTRY, LIBRARIES, ROOT_LIBRARIES, carriedBy, libraryEntries, libraryModules, libraryOf, packageModules, sdkShims, withPackageExports } from './package-exports.mjs';
 import { onePathErrors } from './one-path.mjs';
 
 const args = process.argv.slice(2);
@@ -341,11 +342,12 @@ const libraryItem = (lib, mods) => ({
   description: `Every part of the ${lib.name} library (${lib.npm} on npm): ${lib.tagline}`,
   registryDependencies: [BASE_ITEM, ...itemsOf(mods).map(itemUrl)],
 });
-const libraryItems = [
-  libraryItem(LIBRARY.ui, graph.modules.filter((mod) => libraryOf(mod).id === 'ui')),
-  // Every module the library owns, the ones without an npm entry of their own among them: a copy needs them all.
-  ...ENTRY_LIBRARIES.map((lib) => libraryItem(lib, graph.modules.filter((mod) => libraryOf(mod).id === lib.id))),
-];
+// Every library that owns modules the registry copies gets one: the core, the libraries with a generated entry, and
+// OpenCode, whose entry is written by hand. Every module the library owns is in it, the ones without an npm entry of
+// their own among them: a copy needs them all.
+const libraryItems = LIBRARIES.map((lib) => [lib, graph.modules.filter((mod) => libraryOf(mod).id === lib.id)])
+  .filter(([, mods]) => mods.length)
+  .map(([lib, mods]) => libraryItem(lib, mods));
 {
   const taken = new Set([...componentItems, ...blockItems].map((it) => it.name));
   for (const it of libraryItems) if (taken.has(it.name)) errors.push(`the library item "${it.name}" has the name of a component or a block`);

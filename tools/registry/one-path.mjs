@@ -15,7 +15,8 @@ import { join, posix } from 'node:path';
 import ts from 'typescript';
 import { ROOT, SRC } from './graph.mjs';
 
-const AGGREGATES = new Set(['.', './docstream', './docstream-editor']);
+// (`./opencode` is a library entry written by hand: the component, which is also `./open-code`, and its runtime.)
+const AGGREGATES = new Set(['.', './docstream', './docstream-editor', './opencode']);
 /** The library entries (`./audio`: src/libraries/audio.ts) gather their modules' names as the root does, and the
  *  `./sdk/…` entries are UI SDK's own surface, entry for entry. */
 const isAggregate = (key, entry) =>
