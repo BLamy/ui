@@ -1,21 +1,22 @@
-/* The block's default runtime: Node in a Worker on a virtual disk (see `runtime.worker.ts`), with a copy of every file here
-   so that reading one never waits, and so that another Worker can start from them. Nothing else in the block knows
-   anything in this folder is here: it's reached only through the `VSCodeRuntime` it returns.
+/* The block's default runtime: Node in a Worker on a virtual disk, which is the Sandbox library (`@/lib/sandbox`). This
+   file fits it to the window: a starter project, terminals with a prompt and line editing, the Run panel's scripts, the
+   status bar's words, and the tailnet. Nothing else in the block knows anything in this folder is here: it's reached
+   only through the `VSCodeRuntime` it returns.
 
    The runtime is @agent-wasm/core, the fork of almostnode this repository already depends on. `node -e`, a script with
    no output and a script that sets timers all need what the fork adds over the npm package. */
+import { createSandbox, type Sandbox, type SandboxExit, type SandboxFileEvent, type SandboxShell } from '@/lib/sandbox';
 import type { TerminalCommandIO } from '@/lib/terminal-line';
 import { toTerminalNewlines } from '@/lib/terminal-line';
-import { ancestors, basename } from '../files';
+import { basename } from '../files';
 import { createLineTerminal, createTerminalStream, type LineTerminal } from '../line-terminal';
 import type {
   FileContent, RuntimeEntry, RuntimeFileEvent, RuntimeScriptList, RuntimeStatus, RuntimeTerminal, RuntimeTerminalOptions, VSCodeRuntime,
 } from '../runtime';
 import { ROOT, STARTER_PROJECT } from './project';
-import type { FileData, FsBatch } from './protocol';
 import { completeCommandLine, npmScriptCommand } from './shell-line';
-import { createWorkerHost, spawnBrowserWorker, type RunResult, type SpawnWorker } from './worker-host';
 import { createVSCodeOpenCodeHost } from './open-code';
+import { isTailnetUrl } from './tailnet-fetch';
 import { toResponse, type Tailscale } from '@/lib/tailscale';
 
 export interface AlmostnodeRuntimeOptions {
@@ -23,15 +24,9 @@ export interface AlmostnodeRuntimeOptions {
   tailscale?: Pick<Tailscale, 'fetch'>;
   /** The files to start with: path relative to the root → text. Default: a small starter project. */
   project?: Record<string, string>;
-  /** How to start the Worker. For tests. */
-  spawn?: SpawnWorker;
+  /** How to start the Worker. The default is this folder's `sandbox.worker.ts`, written as every bundler reads it. */
+  worker?: () => Worker;
 }
-
-const sameData = (a: FileData | undefined, b: FileData | undefined) => {
-  if (a === undefined || b === undefined) return false;
-  if (typeof a === 'string' || typeof b === 'string') return a === b;
-  return a.length === b.length && a.every((byte, i) => byte === b[i]);
-};
 
 const PLACE: Record<string, string> = {
   'opaque-origin': "Commands and the packages they install run in an isolated Worker with an origin of its own. They can't read this site's storage, cookies or page, or reach what you've signed in to here.",
@@ -43,68 +38,19 @@ const SAME_ORIGIN_WARNING = "\x1b[33mThis host won't load the runtime in an isol
 /** The block's default `VSCodeRuntime`. Nothing downloads until `start()`, and then only from this site. */
 export function createAlmostnodeRuntime(options: AlmostnodeRuntimeOptions = {}): VSCodeRuntime {
   const root = ROOT;
-  const files = new Map<string, FileData>();
-  const dirs = new Set<string>([root]);
-  for (const [relative, text] of Object.entries(options.project ?? STARTER_PROJECT)) {
-    const path = `${root}/${relative}`;
-    files.set(path, text);
-    for (const dir of ancestors(path)) dirs.add(dir);
-  }
   const manifest = `${root}/package.json`;
 
-  const fileWatchers = new Set<(events: readonly RuntimeFileEvent[]) => void>();
-  const scriptWatchers = new Set<() => void>();
-  const statusWatchers = new Set<() => void>();
-  const fire = (events: RuntimeFileEvent[]) => {
-    if (!events.length) return;
-    for (const listener of fileWatchers) listener(events);
-    if (events.some((event) => (event.type === 'rename' ? event.from === manifest || event.to === manifest : event.path === manifest))) {
-      for (const listener of scriptWatchers) listener();
-    }
-  };
-
-  /** What commands did to the disk, as events. `mv a b` looks like one gone and one new with the same bytes. */
-  const fromWorker = ({ changed, removed, dirs: madeDirs, removedDirs }: FsBatch) => {
-    const events: RuntimeFileEvent[] = [];
-    const moved = new Set<string>();
-    const fresh = changed.filter(({ path }) => !files.has(path));
-    for (const from of removed) {
-      const was = files.get(from);
-      const match = fresh.find(({ path, data }) => !moved.has(path) && sameData(was, data));
-      if (!match) continue;
-      moved.add(match.path);
-      moved.add(from);
-      files.delete(from);
-      files.set(match.path, match.data);
-      events.push({ type: 'rename', from, to: match.path });
-    }
-    for (const path of madeDirs) {
-      if (dirs.has(path)) continue;
-      dirs.add(path);
-      events.push({ type: 'change', path, kind: 'directory' });
-    }
-    for (const { path, data } of changed) {
-      if (moved.has(path) || sameData(files.get(path), data)) continue;
-      files.set(path, data);
-      for (const dir of ancestors(path)) dirs.add(dir);
-      events.push({ type: 'change', path, kind: 'file' });
-    }
-    for (const path of removed) {
-      if (moved.has(path) || !files.delete(path)) continue;
-      events.push({ type: 'delete', path });
-    }
-    for (const path of removedDirs) {
-      if (dirs.delete(path)) events.push({ type: 'delete', path });
-    }
-    fire(events);
-  };
-
-  const host = createWorkerHost({
-    root,
-    spawn: options.spawn ?? spawnBrowserWorker,
-    snapshot: () => ({ files: [...files].map(([path, data]) => ({ path, data })), dirs: [...dirs] }),
-    onFiles: fromWorker,
-    fetch: async (request, signal) => {
+  /* Where the host serves the Worker with CORS, as GitHub Pages does, it has an origin of its own. Where it doesn't, as
+     a dev server, the window still has to work, so the block lets it run as an ordinary Worker of this site, and the
+     status bar and the first terminal say so. */
+  const sandbox: Sandbox = createSandbox({
+    worker: options.worker ?? (() => new Worker(new URL('./sandbox.worker.ts', import.meta.url), { type: 'module', name: 'vscode-runtime' })),
+    cwd: root,
+    files: options.project ?? STARTER_PROJECT,
+    fallback: 'same-origin',
+    // The page is signed in to the tailnet and the Worker is not to be trusted: only tailnet addresses get through.
+    async onHostFetch(request, { signal }) {
+      if (!isTailnetUrl(request.url)) throw new Error('Only tailnet HTTP requests are allowed.');
       if (!options.tailscale) throw new Error('Connect Tailscale from the status bar to reach your devices.');
       const response = toResponse(await options.tailscale.fetch({ ...request, signal }));
       return {
@@ -113,6 +59,33 @@ export function createAlmostnodeRuntime(options: AlmostnodeRuntimeOptions = {}):
       };
     },
   });
+  const { files, directories: dirs } = sandbox.mirror;
+
+  const fileWatchers = new Set<(events: readonly RuntimeFileEvent[]) => void>();
+  const scriptWatchers = new Set<() => void>();
+  const statusWatchers = new Set<() => void>();
+  const touchesManifest = (event: SandboxFileEvent) => (event.type === 'rename' ? event.from === manifest || event.to === manifest : event.path === manifest);
+
+  /* What the window did itself it already knows; what commands and OpenCode did it hears from here. */
+  let own = false;
+  sandbox.files.watch('/', (events) => {
+    if (!own) for (const listener of fileWatchers) listener(events);
+    if (events.some(touchesManifest)) for (const listener of scriptWatchers) listener();
+  });
+  /** One of the window's own changes. The page's copy has it when this returns; the Worker gets it a moment later, and
+   *  nothing waits for that. A change the disk refuses is the caller's to hear. */
+  const change = async (make: () => Promise<void>) => {
+    if (sandbox.status === 'disposed') return;
+    own = true;
+    let sent: Promise<void>;
+    try {
+      sent = make();
+    } finally {
+      own = false;
+    }
+    sent.catch(() => {});
+    await Promise.race([sent, Promise.resolve()]);
+  };
 
   /* ── Status ── */
 
@@ -121,19 +94,19 @@ export function createAlmostnodeRuntime(options: AlmostnodeRuntimeOptions = {}):
   let status: RuntimeStatus | null = null;
   const statusNow = (): RuntimeStatus => {
     if (status) return status;
-    const isolation = host.isolation;
-    const word = { off: 'Starting…', starting: 'Starting…', restarting: 'Restarting…', failed: 'Failed', ready: busy ? `Running${busy > 1 ? ` (${busy})` : ''}` : 'Ready' }[host.status];
+    const isolation = sandbox.isolation;
+    const word = { idle: 'Starting…', loading: 'Starting…', restarting: 'Restarting…', failed: 'Failed', disposed: 'Stopped', ready: busy ? `Running${busy > 1 ? ` (${busy})` : ''}` : 'Ready' }[sandbox.status];
     status = {
-      state: host.status === 'ready' ? 'ready' : host.status === 'failed' ? 'failed' : 'starting',
+      state: sandbox.status === 'ready' ? 'ready' : sandbox.status === 'failed' ? 'failed' : 'starting',
       text: `Node: ${word}`,
       tone: isolation === 'opaque-origin' ? 'safe' : isolation === 'same-origin' ? 'warning' : 'neutral',
       title: `Node runtime: ${word}`,
       details: [
-        ...(host.error ? [host.error] : []),
+        ...(sandbox.error ? [sandbox.error.message] : []),
         isolation ? PLACE[isolation] : 'Nothing is running yet.',
         NETWORK,
       ],
-      actions: [{ label: 'Restart runtime', run: () => host.restart() }],
+      actions: [{ label: 'Restart runtime', run: () => sandbox.restart() }],
     };
     return status;
   };
@@ -147,46 +120,41 @@ export function createAlmostnodeRuntime(options: AlmostnodeRuntimeOptions = {}):
   const shells = new Set<LineTerminal>();
   let warned = false;
   const warnIfExposed = () => {
-    if (warned || host.isolation !== 'same-origin') return;
+    if (warned || sandbox.isolation !== 'same-origin') return;
     const first = shells.values().next().value;
     if (!first) return;
     warned = true;
     first.shell.write(SAME_ORIGIN_WARNING);
   };
-  host.subscribe(() => {
+  sandbox.subscribe(() => {
     warnIfExposed();
     statusChanged();
   });
 
-  let nextSession = 1;
-  const newSession = (cols: number, rows: number) => {
-    const session = `session-${nextSession}`;
-    nextSession += 1;
-    host.openSession(session, { cwd: root, cols, rows });
-    return session;
-  };
-
-  const noticeOf = ({ restarted }: RunResult) => {
-    if (restarted === 'blocked') return "\x1b[33mThat command wouldn't stop, so the runtime was restarted. Your files are kept.\x1b[0m\n";
-    if (restarted !== 'other') return '';
-    return host.status === 'failed'
-      ? `\x1b[31mThe runtime didn't start: ${host.error ?? 'unknown error'}\x1b[0m\n`
+  const noticeOf = ({ interrupted }: SandboxExit) => {
+    if (interrupted === 'unresponsive') return "\x1b[33mThat command wouldn't stop, so the runtime was restarted. Your files are kept.\x1b[0m\n";
+    if (!interrupted) return '';
+    return sandbox.status === 'failed'
+      ? `\x1b[31mThe runtime didn't start: ${sandbox.error?.message ?? 'unknown error'}\x1b[0m\n`
       : '\x1b[33mThe runtime was restarted, which stopped this command.\x1b[0m\n';
   };
 
-  /** One line, on a shell's session. */
-  const runLine = async (session: string, line: string, io: TerminalCommandIO) => {
+  /** One line, on a shell. */
+  const runLine = async (shell: SandboxShell, line: string, io: TerminalCommandIO) => {
     busy += 1;
     statusChanged();
     // Keys go to a script once it's reading them. Until then the shell holds them, for it or for the next prompt.
     let stopListening = null as (() => void) | null;
-    const run = host.run(session, line, (data) => io.write(data), (reading) => {
-      stopListening?.();
-      stopListening = reading ? io.onInput((data) => host.input(session, data)) : null;
+    const run = shell.run(line, {
+      onOutput: (data) => io.write(data),
+      onReadingChange(reading) {
+        stopListening?.();
+        stopListening = reading ? io.onInput((data) => run.write(data)) : null;
+      },
     });
-    const onAbort = () => run.abort();
+    const onAbort = () => run.kill();
     io.signal.addEventListener('abort', onAbort, { once: true });
-    const result = await run.done;
+    const result = await run.exit;
     io.signal.removeEventListener('abort', onAbort);
     stopListening?.();
     busy -= 1;
@@ -196,7 +164,7 @@ export function createAlmostnodeRuntime(options: AlmostnodeRuntimeOptions = {}):
   };
 
   const openShell = ({ cols, rows, onOpenCode }: RuntimeTerminalOptions): RuntimeTerminal => {
-    const session = newSession(cols, rows);
+    const shell = sandbox.shell({ cols, rows });
     let cwd = root;
     let lastExit = 0;
     const prompt = () => {
@@ -220,13 +188,13 @@ export function createAlmostnodeRuntime(options: AlmostnodeRuntimeOptions = {}):
         }
         if (command === 'opencode') {
           if (!onOpenCode) throw new Error('OpenCode needs the VS Code terminal pane.');
-          const bridge = createVSCodeOpenCodeHost({ root, directory: cwd, files, dirs, worker: host, changed: fire });
+          const bridge = createVSCodeOpenCodeHost({ root, directory: cwd, sandbox });
           try { await onOpenCode(bridge, io.signal); } finally { bridge.dispose?.(); }
           lastExit = 0;
           return;
         }
-        const result = await runLine(session, line, io);
-        cwd = result.cwd;
+        const result = await runLine(shell, line, io);
+        cwd = shell.cwd;
         lastExit = result.exitCode;
       },
       complete: ({ word, line, cursor }) => completeCommandLine({
@@ -236,12 +204,12 @@ export function createAlmostnodeRuntime(options: AlmostnodeRuntimeOptions = {}):
     });
     terminal.onExit(() => {
       shells.delete(terminal);
-      host.closeSession(session);
+      shell.dispose();
     });
     const { resize } = terminal;
     terminal.resize = (nextCols, nextRows) => {
       resize(nextCols, nextRows);
-      host.resizeSession(session, nextCols, nextRows);
+      shell.resize(nextCols, nextRows);
     };
     shells.add(terminal);
     warnIfExposed();
@@ -250,27 +218,25 @@ export function createAlmostnodeRuntime(options: AlmostnodeRuntimeOptions = {}):
 
   /** One command with a terminal to itself: no prompt, and it exits with the command. */
   const openCommand = (command: string, { cols, rows }: RuntimeTerminalOptions): RuntimeTerminal => {
-    const session = newSession(cols, rows);
     const stream = createTerminalStream();
     stream.emit(`\x1b[2m$ ${command}\x1b[0m\r\n`);
     busy += 1;
     statusChanged();
     let reading = false;
-    const run = host.run(session, command, (data) => stream.emit(toTerminalNewlines(data)), (now) => { reading = now; });
-    void run.done.then((result) => {
+    const run = sandbox.run(command, { cols, rows, onOutput: (data) => stream.emit(toTerminalNewlines(data)), onReadingChange: (now) => { reading = now; } });
+    void run.exit.then((result) => {
       busy -= 1;
       statusChanged();
       stream.emit(toTerminalNewlines(noticeOf(result)));
-      host.closeSession(session);
       stream.exit(result.exitCode);
     });
     return {
       write(data) {
-        if (data.includes('\x03')) run.abort();
-        else if (reading) host.input(session, data);
+        if (data.includes('\x03')) run.kill();
+        else if (reading) run.write(data);
       },
-      resize: (nextCols, nextRows) => host.resizeSession(session, nextCols, nextRows),
-      kill: () => run.abort(),
+      resize: (nextCols, nextRows) => run.resize(nextCols, nextRows),
+      kill: () => run.kill(),
       onOutput: stream.onOutput,
       onExit: stream.onExit,
     };
@@ -291,10 +257,11 @@ export function createAlmostnodeRuntime(options: AlmostnodeRuntimeOptions = {}):
   };
 
   return {
-    start: () => host.start(),
+    // A start that fails is in the status bar, with why.
+    start: () => { sandbox.start().catch(() => {}); },
     dispose() {
       for (const terminal of [...shells]) terminal.kill();
-      host.dispose();
+      sandbox.dispose();
     },
     files: {
       root,
@@ -308,39 +275,13 @@ export function createAlmostnodeRuntime(options: AlmostnodeRuntimeOptions = {}):
         if (data === undefined) throw new Error(`No such file: ${path}`);
         return data;
       },
-      async write(path, content: FileContent) {
-        files.set(path, content);
-        for (const dir of ancestors(path)) dirs.add(dir);
-        host.write(path, content);
-        if (path === manifest) for (const listener of scriptWatchers) listener();
-      },
-      async mkdir(path) {
-        dirs.add(path);
-        for (const dir of ancestors(path)) dirs.add(dir);
-        host.mkdir(path);
-      },
+      write: (path, content: FileContent) => change(() => sandbox.files.write(path, content)),
+      mkdir: (path) => change(() => sandbox.files.mkdir(path)),
       async rename(from, to) {
-        const move = (path: string) => to + path.slice(from.length);
-        const inside = (path: string) => path === from || path.startsWith(`${from}/`);
-        for (const [path, data] of [...files]) {
-          if (!inside(path)) continue;
-          files.delete(path);
-          files.set(move(path), data);
-        }
-        for (const dir of [...dirs]) {
-          if (!inside(dir)) continue;
-          dirs.delete(dir);
-          dirs.add(move(dir));
-        }
-        for (const dir of ancestors(to)) dirs.add(dir);
-        host.rename(from, to);
-        if (from === manifest || to === manifest) for (const listener of scriptWatchers) listener();
+        if (files.has(from) || dirs.has(from)) await change(() => sandbox.files.rename(from, to));
       },
       async delete(path) {
-        for (const file of [...files.keys()]) if (file === path || file.startsWith(`${path}/`)) files.delete(file);
-        for (const dir of [...dirs]) if (dir === path || dir.startsWith(`${path}/`)) dirs.delete(dir);
-        host.remove(path);
-        if (path === manifest) for (const listener of scriptWatchers) listener();
+        if (files.has(path) || dirs.has(path)) await change(() => sandbox.files.remove(path, { recursive: true }));
       },
       watch(listener) {
         fileWatchers.add(listener);

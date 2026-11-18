@@ -3166,6 +3166,7 @@
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
         "https://blamy.github.io/ui/r/motion.json",
+        "https://blamy.github.io/ui/r/motion-lazy.json",
         "https://blamy.github.io/ui/r/utils.json"
       ],
       "files": [
@@ -3206,8 +3207,7 @@
       "description": "The chat shell: a chat column docked beside an artifact on a wide container, a FloatingSheet over it on a compact one that peeks, grows and folds into a FAB, with the transcript and composer kept across the switch.",
       "dependencies": [
         "@brett_lamy/ui@6.0.0",
-        "class-variance-authority@^0.7.1",
-        "framer-motion@^13.1.0"
+        "class-variance-authority@^0.7.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -3219,6 +3219,7 @@
         "https://blamy.github.io/ui/r/icon.json",
         "https://blamy.github.io/ui/r/kept-children.json",
         "https://blamy.github.io/ui/r/motion.json",
+        "https://blamy.github.io/ui/r/motion-lazy.json",
         "https://blamy.github.io/ui/r/presence.json",
         "https://blamy.github.io/ui/r/primitives.json",
         "https://blamy.github.io/ui/r/reduced-motion.json",
@@ -4023,8 +4024,7 @@
       "description": "A prompt box as parts: a card with the Docstream editor, attachment tiles (images open the ImageAnnotator), footer option pills on the kit's DropdownMenu, send / stop / add buttons on the kit's Button, bumps above and below, a queue for drafts sent while a reply streams, and compact and FAB collapse.",
       "dependencies": [
         "@brett_lamy/ui@6.0.0",
-        "class-variance-authority@^0.7.1",
-        "framer-motion@^13.1.0"
+        "class-variance-authority@^0.7.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -4038,6 +4038,7 @@
         "https://blamy.github.io/ui/r/markdown-editor.json",
         "https://blamy.github.io/ui/r/morph-path.json",
         "https://blamy.github.io/ui/r/motion.json",
+        "https://blamy.github.io/ui/r/motion-lazy.json",
         "https://blamy.github.io/ui/r/pencilkit.json",
         "https://blamy.github.io/ui/r/presence.json",
         "https://blamy.github.io/ui/r/primitives.json",
@@ -4156,8 +4157,7 @@
       "title": "Conversation",
       "description": "An agent thread around one composer: an empty state (the kit's EmptyState) over a centred composer that flies down to its dock when the first message arrives, then a MessageScroller of user and assistant turns with attachments, streaming markdown, a work log and tool calls.",
       "dependencies": [
-        "@brett_lamy/ui@6.0.0",
-        "framer-motion@^13.1.0"
+        "@brett_lamy/ui@6.0.0"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -4169,6 +4169,7 @@
         "https://blamy.github.io/ui/r/message-scroller.json",
         "https://blamy.github.io/ui/r/message-scroller-context.json",
         "https://blamy.github.io/ui/r/motion.json",
+        "https://blamy.github.io/ui/r/motion-lazy.json",
         "https://blamy.github.io/ui/r/presence.json",
         "https://blamy.github.io/ui/r/primitives.json",
         "https://blamy.github.io/ui/r/reduced-motion.json",
@@ -5474,6 +5475,7 @@
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
         "https://blamy.github.io/ui/r/motion.json",
+        "https://blamy.github.io/ui/r/motion-lazy.json",
         "https://blamy.github.io/ui/r/utils.json"
       ],
       "files": [
@@ -5659,8 +5661,7 @@
       "description": "Inset-grouped and plain lists on UI SDK: sections that are lists of rows (grow in, collapse out, reorder by a grip with createReorder), rows with swipe actions and full swipe (createSwipeActions), edit mode and a hover preview, and an A-Z IndexBar.",
       "dependencies": [
         "@brett_lamy/ui@6.0.0",
-        "class-variance-authority@^0.7.1",
-        "framer-motion@^13.1.0"
+        "class-variance-authority@^0.7.1"
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
@@ -5670,8 +5671,10 @@
         "https://blamy.github.io/ui/r/icon.json",
         "https://blamy.github.io/ui/r/list-primitive.json",
         "https://blamy.github.io/ui/r/motion.json",
+        "https://blamy.github.io/ui/r/motion-lazy.json",
         "https://blamy.github.io/ui/r/presence.json",
         "https://blamy.github.io/ui/r/primitives.json",
+        "https://blamy.github.io/ui/r/reduced-motion.json",
         "https://blamy.github.io/ui/r/row-label.json",
         "https://blamy.github.io/ui/r/theme.json",
         "https://blamy.github.io/ui/r/theme-context.json",
@@ -5924,11 +5927,10 @@
       "type": "registry:lib",
       "title": "Motion",
       "description": "Springs and the motion vocabulary: TextMorph, NumberMorph, Swap, Chevron, AnimatedHeight, Celebrate.",
-      "dependencies": [
-        "framer-motion@^13.1.0"
-      ],
+      "dependencies": [],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/motion-lazy.json",
         "https://blamy.github.io/ui/r/reduced-motion.json"
       ],
       "files": [
@@ -5947,6 +5949,7 @@
           "useReducedMotion",
           "useSpringTransition",
           "prefersReducedMotion",
+          "preloadMotion",
           "useDirection",
           "motionDirection",
           "TextMorph",
@@ -6862,6 +6865,89 @@
           "RequestTable",
           "RequestTableLink",
           "REQUEST_TABLE_COLUMNS"
+        ]
+      }
+    },
+    {
+      "name": "sandbox",
+      "type": "registry:lib",
+      "title": "Sandbox",
+      "description": "Runs code a person or a model wrote where it can't reach the page: a Node-compatible runtime (@agent-wasm/core, our build of almostnode) with a virtual disk, a shell and npm, in a Worker that has an origin of its own, so the code has no DOM, cookies or localStorage and the browser refuses it the site's IndexedDB and caches. createSandbox is the page's side (files, commands, shells, status) and loads nothing; serveSandbox is the two-line Worker your bundler builds with the runtime in it. It never runs with the page's origin unless you ask, and it reports the isolation it got. No previews in this version.",
+      "dependencies": [
+        "@agent-wasm/core@>=0.4.0"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/sandbox/command-line.ts",
+          "type": "registry:lib",
+          "target": "lib/sandbox/command-line.ts"
+        },
+        {
+          "path": "packages/ui/src/lib/sandbox/disk.ts",
+          "type": "registry:lib",
+          "target": "lib/sandbox/disk.ts"
+        },
+        {
+          "path": "packages/ui/src/lib/sandbox/error.ts",
+          "type": "registry:lib",
+          "target": "lib/sandbox/error.ts"
+        },
+        {
+          "path": "packages/ui/src/lib/sandbox/host-fetch.ts",
+          "type": "registry:lib",
+          "target": "lib/sandbox/host-fetch.ts"
+        },
+        {
+          "path": "packages/ui/src/lib/sandbox/host.ts",
+          "type": "registry:lib",
+          "target": "lib/sandbox/host.ts"
+        },
+        {
+          "path": "packages/ui/src/lib/sandbox/index.ts",
+          "type": "registry:lib",
+          "target": "lib/sandbox/index.ts"
+        },
+        {
+          "path": "packages/ui/src/lib/sandbox/model.ts",
+          "type": "registry:lib",
+          "target": "lib/sandbox/model.ts"
+        },
+        {
+          "path": "packages/ui/src/lib/sandbox/protocol.ts",
+          "type": "registry:lib",
+          "target": "lib/sandbox/protocol.ts"
+        },
+        {
+          "path": "packages/ui/src/lib/sandbox/react.ts",
+          "type": "registry:lib",
+          "target": "lib/sandbox/react.ts"
+        },
+        {
+          "path": "packages/ui/src/lib/sandbox/serve.ts",
+          "type": "registry:lib",
+          "target": "lib/sandbox/serve.ts"
+        },
+        {
+          "path": "packages/ui/src/lib/sandbox/spawn.ts",
+          "type": "registry:lib",
+          "target": "lib/sandbox/spawn.ts"
+        },
+        {
+          "path": "packages/ui/src/lib/sandbox/worker.ts",
+          "type": "registry:lib",
+          "target": "lib/sandbox/worker.ts"
+        }
+      ],
+      "meta": {
+        "page": "sandbox",
+        "exports": [
+          "createSandbox",
+          "SandboxError",
+          "useSandbox",
+          "serveSandbox"
         ]
       }
     },
@@ -8048,6 +8134,7 @@
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
         "https://blamy.github.io/ui/r/motion.json",
+        "https://blamy.github.io/ui/r/motion-lazy.json",
         "https://blamy.github.io/ui/r/utils.json"
       ],
       "files": [
@@ -9329,6 +9416,43 @@
           "path": "packages/ui/src/lib/morph-path.ts",
           "type": "registry:lib",
           "target": "lib/morph-path.ts"
+        }
+      ]
+    },
+    {
+      "name": "motion-engine",
+      "type": "registry:lib",
+      "title": "Motion Engine",
+      "description": "Motion Engine — part of BL UI's library (lib/motion-engine.ts).",
+      "dependencies": [
+        "framer-motion@^13.1.0"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/motion-engine.ts",
+          "type": "registry:lib",
+          "target": "lib/motion-engine.ts"
+        }
+      ]
+    },
+    {
+      "name": "motion-lazy",
+      "type": "registry:lib",
+      "title": "Motion Lazy",
+      "description": "Motion Lazy — part of BL UI's library (lib/motion-lazy.ts).",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/motion-engine.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/motion-lazy.ts",
+          "type": "registry:lib",
+          "target": "lib/motion-lazy.ts"
         }
       ]
     },
@@ -12732,7 +12856,7 @@
       "name": "vscode",
       "type": "registry:block",
       "title": "VS Code",
-      "description": "A VS Code window that really runs: an activity rail with Explorer, Search and Run, editors in a Workspace you can split, and wterm terminals where opencode opens the real OpenCode TUI on the same files. A Tailscale status-bar menu connects terminal fetches to your tailnet and shares the desktop connection inside macOS. It runs on one in-browser Node runtime (agent-wasm, the fork of almostnode). Everything it needs goes through one interface, so a real folder and real shells can replace the runtime. Packages you install run in a Worker. Where the host serves it with CORS, as GitHub Pages does, that Worker has an opaque origin and no access to the site's storage; elsewhere it's an ordinary Worker of the site that can read and change the site's IndexedDB and caches, and the status bar says which. They can use the network either way, as far as CORS allows.",
+      "description": "A VS Code window that really runs: an activity rail with Explorer, Search and Run, editors in a Workspace you can split, and wterm terminals where opencode opens the real OpenCode TUI on the same files. A Tailscale status-bar menu connects terminal fetches to your tailnet and shares the desktop connection inside macOS. It runs on one in-browser Node runtime, the Sandbox library (agent-wasm, the fork of almostnode). Everything it needs goes through one interface, so a real folder and real shells can replace the runtime. Packages you install run in a Worker. Where the host serves it with CORS, as GitHub Pages does, that Worker has an opaque origin and no access to the site's storage; elsewhere it's an ordinary Worker of the site that can read and change the site's IndexedDB and caches, and the status bar says which. They can use the network either way, as far as CORS allows.",
       "categories": [
         "developer-tools",
         "application"
@@ -12757,6 +12881,7 @@
         "https://blamy.github.io/ui/r/open-code.json",
         "https://blamy.github.io/ui/r/open-code-host.json",
         "https://blamy.github.io/ui/r/popover.json",
+        "https://blamy.github.io/ui/r/sandbox.json",
         "https://blamy.github.io/ui/r/search-input.json",
         "https://blamy.github.io/ui/r/syntax.json",
         "https://blamy.github.io/ui/r/tabs.json",
@@ -12852,29 +12977,14 @@
           "target": "components/blocks/vscode/almostnode/project.ts"
         },
         {
-          "path": "registry/blocks/vscode/almostnode/protocol.ts",
-          "type": "registry:component",
-          "target": "components/blocks/vscode/almostnode/protocol.ts"
-        },
-        {
           "path": "registry/blocks/vscode/almostnode/shell-line.ts",
           "type": "registry:component",
           "target": "components/blocks/vscode/almostnode/shell-line.ts"
         },
         {
-          "path": "registry/blocks/vscode/almostnode/worker-host.ts",
+          "path": "registry/blocks/vscode/almostnode/sandbox.worker.ts",
           "type": "registry:component",
-          "target": "components/blocks/vscode/almostnode/worker-host.ts"
-        },
-        {
-          "path": "registry/blocks/vscode/almostnode/worker-url.ts",
-          "type": "registry:component",
-          "target": "components/blocks/vscode/almostnode/worker-url.ts"
-        },
-        {
-          "path": "registry/blocks/vscode/almostnode/runtime.worker.ts",
-          "type": "registry:component",
-          "target": "components/blocks/vscode/almostnode/runtime.worker.ts"
+          "target": "components/blocks/vscode/almostnode/sandbox.worker.ts"
         }
       ],
       "meta": {
@@ -13013,6 +13123,8 @@
         "https://blamy.github.io/ui/r/morph.json",
         "https://blamy.github.io/ui/r/morph-path.json",
         "https://blamy.github.io/ui/r/motion.json",
+        "https://blamy.github.io/ui/r/motion-engine.json",
+        "https://blamy.github.io/ui/r/motion-lazy.json",
         "https://blamy.github.io/ui/r/number-morph.json",
         "https://blamy.github.io/ui/r/presence.json",
         "https://blamy.github.io/ui/r/pull-to-refresh.json",
@@ -13337,6 +13449,16 @@
         "https://blamy.github.io/ui/r/append-stream.json",
         "https://blamy.github.io/ui/r/durable-streams.json",
         "https://blamy.github.io/ui/r/persistent-state.json"
+      ]
+    },
+    {
+      "name": "library-sandbox",
+      "type": "registry:item",
+      "title": "Sandbox (library)",
+      "description": "Every part of the Sandbox library (@brett_lamy/ui/sandbox on npm): Run Node-compatible code, a shell and npm in a Worker with an origin of its own. Light, and the one to start with.",
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/sandbox.json"
       ]
     },
     {

@@ -1,12 +1,10 @@
-/* What the page and the runtime's Worker say to each other. Everything from the Worker is untrusted: packages run there
-   and can post anything, so the page checks what arrives (runtime.ts) and treats paths and output as plain data. */
-
-/** A file's content: text when it is valid UTF-8, else its bytes. */
-export type FileData = string | Uint8Array;
+/* @internal What the page and the sandbox's Worker say to each other. Everything from the Worker is untrusted: packages
+   run there and can post anything, so the page checks what arrives (host.ts) and treats paths and output as plain data. */
+import type { SandboxFetchRequest, SandboxFetchResponse, SandboxFileData } from './model';
 
 export interface FileEntry {
   path: string;
-  data: FileData;
+  data: SandboxFileData;
 }
 
 /** What changed on the virtual disk. */
@@ -24,24 +22,8 @@ export interface SessionState {
   rows: number;
 }
 
-/** Only HTTP requests for tailnet addresses cross from the Worker to the signed-in page. */
-export interface RuntimeFetchRequest {
-  url: string;
-  method: string;
-  headers: Array<[string, string]>;
-  body: Uint8Array | null;
-  redirect: RequestRedirect;
-}
-
-export interface RuntimeFetchResponse {
-  status: number;
-  statusText: string;
-  headers: Array<[string, string]>;
-  body: Uint8Array | null;
-}
-
 export type HostMessage =
-  | { type: 'fetch-result'; id: number; response?: RuntimeFetchResponse; error?: string }
+  | { type: 'fetch-result'; id: number; response?: SandboxFetchResponse; error?: string }
   | { type: 'init'; root: string; files: FileEntry[]; dirs: string[]; sessions: Array<SessionState & { session: string }> }
   | { type: 'open-session'; session: string; state: SessionState }
   | { type: 'close-session'; session: string }
@@ -51,22 +33,23 @@ export type HostMessage =
   | { type: 'resize'; session: string; cols: number; rows: number }
   /** Output the page has dealt with, in characters. */
   | { type: 'ack'; chars: number }
-  | { type: 'write'; seq: number; path: string; data: FileData }
+  | { type: 'write'; seq: number; path: string; data: SandboxFileData }
   | { type: 'mkdir'; seq: number; path: string }
   | { type: 'rename'; seq: number; from: string; to: string }
   | { type: 'remove'; seq: number; path: string };
 
 export type RuntimeMessage =
-  | { type: 'fetch'; id: number; request: RuntimeFetchRequest }
+  | { type: 'fetch'; id: number; request: SandboxFetchRequest }
   | { type: 'cancel-fetch'; id: number }
-  /** The module has loaded and is listening. */
-  | { type: 'hello' }
-  /** The module, started in an opaque-origin Worker, couldn't load (the host doesn't allow it). */
+  /** The Worker's module has loaded and is listening. `href` is where the Worker was started from, and `origin` the
+   *  origin it has: `null` for one of its own. */
+  | { type: 'hello'; href: string; origin: string }
+  /** The module, imported into a Worker with an origin of its own, could not load: the host refused it. */
   | { type: 'load-failed'; message: string }
   | { type: 'ready'; origin: string }
   | { type: 'failed'; message: string }
   | { type: 'output'; id: number; stream: 'stdout' | 'stderr'; data: string }
-  /** What a terminal's keys are for: a script that's reading them, or (false) nothing yet. */
+  /** What a terminal's keys are for: a script that is reading them, or (false) nothing yet. */
   | { type: 'reading'; id: number; reading: boolean }
   | { type: 'done'; id: number; exitCode: number; cwd: string; env: Record<string, string> }
   | { type: 'fs'; batch: FsBatch }

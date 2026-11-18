@@ -1,21 +1,17 @@
 import type { OpenCodeHostBridge } from '@/lib/open-code-host';
+import type { Sandbox } from '@/lib/sandbox';
 import { ancestors, basename, dirname, resolvePath } from '../files';
-import type { RuntimeFileEvent } from '../runtime';
-import type { FileData } from './protocol';
-import type { WorkerHost } from './worker-host';
 
-/** OpenCode borrows the same disk and Worker as the Explorer and shell. */
-export function createVSCodeOpenCodeHost({ root, directory, files, dirs, worker, changed }: {
+/** OpenCode borrows the same disk and Worker as the Explorer and shell: what it writes shows up in both. */
+export function createVSCodeOpenCodeHost({ root, directory, sandbox }: {
   root: string;
   directory: string;
-  files: Map<string, FileData>;
-  dirs: Set<string>;
-  worker: WorkerHost;
-  changed: (events: RuntimeFileEvent[]) => void;
+  sandbox: Pick<Sandbox, 'files' | 'mirror' | 'run'>;
 }): OpenCodeHostBridge {
   let disposed = false;
-  const active = new Map<string, () => void>();
-  const metadata = new Map<string, { data: FileData | undefined; time: number }>();
+  const { files, directories: dirs } = sandbox.mirror;
+  const active = new Set<() => void>();
+  const metadata = new Map<string, { data: unknown; time: number }>();
   const pathOf = (input: string) => {
     if (disposed) throw new Error('OpenCode has exited.');
     const path = resolvePath(directory, input);
@@ -24,14 +20,13 @@ export function createVSCodeOpenCodeHost({ root, directory, files, dirs, worker,
   };
   directory = pathOf(directory);
   if (!dirs.has(directory)) throw new Error(`No such directory: ${directory}`);
+  /* The tools are synchronous and the disk's calls aren't, but each changes the page's copy before it returns: what a
+     tool reads next is already there. What could be refused is checked here first, so the tool hears of it. */
+  const sent = (change: Promise<void>) => { change.catch(() => {}); };
   const mkdir = (path: string) => {
-    const made = [...ancestors(path).reverse(), path].filter((dir) => dir === root || dir.startsWith(`${root}/`)).filter((dir) => !dirs.has(dir));
-    for (const dir of made) {
-      if (files.has(dir)) throw new Error(`Not a directory: ${dir}`);
-      dirs.add(dir);
-      worker.mkdir(dir);
-    }
-    changed(made.map((dir) => ({ type: 'change', path: dir, kind: 'directory' })));
+    const blocking = [...ancestors(path).reverse(), path].find((dir) => files.has(dir));
+    if (blocking) throw new Error(`Not a directory: ${blocking}`);
+    if (!dirs.has(path)) sent(sandbox.files.mkdir(path));
   };
   const quote = (value: string) => `'${value.replaceAll("'", "'\\''")}'`;
   return {
@@ -48,9 +43,7 @@ export function createVSCodeOpenCodeHost({ root, directory, files, dirs, worker,
         const path = pathOf(input);
         if (dirs.has(path)) throw new Error(`Is a directory: ${path}`);
         mkdir(dirname(path));
-        files.set(path, content);
-        worker.write(path, content);
-        changed([{ type: 'change', path, kind: 'file' }]);
+        sent(sandbox.files.write(path, content));
       },
       readdir(input) {
         const path = pathOf(input);
@@ -75,11 +68,9 @@ export function createVSCodeOpenCodeHost({ root, directory, files, dirs, worker,
       remove(input, options) {
         const path = pathOf(input);
         if (path === root) throw new Error('Cannot remove the workspace root.');
-        const children = [...dirs, ...files.keys()].filter((child) => child.startsWith(`${path}/`));
-        if (children.length && !options?.recursive) throw new Error(`Directory is not empty: ${path}`);
-        for (const child of [...children, path]) { files.delete(child); dirs.delete(child); }
-        worker.remove(path);
-        changed([{ type: 'delete', path }]);
+        const occupied = [...dirs, ...files.keys()].some((child) => child.startsWith(`${path}/`));
+        if (occupied && !options?.recursive) throw new Error(`Directory is not empty: ${path}`);
+        if (files.has(path) || dirs.has(path)) sent(sandbox.files.remove(path, { recursive: true }));
       },
       rename(input, target) {
         const from = pathOf(input);
@@ -87,43 +78,34 @@ export function createVSCodeOpenCodeHost({ root, directory, files, dirs, worker,
         if (from === root || to === root || to.startsWith(`${from}/`)) throw new Error('Cannot move a directory into itself.');
         if (!files.has(from) && !dirs.has(from)) throw new Error(`No such file: ${from}`);
         mkdir(dirname(to));
-        for (const [path, data] of [...files]) if (path === from || path.startsWith(`${from}/`)) { files.delete(path); files.set(to + path.slice(from.length), data); }
-        for (const path of [...dirs]) if (path === from || path.startsWith(`${from}/`)) { dirs.delete(path); dirs.add(to + path.slice(from.length)); }
-        worker.rename(from, to);
-        changed([{ type: 'rename', from, to }]);
+        sent(sandbox.files.rename(from, to));
       },
     },
     processBridge: {
       async exec(input) {
         const cwd = pathOf(input.cwd ?? directory);
         input.signal?.throwIfAborted();
-        const session = `opencode-${crypto.randomUUID()}`;
-        worker.openSession(session, { cwd, env: input.env, cols: 100, rows: 30 });
         const shell = /(?:^|\/)(?:ba|z|da)?sh$/.test(input.command);
         const line = shell && input.args[0] === '-c'
           ? input.args[1] ?? ''
           : input.shell ? [input.command, ...input.args.map(quote)].join(' ') : [input.command, ...input.args].map(quote).join(' ');
         let stdout = '';
-        let suppliedInput = false;
-        const run = worker.run(session, line, (data) => { stdout += data; }, (reading) => {
-          if (reading && input.stdin && !suppliedInput) { suppliedInput = true; worker.input(session, input.stdin); }
-        });
-        active.set(session, run.abort);
-        input.signal?.addEventListener('abort', run.abort, { once: true });
+        const run = sandbox.run(line, { cwd, env: input.env, cols: 100, rows: 30, signal: input.signal, onOutput: (data) => { stdout += data; } });
+        // Held until the script reads its input.
+        if (input.stdin) run.write(input.stdin);
+        active.add(run.kill);
         try {
-          const result = await run.done;
+          const result = await run.exit;
           return { stdout, stderr: '', code: result.exitCode };
         } finally {
-          active.delete(session);
-          input.signal?.removeEventListener('abort', run.abort);
-          worker.closeSession(session);
+          active.delete(run.kill);
         }
       },
     },
     dispose() {
       if (disposed) return;
       disposed = true;
-      for (const abort of active.values()) abort();
+      for (const kill of active) kill();
       active.clear();
     },
   };

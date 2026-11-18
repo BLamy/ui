@@ -143,6 +143,11 @@
       "types": "./dist/libraries/sync.d.ts",
       "default": "./dist/libraries/sync.js"
     },
+    "./sandbox": {
+      "@org/source": "./src/libraries/sandbox.ts",
+      "types": "./dist/libraries/sandbox.d.ts",
+      "default": "./dist/libraries/sandbox.js"
+    },
     "./vault": {
       "@org/source": "./src/libraries/vault.ts",
       "types": "./dist/libraries/vault.d.ts",
@@ -597,6 +602,21 @@
       "@org/source": "./src/lib/request-table-model.ts",
       "types": "./dist/lib/request-table-model.d.ts",
       "default": "./dist/lib/request-table-model.js"
+    },
+    "./lib/sandbox": {
+      "@org/source": "./src/lib/sandbox/index.ts",
+      "types": "./dist/lib/sandbox/index.d.ts",
+      "default": "./dist/lib/sandbox/index.js"
+    },
+    "./lib/sandbox/react": {
+      "@org/source": "./src/lib/sandbox/react.ts",
+      "types": "./dist/lib/sandbox/react.d.ts",
+      "default": "./dist/lib/sandbox/react.js"
+    },
+    "./lib/sandbox/worker": {
+      "@org/source": "./src/lib/sandbox/worker.ts",
+      "types": "./dist/lib/sandbox/worker.d.ts",
+      "default": "./dist/lib/sandbox/worker.js"
     },
     "./lib/scroll-edge": {
       "@org/source": "./src/lib/scroll-edge.ts",

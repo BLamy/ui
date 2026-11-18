@@ -190,6 +190,7 @@
         { "id": "env-variables", "title": "Example environment variables" },
         { "id": "passkey-vault", "title": "Passkey vault" },
         { "id": "pglite", "title": "PGlite" },
+        { "id": "sandbox", "title": "Sandbox" },
         { "id": "tailscale", "title": "Sign in with Tailscale" },
         { "id": "sql-console", "title": "SqlConsole" },
         { "id": "tailscale-router", "title": "Tailscale request router" }

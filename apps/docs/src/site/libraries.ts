@@ -91,10 +91,10 @@ export const LIBRARIES: Library[] = [
   {
     id: 'motion', name: 'Motion', npm: '@brett_lamy/ui/motion', partOf: 'ui', entry: 'motion', category: 'foundation', status: 'new', icon: 'pulse',
     tagline: 'iOS springs, morphs, presence and the gestures that drive them.',
-    description: 'The springs every transition uses and reduced-motion handling, presence (exit animations that finish before unmount), the morphing parts (TextMorph, NumberMorph, Morph, AnimatedHeight, Swap, Celebrate) and the gestures behind sheets and stacks: edge swipe, pull to refresh and the large-title flight.',
+    description: 'The springs every transition uses and reduced-motion handling, presence (exit animations that finish before unmount), the morphing parts (TextMorph, NumberMorph, Morph, AnimatedHeight, Swap, Celebrate) and the gestures behind sheets and stacks: edge swipe, pull to refresh and the large-title flight. The animation engine (framer-motion) is one lazy chunk, fetched at idle after a part that can animate mounts, so a Button or a List does not carry it.',
     dependsOn: ['tokens'], external: ['framer-motion'],
     modules: [
-      'lib/motion.ts', 'lib/reduced-motion.ts', 'lib/presence.ts', 'lib/morph-path.ts', 'lib/title-flight.ts', 'lib/edge-swipe.ts', 'lib/pull-to-refresh.ts',
+      'lib/motion.ts', 'lib/motion-lazy.ts', 'lib/motion-engine.ts', 'lib/reduced-motion.ts', 'lib/presence.ts', 'lib/morph-path.ts', 'lib/title-flight.ts', 'lib/edge-swipe.ts', 'lib/pull-to-refresh.ts',
       'components/text-morph.tsx', 'components/number-morph.tsx', 'components/animated-height.tsx', 'components/morph.tsx', 'components/celebrate.tsx', 'components/swap.tsx',
     ],
     highlights: ['Springs matched to UIKit, `motion-reduce` everywhere', 'TextMorph, NumberMorph, Morph, AnimatedHeight, Swap', 'Edge swipe, pull to refresh, title flight'],
@@ -244,14 +244,16 @@ export const LIBRARIES: Library[] = [
   /* ── Sandboxing ─────────────────────────────────────────────────────────────────────────────────
      Two ways to run code a person or a model wrote, in the tab. The names say which to reach for: Sandbox is the
      default for almost everyone; Linux VM is the heavy, experimental one for what Sandbox cannot do. Both are clients:
-     the package carries the API, and the runtime files (megabytes to gigabytes) are fetched by the frame at run time,
-     never part of the npm tarball. Planned: neither has an entry yet (the research and the API are in the roadmap). */
+     the package carries the API, and the runtime (megabytes to gigabytes) is fetched when one starts, never part of
+     the npm tarball. Sandbox ships in 6.0 (`lib/sandbox`, whose model is the interface the VM implements later);
+     Linux VM is planned. */
   {
-    id: 'sandbox', name: 'Sandbox', npm: '@brett_lamy/ui/sandbox', partOf: 'ui', category: 'sandboxing', status: 'planned', icon: 'shield',
-    tagline: 'Run Node-compatible code, npm and a dev server in an isolated frame. Light, and the one to start with.',
-    description: 'The lightweight sandbox: a Node-compatible runtime in the browser (our fork of almostnode, BLamy/almostnode) with a virtual disk, a shell, git, npm installs and Vite or Next dev servers. It starts in under a megabyte, and the code runs in an isolated frame with an origin of its own, so it cannot read the page, its cookies or its storage. Almost everyone should use this one. The package will carry the client (`createSandbox`, `useSandbox`, `SandboxPreview`); the runtime is fetched when a sandbox starts, not installed with the package.',
-    dependsOn: ['ui'],
-    highlights: ['JavaScript, TypeScript, npm packages, a shell and git', 'Isolated: an origin of its own, no access to the page', 'Under 1 MB to start; dev servers with live previews', 'The default: reach for Linux VM only when this cannot do the job'],
+    id: 'sandbox', name: 'Sandbox', npm: '@brett_lamy/ui/sandbox', partOf: 'ui', entry: 'sandbox', category: 'sandboxing', status: 'new', icon: 'shield',
+    tagline: 'Run Node-compatible code, a shell and npm in a Worker with an origin of its own. Light, and the one to start with.',
+    description: 'The lightweight sandbox: a Node-compatible runtime in the browser (our fork of almostnode, BLamy/almostnode, published as `@agent-wasm/core`) with a virtual disk, a shell and npm installs. The code runs in a Worker with an origin of its own, so it has no DOM, cookies or localStorage and the browser refuses it the page\'s IndexedDB and caches; `sandbox.isolation` says what it got, and it never falls back to the page\'s origin unless you allow it. Almost everyone should use this one. The package carries the client only: `createSandbox` and `useSandbox` for the page, which load nothing, and `serveSandbox` for the two-line Worker your bundler builds with the runtime, an optional peer. Not in this version: dev-server previews, and a runtime served as files instead of installed.',
+    dependsOn: [], external: ['@agent-wasm/core (optional peer)'],
+    modules: ['lib/sandbox/'],
+    highlights: ['JavaScript, npm packages and a shell, on a virtual disk', 'Isolated: an origin of its own, no access to the page or its storage', 'A few kilobytes on the page; the runtime loads in the Worker, on start', 'The default: reach for Linux VM only when this cannot do the job'],
   },
   {
     id: 'linux-vm', name: 'Linux VM', npm: '@brett_lamy/ui/linux-vm', partOf: 'ui', category: 'sandboxing', status: 'planned', icon: 'cube',

@@ -1,0 +1,47 @@
+{
+  "name": "sandbox",
+  "title": "Sandbox",
+  "description": "Runs code a person or a model wrote where it can't reach the page: a Node-compatible runtime (@agent-wasm/core, our build of almostnode) with a virtual disk, a shell and npm, in a Worker that has an origin of its own, so the code has no DOM, cookies or localStorage and the browser refuses it the site's IndexedDB and caches. createSandbox is the page's side (files, commands, shells, status) and loads nothing; serveSandbox is the two-line Worker your bundler builds with the runtime in it. It never runs with the page's origin unless you ask, and it reports the isolation it got. No previews in this version.",
+  "page": "sandbox",
+  "files": [
+    "lib/sandbox/index.ts",
+    "lib/sandbox/react.ts",
+    "lib/sandbox/worker.ts"
+  ],
+  "exports": [
+    "createSandbox",
+    "SandboxError",
+    "useSandbox",
+    "serveSandbox"
+  ],
+  "imports": [
+    "createSandbox",
+    "useSandbox",
+    "serveSandbox"
+  ],
+  "types": [
+    "Sandbox",
+    "SandboxOptions",
+    "SandboxMirror",
+    "SandboxStatus",
+    "SandboxStatusDetails",
+    "SandboxIsolation",
+    "SandboxErrorCode",
+    "SandboxFiles",
+    "SandboxFileData",
+    "SandboxFileEntry",
+    "SandboxFileEvent",
+    "SandboxEntryKind",
+    "SandboxRunOptions",
+    "SandboxOutputDetails",
+    "SandboxProcess",
+    "SandboxExit",
+    "SandboxShell",
+    "SandboxShellOptions",
+    "SandboxFetchRequest",
+    "SandboxFetchResponse",
+    "UseSandboxOptions",
+    "UseSandboxResult",
+    "ServeSandboxOptions"
+  ]
+}
