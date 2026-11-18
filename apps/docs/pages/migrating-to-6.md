@@ -1,11 +1,11 @@
 # Migrating to 6.0
 
-BL UI 6.0 changes two things, and moves one. Every interactive part is now built on [UI SDK](https://ui-sdk.dev) instead of react-aria-components, and its API is UI SDK's: `onClick` instead of `onPress`, `disabled` instead of `isDisabled`, `value` and `onValueChange(value, details)` instead of keys and selections, and roots with named parts instead of wrappers that take "the first child". The library is smaller: components that did the same job as another one were merged into it (5.16's 118 component modules are 98, plus the four new diagram modules), and every concept has one prop name across the kit. And Docstream, the Markdown renderer and editor behind MarkdownView, MarkdownEditor and the Composer, is part of the package now: `@brett_lamy/docstream` and `@brett_lamy/docstream-editor` stop at 2.0.1. This page lists every change, with the before and after, so you can move a 5.x app to 6.0 from here.
+BL UI 6.0 changes two things, moves one, and is one package. Every interactive part is now built on [UI SDK](https://ui-sdk.dev) instead of react-aria-components, and its API is UI SDK's: `onClick` instead of `onPress`, `disabled` instead of `isDisabled`, `value` and `onValueChange(value, details)` instead of keys and selections, and roots with named parts instead of wrappers that take "the first child". The library is smaller: components that did the same job as another one were merged into it (5.16's 118 component modules are 98, plus the four new diagram modules), and every concept has one prop name across the kit. And Docstream, the Markdown renderer and editor behind MarkdownView, MarkdownEditor and the Composer, is part of the package now: `@brett_lamy/docstream` and `@brett_lamy/docstream-editor` stop at 2.0.1. `npm install @brett_lamy/ui` is the whole install: UI SDK ships inside the package, and every library (Time, Canvas, Diagram, Audio, Video, Markdown, the Composer and the rest) is an entry of it, with the package root keeping the core. This page lists every change, with the before and after, so you can move a 5.x app to 6.0 from here.
 
 Read it in this order:
 
-1. [What changed and why](#what-changed-and-why): UI SDK, React 19, the `ui-sdk` cascade layer and the install lines.
-2. [Docstream is part of the library](#docstream-is-part-of-the-library) and [the package surface](#the-package-surface): what you import from where.
+1. [What changed and why](#what-changed-and-why): UI SDK, React 19, the `ui-sdk` cascade layer and the install line.
+2. [Docstream is part of the library](#docstream-is-part-of-the-library), [UI SDK is part of the package](#ui-sdk-is-part-of-the-package) and [the package surface](#the-package-surface): what you import from where, with [every name that left the root](#names-that-left-the-root).
 3. [Changes that apply everywhere](#changes-that-apply-everywhere): the UI SDK vocabulary, which is most of a migration.
 4. [One spelling per concept](#one-spelling-per-concept): the prop names every component now shares.
 5. [Components that merged, moved or were renamed](#components-that-merged-moved-or-were-renamed): one table from every removed or renamed module, export and prop to what you write now.
@@ -17,7 +17,7 @@ Most tokens, radii, springs and sizes are the same as in 5.x. What you change is
 
 ## What changed and why
 
-**UI SDK owns behavior.** Keyboard, focus, selection, dismissal, popups and their placement, drag and drop, and ARIA all come from UI SDK (`@ui-sdk/core` for the framework-free behaviors, `@ui-sdk/react` for the React parts). BL UI owns the look, the tokens and the iOS-flavored containers. A component that UI SDK ships (Button, Dialog, Popover, Menu, Select, Combobox, Tabs, Tooltip, Toast, Tree…) is UI SDK's part with BL UI's classes, so its props, parts and data attributes are the ones in UI SDK's docs. A component UI SDK does not ship (NavigationStack, SplitView, AdaptivePane, Sidebar…) is a primitive built from UI SDK's behaviors, with the same conventions. Why UI SDK, and how the two fit, is on [Built on UI SDK](https://blamy.github.io/ui/#/ui-sdk).
+**UI SDK owns behavior.** Keyboard, focus, selection, dismissal, popups and their placement, drag and drop, and ARIA all come from UI SDK: its core for the framework-free behaviors, its React package for the parts. Both ship inside `@brett_lamy/ui`, at `@brett_lamy/ui/sdk/core` and `@brett_lamy/ui/sdk/react/<part>` ([below](#ui-sdk-is-part-of-the-package)). BL UI owns the look, the tokens and the iOS-flavored containers. A component that UI SDK ships (Button, Dialog, Popover, Menu, Select, Combobox, Tabs, Tooltip, Toast, Tree…) is UI SDK's part with BL UI's classes, so its props, parts and data attributes are the ones in UI SDK's docs. A component UI SDK does not ship (NavigationStack, SplitView, AdaptivePane, Sidebar…) is a primitive built from UI SDK's behaviors, with the same conventions. Why UI SDK, and how the two fit, is on [Built on UI SDK](https://blamy.github.io/ui/#/ui-sdk).
 
 **React 19 is required.** `react` and `react-dom` 19, and `@types/react` 19.2.10 or newer with TypeScript. `ref` is an ordinary prop on every part.
 
@@ -39,30 +39,24 @@ A CSS Module loads too late to come first, so keep the line in the global styles
 
 ### Installing
 
-BL UI uses its fork of UI SDK, published as `@brett_lamy/ui-sdk-core` and `@brett_lamy/ui-sdk-react` and installed under upstream's names through npm aliases. The fork is upstream plus layer hosts (popups contained in an element such as `BLProvider`'s root), a `when` option on `bindLayer`, and the kernel type `SlotProps` exported from `@ui-sdk/core/renderer`; the other behaviors the containers need (size classes, the navigation stack, edge swipes, the platform back, pull to refresh) are BL UI's own, in `@/lib` (see [Built on UI SDK](https://blamy.github.io/ui/#/ui-sdk)). Every import, in the kit and in your code, is `@ui-sdk/core/…` and `@ui-sdk/react/…`.
+6.0 is one package. `@brett_lamy/ui` carries UI SDK, docstream and its editor, so there is nothing else to install and no alias to add (update `react` and `react-dom` to 19 first):
 
-With the npm package, `@brett_lamy/ui` depends on the two aliases. List them in your app too, at the version it pins, so your own `@ui-sdk/react` imports share the kit's copy (and update `react` and `react-dom` to 19 first):
+{% command %}npm install @brett_lamy/ui{% endcommand %}
 
-{% command %}npm install @brett_lamy/ui @ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1 @ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1{% endcommand %}
+| In a 5.x app's `package.json` | In 6.0 |
+| --- | --- |
+| `@brett_lamy/ui` 5.x | `@brett_lamy/ui` 6.0 |
+| `@brett_lamy/docstream`, `@brett_lamy/docstream-editor` | remove them: they are `@brett_lamy/ui/docstream` and `@brett_lamy/ui/docstream-editor` ([below](#docstream-is-part-of-the-library)) |
+| `react-aria`, `react-aria-components`, `@internationalized/date`, `react-resizable-panels` | remove them, if nothing else of yours uses them |
+| `@ui-sdk/core`, `@ui-sdk/react`, if you added upstream's packages yourself | remove them: the package ships its own build of UI SDK, at `@brett_lamy/ui/sdk/…` ([below](#ui-sdk-is-part-of-the-package)) |
 
 Then import `@brett_lamy/ui/styles.css` once, and `@brett_lamy/ui/docstream/styles.css` too if you render Markdown ([Installation](https://blamy.github.io/ui/#/installation) says which components need it); no JavaScript module of the package imports CSS.
 
-With the registry, the copied source imports `@ui-sdk/core` and `@ui-sdk/react`, so your app needs the same two aliased dependencies. Add them before the first `shadcn add`:
+With the registry there is nothing to install by hand either. The registry copies BL UI's own source and not UI SDK or docstream, so an item whose files use one of them adds `@brett_lamy/ui` to your dependencies, and the copied files import it by name (`@brett_lamy/ui/sdk/react/dialog`, `@brett_lamy/ui/docstream/stl`):
 
-{% command %}npm install @ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1 @ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1{% endcommand %}
+{% command %}npx shadcn@latest add https://blamy.github.io/ui/r/dialog.json{% endcommand %}
 
-which writes:
-
-```json
-{
-  "dependencies": {
-    "@ui-sdk/core": "npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1",
-    "@ui-sdk/react": "npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1"
-  }
-}
-```
-
-Pin both to the same version: `@ui-sdk/react` depends on `@ui-sdk/core`, and the app, the kit and any UI SDK component of your own must share one copy of the core. A package that declares `@ui-sdk/core` as a peer dependency resolves it to your aliased copy. Docstream and its editor (behind `MarkdownView`, `MarkdownEditor`, `Composer` and the replay, STL and Strudel parts) are part of `@brett_lamy/ui` now, so they run on the kit's core with nothing to set up. Your own code imports UI SDK the usual way: `import { Menu } from '@ui-sdk/react/menu'`.
+That writes `components/ui/dialog.tsx` and the parts it imports, and installs `@brett_lamy/ui` at the library's version.
 
 ## Docstream is part of the library
 
@@ -108,23 +102,224 @@ Remove the two packages from your `package.json` and rename the imports: a searc
 
 With the registry, docstream isn't copied: an item built on it (`markdown-view`, `markdown-editor`, `composer`, `replay-preview`, `tui-preview`, `stl-viewer`, `strudel-player`, and the blocks Apple Music, Apple Notes, Apple Reminders, Loop QA, Replay Canvas, Strudel Studio and Time Machine) imports `@brett_lamy/ui/docstream…` and adds `@brett_lamy/ui` to your dependencies, where it used to add `@brett_lamy/docstream`.
 
+## UI SDK is part of the package
+
+UI SDK is not a dependency you add. `@brett_lamy/ui` ships its own build of it, and every entry of UI SDK's two packages is an entry of this one. The rule is one substitution: wherever UI SDK's docs say `@ui-sdk/…`, write `@brett_lamy/ui/sdk/…`.
+
+| UI SDK's docs | In your code |
+| --- | --- |
+| `@ui-sdk/core` | `@brett_lamy/ui/sdk/core` |
+| `@ui-sdk/core/<entry>`: `/gesture`, `/date`, `/color`, `/text-match`, `/agent`, `/testing`… | `@brett_lamy/ui/sdk/core/<entry>` |
+| `@ui-sdk/react/<entry>`: `/dialog`, `/menu`, `/primitive`, `/shortcuts`, `/file-input`… | `@brett_lamy/ui/sdk/react/<entry>` |
+| `@ui-sdk/core/web.css` | `@brett_lamy/ui/sdk/core/web.css` |
+
+```tsx
+import { bindDrag, createChange } from '@brett_lamy/ui/sdk/core'
+import { rubberBand } from '@brett_lamy/ui/sdk/core/gesture'
+import { Menu } from '@brett_lamy/ui/sdk/react/menu'
+import { useShortcut } from '@brett_lamy/ui/sdk/react/shortcuts'
+```
+
+The build is from our fork of UI SDK: upstream plus layer hosts (popups contained in an element such as `BLProvider`'s root), a `when` option on `bindLayer`, and the kernel type `SlotProps` exported from the renderer entry (`@brett_lamy/ui/sdk/core/renderer`). The other behaviors the containers need (size classes, the navigation stack, edge swipes, the platform back, pull to refresh) are BL UI's own, in `@/lib` (see [Built on UI SDK](https://blamy.github.io/ui/#/ui-sdk)).
+
+{% hint style="warning" %}
+Do not install upstream's `@ui-sdk/core` or `@ui-sdk/react` beside `@brett_lamy/ui`. A second copy would not share the kit's layer stack and focus state. The kit, docstream, the blocks and any UI SDK component of your own must run on the one copy the package ships: import it from `@brett_lamy/ui/sdk/…`.
+{% endhint %}
+
+A registry install follows the same rule. UI SDK is not copied: the files `shadcn add` writes import `@brett_lamy/ui/sdk/…`, and the item adds `@brett_lamy/ui` to your dependencies for it. The package's license is `MIT AND Apache-2.0`: BL UI is MIT, the UI SDK inside it is Apache-2.0, and its `LICENSE` and a `NOTICE.md` ship in the package (`dist/vendor/ui-sdk`).
+
 ## The package surface
 
-Every module has its own entry, at the registry's path under the package name, so a name has one import path in both installs. `node tools/registry/build.mjs` writes the entries into the package's `exports` from the same import graph that builds the registry.
+One package holds every library, and each library is an entry of it. `node tools/registry/build.mjs` writes the entries into the package's `exports` from the import graph that builds the registry and from the list of libraries, so a module has one import path in both installs.
 
 | Entry | What it holds | In a registry install |
 | --- | --- | --- |
-| `@brett_lamy/ui` | the components, their parts, cva recipes, controllers and the kit's own hooks | the same names, each from its module |
-| `@brett_lamy/ui/<module>` | every component module: `@brett_lamy/ui/dialog`, `@brett_lamy/ui/data-table`; a folder is one module, by its `index.ts`: `@brett_lamy/ui/composer`, `@brett_lamy/ui/pencilkit` | `@/components/ui/<module>` |
+| `@brett_lamy/ui` | the core library (controls, fields, popups, the containers, the workbench parts: their components, parts, cva recipes, controllers and hooks) and the foundation under it: Tokens, Motion and Icons. Nothing of another library | the same names, each from its module |
+| `@brett_lamy/ui/<library>` | a whole library: `/tokens`, `/motion`, `/icons`, `/time`, `/canvas`, `/diagram`, `/audio`, `/video`, `/markdown`, `/composer`, `/replay`, `/sql`, `/pglite`, `/filter`, `/sync`, `/vault`, `/tailscale`. It exports every module of the library that has an entry of its own | the item `library-<library>`, which installs every item of the library |
+| `@brett_lamy/ui/<module>` | every component module: `@brett_lamy/ui/dialog`, `@brett_lamy/ui/data-table`; a folder is one module, by its `index.ts`: `@brett_lamy/ui/pencilkit` | `@/components/ui/<module>` |
 | `@brett_lamy/ui/lib/<module>` | the library modules with an API of their own: the engines (`lib/vault`, `lib/pglite`, `lib/ffmpeg`, `lib/tailscale`, `lib/session-recorder`, `lib/cron`…), the models (`lib/diagram-model`, `lib/state-diagram-model`…), `lib/theme`, `lib/motion`, `lib/icon`, `lib/canvas-math`, `lib/diagram-layout`, `lib/change-details`, and the kit's behaviors (`lib/size-class`, `lib/container`, `lib/stack`, `lib/back`, `lib/edge-swipe`, `lib/pull-to-refresh`, `lib/scroll-edge`, `lib/presence`, `lib/controllable-state`, also on the root) | `@/lib/<module>` |
-| `@brett_lamy/ui/opencode` | OpenCode's runtime loaders, hosts and vault stores | — |
+| `@brett_lamy/ui/opencode` (the component alone: `@brett_lamy/ui/open-code`) | the OpenCode component and its runtime loaders, hosts and vault stores | `@/components/ui/open-code`, which brings the runtime's modules (`@/lib/open-code-host`, `@/lib/open-code-preview`…) |
 | `@brett_lamy/ui/cloudflare` | CloudflareDiagram and its parts with the Cloudflare catalog, systems, `wrangler.jsonc` and workerd readers: their one import path, and the only entry that reaches the catalog | — |
 | `@brett_lamy/ui/docstream/<entry>`, `@brett_lamy/ui/docstream-editor/<entry>` | Docstream and its editor ([above](#docstream-is-part-of-the-library)) | not copied: the item installs `@brett_lamy/ui` |
+| `@brett_lamy/ui/sdk/core`, `@brett_lamy/ui/sdk/core/<entry>`, `@brett_lamy/ui/sdk/react/<entry>` | UI SDK ([above](#ui-sdk-is-part-of-the-package)) | not copied: the item installs `@brett_lamy/ui` |
 | `@brett_lamy/ui/styles.css`, `@brett_lamy/ui/theme.css` | the stylesheet, and the optional iOS palette | the `bl-ui` and `bl-theme` items |
+
+A name has two import paths and no more: its module's entry and its library's entry. A name of the core or the foundation is on the root as well.
+
+```tsx
+import { Calendar } from '@brett_lamy/ui/calendar' // its module
+// or
+import { Calendar } from '@brett_lamy/ui/time' // its library, beside DatePicker and CronEditor
+```
+
+Both cost an app the same: the package's size check fails when a name imported through a library entry or the root costs more than through its own module's entry.
 
 A module that is the kit's wiring between its own modules (a context, a store, internal helpers) has no entry: a registry install copies it with the item that owns it, and none of its names is package API.
 
-What left the root: the engine modules' functions and types (`createVault`, `PGliteProvider`, `useQuery`, `parseCsv`, `createFfmpeg`, `TailscaleProvider`…) are on their `@brett_lamy/ui/lib/<module>` entry only (a hook stays on the root too: `useSessionRecording`, `usePersistentState`, `useTimeParse`…); the canvas math is on `@brett_lamy/ui/lib/canvas-math`; OpenCode's runtime on `@brett_lamy/ui/opencode`; Docstream's parsers, helpers and demo data on `@brett_lamy/ui/docstream/<entry>`; and the kit's class fragments, contexts and plumbing (`FONT`, `BARH`, `pressable`, `IC`, `BLSafeCtx`, `chromeStore`…) are internal. [The table of renames](#components-that-merged-moved-or-were-renamed) gives every one of those names its new path, from the `@brett_lamy/ui/tui` row on. `@brett_lamy/ui/tui` itself is `@brett_lamy/ui/tui-preview`.
+### What left the root
+
+The 5.x root exported everything. In 6.0 it exports the core and the foundation, and the rest moved in two groups:
+
+- **Engines, models and helpers** are on their `@brett_lamy/ui/lib/<module>` entry (`createVault`, `PGliteProvider`, `useQuery`, `parseCsv`, `createFfmpeg`, `TailscaleProvider`…), and with it on their library's entry when they belong to one (`@brett_lamy/ui/vault`, `@brett_lamy/ui/pglite`…). The canvas math is on `@brett_lamy/ui/lib/canvas-math`; OpenCode's runtime on `@brett_lamy/ui/opencode`; Docstream's parsers, helpers and demo data on `@brett_lamy/ui/docstream/<entry>`; and the kit's class fragments, contexts and plumbing (`FONT`, `BARH`, `pressable`, `IC`, `BLSafeCtx`, `chromeStore`…) are internal. [The table of renames](#components-that-merged-moved-or-were-renamed) gives every one of those names its new path, from the `@brett_lamy/ui/tui` row on. `@brett_lamy/ui/tui` itself is `@brett_lamy/ui/tui-preview`.
+- **The components of every library but the core** are on their module's entry and their library's entry: the tables below.
+
+### Names that left the root
+
+Every name here was exported by `@brett_lamy/ui` and is now imported from the entry in its heading, or from its module's own entry: the module `calendar` is `@brett_lamy/ui/calendar` (`@/components/ui/calendar` in a registry install), and `lib/gpu-time` is `@brett_lamy/ui/lib/gpu-time` (`@/lib/gpu-time`). Rename the import's path; the names are the same unless [the table of renames](#components-that-merged-moved-or-were-renamed) says otherwise.
+
+```tsx
+// before
+import { Calendar, DatePicker, Waveform, MarkdownView, Composer, usePersistentState } from '@brett_lamy/ui'
+
+// now
+import { Calendar, DatePicker } from '@brett_lamy/ui/time'
+import { Waveform } from '@brett_lamy/ui/audio'
+import { MarkdownView } from '@brett_lamy/ui/markdown'
+import { Composer } from '@brett_lamy/ui/composer'
+import { usePersistentState } from '@brett_lamy/ui/sync'
+```
+
+The modules `canvas`, `diagram`, `composer` and `filter` have no entry apart from their library's: see [the note below the tables](#entries-that-are-a-library-now).
+
+**Time: `@brett_lamy/ui/time`**
+
+| Module | Names |
+| --- | --- |
+| `calendar` | `Calendar`, `CalendarHeader`, `CalendarHeading`, `CalendarPrevious`, `CalendarNext`, `CalendarMonthSelect`, `CalendarYearSelect`, `CalendarMonths`, `CalendarGrid`, `CalendarGridHeading`, `CalendarWeekdays`, `CalendarWeekday`, `CalendarWeeks`, `CalendarDay`, `calendarVariants`, `createCalendarController`, `CalendarProps`, `CalendarMonthsProps`, `CalendarDayProps`, `CalendarController`, `CalendarDayState`, `CalendarGridCell`, `CalendarMode`, `CalendarValue`, `DateMatcher`, `DateMatchers` |
+| `date-input` | `DateInput`, `DateInputSegment`, `TimeInput`, `TimeInputSegment`, `dateInputVariants`, `createDateInputController`, `createTimeInputController`, `DateInputProps`, `TimeInputProps`, `DateInputController`, `TimeInputController`, `DateInputSegmentData`, `DateInputState` |
+| `date-picker` | `DatePicker`, `DatePickerInputGroup`, `DatePickerInput`, `DatePickerTrigger`, `DatePickerClear`, `DatePickerHint`, `DatePickerPreset`, `DatePickerContent`, `datePickerInputGroupVariants`, `createDatePickerController`, `DatePickerProps`, `DatePickerInputGroupProps`, `DatePickerContentProps`, `DatePickerController`, `DatePickerMode`, `DatePickerValue` |
+| `natural-time-input` | `NaturalTimeInput`, `NaturalTimeInputProps`, `NaturalTimeInputChange`, `NaturalTimeInputParseOptions` |
+| `cron-editor` | `CronEditor`, `CRON_PRESETS`, `CronEditorProps`, `CronPreset`, `CronEditorChangeDetails`, `CronEditorChangeReason` |
+| `lib/gpu-time` | `useTimeParse`, `UseTimeParseOptions`, `TimeParseState` |
+| `lib/gpu-cron` | `useCronParse`, `UseCronParseOptions`, `CronParseState` |
+
+**Canvas: `@brett_lamy/ui/canvas`**
+
+| Module | Names |
+| --- | --- |
+| `canvas` | `Canvas`, `CanvasFrame`, `CanvasHandles`, `CanvasMarquee`, `CanvasGuides`, `CanvasMiniMap`, `canvasFrameVariants`, `useCanvas`, `createCanvasController`, `CanvasProps`, `CanvasPointerInfo`, `CanvasContextValue`, `CanvasController`, `CanvasFitOptions`, `CanvasInsets`, `CanvasViewportChangeDetails`, `CanvasViewportReason`, `CanvasFrameProps`, `CanvasHandlesProps`, `CanvasMarqueeProps`, `CanvasGuidesProps`, `CanvasMiniMapProps`, `CanvasMiniMapItem`, `CanvasPointerLayer` |
+| `pencilkit` | `StrokePath`, `PencilCanvas`, `PencilToolbar`, `PencilToolPicker`, `PencilInkPicker`, `PencilWidthPicker`, `PencilActions`, `usePencilHistory`, `PencilKitAnnotator`, `ImageAnnotator`, `ImageAnnotatorProvider`, `PencilTool`, `PencilDrawTool`, `PencilPoint`, `PencilStroke`, `PencilInk`, `PencilWidth`, `StrokePathProps`, `PencilCanvasProps`, `PencilStrokesChangeDetails`, `PencilStrokesChangeReason`, `PencilToolbarProps`, `PencilToolPickerProps`, `PencilInkPickerProps`, `PencilWidthPickerProps`, `PencilActionsProps`, `PencilPickerPresentation`, `PencilHistory`, `ImageAnnotatorProps`, `ImageAnnotatorProviderProps`, `ImageAnnotatorEngine`, `ImageAnnotatorEngineProps`, `ImageAnnotatorSurface` |
+
+**Diagram: `@brett_lamy/ui/diagram`**
+
+| Module | Names |
+| --- | --- |
+| `diagram` | `Diagram`, `DiagramNodeBody`, `DiagramNodeHeader`, `DiagramSections`, `DiagramEntryMarker`, `DiagramToolbar`, `DiagramToolbarButton`, `useDiagram`, `useDiagramHistory`, `createDiagramController`, `diagramEdgeVariants`, `diagramNodeVariants`, `diagramItemVariants`, `diagramEdgeLabelVariants`, `DiagramProps`, `DiagramNodeBodyProps`, `DiagramNodeHeaderProps`, `DiagramSectionsProps`, `DiagramToolbarProps`, `DiagramToolbarButtonProps`, `DiagramContextValue`, `DiagramController`, `DiagramData`, `DiagramItem`, `DiagramNoun`, `DiagramActionDetails`, `DiagramDataChangeDetails`, `DiagramDataChangeReason`, `DiagramSelectionChangeDetails`, `DiagramSelectionChangeReason`, `DiagramHistory`, `DiagramHistoryChangeDetails`, `DiagramHistoryOptions`, `UseDiagramHistory` |
+| `diagram-frame` | `DiagramFrame`, `DiagramFrameBoard`, `DiagramFramePanel`, `DiagramFrameBar`, `DiagramFrameTrigger`, `DiagramFrameCover`, `DiagramFrameCoverHeader`, `DiagramFrameSection`, `useDiagramFrame`, `DiagramFrameProps`, `DiagramFrameBoardProps`, `DiagramFramePanelProps`, `DiagramFrameBarProps`, `DiagramFrameTriggerProps`, `DiagramFrameCoverProps`, `DiagramFrameCoverHeaderProps`, `DiagramFrameSectionProps` |
+| `state-diagram` | `StateDiagram`, `StateDiagramProps`, `StateDiagramConfigChangeDetails`, `StateDiagramConfigChangeReason` |
+| `lib/diagram-model` | `DiagramConnection`, `DiagramEdge`, `DiagramEdgeTone`, `DiagramEdgeVariant`, `DiagramGlyph`, `DiagramNode`, `DiagramNodeKind`, `DiagramNodeVariant`, `DiagramPort`, `DiagramSection`, `DiagramSectionItem`, `DiagramSelection`, `DiagramSide`, `DiagramTone` |
+| `lib/state-diagram-model` | `StateMachineLike` |
+| `lib/state-diagram-edit` | `StateMachineConfig`, `StateMachineImplementations` |
+| `lib/state-diagram-simulation` | `SimulationStandIns` |
+
+**Audio: `@brett_lamy/ui/audio`**
+
+| Module | Names |
+| --- | --- |
+| `strudel-player` | `StrudelPlayer`, `playStrudel`, `stopStrudel`, `updateStrudel`, `subscribeStrudel`, `getStrudelSnapshot`, `StrudelPlayerProps`, `StrudelCodeChangeDetails`, `StrudelPanelChangeReason`, `StrudelSnapshot` |
+| `now-playing-bars` | `NowPlayingBars`, `NowPlayingBarsProps` |
+| `waveform` | `Waveform`, `waveformVariants`, `WaveformProps` |
+
+**Video: `@brett_lamy/ui/video`**
+
+| Module | Names |
+| --- | --- |
+| `video-timeline` | `VideoTimeline`, `videoTimelineMediaType`, `fitVideoTimelineZoom`, `VideoTimelineProps`, `VideoTimelineMedia`, `VideoTimelineDrop`, `VideoTimelineDropDetails`, `VideoTimelineAction`, `VideoTimelineChangeDetails`, `VideoTimelineChangeReason`, `VideoTimelineSelectionReason`, `VideoTimelineZoomReason` |
+| `video-preview` | `VideoPreview`, `VideoPreviewControls`, `VideoPreviewTimecode`, `VideoPreviewProps`, `VideoPreviewControlsProps`, `VideoPreviewTimecodeProps` |
+| `filmstrip` | `Filmstrip`, `FilmstripProps`, `FilmstripFrame` |
+
+**Markdown: `@brett_lamy/ui/markdown`**
+
+| Module | Names |
+| --- | --- |
+| `markdown-editor` | `MarkdownEditor`, `MarkdownEditorToolbarButton`, `markdownEditorVariants`, `looksLikeMarkdown`, `insertMarkdown`, `MarkdownEditorProps`, `MarkdownEditorHandle`, `MarkdownEditorInstance`, `MarkdownEditorAttachment`, `MarkdownEditorClassNames`, `MarkdownEditorValueChangeDetails`, `MarkdownEditorValueChangeReason`, `MarkdownEditorToolbarButtonProps`, `MarkdownEditorDemo` |
+| `markdown-view` | `MarkdownView`, `MarkdownViewProps`, `MarkdownViewDemo`, `ReferenceNode`, `CodeBlockNode`, `CodeBlockRenderDetails` |
+| `stl-viewer` | `StlViewer`, `StlViewerProps` |
+| `tui-preview` | `TuiPreview`, `TuiPreviewProps`, `TuiPreviewOptions`, `TuiPreviewState`, `TuiAppearance`, `TuiTheme` |
+
+**Composer: `@brett_lamy/ui/composer`**
+
+| Module | Names |
+| --- | --- |
+| `message-scroller` | `MessageScroller`, `MessageScrollerItem`, `MessageScrollerProps`, `MessageScrollerItemProps` |
+| `composer` | `Composer`, `ComposerCard`, `ComposerAddon`, `ComposerFooter`, `ComposerSpacer`, `ComposerSeparator`, `ComposerText`, `ComposerPill`, `ComposerSelect`, `ComposerSend`, `ComposerStop`, `ComposerAdd`, `ComposerExpand`, `ComposerAttachments`, `ComposerInput`, `ComposerOptions`, `ComposerOptionsOutlet`, `ComposerBump`, `ComposerBumpHandle`, `ComposerBumpContent`, `useComposer`, `useComposerBump`, `composerCardVariants`, `composerAddonVariants`, `composerBumpVariants`, `ComposerCards`, `ComposerMorphCard`, `ComposerQueue`, `ComposerProps`, `ComposerCollapse`, `ComposerContextValue`, `ComposerAttachment`, `ComposerAttachmentKind`, `ComposerAttachOptions`, `ComposerFileSource`, `FileRejection`, `ComposerCardProps`, `ComposerAddonProps`, `ComposerFooterProps`, `ComposerSpacerProps`, `ComposerSeparatorProps`, `ComposerTextProps`, `ComposerAttachmentsProps`, `ComposerPillProps`, `ComposerSelectProps`, `ComposerSelectItem`, `ComposerSelectChangeDetails`, `ComposerSendProps`, `ComposerStopProps`, `ComposerAddProps`, `ComposerExpandProps`, `ComposerInputProps`, `ComposerOptionsProps`, `ComposerOptionsOutletProps`, `ComposerBumpProps`, `ComposerBumpContextValue`, `ComposerBumpHandleProps`, `ComposerBumpContentProps`, `ComposerValueChangeDetails`, `ComposerAttachmentsChangeDetails`, `ComposerExpandedChangeDetails`, `ComposerCollapsedChangeDetails`, `ComposerBumpOpenChangeDetails`, `ComposerCardsProps`, `ComposerMorphCardProps`, `ComposerQueueProps`, `ComposerQueueItem`, `ComposerQueueActions`, `ComposerQueueItemsChangeDetails` |
+| `artifact-chat-container` | `ArtifactChatContainer`, `ArtifactChatContainerContent`, `ArtifactChatContainerChat`, `ArtifactChatContainerComposer`, `useArtifactChatContainer`, `artifactChatContainerVariants`, `ArtifactChatContainerProps`, `ArtifactChatContainerContentProps`, `ArtifactChatContainerContextValue`, `ArtifactChatContainerOpenChangeDetails`, `ArtifactChatContainerMinimizedChangeDetails`, `ArtifactChatContainerComposingChangeDetails`, `ArtifactChatContainerComposingChangeReason`, `ArtifactChatContainerPresentation`, `ArtifactChatContainerSide` |
+| `conversation` | `Conversation`, `ConversationEmpty`, `ConversationMessages`, `ConversationComposer`, `ConversationSuggestions`, `ConversationSuggestion`, `ConversationUserMessage`, `ConversationAssistantMessage`, `ConversationMarkdown`, `ConversationTyping`, `ConversationWorkLog`, `ConversationToolCall`, `ConversationProps`, `ConversationEmptyProps`, `ConversationMessagesProps`, `ConversationComposerProps`, `ConversationSuggestionsProps`, `ConversationSuggestionProps`, `ConversationAssistantMessageProps`, `ConversationUserMessageProps`, `ConversationMarkdownProps`, `ConversationTypingProps`, `ConversationWorkLogProps`, `ConversationToolCallProps` |
+
+**Replay: `@brett_lamy/ui/replay`**
+
+| Module | Names |
+| --- | --- |
+| `lib/session-recorder` | `useSessionRecording`, `useSessions`, `useSessionCloud`, `SessionInfo`, `SessionRecordingOptions` |
+| `replay-preview` | `ReplayPreview`, `ReplayPreviewProps`, `ReplayPreviewHandle`, `ReplaySource`, `ReplayChrome`, `ReplayEvent`, `ReplayMarker`, `ReplayMarkerKind`, `ReplayDevtools`, `ReplayDevtoolsTab`, `ReplayInspection`, `ReplayInspectionTab` |
+
+**SQL: `@brett_lamy/ui/sql`**
+
+| Module | Names |
+| --- | --- |
+| `sql-console` | `SqlConsole`, `SqlConsoleHeader`, `SqlConsoleDatabaseMenu`, `SqlConsoleSidebar`, `SqlConsoleEditor`, `SqlConsoleEditorFooter`, `SqlConsoleEditorRun`, `SqlConsoleResults`, `useSqlHistory`, `SqlConsoleProps`, `SqlConsoleHeaderProps`, `SqlConsoleEditorProps`, `SqlConsoleEditorFooterProps`, `SqlConsoleEditorRunProps`, `SqlConsoleEditorHandle`, `SqlHistory` |
+
+**Filter: `@brett_lamy/ui/filter`**
+
+| Module | Names |
+| --- | --- |
+| `filter` | `FilterBar`, `FilterToolbar`, `FilterMenu`, `FilterList`, `FilterChip`, `FilterClear`, `FilterMatch`, `FilterValueEditor`, `useFilters`, `useFilterBar`, `useOptionalFilterBar`, `filterChipVariants`, `FilterBarProps`, `FilterToolbarProps`, `FilterMenuProps`, `FilterListProps`, `FilterChipProps`, `FilterClearProps`, `FilterMatchProps`, `FilterValueEditorProps`, `FilterBarContextValue`, `FilterState`, `FilterActions`, `UseFiltersOptions`, `FilterChangeDetails`, `FilterChangeReason`, `FilterMatchChangeDetails`, `FilterMatchChangeReason`, `FilterChangeOptions` |
+| `filter-input` | `FilterInput`, `FilterInputProps` |
+
+**Sync: `@brett_lamy/ui/sync`**
+
+| Module | Names |
+| --- | --- |
+| `lib/persistent-state` | `usePersistentState` |
+
+**Vault: `@brett_lamy/ui/vault`**
+
+| Module | Names |
+| --- | --- |
+| `vault-gate` | `VaultGate`, `VaultUnlock`, `VaultSetup`, `VaultUnsupported`, `VaultStatusBadge`, `VaultEnrollDialog`, `VaultRecoveryKey`, `vaultRecoveryKeyVariants`, `vaultUnsupportedMessage`, `VaultGateProps`, `VaultGateScreens`, `VaultUnlockProps`, `VaultSetupProps`, `VaultUnsupportedProps`, `VaultStatusBadgeProps`, `VaultEnrollDialogProps`, `VaultRecoveryKeyProps` |
+
+**Tailscale: `@brett_lamy/ui/tailscale`**
+
+| Module | Names |
+| --- | --- |
+| `tailscale-controls` | `TailscaleLoginButton`, `TailscaleStatusBadge`, `TailscaleMark`, `TailscaleSummary`, `TailscaleExitNodes`, `tailscaleStatusBadgeVariants`, `TailscaleLoginButtonProps`, `TailscaleLoginButtonLabels`, `TailscaleStatusBadgeProps`, `TailscaleSummaryProps`, `TailscaleMarkProps`, `TailscaleExitNodesProps`, `TailscaleExitNodeLabels`, `TailscaleExitNodeState`, `TailscaleExitNodeChangeDetails` |
+
+**OpenCode: `@brett_lamy/ui/opencode`**
+
+| Module | Names |
+| --- | --- |
+| `open-code` | `OpenCode`, `openCodeVariants`, `OpenCodeProps`, `OpenCodeBaseProps`, `OpenCodeHostProps`, `OpenCodeState` |
+
+The library's entry, `@brett_lamy/ui/opencode`, carries the component and its runtime (the loaders, the hosts, the vault stores). The component alone is also on its module's entry, `@brett_lamy/ui/open-code`.
+
+### Entries that are a library now
+
+Four libraries are named after their main module: Canvas, Diagram, Composer and Filter. For those the path is the library's. It exports everything the module's entry would, and the library's other modules with it, and the module has no separate entry.
+
+| Entry | The module it is named after | What else it exports |
+| --- | --- | --- |
+| `@brett_lamy/ui/canvas` | `canvas`: Canvas and its parts | PencilKit (`@brett_lamy/ui/pencilkit`) and the canvas math (`@brett_lamy/ui/lib/canvas-math`) |
+| `@brett_lamy/ui/diagram` | `diagram`: Diagram and its parts | DiagramFrame (`@brett_lamy/ui/diagram-frame`), StateDiagram (`@brett_lamy/ui/state-diagram`), the diagram model and layout (`lib/diagram-model`, `lib/diagram-layout`, `lib/diagram-layout/react`) and the state-machine model (`lib/state-diagram-model`, `-source`, `-edit`, `-simulation`). Not CloudflareDiagram, which stays on `@brett_lamy/ui/cloudflare` |
+| `@brett_lamy/ui/composer` | `composer`: Composer and its parts | Conversation (`@brett_lamy/ui/conversation`), MessageScroller (`@brett_lamy/ui/message-scroller`) and ArtifactChatContainer (`@brett_lamy/ui/artifact-chat-container`) |
+| `@brett_lamy/ui/filter` | `filter`: the filter bar and its parts | FilterInput (`@brett_lamy/ui/filter-input`), the filter model and query parser (`lib/filter-model`, `lib/filter-query`) and gpu-query (`lib/gpu-query`) |
+
+Code that imports only the module's names from one of these paths needs no change. In a registry install nothing changes either: `@/components/ui/canvas` is still the one module.
+
+### The registry's library items
+
+Every part still installs as source, one item each. 6.0 adds one item per library, `library-<entry>`, which has no files of its own and installs every item of that library:
+
+{% command %}npx shadcn@latest add https://blamy.github.io/ui/r/library-audio.json{% endcommand %}
+
+| Item | Installs |
+| --- | --- |
+| `library-ui` | the core: every item no other library owns |
+| `library-tokens`, `library-motion`, `library-icons` | the foundation |
+| `library-time`, `library-canvas`, `library-diagram`, `library-audio`, `library-video` | the UI libraries |
+| `library-markdown`, `library-composer`, `library-replay` | the content libraries |
+| `library-sql`, `library-pglite`, `library-filter`, `library-sync`, `library-vault`, `library-tailscale` | the data and platform libraries |
+
+Docstream, its editor and UI SDK have no item: they come with `@brett_lamy/ui`, which the items that use them add to your dependencies.
 
 ## Changes that apply everywhere
 
@@ -295,12 +490,12 @@ UI SDK's text controls listen to the native `input` event: `fireEvent.change(inp
 
 ## Components that merged, moved or were renamed
 
-Where two components did one job, 6.0 keeps one and folds the other into it as a variant, a part or a documented composition; where a name didn't follow UI SDK's, it takes UI SDK's. There are no aliases and no deprecated re-exports: every name in the left column is gone. The module is the file under `@/components/ui/` (a registry item of the same name; the npm package exports the same names from `@brett_lamy/ui`). A few left-hand names only existed in 6.0 previews; they are listed so that code written against those docs moves too. Rows marked **care** change shape, and have a before and after [below the table](#before-and-after-for-the-ones-that-need-care).
+Where two components did one job, 6.0 keeps one and folds the other into it as a variant, a part or a documented composition; where a name didn't follow UI SDK's, it takes UI SDK's. There are no aliases and no deprecated re-exports: every name in the left column is gone. The module is the file under `@/components/ui/` (a registry item of the same name; the npm package exports the same names from the module's entry, `@brett_lamy/ui/<module>`, and from its library's entry, and the core's from `@brett_lamy/ui` too: see [The package surface](#the-package-surface)). A few left-hand names only existed in 6.0 previews; they are listed so that code written against those docs moves too. Rows marked **care** change shape, and have a before and after [below the table](#before-and-after-for-the-ones-that-need-care).
 
 | Before | Now | Notes |
 | --- | --- | --- |
-| `plain-button`: `PlainButton`, `PlainButtonProps` | `import { Button as SdkButton } from '@ui-sdk/react/button'`; props are `ComponentProps<typeof SdkButton>` | UI SDK's unstyled Button, under the local name the kit's own modules use. Button's page has an "Unstyled" section |
-| `plain-button`: `PlainToggleButton`, `PlainToggleButtonProps` | `import { Toggle as SdkToggle } from '@ui-sdk/react/toggle'` | `pressed` / `onPressedChange(pressed, details)`; in a ToggleGroup it takes `value` |
+| `plain-button`: `PlainButton`, `PlainButtonProps` | `import { Button as SdkButton } from '@brett_lamy/ui/sdk/react/button'`; props are `ComponentProps<typeof SdkButton>` | UI SDK's unstyled Button, under the local name the kit's own modules use. Button's page has an "Unstyled" section |
+| `plain-button`: `PlainToggleButton`, `PlainToggleButtonProps` | `import { Toggle as SdkToggle } from '@brett_lamy/ui/sdk/react/toggle'` | `pressed` / `onPressedChange(pressed, details)`; in a ToggleGroup it takes `value` |
 | `toggle-group`: `ToggleGroup`, `ToggleGroupItem`, `toggleGroupVariants`, `createToggleGroupController`, `ToggleGroupProps`, `ToggleGroupItemProps` | the same names from `@/components/ui/toggle` | one module and one page with Toggle, like Checkbox and CheckboxGroup |
 | Button `active`, `variant="quiet" active` | `<Toggle variant="quiet" pressed={on} onPressedChange={setOn}>` | **care**. A tool that stays on is a toggle (`aria-pressed`); Button has no `active` |
 | ToggleGroup `variant="filled"` (the segment tray) | `variant="segmented"`, as on Tabs | an item's own `variant` never makes a segment |
@@ -577,7 +772,7 @@ Where two components did one job, 6.0 keeps one and folds the other into it as a
 | `useMountPresentationKey`, `isLightSurface`, `flipSnapshot`, `flipPlay`, `FlipSnapshot` from `@brett_lamy/ui` | internal: `@/lib/container`; `isLightSurface` is private to `@/lib/trigger-palette`; `flipSnapshot`, `flipPlay`, `FlipSnapshot` from `@brett_lamy/ui/lib/motion` | plumbing of the popups and the motion helpers |
 | from `@brett_lamy/ui`: `rotatePt`, `centerOf`, `HANDLE_DIR`, `ALL_HANDLES`, `EDGE_HANDLES`; `StreamFullError`, `pack`, `unpack`; `FONT_CATEGORIES`, `googleFontsUrl`; `sqlSpans`, `splitStatements`, `positionToLineColumn`, `SqlSpan`, `SqlSpanType`, `SqlStatement`; `formatCell`, `toCsv`, `toJson`, `pgTypeName`, `formatDuration`, `pluralRows`, `PG_TYPE`, `FormattedCell`, `CellKind`, `TabularResult` | `@brett_lamy/ui/lib/canvas-math` (the canvas helpers), `@brett_lamy/ui/lib/append-stream`, `@brett_lamy/ui/lib/google-fonts`; registry only: `@/lib/sql-lex`, `@/lib/sql-format` | the session recorder's store, FontPicker's catalog, the SQL console's internals |
 | from `@brett_lamy/ui`: `treeFromPaths`, `visibleTreeRows`; `useFileUploadContext`; `workspaceTabsets`; `timelineZoomRange` | `@brett_lamy/ui/tree`, `/file-upload`, `/workspace`; `videoTimelineZoomRange` from `/video-timeline` | the module's own entry |
-| from `@brett_lamy/ui`: the engine helpers no page documents: `parseDataDir`, `readServerInfo`, `runtimePostgresMajor`, `identifier`, `quoteIdent`, `quoteLiteral` (pglite-core), `detectImportFormat`, `readArchiveVersion`, `dumpVersion` (pglite-transfer), `detectPersistenceSupport` (pglite-storage), `inferColumnType`, `sortTextPermutation`, `histogramCpu`, `binScale`, `GPU_MIN_ROWS`, `MAX_BINS` (spreadsheet-model), `csvField`, `detectDelimiter` (csv), `DATE_PRESETS`, `FILTER_OPERATORS`, `RELATIVE_UNITS`, `createFilterId`, `emptyValue`, `isDateValue`, `isFilterComplete` (filter-model), `createTailscaleFetch`, `toTailscaleRequest`, `toResponse`, `isSafeLoginUrl` (tailscale), `encodeTailscalePolicy`, `decodeTailscalePolicy`, `describeTailscalePolicy`, `isTailnetHost`, `isTailnetAddress` (tailscale-policy), `tailscaleServiceWorkerUrl`, `tailscaleRouterUnsupportedReason` (tailscale-router/bridge), `parseRate` (ffmpeg), `wavPeaks` (ffmpeg/media), `probeMedia`, `mediaFrames`, `mediaPeaks` (ffmpeg/react), `trackDuration`, `findClip`, `timelineId`, `magneticIndex`, `timelineLooks`, `lookCss`, `lookFfmpeg` (video-timeline-model), `renderMime` (video-render), `createLineState`, `eraseLine`, `wordAtCursor`, `formatColumns`, `cellWidth`, `textWidth`, `stripAnsi`, `advance`, `toTerminalNewlines`, `trimTranscript`, `MAX_HISTORY`, `LineState`, `LineEvent`, `LineStep`, `RenderedLine`, `CellPosition`, `CompletionStep` (terminal-line), `fileBaseName`, `fullLocation`, `shortLocation` (call-stack-model), `requestDisplayName`, `requestTone` (request-table-model), `TRACE_SCRUB_SPEEDS` (trace-timeline-model), `childrenOfValue` (object-tree-model) | `@brett_lamy/ui/lib/<module>` (the registry's `@/lib/<module>`) | the root keeps the components, their parts, cvas, controllers and the kit's own hooks; every engine module is on its own entry (next rows) |
+| from `@brett_lamy/ui`: the engine helpers no page documents: `parseDataDir`, `readServerInfo`, `runtimePostgresMajor`, `identifier`, `quoteIdent`, `quoteLiteral` (pglite-core), `detectImportFormat`, `readArchiveVersion`, `dumpVersion` (pglite-transfer), `detectPersistenceSupport` (pglite-storage), `inferColumnType`, `sortTextPermutation`, `histogramCpu`, `binScale`, `GPU_MIN_ROWS`, `MAX_BINS` (spreadsheet-model), `csvField`, `detectDelimiter` (csv), `DATE_PRESETS`, `FILTER_OPERATORS`, `RELATIVE_UNITS`, `createFilterId`, `emptyValue`, `isDateValue`, `isFilterComplete` (filter-model), `createTailscaleFetch`, `toTailscaleRequest`, `toResponse`, `isSafeLoginUrl` (tailscale), `encodeTailscalePolicy`, `decodeTailscalePolicy`, `describeTailscalePolicy`, `isTailnetHost`, `isTailnetAddress` (tailscale-policy), `tailscaleServiceWorkerUrl`, `tailscaleRouterUnsupportedReason` (tailscale-router/bridge), `parseRate` (ffmpeg), `wavPeaks` (ffmpeg/media), `probeMedia`, `mediaFrames`, `mediaPeaks` (ffmpeg/react), `trackDuration`, `findClip`, `timelineId`, `magneticIndex`, `timelineLooks`, `lookCss`, `lookFfmpeg` (video-timeline-model), `renderMime` (video-render), `createLineState`, `eraseLine`, `wordAtCursor`, `formatColumns`, `cellWidth`, `textWidth`, `stripAnsi`, `advance`, `toTerminalNewlines`, `trimTranscript`, `MAX_HISTORY`, `LineState`, `LineEvent`, `LineStep`, `RenderedLine`, `CellPosition`, `CompletionStep` (terminal-line), `fileBaseName`, `fullLocation`, `shortLocation` (call-stack-model), `requestDisplayName`, `requestTone` (request-table-model), `TRACE_SCRUB_SPEEDS` (trace-timeline-model), `childrenOfValue` (object-tree-model) | `@brett_lamy/ui/lib/<module>` (the registry's `@/lib/<module>`) | the root keeps the core's components, their parts, cvas, controllers and hooks; every engine module is on its own entry (next rows), and with its library on the library's entry |
 | `DEFAULT_OPENCODE_PREVIEW_URL`, `DEFAULT_OPENCODE_RUNTIME_URL`, `loadOpenCodeRuntime`, `createVaultOpenCodeCredentialStore`, `createVaultOpenCodeConnectionStore`, `OPENCODE_CREDENTIAL_SLOT`, `OPENCODE_CONNECTION_SLOT` from `@brett_lamy/ui` | `@brett_lamy/ui/opencode` | the OpenCode entry |
 | `BLProvider dark` (`dark`, `dark={false}`) | `appearance: 'auto' \| 'light' \| 'dark'` (`appearance="dark"`, `appearance="light"`); `'auto'`, the default, follows the ambient appearance | mechanical. `ThemeScope` and `OpenCode` take `'auto'` too; the type is `AppearancePreference` (`Appearance` is the resolved `'light' \| 'dark'`) |
 | ArtifactChatContainer `layout`, `ArtifactChatLayout`, `useArtifactChatContainer().layout`, `data-layout`, `artifactChatContainerVariants({ layout })` | `presentation` (`'auto' \| 'split' \| 'floating'`), `ArtifactChatContainerPresentation`, `.presentation`, `data-presentation`, `({ presentation })` | mechanical; `auto` reads the container's own size class |
@@ -597,7 +792,7 @@ Where two components did one job, 6.0 keeps one and folds the other into it as a
 | `PageStackOptions.active` (`createPageStack`, 6.0 previews) | `when` | mechanical: the fork's name for the same idea on `bindLayer` |
 | `TimelineDrop`, `timelineMediaType`, `fitTimelineZoom`, `timelineZoomRange` (video-timeline); `TimelineMedia`, `TimelineDropDetails` (6.0 previews); `TrackKind` (`lib/video-timeline-model`) | `VideoTimelineMedia`, `VideoTimelineDrop`, `VideoTimelineDropDetails`, `videoTimelineMediaType`, `fitVideoTimelineZoom`, `videoTimelineZoomRange` (on `@brett_lamy/ui/video-timeline`); `TimelineTrackKind` (on `@brett_lamy/ui/lib/video-timeline-model`) | mechanical: the kit has two timelines (TraceTimeline's names are `Trace…`) |
 | FileUpload / `useFileUpload` / `useFileUploadContext()` `busy`; the root's `data-busy` (6.0 previews) | `pending`; `data-pending` | mechanical: an action in flight is `pending` |
-| `SizeClass`, `SizeClassBreakpoints` from `@/lib/container` | from `@/lib/size-class` (`@brett_lamy/ui/lib/size-class`), or the root | one import path per name |
+| `SizeClass`, `SizeClassBreakpoints` from `@/lib/container` | from `@/lib/size-class` (`@brett_lamy/ui/lib/size-class`), or the root | one module entry per name |
 | `@brett_lamy/ui/lib/icon-shapes/chat`, `/docs`, `/pencilkit`, `/workbench` (`CHAT_SHAPES`…); `@brett_lamy/ui/lib/spreadsheet-gpu`; `@brett_lamy/ui/lib/trace-timeline-draw` (6.0 previews) | no entry: draw the shapes with `<Icon name>`; Spreadsheet and TraceTimeline use the other two themselves | implementation files, now `@internal` |
 | loop-qa block: `Pill tone` `critical`, `info`, `primary`, `neutral`, `outline`; `SEVERITY_TONE`, `STATUS_TONE` hold a tone | the kit's tones plus a look: `tone="destructive" variant="solid"`, `tint="var(--lq-info)"`, `tone="default"`, `tone="muted"`, `tone="muted" variant="outline"`; the tables hold a `PillLook` (`{ tone, variant, tint }`) to spread on a `Pill` | |
 | map-chat block: `MapPin.color`, `MapRoute.color`; `MapPin.badge` | `tint`; `icon`, which takes a map icon's name or your own content (a stop's number) | |
@@ -609,14 +804,14 @@ Where two components did one job, 6.0 keeps one and folds the other into it as a
 | `Countdown` (what `useCountdown` returns) | `UseCountdown` | mechanical |
 | `Hud` (the toast HUD type) | `ToastHud` | mechanical |
 | Sheet side `left` / `right` in the docs, examples and stories | `start` / `end` (Sheet follows the writing direction; `left` / `right` still pin a physical edge) | the stories are `Start` / `End` |
-| from `@brett_lamy/ui`: the engine modules (passkey, vault, vault-storage, vault-react, pglite, pglite-core, pglite-transfer, pglite-files, pglite-schema, pglite-storage, tab-lock, spreadsheet-model, csv, filter-model, filter-query, file-upload-model, file-upload-primitive, use-file-upload, tailscale, tailscale-policy, tailscale-exit, tailscale-react, tailscale-connect, tailscale-fake, tailscale-router/bridge, tailscale-router/react, ffmpeg, ffmpeg/media, ffmpeg/react, video-timeline-model, video-render, playback, trace-timeline-model, code-editor-model, code-document, code-editor-gpu, object-tree-model, call-stack-model, log-list-model, data-table-model, request-table-model, terminal-line): `createVault`, `VaultProvider`, `useEncryptedState`, `PGliteProvider`, `useQuery`, `openDatabase`, `parseCsv`, `createFfmpeg`, `useFfmpeg`, `TailscaleProvider`, `createFakeTailscaleClient`, `xhrUpload`, `useFileUpload`, `Timeline`, `LogRow`, `RequestRow`, `CallStackFrame`, … | `@brett_lamy/ui/lib/<module>` (`@/lib/<module>` in a registry install), e.g. `import { createVault } from '@brett_lamy/ui/lib/vault'` | **care**: one import path per name. The components stay on the root and on their module entry |
+| from `@brett_lamy/ui`: the engine modules (passkey, vault, vault-storage, vault-react, pglite, pglite-core, pglite-transfer, pglite-files, pglite-schema, pglite-storage, tab-lock, spreadsheet-model, csv, filter-model, filter-query, file-upload-model, file-upload-primitive, use-file-upload, tailscale, tailscale-policy, tailscale-exit, tailscale-react, tailscale-connect, tailscale-fake, tailscale-router/bridge, tailscale-router/react, ffmpeg, ffmpeg/media, ffmpeg/react, video-timeline-model, video-render, playback, trace-timeline-model, code-editor-model, code-document, code-editor-gpu, object-tree-model, call-stack-model, log-list-model, data-table-model, request-table-model, terminal-line): `createVault`, `VaultProvider`, `useEncryptedState`, `PGliteProvider`, `useQuery`, `openDatabase`, `parseCsv`, `createFfmpeg`, `useFfmpeg`, `TailscaleProvider`, `createFakeTailscaleClient`, `xhrUpload`, `useFileUpload`, `Timeline`, `LogRow`, `RequestRow`, `CallStackFrame`, … | `@brett_lamy/ui/lib/<module>` (`@/lib/<module>` in a registry install), e.g. `import { createVault } from '@brett_lamy/ui/lib/vault'` | **care**: one module entry per name. An engine is on its library's entry too (`@brett_lamy/ui/vault`, `/pglite`, `/filter`, `/tailscale`, `/video`, `/audio`); the components are on their module's entry and their library's, and the core's on the root ([Names that left the root](#names-that-left-the-root)) |
 | from `@brett_lamy/ui`: the canvas math (`toBoard`, `toScreen`, `MIN_SIZE`, `dist`, `cornersOf`, `rectOf`, `unionRect`, `intersects`, `inFrame`, `distToSegment`, `distToPolyline`, `frameHandles`, `handleCursor`, `resizeFrame`, `rotateFrame`, `snapMove`, `Viewport`, `Frame`, `Guide`, `Handle`, `HandleId`, `Pt`, `Rect`) | `@brett_lamy/ui/lib/canvas-math` | its own manifest and entry |
-| from `@brett_lamy/ui`: the storage engines: `LocalStreams` (append-stream); `DurableStreamsClient`, `CloudSync`, `useCloud`, `cloudDeviceId`, `DurableStreamsConfig`, `CloudSettings`, `CloudStatus` (durable-streams); `startSessionRecording`, `sessionCloud`, `readSession`, `deleteSession`, `clearSessions`, `currentSessionId`, `storageUsage`, `RecordedEvent`, `IndexRecord` (session-recorder); `loadJSON`, `saveJSON` (persistent-state) | `@brett_lamy/ui/lib/append-stream`, `@brett_lamy/ui/lib/durable-streams`, `@brett_lamy/ui/lib/session-recorder`, `@brett_lamy/ui/lib/persistent-state` (`@/lib/<module>` in a registry install) | the hooks stay on the root (`useSessionRecording`, `useSessions`, `useSessionCloud`, `usePersistentState`); `useCloud` goes with the `CloudSync` it takes |
-| from `@brett_lamy/ui`: `encodeQR`, `QRMatrix`, `QRLevel`, `QROptions` (qr); `GOOGLE_FONTS`, `findGoogleFont`, `fontStack`, `loadGoogleFont`, `GoogleFont`, `FontCategory` (google-fonts); `parseTime`, `loadGpuTime`, `formatOccurrence`, `timeTextSegments`, `describeRecurrence`, `rruleLine`, `TimeParseOptions`, `TimeParseResult`, `TimeOccurrence`, `TimeDiagnostic`, `TimeSpan`, `FormatOccurrenceOptions`, `TimeTextSegment` (gpu-time); `parseCronText`, `gpuCronAvailable`, `describeCronError`, `GpuCronMatch` (gpu-cron); `validateCron`, `cronProblems`, `nextCronRuns`, `describeCron`, `splitCron`, `CRON_FIELDS`, `CronValidation`, `CronFieldName`, `CronFieldInfo`, `NextCronRunsOptions`, `DescribeCronOptions` (cron); `previewFromValue`, `previewText`, `previewTokens`, `copyTextOf`, `ValuePreview`, `ValuePreviewOptions`, `ValueProperty`, `ValueMapEntry`, `ValueType`, `ValueToken`, `ValueTokenType` (object-tree-value); `formatFileSize` (file-size) | `@brett_lamy/ui/lib/qr`, `lib/google-fonts`, `lib/gpu-time`, `lib/gpu-cron`, `lib/cron`, `lib/object-tree-value`, `lib/file-size` (`@/lib/<module>` in a registry install) | each engine module on its own entry; the hooks stay on the root (`useGoogleFont`, `useGoogleFontStatus`, `useTimeParse`, `useCronParse` and their option and state types) |
+| from `@brett_lamy/ui`: the storage engines: `LocalStreams` (append-stream); `DurableStreamsClient`, `CloudSync`, `useCloud`, `cloudDeviceId`, `DurableStreamsConfig`, `CloudSettings`, `CloudStatus` (durable-streams); `startSessionRecording`, `sessionCloud`, `readSession`, `deleteSession`, `clearSessions`, `currentSessionId`, `storageUsage`, `RecordedEvent`, `IndexRecord` (session-recorder); `loadJSON`, `saveJSON` (persistent-state) | `@brett_lamy/ui/lib/append-stream`, `@brett_lamy/ui/lib/durable-streams`, `@brett_lamy/ui/lib/session-recorder`, `@brett_lamy/ui/lib/persistent-state` (`@/lib/<module>` in a registry install) | the hooks go with their engines: `useSessionRecording`, `useSessions` and `useSessionCloud` on `lib/session-recorder` (and `@brett_lamy/ui/replay`), `usePersistentState` on `lib/persistent-state` (and `@brett_lamy/ui/sync`, which has the two stream engines too); `useCloud` goes with the `CloudSync` it takes |
+| from `@brett_lamy/ui`: `encodeQR`, `QRMatrix`, `QRLevel`, `QROptions` (qr); `GOOGLE_FONTS`, `findGoogleFont`, `fontStack`, `loadGoogleFont`, `GoogleFont`, `FontCategory` (google-fonts); `parseTime`, `loadGpuTime`, `formatOccurrence`, `timeTextSegments`, `describeRecurrence`, `rruleLine`, `TimeParseOptions`, `TimeParseResult`, `TimeOccurrence`, `TimeDiagnostic`, `TimeSpan`, `FormatOccurrenceOptions`, `TimeTextSegment` (gpu-time); `parseCronText`, `gpuCronAvailable`, `describeCronError`, `GpuCronMatch` (gpu-cron); `validateCron`, `cronProblems`, `nextCronRuns`, `describeCron`, `splitCron`, `CRON_FIELDS`, `CronValidation`, `CronFieldName`, `CronFieldInfo`, `NextCronRunsOptions`, `DescribeCronOptions` (cron); `previewFromValue`, `previewText`, `previewTokens`, `copyTextOf`, `ValuePreview`, `ValuePreviewOptions`, `ValueProperty`, `ValueMapEntry`, `ValueType`, `ValueToken`, `ValueTokenType` (object-tree-value); `formatFileSize` (file-size) | `@brett_lamy/ui/lib/qr`, `lib/google-fonts`, `lib/gpu-time`, `lib/gpu-cron`, `lib/cron`, `lib/object-tree-value`, `lib/file-size` (`@/lib/<module>` in a registry install) | each engine module on its own entry. `useGoogleFont` and `useGoogleFontStatus` stay on the root; `useTimeParse` and `useCronParse`, with their option and state types, go with their engines (`lib/gpu-time`, `lib/gpu-cron`), and the three time and cron modules are on `@brett_lamy/ui/time` too |
 | from `@brett_lamy/ui`: `lexSyntax`, `tokenizeLines`, `languageFromPath`, `webgpuSupported`, `probeWebGPU`, `SyntaxHighlighter`, `SyntaxResult`, `SyntaxEngine`, `WebGPUProbe` (syntax); `SyntaxSpan` | `@brett_lamy/ui/lib/syntax` (`@/lib/syntax`); `SyntaxSpan` from `@brett_lamy/ui/lib/syntax-lexer`, the lexer CodeEditor's fallback and docstream's fences share | `CodeToken` and `CodeTokenType`, which CodeEditor's props use, stay on the root |
-| `@brett_lamy/ui/composer/composer`, `@brett_lamy/ui/composer/composer-cards` | `@brett_lamy/ui/composer` (`@/components/ui/composer`) | a folder is one module: its `index.ts` is the entry, its files are the implementation |
-| `@brett_lamy/ui/pencilkit/pencil-canvas`, `/pencil-toolbar`, `/stroke-path`, `/use-pencil-history`, `/pencilkit-annotator`, `/image-annotator`, `/constants` | `@brett_lamy/ui/pencilkit` (`@/components/ui/pencilkit`) | the same; `pencilTools`, `pencilToolLabels`, `pencilToolIcons`, `pencilInks`, `pencilWidths` and `PencilToolDef` (the tool palette's tables) are internal now |
-| from `@brett_lamy/ui`: `createAlmostNodeOpenCodeHost`, `createAgentWasmOpenCodeHost`, the `OpenCode…` host and store types | `@brett_lamy/ui/opencode` | the OpenCode entry |
+| `@brett_lamy/ui/composer/composer`, `@brett_lamy/ui/composer/composer-cards` | `@brett_lamy/ui/composer` (`@/components/ui/composer`) | a folder is one module: its `index.ts` is the entry, its files are the implementation. `@brett_lamy/ui/composer` is also the Composer library's entry, so it has Conversation, MessageScroller and ArtifactChatContainer too |
+| `@brett_lamy/ui/pencilkit/pencil-canvas`, `/pencil-toolbar`, `/stroke-path`, `/use-pencil-history`, `/pencilkit-annotator`, `/image-annotator`, `/constants` | `@brett_lamy/ui/pencilkit` (`@/components/ui/pencilkit`), or `@brett_lamy/ui/canvas` with the rest of the Canvas library | the same; `pencilTools`, `pencilToolLabels`, `pencilToolIcons`, `pencilInks`, `pencilWidths` and `PencilToolDef` (the tool palette's tables) are internal now |
+| from `@brett_lamy/ui`: `createAlmostNodeOpenCodeHost`, `createAgentWasmOpenCodeHost`, the `OpenCode…` host and store types | `@brett_lamy/ui/opencode` | the OpenCode library's entry, with the component, `OpenCode` (which is also on `@brett_lamy/ui/open-code`) |
 | `chromeStore.set(hidden)` | `setChromeHidden(hidden)` | on the root, beside `useChromeHidden` |
 | `@brett_lamy/ui/composer/composer-files`; `useComposerInternals`, `ComposerOutlet` from `@brett_lamy/ui/composer/composer`; `CalendarMonthsContext` (calendar), `useInMessageScroller` (message-scroller), `useImageAnnotatorEngine` (pencilkit/image-annotator) | internal: no npm entry (`@/components/ui/composer/composer-files`, `composer/composer-context`, `@/lib/calendar-months`, `@/lib/message-scroller-context`, `@/components/ui/pencilkit/annotator-engine` in a registry install) | the kit's wiring between its own modules |
 
@@ -1044,8 +1239,8 @@ FloatingChat on its own is `<ArtifactChatContainer presentation="floating">` ove
 | `button` | `isPending` | Return a Promise from `onClick`: the button is pending (`data-pending`, `aria-busy`) until it settles. There is no `pending` prop. |
 | `button` | `ButtonProps` (react-aria props + `title`) | UI SDK `Button` props + `variant` (`default`, `secondary`, `outline`, `ghost`, `quiet`, `contrast`, `destructive`, `plain`, `link`), `size`. **care**: `link` is now a link in running text (the line's size and weight, no height or padding, `size` ignored); a bar text button ("Cancel", "Edit") is `variant="plain"`. New: `focusableWhenDisabled`, `pendingAnnouncement`, `render`, `ButtonVariant`, `ButtonSize`. `type` still defaults to `"button"`. |
 | `button` | `active` (a quiet tool that stays on) | `Toggle variant="quiet" pressed` (see [the table above](#components-that-merged-moved-or-were-renamed)) |
-| `plain-button` | `PlainButton onPress` | UI SDK's `Button`, unstyled: `import { Button as SdkButton } from '@ui-sdk/react/button'`, `onClick` |
-| `plain-button` | `PlainToggleButton isSelected / defaultSelected / onChange` | UI SDK's `Toggle` (`import { Toggle as SdkToggle } from '@ui-sdk/react/toggle'`): `pressed` / `defaultPressed` / `onPressedChange(pressed, details)`; in a ToggleGroup it takes `value` (was `id`) |
+| `plain-button` | `PlainButton onPress` | UI SDK's `Button`, unstyled: `import { Button as SdkButton } from '@brett_lamy/ui/sdk/react/button'`, `onClick` |
+| `plain-button` | `PlainToggleButton isSelected / defaultSelected / onChange` | UI SDK's `Toggle` (`import { Toggle as SdkToggle } from '@brett_lamy/ui/sdk/react/toggle'`): `pressed` / `defaultPressed` / `onPressedChange(pressed, details)`; in a ToggleGroup it takes `value` (was `id`) |
 | `toggle` | `Toggle isSelected / defaultSelected / onChange` | `pressed` / `defaultPressed` / `onPressedChange(pressed, details)`. New: `variant="quiet"`, sizes `icon-sm` / `icon` / `icon-lg`, `ToggleIcon`, `createToggleController`. |
 | `toggle-group` → `toggle` | `ToggleGroup` from `@/components/ui/toggle-group` | the same names from `@/components/ui/toggle` |
 | `toggle` (ToggleGroup) | `selectionMode="single" \| "multiple"` | `multiple` (single by default) |
@@ -1160,7 +1355,7 @@ For Checkbox and Radio, a `className` that styled the old row (gap, text size, o
 | `sql-editor` | `useSqlHistory(key?, max?)` on raw `localStorage`, this tab only | the same signature on UI SDK's `createLocalStorage`: the same JSON array under the same key, and it follows other tabs' writes; `clear()` removes the key |
 | `spreadsheet` | `onChange(rows)`, `isReadOnly` | `onValueChange(rows, details)` (`reason` `cell-edit`, `paste`, `cut`, `clear`, `add-row`, `undo`, `redo`, `imperative`; `details.cancel()` refuses an uncontrolled change), `readOnly`; the cell editor slot is `spreadsheet-editor` |
 | `spreadsheet` | `ref` to a `SpreadsheetHandle` (`focus`, `select(anchor, focus?)`, `undo`, `redo`) | `controller` from `createSpreadsheetController()`: `focus`, `select(anchor, end?)`, `edit(cell, text)`, `paste(text)`, `clear()`, `copy()`, `sort(col, dir?)`, `undo`, `redo`, `addRow`, `setColumnWidths`; each returns whether it did anything |
-| `spreadsheet` | types `SpreadsheetCell { row, column }`, `SpreadsheetSelection { anchor, focus }` | UI SDK's `GridCell { row, col }` and `CellRange { anchor, end }` from `@ui-sdk/core` |
+| `spreadsheet` | types `SpreadsheetCell { row, column }`, `SpreadsheetSelection { anchor, focus }` | UI SDK's `GridCell { row, col }` and `CellRange { anchor, end }` from `@brett_lamy/ui/sdk/core` |
 | `spreadsheet` | — | New: `columnWidths` / `defaultColumnWidths` / `onColumnWidthsChange(widths, details)`, types `SpreadsheetValueChangeReason`, `SpreadsheetColumnWidthsChangeReason` |
 | `spreadsheet` | the grid focused with `aria-activedescendant`; a `[data-slot=spreadsheet-selection]` overlay; A1 selected before focus | roving focus on the `gridcell`s (read `document.activeElement`); cells carry `aria-selected`, `data-selected`, `data-active` and `data-range-edge` (`top right bottom left`) to style the outline from; nothing is active until focus enters. The sort result is announced with `announce()`. |
 | `spreadsheet` | a paste without tabs guessed a CSV delimiter | a paste is tab-separated, as spreadsheets copy |
@@ -1603,7 +1798,7 @@ For a target you hit-test yourself (a canvas item, a map pin), call `controller.
 
 [Calendar](https://blamy.github.io/ui/#/calendar), [DateInput](https://blamy.github.io/ui/#/date-input) (was DateField and TimeField), [DatePicker](https://blamy.github.io/ui/#/date-picker), [NaturalTimeInput](https://blamy.github.io/ui/#/natural-time-input) (was TimeInput).
 
-Values are ISO strings, not `@internationalized/date` objects; `null` means empty. Helpers come from `@ui-sdk/core/date` (`todayDate`, `addDays`, `addMonths`, `toISODate`, `formatDate`…). Dates are Gregorian only, and there is no time-zone segment.
+Values are ISO strings, not `@internationalized/date` objects; `null` means empty. Helpers come from UI SDK's date entry, `@brett_lamy/ui/sdk/core/date` (`todayDate`, `addDays`, `addMonths`, `toISODate`, `formatDate`…). Dates are Gregorian only, and there is no time-zone segment.
 
 | 5.x | 6.0 |
 | --- | --- |
@@ -1662,7 +1857,7 @@ Values are ISO strings, not `@internationalized/date` objects; `null` means empt
 
 [ColorPicker](https://blamy.github.io/ui/#/color-picker), with its "ColorInput" section (was ColorField).
 
-Colors are CSS strings, not `Color` objects. Color math comes from `@ui-sdk/core/color` (`parseColor`, which returns `null` on bad input, `formatColor`, `convertColor`, `contrastRatio`, `mixColor`, `isInGamut`, `toGamut`). The `color-field` module is gone: its parts are parts of `color-picker`, under UI SDK's names.
+Colors are CSS strings, not `Color` objects. Color math comes from UI SDK's color entry, `@brett_lamy/ui/sdk/core/color` (`parseColor`, which returns `null` on bad input, `formatColor`, `convertColor`, `contrastRatio`, `mixColor`, `isInGamut`, `toGamut`). The `color-field` module is gone: its parts are parts of `color-picker`, under UI SDK's names.
 
 | 5.x | 6.0 |
 | --- | --- |
@@ -1837,7 +2032,7 @@ const [q] = useState(() => createToaster())
 
 [FileUpload](https://blamy.github.io/ui/#/file-upload), [useFileUpload](https://blamy.github.io/ui/#/use-file-upload).
 
-Built on UI SDK's FileInput. Every part handles plain `File`s: `FileEntry` is gone, and a file's folder path is `relativePath(file)` from `@ui-sdk/react/file-input`.
+Built on UI SDK's FileInput. Every part handles plain `File`s: `FileEntry` is gone, and a file's folder path is `relativePath(file)` from `@brett_lamy/ui/sdk/react/file-input`.
 
 | Module | 5.x | 6.0 |
 | --- | --- | --- |
@@ -1889,8 +2084,8 @@ Every part takes UI SDK's Command part names with the `CommandMenu` prefix, and 
 | `onPageChange(page, pages)` | `onPagesChange(pages, details)` (`[]` on the first page) |
 | `menuRef`, `CommandMenuApi` | `controller={createCommandMenuController()}`; `useCommandMenu()` returns `{ query, pages, page, controller }` |
 | `useCommandActive()` | `useCommandMenuValue()` |
-| `CommandEmpty` text, `CommandHighlight`, `commandMatch`, `CommandMatch` | `CommandMenuEmpty` draws the kit's `EmptyState` (`icon`, `title` or text children, `description`, `action`); string titles bold their matches; `matchRanges` / `fuzzyScore(text, query)` from `@ui-sdk/core/text-match` |
-| `useHotkey(hotkey, handler, enabled)`, `matchesHotkey` | `useShortcut(enabled ? 'mod+k' : null, handler)` from `@ui-sdk/react/shortcuts` |
+| `CommandEmpty` text, `CommandHighlight`, `commandMatch`, `CommandMatch` | `CommandMenuEmpty` draws the kit's `EmptyState` (`icon`, `title` or text children, `description`, `action`); string titles bold their matches; `matchRanges` / `fuzzyScore(text, query)` from `@brett_lamy/ui/sdk/core/text-match` |
+| `useHotkey(hotkey, handler, enabled)`, `matchesHotkey` | `useShortcut(enabled ? 'mod+k' : null, handler)` from `@brett_lamy/ui/sdk/react/shortcuts` |
 | row `data-active` | `data-highlighted`; the root has `data-depth` and `data-direction` |
 
 ```tsx
@@ -1985,7 +2180,7 @@ The hooks the 5.x containers were built from are gone, with UI SDK's behaviors, 
 | `usePullToRefresh` | `bindPullToRefresh(scroller, options)` from `@/lib/pull-to-refresh`, or `NavigationStackContent onRefresh` |
 | `useBackHistory`, `armBackHistory` | `bindBack(el, { onBack })` from `@/lib/back` |
 | `useScrollHidden` | `useChromeHidden()` from `@/lib/theme`; for floating chrome, `useHideOnScroll(hideOnScroll, scrollRef)` from `@/lib/scroll-edge` |
-| `useSheetDrag`, `SHEET_TAP_SLOP`, `SHEET_MINIMIZE_TRAVEL`, `SheetDragOptions`, `SheetDragState` | a `Drawer` with `snapPoints`, `modalAbove`, `DrawerHandle` and `--drawer-progress` (see `floating-sheet.tsx`); any other vertical drag is `bindDrag` from `@ui-sdk/core` |
+| `useSheetDrag`, `SHEET_TAP_SLOP`, `SHEET_MINIMIZE_TRAVEL`, `SheetDragOptions`, `SheetDragState` | a `Drawer` with `snapPoints`, `modalAbove`, `DrawerHandle` and `--drawer-progress` (see `floating-sheet.tsx`); any other vertical drag is `bindDrag` from `@brett_lamy/ui/sdk/core` |
 | `useDrawerSwipe` | UI SDK's Drawer swipes shut on its own; AdaptivePane's `swipeToOpen` opens it |
 | `navigationPush` | removed |
 | `useControllableState(value, defaultValue, onChange)` → `onChange(next)` | `useControllableChange<T, Reason>(value, defaultValue, onChange)` → `onChange(next, details)`; the setter takes `(next, { reason, event })` and returns whether it happened (`false` for the same value or a cancel) |
@@ -2206,7 +2401,7 @@ The sheet is a bottom UI SDK Drawer in its own layer host, with snap points at t
 | `ArtifactChatContainer.Context`, `.useContainer`, `useArtifactChatContainer().width`, `.compact`, `.chatOpen`, `.setChatOpen` | `useArtifactChatContainer()`: `.sizeClass`, `.presentation === 'floating'`, `.open`, `.setOpen(open, given?)`, `.composing`, `.minimized` |
 | root `data-layout="compact"`; the content was a `<main>` | `data-presentation="floating" \| "split"`; a `div` (pass `role="main"` when it is the page's main) |
 | an open chat as a separate layer with a focusable "Close" scrim | the FloatingSheet's layer: Escape and a press outside bring it to rest, and the scrim is decorative |
-| — | New: `chatLabel`, `gutter` (12), `fabIcon`, `artifactChatContainerVariants` in the barrel; the root takes every `div` prop and `ref` |
+| — | New: `chatLabel`, `gutter` (12), `fabIcon`, and `artifactChatContainerVariants` exported beside the parts; the root part takes every `div` prop and `ref` |
 
 ## SideDrawer, EdgeDrawer and AdaptivePane
 
@@ -2545,18 +2740,18 @@ Nothing here replaces something you have; each page says what it is for and when
 
 | What | Where |
 | --- | --- |
-| [Diagram](https://blamy.github.io/ui/#/diagram): nodes, edges and regions on a Canvas, from plain data; read-only, or an editor with selection, connecting, undo, a controller and agent actions. ELK lays it out when asked (an optional peer) | `@brett_lamy/ui/diagram`, root |
-| [DiagramFrame](https://blamy.github.io/ui/#/diagram-frame): a board with a panel beside it, a drawer, or a page pushed over it, from the frame's own size class | `@brett_lamy/ui/diagram-frame`, root |
-| [StateDiagram](https://blamy.github.io/ui/#/state-diagram): an XState machine drawn, simulated and edited (`xstate`, an optional peer) | `@brett_lamy/ui/state-diagram`, root |
-| [CloudflareDiagram](https://blamy.github.io/ui/#/cloudflare-diagram): a system of Cloudflare's services, from a catalog, `wrangler.jsonc` or a workerd config; and the [Cloudflare Studio](https://blamy.github.io/ui/#/blocks) block | `@brett_lamy/ui/cloudflare` only (not the root, so no other import reaches the catalog) |
+| [Diagram](https://blamy.github.io/ui/#/diagram): nodes, edges and regions on a Canvas, from plain data; read-only, or an editor with selection, connecting, undo, a controller and agent actions. ELK lays it out when asked (an optional peer) | `@brett_lamy/ui/diagram`, the Diagram library's entry |
+| [DiagramFrame](https://blamy.github.io/ui/#/diagram-frame): a board with a panel beside it, a drawer, or a page pushed over it, from the frame's own size class | `@brett_lamy/ui/diagram-frame`, `@brett_lamy/ui/diagram` |
+| [StateDiagram](https://blamy.github.io/ui/#/state-diagram): an XState machine drawn, simulated and edited (`xstate`, an optional peer) | `@brett_lamy/ui/state-diagram`, `@brett_lamy/ui/diagram` |
+| [CloudflareDiagram](https://blamy.github.io/ui/#/cloudflare-diagram): a system of Cloudflare's services, from a catalog, `wrangler.jsonc` or a workerd config; and the [Cloudflare Studio](https://blamy.github.io/ui/#/blocks) block | `@brett_lamy/ui/cloudflare` only (not `@brett_lamy/ui/diagram` and not the root, so no other import reaches the catalog) |
 | [DataTable](https://blamy.github.io/ui/#/data-table): the virtualized table under RequestTable and the SQL console's results | `@brett_lamy/ui/data-table`, root |
 | [Toolbar](https://blamy.github.io/ui/#/toolbar): one tab stop for a row of controls, floating or as the iOS bottom bar; `ToolbarToggle` for a tool that stays on (MarkdownEditor's format buttons) | `@brett_lamy/ui/toolbar`, root |
 | [EmptyState](https://blamy.github.io/ui/#/empty-state): what every `emptyState` shows by default | `@brett_lamy/ui/empty-state`, root |
-| [Swap](https://blamy.github.io/ui/#/swap): content that changes in place, by sliding or popping | `@brett_lamy/ui/swap`, root |
-| [Field](https://blamy.github.io/ui/#/field), [Listbox](https://blamy.github.io/ui/#/listbox), [SearchInput](https://blamy.github.io/ui/#/search-input), [DateInput](https://blamy.github.io/ui/#/date-input), [NaturalTimeInput](https://blamy.github.io/ui/#/natural-time-input), [QRCode](https://blamy.github.io/ui/#/qr-code): the modules that replace TextField, ListBox, SearchField, DateField, TimeInput and QRSvg, with new APIs | their own entries, root |
+| [Swap](https://blamy.github.io/ui/#/swap): content that changes in place, by sliding or popping | `@brett_lamy/ui/swap`, `@brett_lamy/ui/motion`, root |
+| [Field](https://blamy.github.io/ui/#/field), [Listbox](https://blamy.github.io/ui/#/listbox), [SearchInput](https://blamy.github.io/ui/#/search-input), [DateInput](https://blamy.github.io/ui/#/date-input), [NaturalTimeInput](https://blamy.github.io/ui/#/natural-time-input), [QRCode](https://blamy.github.io/ui/#/qr-code): the modules that replace TextField, ListBox, SearchField, DateField, TimeInput and QRSvg, with new APIs | their own entries; the root, but for DateInput and NaturalTimeInput, which are on `@brett_lamy/ui/time` |
 | `AlertDialog` and `createConfirm()`, on the [Dialog](https://blamy.github.io/ui/#/dialog) page; `AvatarGroup` in a module of its own | `@brett_lamy/ui/dialog`, `@brett_lamy/ui/avatar-group`, root |
 | Controllers for every stateful component (`createDialogController()`, `createTreeController()`…), and agent actions on every primitive ([Agent-ready components](https://blamy.github.io/ui/#/agent-ready)) | with each component |
-| The behaviors the containers are built from, documented for parts of your own: [Behaviors](https://blamy.github.io/ui/#/behaviors) and [The kit's behaviors](https://blamy.github.io/ui/#/behaviors-kit) | `@ui-sdk/core`, `@/lib/<behavior>` |
+| The behaviors the containers are built from, documented for parts of your own: [Behaviors](https://blamy.github.io/ui/#/behaviors) and [The kit's behaviors](https://blamy.github.io/ui/#/behaviors-kit) | `@brett_lamy/ui/sdk/core`, `@/lib/<behavior>` |
 
 The 5.x docs pages on react-aria's hooks (`aria-hooks`, `aria-press`, `aria-focus`…) are gone with react-aria; the Behaviors pages cover what UI SDK offers in their place. The old `docstream` page is [MarkdownView](https://blamy.github.io/ui/#/markdown-view)'s, and `#/docstream` is now docstream's own documentation.
 
@@ -2689,7 +2884,7 @@ export function Fetching() {
 | On a board under 420 px, the first view centered the first entry marker | every board opens on its top-start corner; what's selected or current is brought in by `keepInView` (`lib/diagram-drawing`, with `firstView` and `drawDiagram`) |
 | What has the eye: the current state and the edge just taken | also the labels `pressable` names (a simulation's sendable events) when they fit, and the top-start corner when it's in view and both can be read |
 | A port no edge claims was given to ELK | it isn't: a dot to connect by changes nothing in the layout |
-| The model's functions and types from `@brett_lamy/ui` (`addConnection`, `deleteItems`, `edgeGeometries`, `indexDiagram`, `rerouteOrthogonal`, `NOTHING_SELECTED`, `ConnectorRoute`, `DiagramIndex`…) | `@brett_lamy/ui/lib/diagram-model` (`@/lib/diagram-model`), the same names; the types Diagram's props take (`DiagramNode`, `DiagramEdge`, `DiagramPort`, `DiagramSelection`, `DiagramConnection`…) are on the root too |
+| The model's functions and types from `@brett_lamy/ui` (`addConnection`, `deleteItems`, `edgeGeometries`, `indexDiagram`, `rerouteOrthogonal`, `NOTHING_SELECTED`, `ConnectorRoute`, `DiagramIndex`…) | `@brett_lamy/ui/lib/diagram-model` (`@/lib/diagram-model`), the same names; `@brett_lamy/ui/diagram`, the library's entry, has the model beside the components |
 | `layoutDiagram`, `useDiagramLayout`, `createDiagramLayoutEngine`, `DIAGRAM_ELK_OPTIONS`… and their types from `@brett_lamy/ui` | `@brett_lamy/ui/lib/diagram-layout` (`@/lib/diagram-layout`), and `@brett_lamy/ui/lib/diagram-layout/react` for `useDiagramLayout` |
 | Layout `direction: 'RIGHT' \| 'DOWN' \| 'LEFT' \| 'UP'`, default `RIGHT` | `'down' \| 'right' \| 'up' \| 'left'`, default `down` (pass `'right'` for the old run); `density` (`diagramElkOptions(density)`); `board` and `wrapDiagram` to wrap a long run into columns |
 | From `@brett_lamy/ui`: the text measuring (`measureText`, `estimateText`, `DIAGRAM_TEXT_CLASS`, `DiagramTextKind`…), the gestures (`hitTestDiagram`, `stepDiagramGesture`, `DRAG_THRESHOLD`…) and the keyboard's helpers (`describeNode`, `focusOrder`, `stepFocus`…) | internal (`@/lib/diagram-text`, `@/lib/diagram-gesture`, `@/lib/diagram-keyboard` in a registry install); pass `describeNode` / `describeEdge` to change what a screen reader hears |
@@ -2703,7 +2898,7 @@ export function Fetching() {
 
 | On the branch | 6.0 |
 | --- | --- |
-| `machine: MachineLike`; types `MachineConfig`, `MachineImplementations`, `MachineStateNode`, `MachineTransition` | `StateMachineLike`, `StateMachineConfig`, `StateMachineImplementations` (the root and `@brett_lamy/ui/state-diagram`); `StateMachineNode`, `StateMachineTransition` (`@brett_lamy/ui/lib/state-diagram-model`) |
+| `machine: MachineLike`; types `MachineConfig`, `MachineImplementations`, `MachineStateNode`, `MachineTransition` | `StateMachineLike`, `StateMachineConfig`, `StateMachineImplementations` (`@brett_lamy/ui/state-diagram` and `@brett_lamy/ui/diagram`); `StateMachineNode`, `StateMachineTransition` (`@brett_lamy/ui/lib/state-diagram-model`) |
 | `config` without `onConfigChange` (edits held until `config` changed) | `config` is always controlled; `defaultConfig` for one the diagram keeps; `source` for a machine's source text, read without running it |
 | `onConfigChange(config)` | `onConfigChange(config, details)`: `details.reason` `edit`, `undo` or `redo`, and `details.cancel()` when uncontrolled |
 | `direction: 'RIGHT' \| …`, default `RIGHT` | `'down' \| 'right' \| 'up' \| 'left'`, default `down`; `density`; `background` defaults to `grid` and `minimap` to `'auto'` |
@@ -2716,7 +2911,7 @@ export function Fetching() {
 | Undo and Redo in the panel (`edit-undo`, `edit-redo`), ⌘Z on the board | The `DiagramToolbar`'s and the Diagram's ⌘Z, driving the config's history through `<Diagram history>` |
 | `data-slot="state-diagram-error"` | The Diagram's `error`, `data-slot="diagram-error"` |
 | The panel's fields with their own error text | Each a `Field` (`data-field="name"`, `event`, `guard`…) with its refusal as a `FieldError` |
-| From `@brett_lamy/ui`: `machineToDraft`, `describeEvent`, the edits (`addState`, `tryEdit`…), the simulation (`createSimulation`…), types `StateNodeData`, `StateEdgeData` | `@brett_lamy/ui/lib/state-diagram-model`, `-edit` and `-simulation`; the root keeps StateDiagram, its props' types and `SimulationStandIns` |
+| From `@brett_lamy/ui`: `machineToDraft`, `describeEvent`, the edits (`addState`, `tryEdit`…), the simulation (`createSimulation`…), types `StateNodeData`, `StateEdgeData` | `@brett_lamy/ui/lib/state-diagram-model`, `-edit` and `-simulation`; `@brett_lamy/ui/state-diagram` keeps StateDiagram, its props' types and `SimulationStandIns`, and `@brett_lamy/ui/diagram` has all of them |
 | What `machineToDraft` drew: `label` / `detail`; node kinds `compound`, `parallel`, `final`, and `initial` (a marker node and its edge); edge kinds; `EVENT [guard]` labels | Diagram's anatomy, through the `STATE_NODE_LOOK` / `STATE_EDGE_LOOK` preset: a state's card has Entry actions, Exit actions, Invoke, Tags and Meta sections, and the machine's card its Context; parallel is `trailing`, history an `H` / `H*` glyph, final a `stop` glyph; the initial state has `entry: true` (its parent's `data.initial` names it); a transition's label is its event, with its guard and actions as chips and a quiet line for `reenters` or `2 targets`; the targets past the first fork from that label (`forkOf`). What a state or a transition is in XState's terms is `data.type` / `data.transition`; `transitionNotation(edge.data)` writes `EVENT [guard] / action` |
 | `StateNodeData.invokes: string[]`; `StateEdgeData.guard: string` | `invoke: StateInvoke[]` (`src`, `id`, `input`), and `entry`, `exit`, `tags`, `description`, `meta`, `history`, `initial`, `context`; `guard: StateGuard` (`name`, `text`, `params`, `composed`), and `name`, `actions`, `delay`, `actor`, `reenter`, `targets` |
 | Edge names `after 5000`, `done` / `error` for an actor | `after 5,000 ms`; `verifyToken: done` / `verifyToken: error` |

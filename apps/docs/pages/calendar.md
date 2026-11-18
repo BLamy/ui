@@ -6,7 +6,7 @@ A month grid for picking a day, several days, or a start and an end. It is UI SD
 {% tab title="shadcn CLI" %}
 {% command %}npx shadcn@latest add https://blamy.github.io/ui/r/calendar.json{% endcommand %}
 
-Copies the source into your project's `components/ui/` (with the parts it is built from) and adds BL UI's tokens to your CSS — no runtime package. It is yours to edit. Import from your alias:
+Copies the source into your project's `components/ui/` (with the parts it is built from), adds BL UI's tokens to your CSS and installs `@brett_lamy/ui` for UI SDK, which the copied files import by the package's name (`@brett_lamy/ui/sdk/…`). The copied source is yours to edit. Import from your alias:
 
 ```tsx
 import { Calendar } from '@/components/ui/calendar'
@@ -15,7 +15,7 @@ import { Calendar } from '@/components/ui/calendar'
 {% tab title="npm" %}
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 
-Import the stylesheet once at your app's entry, then the parts from their module:
+Import the stylesheet once at your app's entry, then the parts from their module (the Time library's entry, `@brett_lamy/ui/time`, has them too):
 
 ```tsx
 import '@brett_lamy/ui/styles.css'
@@ -25,7 +25,7 @@ import { Calendar } from '@brett_lamy/ui/calendar'
 {% endtab %}
 {% endtabs %}
 
-The parts a calendar is built from come from the same module (`@/components/ui/calendar`, or the package root): `CalendarHeader`, `CalendarHeading`, `CalendarPrevious`, `CalendarNext`, `CalendarMonthSelect`, `CalendarYearSelect`, `CalendarMonths`, `CalendarGrid`, `CalendarGridHeading`, `CalendarWeekdays`, `CalendarWeekday`, `CalendarWeeks` and `CalendarDay`, with `createCalendarController`.
+The parts a calendar is built from come from the same module (`@/components/ui/calendar`; on npm `@brett_lamy/ui/calendar`, or the Time library's entry, `@brett_lamy/ui/time`): `CalendarHeader`, `CalendarHeading`, `CalendarPrevious`, `CalendarNext`, `CalendarMonthSelect`, `CalendarYearSelect`, `CalendarMonths`, `CalendarGrid`, `CalendarGridHeading`, `CalendarWeekdays`, `CalendarWeekday`, `CalendarWeeks` and `CalendarDay`, with `createCalendarController`.
 
 ## Dates are ISO strings
 
@@ -37,7 +37,7 @@ A calendar does not use `Date`. A date is a string such as `"2026-09-09"`: a cal
 | `multiple` | A sorted array of dates. |
 | `range` | `[start, end]`, or `null`. |
 
-No date library is needed. For arithmetic and labels use the helpers in `@ui-sdk/core/date`, which is installed with the calendar: `todayDate()`, `addDays`, `addMonths`, `daysBetween`, `weekday`, `formatDate`, and `toISODate` to bring in a `Date` or any `{ year, month, day }` object. Dates are always Gregorian; a locale's own year system (Buddhist, Japanese era) can still appear in the labels.
+No date library is needed. For arithmetic and labels use the helpers in `@brett_lamy/ui/sdk/core/date`, UI SDK's date entry, which comes with the package: `todayDate()`, `addDays`, `addMonths`, `daysBetween`, `weekday`, `formatDate`, and `toISODate` to bring in a `Date` or any `{ year, month, day }` object. Dates are always Gregorian; a locale's own year system (Buddhist, Japanese era) can still appear in the labels.
 
 ## Anatomy
 

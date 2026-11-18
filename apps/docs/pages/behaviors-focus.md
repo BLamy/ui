@@ -2,14 +2,14 @@
 
 UI SDK's focus behaviors give a group one tab stop and arrow-key movement (`createRovingFocus` for a row or a list, `createGridFocus` for rows and columns), find items by typing (`createTypeahead`), choose a target by where it sits on screen (`spatialMove`, `nearestInDirection`), and put focus somewhere sensible when the focused element moves or disappears (`createFocusRecovery`, `keepFocus`). Next to them sit `inputHints`, which picks a phone's keyboard for a field, and the shortcut helpers, which match and label `mod+b` for the user's platform. They are listed with the other behaviors in the [behaviors overview](https://blamy.github.io/ui/#/behaviors); the upstream reference is [Focus and Keys](https://ui-sdk.dev/docs/core/behaviors/focus).
 
-Nothing to install: they come from `@ui-sdk/core`, which BL UI already depends on. Use them inside a primitive you define with `definePrimitive` and render with `createParts` (see [Built on UI SDK](https://blamy.github.io/ui/#/ui-sdk)): never hand-roll a roving tabindex or a typeahead.
+Nothing to install: they come from UI SDK's core, which ships inside the package as `@brett_lamy/ui/sdk/core`. Use them inside a primitive you define with `definePrimitive` and render with `createParts` (see [Built on UI SDK](https://blamy.github.io/ui/#/ui-sdk)): never hand-roll a roving tabindex or a typeahead.
 
 ```ts
 import {
   createRovingFocus, createGridFocus, spatialMove, nearestInDirection, createTypeahead, isTypeaheadKey, labelOf,
   createFocusRecovery, keepFocus, inputHints, isFocusFromKeyboard,
   matchesShortcut, formatShortcut, ariaKeyshortcuts,
-} from '@ui-sdk/core'
+} from '@brett_lamy/ui/sdk/core'
 ```
 
 ## Already done for you
@@ -138,4 +138,4 @@ formatShortcut('mod+b')   // "⌘B" on Apple, "Ctrl+B" elsewhere (wrapped in a l
 ariaKeyshortcuts('mod+b') // "Meta+B" or "Control+B"
 ```
 
-`matchesShortcut` only checks the keys (letters match by physical key when the layout types another character, such as Option+N on a Mac); your handler prevents the default and acts. The labels depend on the platform, so set them after mount (in a slot's `bind`, as the toolbar example does for `aria-keyshortcuts`) or use `Kbd keys="mod+b"`, which renders the same text on the server and the first client render. In tests, `setPlatform('apple')` from `@ui-sdk/core/testing` fixes the platform. For app-wide shortcuts, `registerShortcut` from `@ui-sdk/react/shortcuts` is what `CommandMenu` uses.
+`matchesShortcut` only checks the keys (letters match by physical key when the layout types another character, such as Option+N on a Mac); your handler prevents the default and acts. The labels depend on the platform, so set them after mount (in a slot's `bind`, as the toolbar example does for `aria-keyshortcuts`) or use `Kbd keys="mod+b"`, which renders the same text on the server and the first client render. In tests, `setPlatform('apple')` from `@brett_lamy/ui/sdk/core/testing` fixes the platform. For app-wide shortcuts, `registerShortcut` from `@brett_lamy/ui/sdk/react/shortcuts` is what `CommandMenu` uses.

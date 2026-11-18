@@ -1,10 +1,12 @@
 ---
-description: How BL became one repository and one library with docstream inside it, what 6.0 publishes, and how @brett_lamy/ui splits next.
+description: How BL became one repository and one npm package, with every library an entry of @brett_lamy/ui, and what is left to do.
 ---
 
 # The plan
 
-BL started as three repositories: `@brett_lamy/ui` here, and docstream and docstream-editor beside it, each with its own docs site, publish workflow and release order to get right. Now it is one repository and one library: docstream and its editor are part of `@brett_lamy/ui`, the site you're reading hosts every library's docs, and the next step is to split the parts an app may not need into packages of their own, so an app installs what it uses and every part has docs of its own.
+BL started as three repositories: `@brett_lamy/ui` here, and docstream and docstream-editor beside it, each with its own docs site, publish workflow and release order to get right. Now it is one repository and one npm package. Docstream, its editor and our build of UI SDK are inside `@brett_lamy/ui`, every library is an entry of it (`@brett_lamy/ui/time`, `@brett_lamy/ui/audio`), and the package root is the core. An app installs one thing and bundles only the entries it imports. The owner publishes one thing.
+
+The plan used to end somewhere else: `@brett_lamy/ui` split into about twenty npm packages, with the root re-exporting everything for a major version and a 7.0 that removed the re-exports. It ends in 6.0 instead, with the libraries as entries of one package. [Why one package](#why-one-package) says why.
 
 ## Where things stand
 
@@ -16,71 +18,87 @@ docstream and docstream-editor moved into this repo **with their full history** 
 {% endstep %}
 
 {% step %}
-### One library — done
+### Docstream inside the library — done
 
 On 2026-11-16 docstream and its editor became **part of `@brett_lamy/ui`**: their sources are `packages/ui/src/docstream` and `packages/ui/src/docstream-editor`, every entry they had is the same module under the library's name (`@brett_lamy/ui/docstream`, `@brett_lamy/ui/docstream/site`, `@brett_lamy/ui/docstream-editor`…), and they are built, tested and versioned with the kit. Their docs and live examples live in `apps/docstream-playground` and `apps/docstream-editor-playground`. The npm packages `@brett_lamy/docstream` and `@brett_lamy/docstream-editor` **stop at 2.0.1**; see [Migrating](06-migration.md).
 {% endstep %}
 
 {% step %}
-### @brett_lamy/ui 6.0 — next
+### UI SDK inside the package — in 6.0
 
-The release this site describes: every interactive part on [UI SDK](https://ui-sdk.dev), the components consolidated so every concept has one name, a subpath entry per module (`@brett_lamy/ui/dialog`), docstream inside, and the Diagram family (Diagram, DiagramFrame, StateDiagram, CloudflareDiagram). It publishes three packages: `@brett_lamy/ui` and the two UI SDK wrappers it depends on, `@brett_lamy/ui-sdk-core` and `@brett_lamy/ui-sdk-react`.
+Every interactive part is built on [UI SDK](https://ui-sdk.dev), from our fork in `vendor/ui-sdk`. The package ships its own build of it: the library's build copies the compiled fork into `dist/vendor/ui-sdk`, with its license, and every UI SDK entry is an entry of the package. Wherever UI SDK's docs say `@ui-sdk/…`, an app writes `@brett_lamy/ui/sdk/…`. There is no second package to install or publish, and one copy of UI SDK's layer stack and focus state in a page.
 {% endstep %}
 
 {% step %}
-### Trusted publishing — by the owner
+### Libraries as entries — in 6.0
 
-npm's trusted publishing lets `publish.yml` publish each package with no token, and attaches provenance. It is configured per package on npmjs.com, and a package has to exist before it can be configured. [Publishing](03-publishing.md) lists every package and the exact settings.
+The [package map](01-packages.md) is no longer a plan for packages: it is the list of the libraries inside the one package. `apps/docs/src/site/libraries.ts` gives each library the units of `packages/ui/src` it owns, and the registry build writes an entry for each from it: `@brett_lamy/ui/tokens`, `/motion`, `/icons`, `/time`, `/canvas`, `/diagram`, `/audio`, `/video`, `/markdown`, `/composer`, `/replay`, `/sql`, `/pglite`, `/filter`, `/sync`, `/vault` and `/tailscale`, beside the hand-written `/cloudflare` and `/opencode`, docstream's entries and UI SDK's. A name has two import paths and no more: its module's entry (`@brett_lamy/ui/waveform`) and its library's (`@brett_lamy/ui/audio`). The [module map](02-module-map.md) gives every unit its library, and a test holds the list to the real import graph.
 {% endstep %}
 
 {% step %}
-### Split @brett_lamy/ui
+### The root is the core — in 6.0
 
-The parts an app may not need move into the libraries the [package map](01-packages.md) describes: tokens, motion and icons beneath the core, and feature packages above it (time, canvas, diagram, media, composer, sql, pglite, filter, sync, vault, tailscale, opencode). Docstream and its editor stay in `@brett_lamy/ui`: the docs, MarkdownView, MarkdownEditor and the Composer all run on them. `@brett_lamy/ui` keeps re-exporting everything for a major version, so no import breaks on the way. The [module map](02-module-map.md) gives every unit its home, and a test already holds the plan to the real import graph.
+`@brett_lamy/ui` itself exports the core library and the foundation under it (Tokens, Motion, Icons), and nothing of another library. So importing the root never loads the Markdown editor, a diagram or a video timeline. The registry build fails when the root re-exports a module that belongs to another library. This is what the old plan called 7.0; it ships in 6.0, which is a breaking release already.
 {% endstep %}
 
 {% step %}
-### Docs for every library
+### A shadcn item per library — in 6.0
 
-Each package gets a folder of Markdown and examples, published here with docstream's DocsSite — the way docstream's own docs work today. The ui docs pages move into the libraries they describe, and the [coverage gaps](04-docs.md) get pages.
+Every part still installs as source with the shadcn CLI. The registry adds one item per library, `library-<entry>` (`library-ui` is the core), which installs every item of that library. UI SDK and docstream are not copied: an item whose files use either installs `@brett_lamy/ui` and imports them by the package's name.
 {% endstep %}
 
 {% step %}
-### Tidy the repository
+### Sizes checked — in 6.0
 
-`apps/docs` becomes `apps/site`, `registry/` becomes `blocks/`, the desktop wrappers move from `tools/` to `apps/`, and the old docstream repositories are archived with a pointer here. See [Repository layout](05-repo-layout.md).
+"You only ship what you import" is measured. `pnpm size` bundles every library entry from the built package the way an app's bundler would, and CI fails when an entry grows past its budget or when a name imported through a library entry or the root costs more than through its own module entry. The [package map](01-packages.md) shows what each entry loads.
 {% endstep %}
 
 {% step %}
-### @brett_lamy/ui 7.0
+### Publish 6.0 — next
 
-The re-exports go. `@brett_lamy/ui` is the core — primitives, containers, docstream and its editor — and nothing else.
+One package, one `npm publish`. Before it, the owner adds this repository's `publish.yml` as the trusted publisher of `@brett_lamy/ui` on npmjs.com; after it, the two docstream packages are deprecated with a pointer to their new names. [Publishing](03-publishing.md) has the settings and the commands.
+{% endstep %}
+
+{% step %}
+### Docs for every library — next
+
+Each library gets a folder of Markdown and examples, published here with docstream's DocsSite, the way docstream's own docs work today. The ui docs pages move to the libraries they describe, and the [coverage gaps](04-docs.md) get pages.
+{% endstep %}
+
+{% step %}
+### Tidy the repository — next
+
+`apps/docs` becomes `apps/site`, `registry/` becomes `blocks/`, the desktop wrappers move from `tools/` to `apps/`, and the old docstream repositories are archived with a pointer here. None of it changes what an app installs or imports. See [Repository layout](05-repo-layout.md).
 {% endstep %}
 {% endstepper %}
 
-## Why split
+## Why one package
 
-- **Install what you use.** A subpath entry per module already keeps what you don't import out of your bundle. It doesn't keep it out of your `node_modules`: installing `@brett_lamy/ui` brings the time parsers (gpu-time, gpu-cron, cronstrue), PencilKit's ink (perfect-freehand), the terminal (wterm), rrweb, and whatever the Diagram family needs, whether or not the app draws a diagram or parses a time. After the split each of those comes only with the package that uses it.
-- **Docs that match the package.** One library, one docs site, one changelog — instead of 140-odd pages under one sidebar.
-- **Layers you can rely on.** Each tier builds only on the tiers below it. The rule is checked today (`apps/docs/src/site/libraries.test.ts`) and enforced after the split by Nx module-boundary tags.
+- **One thing to publish.** One version, one workflow, one trusted publisher on npm. There is no release order to get right and no set of versions that must match: any `@brett_lamy/ui` is a complete, consistent set of libraries.
+- **One thing to install.** `npm install @brett_lamy/ui`, and every library is there when an app wants it. An import path says which library a name comes from; no `package.json` has to change to start using one.
+- **The bundle is still only what you import.** The package is one file per module with no side effects but its stylesheets, and each library is its own entry, so an app that never imports `@brett_lamy/ui/diagram` never bundles a diagram. That was the first reason to split, and entries deliver it without packages. It is checked, not assumed: see "Sizes checked" above.
+- **One copy of UI SDK.** The kit, docstream and an app's own UI SDK components run on the one build the package carries, so they share one layer stack and one focus state.
+- **Layers you can rely on.** Each library builds only on the libraries below it. The rule is checked against the real imports (`apps/docs/src/site/libraries.test.ts`), with the few lazy links against it listed on the [module map](02-module-map.md).
+
+What one package does not do is keep a library's npm dependencies out of `node_modules`. Installing `@brett_lamy/ui` puts Tiptap, framer-motion, the time parsers, rrweb and the rest on disk whether or not the app imports the library that uses them. They stay out of the bundle. The large optional ones (`xstate`, `elkjs`, PGlite, the Tailscale client, the agent runtime) are optional peers: an app installs them only when it uses the library that needs them.
 
 ## What doesn't change
 
 {% hint style="success" %}
-**The shadcn registry keeps working as it is.** Registry items copy source with `@/components/ui/<x>` and `@/lib/<x>` imports; they keep those paths, and `blamy.github.io/ui/r/<item>.json` keeps serving them. Only npm installs see new package names.
+**The shadcn registry keeps working as it is.** Registry items copy source with `@/components/ui/<x>` and `@/lib/<x>` imports; they keep those paths and names, and `blamy.github.io/ui/r/<item>.json` keeps serving them. The `library-<entry>` items are additions.
 {% endhint %}
 
-- Source keeps its alias imports. A package's build rewrites an alias that points into *another* package to that package's name (the module map is the lookup), so npm packages depend on each other while the registry still copies source.
+- Every module keeps its own entry (`@brett_lamy/ui/dialog`), at the registry's path under the package name. A library entry is a second path to the same names, never a replacement.
 - Docs links stay: `#/<page>` URLs for the ui pages keep working when the pages move.
-- One version for the family: `@brett_lamy/ui` and every package split from it share a version, so any set of BL packages at the same version works together. Docstream's version is the library's from 6.0 on.
+- One version: the libraries are one package, so they cannot drift. Docstream's version is the library's from 6.0 on.
 
 ## Read on
 
 <table data-view="cards"><thead><tr><th></th><th></th></tr></thead><tbody>
-<tr><td><strong>Package map</strong></td><td>Every library, what it owns, what it builds on, where it ships. <a href="01-packages.md">Packages →</a></td></tr>
+<tr><td><strong>Package map</strong></td><td>Every library: its entry, its shadcn item, what it loads, what it builds on. <a href="01-packages.md">Packages →</a></td></tr>
 <tr><td><strong>Module map</strong></td><td>Every unit of packages/ui/src and the library it belongs to. <a href="02-module-map.md">Modules →</a></td></tr>
-<tr><td><strong>Publishing</strong></td><td>Trusted publishing, versions and the release order. <a href="03-publishing.md">Publishing →</a></td></tr>
+<tr><td><strong>Publishing</strong></td><td>One package, trusted publishing, and the docstream packages' last steps. <a href="03-publishing.md">Publishing →</a></td></tr>
 <tr><td><strong>Docs</strong></td><td>How each library's docs are built, and what isn't documented yet. <a href="04-docs.md">Docs →</a></td></tr>
-<tr><td><strong>Repository layout</strong></td><td>Where everything lives today and after the split. <a href="05-repo-layout.md">Layout →</a></td></tr>
-<tr><td><strong>Migrating</strong></td><td>What an app changes: docstream's new names, then the split. <a href="06-migration.md">Migrating →</a></td></tr>
+<tr><td><strong>Repository layout</strong></td><td>Where everything lives, and what still moves. <a href="05-repo-layout.md">Layout →</a></td></tr>
+<tr><td><strong>Migrating</strong></td><td>What an app changes for 6.0: one install, the entries, docstream's and UI SDK's names. <a href="06-migration.md">Migrating →</a></td></tr>
 </tbody></table>

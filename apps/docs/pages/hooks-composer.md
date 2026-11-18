@@ -2,7 +2,7 @@
 
 Hooks for building parts that live inside a [Composer](https://blamy.github.io/ui/#/composer): reading the draft and sending it, reading a draggable bump's progress, and undo and redo for [PencilKit](https://blamy.github.io/ui/#/pencilkit) strokes. The image annotator's engine is chosen with props and a provider, not a hook (see [ImageAnnotator](https://blamy.github.io/ui/#/pencilkit)). The other hooks are in the [Hooks overview](https://blamy.github.io/ui/#/hooks).
 
-All three are public.
+All three are public, on the entries below and not on the package root: `@brett_lamy/ui/composer` is the Composer library, and `usePencilHistory` is also on the Canvas library's entry, `@brett_lamy/ui/canvas`.
 
 ```tsx
 // npm

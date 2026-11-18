@@ -6,7 +6,7 @@ The iOS search field: a rounded secondary-colored bar with a magnifier, a border
 {% tab title="shadcn CLI" %}
 {% command %}npx shadcn@latest add https://blamy.github.io/ui/r/search-input.json{% endcommand %}
 
-Copies the source into your project's `components/ui/` (with the parts it is built from) and adds BL UI's tokens to your CSS — no runtime package. It is yours to edit. Import from your alias:
+Copies the source into your project's `components/ui/` (with the parts it is built from), adds BL UI's tokens to your CSS and installs `@brett_lamy/ui` for UI SDK, which the copied files import by the package's name (`@brett_lamy/ui/sdk/…`). The copied source is yours to edit. Import from your alias:
 
 ```tsx
 import { SearchInput } from '@/components/ui/search-input'
@@ -78,7 +78,7 @@ const [search] = useState(createInputController)
 
 ## Accessibility
 
-The input is a native `type="search"`, so its role is `searchbox`. The clear button is labelled "Clear search", returns focus to the input, and is left out of the Tab order (Esc is the keyboard route). The field's accessible name is `aria-label`, which defaults to "Search"; set it to say what is searched ("Search contacts") so it differs from other search fields on the page. Inside a `Field`, the `FieldLabel` names it instead. Announce the result count yourself (`announce()` from `@ui-sdk/core`) if the list updates as you type.
+The input is a native `type="search"`, so its role is `searchbox`. The clear button is labelled "Clear search", returns focus to the input, and is left out of the Tab order (Esc is the keyboard route). The field's accessible name is `aria-label`, which defaults to "Search"; set it to say what is searched ("Search contacts") so it differs from other search fields on the page. Inside a `Field`, the `FieldLabel` names it instead. Announce the result count yourself (`announce()` from `@brett_lamy/ui/sdk/core`) if the list updates as you type.
 
 An agent sees the input under the field's name, with `setValue` and `clear`. With `onSubmit`, the field is listed too, under the same name, with a `submit` action: it calls `onSubmit` with the current query, `reason: 'imperative'` and `source: 'agent'`.
 

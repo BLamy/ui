@@ -1,13 +1,13 @@
 # Built on UI SDK
 
-BL UI 6.0 is built on [UI SDK](https://ui-sdk.dev) (`@ui-sdk/core` and `@ui-sdk/react`, Apache-2.0, by Vercel). UI SDK owns behavior: keyboard, focus, selection, dismissal, popups and their placement, drag and drop, ARIA, and change events with reasons. BL UI owns the look (Tailwind classes on the kit's tokens), the iOS-flavored containers, and the compositions in the blocks. This page shows how the layers fit, how to build a component of your own the way the kit builds its own, what our fork of UI SDK adds and why, and what we would propose upstream: the additions, and the bugs and gaps we hit.
+BL UI 6.0 is built on [UI SDK](https://ui-sdk.dev) (upstream's `@ui-sdk/core` and `@ui-sdk/react`, Apache-2.0, by Vercel), and ships its own build of it inside the package: in your code UI SDK is `@brett_lamy/ui/sdk/…`. UI SDK owns behavior: keyboard, focus, selection, dismissal, popups and their placement, drag and drop, ARIA, and change events with reasons. BL UI owns the look (Tailwind classes on the kit's tokens), the iOS-flavored containers, and the compositions in the blocks. This page shows how the layers fit, how to build a component of your own the way the kit builds its own, what our fork of UI SDK adds and why, and what we would propose upstream: the additions, and the bugs and gaps we hit.
 
 ## How the kit is layered
 
 | Layer | Where | What it is |
 | --- | --- | --- |
-| UI SDK behaviors | `@ui-sdk/core` | Framework-free helpers: `definePrimitive`, `createChange`, `createRovingFocus`, `createSelection`, `createPopup`, `bindDrag`, `bindPanel`… and the cores of UI SDK's own components. See [Behaviors](https://blamy.github.io/ui/#/behaviors). |
-| UI SDK parts | `@ui-sdk/react/<component>`, `@ui-sdk/react/primitive` | The React parts of the components UI SDK ships (Button, Dialog, Popover, Menu, Select, Combobox, Tabs, Tooltip, Toast, Tree, Listbox…), and `createParts` / `usePart` / `usePrimitive`, which turn any primitive into React parts. |
+| UI SDK behaviors | `@brett_lamy/ui/sdk/core` | Framework-free helpers: `definePrimitive`, `createChange`, `createRovingFocus`, `createSelection`, `createPopup`, `bindDrag`, `bindPanel`… and the cores of UI SDK's own components. See [Behaviors](https://blamy.github.io/ui/#/behaviors). |
+| UI SDK parts | `@brett_lamy/ui/sdk/react/<component>`, `@brett_lamy/ui/sdk/react/primitive` | The React parts of the components UI SDK ships (Button, Dialog, Popover, Menu, Select, Combobox, Tabs, Tooltip, Toast, Tree, Listbox…), and `createParts` / `usePart` / `usePrimitive`, which turn any primitive into React parts. |
 | Kit behaviors | `lib/size-class.ts`, `lib/stack.ts`, `lib/edge-swipe.ts`, `lib/back.ts`, `lib/pull-to-refresh.ts`, `lib/presence.ts`; `lib/container.ts` (the size-class scope) | Generic behaviors UI SDK doesn't have (size classes, page stacks, edge swipes, the platform back, pull to refresh, React presence), framework-free and in UI SDK's shape, built only on its public API. See [The kit's behaviors](https://blamy.github.io/ui/#/behaviors-kit). |
 | Kit styled parts | `components/<name>.tsx` | Where UI SDK ships the component, the kit's module wraps its parts with classes and re-exports them: same composition, same part suffixes (`DialogTrigger`, `DialogContent`…), same props, plus `variant`/`size` (a `cva` recipe) and layout props. It renders popups into BLProvider's layer host and carries the theme scope. |
 | Kit primitives | `lib/<name>-primitive.ts` + `components/<name>.tsx` | Where UI SDK doesn't ship it (SplitView, NavigationStack, Sidebar, list rows, IndexBar, LogList, DataTable, Workspace, Diagram, SearchInput's Escape-and-Enter, ToggleGroup's sliding card…), one primitive defined once with `definePrimitive` from UI SDK behaviors, framework-free, and rendered with `createParts`. |
@@ -19,7 +19,30 @@ The same rules hold at every layer, which is why a kit part reads like a UI SDK 
 - **UI SDK's API is the kit's.** `onClick`, `disabled`, `open`/`defaultOpen`/`onOpenChange(open, details)`, `value`/`defaultValue`/`onValueChange(value, details)`, `checked`, `pressed`. `details` carries `reason`, `source`, `event` and `cancel()`. A part's element changes with `render`, never `as` or `asChild`. Outside control goes through a controller.
 - **State is on attributes.** Component state is UI SDK's `data-*` (`data-open`, `data-checked`, `data-pressed`, `data-highlighted`, `data-starting-style`, `data-side`…) and CSS variables (`--anchor-width`, `--available-height`, `--transform-origin`); hover, press and keyboard focus are the native `hover:`, `active:` and `focus-visible:`. `data-slot` comes from UI SDK, never by hand.
 - **Responsive by container.** Shells follow their own box through size classes (the kit's own behavior, provided to what they render as a size-class scope that `presentation="auto"` follows), and popups stay in their layer host (the fork's main addition, below).
-- **Agent-ready.** Every control has a name, and every primitive ends with `agent: { actions }`, so `createAgent` from `@ui-sdk/core/agent` can read and drive the page.
+- **Agent-ready.** Every control has a name, and every primitive ends with `agent: { actions }`, so `createAgent` from `@brett_lamy/ui/sdk/core/agent` can read and drive the page.
+
+## Importing UI SDK
+
+UI SDK is part of `@brett_lamy/ui`: there is no second package to install. Every entry of UI SDK's two packages is an entry of this one, so the rule is one substitution. Wherever UI SDK's docs say `@ui-sdk/…`, write `@brett_lamy/ui/sdk/…`.
+
+| UI SDK's docs | In your code |
+| --- | --- |
+| `@ui-sdk/core` | `@brett_lamy/ui/sdk/core` |
+| `@ui-sdk/core/gesture`, `/date`, `/color`, `/text-match`, `/agent`, `/testing`… | `@brett_lamy/ui/sdk/core/gesture`, `/date`, `/color`, `/text-match`, `/agent`, `/testing`… |
+| `@ui-sdk/react/dialog`, `/menu`, `/primitive`, `/shortcuts`… | `@brett_lamy/ui/sdk/react/dialog`, `/menu`, `/primitive`, `/shortcuts`… |
+
+```tsx
+import { bindDrag, createChange, definePrimitive } from '@brett_lamy/ui/sdk/core'
+import { rubberBand } from '@brett_lamy/ui/sdk/core/gesture'
+import { Dialog, DialogContent } from '@brett_lamy/ui/sdk/react/dialog'
+import { createParts } from '@brett_lamy/ui/sdk/react/primitive'
+```
+
+{% hint style="warning" %}
+Do not install upstream's `@ui-sdk/core` or `@ui-sdk/react` beside `@brett_lamy/ui`. A second copy would not share the kit's layer stack and focus state. Your own UI SDK components, the kit, docstream and the blocks must all run on the copy the package ships.
+{% endhint %}
+
+The same holds in a registry install: UI SDK is not copied, the copied files import `@brett_lamy/ui/sdk/…`, and the item adds `@brett_lamy/ui` to your dependencies. Inside the library's own source (`packages/ui/src`) the imports keep upstream's spelling, `@ui-sdk/…`, which is why this page's upstream notes use it too.
 
 ## Build a component the same way
 
@@ -32,7 +55,7 @@ A primitive describes behavior: state, the functions that change it, and the par
 In the kit this is `lib/mute-button-model.ts` (a `lib/` file can't share a component's name, or shadcn's CLI installs it over the component). No React import.
 
 ```ts
-import { createChange, definePrimitive, type ChangeDetails } from '@ui-sdk/core'
+import { createChange, definePrimitive, type ChangeDetails } from '@brett_lamy/ui/sdk/core'
 
 type MuteReason = 'press' | 'imperative'
 type MuteOptions = {
@@ -80,7 +103,7 @@ In the kit this is `components/mute-button.tsx`. `createParts` maps each slot to
 ```tsx
 'use client'
 import type { ComponentProps } from 'react'
-import { createParts } from '@ui-sdk/react/primitive'
+import { createParts } from '@brett_lamy/ui/sdk/react/primitive'
 import { cva } from 'class-variance-authority'
 import { muteButton } from '@/lib/mute-button-model'
 import { cx } from '@/lib/utils'
@@ -121,7 +144,7 @@ Parts of one slot are told apart by a key: the part's `id` prop if it has one, e
 
 ## What our fork adds
 
-We consume UI SDK through our fork, [BLamy/ui-sdk](https://github.com/BLamy/ui-sdk), vendored as a submodule at `vendor/ui-sdk`, built into `packages/ui-sdk-core` and `packages/ui-sdk-react`, and published as `@brett_lamy/ui-sdk-core` and `@brett_lamy/ui-sdk-react`. Everything imports them under upstream's names, `@ui-sdk/core` and `@ui-sdk/react` (npm aliases), so moving back to upstream is a change of two dependency lines once upstream has what we need.
+We consume UI SDK through our fork, [BLamy/ui-sdk](https://github.com/BLamy/ui-sdk), vendored as a submodule at `vendor/ui-sdk` and compiled into two private workspace packages (`packages/ui-sdk-core`, `packages/ui-sdk-react`) that are never published. The library's source imports them under upstream's names, `@ui-sdk/core` and `@ui-sdk/react`. Its build then copies the compiled fork into the package (`dist/vendor/ui-sdk`, with UI SDK's `LICENSE` and a `NOTICE.md` that says what the fork changes) and exposes each of its entries as `@brett_lamy/ui/sdk/…`. So there is one package to install and one copy of UI SDK in a page. Because the source keeps upstream's names, moving back to upstream is a change to two dependency lines and that build step, once upstream has what we need.
 
 The fork is upstream ([vercel-labs/ui](https://github.com/vercel-labs/ui) at `724a7d6c`) plus three small additions. Against that commit it changes 10 files (217 lines added, 43 removed) and adds one source file (`packages/core/src/foundation/platform/layer-host.ts`, 11 lines), 25 jsdom tests (`packages/core/test/layer-host.test.ts`), a playground fixture (`apps/playground/src/fixtures/layer-host/react.tsx`) with a 9-test browser spec (`tests/specs/layer-host.spec.ts`), and two changesets (`layer-hosts.md`, minor; `slot-prop-types.md`, patch). `git -C vendor/ui-sdk diff --stat` shows it.
 
@@ -129,7 +152,7 @@ The fork is upstream ([vercel-labs/ui](https://github.com/vercel-labs/ui) at `72
 | --- | --- | --- |
 | Layer hosts: an element with `data-layer-host` | Popups whose top-layer element is inside it stay out of the top layer, are placed against its box, and are modal to it alone: only the rest of the host turns inert, presses, focus and Escape from outside it pass by its modal layers and the layers beneath them, and a contained modal pauses only its host's shortcuts. Each host has its own modal stack. No new export: the attribute is the contract, and the host's `contain: layout` is the app's to write. | It changes how core's popups (`popup.ts`, `modal.ts`), layer stack (`layers.ts`), positioning (`position.ts`) and shortcuts (`create-shortcuts.ts`) work; nothing public can keep a popup out of the top layer, or scope inert, scroll lock and dismissal to an element. |
 | `when?: () => boolean` on the public `bindLayer`, which also keeps to a host | While `when()` returns false, the layer is skipped: Escape goes on to the layer beneath (unprevented), outside presses and window blur pass it by. Inside a host, `topLayer: true` stays out of the top layer and a modal layer hears only its host. | `bindLayer` always took Escape and called `preventDefault()`. A layer that is bound but has nothing to dismiss for a while (a page stack on its first page) can't say so from outside. A few lines in `bind-layer.ts`. |
-| `SlotProps` exported from `@ui-sdk/core/renderer`, beside `BaseSlotProps` | A kernel type already used in emitted declarations is exported (and marked `@experimental`). | A library that exports a primitive (`lib/<name>-primitive.ts`) has to name them in its own `.d.ts`; unexported, tsc inlines them. |
+| `SlotProps` exported from the renderer entry (`@ui-sdk/core/renderer` upstream, `@brett_lamy/ui/sdk/core/renderer` here), beside `BaseSlotProps` | A kernel type already used in emitted declarations is exported (and marked `@experimental`). | A library that exports a primitive (`lib/<name>-primitive.ts`) has to name them in its own `.d.ts`; unexported, tsc inlines them. |
 
 Contracts, demo and known limits: [Layer hosts](https://blamy.github.io/ui/#/behaviors-layer-hosts). Each of the 10 files changed from upstream says so in a `Modified in BLamy/ui-sdk:` line at its top.
 

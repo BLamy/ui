@@ -6,7 +6,7 @@ A date input with a calendar button: type a date the way your language writes it
 {% tab title="shadcn CLI" %}
 {% command %}npx shadcn@latest add https://blamy.github.io/ui/r/date-picker.json{% endcommand %}
 
-Copies the source into your project's `components/ui/` (with the parts it is built from) and adds BL UI's tokens to your CSS — no runtime package. It is yours to edit. Import from your alias:
+Copies the source into your project's `components/ui/` (with the parts it is built from), adds BL UI's tokens to your CSS and installs `@brett_lamy/ui` for UI SDK, which the copied files import by the package's name (`@brett_lamy/ui/sdk/…`). The copied source is yours to edit. Import from your alias:
 
 ```tsx
 import {
@@ -17,7 +17,7 @@ import {
 {% tab title="npm" %}
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 
-Import the stylesheet once at your app's entry, then the parts from their module:
+Import the stylesheet once at your app's entry, then the parts from their module (the Time library's entry, `@brett_lamy/ui/time`, has them too):
 
 ```tsx
 import '@brett_lamy/ui/styles.css'
@@ -29,11 +29,11 @@ import {
 {% endtab %}
 {% endtabs %}
 
-The parts not in the import line above, `DatePickerInput`, `DatePickerTrigger`, `DatePickerClear`, `DatePickerHint` and `DatePickerPreset`, come from the same module (`@/components/ui/date-picker`, or the package root), with `createDatePickerController`.
+The parts not in the import line above, `DatePickerInput`, `DatePickerTrigger`, `DatePickerClear`, `DatePickerHint` and `DatePickerPreset`, come from the same module (`@/components/ui/date-picker`; on npm `@brett_lamy/ui/date-picker`, or the Time library's entry, `@brett_lamy/ui/time`), with `createDatePickerController`.
 
 ## Values are ISO strings
 
-The value is a date string such as `"2026-09-09"`, with no time and no time zone, or `null`. In `mode="range"` it is `[start, end]`, or `null` until both ends are valid. Typing into the input and picking in the calendar edit the same value, and no date library is needed; see [Calendar](https://blamy.github.io/ui/#/calendar) for the helpers in `@ui-sdk/core/date`.
+The value is a date string such as `"2026-09-09"`, with no time and no time zone, or `null`. In `mode="range"` it is `[start, end]`, or `null` until both ends are valid. Typing into the input and picking in the calendar edit the same value, and no date library is needed; see [Calendar](https://blamy.github.io/ui/#/calendar) for the helpers in `@brett_lamy/ui/sdk/core/date`.
 
 ## Anatomy
 

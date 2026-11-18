@@ -1,6 +1,6 @@
 # Feedback hooks
 
-Hooks for showing feedback and reading the state of a command palette: `useToast` for the nearest toast queue, and `useCommandMenu` and `useCommandMenuValue` for custom parts inside a `CommandMenu`. Keyboard shortcuts come from UI SDK (`useShortcut` from `@ui-sdk/react/shortcuts`); see [State and platform hooks](https://blamy.github.io/ui/#/hooks-state). The other hooks are in the [Hooks overview](https://blamy.github.io/ui/#/hooks).
+Hooks for showing feedback and reading the state of a command palette: `useToast` for the nearest toast queue, and `useCommandMenu` and `useCommandMenuValue` for custom parts inside a `CommandMenu`. Keyboard shortcuts come from UI SDK (`useShortcut` from `@brett_lamy/ui/sdk/react/shortcuts`); see [State and platform hooks](https://blamy.github.io/ui/#/hooks-state). The other hooks are in the [Hooks overview](https://blamy.github.io/ui/#/hooks).
 
 All three are public.
 

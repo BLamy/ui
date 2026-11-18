@@ -28,15 +28,14 @@ The app: [describe what you are building, its main screens and who it is for].
 
 Setup:
 1. Scaffold a Vite + React 19 + Tailwind v4 app with shadcn: npx shadcn@latest create --name [app-name] --template vite. Any base and preset will do: BL UI's parts are UI SDK parts and don't use shadcn's base, so don't add the base's own components for things BL UI ships.
-2. From the new project's folder install UI SDK, our fork under upstream's names, both at the same version: npm install @ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1 @ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1
-3. Put `@layer ui-sdk;` on the first line of the global CSS, above `@import "tailwindcss"`, so Tailwind's utilities win over UI SDK's runtime CSS.
-4. Add the BL UI base item: npx shadcn@latest add https://blamy.github.io/ui/r/bl-ui.json (it writes BL UI's tokens into the CSS and installs no package).
-5. [Keep or drop this step] Add the iOS theme: npx shadcn@latest add https://blamy.github.io/ui/r/bl-theme.json (it overwrites the shadcn palette variables; skip it to keep the preset's look).
+2. Put `@layer ui-sdk;` on the first line of the global CSS, above `@import "tailwindcss"`, so Tailwind's utilities win over UI SDK's runtime CSS. Do not install UI SDK: it ships inside @brett_lamy/ui, which the first part that needs it adds to the dependencies.
+3. Add the BL UI base item: npx shadcn@latest add https://blamy.github.io/ui/r/bl-ui.json (it writes BL UI's tokens into the CSS and installs no package).
+4. [Keep or drop this step] Add the iOS theme: npx shadcn@latest add https://blamy.github.io/ui/r/bl-theme.json (it overwrites the shadcn palette variables; skip it to keep the preset's look).
 
 Before writing any UI, read https://blamy.github.io/ui/llms.txt and then the Markdown pages for the parts you plan to use (https://blamy.github.io/ui/md/<page>.md). Pick parts from those pages instead of building your own, and use the registry blocks (https://blamy.github.io/ui/r/registry.json, type registry:block) as reference for whole-app layouts.
 
 Rules:
-- Add parts one at a time with npx shadcn@latest add https://blamy.github.io/ui/r/<item>.json. The source is copied into src/components/ui/<name>.tsx (libraries into src/lib/) and can be edited; only the items a part imports are copied with it. Import through the @/ alias, never from @brett_lamy/ui. The one exception is already in the copied files: parts built on docstream (MarkdownView, MarkdownEditor, the Composer, ReplayPreview…) import @brett_lamy/ui/docstream/..., and adding them installs @brett_lamy/ui for that; leave those imports as they are. Blocks land in src/components/blocks/<name>/.
+- Add parts one at a time with npx shadcn@latest add https://blamy.github.io/ui/r/<item>.json. The source is copied into src/components/ui/<name>.tsx (libraries into src/lib/) and can be edited; only the items a part imports are copied with it. Import BL UI's parts through the @/ alias, never from @brett_lamy/ui. The two exceptions are already in the copied files: UI SDK and docstream are not copied, so the files import them from the package (@brett_lamy/ui/sdk/..., @brett_lamy/ui/docstream/...), and adding a part installs @brett_lamy/ui for that; leave those imports as they are. If you need a UI SDK part or behavior yourself, import it the same way (@brett_lamy/ui/sdk/react/<part>, @brett_lamy/ui/sdk/core) and never install @ui-sdk/core or @ui-sdk/react. A whole library is one item, library-<entry> (library-time, library-audio, ...). Blocks land in src/components/blocks/<name>/.
 - Color, radius, type and shadows come from theme utilities: bg-background, text-foreground, text-muted-foreground, border-border, bg-primary, rounded-ctl, text-footnote, shadow-hairline. Do not hard-code hex values, rgba() or arbitrary radius and text sizes, and do not add a second palette.
 - Every component exports a cva recipe (buttonVariants, badgeVariants, ...). Reuse it for links and custom elements, and change a default by editing the copied file, not by wrapping it.
 - Do not invent props or exports. If a part's page doesn't show it, check the installed file first.
@@ -58,7 +57,7 @@ First, inspect the project and tell me what you found before changing anything: 
 Then set it up, doing only the steps that are missing:
 1. Tailwind CSS v4 and an @/ alias. For frameworks other than Vite follow https://ui.shadcn.com/docs/installation. In Next.js, components.json needs "rsc": true so the copied modules keep their 'use client' directives.
 2. shadcn, if there is no components.json: npx shadcn@latest init. An existing Radix, Base UI or React Aria setup can stay; BL UI's parts are built on UI SDK and don't depend on the base.
-3. UI SDK, our fork under upstream's names, both at the same version: npm install @ui-sdk/core@npm:@brett_lamy/ui-sdk-core@0.1.0-beta.2.bl.1 @ui-sdk/react@npm:@brett_lamy/ui-sdk-react@0.1.0-beta.2.bl.1. Then put `@layer ui-sdk;` at the very top of the global CSS, above `@import "tailwindcss"`.
+3. UI SDK's cascade layer: put `@layer ui-sdk;` at the very top of the global CSS, above `@import "tailwindcss"`. Do not install UI SDK: it ships inside @brett_lamy/ui, which the first part that needs it adds to the dependencies. If the app already has @ui-sdk/core or @ui-sdk/react installed, tell me before going on: a second copy of UI SDK would not share BL UI's layer stack and focus state.
 4. The BL UI base item: npx shadcn@latest add https://blamy.github.io/ui/r/bl-ui.json (tokens and framework CSS only, no package).
 5. Do NOT add the iOS theme (bl-theme) unless I ask. It overwrites the app's palette variables. Without it, BL UI wears the app's existing shadcn theme.
 
@@ -68,7 +67,7 @@ Before writing any UI, read https://blamy.github.io/ui/llms.txt and then the Mar
 
 Rules:
 - Make the smallest change that works. Don't restyle, rename or move existing code I didn't ask about, and don't upgrade unrelated dependencies.
-- Add parts one at a time with npx shadcn@latest add https://blamy.github.io/ui/r/<item>.json and import them through the alias (never from @brett_lamy/ui; the copied parts built on docstream keep their own @brett_lamy/ui/docstream/... imports, and adding them installs @brett_lamy/ui). Reuse the app's existing data, routing and state.
+- Add parts one at a time with npx shadcn@latest add https://blamy.github.io/ui/r/<item>.json and import them through the alias (never from @brett_lamy/ui; the copied files keep their own @brett_lamy/ui/sdk/... and @brett_lamy/ui/docstream/... imports, because UI SDK and docstream are not copied, and adding a part installs @brett_lamy/ui for them). Reuse the app's existing data, routing and state.
 - Color comes from shadcn's CSS variables through utilities (bg-background, text-foreground, text-muted-foreground, border-border, bg-primary, ...). Map anything the app hard-codes onto those instead of adding new colors.
 - Do not invent props or exports. If a part's page doesn't show it, check the installed file first.
 - If the app already has its own component library, tell me where BL UI overlaps it and suggest which to keep instead of replacing it.

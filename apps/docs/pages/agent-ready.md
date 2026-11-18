@@ -4,7 +4,7 @@ Every BL UI component is built on UI SDK, so an AI agent can read and operate it
 
 ## How the kit exposes components
 
-UI SDK's agent bridge (`createAgent` from `@ui-sdk/react/agent`) finds every UI SDK part on the page. A kit component is listed under its UI SDK kind:
+UI SDK's agent bridge (`createAgent` from `@brett_lamy/ui/sdk/react/agent`) finds every UI SDK part on the page. A kit component is listed under its UI SDK kind:
 
 | Kit component | Kind in the snapshot | Actions |
 | --- | --- | --- |
@@ -39,7 +39,7 @@ Keep app state in change callbacks (`onValueChange`, `onCheckedChange`, `onOpenC
 Create the bridge once, in the browser, before you render:
 
 ```ts title="agent.ts"
-import { agentTools, createAgent, registerTools } from '@ui-sdk/react/agent'
+import { agentTools, createAgent, registerTools } from '@brett_lamy/ui/sdk/react/agent'
 
 export const agent = createAgent({
   // Steps on a data-agent-confirm control ask the person first.

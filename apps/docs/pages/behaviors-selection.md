@@ -2,10 +2,10 @@
 
 Three UI SDK behaviors cover choosing things: `createSelection` picks item keys (one, many, or a Shift range), `createLasso` selects whatever a dragged rectangle touches, and `createCellRange` selects a block of grid cells and reads it as text for the clipboard. `cellsToText` and `textToCells` convert between rows of cells and the tab-separated text spreadsheets put on the clipboard, which is what replaces the old react-aria clipboard hooks. They are listed with the other behaviors in the [behaviors overview](https://blamy.github.io/ui/#/behaviors); the upstream reference is [Selection](https://ui-sdk.dev/docs/core/behaviors/selection).
 
-Nothing to install: they come from `@ui-sdk/core`. Selection is about *which* items are chosen; moving between them is [Focus and keys](https://blamy.github.io/ui/#/behaviors-focus), and the two are used together.
+Nothing to install: they come from UI SDK's core, which ships inside the package as `@brett_lamy/ui/sdk/core`. Selection is about *which* items are chosen; moving between them is [Focus and keys](https://blamy.github.io/ui/#/behaviors-focus), and the two are used together.
 
 ```ts
-import { createSelection, createLasso, createCellRange, byCellRange, cellsToText, textToCells, createChange } from '@ui-sdk/core'
+import { createSelection, createLasso, createCellRange, byCellRange, cellsToText, textToCells, createChange } from '@brett_lamy/ui/sdk/core'
 ```
 
 ## Already done for you
@@ -124,6 +124,6 @@ Verified in happy-dom:
 
 ### Outside a grid, and the async Clipboard API
 
-For a "Copy" button there is no `copy` event to answer, so use `navigator.clipboard.writeText(text)` (the example's "Copy whole sheet" does, with `cellsToText`). It needs a secure context and a user gesture, and the promise rejects when the page isn't allowed to write, so catch it. Nothing on screen changes when a copy succeeds, so say so with `announce('Copied')` from `@ui-sdk/core` (see [Platform](https://ui-sdk.dev/docs/core/platform)). Reading with `navigator.clipboard.readText()` asks the user for permission in most browsers; prefer the `paste` event, which gets the text without asking.
+For a "Copy" button there is no `copy` event to answer, so use `navigator.clipboard.writeText(text)` (the example's "Copy whole sheet" does, with `cellsToText`). It needs a secure context and a user gesture, and the promise rejects when the page isn't allowed to write, so catch it. Nothing on screen changes when a copy succeeds, so say so with `announce('Copied')` from `@brett_lamy/ui/sdk/core` (see [Platform](https://ui-sdk.dev/docs/core/platform)). Reading with `navigator.clipboard.readText()` asks the user for permission in most browsers; prefer the `paste` event, which gets the text without asking.
 
 For a single field or a code block, copy and paste need nothing from UI SDK: the browser handles text fields, and `copy` / `paste` listeners on any element let you change what goes to or comes from the clipboard (`event.clipboardData.setData('text/html', …)` next to `text/plain`, or `getData('text/html')` on paste). Files pasted from the system arrive in `event.clipboardData.files`; the kit's [`FileUpload`](https://blamy.github.io/ui/#/file-upload) takes them while focus is inside it.

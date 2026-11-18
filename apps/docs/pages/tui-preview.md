@@ -21,7 +21,7 @@ import { TuiPreview } from '@/components/ui/tui-preview'
 {% tab title="npm" %}
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 
-Import the stylesheets once at your app's entry (the kit's, then docstream's, which this part renders with), then the parts from their module:
+Import the stylesheets once at your app's entry (the kit's, then docstream's, which this part renders with), then the parts from their module (the Markdown library's entry, `@brett_lamy/ui/markdown`, has them too):
 
 ```tsx
 import '@brett_lamy/ui/styles.css'

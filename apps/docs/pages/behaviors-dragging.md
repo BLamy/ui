@@ -2,13 +2,13 @@
 
 UI SDK's direct-manipulation behaviors handle the pointer work for things you grab and move: `createMove` places objects anywhere on a surface, `createResize` drags the edges and corners of a box, and `createSwipeActions` slides a row aside to reveal actions. `bindHold` acts once a press has lasted, and `bindRepeat` keeps stepping while a button is held. For values rather than objects there are `createArea` (a point on a 2D pad), `createSpans` (ranges on tracks, like bookings) and `createPreview` (try a choice before committing it). Every one of them has a keyboard route and announces its result. They are listed with the other behaviors in the [behaviors overview](https://blamy.github.io/ui/#/behaviors); the upstream reference is [Dragging and Resizing](https://ui-sdk.dev/docs/core/behaviors/direct-manipulation).
 
-Nothing to install: they come from `@ui-sdk/core`. Sorting and moving items between lists is [Drag and drop](https://blamy.github.io/ui/#/behaviors-drag-drop). The kit's own `bindEdgeSwipe` (swipe in from an edge to go back) and `bindPullToRefresh`, from `@/lib/edge-swipe` and `@/lib/pull-to-refresh`, are on [The kit's behaviors](https://blamy.github.io/ui/#/behaviors-kit).
+Nothing to install: they come from UI SDK's core, which ships inside the package as `@brett_lamy/ui/sdk/core`. Sorting and moving items between lists is [Drag and drop](https://blamy.github.io/ui/#/behaviors-drag-drop). The kit's own `bindEdgeSwipe` (swipe in from an edge to go back) and `bindPullToRefresh`, from `@/lib/edge-swipe` and `@/lib/pull-to-refresh`, are on [The kit's behaviors](https://blamy.github.io/ui/#/behaviors-kit).
 
 ```ts
 import {
   createMove, createResize, createSwipeActions, bindHold, bindRepeat,
   createArea, createSpans, createPreview, createChange, live, css,
-} from '@ui-sdk/core'
+} from '@brett_lamy/ui/sdk/core'
 ```
 
 ## Already done for you

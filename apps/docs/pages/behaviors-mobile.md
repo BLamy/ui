@@ -3,8 +3,8 @@
 On a phone the page lays out for a screen people don't fully see: the on-screen keyboard covers its bottom, iOS pans the page to keep a field in view, a notch and the home indicator take its edges, and there is a finger where a desktop has a mouse that can hover. UI SDK's mobile helpers measure all of it: `bindViewport` follows the keyboard, the visible viewport and the safe areas, `bindAvoidKeyboard` keeps a bar above the keyboard, `createPointerKind` tells a finger from a mouse, and `inputHints` picks the right keyboard for a field. They work inside a primitive or on their own element. The upstream reference is [Mobile](https://ui-sdk.dev/docs/core/mobile).
 
 ```ts
-import { bindViewport, bindAvoidKeyboard, createPointerKind, pointerKindOf, inputHints, type ViewportState } from '@ui-sdk/core'
-import { usePreference } from '@ui-sdk/react/preferences'
+import { bindViewport, bindAvoidKeyboard, createPointerKind, pointerKindOf, inputHints, type ViewportState } from '@brett_lamy/ui/sdk/core'
+import { usePreference } from '@brett_lamy/ui/sdk/react/preferences'
 ```
 
 Layout is a different question. BL UI's containers adapt to their **own** box, never the viewport, through size classes (the kit's `bindSizeClass` and size-class scopes, from `@/lib/size-class` and `@/lib/container`): a phone frame, a window or a split column behaves like a small screen whatever the device. That is on [The kit's behaviors](https://blamy.github.io/ui/#/behaviors-kit), with the platform's back gesture (`bindBack`).

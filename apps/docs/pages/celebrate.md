@@ -6,7 +6,7 @@ A burst for rare moments: a ring pulses and confetti flies out from behind an el
 {% tab title="shadcn CLI" %}
 {% command %}npx shadcn@latest add https://blamy.github.io/ui/r/celebrate.json{% endcommand %}
 
-Copies the source into your project's `components/ui/` (with the parts it is built from) and adds BL UI's tokens to your CSS — no runtime package. It is yours to edit. Import from your alias:
+Copies the source into your project's `components/ui/` (with the parts it is built from), adds BL UI's tokens to your CSS and installs `@brett_lamy/ui` for UI SDK, which the copied files import by the package's name (`@brett_lamy/ui/sdk/…`). The copied source is yours to edit. Import from your alias:
 
 ```tsx
 import { Celebrate } from '@/components/ui/celebrate'
@@ -15,7 +15,7 @@ import { Celebrate } from '@/components/ui/celebrate'
 {% tab title="npm" %}
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 
-Import the stylesheet once at your app's entry, then the parts from their module:
+Import the stylesheet once at your app's entry, then the parts from their module (the Motion library's entry, `@brett_lamy/ui/motion`, has them too):
 
 ```tsx
 import '@brett_lamy/ui/styles.css'

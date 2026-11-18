@@ -3,8 +3,10 @@
  * Markdown from the page's registry entry (registry/components/<name>.json, `page` field): a titled tab set — the
  * "Installation" heading with the npm | shadcn CLI switch on its right — whose tabs each hold a `{% command %}` box
  * (docstream derives the pnpm / yarn / bun forms), a line of prose and the import code. The npm tab imports each
- * module from its own package entry (`@brett_lamy/ui/dialog`, tools/registry/package-exports.mjs); the root import
- * (`@brett_lamy/ui`) is shown once, on the Installation page.
+ * module from its own package entry (`@brett_lamy/ui/dialog`, tools/registry/package-exports.mjs) and names the
+ * library's entry that has the same names (`@brett_lamy/ui/time` on Calendar's page); the root import
+ * (`@brett_lamy/ui`) is shown once, on the Installation page. The shadcn tab says what `add` installs from npm:
+ * `@brett_lamy/ui`, for UI SDK and Docstream, which the registry does not copy.
  *
  *   node tools/docs/install-md.mjs           → rewrite the sections in place
  *   node tools/docs/install-md.mjs --check   → exit 1 if any page's section is stale (pages-md runs this)
@@ -13,8 +15,8 @@
 import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { SRC, aliasOf, buildGraph, moduleExports } from '../registry/graph.mjs';
-import { entryModuleOf, npmSpecifier } from '../registry/package-exports.mjs';
+import { SRC, aliasOf, buildGraph, importsOf, isDocstreamSpecifier, isUpstreamSdkSpecifier, moduleExports } from '../registry/graph.mjs';
+import { entryModuleOf, libraryOf, npmSpecifier } from '../registry/package-exports.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const PAGES = join(ROOT, 'apps/docs/pages');
@@ -77,19 +79,58 @@ function isDocstreamShim(file) {
   return statements.length > 0 && statements.every((s) => /^export\s+(type\s+)?\{[^}]*\}\s+from\s+['"]@brett_lamy\/ui\/docstream[^'"]*['"]$/.test(s));
 }
 
-/** The shadcn tab's line of prose: what the CLI writes and installs. An item built on Docstream installs
- *  `@brett_lamy/ui` (docstream isn't copied, it's imported by the package's name); a widget's one-module re-export of
- *  Docstream has nothing of its own to edit. */
+/** What `shadcn add <item>` takes from the npm package instead of copying: UI SDK (`sdk`) and Docstream (`docstream`),
+ *  looked for in the item's own files and in those of every item it brings with it. */
+function fromPackage(name, seen = new Set(), found = new Set()) {
+  if (seen.has(name)) return found;
+  seen.add(name);
+  const item = graph.items.get(name);
+  for (const file of item?.files ?? []) {
+    for (const spec of importsOf(`${SRC}/${file}`)) {
+      if (isUpstreamSdkSpecifier(spec)) found.add('sdk');
+      else if (isDocstreamSpecifier(spec)) found.add('docstream');
+    }
+  }
+  for (const dep of item?.deps ?? []) fromPackage(dep, seen, found);
+  return found;
+}
+
+/** The shadcn tab's line of prose: what the CLI writes and installs. UI SDK and Docstream aren't copied: an item that
+ *  uses either (itself, or through a part it is built from) installs `@brett_lamy/ui`, and the copied files import
+ *  them by the package's name. A widget's one-module re-export of Docstream has nothing of its own to edit. */
 function cliProse(name, where) {
   const item = graph.items.get(name);
-  const usesPackage = (item?.npm ?? []).some(([pkg]) => pkg === '@brett_lamy/ui');
-  if (!usesPackage) {
+  const uses = fromPackage(name);
+  if (!uses.size) {
     return `Copies the source into your project's ${where} (with the parts it is built from) and adds BL UI's tokens to your CSS — no runtime package. It is yours to edit. Import from your alias:`;
   }
   if (item.files.length === 1 && isDocstreamShim(item.files[0])) {
     return `Adds one module to your project's ${where} and installs \`@brett_lamy/ui\`, whose Docstream it imports by the package's name. The module only re-exports the widget, so there is nothing in it to edit; it gives the widget your alias. Import from your alias:`;
   }
-  return `Copies the source into your project's ${where} (with the parts it is built from), adds BL UI's tokens to your CSS and installs \`@brett_lamy/ui\` for Docstream, which it imports by the package's name. The copied source is yours to edit. Import from your alias:`;
+  const what = uses.has('sdk') && uses.has('docstream')
+    ? 'for UI SDK and Docstream, which the copied files import by the package\'s name (`@brett_lamy/ui/sdk/…`, `@brett_lamy/ui/docstream/…`)'
+    : uses.has('sdk')
+      ? 'for UI SDK, which the copied files import by the package\'s name (`@brett_lamy/ui/sdk/…`)'
+      : 'for Docstream, which it imports by the package\'s name';
+  return `Copies the source into your project's ${where} (with the parts it is built from), adds BL UI's tokens to your CSS and installs \`@brett_lamy/ui\` ${what}. The copied source is yours to edit. Import from your alias:`;
+}
+
+/** The library entry that exports every shown name too (`@brett_lamy/ui/time` for Calendar's parts), when there is one
+ *  and it is another path than the import line's: a library named after its main module is that line already. */
+function libraryEntry(byModule) {
+  const libs = new Set();
+  for (const [mod, names] of byModule) {
+    for (const n of names) {
+      const entry = entryModuleOf(graph, mod, n);
+      if (!entry) return null; // a name without an entry of its own is on the root only
+      libs.add(libraryOf(entry));
+    }
+  }
+  if (libs.size !== 1) return null;
+  const [lib] = libs;
+  if (!lib.entry) return null;
+  const spec = `@brett_lamy/ui/${lib.entry}`;
+  return [...byModule].every(([mod, names]) => names.every((n) => npmSpecifier(graph, mod, n) === spec)) ? null : { name: lib.name, spec };
 }
 
 export function installSection(entry) {
@@ -117,6 +158,8 @@ export function installSection(entry) {
   }
   const files = graph.items.get(entry.name)?.files ?? [];
   const where = files.some((f) => f.startsWith('lib/')) ? '`lib/`' : '`components/ui/`';
+  const library = libraryEntry(byModule);
+  const fromModule = library ? `then the parts from their module (the ${library.name} library's entry, \`${library.spec}\`, has them too):` : 'then the parts from their module:';
   return [
     '{% tabs title="Installation" sync="install" %}',
     '{% tab title="shadcn CLI" %}',
@@ -132,8 +175,8 @@ export function installSection(entry) {
     command('npm install @brett_lamy/ui'),
     '',
     ownSheets(entry).length
-      ? "Import the stylesheets once at your app's entry (the kit's, then docstream's, which this part renders with), then the parts from their module:"
-      : "Import the stylesheet once at your app's entry, then the parts from their module:",
+      ? `Import the stylesheets once at your app's entry (the kit's, then docstream's, which this part renders with), ${fromModule}`
+      : `Import the stylesheet once at your app's entry, ${fromModule}`,
     '',
     IMPORT_FENCE, `import '@brett_lamy/ui/styles.css'`, ...ownSheets(entry).map((sheet) => `import '${sheet}'`), '', [...byEntry.entries()].map(([from, ns]) => importLine(ns, from)).join('\n'), '```',
     '{% endtab %}',

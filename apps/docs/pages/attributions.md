@@ -11,7 +11,7 @@ Most of these are MIT, ISC, BSD or Apache-2.0. Three need a closer look before y
 | Library | Used for | License |
 | --- | --- | --- |
 | [React](https://react.dev) and React DOM 19 | Everything | MIT |
-| [UI SDK](https://ui-sdk.dev) (`@ui-sdk/core`, `@ui-sdk/react`) by Vercel, through our fork [BLamy/ui-sdk](https://github.com/BLamy/ui-sdk) (published as `@brett_lamy/ui-sdk-core` and `@brett_lamy/ui-sdk-react`) | Behavior for every component: buttons, menus, dialogs, popovers, lists, pickers, trees, tabs, toasts, focus and keyboard handling, selection, drag and drop, dates, colors, ARIA; and the behaviors the containers are built from. The fork adds layer hosts, a `when` option on `bindLayer` and two exported kernel types (see [Built on UI SDK](https://blamy.github.io/ui/#/ui-sdk)). Copyright 2026 Vercel, Inc.; the fork's changed files say so at the top. | Apache-2.0 |
+| [UI SDK](https://ui-sdk.dev) (`@ui-sdk/core`, `@ui-sdk/react`) by Vercel, through our fork [BLamy/ui-sdk](https://github.com/BLamy/ui-sdk), a build of which ships inside `@brett_lamy/ui` (`@brett_lamy/ui/sdk/…`) | Behavior for every component: buttons, menus, dialogs, popovers, lists, pickers, trees, tabs, toasts, focus and keyboard handling, selection, drag and drop, dates, colors, ARIA; and the behaviors the containers are built from. The fork adds layer hosts, a `when` option on `bindLayer` and two exported kernel types (see [Built on UI SDK](https://blamy.github.io/ui/#/ui-sdk)). Copyright 2026 Vercel, Inc.; the fork's changed files say so at the top. | Apache-2.0 |
 | [Tailwind CSS](https://tailwindcss.com) 4 | Styling, through the design tokens | MIT |
 | [shadcn/ui](https://ui.shadcn.com) | The registry format and the `shadcn` CLI that copies components into your project | MIT |
 | [class-variance-authority](https://cva.style) | Variant recipes | Apache-2.0 |
@@ -19,7 +19,7 @@ Most of these are MIT, ISC, BSD or Apache-2.0. Three need a closer look before y
 | [Motion](https://motion.dev) (`framer-motion`) | Springs, layout and gesture animation | MIT |
 | [Codicons](https://github.com/microsoft/vscode-codicons) (`@vscode/codicons`) | Debugger control icons in `DebugToolbar` | CC-BY-4.0 (the icons, as the package declares), MIT (its code) |
 
-UI SDK is licensed under the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0). Our fork keeps that license and its copyright notice: `@brett_lamy/ui-sdk-core` and `@brett_lamy/ui-sdk-react` ship UI SDK's `LICENSE`, and every file the fork changes from upstream says so at its top. A registry install copies BL UI's own source, not UI SDK's; UI SDK reaches your app, with its license, as those two npm packages.
+UI SDK is licensed under the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0). Our fork keeps that license and its copyright notice: the build inside `@brett_lamy/ui` (`dist/vendor/ui-sdk`) ships UI SDK's `LICENSE` and a `NOTICE.md` that says where it came from and what the fork changes, every file the fork changes from upstream says so at its top, and the package's license field is `MIT AND Apache-2.0`. A registry install copies BL UI's own source, not UI SDK's; UI SDK reaches your app, with its license, inside `@brett_lamy/ui`.
 
 ## Trees, files and data
 

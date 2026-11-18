@@ -9,7 +9,7 @@ docstream is part of BL UI: it comes with `@brett_lamy/ui`, at `@brett_lamy/ui/d
 {% command %}npm install @brett_lamy/ui react react-dom{% endcommand %}
 
 {% hint style="info" %}
-React and React DOM (19) are peer dependencies: docstream uses your app's copy. Its interactive parts (tabs, menus, popovers, hover cards, the site's sidebar and search, the replay and Strudel controls) are [UI SDK](https://ui-sdk.dev) components, from the same copy of UI SDK as the rest of BL UI (`@ui-sdk/core` and `@ui-sdk/react`, which `@brett_lamy/ui` brings). Everything else it needs — the GitBook parser, the code highlighter, Pele, KaTeX, rrweb, Strudel — is a regular dependency and installs with it.
+React and React DOM (19) are peer dependencies: docstream uses your app's copy. Its interactive parts (tabs, menus, popovers, hover cards, the site's sidebar and search, the replay and Strudel controls) are [UI SDK](https://ui-sdk.dev) components, from the same copy of UI SDK as the rest of BL UI: the build of it that ships inside `@brett_lamy/ui`. Everything else it needs — the GitBook parser, the code highlighter, Pele, KaTeX, rrweb, Strudel — is a regular dependency and installs with it.
 {% endhint %}
 
 ## Peer dependencies
@@ -23,7 +23,7 @@ React and React DOM (19) are peer dependencies: docstream uses your app's copy. 
 | `xstate` | `^5.33.3` | Optional | An ` ```xstate ` fence's StateDiagram (with `elkjs`, which lays it out), loaded when it's displayed, and the `@brett_lamy/ui/docstream/xstate/machine` entry (`xstateToMermaid`). Without them the fence keeps its source and says what to install where the diagram would be. |
 | `vite` | `>=5` | Optional | The `@brett_lamy/ui/docstream/vite` plugin (`docstreamSources`), imported from `vite.config.ts`. |
 
-UI SDK (`@ui-sdk/core`, `@ui-sdk/react`) isn't a peer: it is a dependency of `@brett_lamy/ui`, so docstream and the rest of BL UI share its one copy. `@brett_lamy/ui` has other optional peers (ELK, PGlite, Tailscale) for kit components; docstream never loads them.
+UI SDK isn't a peer, and there is nothing to install for it: `@brett_lamy/ui` ships its own build (`@brett_lamy/ui/sdk/…`), so docstream and the rest of BL UI share one copy. Don't install upstream's `@ui-sdk/core` or `@ui-sdk/react` beside it. `@brett_lamy/ui` has other optional peers (ELK, PGlite, Tailscale) for kit components; docstream never loads them.
 
 The optional peers are only ever imported by their own entry. A test (`packages/ui/src/docstream/entry-boundary.test.ts` in BL UI's repository) walks the module graph of every other entry — static, type-only and dynamic imports — and fails if almost-node shows up, so an app that never installs `@agent-wasm/core` typechecks and bundles cleanly.
 
@@ -192,11 +192,11 @@ Replace the two packages with `@brett_lamy/ui` in your `package.json`. The optio
 `react` and `react-dom` are `>=19` now, as UI SDK requires (`@types/react` 19.2.10 or newer with TypeScript).
 {% endstep %}
 {% step %}
-### Install the two UI SDK peers
+### Install the library; UI SDK comes inside it
 
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 
-The standalone `@brett_lamy/docstream` 2.0 took both as peer dependencies (`^0.1.0-beta.2`). Inside `@brett_lamy/ui` (6.0 and later) they come with the library, so your app and docstream share one copy of the core.
+The standalone `@brett_lamy/docstream` 2.0 took UI SDK's two packages as peer dependencies (`^0.1.0-beta.2`). `@brett_lamy/ui` (6.0 and later) ships UI SDK inside it, so your app and docstream share one copy. If your app installed `@ui-sdk/core` or `@ui-sdk/react` for 2.0, remove them, and import UI SDK from `@brett_lamy/ui/sdk/…` where your own code uses it.
 {% endstep %}
 {% step %}
 ### Declare the layer, if you layer docstream

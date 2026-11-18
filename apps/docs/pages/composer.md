@@ -8,7 +8,7 @@ Use something else when: a plain multi-line field is enough ([Textarea](https://
 {% tab title="shadcn CLI" %}
 {% command %}npx shadcn@latest add https://blamy.github.io/ui/r/composer.json{% endcommand %}
 
-Copies the source into your project's `components/ui/` (with the parts it is built from), adds BL UI's tokens to your CSS and installs `@brett_lamy/ui` for Docstream, which it imports by the package's name. The copied source is yours to edit. Import from your alias:
+Copies the source into your project's `components/ui/` (with the parts it is built from), adds BL UI's tokens to your CSS and installs `@brett_lamy/ui` for UI SDK and Docstream, which the copied files import by the package's name (`@brett_lamy/ui/sdk/…`, `@brett_lamy/ui/docstream/…`). The copied source is yours to edit. Import from your alias:
 
 ```tsx
 import {

@@ -37,6 +37,60 @@ description: Branding, theme and colors, page actions, edit links, footers, per-
 
 A tab goes to its first page in reading order; set `slug` to send it somewhere else. A page with frontmatter `layout: wide` gets the full width (up to `--ds-site-wide-w`, 1240px) and no outline — for galleries and full-size demos.
 
+## Under your own bar
+
+A site mounted inside an app that already has a top bar would stack a second bar under it. `header={false}` leaves the site's header out, so the site starts at its sidebar and page, and the app's bar is the only one. Two controls lived only in that header, so they move to your bar as parts: `DocsSiteSearchTrigger` and `DocsSiteNavigationTrigger`. A controller connects them to the site, the way UI SDK's dialog controller connects a trigger to a dialog elsewhere on the page.
+
+```tsx title="app.tsx"
+import { useState } from "react"
+import { DocsSite, DocsSiteNavigationTrigger, DocsSiteSearchTrigger, createDocsSiteController } from "@brett_lamy/ui/docstream/site"
+
+export function App() {
+  const [docs] = useState(createDocsSiteController)
+  return (
+    <>
+      <header className="app-bar">
+        <DocsSiteNavigationTrigger controller={docs} />
+        <a href="/">Acme</a>
+        <DocsSiteSearchTrigger controller={docs} />
+      </header>
+      <DocsSite files={files} title="Acme docs" header={false} controller={docs} height="calc(100dvh - 56px)" />
+    </>
+  )
+}
+```
+
+| API | Default | What it does |
+| --- | --- | --- |
+| `header` (on `DocsSite`) | `true` | `false` leaves out the site's header: brand, tabs, search button, links, appearance switch and the phone's menu button. |
+| `controller` (on `DocsSite`) | its own | The connection to triggers written outside the site. Give the site and each trigger the same one. |
+| `createDocsSiteController()` | — | Makes a controller. Call it once (`useState(createDocsSiteController)` or at module scope), not on every render. It also has `openSearch()` and `openNavigation()`, to open either from code. |
+| `<DocsSiteSearchTrigger controller>` | — | The button that opens the site's search. It is the search dialog's own trigger: focus returns to it when the dialog closes, and it announces the shortcut. Its content is a magnifier, "Search…" and the shortcut in a `<kbd>`; children replace it. |
+| `<DocsSiteNavigationTrigger controller>` | — | The button that opens the navigation drawer. It renders only while the site is narrow enough to fold its sidebar away, so write it unconditionally. Its content is a menu glyph; children replace it. |
+
+Both triggers are UI SDK trigger parts: they take `render` for your own button, `className`, `aria-label` and the rest of a button's props. Outside the site they are unstyled, so style them like the rest of your bar:
+
+```tsx
+<DocsSiteSearchTrigger controller={docs} aria-label="Search Acme docs" render={<Button variant="outline" />}>
+  <SearchIcon /> Search… <Kbd keys="mod+k" />
+</DocsSiteSearchTrigger>
+```
+
+What stays the same without the header:
+
+- ⌘K (and `/`) still open search, whether or not you place the trigger. `search={false}` still turns search off; write the trigger only for a site that has it.
+- `title` still names the browser tab, and with `logo` it heads the navigation drawer.
+- `tabs` still scope the sidebar and Previous / Next, and still sit at the top of the drawer. Link to each section from your bar; `tabForSlug(tabs, slug)` tells you which one a page is in, to mark it current.
+- The outline and the sidebar stick directly under your bar. Set `height` to the room under it, as above.
+
+What you take over: `links` and the appearance switch are not drawn, so put any link your bar doesn't already have somewhere else (`sidebarFooter` works), and control the theme with `appearance`.
+
+{% hint style="info" %}
+One controller serves one mounted site at a time. A router that swaps sites under the same bar can give them all the same controller: the triggers follow whichever one is mounted.
+{% endhint %}
+
+Why these are a prop and two parts, not something you compose from what was there: `search={false}` removes search itself, ⌘K included, and hiding the header with CSS leaves a narrow site with no way to open its navigation. The triggers are the same parts the site's own header draws, so a site on its own and a site under your bar behave alike.
+
 ## Light, dark and your own tokens
 
 The built-in palette has a light and a dark set. The header's switch flips them and remembers the choice in `localStorage`; `?theme=dark` in the URL wins for one visit (handy for screenshots).
@@ -86,6 +140,7 @@ Every page header has docstream's **Copy page ▾** menu — copy as Markdown, v
 | `footer` | Below every page, after previous / next. |
 | `renderPage(page, content)` | Wrap or extend a page — add a banner to drafts, a feedback widget, anything per page. |
 | `notFound(path)` | The page for an unknown URL. |
+| `header={false}` | No header, for a site [under your own bar](#under-your-own-bar). |
 | `search={false}` | No search button, no ⌘K. |
 | `toc={false}` | No outline. |
 | `documentTitle` | `false` to leave `document.title` alone, or `(page, siteTitle) => string`. |

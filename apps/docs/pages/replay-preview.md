@@ -2,7 +2,7 @@
 
 A session replay in a browser window. `ReplayPreview` plays an [rrweb](https://github.com/rrweb-io/rrweb) recording with docstream's headless `ReplayStage` and wraps it in browser chrome: a URL bar that follows the recording's navigations, play/pause, a plain seek bar (with `markers`, the recording's moments on a rail above it), a speed control, fullscreen, and a drawn cursor whose clicks ripple. Until the player is ready, a page-shaped skeleton holds the frame at the recording's aspect ratio, so nothing jumps when the page appears.
 
-`ReplayPreview` lives in docstream, the library's Markdown renderer (`@brett_lamy/ui/docstream/replay`), next to the rrweb stage and the marker helpers it is built on. BL UI keeps a thin re-export, so `@/components/ui/replay-preview` (and the package root) resolves like every other part: the component, the types of its props and handle (`ReplayPreviewProps`, `ReplayPreviewHandle`, `ReplayEvent`, `ReplayMarker`, `ReplayInspection`, …). Everything else, the headless `ReplayStage`, the readers (`getReplayMeta`, `getReplayMarkers`, `getReplayDevtools`, …), `formatReplayTime` and the demo recording, you import from `@brett_lamy/ui/docstream/replay` and `@brett_lamy/ui/docstream/replay/demo`. Docstream isn't copied by the registry, so the registry item adds `@brett_lamy/ui` as its one npm dependency, for `@brett_lamy/ui/docstream/replay`.
+`ReplayPreview` lives in docstream, the library's Markdown renderer (`@brett_lamy/ui/docstream/replay`), next to the rrweb stage and the marker helpers it is built on. BL UI keeps a thin re-export, so `@/components/ui/replay-preview` (on npm `@brett_lamy/ui/replay-preview`, or the Replay library's entry, `@brett_lamy/ui/replay`) resolves like every other part: the component, the types of its props and handle (`ReplayPreviewProps`, `ReplayPreviewHandle`, `ReplayEvent`, `ReplayMarker`, `ReplayInspection`, …). Everything else, the headless `ReplayStage`, the readers (`getReplayMeta`, `getReplayMarkers`, `getReplayDevtools`, …), `formatReplayTime` and the demo recording, you import from `@brett_lamy/ui/docstream/replay` and `@brett_lamy/ui/docstream/replay/demo`. Docstream isn't copied by the registry, so the registry item adds `@brett_lamy/ui` as its one npm dependency, for `@brett_lamy/ui/docstream/replay`.
 
 Use a sibling for a different job: [VideoPreview](https://blamy.github.io/ui/#/video-preview) plays a video file, and the [Replay Canvas block](https://blamy.github.io/ui/#/blocks/replay-canvas) lays many recordings out as one map of the app.
 
@@ -19,7 +19,7 @@ import { ReplayPreview } from '@/components/ui/replay-preview'
 {% tab title="npm" %}
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 
-Import the stylesheets once at your app's entry (the kit's, then docstream's, which this part renders with), then the parts from their module:
+Import the stylesheets once at your app's entry (the kit's, then docstream's, which this part renders with), then the parts from their module (the Replay library's entry, `@brett_lamy/ui/replay`, has them too):
 
 ```tsx
 import '@brett_lamy/ui/styles.css'

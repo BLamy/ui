@@ -16,11 +16,29 @@ Numbers from production builds of a fresh shadcn app (`shadcn create --base aria
 
 What the numbers say:
 
-- **JavaScript is the same either way.** The npm package is built with one output module per source module and `sideEffects` limited to CSS, so a bundler drops what you don't import. Importing `Button` (from `@brett_lamy/ui/button` or from the root) does not pull the Composer.
+- **JavaScript is the same either way.** The npm package is built with one output module per source module and `sideEffects` limited to CSS, so a bundler drops what you don't import. Importing `Button` (from `@brett_lamy/ui/button` or from the root) does not pull the Composer: the root exports only the core, and the Composer is the entry `@brett_lamy/ui/composer`.
 - **CSS is where they differ.** The registry adds Tailwind utilities only for the classes in the files you copied, because Tailwind scans your source. The npm stylesheet is precompiled for the whole library, including the Markdown editor's styles, so it is roughly 3–4× larger in gzip whatever you import. (Docstream's own sheet, `@brett_lamy/ui/docstream/styles.css`, is separate: import it when you render Markdown; KaTeX's styles load with the first math block.)
 - **Motion is the real cost.** `Button` alone adds about 210 kB raw (67 kB gzip) of JavaScript, because its label morph uses `framer-motion`. That is the price of the springs; it is shared by every other part, so `SplitView` adds only 49 kB raw on top of `Button`.
 
 Your numbers will differ with your app, plugins and browser targets. To measure yours, run `vite build` (or `next build`) with and without the import.
+
+## What an entry costs
+
+The numbers above are from 3.0.0. For 6.0 the package measures itself. `pnpm size` (`tools/size/measure.mjs`) bundles every library entry on its own from the built package the way an app's bundler would (Rolldown, the bundler under Vite: minified, tree-shaken, code-split, with React and the optional peers left out and every other dependency counted in), and reports for each:
+
+| | What it is |
+| --- | --- |
+| `load` | What the browser must fetch before the entry works: its chunk and everything it imports statically |
+| `lazy` | What it may fetch later: the chunks behind a dynamic `import()` (KaTeX, Mermaid, the Cloudflare catalog) |
+
+Both are minified and gzipped. Stylesheets, worker scripts, the wasm an entry loads by URL and the optional peers are not counted. Each library's page under [Libraries](https://blamy.github.io/ui/#/libraries) shows its numbers.
+
+Two things are checked in CI and before a version is published (`pnpm size --check`), because they are what "you only ship what you import" rests on:
+
+- **Budgets.** What a library entry loads, and what one import loads (a Button, a Dialog: the floor an app pays), may not grow past its budget (`tools/size/budget.json`, set 5% over what was measured).
+- **Tree-shaking.** One name imported from a library entry (`import { Waveform } from '@brett_lamy/ui/audio'`) or from the root costs what its own module entry costs (`@brett_lamy/ui/waveform`), within a small tolerance.
+
+Entries share code and never carry a copy each: the package is one file per module, UI SDK included, so two entries that use a module import the same file. `pnpm size --why @brett_lamy/ui/button` lists what an entry is made of, largest first.
 
 ## Registry or npm
 
@@ -33,11 +51,11 @@ Your numbers will differ with your app, plugins and browser targets. To measure 
 | Updates | `shadcn add … -o` and review the diff | `npm update` |
 | Best for | a product you will restyle | trying it, prototypes, several apps sharing one version |
 
-Start with the registry for a product. Use npm when you want the parts unmodified, and switch later: every module is a package entry at the registry's path (`@/components/ui/dialog` ↔ `@brett_lamy/ui/dialog`, `@/lib/theme` ↔ `@brett_lamy/ui/lib/theme`), so your own code only changes the prefix of its imports.
+Start with the registry for a product. Use npm when you want the parts unmodified, and switch later: every module is a package entry at the registry's path (`@/components/ui/dialog` ↔ `@brett_lamy/ui/dialog`, `@/lib/theme` ↔ `@brett_lamy/ui/lib/theme`), so your own code only changes the prefix of its imports. Either way `@brett_lamy/ui` is in your `node_modules`: the registry copies BL UI's source, and UI SDK and docstream come from the package.
 
 ## Vite
 
-- **Import from the module.** With the package, import each part from its module's entry: `import { Button } from '@brett_lamy/ui/button'`. A production build tree-shakes the root (`@brett_lamy/ui`) just as well, but the dev server and the type checker then load the whole index to resolve one name; a module entry loads only that module and what it imports.
+- **Import from the module.** With the package, import each part from its module's entry: `import { Button } from '@brett_lamy/ui/button'`. A production build tree-shakes the root (`@brett_lamy/ui`) and a library entry (`@brett_lamy/ui/time`) just as well, but the dev server and the type checker then load a whole index to resolve one name; a module entry loads only that module and what it imports.
 - **Split the heavy parts.** The Composer (a TipTap editor), the Markdown renderer with syntax highlighting, maps and session replay load libraries you may not need on first paint. Load them lazily:
 
   ```tsx
@@ -48,12 +66,12 @@ Start with the registry for a product. Use npm when you want the parts unmodifie
   )
   ```
 
-  With the package it is the same line on `@brett_lamy/ui/composer`. A lazy import of the root would put the whole library behind the split point.
+  With the package it is the same line on `@brett_lamy/ui/composer`. A lazy import of the root would put the whole core behind the split point, and a lazy import of a library entry the whole library: split on a module's entry (`@brett_lamy/ui/markdown-editor`, not `@brett_lamy/ui/markdown`) when you want one part.
 
   Composer is a family of parts, so lazy-load the module that renders the whole composition (your `PromptBox` component) rather than one part at a time.
 - **What already waits.** Some costs are deferred for you. Docstream loads Mermaid (Pele), KaTeX and rrweb only when a page shows a diagram, math or a replay, and Strudel on the first play; the diagrams load ELK, in a worker, only when a layout is asked for; StateDiagram loads XState when it mounts (and Babel's parser only for `source`), CloudflareDiagram only for a service with a machine, and docstream's xstate fence loads StateDiagram itself only when a fence is shown; the Cloudflare catalog (about 26 kB gzipped) and `jsonc-parser` are only on `@brett_lamy/ui/cloudflare` (CloudflareDiagram's one entry), so no other import reaches them.
 - **Pre-bundle in dev.** Vite discovers dependencies as they are first imported, and a late discovery reloads the page. The docs app lists the TipTap packages, and the libraries docstream loads lazily, in `optimizeDeps.include` for that reason (`apps/docs/vite.config.mts`); do the same for any package Vite reports as newly found. Docstream itself needs no entry: from `node_modules` it is pre-bundled like any dependency.
-- **Chunking.** If one vendor chunk grows, `build.rollupOptions.output.manualChunks` can put `framer-motion` and `@ui-sdk/react` / `@ui-sdk/core` in their own long-cached chunks. Measure before and after: the two are used together by most parts, and splitting them rarely shrinks the total.
+- **Chunking.** If one vendor chunk grows, `build.rollupOptions.output.manualChunks` can put `framer-motion` and UI SDK (the modules under `node_modules/@brett_lamy/ui/dist/vendor/ui-sdk`) in their own long-cached chunks. Measure before and after: the two are used together by most parts, and splitting them rarely shrinks the total.
 
 ## Next.js
 

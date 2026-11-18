@@ -2,14 +2,14 @@
 
 Three groups of standalone hooks. `useSyntaxTokens` and `useCodeEditor` give you the tokens and the text of highlighted code. `useCountdown` is a wall-clock timer. `useSessionRecording`, `useSessions`, `useSessionCloud` and `useCloud` record the page with rrweb into `localStorage`, list the recordings, and (optionally) sync them to a Durable Streams server. The other hooks are in the [Hooks overview](https://blamy.github.io/ui/#/hooks).
 
-All seven are public.
+All seven are public. The session hooks belong to the Replay library and `useCloud` to Sync, so they are on those entries and not on the package root.
 
 ```tsx
 // npm
 import { useSyntaxTokens, useCodeEditor } from '@brett_lamy/ui/code-editor'
 import { useCountdown } from '@brett_lamy/ui/progress-ring'
-import { useSessionRecording, useSessions, useSessionCloud } from '@brett_lamy/ui'
-import { useCloud } from '@brett_lamy/ui/lib/durable-streams'
+import { useSessionRecording, useSessions, useSessionCloud } from '@brett_lamy/ui/replay' // or '@brett_lamy/ui/lib/session-recorder'
+import { useCloud } from '@brett_lamy/ui/sync' // or '@brett_lamy/ui/lib/durable-streams'
 
 // shadcn registry (aliases)
 import { useSyntaxTokens, useCodeEditor } from '@/components/ui/code-editor'  // …/r/code-editor.json
@@ -131,7 +131,7 @@ Details, from the source:
 
 Records the page with [rrweb](https://github.com/rrweb-io/rrweb) for as long as the component is mounted: one new session per mount (not per re-render). The events are appended to streams in `localStorage`, so a private browser is the whole system. If the cloud is switched on, it syncs meanwhile (see `useSessionCloud`).
 
-- **Export:** public, with `useSessions` and `useSessionCloud`; the engine (`startSessionRecording`, `sessionCloud`, `readSession`, `deleteSession`, `clearSessions`, `currentSessionId`, `storageUsage`) is on `@brett_lamy/ui/lib/session-recorder`. Registry item `session-recorder` (`@/lib/session-recorder`), which depends on `rrweb`, `append-stream` and `durable-streams`.
+- **Export:** public, on `@brett_lamy/ui/lib/session-recorder` and the Replay library's entry, `@brett_lamy/ui/replay`, with `useSessions`, `useSessionCloud` and the engine (`startSessionRecording`, `sessionCloud`, `readSession`, `deleteSession`, `clearSessions`, `currentSessionId`, `storageUsage`). Registry item `session-recorder` (`@/lib/session-recorder`), which depends on `rrweb`, `append-stream` and `durable-streams`.
 - **Needs:** nothing. It does its work in an effect, so it does nothing on the server.
 
 ```ts
@@ -260,7 +260,7 @@ Behaviors to know:
 
 The same status and settings, for **any** `CloudSync` you build yourself, which is what `useSessionCloud` calls with `sessionCloud`.
 
-- **Export:** on `@brett_lamy/ui/lib/durable-streams` (not the root: it needs the engine beside it), with `CloudSync`, `DurableStreamsClient` and `cloudDeviceId`. Registry item `durable-streams` (`@/lib/durable-streams`).
+- **Export:** on `@brett_lamy/ui/lib/durable-streams` and the Sync library's entry, `@brett_lamy/ui/sync` (not the root), with `CloudSync`, `DurableStreamsClient` and `cloudDeviceId`. Registry item `durable-streams` (`@/lib/durable-streams`).
 - **Needs:** nothing.
 
 ```ts

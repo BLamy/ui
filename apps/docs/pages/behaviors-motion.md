@@ -1,10 +1,10 @@
 # Motion and gestures
 
-In BL UI 6.0 motion is CSS. A part's state is on attributes (`data-open`, `data-starting-style`, `data-ending-style`, `data-covered`, `data-swiping`) and its progress on CSS variables (`--panel-height`, `--stack-progress`, `--pull-distance`), and transitions on the kit's spring tokens animate between them. That makes every animation interruptible (a transition starts from where the last one is), instant while a finger drags (a `data-*` attribute turns the transition off), and calm under `prefers-reduced-motion` (`motion-reduce:`). UI SDK's motion behaviors supply the attributes and keep an element mounted until its exit has played: `bindPanel` for a panel that animates its height, `animateIn` and `animateOut` for anything that comes and goes, and the math in `@ui-sdk/core/gesture` for throws, springs and rubber-banding. framer-motion stays only for purely visual morphs (shared layout, [TextMorph](https://blamy.github.io/ui/#/text-morph), [NumberMorph](https://blamy.github.io/ui/#/number-morph)). The upstream reference is [Transitions and Gestures](https://ui-sdk.dev/docs/core/behaviors/motion).
+In BL UI 6.0 motion is CSS. A part's state is on attributes (`data-open`, `data-starting-style`, `data-ending-style`, `data-covered`, `data-swiping`) and its progress on CSS variables (`--panel-height`, `--stack-progress`, `--pull-distance`), and transitions on the kit's spring tokens animate between them. That makes every animation interruptible (a transition starts from where the last one is), instant while a finger drags (a `data-*` attribute turns the transition off), and calm under `prefers-reduced-motion` (`motion-reduce:`). UI SDK's motion behaviors supply the attributes and keep an element mounted until its exit has played: `bindPanel` for a panel that animates its height, `animateIn` and `animateOut` for anything that comes and goes, and the math in `@brett_lamy/ui/sdk/core/gesture` for throws, springs and rubber-banding. framer-motion stays only for purely visual morphs (shared layout, [TextMorph](https://blamy.github.io/ui/#/text-morph), [NumberMorph](https://blamy.github.io/ui/#/number-morph)). The upstream reference is [Transitions and Gestures](https://ui-sdk.dev/docs/core/behaviors/motion).
 
 ```ts
-import { bindPanel, hiddenAttrs, bindFindable, animateIn, animateOut } from '@ui-sdk/core'
-import { createVelocityTracker, projectDistance, solveSpring, rubberBand, sectorOf } from '@ui-sdk/core/gesture'
+import { bindPanel, hiddenAttrs, bindFindable, animateIn, animateOut } from '@brett_lamy/ui/sdk/core'
+import { createVelocityTracker, projectDistance, solveSpring, rubberBand, sectorOf } from '@brett_lamy/ui/sdk/core/gesture'
 ```
 
 ## The spring tokens
@@ -87,7 +87,7 @@ The row collapses with `grid-template-rows: 1fr → 0fr`, so no height is measur
 
 ## Gesture math
 
-`@ui-sdk/core/gesture` interprets pointer movement; your primitive still handles input (with `bindDrag`), state and frames. The fork's edge swipe and pull to refresh are built from these.
+`@brett_lamy/ui/sdk/core/gesture` interprets pointer movement; your primitive still handles input (with `bindDrag`), state and frames. The fork's edge swipe and pull to refresh are built from these.
 
 | Helper | What it does |
 | --- | --- |

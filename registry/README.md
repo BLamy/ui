@@ -13,13 +13,19 @@ app, and the app's own bundler tree-shakes. The full explanation, with examples,
   `dependencies` are derived from the real imports (`@/components/ui/<x>`, `@/lib/<x>`, bare specifiers); dependencies on our
   own items are full URLs, so the shadcn CLI never substitutes its stock `button`. Docstream isn't copied: an item that imports
   `@brett_lamy/ui/docstream…` gets the npm dependency `@brett_lamy/ui` at the library's version, and its manifest's `css` adds
-  docstream's stylesheet to the app's CSS (`@import "@brett_lamy/ui/docstream/styles.css" layer(docstream)`).
+  docstream's stylesheet to the app's CSS (`@import "@brett_lamy/ui/docstream/styles.css" layer(docstream)`). UI SDK isn't
+  copied either: the package ships its own build of it. A library module imports it as `@ui-sdk/…`; its item gets the same
+  npm dependency, `@brett_lamy/ui`, and the static registry writes the copied file's imports as `@brett_lamy/ui/sdk/…`.
+- **Library items** (`library-<entry>`, `registry:item`) are one per library of `apps/docs/src/site/libraries.ts`: no files of
+  their own, every item of the library as a `registryDependency`. `library-ui` is the core. They are generated with the
+  package's library entries (`packages/ui/src/libraries/<entry>.ts`), from the same list.
 - **Blocks** are `blocks/<slug>/` (e.g. `github-clone`, `discord-clone`, `t3-clone`, `map-chat`). Each has `meta.json`
   (`{ name, title, description, categories, files, dependencies? }`, see `blocks/types.ts`) and a `page.tsx` whose default export
   is the whole block. A block imports only `react`, `@/components/ui/*`, `@/lib/*`, its own files and the npm packages in
-  `meta.json`'s `dependencies` (the build fails otherwise). Never the library's parts from `@brett_lamy/ui`; the one
-  exception is docstream, which the registry doesn't copy: a block that uses it imports `@brett_lamy/ui/docstream/<entry>`
-  (or `@brett_lamy/ui/docstream-editor/<entry>`) by name and lists `@brett_lamy/ui` in `dependencies`. Files are installed
+  `meta.json`'s `dependencies` (the build fails otherwise). Never the library's parts from `@brett_lamy/ui`; the two
+  exceptions are docstream and UI SDK, which the registry doesn't copy: a block that uses them imports
+  `@brett_lamy/ui/docstream/<entry>` (or `@brett_lamy/ui/docstream-editor/<entry>`) and `@brett_lamy/ui/sdk/…` by name and
+  lists `@brett_lamy/ui` in `dependencies`. A block never writes `@ui-sdk/…`: the build names the entry to import instead. Files are installed
   together into `components/blocks/<slug>/`. Blocks may own complex, product-specific components (for example
   `t3-clone/components/workbench/*`). An optional `<slug>.stories.tsx` is picked up by Storybook (not listed in `files`). Add the block to the docs Blocks page with a
   `{% demo src="blocks/<slug>" layout="multi" %}` line in `apps/docs/pages/blocks.md` (pages-md fails until you do).
@@ -31,13 +37,15 @@ app, and the app's own bundler tree-shakes. The full explanation, with examples,
 
 ## Commands (repo root)
 
-- `pnpm registry` — regenerate `registry.json` and `packages/ui/package.json` `exports` (validates the import graph, the
-  barrel, block imports, and that no two package entries export one name).
+- `pnpm registry` — regenerate `registry.json`, `packages/ui/package.json` `exports`, the library entries
+  (`packages/ui/src/libraries`) and the UI SDK entries (`packages/ui/src/sdk`). It validates the import graph, the barrel
+  (which may re-export only the core and the foundation), block imports, and that no two module entries export one name.
 - `pnpm registry:static` — also run `shadcn build` into `apps/docs/public/r` (the docs build does this via
   `nx run @brett_lamy/registry:registry`).
 - `node tools/registry/build.mjs --static --url http://localhost:4501/r --out /tmp/reg-root/r` — a static registry for another
   host, for testing `npx shadcn add http://localhost:4501/r/<item>.json` locally (`cd /tmp/reg-root && python3 -m http.server 4501`).
-- `node tools/registry/build.mjs --check` — fail if the committed files (`registry.json`, the package's `exports`) are stale, a
+- `node tools/registry/build.mjs --check` — fail if the committed files (`registry.json`, the package's `exports`, the generated
+  entries) are stale, the root re-exports a module that belongs to another library, a
   manifest exports a name that neither the npm barrel (`packages/ui/src/index.ts`) nor the module's own entry does, or two
   entries export one name (`tools/registry/one-path.mjs`) (CI).
 
@@ -46,5 +54,6 @@ app, and the app's own bundler tree-shakes. The full explanation, with examples,
 `@brett_lamy/ui` is built from the same modules (`vite build` with `preserveModules`, `sideEffects: ["*.css"]`, `'use client'` on
 client modules). Every module with an API has its own entry at its registry path (`@/components/ui/dialog` ↔
 `@brett_lamy/ui/dialog`, `@/lib/cron` ↔ `@brett_lamy/ui/lib/cron`), written into `exports` from the same import graph, and the
-root barrel re-exports the components, their parts and the kit's hooks. Blocks are registry-only; they are not part of the npm
-package.
+root barrel re-exports the core's components, their parts and hooks, with the foundation under them. Every other library is
+an entry of its own (`@brett_lamy/ui/time`, `@brett_lamy/ui/audio`), generated from `apps/docs/src/site/libraries.ts`, and UI SDK
+ships inside the package at `@brett_lamy/ui/sdk/…`. Blocks are registry-only; they are not part of the npm package.

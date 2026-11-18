@@ -1,13 +1,13 @@
 # Popups and layers
 
-Every floating thing in BL UI (Popover, Tooltip, HoverCard, DropdownMenu (and its context menus), Select, Combobox, Dialog, Sheet, CommandMenu) is a UI SDK popup: one engine for opening and closing, placing beside a trigger, Escape and outside presses, focus moving in and back, modality, nesting, and presenting as a sheet. The same engine is in `@ui-sdk/core` for a popup of your own: `createPopup` with a **preset** and the popup slot helpers. Below it are the pieces it is made of, which you can use alone: `position` places an element beside an anchor, and `bindLayer` puts an element in the dismissal stack. The upstream reference is [Popups](https://ui-sdk.dev/docs/core/behaviors/popups).
+Every floating thing in BL UI (Popover, Tooltip, HoverCard, DropdownMenu (and its context menus), Select, Combobox, Dialog, Sheet, CommandMenu) is a UI SDK popup: one engine for opening and closing, placing beside a trigger, Escape and outside presses, focus moving in and back, modality, nesting, and presenting as a sheet. The same engine is in UI SDK's core (`@brett_lamy/ui/sdk/core`) for a popup of your own: `createPopup` with a **preset** and the popup slot helpers. Below it are the pieces it is made of, which you can use alone: `position` places an element beside an anchor, and `bindLayer` puts an element in the dismissal stack. The upstream reference is [Popups](https://ui-sdk.dev/docs/core/behaviors/popups).
 
 ```ts
 import {
   createPopup, popupState, popupTrigger, popupContent, popupTitle, popupDescription, popupClose, popupArrow, popupBackdrop,
   position, bindLayer, bindPersistentLayer, isDismissal, supportsTopLayer,
-} from '@ui-sdk/core'
-import { popoverPreset } from '@ui-sdk/core/popover'
+} from '@brett_lamy/ui/sdk/core'
+import { popoverPreset } from '@brett_lamy/ui/sdk/core/popover'
 ```
 
 ## Already done for you
@@ -56,10 +56,10 @@ Change the preset to change the interaction. Each follows its WAI-ARIA pattern, 
 
 | Preset | Import from | For |
 | --- | --- | --- |
-| `popoverPreset` | `@ui-sdk/core/popover` | Interactive content beside a trigger |
-| `dialogPreset` | `@ui-sdk/core/dialog` | A modal task that holds focus (the page, or the layer host, turns inert) |
-| `tooltipPreset` | `@ui-sdk/core/tooltip` | A short label on hover or focus |
-| `hoverCardPreset` | `@ui-sdk/core/hover-card` | A preview on hover or focus |
+| `popoverPreset` | `@brett_lamy/ui/sdk/core/popover` | Interactive content beside a trigger |
+| `dialogPreset` | `@brett_lamy/ui/sdk/core/dialog` | A modal task that holds focus (the page, or the layer host, turns inert) |
+| `tooltipPreset` | `@brett_lamy/ui/sdk/core/tooltip` | A short label on hover or focus |
+| `hoverCardPreset` | `@brett_lamy/ui/sdk/core/hover-card` | A preview on hover or focus |
 
 `createPopup` also reads `modal`, `presentation`, `openOnHover`, `delay`, `closeDelay`, `disabled`, `dismissible` and `onDismissAttempt` from the primitive's options when you declare them. `popupArrow`, `popupBackdrop` and `popupViewport` (the full-screen element a sheet sits in) complete the set; `popupSlots(slot)` builds them all at once.
 

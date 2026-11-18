@@ -7,7 +7,7 @@ description: From an empty component to a rendered docs page, a streaming AI ans
 This page takes you from nothing to the three things docstream is built for: rendering a GitBook-flavored page, streaming an AI answer into the same renderer, and putting live, file-backed React demos into Markdown.
 
 {% hint style="info" %}
-**You need** a React 19+ app with UI SDK installed (`@ui-sdk/core`, `@ui-sdk/react`) and with a bundler that handles CSS imports (Vite, Next.js, webpack…). Every example below is running on this page — it's rendered by docstream too.
+**You need** a React 19+ app with `@brett_lamy/ui` installed (UI SDK comes inside it) and a bundler that handles CSS imports (Vite, Next.js, webpack…). Every example below is running on this page — it's rendered by docstream too.
 {% endhint %}
 
 {% stepper %}

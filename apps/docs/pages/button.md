@@ -6,7 +6,7 @@ The action button: UI SDK's `Button` dressed in BL UI's look, with nine variants
 {% tab title="shadcn CLI" %}
 {% command %}npx shadcn@latest add https://blamy.github.io/ui/r/button.json{% endcommand %}
 
-Copies the source into your project's `components/ui/` (with the parts it is built from) and adds BL UI's tokens to your CSS — no runtime package. It is yours to edit. Import from your alias:
+Copies the source into your project's `components/ui/` (with the parts it is built from), adds BL UI's tokens to your CSS and installs `@brett_lamy/ui` for UI SDK, which the copied files import by the package's name (`@brett_lamy/ui/sdk/…`). The copied source is yours to edit. Import from your alias:
 
 ```tsx
 import { Button } from '@/components/ui/button'
@@ -104,8 +104,8 @@ Keep a toggle's label the same in both states ("Star", not "Star" / "Remove star
 For a chip, a row, a tile or anything else whose look is all your own, use UI SDK's `Button` and `Toggle` themselves. They bring the behavior (press, focus, keyboard, `disabled`, the pending state, `pressed` on the toggle) and no classes at all, so your `className` is the only styling. The kit's own modules import them under these names:
 
 ```tsx
-import { Button as SdkButton } from '@ui-sdk/react/button'
-import { Toggle as SdkToggle } from '@ui-sdk/react/toggle'
+import { Button as SdkButton } from '@brett_lamy/ui/sdk/react/button'
+import { Toggle as SdkToggle } from '@brett_lamy/ui/sdk/react/toggle'
 
 <SdkToggle
   pressed={on}
@@ -118,7 +118,7 @@ import { Toggle as SdkToggle } from '@ui-sdk/react/toggle'
 
 {% demo src="button/unstyled" %}
 
-Style hover, a held press and keyboard focus with the native `hover:`, `active:` and `focus-visible:`, and state with UI SDK's attributes: `data-disabled`, `data-pending` on the button, `data-pressed` on the toggle while it is on. There is no default focus ring, hover or disabled style: add them, or keyboard users will see no focus indicator. In a registry block, list `@ui-sdk/react` in `meta.json`'s `dependencies`.
+Style hover, a held press and keyboard focus with the native `hover:`, `active:` and `focus-visible:`, and state with UI SDK's attributes: `data-disabled`, `data-pending` on the button, `data-pressed` on the toggle while it is on. There is no default focus ring, hover or disabled style: add them, or keyboard users will see no focus indicator. In a registry block, list `@brett_lamy/ui` in `meta.json`'s `dependencies`.
 
 | | Looks | Use it for |
 | --- | --- | --- |

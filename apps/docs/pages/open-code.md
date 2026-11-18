@@ -6,7 +6,7 @@
 {% tab title="shadcn CLI" %}
 {% command %}npx shadcn@latest add https://blamy.github.io/ui/r/open-code.json{% endcommand %}
 
-Copies the source into your project's `components/ui/` (with the parts it is built from) and adds BL UI's tokens to your CSS — no runtime package. It is yours to edit. Import from your alias:
+Copies the source into your project's `components/ui/` (with the parts it is built from), adds BL UI's tokens to your CSS and installs `@brett_lamy/ui` for UI SDK, which the copied files import by the package's name (`@brett_lamy/ui/sdk/…`). The copied source is yours to edit. Import from your alias:
 
 ```tsx
 import { OpenCode } from '@/components/ui/open-code'
@@ -31,7 +31,7 @@ import { OpenCode } from '@brett_lamy/ui/open-code'
 
 ## Setting up a host
 
-The registry item includes the component and the host bridge. Install `@agent-wasm/core` for the runtime used in this example. With the npm package, the component is `@brett_lamy/ui/open-code` and the runtime (the hosts, `loadOpenCodeRuntime`, the vault stores) is `@brett_lamy/ui/opencode`, an entry of its own because it is large.
+The registry item includes the component and the host bridge. Install `@agent-wasm/core` for the runtime used in this example. With the npm package, the library's entry `@brett_lamy/ui/opencode` has the component and the runtime (the hosts, `loadOpenCodeRuntime`, the vault stores); `@brett_lamy/ui/open-code` is the component alone. The runtime's modules load only when the component mounts.
 
 ```tsx
 import { OpenCode } from '@/components/ui/open-code';

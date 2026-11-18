@@ -18,7 +18,7 @@ The install runs no build or postinstall scripts, so `pnpm add` finishes without
 
 | Dependency | What the editor uses it for |
 | --- | --- |
-| `@ui-sdk/core`, `@ui-sdk/react` | The toolbar, the `/ @ # $` trigger menus, selects, tabs, checkboxes, popovers and dialogs. |
+| UI SDK, the build inside the package (`@brett_lamy/ui/sdk/…`) | The toolbar, the `/ @ # $` trigger menus, selects, tabs, checkboxes, popovers and dialogs. |
 | `@tiptap/core` | `Node`, `Mark`, `Extension`, `getSchema`: the GitBook nodes and marks are built on it. |
 | `@tiptap/react` | `useEditor`, `EditorContent` and the React node views (`ReactNodeViewRenderer`). |
 | `@tiptap/pm` | ProseMirror: the schema, plugins, history (task-state changes close an undo step). |

@@ -15,7 +15,7 @@ import { cn, cx } from '@/lib/utils'
 {% tab title="npm" %}
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 
-Import the stylesheet once at your app's entry, then the parts from their module:
+Import the stylesheet once at your app's entry, then the parts from their module (the Tokens library's entry, `@brett_lamy/ui/tokens`, has them too):
 
 ```tsx
 import '@brett_lamy/ui/styles.css'
@@ -66,7 +66,7 @@ A class string for tappable elements you draw yourself: it removes the mobile ta
 
 {% demo src="utilities/pressable" %}
 
-It is for plain elements and [unstyled UI SDK buttons](https://blamy.github.io/ui/#/button) (`Button as SdkButton` from `@ui-sdk/react/button`). The styled `Button` has its own press and hover states (`active:` and `hover:` on UI SDK's Button) and does not use it.
+It is for plain elements and [unstyled UI SDK buttons](https://blamy.github.io/ui/#/button) (`Button as SdkButton` from `@brett_lamy/ui/sdk/react/button`). The styled `Button` has its own press and hover states (`active:` and `hover:` on UI SDK's Button) and does not use it.
 
 ## brandTile
 

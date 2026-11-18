@@ -18,7 +18,7 @@ import {
 {% tab title="npm" %}
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 
-Import the stylesheet once at your app's entry, then the parts from their module:
+Import the stylesheet once at your app's entry, then the parts from their module (the PGlite library's entry, `@brett_lamy/ui/pglite`, has them too):
 
 ```tsx
 import '@brett_lamy/ui/styles.css'

@@ -2,13 +2,13 @@
 
 UI SDK's drag and drop works inside the page, with the pointer and the keyboard alike. `createReorder` sorts a list or a grid, `createTreeReorder` moves rows and their subtrees in an outline, and `createTransfer` moves items between lists; each keeps a draft while an item moves and commits it once, on drop, through your change, and each announces the pickup, the moves and the drop to screen readers. Under them are the pieces for a drag of your own: `bindDrag` follows a pointer, `bindDragPreview` drags a copy of an element, and `createAutoScroll` scrolls when the pointer nears an edge. They are listed with the other behaviors in the [behaviors overview](https://blamy.github.io/ui/#/behaviors); the upstream reference is [Drag and Drop](https://ui-sdk.dev/docs/core/behaviors/drag-and-drop).
 
-Nothing to install: they come from `@ui-sdk/core`. For freely placed objects (stickers, windows, handles), see [Dragging and resizing](https://blamy.github.io/ui/#/behaviors-dragging).
+Nothing to install: they come from UI SDK's core, which ships inside the package as `@brett_lamy/ui/sdk/core`. For freely placed objects (stickers, windows, handles), see [Dragging and resizing](https://blamy.github.io/ui/#/behaviors-dragging).
 
 ```ts
 import {
   createReorder, createTreeReorder, createTransfer,
   bindDrag, dragThreshold, bindDragPreview, createAutoScroll, announce, createChange,
-} from '@ui-sdk/core'
+} from '@brett_lamy/ui/sdk/core'
 ```
 
 {% hint style="warning" %}

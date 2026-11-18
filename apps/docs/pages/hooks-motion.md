@@ -96,7 +96,7 @@ Inside a group it returns the group's `transition` prop, else the group's `sprin
 
 ## Gestures
 
-The 5.x gesture hooks are gone in 6.0. Each was hand-written pointer code; the containers now build on UI SDK behaviors from `@ui-sdk/core` and on the kit's own behaviors built from them, and so should your own gestures. See [Dragging](https://blamy.github.io/ui/#/behaviors-dragging) and [The kit's behaviors](https://blamy.github.io/ui/#/behaviors-kit).
+The 5.x gesture hooks are gone in 6.0. Each was hand-written pointer code; the containers now build on UI SDK's behaviors (`@brett_lamy/ui/sdk/core`) and on the kit's own behaviors built from them, and so should your own gestures. See [Dragging](https://blamy.github.io/ui/#/behaviors-dragging) and [The kit's behaviors](https://blamy.github.io/ui/#/behaviors-kit).
 
 | 5.x hook | 6.0 |
 | --- | --- |

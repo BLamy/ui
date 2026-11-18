@@ -6,7 +6,7 @@ UI SDK's color picker, as parts you compose. `ColorPicker` is a group that holds
 {% tab title="shadcn CLI" %}
 {% command %}npx shadcn@latest add https://blamy.github.io/ui/r/color-picker.json{% endcommand %}
 
-Copies the source into your project's `components/ui/` (with the parts it is built from) and adds BL UI's tokens to your CSS — no runtime package. It is yours to edit. Import from your alias:
+Copies the source into your project's `components/ui/` (with the parts it is built from), adds BL UI's tokens to your CSS and installs `@brett_lamy/ui` for UI SDK, which the copied files import by the package's name (`@brett_lamy/ui/sdk/…`). The copied source is yours to edit. Import from your alias:
 
 ```tsx
 import {
@@ -31,10 +31,10 @@ import {
 
 ## Values are CSS color strings
 
-`value`, `defaultValue` and `onValueChange` carry a CSS color string: pass `'#7f5af0'`, `'hsl(262 83% 66% / 0.6)'` or any other CSS color, and the picker writes hex back (eight digits once the opacity is below 1), or the `format` you ask for. A value you pass is kept as you wrote it until someone edits it. `onValueChange(value, details)` runs on every step of a drag and `onValueCommit(value, details)` once when the drag, key press or typed color ends, so save in the second. `details.reason` says what changed it (`drag`, `track-press`, `step-key`, `input-commit`, `item-press`, `eye-dropper-pick`…), `details.color` is the same color as data, and `details.cancel()` refuses the change. A picker always holds a color: without a `defaultValue` it starts at black. Read a string with `parseColor` and write one with `formatColor`, both from `@ui-sdk/core/color` (the kit's UI SDK dependency, nothing extra to install):
+`value`, `defaultValue` and `onValueChange` carry a CSS color string: pass `'#7f5af0'`, `'hsl(262 83% 66% / 0.6)'` or any other CSS color, and the picker writes hex back (eight digits once the opacity is below 1), or the `format` you ask for. A value you pass is kept as you wrote it until someone edits it. `onValueChange(value, details)` runs on every step of a drag and `onValueCommit(value, details)` once when the drag, key press or typed color ends, so save in the second. `details.reason` says what changed it (`drag`, `track-press`, `step-key`, `input-commit`, `item-press`, `eye-dropper-pick`…), `details.color` is the same color as data, and `details.cancel()` refuses the change. A picker always holds a color: without a `defaultValue` it starts at black. Read a string with `parseColor` and write one with `formatColor`, both from `@brett_lamy/ui/sdk/core/color` (UI SDK's color entry, part of the package: nothing extra to install):
 
 ```tsx
-import { formatColor, parseColor } from '@ui-sdk/core/color'
+import { formatColor, parseColor } from '@brett_lamy/ui/sdk/core/color'
 
 const [accent, setAccent] = useState('#7f5af0')
 

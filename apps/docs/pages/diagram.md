@@ -12,7 +12,7 @@ Use [Canvas](#/canvas) itself for a free board of things you place (cards, notes
 {% tab title="shadcn CLI" %}
 {% command %}npx shadcn@latest add https://blamy.github.io/ui/r/diagram.json{% endcommand %}
 
-Copies the source into your project's `components/ui/` (with the parts it is built from) and adds BL UI's tokens to your CSS — no runtime package. It is yours to edit. Import from your alias:
+Copies the source into your project's `components/ui/` (with the parts it is built from), adds BL UI's tokens to your CSS and installs `@brett_lamy/ui` for UI SDK, which the copied files import by the package's name (`@brett_lamy/ui/sdk/…`). The copied source is yours to edit. Import from your alias:
 
 ```tsx
 import { Diagram, DiagramToolbar } from '@/components/ui/diagram'
@@ -438,7 +438,7 @@ It returns `nodes`, `edges`, `bounds`, `status`, `error`, and `engine` and `ms`,
 
 ### The model
 
-`@/lib/diagram-model` is plain functions on plain data, with nothing to render: `edgeGeometry`, `edgeGeometries`, `connectorPath`, `nodeAt`, `edgeAt`, `edgesAtPoint`, `moveNodes`, `deleteItems`, `checkConnection`, `addConnection`, `moveEdgeEnd`, `indexDiagram`, `labelBox`, `regionDividers` and more; on npm it is `@brett_lamy/ui/lib/diagram-model` (the package root has only the data types Diagram's props take: `DiagramNode`, `DiagramEdge`, `DiagramSelection`…). `@/lib/diagram-keyboard` has `stepFocus`, `viewportToShow`, `describeNode` and `describeEdge`, `@/lib/diagram-gesture` has `stepDiagramGesture` and `hitTestDiagram`, and `@/lib/diagram-primitive` the primitive. Freeform's connectors, Interface Builder's segues and Replay Canvas's segues are drawn by the same model.
+`@/lib/diagram-model` is plain functions on plain data, with nothing to render: `edgeGeometry`, `edgeGeometries`, `connectorPath`, `nodeAt`, `edgeAt`, `edgesAtPoint`, `moveNodes`, `deleteItems`, `checkConnection`, `addConnection`, `moveEdgeEnd`, `indexDiagram`, `labelBox`, `regionDividers` and more; on npm it is `@brett_lamy/ui/lib/diagram-model`, and `@brett_lamy/ui/diagram`, the Diagram library's entry, has it beside the components. `@/lib/diagram-keyboard` has `stepFocus`, `viewportToShow`, `describeNode` and `describeEdge`, `@/lib/diagram-gesture` has `stepDiagramGesture` and `hitTestDiagram`, and `@/lib/diagram-primitive` the primitive. Freeform's connectors, Interface Builder's segues and Replay Canvas's segues are drawn by the same model.
 
 ## cva recipes
 

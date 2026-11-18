@@ -2,11 +2,12 @@
 
 Small utilities for state that survives a reload, the system back gesture, labelling controls inside list rows, and moving one DOM element between homes. The other hooks are in the [Hooks overview](https://blamy.github.io/ui/#/hooks).
 
-`usePersistentState`, `useControllableChange`, `useKeptChildren`, `useCopy` and `usePaced` are public. `useRowLabel` is **registry-only**: it is not in `@brett_lamy/ui`. A component that uses it brings it along when you add the component, and you can add it by itself.
+`usePersistentState`, `useControllableChange`, `useKeptChildren`, `useCopy` and `usePaced` are public. `usePersistentState` belongs to the Sync library, so it is on `@brett_lamy/ui/sync` and not on the package root. `useRowLabel` is **registry-only**: it is not in `@brett_lamy/ui`. A component that uses it brings it along when you add the component, and you can add it by itself.
 
 ```tsx
 // npm (the public hooks)
-import { usePersistentState, useControllableChange } from '@brett_lamy/ui'
+import { useControllableChange } from '@brett_lamy/ui'
+import { usePersistentState } from '@brett_lamy/ui/sync' // or '@brett_lamy/ui/lib/persistent-state'
 import { useKeptChildren } from '@brett_lamy/ui/lib/kept-children'
 import { useCopy } from '@brett_lamy/ui/lib/use-copy'
 import { usePaced } from '@brett_lamy/ui/lib/use-paced'
@@ -24,7 +25,7 @@ import { useRowLabel } from '@/lib/row-label'                                   
 
 `useState` backed by `localStorage` as JSON. A missing, unparseable or invalid stored value falls back to the initial one, and storage that throws (private mode, quota, disabled) is ignored: the state just does not persist.
 
-- **Export:** public; `loadJSON` and `saveJSON`, the reads and writes underneath, are on `@brett_lamy/ui/lib/persistent-state`. Registry item `persistent-state` (`@/lib/persistent-state`).
+- **Export:** public, on `@brett_lamy/ui/lib/persistent-state` and the Sync library's entry, `@brett_lamy/ui/sync`, with `loadJSON` and `saveJSON`, the reads and writes underneath. Not on the package root. Registry item `persistent-state` (`@/lib/persistent-state`).
 - **Needs:** nothing.
 
 ```ts
@@ -150,10 +151,10 @@ const frames = usePaced(framesProp) // a strip that redraws as fast as React can
 
 ## Keyboard shortcuts
 
-BL UI has no shortcut hook of its own: shortcuts are UI SDK's. `useShortcut` from `@ui-sdk/react/shortcuts` registers a shortcut while the component is mounted, in UI SDK's shared shortcut registry, so it takes part in the same layering as menus, dialogs and command palettes (a shortcut can belong to a popup with `layer`).
+BL UI has no shortcut hook of its own: shortcuts are UI SDK's. `useShortcut` from `@brett_lamy/ui/sdk/react/shortcuts` registers a shortcut while the component is mounted, in UI SDK's shared shortcut registry, so it takes part in the same layering as menus, dialogs and command palettes (a shortcut can belong to a popup with `layer`).
 
 ```ts
-import { useShortcut, useShortcutHint } from '@ui-sdk/react/shortcuts'
+import { useShortcut, useShortcutHint } from '@brett_lamy/ui/sdk/react/shortcuts'
 
 function useShortcut(keys: string | null | undefined, handler: ShortcutHandler, options?: UseShortcutOptions): void
 function useShortcutHint(keys: string): { text: string; ariaKeyshortcuts: string }   // '⌘K' on Apple platforms, 'Ctrl+K' elsewhere

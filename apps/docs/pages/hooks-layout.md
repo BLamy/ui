@@ -2,7 +2,7 @@
 
 Hooks for sizing from a container instead of the viewport (a size class first, pixels when you really need them), the size-class scope that `presentation="auto"` popups follow, and for reading the state of the layout containers: `SplitView`, `SidebarProvider`, `Tabs`, `FloatingSheet` and `ArtifactChatContainer`. They are all listed with their siblings in the [Hooks overview](https://blamy.github.io/ui/#/hooks).
 
-Each hook below is public: import it from the package root, or from the alias path a registry copy creates.
+Each hook below is public: import it from the package root (`useArtifactChatContainer`, a hook of the Composer library, from its module or `@brett_lamy/ui/composer`), or from the alias path a registry copy creates.
 
 ```tsx
 // npm: import '@brett_lamy/ui/styles.css' once, then
@@ -108,7 +108,7 @@ function usePresentation<P extends string>(presentation: P | undefined, fallback
 ```
 
 ```tsx
-import { Popover as SdkPopover } from '@ui-sdk/react/popover'
+import { Popover as SdkPopover } from '@brett_lamy/ui/sdk/react/popover'
 
 function MyPopover({ presentation, ...props }: ComponentProps<typeof SdkPopover>) {
   return <SdkPopover presentation={usePresentation(presentation, 'popover')} {...props} />
@@ -398,7 +398,7 @@ It is always `false` when `hideOnScroll` is `false`. The scroller is read from `
 
 State of the enclosing [ArtifactChatContainer](https://blamy.github.io/ui/#/artifact-chat-container): which presentation is showing, and the floating chat's open, folded and composing state.
 
-- **Export:** public. Registry item `artifact-chat-container`.
+- **Export:** public, on `@brett_lamy/ui/artifact-chat-container` and the Composer library's entry, `@brett_lamy/ui/composer`; not on the package root. Registry item `artifact-chat-container`.
 - **Needs:** an `ArtifactChatContainer` ancestor; anything inside `ArtifactChatContainerContent`, `ArtifactChatContainerChat` and `ArtifactChatContainerComposer` counts (the Chat and Composer are portalled into the current presentation's docks, but React context follows where you wrote them). **Outside it:** throws `useArtifactChatContainer must be used within <ArtifactChatContainer>`.
 
 ```ts

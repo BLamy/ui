@@ -8,7 +8,7 @@ Use it when a chat and an artifact share a screen. For a chat that *is* the scre
 {% tab title="shadcn CLI" %}
 {% command %}npx shadcn@latest add https://blamy.github.io/ui/r/artifact-chat-container.json{% endcommand %}
 
-Copies the source into your project's `components/ui/` (with the parts it is built from) and adds BL UI's tokens to your CSS — no runtime package. It is yours to edit. Import from your alias:
+Copies the source into your project's `components/ui/` (with the parts it is built from), adds BL UI's tokens to your CSS and installs `@brett_lamy/ui` for UI SDK and Docstream, which the copied files import by the package's name (`@brett_lamy/ui/sdk/…`, `@brett_lamy/ui/docstream/…`). The copied source is yours to edit. Import from your alias:
 
 ```tsx
 import {
@@ -20,7 +20,7 @@ import {
 {% tab title="npm" %}
 {% command %}npm install @brett_lamy/ui{% endcommand %}
 
-Import the stylesheet once at your app's entry, then the parts from their module:
+Import the stylesheet once at your app's entry, then the parts from their module (the Composer library's entry, `@brett_lamy/ui/composer`, has them too):
 
 ```tsx
 import '@brett_lamy/ui/styles.css'

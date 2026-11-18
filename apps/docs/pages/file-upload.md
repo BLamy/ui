@@ -6,7 +6,7 @@ Pick, drop or paste files and see what happens to them: a drop zone, a list with
 {% tab title="shadcn CLI" %}
 {% command %}npx shadcn@latest add https://blamy.github.io/ui/r/file-upload.json{% endcommand %}
 
-Copies the source into your project's `components/ui/` (with the parts it is built from) and adds BL UI's tokens to your CSS — no runtime package. It is yours to edit. Import from your alias:
+Copies the source into your project's `components/ui/` (with the parts it is built from), adds BL UI's tokens to your CSS and installs `@brett_lamy/ui` for UI SDK, which the copied files import by the package's name (`@brett_lamy/ui/sdk/…`). The copied source is yours to edit. Import from your alias:
 
 ```tsx
 import {
@@ -292,7 +292,7 @@ It returns `{ files, add, remove, retry, clear, uploadAll, pending, counts, rule
 
 ### Helpers
 
-`describeAccept(accept)`, `describeRules(rules)`, `fileKind(file)`, `rejectionMessage(reason, context, messages)`, `useFilePreview(file)`, and `formatFileSize(bytes, locale?)` from `@/lib/file-size` (on npm, `@brett_lamy/ui/lib/file-size`). UI SDK's `relativePath(file)` comes from `@ui-sdk/react/file-input`.
+`describeAccept(accept)`, `describeRules(rules)`, `fileKind(file)`, `rejectionMessage(reason, context, messages)`, `useFilePreview(file)`, and `formatFileSize(bytes, locale?)` from `@/lib/file-size` (on npm, `@brett_lamy/ui/lib/file-size`). UI SDK's `relativePath(file)` comes from `@brett_lamy/ui/sdk/react/file-input`.
 
 ## Limits
 

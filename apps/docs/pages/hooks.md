@@ -6,14 +6,14 @@ Every hook BL UI defines, in one table, and where each is documented in detail. 
 
 BL UI ships two ways from the same files (see [How the registry works](https://blamy.github.io/ui/#/registry)), and the hooks follow:
 
-- **Public** hooks are on npm, at their module's entry: `import { useToast } from '@brett_lamy/ui/toast'`. The kit's own hooks are also re-exported from the package root (`import { useToast } from '@brett_lamy/ui'`); the engines' hooks (the vault, PGlite, Tailscale, file upload, the filter query) are only on their `@brett_lamy/ui/lib/<module>` entry, which the Export column names. They are also in the registry, so a source copy gives you the same hook at an alias path (`@/components/ui/toast`, `@/lib/container`).
+- **Public** hooks are on npm, at their module's entry: `import { useToast } from '@brett_lamy/ui/toast'`. A hook of the core or the foundation is also on the package root (`import { useToast } from '@brett_lamy/ui'`). A hook of another library is on that library's entry instead (`useComposer` on `@brett_lamy/ui/composer`, `useSessions` on `@brett_lamy/ui/replay`), and the engines' hooks (the vault, PGlite, Tailscale, file upload, the filter query) are on their `@brett_lamy/ui/lib/<module>` entry; the Export column names the entries. They are also in the registry, so a source copy gives you the same hook at an alias path (`@/components/ui/toast`, `@/lib/container`).
 - **Registry-only** hooks are not in the package root. One is: `useRowLabel`, plus the framework-free `createTitleFlight`. They are internals of components (`ListRow`, `NavigationStack`) and are copied into your project, with the component that uses them, when you add that component. You can also add one on its own, for example `npx shadcn@latest add https://blamy.github.io/ui/r/row-label.json`.
 
 A "must be called under" entry below means the hook reads a React context that the named component provides. Components render their children where you put them, so the rule is about the **React tree**, not the DOM: a node rendered through a portal sees the context of the place the portal was created, not of the element it lands in.
 
 ## All hooks
 
-Grouped by page. "Needs" is the component or provider the hook must be called under, and what happens outside it. "Export" says whether it is public on npm (`public`: the package root and its module entry; `public, lib/<module>`: that entry only) or only in the registry (`registry-only`).
+Grouped by page. "Needs" is the component or provider the hook must be called under, and what happens outside it. "Export" says whether it is public on npm or only in the registry (`registry-only`). Plain `public` is a hook of the core or the foundation: it is on the package root and its module's entry. `public` followed by entries is a hook that is not on the root: it is on the entries named, a module's (`lib/vault-react` is `@brett_lamy/ui/lib/vault-react`) and its library's (`vault` is `@brett_lamy/ui/vault`).
 
 ### Layout
 
@@ -34,7 +34,7 @@ Documented on [Layout hooks](https://blamy.github.io/ui/#/hooks-layout).
 | `useTabsTab` | the tab's UI SDK state, `{ selected, disabled }` | the content of a `TabsTab`; `null` outside | public |
 | `useFloatingSheet` | `{ open, setOpen, progress, peek, minimized, setMinimized }` | `FloatingSheet`; throws outside | public |
 | `useHideOnScroll` | `boolean` | nothing (takes the scroller's ref) | public |
-| `useArtifactChatContainer` | `{ sizeClass, presentation, open, setOpen, composing, minimized, … }` | `ArtifactChatContainer`; throws outside | public |
+| `useArtifactChatContainer` | `{ sizeClass, presentation, open, setOpen, composing, minimized, … }` | `ArtifactChatContainer`; throws outside | public, `artifact-chat-container`, `composer` |
 
 ### Motion
 
@@ -70,7 +70,7 @@ Documented on [State hooks](https://blamy.github.io/ui/#/hooks-state).
 
 | Hook | Returns | Needs | Export |
 | --- | --- | --- | --- |
-| `usePersistentState` | `[value, setValue]` | nothing | public |
+| `usePersistentState` | `[value, setValue]` | nothing | public, `lib/persistent-state`, `sync` |
 | `useControllableChange` | `[value, set]` | nothing | public |
 | `useKeptChildren` | `{ dock, portal, inline }` | nothing | public |
 | `useCopy` | `{ copy, copied }` | nothing | public |
@@ -85,9 +85,9 @@ Documented on [Composer hooks](https://blamy.github.io/ui/#/hooks-composer).
 
 | Hook | Returns | Needs | Export |
 | --- | --- | --- | --- |
-| `useComposer` | the draft, attachments and actions | `Composer`; throws outside | public |
-| `useComposerBump` | `{ side, open, setOpen, reveal, progress, dragging, settling, … }` | `ComposerBump`; throws outside | public |
-| `usePencilHistory` | strokes with undo, redo and clear | nothing | public |
+| `useComposer` | the draft, attachments and actions | `Composer`; throws outside | public, `composer` |
+| `useComposerBump` | `{ side, open, setOpen, reveal, progress, dragging, settling, … }` | `ComposerBump`; throws outside | public, `composer` |
+| `usePencilHistory` | strokes with undo, redo and clear | nothing | public, `pencilkit`, `canvas` |
 
 ### Feedback
 
@@ -108,10 +108,10 @@ Documented on [Syntax, sessions and countdown hooks](https://blamy.github.io/ui/
 | `useSyntaxTokens` | `{ lines, highlighter }` | nothing | public |
 | `useCodeEditor` | `{ getValue, language, variant, title, engine }` | `CodeEditor`; `null` outside | public |
 | `useCountdown` | `{ remaining, period, elapsed, reset }` | nothing | public |
-| `useSessionRecording` | nothing | nothing | public |
-| `useSessions` | `SessionInfo[]`, newest first | nothing | public |
-| `useSessionCloud` | `{ status, settings, configure }` | nothing | public |
-| `useCloud` | `{ status, settings }` of a `CloudSync` | nothing | public |
+| `useSessionRecording` | nothing | nothing | public, `lib/session-recorder`, `replay` |
+| `useSessions` | `SessionInfo[]`, newest first | nothing | public, `lib/session-recorder`, `replay` |
+| `useSessionCloud` | `{ status, settings, configure }` | nothing | public, `lib/session-recorder`, `replay` |
+| `useCloud` | `{ status, settings }` of a `CloudSync` | nothing | public, `lib/durable-streams`, `sync` |
 
 `useReducedMotion` is also public: it is framer-motion's hook, re-exported from the package root, and is covered with the motion hooks.
 
@@ -121,11 +121,11 @@ Each is documented on the page of the component or module it belongs to.
 
 | Hook | Returns | Needs | Export | Documented on |
 | --- | --- | --- | --- | --- |
-| `useTimeParse` | `{ result, pending, … }` for a line of English | nothing (loads `gpu-time` on first use) | public | [NaturalTimeInput](https://blamy.github.io/ui/#/natural-time-input) |
-| `useCronParse` | `{ support, match, pending, … }` for a line of English | nothing (loads `gpu-cron`; needs WebGPU) | public | [CronEditor](https://blamy.github.io/ui/#/cron-editor) |
-| `useFilters` | the controlled filter list and its actions | nothing | public | [Filter](https://blamy.github.io/ui/#/filter) |
-| `useFilterBar` | the filter bar's state and actions | `FilterBar`; throws outside | public | [Filter](https://blamy.github.io/ui/#/filter) |
-| `useFilterQuery` | a natural-language query turned into filters | nothing (loads the vendored gpu-query model) | public, `lib/filter-query` | [Filter](https://blamy.github.io/ui/#/filter) |
+| `useTimeParse` | `{ result, pending, … }` for a line of English | nothing (loads `gpu-time` on first use) | public, `lib/gpu-time`, `time` | [NaturalTimeInput](https://blamy.github.io/ui/#/natural-time-input) |
+| `useCronParse` | `{ support, match, pending, … }` for a line of English | nothing (loads `gpu-cron`; needs WebGPU) | public, `lib/gpu-cron`, `time` | [CronEditor](https://blamy.github.io/ui/#/cron-editor) |
+| `useFilters` | the controlled filter list and its actions | nothing | public, `filter` | [Filter](https://blamy.github.io/ui/#/filter) |
+| `useFilterBar` | the filter bar's state and actions | `FilterBar`; throws outside | public, `filter` | [Filter](https://blamy.github.io/ui/#/filter) |
+| `useFilterQuery` | a natural-language query turned into filters | nothing (loads the vendored gpu-query model) | public, `lib/filter-query`, `filter` | [Filter](https://blamy.github.io/ui/#/filter) |
 | `useFileUpload` | `{ files, add, remove, retry, … }` | nothing | public, `lib/use-file-upload` | [useFileUpload](https://blamy.github.io/ui/#/use-file-upload) |
 | `useFilePreview` | an object URL for a file, revoked on unmount | nothing | public, `lib/use-file-upload` | [useFileUpload](https://blamy.github.io/ui/#/use-file-upload) |
 | `useVault`, `useVaultState` | the passkey vault and its state | `VaultProvider`; throws outside | public, `lib/vault-react` | [Passkey vault](https://blamy.github.io/ui/#/passkey-vault) |
@@ -137,7 +137,7 @@ Each is documented on the page of the component or module it belongs to.
 | `useTailscale`, `useTailscaleStatus`, `useTailscaleFetch` | the tailnet connection, its status, a `fetch` that routes through it | `TailscaleProvider`; throws outside | public, `lib/tailscale-react` | [Sign in with Tailscale](https://blamy.github.io/ui/#/tailscale) |
 | `useTailscaleRouter` | the service-worker router's status | `TailscaleProvider` | public, `lib/tailscale-router/react` | [Tailscale request router](https://blamy.github.io/ui/#/tailscale-router) |
 
-BL UI is built on [UI SDK](https://blamy.github.io/ui/#/ui-sdk), and the behaviors it builds on (press, focus, shortcuts, clipboard, drag and drop, popups) are UI SDK's, not BL UI's own. You can use them beside the kit; they are covered in [Behaviors](https://blamy.github.io/ui/#/behaviors). Keyboard shortcuts in particular are UI SDK's `useShortcut` (`@ui-sdk/react/shortcuts`): 6.0 removed `useHotkey` and `matchesHotkey`.
+BL UI is built on [UI SDK](https://blamy.github.io/ui/#/ui-sdk), and the behaviors it builds on (press, focus, shortcuts, clipboard, drag and drop, popups) are UI SDK's, not BL UI's own. You can use them beside the kit; they are covered in [Behaviors](https://blamy.github.io/ui/#/behaviors). Keyboard shortcuts in particular are UI SDK's `useShortcut` (`@brett_lamy/ui/sdk/react/shortcuts`): 6.0 removed `useHotkey` and `matchesHotkey`.
 
 ## Conventions
 
