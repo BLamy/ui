@@ -463,6 +463,20 @@ Popups (dialogs, sheets, menus, popovers, tooltips, toasts) render into the near
 
 UI SDK's text controls listen to the native `input` event: `fireEvent.change(input, { target: { value } })` no longer reaches `onValueChange`, so use `fireEvent.input`. Set `globalThis.__UI_SDK_STRICT__ = true` in a test file to turn UI SDK's development warnings (an unnamed control, a missing part) into failures.
 
+### Motion loads on demand
+
+The animation engine (framer-motion) is no longer in what a Button, a List or a Toast loads. It is one lazy chunk, asked for at idle after a part that can animate mounts. Nothing renders differently because of it: a change that happens before the engine has arrived applies without animating. Three things follow for an app:
+
+- A test that asserts on a morph in flight awaits `preloadMotion()` first (`import { preloadMotion } from '@brett_lamy/ui'`). An app that needs its very first change to animate can call it at startup.
+- `useReducedMotion()` is the kit's own hook. It follows the system setting while the page is open and returns a `boolean`, where 5.x re-exported framer-motion's, which read the setting once and could return `null`.
+- Do not write a manual chunk for framer-motion in your bundler's config: the library already keeps it apart.
+
+Morph, NumberMorph and Celebrate still import the engine themselves, so an entry that uses one of them loads it up front.
+
+### New in 6.0: Sandbox
+
+`@brett_lamy/ui/sandbox` runs code in a Worker with an origin of its own (`createSandbox`, `useSandbox`, `serveSandbox`). It has no 5.x counterpart to migrate from; see [Sandbox](#/sandbox).
+
 ## One spelling per concept
 
 6.0 uses one prop name for one idea across the whole kit. When a 5.x prop of yours isn't in the tables below, look here first: most renames are one of these.

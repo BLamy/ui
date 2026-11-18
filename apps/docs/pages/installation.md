@@ -417,6 +417,7 @@ It exports nothing of another library, so importing the root never loads the Mar
 | Filter | `@brett_lamy/ui/filter` | The filter bar and its parts, FilterInput, the filter model, the query parser |
 | Sync | `@brett_lamy/ui/sync` | `usePersistentState`, the append-only local streams, the Durable Streams client |
 | Vault | `@brett_lamy/ui/vault` | VaultGate, the passkey vault and its React hooks |
+| Sandbox | `@brett_lamy/ui/sandbox` | `createSandbox`, `useSandbox` and `serveSandbox`: code that runs in a Worker with an origin of its own. `@agent-wasm/core` is an optional peer, loaded only when a sandbox starts: see [Sandbox](#/sandbox) |
 | Tailscale | `@brett_lamy/ui/tailscale` | The Tailscale client, its React hooks, the controls, the service-worker router, the fake for tests. `@agent-wasm/tailscale-connect` is an optional peer |
 | OpenCode | `@brett_lamy/ui/opencode` | The OpenCode component and its runtime (the loaders, the hosts, the vault stores). The runtime's modules load only when the component mounts |
 | Docstream | `@brett_lamy/ui/docstream`, `@brett_lamy/ui/docstream/<entry>` | The Markdown renderer, DocsSite and their entries: [docstream's docs](https://blamy.github.io/ui/#/docstream) |

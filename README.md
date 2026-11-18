@@ -68,6 +68,7 @@ The package root, `@brett_lamy/ui`, exports the core (controls, fields, popups, 
 | Filter | `@brett_lamy/ui/filter` | The filter bar, FilterInput, the filter model |
 | Sync | `@brett_lamy/ui/sync` | `usePersistentState`, local streams, the Durable Streams client |
 | Vault | `@brett_lamy/ui/vault` | VaultGate and the passkey vault |
+| Sandbox | `@brett_lamy/ui/sandbox` | Run code in a Worker with an origin of its own: a disk, a shell and npm on a Node-compatible runtime (`@agent-wasm/core`, an optional peer, loaded only when a sandbox starts) |
 | Tailscale | `@brett_lamy/ui/tailscale` | The Tailscale client, its React hooks and controls |
 | OpenCode | `@brett_lamy/ui/opencode` | The OpenCode component and its runtime (the loaders, the hosts, the vault stores) |
 | Docstream | `@brett_lamy/ui/docstream`, `@brett_lamy/ui/docstream/<entry>` | The Markdown renderer, DocsSite and their entries (`/site`, `/gitbook`, `/replay`…) |

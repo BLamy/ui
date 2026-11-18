@@ -54,6 +54,18 @@ Every part still installs as source with the shadcn CLI. The registry adds one i
 {% endstep %}
 
 {% step %}
+### Motion on demand — in 6.0
+
+The animation engine (framer-motion) is one lazy chunk, asked for at idle after a part that can animate mounts. A Button with a text label used to load all of it for a morph that only runs when the label changes; it now loads about a third of what it did, and so does everything built on it.
+{% endstep %}
+
+{% step %}
+### Sandboxing — Sandbox in 6.0, Linux VM planned
+
+Two ways to run code a person or a model wrote, in the tab, named for the choice. **Sandbox** (`@brett_lamy/ui/sandbox`) is the one almost everyone should use: a Node-compatible runtime with a disk, a shell and npm, in a Worker with an origin of its own, so the code cannot read the page or its storage. It costs the page a few kilobytes; the runtime is an optional peer that loads when a sandbox starts. Previews are not in this version. **Linux VM** (`@brett_lamy/ui/linux-vm`) is planned for what Sandbox cannot do: a real kernel, native binaries, container images. It is heavy (tens to hundreds of megabytes), far slower than native and not optimized, and it will share Sandbox's interface. Neither runtime is ever part of the npm tarball.
+{% endstep %}
+
+{% step %}
 ### Publish 6.0 — next
 
 One package, one `npm publish`. Before it, the owner adds this repository's `publish.yml` as the trusted publisher of `@brett_lamy/ui` on npmjs.com; after it, the two docstream packages are deprecated with a pointer to their new names. [Publishing](03-publishing.md) has the settings and the commands.
