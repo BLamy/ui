@@ -1,10 +1,13 @@
-/* BL UI documentation: docstream's DocsSite over the docs' Markdown. Components and Blocks are the header's tabs; the
-   sidebar comes from pages/nav.json (as a SUMMARY.md) and the blocks from pages/blocks.md, so every URL stays what it
-   was (`#/composer`, `#/blocks`, `#/blocks/apple-notes`). The BL site (../site/site.tsx) puts its header above it and
-   owns the appearance: the header has the only switch. */
+/* BL UI documentation: docstream's DocsSite over the docs' Markdown. Components and Blocks are its tabs (each has its
+   own sidebar); the sidebar comes from pages/nav.json (as a SUMMARY.md) and the blocks from pages/blocks.md, so every
+   URL stays what it was (`#/composer`, `#/blocks`, `#/blocks/apple-notes`). The BL site (../site/site.tsx) puts its
+   header above it, and that is the only bar: this DocsSite has no header of its own (`header={false}`). The site's
+   header links to the two tabs as Docs and Blocks, has the GitHub link and the only appearance switch, and holds this
+   site's search and navigation buttons through `controller`; the title, mark and tabs here head the navigation
+   drawer. */
 import { useMemo, type MouseEvent, type ReactNode } from 'react';
 import { DocstreamEnvProvider } from '@brett_lamy/ui/docstream';
-import { DocsSite, type DocsPage, type DocsSiteTab } from '@brett_lamy/ui/docstream/site';
+import { DocsSite, type DocsPage, type DocsSiteController, type DocsSiteTab } from '@brett_lamy/ui/docstream/site';
 import type { Appearance } from '@/lib/theme';
 import { demoResolver } from '../demos';
 import { EnvKeychain } from '../env-keychain';
@@ -83,8 +86,9 @@ function renderPage(page: DocsPage, content: ReactNode) {
 
 const GITHUB = 'https://github.com/BLamy/ui';
 
-/** `appearance` comes from the site (its header switches it); `height` is the room under the site's header. */
-export default function App({ appearance, height }: { appearance: Appearance; height?: string }) {
+/** `appearance` comes from the site (its header switches it); `height` is the room under the site's header;
+    `controller` is the one the site's header holds this site's search and navigation buttons with. */
+export default function App({ appearance, height, controller }: { appearance: Appearance; height?: string; controller: DocsSiteController }) {
   const files = useMemo(docsFiles, []);
   return (
       <DocsSite
@@ -92,9 +96,9 @@ export default function App({ appearance, height }: { appearance: Appearance; he
         tabs={TABS}
         title="BL UI"
         logo={<Logo />}
-        links={[{ label: 'GitHub', href: GITHUB }]}
+        header={false}
+        controller={controller}
         appearance={appearance}
-        appearanceToggle={false}
         appearanceStorageKey={false}
         height={height}
         tint="#0A84FF"

@@ -6,7 +6,11 @@
    (⌘K), an "On this page" outline, breadcrumbs, previous / next and "Copy page".
    Relative `.md` links between pages navigate in place. Routing is the URL hash by default
    (static hosting needs no rewrites), the History API with `routing="history"`, or in-memory
-   with `routing="memory"` for a site embedded in another page. */
+   with `routing="memory"` for a site embedded in another page.
+
+   Under a host page's own bar, `header={false}` leaves the site's header out, and a controller
+   (`createDocsSiteController()`) lets that bar hold the two controls only the header had:
+   `DocsSiteSearchTrigger` and `DocsSiteNavigationTrigger`. */
 import {
   useCallback,
   useContext,
@@ -15,6 +19,8 @@ import {
   useMemo,
   useRef,
   useState,
+  useSyncExternalStore,
+  type ComponentProps,
   type CSSProperties,
   type MouseEvent as ReactMouseEvent,
   type ReactNode,
@@ -126,6 +132,15 @@ export interface DocsSiteProps extends Omit<DocRenderOptions, "pageActions"> {
   palette?: boolean
   /** Brand color (a CSS color) for links, current items and focus rings. */
   tint?: string
+  /** The site's own header: brand, tabs, search button, links, appearance switch and, on a narrow site, the button
+   *  that opens the navigation drawer (default true). `false` under a host page's own bar, so there is one bar: the
+   *  site then starts at its sidebar and page, ⌘K still searches, `title` still names the browser tab, and `tabs`
+   *  still scope the sidebar and show in the drawer. Put `DocsSiteSearchTrigger` and `DocsSiteNavigationTrigger` in
+   *  the host's bar (they need `controller`), and anything from `links` the host doesn't already offer. */
+  header?: boolean
+  /** Connects the site to `DocsSiteSearchTrigger` and `DocsSiteNavigationTrigger` written outside it. Make it once
+   *  with `createDocsSiteController()` and give the same one to the site and to each trigger. */
+  controller?: DocsSiteController
   /** ⌘K full-text search (default true). */
   search?: boolean
   /** The "On this page" outline (default true). */
@@ -287,6 +302,123 @@ const plainClick = (e: ReactMouseEvent) => e.button === 0 && !e.metaKey && !e.ct
 /** ⌘K on Apple platforms, Ctrl+K elsewhere. */
 const SEARCH_KEYS = "mod+k"
 
+/**
+ * Connects a DocsSite to the parts written outside it (`DocsSiteSearchTrigger`, `DocsSiteNavigationTrigger`), the way
+ * UI SDK's dialog controller connects a trigger to a dialog elsewhere on the page. Make one with
+ * `createDocsSiteController()`, keep it for the life of the page, and give it to `<DocsSite controller>` and to each
+ * part. One controller serves one mounted site at a time (a router that swaps sites can share it between them).
+ */
+export interface DocsSiteController {
+  /** Opens the site's search, as ⌘K does. Nothing happens while no site with `search` uses the controller. */
+  openSearch: () => void
+  /** Opens the site's navigation drawer. Nothing happens while no site uses the controller. */
+  openNavigation: () => void
+}
+
+/** What the site and its parts share through a controller. */
+interface SiteConnection {
+  /** The search dialog's and the navigation drawer's own controllers: the triggers are theirs. */
+  search: ReturnType<typeof createDialogController<unknown, string>>
+  navigation: ReturnType<typeof createDrawerController<unknown, string>>
+  /** Whether the mounted site's sidebar is folded into the drawer (its narrow layout). */
+  sidebarCollapsed: () => boolean
+  setSidebarCollapsed: (collapsed: boolean) => void
+  subscribe: (listener: () => void) => () => void
+}
+
+/* The connection rides on the controller itself, under a registered symbol, so a controller still works for a second
+   copy of this module: one made before a hot update of this file, or by another build of the package on the page. */
+const CONNECTION = Symbol.for("docstream.site.connection")
+
+function connectionOf(controller: DocsSiteController): SiteConnection {
+  const connection = (controller as { [CONNECTION]?: SiteConnection })[CONNECTION]
+  if (!connection) throw new Error("DocsSite: `controller` must be made with createDocsSiteController().")
+  return connection
+}
+
+/** A controller for one DocsSite and the triggers written outside it. Create it once (`useState(createDocsSiteController)`
+ *  or at module scope), not on every render. */
+export function createDocsSiteController(): DocsSiteController {
+  const search = createDialogController()
+  const navigation = createDrawerController()
+  const listeners = new Set<() => void>()
+  let collapsed = false
+  const connection: SiteConnection = {
+    search,
+    navigation,
+    sidebarCollapsed: () => collapsed,
+    setSidebarCollapsed: (next) => {
+      if (next === collapsed) return
+      collapsed = next
+      for (const listener of listeners) listener()
+    },
+    subscribe: (listener) => {
+      listeners.add(listener)
+      return () => void listeners.delete(listener)
+    },
+  }
+  const controller: DocsSiteController = {
+    openSearch: () => void search.open(),
+    openNavigation: () => void navigation.open(),
+  }
+  return Object.defineProperty(controller, CONNECTION, { value: connection })
+}
+
+export type DocsSiteSearchTriggerProps = Omit<ComponentProps<typeof DialogTrigger>, "controller"> & {
+  /** The controller given to `<DocsSite controller>`. */
+  controller: DocsSiteController
+}
+
+/**
+ * The button that opens a site's search, wherever it is written: the site's own header draws this one, and with
+ * `header={false}` the host's bar holds it. It is the search dialog's trigger (UI SDK's DialogTrigger: `render` for
+ * your own button, `className`, `aria-expanded`, focus back to it when the dialog closes), named "Search
+ * documentation" and announcing the shortcut. Its default content is a magnifier, "Search…" and the shortcut in a
+ * `<kbd>`; children replace it. Until its site mounts it is a plain button, so write it only beside a site that has
+ * `search`.
+ */
+export function DocsSiteSearchTrigger({ controller, children, ...props }: DocsSiteSearchTriggerProps) {
+  const hint = useShortcutHint(SEARCH_KEYS)
+  return (
+    <DialogTrigger controller={connectionOf(controller).search} aria-label="Search documentation" aria-keyshortcuts={hint.ariaKeyshortcuts} {...props}>
+      {children ?? (
+        <>
+          <Glyph name="magnifyingglass" size={15} />
+          <span className="ds-site-search-btn-label">Search…</span>
+          <kbd>{hint.text}</kbd>
+        </>
+      )}
+    </DialogTrigger>
+  )
+}
+
+export type DocsSiteNavigationTriggerProps = Omit<ComponentProps<typeof DrawerTrigger>, "controller"> & {
+  /** The controller given to `<DocsSite controller>`. */
+  controller: DocsSiteController
+}
+
+/** The navigation drawer's trigger, always rendered: the site's own header hides it with a container query. */
+function NavigationTrigger({ controller, children, ...props }: DocsSiteNavigationTriggerProps) {
+  return (
+    <DrawerTrigger controller={connectionOf(controller).navigation} aria-label="Open navigation" {...props}>
+      {children ?? <Glyph name="menu" size={18} />}
+    </DrawerTrigger>
+  )
+}
+
+/**
+ * The button that opens a site's navigation drawer, for a host's bar over a site with `header={false}`. It renders
+ * only while the site's sidebar is folded into the drawer (the site is narrow), so it can be written unconditionally:
+ * on a wide site, and while no site is mounted, it renders nothing. It is the drawer's trigger (UI SDK's
+ * DrawerTrigger: `render`, `className`, focus back to it when the drawer closes), named "Open navigation"; its default
+ * content is a menu glyph, and children replace it.
+ */
+export function DocsSiteNavigationTrigger(props: DocsSiteNavigationTriggerProps) {
+  const connection = connectionOf(props.controller)
+  const collapsed = useSyncExternalStore(connection.subscribe, connection.sidebarCollapsed, () => false)
+  return collapsed ? <NavigationTrigger {...props} /> : null
+}
+
 function useActiveHeading(scroller: RefObject<HTMLElement | null>, outline: OutlineEntry[], pageKey: string) {
   const [active, setActive] = useState<string | undefined>(outline[0]?.id)
   useEffect(() => {
@@ -438,6 +570,7 @@ export function DocsSite(props: DocsSiteProps) {
     appearanceToggle = true,
     palette = true,
     tint,
+    header = true,
     search = true,
     toc = true,
     pageActions = true,
@@ -474,9 +607,12 @@ export function DocsSite(props: DocsSiteProps) {
   // A site without a root README opens on its first page.
   const shown = page ?? (location.slug === "" ? home : undefined)
 
-  // The phone navigation (a drawer) and search (a dialog): their buttons sit in the header, far from their content.
-  const [navDrawer] = useState(() => createDrawerController())
-  const [searchDialog] = useState(() => createDialogController())
+  // The phone navigation (a drawer) and search (a dialog): their buttons sit in the header, far from their content,
+  // or in the host's bar when it brings the controller.
+  const [ownController] = useState(createDocsSiteController)
+  const controller = props.controller ?? ownController
+  const connection = connectionOf(controller)
+  const { navigation: navDrawer, search: searchDialog } = connection
   const [navOpen, setNavOpen] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
   // A site embedded in another page (memory routing) keeps its overlays to itself: they trap focus but leave the host
@@ -486,7 +622,26 @@ export function DocsSite(props: DocsSiteProps) {
   const scrollerRef = useRef<HTMLDivElement>(null)
   const articleRef = useRef<HTMLElement>(null)
   const rootRef = useRef<HTMLDivElement>(null)
+  const sidebarRef = useRef<HTMLElement>(null)
   useOverlayFrame(rootRef, embedded && (navOpen || searchOpen))
+
+  // A trigger outside the site can't read the site's container queries, so the site tells its controller when the
+  // stylesheet has folded the sidebar into the drawer. Only a host's controller has parts out there to tell.
+  const shared = props.controller ? connection : undefined
+  useLayoutEffect(() => {
+    const root = rootRef.current
+    const sidebar = sidebarRef.current
+    if (!shared || !root || !sidebar) return
+    const view = root.ownerDocument.defaultView ?? window
+    const measure = () => shared.setSidebarCollapsed(view.getComputedStyle(sidebar).display === "none")
+    measure()
+    const observer = typeof ResizeObserver === "undefined" ? undefined : new ResizeObserver(measure)
+    observer?.observe(root)
+    return () => {
+      observer?.disconnect()
+      shared.setSidebarCollapsed(false)
+    }
+  }, [shared])
 
   const go = useCallback(
     (slug: string, hash = "") => {
@@ -523,7 +678,6 @@ export function DocsSite(props: DocsSiteProps) {
   }
   useShortcut(search ? SEARCH_KEYS : null, () => void searchDialog.open(), { when: answers, description: "Search documentation" })
   useShortcut(search && routing !== "memory" ? "/" : null, () => void searchDialog.open(), { when: answers, description: "Search documentation" })
-  const searchHint = useShortcutHint(SEARCH_KEYS)
 
   const outline = useMemo(() => {
     if (!shown || !toc) return []
@@ -674,41 +828,36 @@ export function DocsSite(props: DocsSiteProps) {
       data-palette={palette ? "" : undefined}
       data-nav-open={navOpen || undefined}
       data-embedded={embedded ? "" : undefined}
+      data-headerless={header ? undefined : ""}
       style={rootStyle}
     >
-      <header className="ds-site-header">
-        <DrawerTrigger controller={navDrawer} className="ds-site-icon-btn ds-site-menu" aria-label="Open navigation">
-          <Glyph name="menu" size={18} />
-        </DrawerTrigger>
-        {brand}
-        {tabBar("header")}
-        <div className="ds-site-header-spacer" />
-        {search ? (
-          <DialogTrigger controller={searchDialog} className="ds-site-search-btn" aria-label="Search documentation" aria-keyshortcuts={searchHint.ariaKeyshortcuts}>
-            <Glyph name="magnifyingglass" size={15} />
-            <span className="ds-site-search-btn-label">Search…</span>
-            <kbd>{searchHint.text}</kbd>
-          </DialogTrigger>
-        ) : null}
-        {links.length ? (
-          <nav className="ds-site-links" aria-label="Site links">
-            {links.map((l) => (
-              <a key={l.href} href={l.href} target="_blank" rel="noreferrer" className="ds-site-header-link">
-                {l.icon ?? null}
-                <span>{l.label}</span>
-              </a>
-            ))}
-          </nav>
-        ) : null}
-        {appearanceToggle ? (
-          <button type="button" className="ds-site-icon-btn" onClick={toggleTheme} aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} theme`}>
-            {theme === "dark" ? <Glyph name="sun" size={16} /> : <Glyph name="moon" size={16} />}
-          </button>
-        ) : null}
-      </header>
+      {header ? (
+        <header className="ds-site-header">
+          <NavigationTrigger controller={controller} className="ds-site-icon-btn ds-site-menu" />
+          {brand}
+          {tabBar("header")}
+          <div className="ds-site-header-spacer" />
+          {search ? <DocsSiteSearchTrigger controller={controller} className="ds-site-search-btn" /> : null}
+          {links.length ? (
+            <nav className="ds-site-links" aria-label="Site links">
+              {links.map((l) => (
+                <a key={l.href} href={l.href} target="_blank" rel="noreferrer" className="ds-site-header-link">
+                  {l.icon ?? null}
+                  <span>{l.label}</span>
+                </a>
+              ))}
+            </nav>
+          ) : null}
+          {appearanceToggle ? (
+            <button type="button" className="ds-site-icon-btn" onClick={toggleTheme} aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} theme`}>
+              {theme === "dark" ? <Glyph name="sun" size={16} /> : <Glyph name="moon" size={16} />}
+            </button>
+          ) : null}
+        </header>
+      ) : null}
 
       <div className="ds-site-body">
-        <nav className="ds-site-sidebar" aria-label="Documentation">
+        <nav className="ds-site-sidebar" ref={sidebarRef} aria-label="Documentation">
           <div className="ds-site-sidebar-scroll">{navTree}</div>
           {sidebarFooter ? <div className="ds-site-sidebar-foot">{sidebarFooter}</div> : null}
         </nav>

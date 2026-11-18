@@ -1,14 +1,20 @@
-/* The header on every page of the site: the brand, the Libraries menu (every library by category, with its status),
-   the Docs, Blocks and Roadmap links, GitHub and the appearance switch.
+/* The header on every page of the site, and the only bar: the brand, the Libraries menu (every library by category,
+   with its status), the Docs, Blocks and Roadmap links, GitHub and the appearance switch. Over a docs site (the ui
+   docs, docstream's, the editor's, the roadmap) it also holds that site's search and, while the site is narrow enough
+   to fold its sidebar away, the button that opens its navigation: the DocsSite under it is mounted without a header
+   of its own (`header={false}`), and these are its own triggers, connected through its controller.
 
    It is the kit's responsive pattern, not a hand-made one. The header measures its own width (a size-class scope, as
    CONVENTIONS rule 10 asks) and its menus are DropdownMenus with `presentation="auto"`: on a regular or medium header
    the Libraries menu is a popover laid out in columns, one per category; on a compact one the links fold into a single
    menu button, and the same menu opens as a sheet. UI SDK owns the keyboard (arrow keys through the rows, typeahead,
    Esc, focus back to the trigger). */
+import { DocsSiteNavigationTrigger, DocsSiteSearchTrigger, type DocsSiteController } from '@brett_lamy/ui/docstream/site';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuGroupLabel, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
+import { Kbd } from '@/components/ui/kbd';
 import { SizeClassProvider, useSizeClass } from '@/lib/container';
+import type { SizeClass } from '@/lib/size-class';
 import { Icon } from '@/lib/icon';
 import { barMaterial, pressableFocusRing } from '@/lib/primitives';
 import { ThemeScope, type Appearance } from '@/lib/theme';
@@ -105,7 +111,38 @@ function SiteMenu({ compact, columns, route, area }: { compact: boolean; columns
   );
 }
 
-export function SiteHeader({ route, area, appearance, onToggleAppearance }: { route: string; area: SiteArea; appearance: Appearance; onToggleAppearance: () => void }) {
+/** The docs site mounted under the header: its controller, and the name its search goes by ("Search Docstream…"). */
+interface SiteHeaderDocs {
+  controller: DocsSiteController;
+  name: string;
+}
+
+/** The docs site's search, as the site's ⌘K opens it: a field-like button with the shortcut on a regular header, a
+    shorter one on a medium header, a round icon button on a compact one. */
+function DocsSearch({ docs, sizeClass }: { docs: SiteHeaderDocs; sizeClass: SizeClass }) {
+  const compact = sizeClass === 'compact';
+  return (
+    <DocsSiteSearchTrigger
+      controller={docs.controller}
+      aria-label={`Search ${docs.name}`}
+      render={<Button variant={compact ? 'quiet' : 'outline'} size={compact ? 'icon' : 'sm'} />}
+      className={cn(!compact && 'me-1.5 justify-start gap-2 ps-2.5 pe-1.5 font-normal text-muted-foreground hover:not-data-disabled:text-foreground', sizeClass === 'regular' && 'min-w-56')}
+    >
+      <Icon name="magnifyingglass" size={compact ? 18 : 15} />
+      {compact ? null : <span className="flex-1 pe-1 text-start">{sizeClass === 'regular' ? `Search ${docs.name}…` : 'Search…'}</span>}
+      {sizeClass === 'regular' ? <Kbd keys="mod+k" /> : null}
+    </DocsSiteSearchTrigger>
+  );
+}
+
+export function SiteHeader({ route, area, appearance, onToggleAppearance, docs }: {
+  route: string;
+  area: SiteArea;
+  appearance: Appearance;
+  onToggleAppearance: () => void;
+  /** The docs site this route mounts, if it does. */
+  docs?: SiteHeaderDocs;
+}) {
   const [measure, sizeClass] = useSizeClass<HTMLElement>();
   const compact = sizeClass === 'compact';
   const dark = appearance === 'dark';
@@ -113,6 +150,12 @@ export function SiteHeader({ route, area, appearance, onToggleAppearance }: { ro
     <ThemeScope data-bl-site="" appearance={appearance} className="relative z-20 shrink-0 font-sans text-foreground">
       <SizeClassProvider value={sizeClass}>
         <header ref={measure} className={cn('flex h-14 items-center gap-1 shadow-hairline-b', compact ? 'px-2' : 'px-4', barMaterial)}>
+          {docs ? (
+            // Renders only while the docs site's sidebar is folded into its drawer.
+            <DocsSiteNavigationTrigger controller={docs.controller} aria-label="Open the docs navigation" render={<Button variant="quiet" size="icon" />} className={cn(!compact && '-ms-1.5')}>
+              <Icon name="sidebar-left" size={18} />
+            </DocsSiteNavigationTrigger>
+          ) : null}
           <a href="#/" aria-label="BL, home" aria-current={area === 'home' ? 'page' : undefined} className={cn('me-2 flex items-center gap-2 rounded-ctl px-1.5 py-1 text-foreground no-underline', pressableFocusRing)}>
             <BLMark />
             <span className="text-callout font-bold tracking-tight">BL</span>
@@ -137,6 +180,7 @@ export function SiteHeader({ route, area, appearance, onToggleAppearance }: { ro
             </nav>
           )}
           <div className="ms-auto flex items-center gap-0.5">
+            {docs ? <DocsSearch docs={docs} sizeClass={sizeClass} /> : null}
             <Button variant="quiet" size="icon" render={<a href={REPO_URL} target="_blank" rel="noreferrer" aria-label="GitHub repository" />}>
               <GitHubMark />
             </Button>

@@ -591,6 +591,11 @@
   scrollbar-width: thin;
 }
 
+/* Without the site's header (`header={false}`) the scroller is as tall as the site. */
+.ds-site[data-headerless] .ds-site-toc {
+  max-height: var(--ds-site-height, 100dvh);
+}
+
 .ds-site .ds-site-toc-title {
   margin-bottom: 10px;
   color: var(--ds-site-fg);

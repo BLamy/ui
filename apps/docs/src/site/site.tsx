@@ -1,7 +1,11 @@
 /* The BL site: one header over every page, and a hash router that picks what sits under it — the landing page, the
    libraries, a docs site of its own (docstream, the editor, the roadmap), or the ui docs (every other `#/<page>`, as
-   before, including `#/blocks/<slug>`). `?demo=`, `?render` and `?harness=` never get here: main.tsx serves them bare. */
+   before, including `#/blocks/<slug>`). `?demo=`, `?render` and `?harness=` never get here: main.tsx serves them bare.
+
+   The header is the only bar. Every docs site under it is a DocsSite without its own header, sharing one controller
+   with the site's header, which holds the search and navigation buttons of whichever one the route mounts. */
 import { useEffect, useState, type MouseEvent } from 'react';
+import { createDocsSiteController } from '@brett_lamy/ui/docstream/site';
 import { AppearanceProvider, BLProvider, type Appearance } from '@/lib/theme';
 import App from '../app/app';
 import { SITE_URL } from '../pages';
@@ -45,6 +49,9 @@ function viewOf(route: string): View {
 
 const AREA: Record<View['kind'], SiteArea> = { home: 'home', libraries: 'libraries', library: 'libraries', docs: 'library-docs', ui: 'docs' };
 
+/** What the header's search says it covers on each docs site ("Search Docstream…"). */
+const DOCS_NAME: Record<DocsSiteId | 'ui', string> = { ui: 'BL UI', docstream: 'Docstream', 'docstream-editor': 'Docstream Editor', roadmap: 'the roadmap' };
+
 function titleOf(view: View): string | null {
   if (view.kind === 'home') return 'BL — React libraries for apps that feel native';
   if (view.kind === 'libraries') return 'Libraries — BL';
@@ -85,7 +92,11 @@ export default function Site() {
     return next;
   });
 
+  // One controller for whichever docs site the route mounts: its search and navigation buttons sit in the header.
+  const [docs] = useState(createDocsSiteController);
+
   const view = viewOf(route);
+  const docsName = view.kind === 'docs' ? DOCS_NAME[view.id] : view.kind === 'ui' ? DOCS_NAME.ui : undefined;
   useEffect(() => {
     const title = titleOf(viewOf(route));
     if (title) document.title = title;
@@ -96,10 +107,16 @@ export default function Site() {
   return (
     <AppearanceProvider value={appearance}>
       <div className="flex h-dvh flex-col overflow-hidden" onClickCapture={followSiteLinks}>
-        <SiteHeader route={route} area={AREA[view.kind]} appearance={appearance} onToggleAppearance={toggleAppearance} />
+        <SiteHeader
+          route={route}
+          area={AREA[view.kind]}
+          appearance={appearance}
+          onToggleAppearance={toggleAppearance}
+          docs={docsName ? { controller: docs, name: docsName } : undefined}
+        />
         <div className="min-h-0 flex-1">
-          {view.kind === 'docs' ? <LibraryDocs id={view.id} appearance={appearance} />
-            : view.kind === 'ui' ? <App appearance={appearance} height={UNDER_HEADER} />
+          {view.kind === 'docs' ? <LibraryDocs id={view.id} appearance={appearance} controller={docs} />
+            : view.kind === 'ui' ? <App appearance={appearance} height={UNDER_HEADER} controller={docs} />
             : (
               <BLProvider appearance={appearance} className="bg-background select-text">
                 {view.kind === 'home' ? <Landing /> : view.kind === 'libraries' ? <LibrariesIndex /> : <LibraryPage id={view.id} />}

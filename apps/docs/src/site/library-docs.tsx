@@ -1,6 +1,8 @@
 /* The docs sites the BL site mounts beside the ui docs — docstream's, the editor's and the roadmap — each a DocsSite
-   under its own hash prefix (`#/docstream/…`), loaded on first visit. */
+   under its own hash prefix (`#/docstream/…`), loaded on first visit. None draws a header: the site's header is the
+   only bar, and holds their search and navigation buttons through `controller`. */
 import { lazy, Suspense } from 'react';
+import type { DocsSiteController } from '@brett_lamy/ui/docstream/site';
 import { Spinner } from '@/components/ui/spinner';
 import type { EmbeddedDocsProps } from './embedded';
 
@@ -14,7 +16,7 @@ const SITES = {
   roadmap: lazy(() => import('./roadmap-docs')),
 } satisfies Record<DocsSiteId, unknown>;
 
-export function LibraryDocs({ id, ...props }: EmbeddedDocsProps & { id: DocsSiteId }) {
+export function LibraryDocs({ id, ...props }: EmbeddedDocsProps & { id: DocsSiteId; controller: DocsSiteController }) {
   const Site = SITES[id];
   return (
     <Suspense

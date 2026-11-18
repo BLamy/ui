@@ -3,7 +3,7 @@
    (apps/docstream-playground) serves the same folder on its own; a page added there is a page here. */
 import { useMemo } from 'react';
 import { DocstreamRefContext, SourcePreview, createBundledSourceClient, type CitationPreviewResolver, type SourceReferenceRenderer } from '@brett_lamy/ui/docstream';
-import { DocsSite, humanize, type BuildDocsTreeOptions } from '@brett_lamy/ui/docstream/site';
+import { DocsSite, humanize, type BuildDocsTreeOptions, type DocsSiteController } from '@brett_lamy/ui/docstream/site';
 import { docstreamDemos } from './library-demos';
 import { embeddedSiteProps, type EmbeddedDocsProps } from './embedded';
 import { docstreamDemoRuntime, docstreamLiveRenderer, docstreamSourceModules } from './playground-parts';
@@ -39,8 +39,11 @@ const citationPreviews: CitationPreviewResolver = (citation) => {
 };
 
 const DOCS_URL = 'https://blamy.github.io/ui/#/docstream';
+const SOURCE_URL = `${REPO_URL}/tree/main/packages/ui/src/docstream`;
 
-export default function DocstreamDocs(props: EmbeddedDocsProps) {
+/* No header of its own: the site's is the only bar. The title and mark head the navigation drawer, and the link to
+   the source sits under the sidebar. */
+export default function DocstreamDocs({ controller, ...props }: EmbeddedDocsProps & { controller: DocsSiteController }) {
   const sourceRenderer = useMemo<SourceReferenceRenderer>(() => (reference) => <SourcePreview reference={reference} client={sourceClient} />, []);
   return (
     <DocstreamRefContext.Provider value={{ resolveCitationPreview: citationPreviews }}>
@@ -50,14 +53,15 @@ export default function DocstreamDocs(props: EmbeddedDocsProps) {
         basePath="docstream"
         title="Docstream"
         logo={<BLMark />}
-        links={[{ label: 'Source', href: `${REPO_URL}/tree/main/packages/ui/src/docstream` }]}
+        header={false}
+        controller={controller}
         liveRenderer={docstreamLiveRenderer}
         sourceRenderer={sourceRenderer}
         demoResolver={docstreamDemos}
         demoRuntime={docstreamDemoRuntime}
         pageActions={(page) => ({ transform: (md) => `${md.trim()}\n\n---\n\nSource: ${DOCS_URL}/${page.slug}\n` })}
         editUrl={(page) => `${REPO_URL}/edit/main/apps/docstream-playground/docs/${page.path}`}
-        sidebarFooter={<>Part of <code>@brett_lamy/ui</code> since 6.0: <code>@brett_lamy/ui/docstream</code>.</>}
+        sidebarFooter={<>Part of <code>@brett_lamy/ui</code> since 6.0: <code>@brett_lamy/ui/docstream</code>. <a href={SOURCE_URL} target="_blank" rel="noreferrer">Source</a></>}
         {...embeddedSiteProps(props)}
       />
     </DocstreamRefContext.Provider>
