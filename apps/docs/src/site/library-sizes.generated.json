@@ -306,13 +306,13 @@
     },
     "opencode": {
       "entry": "@brett_lamy/ui/opencode",
-      "min": 3907,
-      "gzip": 1922,
-      "brotli": 1716,
+      "min": 290379,
+      "gzip": 98128,
+      "brotli": 85811,
       "lazy": {
-        "min": 0,
-        "gzip": 20,
-        "brotli": 1
+        "min": 754,
+        "gzip": 464,
+        "brotli": 369
       },
       "peers": []
     }
