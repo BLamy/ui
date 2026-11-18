@@ -1,7 +1,8 @@
 'use client';
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type HTMLAttributes, type Ref } from 'react';
-import { AnimatePresence, animate, motion, useReducedMotion, type AnimationPlaybackControls } from 'framer-motion';
-import { springs } from '@/lib/motion';
+import type { AnimationPlaybackControls } from 'framer-motion';
+import { springs, useReducedMotion } from '@/lib/motion';
+import { motionEngine, requestMotionEngine, useMotionRequest } from '@/lib/motion-lazy';
 import { cn } from '@/lib/utils';
 
 /* ══ TextMorph — a label that morphs into the next one, Family-style ══
@@ -13,7 +14,10 @@ import { cn } from '@/lib/utils';
    (`truncate`, padding, a background) apply the same way throughout. The root's border box (padding included)
    is pinned and springs only while a morph runs; the inline width is released when the morph ends (a new text
    mid-morph carries on from the current width into the next one) and whenever the change can't morph (reduced
-   motion, multi-line), so a later change of font, size or text without a morph is never clipped by a stale width. */
+   motion, multi-line), so a later change of font, size or text without a morph is never clipped by a stale width.
+   The morph is framer-motion's, and framer-motion is not part of what a label loads: it is asked for at idle once a
+   label has mounted (lib/motion-lazy.ts). A text that changes before it has arrived simply shows, as it does under
+   reduced motion; the resting markup is the same either way, on the server too. */
 
 interface Glyph { key: string; ch: string }
 /** `xs` are glyph offsets from the root's padding edge (where the absolute letter layer starts); `y` is the run's
@@ -68,6 +72,7 @@ export interface TextMorphProps extends Omit<HTMLAttributes<HTMLSpanElement>, 'c
 export function TextMorph({ children, className, style, ref, ...props }: TextMorphProps) {
   const text = String(children ?? '');
   const reduced = useReducedMotion();
+  useMotionRequest();
   const rootRef = useRef<HTMLSpanElement | null>(null);
   const last = useRef<Layout | null>(null);
   const [morph, setMorph] = useState<Morph | null>(null);
@@ -102,9 +107,12 @@ export function TextMorph({ children, className, style, ref, ...props }: TextMor
     if (el && morphing.current) el.style.width = pinned;
     last.current = now;
     if (!el || !now || !prev || prev.text === text) return;
-    if (reduced || /\n/.test(text + prev.text)) {
+    const engine = reduced || /\n/.test(text + prev.text) ? null : motionEngine();
+    if (!engine) {
+      // Reduced motion, a second line, or the engine has not arrived (ask now, for the next change): the text shows.
       release();
       setMorph(null);
+      if (!reduced) requestMotionEngine();
       return;
     }
     const from = morphing.current ? el.offsetWidth : prev.box;
@@ -113,7 +121,7 @@ export function TextMorph({ children, className, style, ref, ...props }: TextMor
     anim.current?.stop();
     morphing.current = true;
     el.style.width = `${from}px`;
-    anim.current = animate(from, now.box, {
+    anim.current = engine.animate(from, now.box, {
       ...(springs.snappy as object),
       onUpdate: (w: number) => { if (morphing.current) el.style.width = `${w}px`; },
     } as never);
@@ -135,6 +143,8 @@ export function TextMorph({ children, className, style, ref, ...props }: TextMor
 
   const fromX = new Map(morph?.from.glyphs.map((g, i) => [g.key, morph.from.xs[i]]) ?? []);
   const toKeys = new Set(morph?.to.glyphs.map((g) => g.key) ?? []);
+  // A morph only starts with the engine, and the engine never leaves.
+  const layer = morph ? motionEngine() : null;
   return (
     <span
       {...props}
@@ -145,39 +155,42 @@ export function TextMorph({ children, className, style, ref, ...props }: TextMor
       style={style}
     >
       <span style={morph ? { visibility: 'hidden' } : undefined}>{text}</span>
-      {morph ? (
+      {morph && layer ? (
         <span aria-hidden="true" className="pointer-events-none absolute inset-0" style={{ top: morph.to.y }}>
-          {/* The layer mounts with the morph, so its first children must play their `initial` (no initial={false}). */}
-          <AnimatePresence>
-            {morph.to.glyphs.map((g, i) => {
-              const from = fromX.get(g.key);
-              const x = morph.to.xs[i];
-              return (
-                <motion.span
+          {/* The layer mounts with the morph, so its first children must play their `initial` (no initial={false}).
+              `m` elements, given the engine's animation features here: the letters need no gestures or layout. */}
+          <layer.LazyMotion features={layer.domMin}>
+            <layer.AnimatePresence>
+              {morph.to.glyphs.map((g, i) => {
+                const from = fromX.get(g.key);
+                const x = morph.to.xs[i];
+                return (
+                  <layer.m.span
+                    key={g.key}
+                    className="absolute top-0 left-0 whitespace-pre"
+                    initial={from != null ? { x: from, opacity: 1 } : { x, opacity: 0, scale: 0.7, filter: 'blur(4px)' }}
+                    animate={{ x, opacity: 1, scale: 1, filter: 'blur(0px)' }}
+                    exit={{ opacity: 0, scale: 0.7, filter: 'blur(4px)', transition: LETTER_OUT }}
+                    transition={{ x: springs.snappy, default: LETTER_IN }}
+                  >
+                    {g.ch}
+                  </layer.m.span>
+                );
+              })}
+              {morph.from.glyphs.map((g, i) => toKeys.has(g.key) ? null : (
+                <layer.m.span
                   key={g.key}
                   className="absolute top-0 left-0 whitespace-pre"
-                  initial={from != null ? { x: from, opacity: 1 } : { x, opacity: 0, scale: 0.7, filter: 'blur(4px)' }}
-                  animate={{ x, opacity: 1, scale: 1, filter: 'blur(0px)' }}
-                  exit={{ opacity: 0, scale: 0.7, filter: 'blur(4px)', transition: LETTER_OUT }}
-                  transition={{ x: springs.snappy, default: LETTER_IN }}
+                  initial={{ x: morph.from.xs[i], opacity: 1 }}
+                  animate={{ opacity: 0, scale: 0.7, filter: 'blur(4px)' }}
+                  exit={{ opacity: 0 }}
+                  transition={LETTER_OUT}
                 >
                   {g.ch}
-                </motion.span>
-              );
-            })}
-            {morph.from.glyphs.map((g, i) => toKeys.has(g.key) ? null : (
-              <motion.span
-                key={g.key}
-                className="absolute top-0 left-0 whitespace-pre"
-                initial={{ x: morph.from.xs[i], opacity: 1 }}
-                animate={{ opacity: 0, scale: 0.7, filter: 'blur(4px)' }}
-                exit={{ opacity: 0 }}
-                transition={LETTER_OUT}
-              >
-                {g.ch}
-              </motion.span>
-            ))}
-          </AnimatePresence>
+                </layer.m.span>
+              ))}
+            </layer.AnimatePresence>
+          </layer.LazyMotion>
         </span>
       ) : null}
     </span>

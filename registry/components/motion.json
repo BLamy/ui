@@ -9,7 +9,7 @@
     "motionFades",
     "useReducedMotion",
     "useSpringTransition",
-    "prefersReducedMotion",
+    "prefersReducedMotion", "preloadMotion",
     "useDirection",
     "motionDirection",
     "TextMorph",

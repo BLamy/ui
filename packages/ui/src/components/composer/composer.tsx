@@ -30,7 +30,6 @@ import {
   ComposerContext, ComposerOutletContext, useComposerInternals,
   type ComposerEditor, type ComposerInternals, type ComposerQueueTake,
 } from '@/components/ui/composer/composer-context';
-import { animate } from 'framer-motion';
 import { useToast } from '@/components/ui/toast';
 import {
   acceptsFile,
@@ -47,6 +46,7 @@ import {
 } from '@/components/ui/composer/composer-files';
 import { formatFileSize } from '@/lib/file-size';
 import { flipPlay, flipSnapshot, prefersReducedMotion, springs, type FlipSnapshot } from '@/lib/motion';
+import { motionEngine, requestMotionEngine, useMotionRequest, type MotionEngine } from '@/lib/motion-lazy';
 import { useEnterExit, usePresence, usePresenceList, type PresenceEntry } from '@/lib/presence';
 import { Swap } from '@/components/ui/swap';
 import { TextMorph } from '@/components/ui/text-morph';
@@ -613,11 +613,17 @@ export function Composer({
   if (shapeKey !== committedShape.current && !shapeSnap.current && typeof window !== 'undefined') {
     shapeSnap.current = snapshotShape(rootRef.current);
   }
+  // The morphs are framer-motion's, fetched after first paint (lib/motion-lazy): a shape that changes before it has
+  // arrived simply takes its new shape.
+  useMotionRequest();
   React.useLayoutEffect(() => {
     committedShape.current = shapeKey;
     const snap = shapeSnap.current;
     shapeSnap.current = null;
-    if (snap && !prefersReducedMotion()) playShape(rootRef.current, snap);
+    if (!snap || prefersReducedMotion()) return;
+    const engine = motionEngine();
+    if (engine) playShape(engine, rootRef.current, snap);
+    else requestMotionEngine();
   }, [shapeKey]);
 
   const restore = (event?: React.MouseEvent) => {
@@ -771,7 +777,7 @@ function snapshotShape(root: HTMLElement | null): ShapeSnapshot | null {
   };
 }
 
-function playShape(root: HTMLElement | null, snap: ShapeSnapshot) {
+function playShape({ animate }: MotionEngine, root: HTMLElement | null, snap: ShapeSnapshot) {
   const card = root?.querySelector<HTMLElement>('[data-slot="composer-card"]');
   if (!root || !card) return;
   const spring = springs.smooth;

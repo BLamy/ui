@@ -3,7 +3,6 @@ import {
   Children, createContext, Fragment, isValidElement, use, useId, useLayoutEffect, useRef, useState,
   type ComponentProps, type CSSProperties, type ReactElement, type ReactNode,
 } from 'react';
-import { MotionConfig, motion } from 'framer-motion';
 import { createParts } from '@ui-sdk/react/primitive';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { Button as SdkButton } from '@ui-sdk/react/button';
@@ -11,7 +10,9 @@ import { checkboxVariants } from '@/components/ui/checkbox';
 import { renderEmptyState } from '@/components/ui/empty-state';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
 import { Icon, isIconName } from '@/lib/icon';
-import { springs } from '@/lib/motion';
+import { flipSnapshot, springs, type FlipSnapshot } from '@/lib/motion';
+import { motionEngine, requestMotionEngine, useMotionRequest } from '@/lib/motion-lazy';
+import { prefersReducedMotion } from '@/lib/reduced-motion';
 import { usePresenceList } from '@/lib/presence';
 import { sectionLabelVariants } from '@/lib/primitives';
 import { useChromeHidden } from '@/lib/theme';
@@ -33,7 +34,10 @@ export type {
    A list works out its own sticky offset: whatever chrome sits above it (nav bar, none, …) plus its own
    header if it has one. `stickyTop` overrides both. A section is a `list` of its rows; a row is a press target
    (`onClick`), a container for controls, or both, with swipe actions, an edit-mode gutter and a hover preview.
-   Behavior lives in lib/list-primitive.ts; a list whose rows are chosen from (one or many) is a Listbox. */
+   Behavior lives in lib/list-primitive.ts; a list whose rows are chosen from (one or many) is a Listbox.
+   A list loads no framer-motion: inserts and removals are CSS, and the slide of a section's rows to their new places
+   is a FLIP on the smooth spring, whose engine is fetched after first paint once a section that animates has mounted
+   (lib/motion-lazy.ts). A row that moves before the engine has arrived moves at once. */
 
 /** A swipe action. In `startActions` / `endActions`, index 0 is the outermost button (nearest the screen
  *  edge): the one a full swipe runs. */
@@ -160,6 +164,9 @@ export function ListSection({
   const top = chromeOffset(stickyTop != null ? stickyTop : ctxTop, useChromeHidden());
   const titleId = useId();
   const animated = !!(anim || onOrderChange);
+  // The engine behind the rows' slide, asked for at idle by a section that animates.
+  useMotionRequest(animated);
+  const rowsRef = useRef<HTMLDivElement | null>(null);
   const items = Children.toArray(children).filter(isValidElement) as ReactElement[];
   // Rows that left keep rendering where they were (from their last element) until they have collapsed.
   const entries = usePresenceList(items, keyOf);
@@ -186,17 +193,16 @@ export function ListSection({
               ? <div id={titleId} data-slot="list-section-title" className="sticky top-(--list-section-top) z-20 bg-sticky px-4 py-[3px] text-footnote font-semibold text-foreground backdrop-blur-[10px] transition-[top] duration-spring-smooth ease-spring-smooth"
                   style={{ '--list-section-top': top + 'px' } as CSSProperties}>{title}</div>
               : <div id={titleId} data-slot="list-section-title" className={cn(sectionLabelVariants({ variant: 'grouped' }), 'px-4 pt-1 pb-[7px]')}>{title}</div>) : null}
-            <SectionParts.Rows aria-labelledby={title != null ? titleId : undefined}
+            <SectionParts.Rows ref={rowsRef} aria-labelledby={title != null ? titleId : undefined}
               className={cn('overflow-hidden', sticky ? 'rounded-none' : 'rounded-panel')}>
-              <MotionConfig reducedMotion="user">
-                {rows.map((e, i) => (
-                  <SectionItem key={e.key} value={e.key} label={labelOf(e.item)} animated={animated}
-                    entering={e.present && e.appear} slot={{ value: e.key, index: i, count: rows.length, reorderable: !!onOrderChange }}>
-                    {e.item}
-                  </SectionItem>
-                ))}
-              </MotionConfig>
+              {rows.map((e, i) => (
+                <SectionItem key={e.key} value={e.key} label={labelOf(e.item)} animated={animated}
+                  entering={e.present && e.appear} slot={{ value: e.key, index: i, count: rows.length, reorderable: !!onOrderChange }}>
+                  {e.item}
+                </SectionItem>
+              ))}
             </SectionParts.Rows>
+            {animated ? <RowSlides rows={rowsRef} /> : null}
             {footer ? <div data-slot="list-section-footer" className="px-4 pt-[7px] pb-0 text-footnote leading-[18px] text-muted-foreground">{footer}</div> : null}
             <div className={sticky ? 'h-0' : 'h-[22px]'} />
           </>
@@ -222,14 +228,76 @@ function SectionItem({ value, label, animated, entering, slot, children }: {
         'shadow-[0_8px_24px_black] shadow-transparent data-grabbed:z-5 data-grabbed:scale-[1.02] data-grabbed:shadow-black/18',
         'data-dragging:translate-x-(--drag-x) data-dragging:translate-y-(--drag-y) data-dragging:transition-[scale,box-shadow]',
       )}>
-      {({ grabbed }) => (
-        // Neighbours slide to their new place on reorder: a visual layout morph only.
-        <motion.div layout={grabbed ? false : 'position'} transition={springs.smooth} className="min-h-0 overflow-hidden">
-          <RowSlotCtx value={slot}>{children}</RowSlotCtx>
-        </motion.div>
-      )}
+      <div className="min-h-0 overflow-hidden">
+        <RowSlotCtx value={slot}>{children}</RowSlotCtx>
+      </div>
     </SectionParts.Item>
   );
+}
+
+/** The element of each row that slides, but for the row that is held: it follows the pointer or the keys. */
+const SLIDING = ':scope > [data-slot=list-section-item]:not([data-grabbed]) > div';
+
+/** Rows slide to their new places when the section's layout changes under them: a visual move only (a FLIP on the
+ *  smooth spring). A reorder moves more than the rows that changed places: the moved row grows back into its new
+ *  place, and the slide of the rows below is what holds them still while it does. So, as often as the section renders,
+ *  where every row is drawn is read while rendering (before React commits) and played back after: a row whose place did
+ *  not change is left alone, and one moved again mid-slide carries on from wherever it had got to. Renders nothing. */
+function RowSlides({ rows }: { rows: { current: HTMLElement | null } }) {
+  const before = useRef<FlipSnapshot | null>(null);
+  if (!before.current && rows.current) before.current = flipSnapshot(rows.current.querySelectorAll(SLIDING));
+  useLayoutEffect(() => {
+    const snapshot = before.current;
+    before.current = null;
+    // Once the commit is through, before the frame is drawn: by then the section has written the new layout's first
+    // frame (the moved row starts collapsed, and grows back), which an effect of this commit would be too early for.
+    if (snapshot) queueMicrotask(() => slideRows(snapshot));
+  });
+  return null;
+}
+
+/** How far an element's own transform moves it now: the rest of a slide that is still running, else nothing. */
+function slideOf(el: Element): [number, number] {
+  const transform = getComputedStyle(el).transform;
+  if (!transform || transform === 'none' || typeof DOMMatrixReadOnly !== 'function') return [0, 0];
+  try {
+    const matrix = new DOMMatrixReadOnly(transform);
+    return [matrix.m41, matrix.m42];
+  } catch {
+    // Not a matrix a browser computes (a test's DOM hands back the inline text): nothing to carry on from.
+    return [0, 0];
+  }
+}
+
+/** Plays the rows from where `snapshot` saw them to where they are now. Each is held where it was for this frame and
+ *  springs from the next, from rest: the moved row's CSS transition starts a frame after the change too, so the two
+ *  keep time. Before the engine has loaded (lib/motion-lazy.ts) the rows are simply in their places. */
+function slideRows(snapshot: FlipSnapshot) {
+  if (prefersReducedMotion()) return;
+  const engine = motionEngine();
+  if (!engine) return requestMotionEngine();
+  const moves: Array<[HTMLElement, number, number]> = [];
+  snapshot.forEach((before, el) => {
+    // Held since the snapshot was taken, or gone: not this one.
+    if (!(el instanceof HTMLElement) || !el.isConnected || el.parentElement?.hasAttribute('data-grabbed')) return;
+    const after = el.getBoundingClientRect();
+    const dx = before.left - after.left;
+    const dy = before.top - after.top;
+    if (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5) return;
+    // `after` was read with a slide still running on the row: the new one starts from that offset too.
+    const [x, y] = slideOf(el);
+    moves.push([el, dx + x, dy + y]);
+  });
+  for (const [el, x, y] of moves) {
+    engine.animate(el, { x, y }, { duration: 0 });
+    // Now, not at the engine's next frame: a second change in this frame reads the row where it is drawn.
+    el.style.transform = `translateX(${x}px) translateY(${y}px)`;
+  }
+  if (moves.length) {
+    requestAnimationFrame(() => {
+      for (const [el, x, y] of moves) if (el.isConnected) engine.animate(el, { x: [x, 0], y: [y, 0] }, { ...springs.smooth, velocity: 0 });
+    });
+  }
 }
 
 /* ── Row ── */

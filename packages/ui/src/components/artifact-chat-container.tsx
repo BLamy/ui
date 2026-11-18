@@ -14,13 +14,13 @@ import {
   type ReactNode,
   type RefObject,
 } from 'react';
-import { animate } from 'framer-motion';
 import { Button as SdkButton } from '@ui-sdk/react/button';
 import type { ChangeDetails } from '@ui-sdk/core';
 import { cva } from 'class-variance-authority';
 import type { SizeClass, SizeClassBreakpoints } from '@/lib/size-class';
 import { SizeClassProvider, useSizeClass } from '@/lib/container';
 import { springs } from '@/lib/motion';
+import { motionEngine, requestMotionEngine, useMotionRequest } from '@/lib/motion-lazy';
 import { usePresence } from '@/lib/presence';
 import { prefersReducedMotion } from '@/lib/reduced-motion';
 import { useControllableChange } from '@/lib/controllable-state';
@@ -330,6 +330,7 @@ export function ArtifactChatContainer({
       content: contentRef.current?.getBoundingClientRect() ?? null,
     };
   }
+  useMotionRequest();
   useLayoutEffect(() => {
     lastFloating.current = floating;
     const snap = shift.current;
@@ -339,12 +340,15 @@ export function ArtifactChatContainer({
     if (!snap || snap.layout !== floating || !composerEl) return;
     shift.current = null;
     if (prefersReducedMotion()) return;
+    // The animation engine loads after first paint (lib/motion-lazy): until it has, the new layout simply shows.
+    const engine = motionEngine();
+    if (!engine) return requestMotionEngine();
     if (snap.composer) {
       const to = composerEl.getBoundingClientRect();
       const from = snap.composer;
       composerEl.style.width = `${from.width}px`;
       const held = composerEl.getBoundingClientRect();
-      animate(
+      engine.animate(
         composerEl,
         { x: [from.left - held.left, 0], y: [from.top - held.top, 0], width: [from.width, to.width] },
         {
@@ -363,7 +367,7 @@ export function ArtifactChatContainer({
       const f = snap.content;
       const inset = `inset(${Math.max(0, f.top - to.top)}px ${Math.max(0, to.right - f.right)}px ${Math.max(0, to.bottom - f.bottom)}px ${Math.max(0, f.left - to.left)}px)`;
       if (inset !== 'inset(0px 0px 0px 0px)') {
-        animate(content, { clipPath: [inset, 'inset(0px 0px 0px 0px)'] }, { ...springs.smooth, onComplete: () => (content.style.clipPath = '') });
+        engine.animate(content, { clipPath: [inset, 'inset(0px 0px 0px 0px)'] }, { ...springs.smooth, onComplete: () => (content.style.clipPath = '') });
       }
     }
   }, [floating, composerDock]);

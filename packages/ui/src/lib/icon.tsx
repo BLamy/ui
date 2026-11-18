@@ -1,7 +1,8 @@
 'use client';
-import { useId, useRef, type CSSProperties, type HTMLAttributes, type ReactNode, type Ref } from 'react';
-import { motion, useReducedMotion } from 'framer-motion';
-import { springs } from '@/lib/motion';
+import { useCallback, useEffect, useId, useLayoutEffect, useRef, type CSSProperties, type HTMLAttributes, type ReactNode, type Ref } from 'react';
+import type { AnimationPlaybackControls } from 'framer-motion';
+import { springs, useReducedMotion } from '@/lib/motion';
+import { motionEngine, requestMotionEngine, useMotionRequest } from '@/lib/motion-lazy';
 import { cn } from '@/lib/utils';
 import { WORKBENCH_SHAPES } from '@/lib/icon-shapes/workbench';
 import { CHAT_SHAPES } from '@/lib/icon-shapes/chat';
@@ -632,8 +633,12 @@ export function Icon({ name, shapes, size, weight, sw, className, style, title, 
 /* ══ Chevron — one chevron that turns to face a new direction ══
    Forward → down when a row expands, forward → back when a flow reverses. It accumulates its angle, so it always
    turns the short way round (up → right is a quarter turn forward, not three quarters back), on the snappy spring.
-   Decorative: `aria-hidden`; put the meaning (`aria-expanded`, the label) on the control around it. */
+   Decorative: `aria-hidden`; put the meaning (`aria-expanded`, the label) on the control around it.
+   The spring is framer-motion's, fetched after first paint (lib/motion-lazy.ts): the span is drawn at its angle with
+   no engine, and a turn that comes before the engine has arrived is made at once. */
 const CHEVRON_ANGLE = { right: 0, down: 90, left: 180, up: 270 } as const;
+/** The transform for an angle, as framer-motion writes it (no turn is `none`). */
+const turned = (deg: number) => (deg === 0 ? 'none' : `rotate(${deg}deg)`);
 export type ChevronDirection = keyof typeof CHEVRON_ANGLE;
 
 export interface ChevronProps
@@ -647,25 +652,56 @@ export interface ChevronProps
   ref?: Ref<HTMLSpanElement>;
 }
 
-export function Chevron({ direction = 'right', size = 17, strokeWidth = 2.4, className, ...props }: ChevronProps) {
+export function Chevron({ direction = 'right', size = 17, strokeWidth = 2.4, className, style, ref, ...props }: ChevronProps) {
   const reduced = useReducedMotion();
+  useMotionRequest();
   const acc = useRef<{ dir: ChevronDirection; deg: number }>({ dir: direction, deg: CHEVRON_ANGLE[direction] });
   if (acc.current.dir !== direction) {
     const delta = ((CHEVRON_ANGLE[direction] - (acc.current.deg % 360) + 540) % 360) - 180;
     acc.current = { dir: direction, deg: acc.current.deg + (delta === -180 ? 180 : delta) };
   }
+  const deg = acc.current.deg;
+  const el = useRef<HTMLSpanElement | null>(null);
+  /* React draws the angle the chevron mounted at, once (the same value every render, so it is never written again);
+     every turn after that is made on the element: by the engine when it is here, else at once. `at` is the angle the
+     element shows or is heading for, and `driven` says framer-motion holds it now, so a turn carries on from wherever
+     the last one had got to. */
+  const first = useRef(deg);
+  const at = useRef(deg);
+  const driven = useRef(false);
+  const running = useRef<AnimationPlaybackControls | null>(null);
+  useLayoutEffect(() => {
+    const node = el.current;
+    if (!node || at.current === deg) return;
+    const from = at.current;
+    at.current = deg;
+    const engine = motionEngine();
+    if (!engine) {
+      node.style.transform = turned(deg);
+      requestMotionEngine();
+      return;
+    }
+    // The first turn the engine makes names where it starts: read back from the element, an angle loses its full turns.
+    running.current = engine.animate(node, { rotate: driven.current ? deg : [from, deg] }, reduced ? { duration: 0 } : springs.snappy);
+    driven.current = true;
+  }, [deg, reduced]);
+  useEffect(() => () => running.current?.stop(), []);
+  const setEl = useCallback((node: HTMLSpanElement | null) => {
+    el.current = node;
+    if (typeof ref === 'function') ref(node);
+    else if (ref) ref.current = node;
+  }, [ref]);
   return (
-    <motion.span
+    <span
       {...props}
+      ref={setEl}
       data-slot="chevron"
       data-direction={direction}
       aria-hidden="true"
       className={cn('inline-grid shrink-0 place-items-center', className)}
-      initial={false}
-      animate={{ rotate: acc.current.deg }}
-      transition={reduced ? { duration: 0 } : springs.snappy}
+      style={{ ...style, transform: turned(first.current) }}
     >
       <Icon name="chev" size={size} sw={strokeWidth} />
-    </motion.span>
+    </span>
   );
 }

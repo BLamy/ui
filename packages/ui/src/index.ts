@@ -19,7 +19,7 @@ import './styles.css';
 export { cn, cx } from './lib/utils';
 export {
   springs, springCss, motionDirection, useDirection, motionFades, useSpringTransition, useReducedMotion, type SpringName,
-  prefersReducedMotion,
+  prefersReducedMotion, preloadMotion,
 } from './lib/motion';
 export { usePresence, usePresenceList, useEnterExit } from './lib/presence';
 export type { Presence, PresenceEntry, PresenceOptions } from './lib/presence';

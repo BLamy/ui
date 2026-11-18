@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
 import { act, cleanup, render } from '@testing-library/react';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { preloadMotion } from '@/lib/motion';
 import { TextMorph } from './text-morph';
 
 declare global { var __UI_SDK_STRICT__: boolean | undefined }
@@ -22,6 +23,9 @@ const rect = (left: number, width: number) =>
   ({ left, top: 0, right: left + width, bottom: 20, width, height: 20, x: left, y: 0, toJSON: () => ({}) }) as DOMRect;
 
 const saved: Record<string, PropertyDescriptor | undefined> = {};
+// The morph is framer-motion's, which a label fetches after first paint. These tests look at the morph itself, so the
+// engine is here before they start; what a label does while it is still on its way is in lib/motion-lazy.test.tsx.
+beforeAll(() => preloadMotion());
 beforeAll(() => {
   // happy-dom's Web Animations reject `finished` on cancel; framer-motion falls back to its JS driver without them.
   saved.animate = Object.getOwnPropertyDescriptor(Element.prototype, 'animate');

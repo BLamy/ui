@@ -10,9 +10,13 @@
    - Reduced motion: honour `prefers-reduced-motion` — swap movement for a short opacity change.
 
    `springs` are framer-motion transitions; the same physics are sampled into CSS as
-   `--ease-spring-*` / `--duration-spring-*` in theme.css for plain CSS transitions. */
-import { animate, useReducedMotion as useReducedMotionFM } from 'framer-motion';
-import { useRef } from 'react';
+   `--ease-spring-*` / `--duration-spring-*` in theme.css for plain CSS transitions.
+
+   This module imports no framer-motion: the engine is fetched after first paint (lib/motion-lazy.ts), once for the
+   page, when a part that can animate has mounted. Until it arrives a change shows at once instead of animating;
+   `preloadMotion()` fetches it sooner. */
+import { useRef, useSyncExternalStore } from 'react';
+import { loadMotionEngine, motionEngine, requestMotionEngine } from '@/lib/motion-lazy';
 import { prefersReducedMotion } from '@/lib/reduced-motion';
 
 /** Spring presets. `snappy` for small controls, `smooth` for layout and panels, `tray` for sheets and
@@ -46,7 +50,7 @@ export const motionFades = {
 
 /** A spring preset, or an instant transition when the user prefers reduced motion. */
 export function useSpringTransition(name: SpringName = 'smooth') {
-  const reduced = useReducedMotionFM();
+  const reduced = useReducedMotion();
   return reduced ? ({ duration: 0 } as const) : springs[name];
 }
 
@@ -58,7 +62,33 @@ export function useDirection(index: number): -1 | 0 | 1 {
   return r.current.dir;
 }
 
-export { useReducedMotion } from 'framer-motion';
+/* The page's reduced-motion query, made once (and again if `matchMedia` itself is replaced, as a test's stand-in is). */
+let reducedMedia: { from: typeof matchMedia; query: MediaQueryList } | null = null;
+function reducedQuery(): MediaQueryList | null {
+  if (typeof matchMedia !== 'function') return null;
+  if (reducedMedia?.from !== matchMedia) reducedMedia = { from: matchMedia, query: matchMedia('(prefers-reduced-motion: reduce)') };
+  return reducedMedia.query;
+}
+const watchReduced = (notify: () => void) => {
+  const query = reducedQuery();
+  query?.addEventListener?.('change', notify);
+  return () => query?.removeEventListener?.('change', notify);
+};
+const reducedNow = () => !!reducedQuery()?.matches;
+const reducedOnServer = () => false;
+
+/** Whether the user asked for reduced motion. It follows the setting while the component is mounted, and is `false`
+ *  on the server and in the render that hydrates. For script that runs outside a component, `prefersReducedMotion()`. */
+export function useReducedMotion(): boolean {
+  return useSyncExternalStore(watchReduced, reducedNow, reducedOnServer);
+}
+
+/** Fetches the animation engine now instead of at idle, and resolves once it is ready: before a moment that must
+ *  animate the first time (an onboarding step), or in a test that looks at a morph. The kit asks for it by itself
+ *  after first paint, so most apps never call this. */
+export function preloadMotion(): Promise<void> {
+  return loadMotionEngine().then(() => undefined);
+}
 
 /* ══ FLIP moves and reduced-motion checks ══
    For elements that change parents or places (a tile closing a gap, a pill flying to a bump), after Benji Taylor's
@@ -81,7 +111,8 @@ export function flipSnapshot(elements: Iterable<Element>): FlipSnapshot {
 /**
  * Plays elements from where `snapshot` saw them to where they are now, on a spring. `relativeTo` pairs a
  * container's before/after rects so children move relative to it (a card that is itself resizing).
- * Interrupting is safe: a snapshot taken mid-flight includes the running transform.
+ * Interrupting is safe: a snapshot taken mid-flight includes the running transform. Before the animation engine has
+ * loaded (see `preloadMotion`) nothing plays, and it is asked for.
  */
 export function flipPlay(
   snapshot: FlipSnapshot,
@@ -93,6 +124,9 @@ export function flipPlay(
   }: { spring?: SpringName; relativeTo?: [DOMRect, DOMRect]; fade?: boolean; lift?: boolean } = {},
 ) {
   if (prefersReducedMotion()) return;
+  // Not here yet: the elements are already where they belong, so they simply stay there.
+  const engine = motionEngine();
+  if (!engine) return requestMotionEngine();
   const [rb, ra] = relativeTo ?? [null, null];
   snapshot.forEach((before, el) => {
     if (!el.isConnected || !(el instanceof HTMLElement || el instanceof SVGElement)) return;
@@ -110,7 +144,7 @@ export function flipPlay(
       el.style.position ||= 'relative';
       el.style.zIndex = '5';
     }
-    animate(el, { x: [dx, 0], y: [dy, 0], ...(fade ? { opacity: [0.4, 1] } : null) }, {
+    engine.animate(el, { x: [dx, 0], y: [dy, 0], ...(fade ? { opacity: [0.4, 1] } : null) }, {
       ...springs[spring],
       onComplete: () => {
         if (lift) el.style.zIndex = '';

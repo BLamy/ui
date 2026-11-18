@@ -125,6 +125,22 @@ return toast.mounted ? (
 
 {% demo src="motion/celebrate" %}
 
+## When the engine loads
+
+The springs run on framer-motion, and an everyday part does not load framer-motion to be drawn. `Button`, `Toast`, `List`, `TextMorph`, `Chevron` and `AnimatedHeight` render their resting markup without it, on the server too. Once one of them has mounted, the kit fetches the engine when the browser is idle: one chunk for the page (about 29 kB gzipped), shared by every part.
+
+A label that changes, or a row that moves, before that chunk has arrived simply shows its new state, as it does under reduced motion. From then on it animates. Nothing renders again and no element is replaced when the engine arrives, so nothing shifts and focus stays where it was.
+
+`preloadMotion()` fetches the engine sooner and resolves when it is ready. Call it before a moment that has to animate the first time, or in a test that looks at a morph:
+
+```tsx
+import { preloadMotion } from '@brett_lamy/ui/lib/motion'
+
+await preloadMotion()
+```
+
+`NumberMorph`, `Morph` and `Celebrate` are made of framer-motion's own elements and import it themselves, so a page that renders one of them loads the engine with it (`Progress` and `ProgressRing` show their percentage with `NumberMorph`).
+
 ## Slowing it down
 
 These docs have a motion panel for reviewing animation: press **⌥M** (Alt+M) to show or hide it, then pick 1×, ½×, ¼× or ⅒× speed. Every demo slows together, so a title flying into a back button or a sheet settling can be watched frame by frame. Change the speed while something is moving and it carries on from where it was.

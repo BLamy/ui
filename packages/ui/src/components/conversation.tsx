@@ -1,6 +1,5 @@
 'use client';
 import * as React from 'react';
-import { animate } from 'framer-motion';
 import { Collapsible, CollapsiblePanel, CollapsibleTrigger, type CollapsibleOptions } from '@ui-sdk/react/collapsible';
 import { Button, type ButtonProps } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -13,6 +12,7 @@ import { cn } from '@/lib/utils';
 import { pressable, brandTile } from '@/lib/primitives';
 import { Chevron, Icon, type IconName } from '@/lib/icon';
 import { springs } from '@/lib/motion';
+import { motionEngine, requestMotionEngine, useMotionRequest } from '@/lib/motion-lazy';
 import { usePresence } from '@/lib/presence';
 import { prefersReducedMotion } from '@/lib/reduced-motion';
 
@@ -149,6 +149,7 @@ export function ConversationComposer({ className, ref, children, ...props }: Con
   const dock = React.useRef<HTMLDivElement | null>(null);
   const before = React.useRef<DOMRect | null>(null);
   const last = React.useRef(empty);
+  useMotionRequest();
   if (last.current !== empty && !before.current && dock.current) before.current = dock.current.getBoundingClientRect();
   React.useLayoutEffect(() => {
     last.current = empty;
@@ -156,8 +157,11 @@ export function ConversationComposer({ className, ref, children, ...props }: Con
     before.current = null;
     const el = dock.current;
     if (!from || !el || prefersReducedMotion()) return;
+    // The animation engine loads after first paint (lib/motion-lazy): until it has, the composer is simply in its new place.
+    const engine = motionEngine();
+    if (!engine) return requestMotionEngine();
     const to = el.getBoundingClientRect();
-    animate(
+    engine.animate(
       el,
       { x: [from.left - to.left, 0], y: [from.top - to.top, 0], width: [from.width, to.width] },
       { ...springs.smooth, onComplete: () => ((el.style.width = ''), (el.style.transform = '')) },
