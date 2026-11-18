@@ -51,6 +51,9 @@ import { addState, addTransition, renameState } from './state-diagram-edit';
 import { machineToDraft } from './state-diagram-model';
 import { parseXState } from './state-diagram-source';
 
+/** How long one layout cell may take before it counts as hung (ELK is CPU-bound, and CI runners are slow and shared). */
+const LAYOUT_TIMEOUT = 120_000;
+
 const text = estimateText;
 /** Set to a path to have every finding written there too, one a line (the suite's report). */
 const DUMP = process.env.DIAGRAM_INVARIANTS_OUT;
@@ -211,8 +214,9 @@ for (const c of CASES) {
           const unique = [...new Set(kept)];
           if (DUMP && unique.length) appendFileSync(DUMP, unique.map((v) => `${c.name} | ${frame.name}${panel ? ', panel open' : ''} | ${v}\n`).join(''));
           expect(unique).toEqual([]);
-          // A generated machine's wrapping is the slow part: about a second a frame on its own, several in a busy workspace run.
-        }, 30_000);
+          // A generated machine's wrapping is the slow part: about a second a frame on its own, several in a busy workspace
+          // run, and over thirty on a shared CI runner. The limit is for a hang, not a speed check.
+        }, LAYOUT_TIMEOUT);
       }
     }
   });
@@ -466,6 +470,6 @@ describe('In a document', () => {
       const unique = [...new Set(found)];
       if (DUMP && unique.length) appendFileSync(DUMP, unique.map((v) => `In a document: ${f.name} | ${col.name} | ${v}\n`).join(''));
       expect(unique).toEqual([]);
-    }, 30_000);
+    }, LAYOUT_TIMEOUT);
   }
 });
