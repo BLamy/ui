@@ -127,7 +127,7 @@ return toast.mounted ? (
 
 ## When the engine loads
 
-The springs run on framer-motion, and an everyday part does not load framer-motion to be drawn. `Button`, `Toast`, `List`, `TextMorph`, `Chevron` and `AnimatedHeight` render their resting markup without it, on the server too. Once one of them has mounted, the kit fetches the engine when the browser is idle: one chunk for the page (about 29 kB gzipped), shared by every part.
+The springs run on framer-motion, and an everyday part does not load framer-motion to be drawn. `Button`, `Toast`, `List`, `TextMorph`, `Chevron` and `AnimatedHeight` render their resting markup without it, on the server too. Once one that can animate has mounted (a Button with a text label, a List whose rows can move, a Toast), the kit fetches the engine when the browser is idle: one chunk for the page (about 29 kB gzipped), shared by every part.
 
 A label that changes, or a row that moves, before that chunk has arrived simply shows its new state, as it does under reduced motion. From then on it animates. Nothing renders again and no element is replaced when the engine arrives, so nothing shifts and focus stays where it was.
 
@@ -139,7 +139,11 @@ import { preloadMotion } from '@brett_lamy/ui/lib/motion'
 await preloadMotion()
 ```
 
-`NumberMorph`, `Morph` and `Celebrate` are made of framer-motion's own elements and import it themselves, so a page that renders one of them loads the engine with it (`Progress` and `ProgressRing` show their percentage with `NumberMorph`).
+`NumberMorph`, `Morph` and `Celebrate` are made of framer-motion's own elements and import it themselves, so framer-motion is part of the bundle of a page that renders one of them (`Progress` and `ProgressRing` show their percentage with `NumberMorph`). The everyday parts beside them still wait for the kit's own fetch, so the first change is only sure to animate after `preloadMotion()`.
+
+`preloadMotion()` rejects if the fetch fails (offline, a deploy that replaced the chunk). The parts carry on without animating, and because a browser remembers a failed module fetch for as long as the page is open, they animate again after a reload.
+
+A `List` no longer wraps its rows in framer-motion's `MotionConfig`: an element of your own inside a row that should stand still under Reduce motion needs `<MotionConfig reducedMotion="user">` around it, or `useReducedMotion()`.
 
 ## Slowing it down
 

@@ -22,7 +22,9 @@ let engine: MotionEngine | null = null;
 let request: Promise<MotionEngine> | null = null;
 
 /** Fetches the engine, once for the page, and resolves with it. A fetch that failed (offline, a stale deploy) is
- *  forgotten, so a later call tries again. */
+ *  forgotten here, so a later call asks again; a browser keeps a failed module fetch for the life of the document,
+ *  though, so the second ask usually fails the same way and the parts stay unanimated until the page is reloaded.
+ *  Nothing breaks meanwhile: changes apply without animating. */
 export function loadMotionEngine(): Promise<MotionEngine> {
   request ??= import('@/lib/motion-engine').then(
     (loaded) => {

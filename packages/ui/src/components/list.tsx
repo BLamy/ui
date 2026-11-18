@@ -193,6 +193,10 @@ export function ListSection({
               ? <div id={titleId} data-slot="list-section-title" className="sticky top-(--list-section-top) z-20 bg-sticky px-4 py-[3px] text-footnote font-semibold text-foreground backdrop-blur-[10px] transition-[top] duration-spring-smooth ease-spring-smooth"
                   style={{ '--list-section-top': top + 'px' } as CSSProperties}>{title}</div>
               : <div id={titleId} data-slot="list-section-title" className={cn(sectionLabelVariants({ variant: 'grouped' }), 'px-4 pt-1 pb-[7px]')}>{title}</div>) : null}
+            {/* Before the rows, though it renders nothing: its work is then queued ahead of anything a row's own content
+                queues when it updates (a framer `layout` element measures itself from a microtask), which must find the
+                rows already held where they were. */}
+            {animated ? <RowSlides rows={rowsRef} /> : null}
             <SectionParts.Rows ref={rowsRef} aria-labelledby={title != null ? titleId : undefined}
               className={cn('overflow-hidden', sticky ? 'rounded-none' : 'rounded-panel')}>
               {rows.map((e, i) => (
@@ -202,7 +206,6 @@ export function ListSection({
                 </SectionItem>
               ))}
             </SectionParts.Rows>
-            {animated ? <RowSlides rows={rowsRef} /> : null}
             {footer ? <div data-slot="list-section-footer" className="px-4 pt-[7px] pb-0 text-footnote leading-[18px] text-muted-foreground">{footer}</div> : null}
             <div className={sticky ? 'h-0' : 'h-[22px]'} />
           </>
@@ -244,14 +247,23 @@ const SLIDING = ':scope > [data-slot=list-section-item]:not([data-grabbed]) > di
  *  where every row is drawn is read while rendering (before React commits) and played back after: a row whose place did
  *  not change is left alone, and one moved again mid-slide carries on from wherever it had got to. Renders nothing. */
 function RowSlides({ rows }: { rows: { current: HTMLElement | null } }) {
-  const before = useRef<FlipSnapshot | null>(null);
-  if (!before.current && rows.current) before.current = flipSnapshot(rows.current.querySelectorAll(SLIDING));
+  // Where the rows and their container were drawn before this change. Kept until its microtask has played it, so a
+  // second commit in the same task (an ancestor setting state from a layout effect) plays from the first one's
+  // "before", not from a layout nobody saw.
+  const before = useRef<{ rows: FlipSnapshot; box: DOMRect } | null>(null);
+  const queued = useRef(false);
+  if (!before.current && rows.current) before.current = { rows: flipSnapshot(rows.current.querySelectorAll(SLIDING)), box: rows.current.getBoundingClientRect() };
   useLayoutEffect(() => {
-    const snapshot = before.current;
-    before.current = null;
+    if (!before.current || queued.current) return;
+    queued.current = true;
     // Once the commit is through, before the frame is drawn: by then the section has written the new layout's first
     // frame (the moved row starts collapsed, and grows back), which an effect of this commit would be too early for.
-    if (snapshot) queueMicrotask(() => slideRows(snapshot));
+    queueMicrotask(() => {
+      queued.current = false;
+      const snapshot = before.current;
+      before.current = null;
+      if (snapshot && rows.current) slideRows(snapshot.rows, snapshot.box, rows.current.getBoundingClientRect());
+    });
   });
   return null;
 }
@@ -272,7 +284,7 @@ function slideOf(el: Element): [number, number] {
 /** Plays the rows from where `snapshot` saw them to where they are now. Each is held where it was for this frame and
  *  springs from the next, from rest: the moved row's CSS transition starts a frame after the change too, so the two
  *  keep time. Before the engine has loaded (lib/motion-lazy.ts) the rows are simply in their places. */
-function slideRows(snapshot: FlipSnapshot) {
+function slideRows(snapshot: FlipSnapshot, boxBefore: DOMRect, boxAfter: DOMRect) {
   if (prefersReducedMotion()) return;
   const engine = motionEngine();
   if (!engine) return requestMotionEngine();
@@ -281,8 +293,10 @@ function slideRows(snapshot: FlipSnapshot) {
     // Held since the snapshot was taken, or gone: not this one.
     if (!(el instanceof HTMLElement) || !el.isConnected || el.parentElement?.hasAttribute('data-grabbed')) return;
     const after = el.getBoundingClientRect();
-    const dx = before.left - after.left;
-    const dy = before.top - after.top;
+    // Relative to the rows' container: a section that moved as a whole (its row in an outer list slid, something
+    // above it changed height) has not moved its rows, and whatever moved it animates that.
+    const dx = (before.left - boxBefore.left) - (after.left - boxAfter.left);
+    const dy = (before.top - boxBefore.top) - (after.top - boxAfter.top);
     if (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5) return;
     // `after` was read with a slide still running on the row: the new one starts from that offset too.
     const [x, y] = slideOf(el);

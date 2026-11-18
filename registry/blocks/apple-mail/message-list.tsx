@@ -6,7 +6,7 @@ import { useRef } from 'react';
 import { ListRow, ListSection } from '@/components/ui/list';
 import { useSplitView } from '@/components/ui/split-view';
 import { Icon } from '@/lib/icon';
-import { LayoutGroup, motion } from 'framer-motion';
+import { LayoutGroup, MotionConfig, motion } from 'framer-motion';
 import { springs } from '@/lib/motion';
 import { cn } from '@/lib/utils';
 import { preview, relativeTime, type Message } from './data';
@@ -72,6 +72,9 @@ export function MessageList({ mail, onOpen }: { mail: MailState; onOpen: (id: st
   const isEdge = s.collapsed ? (x: number) => x - (list.current?.getBoundingClientRect().left ?? 0) < 28 : undefined;
   return (
     <div className="pb-16">
+      {/* The selection highlight is framer's own element, so this block says how it treats "Reduce motion" (List's
+          rows are plain elements and no longer set it for what is inside them). */}
+      <MotionConfig reducedMotion="user">
       <LayoutGroup id={`mail-${mail.boxId}`}>
         <ListSection key={mail.boxId} ref={list} animate>
           {mail.list.map((m) => (
@@ -80,6 +83,7 @@ export function MessageList({ mail, onOpen }: { mail: MailState; onOpen: (id: st
           ))}
         </ListSection>
       </LayoutGroup>
+      </MotionConfig>
       {mail.list.length === 0 ? (
         <div className="px-6 pt-16 text-center">
           <div className="text-title font-semibold">{mail.query ? 'No Results' : 'No Mail'}</div>
