@@ -1,143 +1,120 @@
-/* The site's front page: what BL is, every library by category, how they layer, a live app, and how to install. */
-import { libraryPages, uiUnits } from 'virtual:bl-site-files';
+/* The site's front page. It leads with the kit itself: a small app built from the real parts, in a frame whose width
+   the reader sets, so "responsive by container" is something they do rather than read. Then the two ways to install,
+   as commands to copy, and the libraries as what they are: entries of one package. The page's own parts are in
+   ./landing/. */
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { MarkdownView } from '@/components/ui/markdown-view';
 import { Icon } from '@/lib/icon';
-import { BLOCK_PAGES, PAGE_LIST } from '../pages';
-import { demoResolver } from '../demos';
-import { LIBRARIES, LIBRARY, packageNames, packageOf, reach, type Library } from './libraries';
-import { LibraryChip, LibraryGroups, SitePage, SiteSection } from './site-parts';
+import { pressableFocusRing } from '@/lib/primitives';
+import { useCopy } from '@/lib/use-copy';
+import { cn } from '@/lib/utils';
+import { BLOCK_PAGES } from '../pages';
+import { InstallWays } from './landing/install';
+import { INSTALL_COMMAND, PACKAGE } from './landing/install-data';
+import { LibraryIndex } from './landing/library-index';
+import NotesApp from './landing/notes-app';
+import { Stage } from './landing/stage';
+import { LIBRARY } from './libraries';
+import { REPO_URL, SitePage } from './site-parts';
 
-/* How the libraries stack, computed from the plan so it can't drift: the npm package that holds the core, what the core
-   builds on, what builds on the core, and what needs neither. */
-const inCore = (l: Library) => packageOf(l).id === 'ui';
-const coreReach = new Set(LIBRARIES.filter(inCore).flatMap((l) => [...reach(l.id)]));
-const LAYERS: Array<{ name: string; note: string; libs: Library[] }> = [
-  { name: 'Built on the core', note: 'Planned packages: in @brett_lamy/ui today', libs: LIBRARIES.filter((l) => !inCore(l) && reach(l.id).has('ui')) },
-  { name: 'The core', note: '@brett_lamy/ui, with docstream and its editor', libs: LIBRARIES.filter(inCore) },
-  { name: 'Foundation', note: 'What the core builds on', libs: LIBRARIES.filter((l) => !inCore(l) && coreReach.has(l.id)) },
-  { name: 'Beside it', note: 'Need no BL library, or only the foundation', libs: LIBRARIES.filter((l) => !inCore(l) && !coreReach.has(l.id) && !reach(l.id).has('ui')) },
-];
-
-const INSTALL_SOURCE = '{% command %}npx shadcn@latest add https://blamy.github.io/ui/r/navigation-stack.json{% endcommand %}';
-const INSTALL_PACKAGE = [
-  '{% command %}npm install @brett_lamy/ui{% endcommand %}',
-  '```tsx',
-  "import '@brett_lamy/ui/styles.css';",
-  "import { Dialog, DialogContent } from '@brett_lamy/ui/dialog';",
-  "import { MarkdownView } from '@brett_lamy/ui/markdown-view';",
-  '```',
-].join('\n');
-const DEMO = '{% demo src="introduction/first-app" %}';
-
-function Stat({ value, label }: { value: number; label: string }) {
+/** A link in the page's own voice: the text color, an arrow, underlined while hovered. */
+function TextLink({ href, children, external }: { href: string; children: string; external?: boolean }) {
   return (
-    <div className="flex flex-col gap-0.5 rounded-panel bg-card p-4 shadow-hairline">
-      <strong className="text-large-title leading-none font-bold tabular-nums">{value}</strong>
-      <span className="text-footnote text-muted-foreground">{label}</span>
+    <a
+      href={href}
+      {...(external ? { target: '_blank', rel: 'noreferrer' } : null)}
+      className={cn('group/link inline-flex items-center gap-1 rounded-sm text-subhead font-medium text-foreground no-underline underline-offset-4 hover:underline', pressableFocusRing)}
+    >
+      {children}
+      <Icon name={external ? 'arrow-up-right' : 'arrow-right'} size={14} className="text-muted-foreground transition-transform duration-spring-snappy ease-spring-snappy group-hover/link:translate-x-0.5 motion-reduce:transition-none" />
+    </a>
+  );
+}
+
+/** The install command as one line to copy. */
+function InstallLine() {
+  const { copy, copied } = useCopy();
+  return (
+    <div className="flex h-11 w-fit max-w-full items-center gap-2 rounded-ctl bg-secondary ps-4 pe-1.5">
+      <span aria-hidden="true" className="font-mono text-detail text-tertiary-foreground select-none">$</span>
+      <code className="min-w-0 truncate font-mono text-detail text-foreground select-all">{INSTALL_COMMAND}</code>
+      <Button variant="quiet" size="icon-sm" aria-label={copied ? 'Copied' : 'Copy the install command'} onClick={() => { void copy(INSTALL_COMMAND); }}>
+        <Icon name={copied ? 'check' : 'copy'} size={16} />
+      </Button>
+    </div>
+  );
+}
+
+function SectionHeading({ id, title, children }: { id: string; title: string; children?: React.ReactNode }) {
+  return (
+    <div className="flex max-w-2xl flex-col gap-2">
+      <h2 id={id} className="m-0 text-title font-bold tracking-tight">{title}</h2>
+      {children ? <p className="m-0 text-callout text-pretty text-muted-foreground">{children}</p> : null}
     </div>
   );
 }
 
 export function Landing() {
-  const packages = LIBRARIES.filter((l) => l.status !== 'planned').flatMap(packageNames);
-  const components = uiUnits.filter((u) => u.startsWith('components/')).length;
+  const docstream = LIBRARY.docstream;
   return (
     <SitePage label="BL">
-      <section aria-labelledby="hero" className="grid gap-8 @4xl/page:grid-cols-[3fr_2fr] @4xl/page:items-end">
-        <h1 id="hero" className="m-0 text-[clamp(2.25rem,4cqi+1.25rem,4rem)] leading-[1.05] font-bold tracking-tight text-balance">
-          React libraries for apps that feel <span className="text-primary">native</span>
-        </h1>
-        <div className="flex flex-col gap-5">
-          <p className="m-0 text-body text-muted-foreground">
-            Components, motion, Markdown and data tools that compose like UIKit: behavior from UI SDK, looks from tokens,
-            responsive by container. Copy them into your project as source, or install them from npm.
-          </p>
-          <div className="flex flex-wrap items-center gap-2">
-            <Button size="lg" render={<a href="#/libraries" />} className="no-underline">Browse the libraries</Button>
-            <Button size="lg" variant="outline" render={<a href="#/introduction#find-a-component" />} className="no-underline">Components</Button>
-            <Button size="lg" variant="ghost" render={<a href="#/introduction" />} className="no-underline">
-              Read the docs <Icon name="arrow-right" size={16} />
-            </Button>
+      <section aria-labelledby="hero" className="flex flex-col gap-8">
+        <div className="grid gap-x-12 gap-y-6 @4xl/page:grid-cols-[minmax(0,1fr)_auto] @4xl/page:items-end">
+          <div className="flex max-w-2xl flex-col gap-3">
+            <h1 id="hero" className="m-0 text-large-title leading-tight font-bold tracking-tight text-balance">React libraries for apps that feel native</h1>
+            <p className="m-0 text-body text-pretty text-muted-foreground">
+              Navigation stacks, split views, dialogs that become sheets, a composer, diagrams and a Markdown renderer
+              that streams. Behavior from <a href="https://ui-sdk.dev" target="_blank" rel="noreferrer">UI SDK</a>, looks
+              from Tailwind v4 and tokens, and every container responds to its own width, not the window’s.
+            </p>
+          </div>
+          <div className="flex flex-col gap-3 @4xl/page:items-end">
+            <InstallLine />
+            <div className="flex flex-wrap gap-x-5 gap-y-1">
+              <TextLink href="#/introduction">Read the docs</TextLink>
+              <TextLink href={REPO_URL} external>GitHub</TextLink>
+            </div>
           </div>
         </div>
+        <Stage
+          label="Notes, a live example app"
+          lead="This is the kit running, not a picture of it."
+          caption={({ resizable, sizeClass, available, regularFits }) => (
+            <>
+              Notes is a SplitView in a frame, and it measures the frame, never the window. Under 640 px its columns are a stack, and its sort menu and New Note dialog open as sheets.{' '}
+              {resizable
+                ? <>The frame is {sizeClass} now.{regularFits ? null : <> This page gives it at most {available} px, so regular, which starts at 1024 px, is out of reach here.</>}</>
+                : <>The frame is {sizeClass} at this width; on a wider screen you can resize it.</>}
+            </>
+          )}
+        >
+          <NotesApp />
+        </Stage>
       </section>
 
-      <div className="grid grid-cols-2 gap-3 @3xl/page:grid-cols-4">
-        <Stat value={LIBRARIES.length} label="Libraries" />
-        <Stat value={packages.length} label="npm packages in 6.0" />
-        <Stat value={components} label="Component modules" />
-        <Stat value={PAGE_LIST.length + libraryPages} label="Docs pages" />
-      </div>
+      <section aria-labelledby="install" className="flex flex-col gap-8">
+        <SectionHeading id="install" title="Two ways to install">
+          The same files either way. Take the package and import what you use, or have the shadcn CLI copy the source into your project.
+        </SectionHeading>
+        <InstallWays />
+      </section>
 
-      <Card variant="elevated">
-        <CardHeader>
-          <CardTitle render={<h2 />}>Docstream moved in</CardTitle>
-          <CardDescription>
-            Docstream and its editor are part of <code>@brett_lamy/ui</code> from 6.0. The packages{' '}
-            <code>{LIBRARY.docstream.formerly?.[0].npm}</code> and <code>{LIBRARY['docstream-editor'].formerly?.[0].npm}</code> stop at
-            {' '}{LIBRARY.docstream.formerly?.[0].last}: import <code>{LIBRARY.docstream.npm}</code> and <code>{LIBRARY['docstream-editor'].npm}</code> instead.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-wrap gap-2 pt-1">
-          <Button variant="secondary" size="sm" render={<a href="#/roadmap/migration" />} className="no-underline">How to migrate</Button>
-          <Button variant="ghost" size="sm" render={<a href="#/docstream" />} className="no-underline">Docstream's docs</Button>
-        </CardContent>
-      </Card>
+      <section aria-labelledby="libraries" className="flex flex-col gap-6">
+        <SectionHeading id="libraries" title="One package, a library per entry">
+          Everything ships in <code>{PACKAGE}</code>. Each library is a path you import from it; its page says what it holds.
+          {docstream?.formerly?.length ? <> Docstream and its editor moved in with 6.0: <a href="#/roadmap/migration" className="whitespace-nowrap">how to migrate</a>.</> : null}
+        </SectionHeading>
+        <LibraryIndex />
+      </section>
 
-      <SiteSection
-        title="The libraries"
-        lede={<>
-          <code>@brett_lamy/ui</code> carries the kit, docstream and its editor; UI SDK publishes beside it. The planned
-          libraries ship inside <code>@brett_lamy/ui</code> today and are next in line for packages of their own — each is
-          mapped, module by module, in <a href="#/roadmap/module-map">the plan</a>.
-        </>}
-      >
-        <LibraryGroups />
-      </SiteSection>
-
-      <SiteSection title="Built in layers" lede="Each layer builds only on the ones below it, so an app installs the parts it uses and nothing above them. A test holds the plan to the real imports.">
-        <ol className="m-0 flex list-none flex-col gap-2 p-0">
-          {LAYERS.filter((layer) => layer.libs.length).map((layer) => (
-            <li key={layer.name} className="grid gap-3 rounded-panel bg-card p-4 shadow-hairline @3xl/page:grid-cols-[12rem_1fr] @3xl/page:items-center">
-              <div className="flex flex-col">
-                <strong className="text-subhead">{layer.name}</strong>
-                <span className="text-footnote text-muted-foreground">{layer.note}</span>
-              </div>
-              <div className="flex flex-wrap gap-1.5">
-                {layer.libs.map((lib) => <LibraryChip key={lib.id} lib={lib} />)}
-              </div>
-            </li>
-          ))}
-        </ol>
-      </SiteSection>
-
-      <SiteSection title="Not screenshots" lede="Every example on this site is the real component, running. This one is Tabs with a NavigationStack in each, inset Lists, and a Dialog shown as a tray: open a friend, then swipe back from the leading edge.">
-        <MarkdownView markdown={DEMO} demo={{ resolver: demoResolver }} className="dk-md" />
-      </SiteSection>
-
-      <SiteSection title="Two ways in" lede="The same source, two ways: copy what you need into your project, or install the package.">
-        <div className="grid gap-3 @3xl/page:grid-cols-2">
-          <Card variant="outline">
-            <CardHeader>
-              <CardTitle>Copy the source</CardTitle>
-              <CardDescription>The shadcn registry copies a component and the parts it's built from into your project. You own the code, and you ship only what you add.</CardDescription>
-            </CardHeader>
-            <CardContent><MarkdownView markdown={INSTALL_SOURCE} /></CardContent>
-          </Card>
-          <Card variant="outline">
-            <CardHeader>
-              <CardTitle>Install the package</CardTitle>
-              <CardDescription>Every module is its own entry, so a bundler takes only the ones you import. Import the stylesheet once.</CardDescription>
-            </CardHeader>
-            <CardContent><MarkdownView markdown={INSTALL_PACKAGE} /></CardContent>
-          </Card>
+      <nav aria-labelledby="next" className="flex flex-col gap-4 border-t border-border pt-8">
+        <h2 id="next" className="m-0 text-body font-semibold">Where to go next</h2>
+        <div className="flex flex-wrap gap-x-6 gap-y-2">
+          <TextLink href="#/introduction">Read the docs</TextLink>
+          <TextLink href="#/blocks">{`Open the ${BLOCK_PAGES.length} example apps`}</TextLink>
+          <TextLink href="#/libraries">All libraries</TextLink>
+          <TextLink href={REPO_URL} external>Source on GitHub</TextLink>
         </div>
-        <p className="m-0 text-footnote text-muted-foreground">
-          {BLOCK_PAGES.length} app blocks show the parts working together — <a href="#/blocks">see them all</a>.
-        </p>
-      </SiteSection>
+      </nav>
     </SitePage>
   );
 }
