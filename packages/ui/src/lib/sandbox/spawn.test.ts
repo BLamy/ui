@@ -43,7 +43,7 @@ function setup(options: Partial<SpawnerOptions> = {}) {
     },
     ...options,
   });
-  const hello = (worker: ReturnType<typeof fakeWorker>, origin: string, href = HREF) => worker.say({ type: 'hello', href, origin });
+  const hello = (worker: ReturnType<typeof fakeWorker>, origin: string, href = HREF, hostFetch = false) => worker.say({ type: 'hello', href, origin, hostFetch });
   return { spawn, mine, isolated, hello };
 }
 
@@ -134,11 +134,17 @@ describe('starting the Worker', () => {
     await expect(starting).resolves.toMatchObject({ isolation: 'same-origin' });
     expect(isolated).toHaveLength(0);
 
-    const forced = setup();
-    const again = forced.spawn({ sameOrigin: true });
+    // Asked for by the sandbox, once it has fallen back: only where the caller allowed a Worker of the page's origin.
+    const forced = setup({ fallback: true });
+    const again = forced.spawn({ only: 'same-origin' });
     forced.hello(forced.mine[0], 'https://app.example');
     await expect(again).resolves.toMatchObject({ isolation: 'same-origin' });
     expect(forced.isolated).toHaveLength(0);
+
+    const refused = setup();
+    await expect(refused.spawn({ only: 'same-origin' })).rejects.toMatchObject({ code: 'isolation' });
+    expect(refused.mine).toHaveLength(0);
+    expect(refused.isolated).toHaveLength(0);
   });
 
   it('says so when the app\'s Worker can\'t start, throws, or never answers', async () => {
@@ -167,5 +173,127 @@ describe('starting the Worker', () => {
     await expect(starting).rejects.toMatchObject({ code: 'isolation', message: expect.stringContaining('did not say where it was loaded from') });
     expect(isolated).toHaveLength(0);
     expect(mine[0].worker.terminate).toHaveBeenCalled();
+  });
+});
+
+describe('when it may start a Worker of the page\'s origin to run code', () => {
+  /** A spawner whose first Worker started isolated, so that it knows where the module is. */
+  async function started(options: Partial<SpawnerOptions> = {}) {
+    const made = setup(options);
+    const first = made.spawn();
+    made.hello(made.mine[0], 'https://app.example');
+    await tick();
+    made.hello(made.isolated[0], 'null');
+    await first;
+    return made;
+  }
+
+  it('falls back on a later start too, with a new Worker of the app\'s, where the caller allowed it', async () => {
+    const { spawn, mine, isolated, hello } = await started({ fallback: true });
+    const second = spawn();
+    await tick();
+    isolated[1].say({ type: 'load-failed', message: 'TypeError: Failed to fetch dynamically imported module' });
+    await tick();
+    expect(mine).toHaveLength(2);
+    hello(mine[1], 'https://app.example');
+    await expect(second).resolves.toMatchObject({ isolation: 'same-origin' });
+    expect(isolated[1].worker.terminate).toHaveBeenCalled();
+  });
+
+  it('asked for an isolated Worker only, it fails rather than fall back, though falling back was allowed', async () => {
+    const { spawn, mine, isolated } = await started({ fallback: true });
+    for (const refuse of [
+      () => isolated.at(-1)?.say({ type: 'load-failed', message: 'TypeError: Failed to fetch dynamically imported module' }),
+      () => isolated.at(-1)?.crash('Script error.'),
+      () => isolated.at(-1)?.say({ type: 'hello', href: HREF, origin: 'https://app.example' }),
+    ]) {
+      const again = spawn({ only: 'opaque-origin' });
+      await tick();
+      refuse();
+      const failure = await again.catch((reason: unknown) => reason);
+      expect(failure).toMatchObject({ code: 'isolation', message: expect.stringContaining('has run code in a Worker with an origin of its own') });
+      expect((failure as Error).message).not.toContain('pass fallback');
+      expect(isolated.at(-1)?.worker.terminate).toHaveBeenCalled();
+    }
+    // No Worker of the page's origin was started for any of them.
+    expect(mine).toHaveLength(1);
+  });
+
+  it('an isolated Worker that never answers fails the start, or is replaced where that was allowed, and is ended', async () => {
+    vi.useFakeTimers();
+    try {
+      const strict = setup({ timeout: 1000 });
+      const failing = strict.spawn().catch((reason: unknown) => reason);
+      strict.hello(strict.mine[0], 'https://app.example');
+      await vi.advanceTimersByTimeAsync(1001);
+      expect(await failing).toMatchObject({ code: 'isolation', message: expect.stringContaining('did not answer') });
+      expect(strict.isolated[0].worker.terminate).toHaveBeenCalled();
+      expect(strict.mine[0].worker.terminate).toHaveBeenCalled();
+      expect(strict.mine[0].posted).toEqual([]);
+
+      const lenient = setup({ timeout: 1000, fallback: true });
+      const falling = lenient.spawn();
+      lenient.hello(lenient.mine[0], 'https://app.example');
+      await vi.advanceTimersByTimeAsync(1001);
+      await expect(falling).resolves.toMatchObject({ isolation: 'same-origin' });
+      expect(lenient.isolated[0].worker.terminate).toHaveBeenCalled();
+      expect(lenient.mine[0].worker.terminate).not.toHaveBeenCalled();
+
+      // No limit at all: it waits.
+      const patient = setup({ timeout: Infinity });
+      let settled = false;
+      patient.spawn().then(() => { settled = true; }, () => { settled = true; });
+      await vi.advanceTimersByTimeAsync(600_000);
+      expect(settled).toBe(false);
+      expect(patient.mine[0].worker.terminate).not.toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('ends whatever it was starting when the start is no longer wanted, and never falls back for that', async () => {
+    const early = setup({ fallback: true });
+    const controller = new AbortController();
+    const first = early.spawn({ signal: controller.signal }).catch((reason: unknown) => reason);
+    controller.abort();
+    expect(await first).toBeInstanceOf(SandboxError);
+    expect(early.mine[0].worker.terminate).toHaveBeenCalled();
+    expect(early.isolated).toHaveLength(0);
+
+    const late = setup({ fallback: true });
+    const second = new AbortController();
+    const starting = late.spawn({ signal: second.signal }).catch((reason: unknown) => reason);
+    late.hello(late.mine[0], 'https://app.example');
+    await tick();
+    second.abort();
+    expect(await starting).toBeInstanceOf(SandboxError);
+    expect(late.isolated[0].worker.terminate).toHaveBeenCalled();
+    expect(late.mine[0].worker.terminate).toHaveBeenCalled();
+    expect(late.mine).toHaveLength(1);
+
+    const never = setup();
+    await expect(never.spawn({ signal: AbortSignal.abort() })).rejects.toBeInstanceOf(SandboxError);
+    expect(never.mine.every((made) => made.worker.terminate.mock.calls.length > 0)).toBe(true);
+  });
+
+  it('says whether the Worker\'s file hands requests to the page, and passes on an error from a Worker that has started', async () => {
+    const { spawn, mine, isolated, hello } = setup();
+    const starting = spawn();
+    hello(mine[0], 'https://app.example', HREF, true);
+    await tick();
+    hello(isolated[0], 'null', 'data:text/javascript,…', true);
+    const transport = await starting;
+    expect(transport.hostFetch).toBe(true);
+    const errors: string[] = [];
+    transport.onerror = (message) => errors.push(message);
+    isolated[0].crash('out of memory');
+    expect(errors).toEqual(['out of memory']);
+    // It is the sandbox's to end now, not the spawner's.
+    expect(isolated[0].worker.terminate).not.toHaveBeenCalled();
+
+    const plain = setup({ isolation: 'same-origin' });
+    const other = plain.spawn();
+    plain.mine[0].say({ type: 'hello', href: HREF, origin: 'https://app.example' });
+    expect((await other).hostFetch).toBe(false);
   });
 });

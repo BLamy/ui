@@ -101,6 +101,21 @@ function fakeRuntime(scope: SandboxWorkerScope): SandboxRuntimeModule {
             }, 20);
           });
           case 'fetch': try { return done(`${await (await scope.fetch(rest)).text()}\n`); } catch (error) { return done('', 1, `${(error as Error).message}\n`); }
+          // What sandboxed code can do with the Worker's real global: post any message it likes.
+          case 'hostile': scope.postMessage(JSON.parse(rest)); return done();
+          case 'origin': return done(`${scope.origin}\n`);
+          case 'rmdir': vfs.rmdirSync(at(state.cwd, rest)); return done();
+          // One write of that many characters.
+          case 'big': io.onStdout('x'.repeat(Number(rest))); return done();
+          // Posts output for a run by itself, past what the Worker's own code allows: `flood <run> <messages> <characters each>`.
+          case 'flood':
+            for (let i = 0; i < Number(args[1]); i += 1) scope.postMessage({ type: 'output', id: Number(args[0]), stream: 'stdout', data: 'x'.repeat(Number(args[2])) });
+            return new Promise<ReturnType<typeof done>>(() => {});
+          // Changes the disk without an event, as a move does, and keeps running: the page has not heard of it.
+          case 'plant':
+            files.set(at(state.cwd, args[0]), new TextEncoder().encode(args.slice(1).join(' ')));
+            times.set(at(state.cwd, args[0]), (clock += 1));
+            return new Promise<ReturnType<typeof done>>((resolve) => io.signal.addEventListener('abort', () => resolve(done('', 130))));
           default: return done('', 127, `${command}: command not found\n`);
         }
       },
@@ -138,10 +153,12 @@ interface Started {
 
 class FakeWorker {
   terminated = false;
+  /** A script that never returns, `while (true) {}`: the thread takes no more messages. */
+  blocked = false;
   private listeners = new Set<(event: MessageEvent) => void>();
   private scope: SandboxWorkerScope | null = null;
   postMessage(message: unknown) {
-    setTimeout(() => { if (!this.terminated) this.scope?.onmessage?.({ data: message } as never); });
+    setTimeout(() => { if (!this.terminated && !this.blocked) this.scope?.onmessage?.({ data: message } as never); });
   }
   terminate() { this.terminated = true; }
   addEventListener(type: string, listener: (event: never) => void) {
@@ -164,6 +181,7 @@ class FakeWorker {
     };
     const scope = this.scope;
     serve(scope, async () => {
+      if (world.refuseRuntime(origin)) throw new Error('Failed to fetch dynamically imported module');
       started.loads += 1;
       return fakeRuntime(scope);
     }, options);
@@ -180,11 +198,13 @@ interface World {
   network: typeof fetch;
   imported: string[];
   serveOptions: ServeOptions;
+  /** Whether the host refuses a Worker of this origin the runtime's chunks: its module loads, and then can't start. */
+  refuseRuntime: (origin: string) => boolean;
 }
 
 function world(overrides: Partial<World> = {}): World {
   const w: World = {
-    started: [], cors: true, opaqueOrigin: 'null', imported: [], serveOptions: {},
+    started: [], cors: true, opaqueOrigin: 'null', imported: [], serveOptions: {}, refuseRuntime: () => false,
     network: vi.fn(async (input: RequestInfo | URL) => new Response(`network: ${String(input)}`)) as unknown as typeof fetch,
     ...overrides,
   };
@@ -233,6 +253,10 @@ const exec = (sandbox: ReturnType<typeof createSandbox>, command: string, option
   const chunks: string[] = [];
   return output(sandbox.run(command, { ...options, onOutput: (chunk) => chunks.push(chunk) }), chunks);
 };
+
+const tick = (ms = 20) => new Promise((resolve) => { setTimeout(resolve, ms); });
+/** The Workers that ran anything: the runtime was loaded in them. */
+const ran = (w: World) => w.started.filter(({ loads }) => loads > 0).map(({ origin }) => origin);
 
 afterEach(() => { vi.unstubAllGlobals(); });
 
@@ -449,7 +473,6 @@ describe('commands', () => {
     const second = sandbox.run('wait', { signal: controller.signal });
     controller.abort();
     await expect(second.exit).resolves.toEqual({ exitCode: 130 });
-    await expect(sandbox.run('wait', { signal: AbortSignal.abort() }).exit).resolves.toEqual({ exitCode: 130 });
     sandbox.dispose();
   });
 
@@ -543,5 +566,345 @@ describe('the end', () => {
     await expect(starting).rejects.toMatchObject({ code: 'disposed' });
     await new Promise((resolve) => { setTimeout(resolve, 20); });
     expect(w.started.every(({ worker }) => worker.terminated)).toBe(true);
+  });
+});
+
+/* ── What the code in the Worker can't do ──
+   It runs in the same global as the library's own Worker code, so it can post any message the library can. None of
+   them may change where code runs, and what it posts is data: paths, output and requests are checked on the page. */
+
+describe('sandboxed code cannot change where it runs', () => {
+  it('a `failed` posted after the Worker is ready changes nothing, though falling back was allowed', async () => {
+    // The host serves the Worker with CORS headers: isolation works here.
+    const { sandbox, w, statuses } = setup({ fallback: 'same-origin' });
+    await sandbox.start();
+    expect(sandbox.isolation).toBe('opaque-origin');
+    await exec(sandbox, 'write planted.js hostile');
+    await expect(sandbox.run('hostile {"type":"failed","message":"x"}').exit).resolves.toEqual({ exitCode: 0 });
+    await tick();
+    expect(sandbox.status).toBe('ready');
+    expect(sandbox.isolation).toBe('opaque-origin');
+    expect(statuses).toEqual(['loading', 'ready']);
+    await expect(exec(sandbox, 'origin')).resolves.toMatchObject({ text: 'null\n' });
+    // No Worker of the page's origin ever ran anything, and no second Worker was started at all.
+    expect(ran(w)).toEqual(['null']);
+    expect(w.started.map(({ origin }) => origin)).toEqual([PAGE, 'null']);
+    sandbox.dispose();
+  });
+
+  it('nor does it without: the sandbox goes on, isolated', async () => {
+    const { sandbox, w } = setup();
+    await sandbox.start();
+    await sandbox.run('hostile {"type":"failed","message":"x"}').exit;
+    await sandbox.run('hostile {"type":"ready","origin":"https://app.example"}').exit;
+    await tick();
+    expect(sandbox.status).toBe('ready');
+    expect(sandbox.error).toBeNull();
+    expect(sandbox.isolation).toBe('opaque-origin');
+    expect(ran(w)).toEqual(['null']);
+    sandbox.dispose();
+  });
+
+  it('once code has run isolated, a restart that can\'t isolate fails: it never continues in the page\'s origin', async () => {
+    const { sandbox, w } = setup({ fallback: 'same-origin' });
+    await exec(sandbox, 'write planted.js hostile');
+    expect(sandbox.isolation).toBe('opaque-origin');
+    // The host stops answering the isolated Worker: an outage, or something the code brought about.
+    w.cors = false;
+    sandbox.restart();
+    const failure = await sandbox.start().catch((reason: unknown) => reason);
+    expect(failure).toMatchObject({ code: 'isolation', message: expect.stringContaining('has run code in a Worker with an origin of its own') });
+    expect(sandbox.status).toBe('failed');
+    expect(sandbox.isolation).toBeNull();
+    expect(ran(w)).toEqual(['null']);
+    expect(w.started.filter(({ origin }) => origin === PAGE)).toHaveLength(1);
+    await expect(sandbox.run('origin').exit).resolves.toEqual({ exitCode: 1, interrupted: 'unavailable' });
+    // The files are the page's to keep, and the next restart tries again.
+    w.cors = true;
+    sandbox.restart();
+    await sandbox.start();
+    expect(sandbox.isolation).toBe('opaque-origin');
+    await expect(exec(sandbox, 'cat planted.js')).resolves.toEqual({ exitCode: 0, text: 'hostile' });
+    await expect(exec(sandbox, 'origin')).resolves.toMatchObject({ text: 'null\n' });
+    expect(ran(w)).toEqual(['null', 'null']);
+    sandbox.dispose();
+  });
+
+  it('a command that won\'t stop cannot have its replacement started in the page\'s origin', async () => {
+    const { sandbox, w } = setup({ fallback: 'same-origin' });
+    await sandbox.start();
+    const stuck = sandbox.run('spin');
+    await tick();
+    w.cors = false;
+    stuck.kill();
+    await expect(stuck.exit).resolves.toEqual({ exitCode: 130, interrupted: 'unresponsive' });
+    await expect(sandbox.start()).rejects.toMatchObject({ code: 'isolation' });
+    expect(sandbox.isolation).toBeNull();
+    expect(ran(w)).toEqual(['null']);
+  });
+
+  it('a Worker that can\'t start again after code has run isolated is not retried in the page\'s origin', async () => {
+    const { sandbox, w } = setup({ fallback: 'same-origin' });
+    await exec(sandbox, 'write planted.js hostile');
+    // What the code left on the disk, or in a shell's state, makes the next Worker fail as it starts.
+    w.refuseRuntime = () => true;
+    sandbox.restart();
+    await expect(sandbox.start()).rejects.toMatchObject({ code: 'runtime' });
+    expect(sandbox.status).toBe('failed');
+    expect(sandbox.isolation).toBeNull();
+    expect(ran(w)).toEqual(['null']);
+    expect(w.started.filter(({ origin }) => origin === PAGE)).toHaveLength(1);
+  });
+
+  it('before anything has run, an isolated Worker that loads and then can\'t start is replaced, where that was allowed', async () => {
+    const { sandbox, w, statuses } = setup({ fallback: 'same-origin' }, { refuseRuntime: (origin) => origin === 'null' });
+    await sandbox.start();
+    expect(sandbox.isolation).toBe('same-origin');
+    expect(statuses).toEqual(['loading', 'ready']);
+    expect(ran(w)).toEqual([PAGE]);
+    await expect(exec(sandbox, 'origin')).resolves.toMatchObject({ text: `${PAGE}\n` });
+    sandbox.dispose();
+
+    const strict = setup({}, { refuseRuntime: (origin) => origin === 'null' });
+    await expect(strict.sandbox.start()).rejects.toMatchObject({ code: 'runtime' });
+    expect(ran(strict.w)).toEqual([]);
+  });
+
+  it('where it runs is decided once: a sandbox that fell back stays there, and says so', async () => {
+    const { sandbox, w } = setup({ fallback: 'same-origin' }, { cors: false });
+    await sandbox.start();
+    expect(sandbox.isolation).toBe('same-origin');
+    w.cors = true;
+    sandbox.restart();
+    expect(sandbox.isolation).toBe('same-origin');
+    await sandbox.start();
+    expect(sandbox.isolation).toBe('same-origin');
+    await expect(exec(sandbox, 'origin')).resolves.toMatchObject({ text: `${PAGE}\n` });
+    // It did not try for an isolated Worker again.
+    expect(w.imported).toHaveLength(1);
+    sandbox.dispose();
+  });
+});
+
+describe('what the Worker reports is data', () => {
+  it('keeps out of the page\'s copy of the disk any path that is not a plain absolute one', async () => {
+    const { sandbox } = setup();
+    await sandbox.start();
+    const before = [...sandbox.mirror.files.keys()].sort();
+    const batch = {
+      type: 'fs',
+      batch: {
+        changed: [
+          { path: '/project/../../etc/passwd', data: 'x' },
+          { path: '/project/a/', data: 'x' },
+          { path: '/', data: 'x' },
+          { path: '/project//b', data: 'x' },
+          { path: '/project/./c', data: 'x' },
+        ],
+        removed: ['/project/src/../index.js'], dirs: ['/project/d/', '/project/e/..'], removedDirs: ['/', '/project/'],
+      },
+    };
+    await sandbox.run(`hostile ${JSON.stringify(batch)}`).exit;
+    expect([...sandbox.mirror.files.keys()].sort()).toEqual(before);
+    expect([...sandbox.mirror.directories].sort()).toEqual(['/', '/project', '/project/src']);
+    sandbox.dispose();
+  });
+
+  it('keeps the copy a tree: one path is never both a file and a folder, and nothing is under a file', async () => {
+    const { sandbox } = setup();
+    await sandbox.start();
+    const batch = { type: 'fs', batch: { changed: [{ path: '/project/index.js/child', data: 'x' }, { path: '/project/src', data: 'x' }], removed: [], dirs: [], removedDirs: [] } };
+    await sandbox.run(`hostile ${JSON.stringify(batch)}`).exit;
+    const { files, directories } = sandbox.mirror;
+    for (const path of files.keys()) {
+      expect(directories.has(path), path).toBe(false);
+      expect(directories.has(path.slice(0, path.lastIndexOf('/')) || '/'), path).toBe(true);
+    }
+    // The newest report wins: `index.js` became a folder, and `src` a file with nothing left under it.
+    expect(directories.has('/project/index.js')).toBe(true);
+    expect(files.get('/project/src')).toBe('x');
+    expect(files.has('/project/src/greet.js')).toBe(false);
+    await expect(sandbox.files.list('.')).resolves.toEqual([{ name: 'index.js', kind: 'directory' }, { name: 'src', kind: 'file' }]);
+    sandbox.dispose();
+  });
+
+  it('follows a folder that a command replaced with a file of the same name, and back', async () => {
+    const { sandbox } = setup();
+    const seen: SandboxFileEvent[] = [];
+    await exec(sandbox, 'mkdir out');
+    sandbox.files.watch('out', (events) => seen.push(...events));
+    await exec(sandbox, 'rmdir out; write out now-a-file');
+    expect(sandbox.mirror.files.get('/project/out')).toBe('now-a-file');
+    expect(sandbox.mirror.directories.has('/project/out')).toBe(false);
+    await expect(sandbox.files.list('.')).resolves.toContainEqual({ name: 'out', kind: 'file' });
+    expect((await sandbox.files.list('.')).filter(({ name }) => name === 'out')).toHaveLength(1);
+    expect(seen).toEqual([{ type: 'delete', path: '/project/out' }, { type: 'change', path: '/project/out', kind: 'file' }]);
+    // The page can write the file it sees.
+    await sandbox.files.write('out', 'mine');
+    await expect(exec(sandbox, 'cat out')).resolves.toEqual({ exitCode: 0, text: 'mine' });
+    await exec(sandbox, 'rm out; mkdir out; write out/inner.txt x');
+    expect(sandbox.mirror.files.has('/project/out')).toBe(false);
+    expect(sandbox.mirror.directories.has('/project/out')).toBe(true);
+    await expect(sandbox.files.readText('out/inner.txt')).resolves.toBe('x');
+    sandbox.dispose();
+  });
+
+  it('never hands the page a request the Worker\'s file was not told to hand over', async () => {
+    const onHostFetch = vi.fn();
+    const { sandbox } = setup({ onHostFetch });
+    await sandbox.start();
+    const message = { type: 'fetch', id: 99, request: { url: 'http://notes.internal/', method: 'GET', headers: [], body: null, redirect: 'follow' } };
+    await sandbox.run(`hostile ${JSON.stringify(message)}`).exit;
+    await tick();
+    expect(onHostFetch).not.toHaveBeenCalled();
+    sandbox.dispose();
+  });
+
+  it('hands the page exactly the five fields it checked, and only an absolute http or https address', async () => {
+    const seen: unknown[] = [];
+    const { sandbox } = setup({
+      async onHostFetch(request) {
+        seen.push(request);
+        return { status: 200, statusText: 'OK', headers: [], body: null };
+      },
+    }, { serveOptions: { hostFetch: () => true } });
+    await sandbox.start();
+    const forged = (id: number, url: string) => ({ type: 'fetch', id, request: { url, method: 'GET', headers: [['x-a', 'b']], body: null, redirect: 'follow', credentials: 'include', mode: 'no-cors', referrer: 'x' } });
+    await sandbox.run(`hostile ${JSON.stringify(forged(91, '/api/me'))}`).exit;
+    await sandbox.run(`hostile ${JSON.stringify(forged(92, 'file:///etc/passwd'))}`).exit;
+    await sandbox.run(`hostile ${JSON.stringify(forged(93, 'javascript:alert(1)'))}`).exit;
+    await sandbox.run(`hostile ${JSON.stringify(forged(94, 'http://notes.internal/list'))}`).exit;
+    await tick();
+    expect(seen).toEqual([{ url: 'http://notes.internal/list', method: 'GET', headers: [['x-a', 'b']], body: null, redirect: 'follow' }]);
+    sandbox.dispose();
+  });
+});
+
+describe('commands that have not started', () => {
+  it('kill() before a command has reached a Worker ends it at once, and costs no Worker', async () => {
+    const { sandbox, w, statuses } = setup({ killAfter: 0 });
+    const run = sandbox.run('write ran.txt yes');
+    const other = sandbox.run('echo hi');
+    expect(sandbox.status).toBe('loading');
+    run.kill();
+    // It never started: it is not a command that would not stop, and the one beside it is not disturbed.
+    await expect(run.exit).resolves.toEqual({ exitCode: 130 });
+    await expect(other.exit).resolves.toEqual({ exitCode: 0 });
+    expect(statuses).toEqual(['loading', 'ready']);
+    expect(w.started.map(({ origin }) => origin)).toEqual([PAGE, 'null']);
+    expect(sandbox.mirror.files.has('/project/ran.txt')).toBe(false);
+    sandbox.dispose();
+  });
+
+  it('a signal that is already aborted never starts the command, nor the sandbox', async () => {
+    const { sandbox, w } = setup();
+    await expect(sandbox.run('write ran.txt yes', { signal: AbortSignal.abort() }).exit).resolves.toEqual({ exitCode: 130 });
+    expect(sandbox.status).toBe('idle');
+    expect(w.started).toHaveLength(0);
+    await sandbox.start();
+    await expect(sandbox.run('write ran.txt yes', { signal: AbortSignal.abort() }).exit).resolves.toEqual({ exitCode: 130 });
+    const shell = sandbox.shell({ cwd: 'src' });
+    await expect(shell.run('cd /', { signal: AbortSignal.abort() }).exit).resolves.toEqual({ exitCode: 130 });
+    expect(shell.cwd).toBe('/project/src');
+    await exec(sandbox, 'echo settle');
+    expect(sandbox.mirror.files.has('/project/ran.txt')).toBe(false);
+    sandbox.dispose();
+  });
+
+  it('with killAfter: Infinity a command gets as long as it needs to stop, and its Worker is never taken from under it', async () => {
+    const { sandbox } = setup({ killAfter: Infinity });
+    await sandbox.start();
+    const run = sandbox.run('wait');
+    await tick();
+    run.kill();
+    await expect(run.exit).resolves.toEqual({ exitCode: 130 });
+    sandbox.dispose();
+  });
+});
+
+describe('output without end', () => {
+  it('the Worker never lets more go unanswered than its limit, even in one write', async () => {
+    const { sandbox } = setup();
+    await sandbox.start();
+    const sizes: number[] = [];
+    let text = '';
+    const run = sandbox.run('big 20000000', { onOutput: (chunk) => { sizes.push(chunk.length); text = chunk.slice(-80); } });
+    await expect(run.exit).resolves.toEqual({ exitCode: 0 });
+    expect(Math.max(...sizes)).toBeLessThanOrEqual(8 * 1024 * 1024);
+    expect(text).toContain('characters of output were dropped]');
+    sandbox.dispose();
+  });
+
+  it('a Worker that posts more than the page has taken is replaced, and stays isolated', async () => {
+    const { sandbox, w, statuses } = setup({ fallback: 'same-origin' });
+    await sandbox.start();
+    let received = 0;
+    // Run 1 posts 20 messages of a million characters for itself, in one go: more than the page lets pile up.
+    const run = sandbox.run('flood 1 20 1000000', { onOutput: (chunk) => { received += chunk.length; } });
+    await expect(run.exit).resolves.toEqual({ exitCode: 137, interrupted: 'restarted' });
+    expect(received).toBeLessThanOrEqual(16 * 1024 * 1024);
+    expect(statuses).toEqual(['loading', 'ready', 'restarting']);
+    await sandbox.start();
+    expect(sandbox.isolation).toBe('opaque-origin');
+    expect(ran(w)).toEqual(['null', 'null']);
+    sandbox.dispose();
+  });
+});
+
+describe('files while the Worker is busy', () => {
+  it('a change resolves when the page\'s copy has it, though a script blocks the Worker\'s thread', async () => {
+    const { sandbox, w } = setup();
+    await sandbox.start();
+    const stuck = sandbox.run('spin');
+    await tick();
+    (w.started.at(-1) as Started).worker.blocked = true;
+    const settled = await Promise.race([
+      (async () => {
+        await sandbox.files.write('index.js', 'console.log(2)');
+        await sandbox.files.mkdir('made');
+        await sandbox.files.rename('src/greet.js', 'made/greet.js');
+        await sandbox.files.remove('src');
+        return 'settled';
+      })(),
+      tick(200).then(() => 'still waiting'),
+    ]);
+    expect(settled).toBe('settled');
+    await expect(sandbox.files.readText('index.js')).resolves.toBe('console.log(2)');
+    // Stopping the script replaces the Worker, and the new one starts from the page's copy.
+    stuck.kill();
+    await expect(stuck.exit).resolves.toEqual({ exitCode: 130, interrupted: 'unresponsive' });
+    await expect(exec(sandbox, 'cat index.js')).resolves.toEqual({ exitCode: 0, text: 'console.log(2)' });
+    await expect(exec(sandbox, 'cat made/greet.js')).resolves.toEqual({ exitCode: 0, text: 'hello' });
+    sandbox.dispose();
+  });
+
+  it('a command run after a change sees it: the Worker takes both in order', async () => {
+    const { sandbox } = setup();
+    await sandbox.start();
+    void sandbox.files.write('index.js', 'newer');
+    await expect(exec(sandbox, 'cat index.js')).resolves.toEqual({ exitCode: 0, text: 'newer' });
+    sandbox.dispose();
+  });
+
+  it('when the Worker\'s disk can\'t take a change, the page\'s copy is put right and watchers hear', async () => {
+    const { sandbox } = setup();
+    await sandbox.start();
+    // A running command has made a file the page has not heard of yet.
+    const running = sandbox.run('plant taken theirs');
+    await tick();
+    expect(sandbox.mirror.files.has('/project/taken')).toBe(false);
+    const seen: SandboxFileEvent[] = [];
+    sandbox.files.watch('taken', (events) => seen.push(...events));
+    // The page's copy has no reason to refuse a file under it; the Worker's disk has.
+    await sandbox.files.write('taken/mine.txt', 'mine');
+    expect(sandbox.mirror.files.get('/project/taken/mine.txt')).toBe('mine');
+    await vi.waitFor(() => expect(sandbox.mirror.files.get('/project/taken')).toBe('theirs'));
+    expect(sandbox.mirror.files.has('/project/taken/mine.txt')).toBe(false);
+    expect(sandbox.mirror.directories.has('/project/taken')).toBe(false);
+    expect(seen.at(-2)).toEqual({ type: 'delete', path: '/project/taken' });
+    expect(seen.at(-1)).toEqual({ type: 'change', path: '/project/taken', kind: 'file' });
+    running.kill();
+    await running.exit;
+    sandbox.dispose();
   });
 });

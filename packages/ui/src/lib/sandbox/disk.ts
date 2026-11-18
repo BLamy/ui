@@ -116,7 +116,15 @@ export function createSandboxDisk(root: string, initial: Record<string, SandboxF
       if (!files.has(from) && !directories.has(from)) throw new SandboxError('files', `No such file or directory: ${from}`);
       if (to === from) return;
       if (to.startsWith(`${from}/`)) throw new SandboxError('files', `Cannot move ${from} into itself.`);
+      // As `rename(2)` has it: a file replaces a file, and a folder an empty folder, and nothing else.
+      if (files.has(from) && directories.has(to)) throw new SandboxError('files', `Is a directory: ${to}`);
+      if (directories.has(from) && files.has(to)) throw new SandboxError('files', `Not a directory: ${to}`);
+      if (directories.has(to) && [...files.keys(), ...directories].some((entry) => entry !== to && inside(entry, to))) {
+        throw new SandboxError('files', `Directory not empty: ${to}`);
+      }
       const events: SandboxFileEvent[] = [];
+      files.delete(to);
+      directories.delete(to);
       addDirs(dirname(to), events);
       const move = (path: string) => to + path.slice(from.length);
       for (const [path, data] of [...files]) {
@@ -151,11 +159,39 @@ export function createSandboxDisk(root: string, initial: Record<string, SandboxF
       return entries.sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
     },
     /* `mv a b` looks like one gone and one new with the same bytes: that is told as a move, so that whatever follows a
-       file (an editor's tab) can follow it. */
+       file (an editor's tab) can follow it.
+       A report is the Worker's word, and the copy stays a tree whatever it says: the newest report about a path wins,
+       so a file that arrives where a folder is takes the folder's place, with what was in it, and the reverse; a file
+       or folder under a file turns that file into a folder. The root is never removed. */
     apply({ changed, removed, dirs: madeDirs, removedDirs }) {
       const events: SandboxFileEvent[] = [];
+      /** A folder, and the folders above it: a file in the way gives way. */
+      const makeDir = (path: string) => {
+        for (const dir of [...ancestors(path), path]) {
+          if (files.delete(dir)) events.push({ type: 'delete', path: dir });
+          if (directories.has(dir)) continue;
+          directories.add(dir);
+          events.push({ type: 'change', path: dir, kind: 'directory' });
+        }
+      };
+      /** Takes a folder and everything in it, quietly: the caller tells of it. */
+      const dropTree = (path: string) => {
+        for (const file of [...files.keys()]) if (inside(file, path)) files.delete(file);
+        for (const dir of [...directories]) if (dir !== '/' && inside(dir, path)) directories.delete(dir);
+      };
+      /** A file, where a folder may have been. Says whether it took a folder's place. */
+      const placeFile = (path: string, data: SandboxFileData) => {
+        const parent = dirname(path);
+        if (parent !== '/') makeDir(parent);
+        if (directories.has(path)) {
+          dropTree(path);
+          events.push({ type: 'delete', path });
+        }
+        files.set(path, data);
+      };
+
       const moved = new Set<string>();
-      const fresh = changed.filter(({ path }) => !files.has(path));
+      const fresh = changed.filter(({ path }) => !files.has(path) && !directories.has(path));
       for (const from of removed) {
         const was = files.get(from);
         const match = fresh.find(({ path, data }) => !moved.has(path) && sameData(was, data));
@@ -163,19 +199,13 @@ export function createSandboxDisk(root: string, initial: Record<string, SandboxF
         moved.add(match.path);
         moved.add(from);
         files.delete(from);
-        files.set(match.path, match.data);
-        for (const dir of ancestors(match.path)) directories.add(dir);
+        placeFile(match.path, match.data);
         events.push({ type: 'rename', from, to: match.path });
       }
-      for (const path of madeDirs) {
-        if (directories.has(path)) continue;
-        directories.add(path);
-        events.push({ type: 'change', path, kind: 'directory' });
-      }
+      for (const path of madeDirs) if (path !== '/') makeDir(path);
       for (const { path, data } of changed) {
-        if (moved.has(path) || sameData(files.get(path), data)) continue;
-        files.set(path, data);
-        for (const dir of ancestors(path)) directories.add(dir);
+        if (path === '/' || moved.has(path) || sameData(files.get(path), data)) continue;
+        placeFile(path, data);
         events.push({ type: 'change', path, kind: 'file' });
       }
       for (const path of removed) {
@@ -183,7 +213,9 @@ export function createSandboxDisk(root: string, initial: Record<string, SandboxF
         events.push({ type: 'delete', path });
       }
       for (const path of removedDirs) {
-        if (directories.delete(path)) events.push({ type: 'delete', path });
+        if (path === '/' || !directories.has(path)) continue;
+        dropTree(path);
+        events.push({ type: 'delete', path });
       }
       fire(events);
     },

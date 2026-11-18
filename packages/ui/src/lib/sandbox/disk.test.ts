@@ -101,6 +101,62 @@ describe('the page\'s copy of the disk', () => {
     expect(disk.files.get('/project/out/bin')).toBe(bytes);
   });
 
+  it('stays a tree whatever a report says: a path is a file or a folder, and nothing is under a file', () => {
+    const { disk, events } = setup();
+    // A file where a folder was: the folder goes, with what was in it.
+    disk.apply({ changed: [{ path: '/project/src', data: 'now a file' }], removed: [], dirs: [], removedDirs: [] });
+    expect(disk.files.get('/project/src')).toBe('now a file');
+    expect(disk.directories.has('/project/src')).toBe(false);
+    expect(disk.files.has('/project/src/a.js')).toBe(false);
+    expect(events.pop()).toEqual([{ type: 'delete', path: '/project/src' }, { type: 'change', path: '/project/src', kind: 'file' }]);
+    // A folder where a file was.
+    disk.apply({ changed: [], removed: [], dirs: ['/project/index.js'], removedDirs: [] });
+    expect(disk.files.has('/project/index.js')).toBe(false);
+    expect(disk.directories.has('/project/index.js')).toBe(true);
+    expect(events.pop()).toEqual([{ type: 'delete', path: '/project/index.js' }, { type: 'change', path: '/project/index.js', kind: 'directory' }]);
+    // A file under a file: the newer report is the truth, so what was a file is a folder now. The folders above a new
+    // entry are made, and told.
+    disk.apply({ changed: [{ path: '/project/src/deep/x.js', data: 'x' }], removed: [], dirs: ['/var/log/app'], removedDirs: [] });
+    expect(disk.files.has('/project/src')).toBe(false);
+    expect(disk.directories.has('/project/src/deep')).toBe(true);
+    expect(events.pop()).toEqual([
+      { type: 'change', path: '/var', kind: 'directory' },
+      { type: 'change', path: '/var/log', kind: 'directory' },
+      { type: 'change', path: '/var/log/app', kind: 'directory' },
+      { type: 'delete', path: '/project/src' },
+      { type: 'change', path: '/project/src', kind: 'directory' },
+      { type: 'change', path: '/project/src/deep', kind: 'directory' },
+      { type: 'change', path: '/project/src/deep/x.js', kind: 'file' },
+    ]);
+    // A folder that goes takes what was in it, and the root never goes.
+    disk.apply({ changed: [], removed: ['/'], dirs: [], removedDirs: ['/project/src', '/'] });
+    expect([...disk.files.keys()]).toEqual(['/etc/motd']);
+    expect(disk.directories.has('/')).toBe(true);
+    expect(events.pop()).toEqual([{ type: 'delete', path: '/project/src' }]);
+    for (const path of [...disk.files.keys(), ...disk.directories]) {
+      if (path !== '/') expect(disk.directories.has(path.slice(0, path.lastIndexOf('/')) || '/'), path).toBe(true);
+    }
+  });
+
+  it('a move replaces only what is its own kind, and a folder only when it is empty', () => {
+    const { disk, events } = setup();
+    disk.mkdir('/project/empty');
+    disk.write('/project/lib/b.js', 'b');
+    events.length = 0;
+    expect(() => disk.rename('/project/index.js', '/project/src')).toThrow('Is a directory: /project/src');
+    expect(() => disk.rename('/project/src', '/project/index.js')).toThrow('Not a directory: /project/index.js');
+    expect(() => disk.rename('/project/src', '/project/lib')).toThrow('Directory not empty: /project/lib');
+    expect(() => disk.rename('/project/src/a.js', '/project')).toThrow('Is a directory: /project');
+    expect(events).toEqual([]);
+    expect(disk.list('/project').map(({ name }) => name)).toEqual(['empty', 'index.js', 'lib', 'src']);
+    // A file over a file, and a folder over an empty one.
+    disk.rename('/project/index.js', '/project/lib/b.js');
+    expect(disk.files.get('/project/lib/b.js')).toBe('one');
+    disk.rename('/project/src', '/project/empty');
+    expect(disk.files.get('/project/empty/a.js')).toBe('a');
+    expect(disk.list('/project')).toEqual([{ name: 'empty', kind: 'directory' }, { name: 'lib', kind: 'directory' }]);
+  });
+
   it('says nothing when a report changes nothing', () => {
     const { disk, events } = setup();
     disk.apply({ changed: [{ path: '/project/index.js', data: 'one' }], removed: ['/project/never'], dirs: ['/project/src'], removedDirs: ['/nope'] });

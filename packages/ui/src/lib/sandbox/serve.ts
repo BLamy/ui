@@ -152,7 +152,7 @@ export function serve(scope: SandboxWorkerScope, loadRuntime: () => Promise<Sand
     });
   }
 
-  function walkFiles(visit: (path: string, isDirectory: boolean) => void) {
+  function walkFiles(visit: (path: string, isDirectory: boolean) => void, from = '/') {
     const { vfs } = container;
     const walk = (dir: string) => {
       for (const name of vfs.readdirSync(dir) as string[]) {
@@ -168,7 +168,7 @@ export function serve(scope: SandboxWorkerScope, loadRuntime: () => Promise<Sand
         if (isDirectory) walk(path);
       }
     };
-    walk('/');
+    walk(from);
   }
 
   /** Compares the disk with what the page has heard, and tells it the difference. */
@@ -213,6 +213,8 @@ export function serve(scope: SandboxWorkerScope, loadRuntime: () => Promise<Sand
   const runs = new Map<number, Run>();
 
   let unanswered = 0;
+  /** Characters waiting in `queued`: they count against the limit as much as what has gone. */
+  let queuedChars = 0;
   let burstStart = 0;
   let burstWrites = 0;
   const queued: Array<{ id: number; stream: 'stdout' | 'stderr'; data: string }> = [];
@@ -221,20 +223,24 @@ export function serve(scope: SandboxWorkerScope, loadRuntime: () => Promise<Sand
   function flushOutput() {
     clearTimeout(queuedTimer);
     queuedTimer = undefined;
+    queuedChars = 0;
     for (const { id, stream, data } of queued.splice(0)) {
       unanswered += data.length;
       post({ type: 'output', id, stream, data });
     }
   }
 
-  function emit(id: number, stream: 'stdout' | 'stderr', data: string) {
+  /** `always`: the line that says how much was dropped, which goes however much is unanswered. */
+  function emit(id: number, stream: 'stdout' | 'stderr', text: string, always = false) {
     const run = runs.get(id);
     // A timer left over from a command that has been stopped.
-    if (!run || !data) return;
-    if (unanswered > MAX_UNANSWERED) {
-      run.dropped += data.length;
-      return;
-    }
+    if (!run || !text) return;
+    // Up to the limit and no further, even in one write.
+    const room = always ? text.length : Math.max(0, MAX_UNANSWERED - unanswered - queuedChars);
+    const data = text.length > room ? text.slice(0, room) : text;
+    run.dropped += text.length - data.length;
+    if (!data) return;
+    queuedChars += data.length;
     const last = queued[queued.length - 1];
     if (last && last.id === id && last.stream === stream) last.data += data;
     else queued.push({ id, stream, data });
@@ -248,12 +254,12 @@ export function serve(scope: SandboxWorkerScope, loadRuntime: () => Promise<Sand
     else queuedTimer ??= setTimeout(flushOutput, BURST_MS);
   }
 
-  function reportDropped() {
+  function reportDropped(only?: number) {
     for (const [id, run] of runs) {
-      if (!run.dropped) continue;
+      if (!run.dropped || (only !== undefined && id !== only)) continue;
       const dropped = run.dropped;
       run.dropped = 0;
-      emit(id, 'stderr', `\n[${dropped.toLocaleString('en-US')} characters of output were dropped]\n`);
+      emit(id, 'stderr', `\n[${dropped.toLocaleString('en-US')} characters of output were dropped]\n`, true);
     }
   }
 
@@ -375,6 +381,8 @@ export function serve(scope: SandboxWorkerScope, loadRuntime: () => Promise<Sand
       exitCode = 1;
     }
     if (run.controller.signal.aborted) exitCode = 130;
+    // What was dropped is said before the command ends, or not at all.
+    reportDropped(id);
     flushOutput();
     runs.delete(id);
     if (!runs.size) {
@@ -399,16 +407,50 @@ export function serve(scope: SandboxWorkerScope, loadRuntime: () => Promise<Sand
 
   /* ── What the page asks for ── */
 
-  function applied(seq: number, apply: () => void) {
+  /** A change the page has made to its copy, made here too. When this disk can't take it (a command has put something
+   *  in the way the page had not heard of), the page is told what is at those paths instead, so that its copy is put
+   *  right. */
+  function applied(seq: number, paths: string[], apply: () => void) {
     applying = true;
     try {
       apply();
       post({ type: 'applied', seq });
     } catch (error) {
       post({ type: 'applied', seq, error: error instanceof Error ? error.message : String(error) });
+      reportPaths(paths);
     } finally {
       applying = false;
     }
+  }
+
+  /** What this disk has at each path: the nearest file or folder at or above it, and below a folder, all of it. */
+  function reportPaths(paths: string[]) {
+    const { vfs } = container;
+    const batch: FsBatch = { changed: [], removed: [], dirs: [], removedDirs: [] };
+    const isDirectory = (path: string) => (vfs.statSync(path) as { isDirectory: () => boolean }).isDirectory();
+    const tell = (path: string, directory: boolean) => {
+      if (directory) {
+        known.set(path, '');
+        batch.dirs.push(path);
+      } else {
+        known.set(path, signature(path));
+        batch.changed.push({ path, data: dataOf(path) });
+      }
+    };
+    for (const path of paths) {
+      let at = path;
+      while (at !== '/' && !vfs.existsSync(at)) at = at.slice(0, at.lastIndexOf('/')) || '/';
+      if (at !== path) {
+        batch.removed.push(path);
+        batch.removedDirs.push(path);
+      }
+      if (at === '/') continue;
+      const directory = isDirectory(at);
+      // A file above the path is all there is of it; a folder above it says nothing of the path that the removal didn't.
+      if (at === path || !directory) tell(at, directory);
+      if (at === path && directory) walkFiles(tell, path);
+    }
+    send(batch);
   }
 
   function removeTree(path: string) {
@@ -482,7 +524,7 @@ export function serve(scope: SandboxWorkerScope, loadRuntime: () => Promise<Sand
         if (unanswered <= MAX_UNANSWERED) reportDropped();
         return;
       case 'write':
-        applied(message.seq, () => {
+        applied(message.seq, [message.path], () => {
           const parent = message.path.slice(0, message.path.lastIndexOf('/')) || '/';
           container.vfs.mkdirSync(parent, { recursive: true });
           container.vfs.writeFileSync(message.path, message.data);
@@ -490,13 +532,13 @@ export function serve(scope: SandboxWorkerScope, loadRuntime: () => Promise<Sand
         });
         return;
       case 'mkdir':
-        applied(message.seq, () => {
+        applied(message.seq, [message.path], () => {
           container.vfs.mkdirSync(message.path, { recursive: true });
           known.set(message.path, '');
         });
         return;
       case 'rename':
-        applied(message.seq, () => {
+        applied(message.seq, [message.from, message.to], () => {
           // A new Worker started from the files after the move has nothing left to do.
           if (!container.vfs.existsSync(message.from)) return;
           const parent = message.to.slice(0, message.to.lastIndexOf('/')) || '/';
@@ -513,7 +555,7 @@ export function serve(scope: SandboxWorkerScope, loadRuntime: () => Promise<Sand
         });
         return;
       case 'remove':
-        applied(message.seq, () => {
+        applied(message.seq, [message.path], () => {
           removeTree(message.path);
           for (const path of [...known.keys()]) if (path.startsWith(`${message.path}/`)) known.delete(path);
         });
@@ -528,5 +570,5 @@ export function serve(scope: SandboxWorkerScope, loadRuntime: () => Promise<Sand
     if (last !== undefined) emit(last, 'stderr', `${event.message}\n`);
   });
 
-  post({ type: 'hello', href: scope.location.href, origin: scope.origin });
+  post({ type: 'hello', href: scope.location.href, origin: scope.origin, hostFetch: !!options.hostFetch });
 }

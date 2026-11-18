@@ -1,7 +1,9 @@
 /* ══ Sandbox — run code a person or a model wrote, where it can't reach the page ══
    A Node-compatible runtime (`@agent-wasm/core`, our build of almostnode) with a virtual disk, a shell and npm, in a
    Worker that has an origin of its own. The code that runs there, and every package it installs, has no DOM, no
-   cookies and no localStorage, and the browser refuses it the site's IndexedDB, caches and credentialed requests.
+   cookies and no localStorage, and the browser refuses it the site's IndexedDB, caches and OPFS. What it fetches from the
+   site goes without the page's cookies, apart from any marked `SameSite=None` (and, in browsers that don't treat a
+   cookie without the attribute as `Lax`, those too).
 
    This module is the page's side and loads nothing: no runtime, no Worker. The Worker is a file of yours that calls
    `serveSandbox()` (lib/sandbox/worker), so that your bundler builds it with the runtime inside:
@@ -15,7 +17,8 @@
      const { exitCode } = await sandbox.run('node index.js', { onOutput: (chunk) => console.log(chunk) }).exit;
 
    It never runs with the page's origin unless you say so (`isolation: 'same-origin'`, or `fallback: 'same-origin'`
-   for hosts that don't send CORS headers), and `isolation` says what it got. `lib/sandbox/react` has the hook. ══ */
+   for hosts that don't send CORS headers, which applies only before any code has run), and nothing the code in the
+   Worker does can change that. `isolation` says what it got. `lib/sandbox/react` has the hook. ══ */
 import { createSandboxDisk } from './disk';
 import { SandboxError, type SandboxErrorCode } from './error';
 import { createSandboxHost } from './host';
@@ -53,14 +56,20 @@ export interface SandboxOptions {
    *  IndexedDB and caches: for code you trust. */
   isolation?: SandboxIsolation;
   /** What to do when a Worker with an origin of its own can't load. `none` (the default): fail, and say what the host
-   *  must serve. `same-origin`: run in your Worker as it is; `isolation` then says `same-origin`. */
+   *  must serve. `same-origin`: run in your Worker as it is; `isolation` then says `same-origin`. It applies only to
+   *  the first start, before any code has run: once code has run isolated, a restart that can't isolate fails, and a
+   *  sandbox that fell back stays in the page's origin. */
   fallback?: 'none' | 'same-origin';
   /** Answers the requests the Worker hands to the page (`hostFetch` in `serveSandbox`). It runs with the page's
    *  origin and sign-ins, so it is the gate: check the address before you fetch. */
   onHostFetch?: (request: SandboxFetchRequest, details: { signal: AbortSignal }) => Promise<SandboxFetchResponse>;
   onStatusChange?: (status: SandboxStatus, details: SandboxStatusDetails) => void;
-  /** How long a command gets to stop after `kill()` before its Worker is replaced, in ms. Default 800. */
+  /** How long a command gets to stop after `kill()` before its Worker is replaced, in ms. Default 800. `Infinity`:
+   *  never replace it. */
   killAfter?: number;
+  /** How long a Worker gets to load its module, and then the runtime to start, in ms each. Default 30 000.
+   *  `Infinity`: wait for ever. */
+  startTimeout?: number;
 }
 
 /** The page's copy of the disk, read without waiting. */
@@ -72,7 +81,8 @@ export interface SandboxMirror {
 
 export interface Sandbox {
   readonly status: SandboxStatus;
-  /** Where the code runs: what the sandbox got, not what was asked for. `null` until a Worker has started. */
+  /** Where the code runs: what the sandbox got, not what was asked for. `null` until a Worker has started, and once
+   *  the sandbox has failed. */
   readonly isolation: SandboxIsolation | null;
   readonly error: SandboxError | null;
   readonly cwd: string;
@@ -101,14 +111,18 @@ export function createSandbox(options: SandboxOptions): Sandbox {
   const cwd = options.cwd ?? '/project';
   const disk = createSandboxDisk(cwd, options.files);
   const fallback = options.fallback === 'same-origin';
+  // Anything but the one word fails closed.
+  const isolation = options.isolation === 'same-origin' ? 'same-origin' : 'opaque-origin';
   const host = createSandboxHost({
     root: cwd,
-    spawn: createSpawner({ worker: options.worker, isolation: options.isolation ?? 'opaque-origin', fallback }),
+    spawn: createSpawner({ worker: options.worker, isolation, fallback, timeout: options.startTimeout }),
+    isolation,
     fallback,
     snapshot: disk.snapshot,
     onFiles: disk.apply,
     onFetch: options.onHostFetch ? (request, signal) => (options.onHostFetch as NonNullable<SandboxOptions['onHostFetch']>)(request, { signal }) : undefined,
     killAfter: options.killAfter,
+    startTimeout: options.startTimeout,
   });
 
   let lastStatus = host.status;
@@ -118,11 +132,12 @@ export function createSandbox(options: SandboxOptions): Sandbox {
     options.onStatusChange?.(host.status, { error: host.error, isolation: host.isolation });
   });
 
-  /** Makes the change on the page's copy, where it can be refused, then on the Worker's. */
-  const change = async (apply: () => void, tell: () => Promise<void>) => {
+  /** Makes the change on the page's copy, where it can be refused, and tells the Worker. It resolves when the page's
+   *  copy has it: a command run after it runs after it, and a Worker that is replaced starts with it. */
+  const change = async (apply: () => void, tell: () => void) => {
     if (host.status === 'disposed') throw new SandboxError('disposed', 'The sandbox has been disposed.');
     apply();
-    await tell();
+    tell();
   };
   const fileAt = (path: string) => {
     const data = disk.files.get(path);
@@ -170,8 +185,14 @@ export function createSandbox(options: SandboxOptions): Sandbox {
     return session;
   };
 
-  /** One command on a session. `ended` is told the folder it left the session in. */
-  const start = (session: string, command: string, run: Omit<SandboxRunOptions, 'cwd' | 'env' | 'cols' | 'rows'>, ended: (folder: string) => void): SandboxProcess => {
+  /** One command on a session. `ended` is told the folder it left the session in, or nothing when it never ran. */
+  const start = (session: string, command: string, run: Omit<SandboxRunOptions, 'cwd' | 'env' | 'cols' | 'rows'>, ended: (folder?: string) => void): SandboxProcess => {
+    // Called off before it began: it is not sent, and nothing is started for it.
+    if (run.signal?.aborted) {
+      ended();
+      const nothing = () => undefined;
+      return { write: nothing, resize: nothing, kill: nothing, exit: Promise.resolve({ exitCode: 130 }) };
+    }
     if (host.status === 'idle') host.start();
     let reading = false;
     let over = false;
@@ -189,8 +210,7 @@ export function createSandbox(options: SandboxOptions): Sandbox {
       },
     });
     const onAbort = () => handle.abort();
-    if (run.signal?.aborted) handle.abort();
-    else run.signal?.addEventListener('abort', onAbort, { once: true });
+    run.signal?.addEventListener('abort', onAbort, { once: true });
     const exit = handle.done.then(({ cwd: folder, ...result }): SandboxExit => {
       over = true;
       held = '';
@@ -241,7 +261,7 @@ export function createSandbox(options: SandboxOptions): Sandbox {
       let folder = shellOptions.cwd ? disk.resolve(shellOptions.cwd) : cwd;
       return {
         get cwd() { return folder; },
-        run: (command, run = {}) => start(session, command, run, (next) => { folder = next; }),
+        run: (command, run = {}) => start(session, command, run, (next) => { if (next) folder = next; }),
         resize: (cols, rows) => host.resizeSession(session, cols, rows),
         dispose: () => host.closeSession(session),
       };

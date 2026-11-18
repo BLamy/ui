@@ -21,6 +21,22 @@ export function createHostFetch(
       body: request.method === 'GET' || request.method === 'HEAD' ? null : new Uint8Array(await request.arrayBuffer()),
       redirect: request.redirect,
     }, request.signal);
-    return new Response(result.body as BodyInit | null, { status: result.status, statusText: result.statusText, headers: result.headers });
+    return responseOf(result);
   };
+}
+
+/** Statuses a response has no body with: `new Response` refuses one, even an empty one. */
+const NULL_BODY = new Set([204, 205, 304]);
+
+/** The page's answer as a `Response`, or a `TypeError`, as `fetch` fails, when it can't be one: a status outside 200 to
+ *  599 (a page's `fetch` gives 0 for a redirect it was told not to follow), or a status text that isn't one. */
+function responseOf(result: SandboxFetchResponse): Response {
+  const { status } = result;
+  if (!Number.isInteger(status) || status < 200 || status > 599) throw new TypeError(`The page answered with the status ${status}, which a response can't have.`);
+  const body = NULL_BODY.has(status) ? null : result.body as BodyInit | null;
+  try {
+    return new Response(body, { status, statusText: result.statusText, headers: result.headers });
+  } catch (error) {
+    throw new TypeError(`The page's answer can't be a response: ${error instanceof Error ? error.message : String(error)}`);
+  }
 }

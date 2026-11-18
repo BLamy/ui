@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
-import type { SandboxIsolation } from '@/lib/sandbox'
+import type { SandboxIsolation, SandboxProcess } from '@/lib/sandbox'
 import { useSandbox } from '@/lib/sandbox/react'
 
 // Written out, so that the bundler builds the Worker with the runtime in it.
@@ -24,12 +24,19 @@ function Runner({ isolation, runNow, onUseSameOrigin }: { isolation: SandboxIsol
   const { sandbox, status, isolation: got, error } = useSandbox({ worker: newWorker, isolation, autoStart: false })
   const [code, setCode] = useState(SCRIPT)
   const [output, setOutput] = useState('')
+  const [running, setRunning] = useState<SandboxProcess | null>(null)
 
   const run = async () => {
     if (!sandbox) return
+    running?.kill()
     setOutput('')
+    // Settles when the page's copy has it, even while a script holds the Worker's thread.
     await sandbox.files.write('index.js', code)
-    await sandbox.run('node index.js', { onOutput: (chunk) => setOutput((text) => text + chunk) }).exit
+    const job = sandbox.run('node index.js', { onOutput: (chunk) => setOutput((text) => text + chunk) })
+    setRunning(job)
+    const { interrupted } = await job.exit
+    setRunning((now) => (now === job ? null : now))
+    if (interrupted === 'unresponsive') setOutput((text) => `${text}\n[It would not stop, so its Worker was replaced. The files are kept.]\n`)
   }
 
   const ran = useRef(false)
@@ -44,6 +51,8 @@ function Runner({ isolation, runNow, onUseSameOrigin }: { isolation: SandboxIsol
       <Textarea aria-label="index.js" className="font-mono text-footnote" rows={7} spellCheck={false} value={code} onChange={(event) => setCode(event.target.value)} />
       <div className="flex items-center gap-3">
         <Button variant="secondary" onClick={run} disabled={!sandbox}>Run</Button>
+        {/* A `while (true) {}` holds only the Worker: Stop asks it to end, and replaces the Worker if it won't. */}
+        <Button variant="outline" onClick={() => running?.kill()} disabled={!running}>Stop</Button>
         <p role="status" data-testid="sandbox-status" data-status={status} data-isolation={got ?? undefined} className="text-footnote text-foreground/65">
           {got ? PLACE[got] : status === 'idle' ? 'Nothing has started yet.' : status === 'failed' ? 'It did not start.' : 'Starting…'}
         </p>

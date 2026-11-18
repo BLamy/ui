@@ -42,7 +42,8 @@ export function createAlmostnodeRuntime(options: AlmostnodeRuntimeOptions = {}):
 
   /* Where the host serves the Worker with CORS, as GitHub Pages does, it has an origin of its own. Where it doesn't, as
      a dev server, the window still has to work, so the block lets it run as an ordinary Worker of this site, and the
-     status bar and the first terminal say so. */
+     status bar and the first terminal say so. The library decides that once, on the first start and before anything
+     runs: nothing a command does can move it to this site's origin later, and a restart that can't isolate fails. */
   const sandbox: Sandbox = createSandbox({
     worker: options.worker ?? (() => new Worker(new URL('./sandbox.worker.ts', import.meta.url), { type: 'module', name: 'vscode-runtime' })),
     cwd: root,
@@ -72,19 +73,19 @@ export function createAlmostnodeRuntime(options: AlmostnodeRuntimeOptions = {}):
     if (!own) for (const listener of fileWatchers) listener(events);
     if (events.some(touchesManifest)) for (const listener of scriptWatchers) listener();
   });
-  /** One of the window's own changes. The page's copy has it when this returns; the Worker gets it a moment later, and
-   *  nothing waits for that. A change the disk refuses is the caller's to hear. */
+  /** One of the window's own changes. The page's copy has it when this returns (the library's `files` settle then, and
+   *  the Worker gets it in order before the next command). A change the disk refuses is the caller's to hear. */
   const change = async (make: () => Promise<void>) => {
     if (sandbox.status === 'disposed') return;
     own = true;
     let sent: Promise<void>;
     try {
+      // The page's copy takes the change before `make` first waits, so the watcher above hears it while `own` is set.
       sent = make();
     } finally {
       own = false;
     }
-    sent.catch(() => {});
-    await Promise.race([sent, Promise.resolve()]);
+    await sent;
   };
 
   /* ── Status ── */
@@ -103,7 +104,7 @@ export function createAlmostnodeRuntime(options: AlmostnodeRuntimeOptions = {}):
       title: `Node runtime: ${word}`,
       details: [
         ...(sandbox.error ? [sandbox.error.message] : []),
-        isolation ? PLACE[isolation] : 'Nothing is running yet.',
+        isolation ? PLACE[isolation] : sandbox.status === 'failed' ? 'Nothing is running. Restart the runtime to try again.' : 'Nothing is running yet.',
         NETWORK,
       ],
       actions: [{ label: 'Restart runtime', run: () => sandbox.restart() }],

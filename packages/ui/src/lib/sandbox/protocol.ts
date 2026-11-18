@@ -42,8 +42,8 @@ export type RuntimeMessage =
   | { type: 'fetch'; id: number; request: SandboxFetchRequest }
   | { type: 'cancel-fetch'; id: number }
   /** The Worker's module has loaded and is listening. `href` is where the Worker was started from, and `origin` the
-   *  origin it has: `null` for one of its own. */
-  | { type: 'hello'; href: string; origin: string }
+   *  origin it has: `null` for one of its own. `hostFetch`: its file hands some requests to the page. */
+  | { type: 'hello'; href: string; origin: string; hostFetch?: boolean }
   /** The module, imported into a Worker with an origin of its own, could not load: the host refused it. */
   | { type: 'load-failed'; message: string }
   | { type: 'ready'; origin: string }
