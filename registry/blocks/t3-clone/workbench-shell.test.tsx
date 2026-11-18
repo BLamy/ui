@@ -2,8 +2,8 @@
 import { act, type ReactNode } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
-import { definePrimitive } from '@ui-sdk/core';
-import { mount } from '@ui-sdk/core/testing';
+import { definePrimitive } from '@brett_lamy/ui/sdk/core';
+import { mount } from '@brett_lamy/ui/sdk/core/testing';
 import { MotionGlobalConfig } from 'framer-motion';
 import { BLProvider } from '@/lib/theme';
 import { ThreadGroup, ThreadItem } from './components/thread-sidebar';

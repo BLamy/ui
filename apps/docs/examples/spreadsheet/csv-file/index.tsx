@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { FileInput, FileInputDropzone, FileInputTrigger } from '@ui-sdk/react/file-input'
+import { FileInput, FileInputDropzone, FileInputTrigger } from '@brett_lamy/ui/sdk/react/file-input'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Spreadsheet } from '@/components/ui/spreadsheet'
 import { delimiterForPath, parseCsv, stringifyCsv, type CsvFormat } from '@/lib/csv'

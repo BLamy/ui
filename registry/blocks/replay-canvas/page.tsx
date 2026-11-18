@@ -14,7 +14,7 @@ import type { ReplayEvent } from '@/components/ui/replay-preview';
 import { createCanvasController } from '@/components/ui/canvas';
 import { unionRect, type Rect, type Viewport } from '@/lib/canvas-math';
 import { useContainerSize } from '@/lib/container';
-import { Button as SdkButton } from '@ui-sdk/react/button';
+import { Button as SdkButton } from '@brett_lamy/ui/sdk/react/button';
 import { Icon } from '@/lib/icon';
 import { BLProvider, useAppearance } from '@/lib/theme';
 import { cn } from '@/lib/utils';

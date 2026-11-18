@@ -10,7 +10,7 @@ import { Field, FieldGroup } from '@/components/ui/field';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
 import { Input } from '@/components/ui/input';
 import { NumberMorph } from '@/components/ui/number-morph';
-import { Button as SdkButton } from '@ui-sdk/react/button';
+import { Button as SdkButton } from '@brett_lamy/ui/sdk/react/button';
 import { Spinner } from '@/components/ui/spinner';
 import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';

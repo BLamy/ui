@@ -5,8 +5,8 @@
 import { Fragment, useState, type ReactNode } from 'react';
 import { Avatar } from '@/components/ui/avatar';
 import { HoverCard, HoverCardContent, HoverCardHeader, HoverCardTrigger } from '@/components/ui/hover-card';
-import { Button as SdkButton } from '@ui-sdk/react/button';
-import { Collapsible, CollapsiblePanel, CollapsibleTrigger } from '@ui-sdk/react/collapsible';
+import { Button as SdkButton } from '@brett_lamy/ui/sdk/react/button';
+import { Collapsible, CollapsiblePanel, CollapsibleTrigger } from '@brett_lamy/ui/sdk/react/collapsible';
 import { Chevron, Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
 import { MESSAGES, ME, VIPS, longTime, relativeTime, type Attachment, type Message, type Person, type ThreadEntry } from './data';

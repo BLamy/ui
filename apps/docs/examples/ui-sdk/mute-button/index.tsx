@@ -1,5 +1,5 @@
-import { createChange, definePrimitive, type ChangeDetails } from '@ui-sdk/core';
-import { createParts } from '@ui-sdk/react/primitive';
+import { createChange, definePrimitive, type ChangeDetails } from '@brett_lamy/ui/sdk/core';
+import { createParts } from '@brett_lamy/ui/sdk/react/primitive';
 import { useState, type ComponentProps } from 'react';
 import { cva } from 'class-variance-authority';
 import { Icon } from '@/lib/icon';

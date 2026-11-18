@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Avatar } from '@/components/ui/avatar';
-import { ToggleGroup } from '@ui-sdk/react/toggle';
+import { ToggleGroup } from '@brett_lamy/ui/sdk/react/toggle';
 import { Toggle } from '@/components/ui/toggle';
 import { Icon } from '@/lib/icon';
 

@@ -17,16 +17,26 @@
  *                    registryDependencies point at our own items by URL (never shadcn's stock ones of the same name).
  *   <block>          registry:block — registry/blocks/<slug>/meta.json; files land in components/blocks/<slug>/.
  *                    A block may import another's entry by ../<slug>/page; that block becomes a registryDependency.
+ *   library-<entry>  registry:item — a whole library of the plan (apps/docs/src/site/libraries.ts): no files of its
+ *                    own, every item of the library as a registryDependency. `library-ui` is the core.
+ *
+ * UI SDK and docstream are not copied: the package ships them (`@brett_lamy/ui/sdk/…`, `@brett_lamy/ui/docstream/…`),
+ * so an item whose files use either installs `@brett_lamy/ui` from npm, and `--static` writes each copied file with its
+ * `@ui-sdk/…` imports spelled `@brett_lamy/ui/sdk/…`.
+ *
+ * This also writes what the npm package's entries are made from (package-exports.mjs): the `exports` and `imports` of
+ * packages/ui/package.json, the library entries (packages/ui/src/libraries/<entry>.ts) and the UI SDK entries
+ * (packages/ui/src/sdk/…).
  */
 import { posix } from 'node:path';
 import { execFileSync } from 'node:child_process';
-import { existsSync, mkdirSync, readFileSync, writeFileSync, mkdtempSync, readdirSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync, mkdtempSync, readdirSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, relative, resolve } from 'node:path';
 import postcss from 'postcss';
 import ts from 'typescript';
-import { ROOT, SRC, buildGraph, importsOf, isDocstreamSpecifier, resolveModule, npmVersion, moduleExports } from './graph.mjs';
-import { HAND_ENTRY, packageModules, withPackageExports } from './package-exports.mjs';
+import { ROOT, SRC, buildGraph, importsOf, isPackageSpecifier, isUpstreamSdkSpecifier, sdkSpecifier, uiVersion, resolveModule, npmVersion, moduleExports } from './graph.mjs';
+import { ENTRY_LIBRARIES, HAND_ENTRY, LIBRARY, ROOT_LIBRARIES, carriedBy, libraryEntries, libraryModules, libraryOf, packageModules, sdkShims, withPackageExports } from './package-exports.mjs';
 import { onePathErrors } from './one-path.mjs';
 
 const args = process.argv.slice(2);
@@ -60,6 +70,18 @@ function emit(path, content) {
   mkdirSync(dirname(abs), { recursive: true });
   writeFileSync(abs, content);
   written.push(path);
+}
+/** A folder that holds exactly these generated files (path under it → content): written, and anything else in it removed. */
+function emitFolder(dir, files) {
+  const wanted = new Map(files);
+  for (const [file, content] of wanted) emit(`${dir}/${file}`, content);
+  const abs = join(ROOT, dir);
+  if (!existsSync(abs)) return;
+  for (const file of readdirSync(abs, { recursive: true, encoding: 'utf8' }).map((f) => f.split('\\').join('/'))) {
+    if (wanted.has(file) || !/\.tsx?$/.test(file)) continue;
+    if (CHECK) errors.push(`${dir}/${file} is not a generated file any more — run \`pnpm registry\``);
+    else { rmSync(join(abs, file)); written.push(`${dir}/${file} (removed)`); }
+  }
 }
 
 /* ── CSS → the registry's `css` object ── */
@@ -198,6 +220,18 @@ const barrelNames = new Set();
     if (ts.isExportDeclaration(n) && n.exportClause && ts.isNamedExports(n.exportClause)) for (const e of n.exportClause.elements) barrelNames.add(e.name.text);
   });
 }
+// The package root is the core and the foundation under it (ROOT_LIBRARIES): every other library is its own entry
+// (`@brett_lamy/ui/audio`), so an app that imports the root never loads a library it doesn't use.
+{
+  const sf = ts.createSourceFile('index.ts', read(`${SRC}/index.ts`), ts.ScriptTarget.Latest, true);
+  sf.forEachChild((n) => {
+    if (!ts.isExportDeclaration(n) || !n.moduleSpecifier || !ts.isStringLiteral(n.moduleSpecifier)) return;
+    const mod = resolveModule('index.ts', n.moduleSpecifier.text, graph.all);
+    if (!mod) return;
+    const lib = libraryOf(mod);
+    if (!ROOT_LIBRARIES.has(lib.id)) errors.push(`${SRC}/index.ts re-exports ${n.moduleSpecifier.text}, which belongs to the ${lib.name} library: import it from ${lib.npm}`);
+  });
+}
 const definedAnywhere = new Set();
 const onSubpath = new Set();
 const subpathModules = new Set(packageModules(graph));
@@ -205,7 +239,7 @@ for (const mod of graph.modules) {
   const ex = moduleExports(`${SRC}/${mod}`);
   for (const v of [...ex.values, ...ex.types]) {
     definedAnywhere.add(v);
-    if (subpathModules.has(mod) || HAND_ENTRY[mod]) onSubpath.add(v);
+    if (subpathModules.has(mod) || HAND_ENTRY[mod] || carriedBy(mod)) onSubpath.add(v);
   }
 }
 // shadcn's CLI goes by a file's last path part when it installs, so it turns `@/lib/x` into `@/components/ui/x` if
@@ -273,8 +307,9 @@ const blockItems = readdirSync(join(ROOT, BLOCKS_DIR), { withFileTypes: true })
           }
           else if (spec.startsWith('@/components/ui/') || spec.startsWith('@/lib/')) errors.push(`${path}: "${spec}" is not a library module`);
           else if (spec.startsWith('@/')) errors.push(`${path}: "${spec}" — blocks import library parts by @/components/ui/… or @/lib/…, and other blocks' entries by ../<slug>/page`);
-          // Docstream is part of the library but not copied: a block imports it by the package's name, `@brett_lamy/ui` in its meta.json.
-          else if ((spec === '@brett_lamy/ui' || spec.startsWith('@brett_lamy/ui/')) && !isDocstreamSpecifier(spec)) errors.push(`${path}: "${spec}" — blocks import the library's parts by @/components/ui/… or @/lib/…; only its docstream entries (@brett_lamy/ui/docstream…) by name`);
+          // Docstream and UI SDK are part of the library but not copied: a block imports them by the package's name, `@brett_lamy/ui` in its meta.json.
+          else if (isUpstreamSdkSpecifier(spec)) errors.push(`${path}: "${spec}" — the package ships UI SDK: import ${sdkSpecifier(spec)}`);
+          else if ((spec === '@brett_lamy/ui' || spec.startsWith('@brett_lamy/ui/')) && !isPackageSpecifier(spec)) errors.push(`${path}: "${spec}" — blocks import the library's parts by @/components/ui/… or @/lib/…; only its docstream and UI SDK entries (@brett_lamy/ui/docstream…, @brett_lamy/ui/sdk/…) by name`);
           else if (!(spec === 'react' || spec.startsWith('react/') || isOwnFile(f, spec) || (meta.dependencies || []).some((d) => spec === d || spec.startsWith(d + '/')))) {
             errors.push(`${path}: imports "${spec}" — blocks may import only react, @/components/ui/…, @/lib/…, their own files, other blocks' entries (../<slug>/page) and meta.dependencies`);
           }
@@ -295,11 +330,33 @@ const blockItems = readdirSync(join(ROOT, BLOCKS_DIR), { withFileTypes: true })
     };
   });
 
+/* ── libraries: a whole library in one `shadcn add` ── */
+// An item with no files of its own: the registry items of every module the library owns (the core: every module no
+// other library lists). Docstream, its editor and UI SDK ship in the npm package, which the items that use them install.
+const itemsOf = (mods) => [...new Set(mods.map((mod) => graph.owner.get(mod)).filter(Boolean))].sort();
+const libraryItem = (lib, mods) => ({
+  name: `library-${lib.entry ?? lib.id}`,
+  type: 'registry:item',
+  title: `${lib.name} (library)`,
+  description: `Every part of the ${lib.name} library (${lib.npm} on npm): ${lib.tagline}`,
+  registryDependencies: [BASE_ITEM, ...itemsOf(mods).map(itemUrl)],
+});
+const libraryItems = [
+  libraryItem(LIBRARY.ui, graph.modules.filter((mod) => libraryOf(mod).id === 'ui')),
+  // Every module the library owns, the ones without an npm entry of their own among them: a copy needs them all.
+  ...ENTRY_LIBRARIES.map((lib) => libraryItem(lib, graph.modules.filter((mod) => libraryOf(mod).id === lib.id))),
+];
+{
+  const taken = new Set([...componentItems, ...blockItems].map((it) => it.name));
+  for (const it of libraryItems) if (taken.has(it.name)) errors.push(`the library item "${it.name}" has the name of a component or a block`);
+  for (const lib of ENTRY_LIBRARIES) if (!libraryModules(graph, lib).length) errors.push(`the library "${lib.id}" has no module with an entry`);
+}
+
 const registry = {
   $schema: 'https://ui.shadcn.com/schema/registry.json',
   name: 'bl-ui',
   homepage: URL_BASE.replace(/\/r$/, ''),
-  items: [baseItem(), themeItem(), ...componentItems, ...blockItems],
+  items: [baseItem(), themeItem(), ...componentItems, ...blockItems, ...libraryItems],
 };
 const registryJson = JSON.stringify(registry, null, 2) + '\n';
 
@@ -320,6 +377,9 @@ if (errors.length) {
 let registryFile = 'registry.json';
 // The package's per-module entry points (package-exports.mjs), from the same graph.
 emit('packages/ui/package.json', JSON.stringify(packageJson, null, 2) + '\n');
+// …and the modules behind the generated entries: one per library, one per UI SDK entry.
+emitFolder(`${SRC}/libraries`, libraryEntries(graph).map(([file, content]) => [file.slice('libraries/'.length), content]));
+emitFolder(`${SRC}/sdk`, sdkShims().map(([file, content]) => [file.slice('sdk/'.length), content]));
 if (URL_BASE === PROD_URL) emit('registry.json', registryJson);
 else {
   // Another host: build from a temporary registry.json, leaving the committed one alone.
@@ -331,7 +391,7 @@ if (errors.length) {
   process.exit(1);
 }
 console.log(
-  `registry: ${registry.items.length} items (${componentItems.length} components, ${blockItems.length} blocks)` +
+  `registry: ${registry.items.length} items (${componentItems.length} components, ${blockItems.length} blocks, ${libraryItems.length} libraries)` +
     (written.length ? `; wrote ${written.join(', ')}` : '; up to date'),
 );
 
@@ -342,5 +402,19 @@ if (flag('--static') && !CHECK) {
     cwd: ROOT,
     stdio: 'inherit',
   });
-  console.log(`static registry → ${OUT.startsWith(ROOT) ? rel(OUT) : OUT}`);
+  // A copied file names UI SDK as the package ships it: `@ui-sdk/react/dialog` → `@brett_lamy/ui/sdk/react/dialog`.
+  const upstream = /(\bfrom\s*|\bimport\s*\(\s*|\bimport\s+)(["'])(@ui-sdk\/(?:core|react)(?:\/[^"']*)?)\2/g;
+  let rewritten = 0;
+  for (const file of readdirSync(OUT).filter((f) => f.endsWith('.json'))) {
+    const item = JSON.parse(readFileSync(join(OUT, file), 'utf8'));
+    let changed = false;
+    for (const f of item.files ?? []) {
+      if (typeof f.content !== 'string') continue;
+      const next = f.content.replace(upstream, (_, head, quote, spec) => `${head}${quote}${sdkSpecifier(spec)}${quote}`);
+      if (next !== f.content) { f.content = next; changed = true; }
+      if (/["']@ui-sdk\/(core|react)/.test(f.content)) throw new Error(`${file}: ${f.path} still names @ui-sdk after the rewrite`);
+    }
+    if (changed) { writeFileSync(join(OUT, file), JSON.stringify(item, null, 2) + '\n'); rewritten++; }
+  }
+  console.log(`static registry → ${OUT.startsWith(ROOT) ? rel(OUT) : OUT} (${rewritten} items name UI SDK as @brett_lamy/ui/sdk/…, from @brett_lamy/ui@${uiVersion()})`);
 }

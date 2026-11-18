@@ -3,7 +3,7 @@ import { cn } from '@/lib/utils';
 import type { DebuggerPartProps } from './styles';
 import { Input } from '@/components/ui/input';
 import { buttonVariants } from '@/components/ui/button';
-import { Collapsible, CollapsiblePanel, CollapsibleTrigger } from '@ui-sdk/react/collapsible';
+import { Collapsible, CollapsiblePanel, CollapsibleTrigger } from '@brett_lamy/ui/sdk/react/collapsible';
 import { ObjectTree } from '@/components/ui/object-tree';
 import { ObjectValue } from '@/components/ui/object-value';
 import { useMemo, useRef, useState } from 'react';

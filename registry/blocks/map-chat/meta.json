@@ -18,7 +18,6 @@
     "map-icons.ts"
   ],
   "dependencies": [
-    "@ui-sdk/core",
-    "@ui-sdk/react"
+    "@brett_lamy/ui"
   ]
 }

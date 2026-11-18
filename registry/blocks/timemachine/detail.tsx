@@ -3,7 +3,7 @@
    the session ended, still, with its title, address and what happened in it. */
 import { useEffect, useMemo, useState } from 'react';
 import { HoverCardHeader } from '@/components/ui/hover-card';
-import { Button as SdkButton } from '@ui-sdk/react/button';
+import { Button as SdkButton } from '@brett_lamy/ui/sdk/react/button';
 import { getReplayMarkers, ReplayStage } from '@brett_lamy/ui/docstream/replay';
 import { ReplayPreview, type ReplayEvent } from '@/components/ui/replay-preview';
 import { Spinner } from '@/components/ui/spinner';

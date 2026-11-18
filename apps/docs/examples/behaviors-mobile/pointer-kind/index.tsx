@@ -1,5 +1,5 @@
-import { createPointerKind } from '@ui-sdk/core';
-import { usePreference } from '@ui-sdk/react/preferences';
+import { createPointerKind } from '@brett_lamy/ui/sdk/core';
+import { usePreference } from '@brett_lamy/ui/sdk/react/preferences';
 import { useState } from 'react';
 
 /* One pointer kind for the page, read like a preference. It is for behavior and content (here: whether resting the

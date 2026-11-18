@@ -4,15 +4,15 @@
 import { useState, type ReactNode } from 'react';
 import { HoverCard, HoverCardContent, HoverCardHeader, HoverCardTrigger } from '@/components/ui/hover-card';
 import { ListRow, ListSection, type ListRowProps } from '@/components/ui/list';
-import { Button as SdkButton } from '@ui-sdk/react/button';
+import { Button as SdkButton } from '@brett_lamy/ui/sdk/react/button';
 import { RadioGroup } from '@/components/ui/radio-group';
 import { Segmented, SegmentedItem } from '@/components/ui/segmented';
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
 import { TextMorph } from '@/components/ui/text-morph';
-import { Collapsible, CollapsiblePanel } from '@ui-sdk/react/collapsible';
-import { Radio } from '@ui-sdk/react/radio';
+import { Collapsible, CollapsiblePanel } from '@brett_lamy/ui/sdk/react/collapsible';
+import { Radio } from '@brett_lamy/ui/sdk/react/radio';
 import { Icon, isIconName, type IconProps } from '@/lib/icon';
 import { type Appearance } from '@/lib/theme';
 import { cn } from '@/lib/utils';

@@ -2,8 +2,8 @@
 /* The toolbar's icon buttons (Interface Builder's): a plain button that shows its label as a tooltip, and the same
    button as a UI SDK Toggle (`aria-pressed`) that tints while pressed, for the panes and layers it shows or hides. */
 import type { ReactNode } from 'react';
-import { Button as SdkButton } from '@ui-sdk/react/button';
-import { Toggle as SdkToggle } from '@ui-sdk/react/toggle';
+import { Button as SdkButton } from '@brett_lamy/ui/sdk/react/button';
+import { Toggle as SdkToggle } from '@brett_lamy/ui/sdk/react/toggle';
 import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
 

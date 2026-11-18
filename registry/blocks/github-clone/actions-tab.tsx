@@ -2,7 +2,7 @@
    on GitHub. */
 import { useState, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
-import { Button as SdkButton } from '@ui-sdk/react/button';
+import { Button as SdkButton } from '@brett_lamy/ui/sdk/react/button';
 import { cn } from '@/lib/utils';
 import type { WorkflowRun } from './data';
 import { Box, Oct, ghButton, Branch, type Layout } from './parts';

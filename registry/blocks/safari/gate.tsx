@@ -2,7 +2,7 @@
    host), so the browser underneath is inert and the rest of the page is not. It cannot be dismissed, and goes away only
    when the controller reports `connected`. Signing out brings it back. */
 import { useState, type ComponentProps } from 'react';
-import { DialogContent, DialogDescription, DialogTitle } from '@ui-sdk/react/dialog';
+import { DialogContent, DialogDescription, DialogTitle } from '@brett_lamy/ui/sdk/react/dialog';
 import { Dialog } from '@/components/ui/dialog';
 import { TailscaleLoginButton, TailscaleMark, TailscaleStatusBadge } from '@/components/ui/tailscale-controls';
 import { Icon, type IconName } from '@/lib/icon';

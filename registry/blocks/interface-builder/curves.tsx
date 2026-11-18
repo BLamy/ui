@@ -3,12 +3,12 @@
    control points (or with the arrow keys); and watch it play. Every graph samples framer-motion's own generators,
    and the preview plays the transition with framer-motion's `animate`, so what you see is what runs. */
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
-import type { AreaReason, AreaValue } from '@ui-sdk/core';
-import { createParts, usePart, usePrimitive } from '@ui-sdk/react/primitive';
+import type { AreaReason, AreaValue } from '@brett_lamy/ui/sdk/core';
+import { createParts, usePart, usePrimitive } from '@brett_lamy/ui/sdk/react/primitive';
 import { animate, motion, useMotionValue, useReducedMotion, useTransform, type AnimationPlaybackControls, type MotionValue } from 'framer-motion';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Button as SdkButton } from '@ui-sdk/react/button';
-import { Toggle as SdkToggle } from '@ui-sdk/react/toggle';
+import { Button as SdkButton } from '@brett_lamy/ui/sdk/react/button';
+import { Toggle as SdkToggle } from '@brett_lamy/ui/sdk/react/toggle';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Segmented, SegmentedItem } from '@/components/ui/segmented';
 import { Icon } from '@/lib/icon';

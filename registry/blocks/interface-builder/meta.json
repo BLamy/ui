@@ -52,8 +52,7 @@
     "tree.ts"
   ],
   "dependencies": [
-    "@ui-sdk/core",
-    "@ui-sdk/react",
-    "framer-motion"
+    "framer-motion",
+    "@brett_lamy/ui"
   ]
 }

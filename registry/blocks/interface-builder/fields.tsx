@@ -3,11 +3,11 @@
    checked as you type (with their value at design time), colors from the theme or anywhere, symbols, and a toggle
    that turns any prop into a binding. A scrub is one undo step: `onBegin` once, then live changes. */
 import { useCallback, useEffect, useId, useMemo, useRef, useState, type KeyboardEvent, type PointerEvent, type ReactNode } from 'react';
-import { bindDrag, dragThreshold, type BindDragOptions } from '@ui-sdk/core';
-import { formatColor, parseColor } from '@ui-sdk/core/color';
+import { bindDrag, dragThreshold, type BindDragOptions } from '@brett_lamy/ui/sdk/core';
+import { formatColor, parseColor } from '@brett_lamy/ui/sdk/core/color';
 import { ColorPicker, ColorPickerArea, ColorPickerInputGroup, ColorPickerInput, ColorPickerSlider, ColorPickerSwatch } from '@/components/ui/color-picker';
-import { Button as SdkButton } from '@ui-sdk/react/button';
-import { Toggle as SdkToggle } from '@ui-sdk/react/toggle';
+import { Button as SdkButton } from '@brett_lamy/ui/sdk/react/button';
+import { Toggle as SdkToggle } from '@brett_lamy/ui/sdk/react/toggle';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverClose, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Segmented, SegmentedItem } from '@/components/ui/segmented';

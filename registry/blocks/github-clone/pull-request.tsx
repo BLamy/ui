@@ -9,7 +9,7 @@ import { AvatarGroup } from '@/components/ui/avatar-group';
 import { Button } from '@/components/ui/button';
 import { Composer, ComposerCard, ComposerFooter, ComposerInput, ComposerSend, ComposerSpacer, ComposerText } from '@/components/ui/composer';
 import { MarkdownView } from '@/components/ui/markdown-view';
-import { Button as SdkButton } from '@ui-sdk/react/button';
+import { Button as SdkButton } from '@brett_lamy/ui/sdk/react/button';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsBar, TabsFooter, TabsList } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';

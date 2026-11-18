@@ -1,4 +1,4 @@
-import { createArea, createChange, definePrimitive, type AreaAxis, type AreaReason, type AreaValue, type ChangeDetails } from '@ui-sdk/core';
+import { createArea, createChange, definePrimitive, type AreaAxis, type AreaReason, type AreaValue, type ChangeDetails } from '@brett_lamy/ui/sdk/core';
 
 /* ══ pointPad — a point dragged on a graph: UI SDK's `createArea` as a primitive ══
    The pad is the graph's plotting box; the thumb is the point, a 2D slider: a drag follows the pointer (a press

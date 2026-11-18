@@ -7,8 +7,8 @@ import { PencilInkPicker, PencilToolbar, PencilToolPicker, PencilWidthPicker } f
 import { Separator } from '@/components/ui/separator';
 import { toggleVariants } from '@/components/ui/toggle';
 import { ToolbarSeparator, toolbarButtonVariants } from '@/components/ui/toolbar';
-import { Button as SdkButton } from '@ui-sdk/react/button';
-import { Toggle as SdkToggle } from '@ui-sdk/react/toggle';
+import { Button as SdkButton } from '@brett_lamy/ui/sdk/react/button';
+import { Toggle as SdkToggle } from '@brett_lamy/ui/sdk/react/toggle';
 import { Popover, PopoverClose, PopoverContent, PopoverTrigger, createPopoverController } from '@/components/ui/popover';
 import { Icon, type IconShape } from '@/lib/icon';
 import { cn, cx } from '@/lib/utils';

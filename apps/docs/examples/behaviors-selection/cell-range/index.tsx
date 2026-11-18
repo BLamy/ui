@@ -11,8 +11,8 @@ import {
   textToCells,
   type CellRange,
   type GridCell,
-} from '@ui-sdk/core';
-import { createParts, usePart, type PartProps } from '@ui-sdk/react/primitive';
+} from '@brett_lamy/ui/sdk/core';
+import { createParts, usePart, type PartProps } from '@brett_lamy/ui/sdk/react/primitive';
 import { Button, buttonVariants } from '@/components/ui/button';
 
 type SheetState = { active: GridCell | null; range: CellRange | null; cells: string[][] };

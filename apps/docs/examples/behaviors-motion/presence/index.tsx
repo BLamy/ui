@@ -1,5 +1,5 @@
-import { animateIn, animateOut, definePrimitive } from '@ui-sdk/core';
-import { createParts } from '@ui-sdk/react/primitive';
+import { animateIn, animateOut, definePrimitive } from '@brett_lamy/ui/sdk/core';
+import { createParts } from '@brett_lamy/ui/sdk/react/primitive';
 import { buttonVariants } from '@/components/ui/button';
 import { Icon } from '@/lib/icon';
 

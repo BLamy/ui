@@ -23,12 +23,6 @@ importers:
       '@pierre/trees':
         specifier: 1.0.0-beta.6
         version: 1.0.0-beta.6(@pierre/theme@2.0.0)(@shikijs/themes@4.4.3)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(shiki@4.4.3)
-      '@ui-sdk/core':
-        specifier: workspace:@brett_lamy/ui-sdk-core@*
-        version: link:packages/ui-sdk-core
-      '@ui-sdk/react':
-        specifier: workspace:@brett_lamy/ui-sdk-react@*
-        version: link:packages/ui-sdk-react
       buffer:
         specifier: ^6.0.3
         version: 6.0.3
@@ -120,6 +114,12 @@ importers:
       '@types/react-dom':
         specifier: ^19.2.3
         version: 19.3.0(@types/react@19.3.0)
+      '@ui-sdk/core':
+        specifier: workspace:@brett_lamy/ui-sdk-core@*
+        version: link:packages/ui-sdk-core
+      '@ui-sdk/react':
+        specifier: workspace:@brett_lamy/ui-sdk-react@*
+        version: link:packages/ui-sdk-react
       '@vitejs/plugin-react':
         specifier: ^6.0.0
         version: 6.0.5(vite@8.2.1(@types/node@24.13.3)(esbuild@0.27.7)(jiti@2.4.2)(terser@5.50.0)(yaml@2.9.0))
@@ -180,6 +180,9 @@ importers:
       prettier:
         specifier: ^3.8.1
         version: 3.9.6
+      rolldown:
+        specifier: ^1.2.4
+        version: 1.2.4
       shadcn:
         specifier: 4.21.0
         version: 4.21.0(babel-plugin-macros@3.1.0)(typescript@6.0.3)
@@ -220,12 +223,6 @@ importers:
         specifier: workspace:*
         version: link:../../packages/ui
     devDependencies:
-      '@ui-sdk/core':
-        specifier: workspace:@brett_lamy/ui-sdk-core@*
-        version: link:../../packages/ui-sdk-core
-      '@ui-sdk/react':
-        specifier: workspace:@brett_lamy/ui-sdk-react@*
-        version: link:../../packages/ui-sdk-react
       highlight.js:
         specifier: 11.11.2
         version: 11.11.2
@@ -268,12 +265,6 @@ importers:
       '@tiptap/starter-kit':
         specifier: 3.30.5
         version: 3.30.5
-      '@ui-sdk/core':
-        specifier: workspace:@brett_lamy/ui-sdk-core@*
-        version: link:../../packages/ui-sdk-core
-      '@ui-sdk/react':
-        specifier: workspace:@brett_lamy/ui-sdk-react@*
-        version: link:../../packages/ui-sdk-react
       highlight.js:
         specifier: 11.11.2
         version: 11.11.2
@@ -308,12 +299,6 @@ importers:
       '@tiptap/starter-kit':
         specifier: 3.30.5
         version: 3.30.5
-      '@ui-sdk/core':
-        specifier: workspace:@brett_lamy/ui-sdk-core@*
-        version: link:../../packages/ui-sdk-core
-      '@ui-sdk/react':
-        specifier: workspace:@brett_lamy/ui-sdk-react@*
-        version: link:../../packages/ui-sdk-react
       react:
         specifier: 19.2.3
         version: 19.2.3
@@ -329,12 +314,6 @@ importers:
       '@brett_lamy/ui':
         specifier: workspace:*
         version: link:../../packages/ui
-      '@ui-sdk/core':
-        specifier: workspace:@brett_lamy/ui-sdk-core@*
-        version: link:../../packages/ui-sdk-core
-      '@ui-sdk/react':
-        specifier: workspace:@brett_lamy/ui-sdk-react@*
-        version: link:../../packages/ui-sdk-react
       react:
         specifier: 19.2.3
         version: 19.2.3
@@ -381,12 +360,6 @@ importers:
       '@tiptap/starter-kit':
         specifier: 3.30.5
         version: 3.30.5
-      '@ui-sdk/core':
-        specifier: workspace:@brett_lamy/ui-sdk-core@*
-        version: link:../ui-sdk-core
-      '@ui-sdk/react':
-        specifier: workspace:@brett_lamy/ui-sdk-react@*
-        version: link:../ui-sdk-react
       '@vscode/codicons':
         specifier: 0.0.46-24
         version: 0.0.46-24
@@ -466,6 +439,15 @@ importers:
       '@testing-library/react':
         specifier: ^16.3.3
         version: 16.3.3(@testing-library/dom@10.4.2)(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+      '@types/react':
+        specifier: ^19.2.10
+        version: 19.3.0
+      '@ui-sdk/core':
+        specifier: workspace:@brett_lamy/ui-sdk-core@*
+        version: link:../ui-sdk-core
+      '@ui-sdk/react':
+        specifier: workspace:@brett_lamy/ui-sdk-react@*
+        version: link:../ui-sdk-react
       elkjs:
         specifier: 0.12.1
         version: 0.12.1
@@ -513,12 +495,6 @@ importers:
       '@brett_lamy/ui':
         specifier: workspace:*
         version: link:../packages/ui
-      '@ui-sdk/core':
-        specifier: workspace:@brett_lamy/ui-sdk-core@*
-        version: link:../packages/ui-sdk-core
-      '@ui-sdk/react':
-        specifier: workspace:@brett_lamy/ui-sdk-react@*
-        version: link:../packages/ui-sdk-react
       '@visual-json/react':
         specifier: 0.4.0
         version: 0.4.0(react@19.2.3)

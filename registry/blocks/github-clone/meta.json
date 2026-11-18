@@ -21,6 +21,6 @@
     "data.ts"
   ],
   "dependencies": [
-    "@ui-sdk/react"
+    "@brett_lamy/ui"
   ]
 }

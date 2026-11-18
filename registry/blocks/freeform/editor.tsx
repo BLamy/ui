@@ -4,7 +4,7 @@
 import { useLayoutEffect, useRef, useState, type DragEvent } from 'react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { pencilInks } from '@/components/ui/pencilkit/constants';
-import { Button as SdkButton } from '@ui-sdk/react/button';
+import { Button as SdkButton } from '@brett_lamy/ui/sdk/react/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useContainerSize, useSizeClassScope } from '@/lib/container';
 import { Icon } from '@/lib/icon';

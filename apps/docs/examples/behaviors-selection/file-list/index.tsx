@@ -6,8 +6,8 @@ import {
   definePrimitive,
   selects,
   type ChangeDetails,
-} from '@ui-sdk/core';
-import { createParts } from '@ui-sdk/react/primitive';
+} from '@brett_lamy/ui/sdk/core';
+import { createParts } from '@brett_lamy/ui/sdk/react/primitive';
 
 type FilesState = { value: string[]; focused: string | null };
 type FilesReason = 'item-press' | 'list-navigation' | 'imperative';

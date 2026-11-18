@@ -4,7 +4,7 @@
    kit itself, and the code generator writes the same JSX: 6.0's, on UI SDK (`onClick`, `value` / `onValueChange`,
    a root with named parts, dates and colors as strings). */
 import { cloneElement, createContext, use, type ComponentType, type ReactElement, type ReactNode } from 'react';
-import { mergeProps } from '@ui-sdk/react/primitive';
+import { mergeProps } from '@brett_lamy/ui/sdk/react/primitive';
 import { AnimatedHeight } from '@/components/ui/animated-height';
 import { Avatar, type AvatarStatus } from '@/components/ui/avatar';
 import { AvatarGroup } from '@/components/ui/avatar-group';

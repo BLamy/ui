@@ -5,7 +5,7 @@
    class (compact below 720px, regular from 900px): below regular the side panes become drawers over the canvas
    that leave it usable, and the toolbar drops its labels when compact. */
 import { useCallback, useLayoutEffect, useRef, useState } from 'react';
-import { useShortcut } from '@ui-sdk/react/shortcuts';
+import { useShortcut } from '@brett_lamy/ui/sdk/react/shortcuts';
 import { AdaptivePane, createAdaptivePaneController } from '@/components/ui/adaptive-pane';
 import { createCanvasController } from '@/components/ui/canvas';
 import { createDialogController } from '@/components/ui/dialog';

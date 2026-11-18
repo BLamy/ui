@@ -6,9 +6,9 @@
    the arrows, to change when it starts (its delay); drag its end, or Shift with the arrows, to change how long it
    takes (a tween's duration, a spring's time). A click on a bar or a track's name selects its node. */
 import { useMemo, useState, type CSSProperties } from 'react';
-import { createParts } from '@ui-sdk/react/primitive';
-import { Slider, SliderControl, SliderThumb, SliderTrack } from '@ui-sdk/react/slider';
-import { Button as SdkButton } from '@ui-sdk/react/button';
+import { createParts } from '@brett_lamy/ui/sdk/react/primitive';
+import { Slider, SliderControl, SliderThumb, SliderTrack } from '@brett_lamy/ui/sdk/react/slider';
+import { Button as SdkButton } from '@brett_lamy/ui/sdk/react/button';
 import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
 import { appearSchedule, instanceKey, scheduleLength, type Slot } from './appear';

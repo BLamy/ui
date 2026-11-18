@@ -1,7 +1,7 @@
 'use client';
 import { useDeferredValue, useEffect, useMemo, useSyncExternalStore } from 'react';
-import { Button as SdkButton } from '@ui-sdk/react/button';
-import { Toggle as SdkToggle } from '@ui-sdk/react/toggle';
+import { Button as SdkButton } from '@brett_lamy/ui/sdk/react/button';
+import { Toggle as SdkToggle } from '@brett_lamy/ui/sdk/react/toggle';
 import { SearchInput } from '@/components/ui/search-input';
 import { FileBadgeIcon } from '@/lib/file-icons';
 import { cn } from '@/lib/utils';

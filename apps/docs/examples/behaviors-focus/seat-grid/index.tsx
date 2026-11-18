@@ -1,5 +1,5 @@
-import { byCell, createGridFocus, definePrimitive, selects, type GridCell } from '@ui-sdk/core';
-import { createParts, usePart, type PartProps } from '@ui-sdk/react/primitive';
+import { byCell, createGridFocus, definePrimitive, selects, type GridCell } from '@brett_lamy/ui/sdk/core';
+import { createParts, usePart, type PartProps } from '@brett_lamy/ui/sdk/react/primitive';
 
 type SeatMapState = { active: GridCell | null };
 type SeatMapOptions = { rows: number; cols: number; taken: string[] };

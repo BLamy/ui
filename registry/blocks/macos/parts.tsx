@@ -6,7 +6,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import { HoverCard, HoverCardContent, HoverCardHeader, HoverCardTrigger } from '@/components/ui/hover-card';
 import { Swap } from '@/components/ui/swap';
 import { NumberMorph } from '@/components/ui/number-morph';
-import { Button as SdkButton } from '@ui-sdk/react/button';
+import { Button as SdkButton } from '@brett_lamy/ui/sdk/react/button';
 import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
 import { APPS, type DesktopApp } from './apps';

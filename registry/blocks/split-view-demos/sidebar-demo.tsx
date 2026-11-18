@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Toggle as SdkToggle } from '@ui-sdk/react/toggle';
+import { Toggle as SdkToggle } from '@brett_lamy/ui/sdk/react/toggle';
 import {
   Sidebar, SidebarContent, SidebarHeader, SidebarInset, SidebarItem, SidebarProvider, SidebarSearch, SidebarSection,
   SidebarTrigger, SidebarAccount, useSidebar, type SidebarPresentation, type SidebarVariant,

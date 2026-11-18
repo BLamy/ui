@@ -7,10 +7,8 @@ box and modal to it alone), a `when` option on `bindLayer`, and the kernel type 
 `@ui-sdk/core/renderer`. Each is written to be
 proposed upstream.
 
-Install it under upstream's name, so imports read like the UI SDK docs:
-
-```bash
-npm install @ui-sdk/react@npm:@brett_lamy/ui-sdk-react
-```
+This package is private to the BLamy/ui workspace and is not on npm. `@brett_lamy/ui` ships its output inside
+its own dist, so an app gets it with the library and imports it as `@brett_lamy/ui/sdk/react/<part>`:
+wherever UI SDK's docs say `@ui-sdk/…`, write `@brett_lamy/ui/sdk/…`.
 
 Licensed under Apache-2.0, like upstream. Files changed from upstream say so at the top.

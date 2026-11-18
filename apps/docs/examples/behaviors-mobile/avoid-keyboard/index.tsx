@@ -1,4 +1,4 @@
-import { bindAvoidKeyboard, bindViewport, type ViewportState } from '@ui-sdk/core';
+import { bindAvoidKeyboard, bindViewport, type ViewportState } from '@brett_lamy/ui/sdk/core';
 import { useEffect, useRef, useState } from 'react';
 
 const GROCERIES = 'Groceries\n- oat milk\n- lemons';

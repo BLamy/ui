@@ -1,4 +1,4 @@
-import { Tabs, TabsList, TabsPanel, TabsTab } from '@ui-sdk/react/tabs';
+import { Tabs, TabsList, TabsPanel, TabsTab } from '@brett_lamy/ui/sdk/react/tabs';
 import { TerminalAction, TerminalBody, TerminalHeader } from './workbench/terminal';
 import { WorkbenchDock, WorkbenchDockClose } from './workbench/workbench-shell';
 import type { Workspace } from '../lib/use-workspaces';

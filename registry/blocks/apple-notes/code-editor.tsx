@@ -7,7 +7,7 @@
    four spaces); Enter keeps the line's indent. Esc, then Tab, moves focus on, so the editor never traps the keyboard.
    ⌘S saves at once (edits also save on their own). */
 import { useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react';
-import { Textarea } from '@ui-sdk/react/textarea';
+import { Textarea } from '@brett_lamy/ui/sdk/react/textarea';
 import { SyntaxTokens, useSyntaxTokens } from '@/components/ui/code-editor';
 import { cn } from '@/lib/utils';
 

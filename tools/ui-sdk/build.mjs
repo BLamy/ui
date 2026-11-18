@@ -1,11 +1,13 @@
-// Builds the UI SDK fork (the `vendor/ui-sdk` submodule) into the two packages that publish it under our scope:
+// Builds the UI SDK fork (the `vendor/ui-sdk` submodule) into two private workspace packages:
 //
 //   vendor/ui-sdk/packages/core   →  packages/ui-sdk-core    (@brett_lamy/ui-sdk-core)
 //   vendor/ui-sdk/packages/react  →  packages/ui-sdk-react   (@brett_lamy/ui-sdk-react)
 //
-// Everything in this workspace imports them as `@ui-sdk/core` and `@ui-sdk/react` (npm aliases), so source
-// reads exactly like upstream's docs and the fork stays a small diff. The fork's own package.json files are
-// never edited for this: each wrapper's manifest is generated from the fork's `publishConfig`.
+// Neither is published. @brett_lamy/ui imports them as `@ui-sdk/core` and `@ui-sdk/react` (workspace aliases, dev
+// dependencies), so its source reads exactly like upstream's docs and the fork stays a small diff, and its build
+// copies their output into its own dist (packages/ui/scripts/vendor-ui-sdk.mjs): UI SDK ships inside the one package,
+// at `@brett_lamy/ui/sdk/…`. The fork's own package.json files are never edited for this: each wrapper's manifest is
+// generated from the fork's `publishConfig`.
 //
 //   node tools/ui-sdk/build.mjs              Build both, always.
 //   node tools/ui-sdk/build.mjs --if-stale   Build only when the fork changed since the last build (postinstall).
@@ -52,8 +54,10 @@ function manifest(name) {
   const has = (o) => o && Object.keys(o).length > 0;
   return {
     name: wrapperName(name),
+    // Built here, shipped inside @brett_lamy/ui (dist/vendor/ui-sdk): never published on its own.
+    private: true,
     version: `${src.version}.bl.${revision}`,
-    description: `${src.description} BL fork of ${src.name}: upstream plus layer hosts.`,
+    description: `${src.description} BL fork of ${src.name}: upstream plus layer hosts. Private: it ships inside @brett_lamy/ui.`,
     keywords: src.keywords,
     type: src.type,
     license: src.license,
@@ -68,7 +72,6 @@ function manifest(name) {
     ...(has(dependencies) ? { dependencies } : {}),
     ...(has(peers) ? { peerDependencies: peers } : {}),
     ...(src.peerDependenciesMeta ? { peerDependenciesMeta: src.peerDependenciesMeta } : {}),
-    publishConfig: { access: 'public' },
   };
 }
 
@@ -84,11 +87,9 @@ box and modal to it alone), a \`when\` option on \`bindLayer\`, and the kernel t
 \`@ui-sdk/core/renderer\`. Each is written to be
 proposed upstream.
 
-Install it under upstream's name, so imports read like the UI SDK docs:
-
-\`\`\`bash
-npm install @ui-sdk/${name}@npm:${wrapperName(name)}
-\`\`\`
+This package is private to the BLamy/ui workspace and is not on npm. \`@brett_lamy/ui\` ships its output inside
+its own dist, so an app gets it with the library and imports it as \`@brett_lamy/ui/sdk/${name}${name === 'react' ? '/<part>' : ''}\`:
+wherever UI SDK's docs say \`@ui-sdk/…\`, write \`@brett_lamy/ui/sdk/…\`.
 
 Licensed under Apache-2.0, like upstream. Files changed from upstream say so at the top.
 `;
@@ -151,7 +152,9 @@ async function build(name) {
   rmSync(outDir, { recursive: true, force: true });
   await transpile({ sourceDir, outDir, useClient, serverModules });
 
-  // Declarations, as the fork's `emitDeclarations` does, but with a tsc we pick (see `tscFor`).
+  // Declarations, as the fork's `emitDeclarations` does, but with a tsc we pick (see `tscFor`). The React package
+  // imports `@ui-sdk/core`, which tsc finds by walking up to this workspace's root node_modules: the root's
+  // devDependencies name the two wrappers for exactly that (nothing of ours imports them from the root).
   execFileSync(
     process.execPath,
     [tscFor(packageDir), '-p', 'tsconfig.json', '--noEmit', 'false', '--declaration', '--emitDeclarationOnly', '--rootDir', sourceDir, '--outDir', outDir],

@@ -16,6 +16,10 @@ import ts from 'typescript';
 import { ROOT, SRC } from './graph.mjs';
 
 const AGGREGATES = new Set(['.', './docstream', './docstream-editor']);
+/** The library entries (`./audio`: src/libraries/audio.ts) gather their modules' names as the root does, and the
+ *  `./sdk/…` entries are UI SDK's own surface, entry for entry. */
+const isAggregate = (key, entry) =>
+  AGGREGATES.has(key) || /^\.\/sdk\//.test(key) || (typeof entry === 'object' && /^\.\/src\/libraries\//.test(entry?.['@org/source'] ?? ''));
 const isDocstream = (key) => /^\.\/docstream(-editor)?\//.test(key);
 
 /** What each Docstream widget's kit module (rule 16) and MarkdownView may re-export from docstream: a fixed list, so a
@@ -150,7 +154,7 @@ export function entryNames(exportsMap) {
 
   const names = new Map(); // name → { entries: Set, ids: Set, type }
   for (const [key, entry] of Object.entries(exportsMap)) {
-    if (AGGREGATES.has(key)) continue;
+    if (isAggregate(key, entry)) continue;
     const source = typeof entry === 'object' ? entry['@org/source'] : undefined;
     if (!source || !/\.tsx?$/.test(source)) continue;
     for (const [name, id] of exportsOf(posix.join('packages/ui', source))) {

@@ -4,7 +4,7 @@
   "rules": {
     "duplicates": "off"
   },
-  // Build-output wrappers that tools/ui-sdk/build.mjs generates around the UI SDK fork (vendor/ui-sdk): no source here.
+  // Build output that tools/ui-sdk/build.mjs compiles from the UI SDK fork (vendor/ui-sdk): private, no source here.
   "ignoreWorkspaces": ["packages/ui-sdk-core", "packages/ui-sdk-react"],
   "workspaces": {
     ".": {
@@ -35,8 +35,9 @@
         "eslint-plugin-react-hooks",
         "happy-dom",
         "@electron/packager",
-        // Imported as `@ui-sdk/*` through `workspace:@brett_lamy/ui-sdk-*@*` aliases. Knip resolves those imports to the
-        // workspace's files and matches them by its package name, so it never counts the alias as used.
+        // The UI SDK fork's two build outputs, at the root so the fork's own declaration build (run inside vendor/ui-sdk
+        // by tools/ui-sdk/build.mjs) finds `@ui-sdk/core` from its React package. No source of ours imports them from
+        // here: the library does (packages/ui), and everything else goes through `@brett_lamy/ui/sdk/…`.
         "@ui-sdk/core",
         "@ui-sdk/react"
       ],
@@ -50,6 +51,10 @@
     },
     "packages/ui": {
       "entry": [
+        // The generated entries (tools/registry/build.mjs): one per library (`@brett_lamy/ui/audio`) and one per UI SDK
+        // entry (`@brett_lamy/ui/sdk/react/dialog`), each a file of re-exports.
+        "src/libraries/*.ts",
+        "src/sdk/**/*.ts",
         // Docstream's public entries (package.json `exports`), named here so a run does not depend on how a given
         // install resolves `@brett_lamy/ui/docstream/<entry>`. Knip calls some of these (and the registry's two
         // `types.ts` entries) redundant in a long-lived checkout; a fresh clone, which is what CI runs, needs them.
@@ -68,6 +73,13 @@
       ],
       "project": [
         "src/**/*.{ts,tsx}"
+      ],
+      "ignoreDependencies": [
+        // Imported as `@ui-sdk/*` through `workspace:@brett_lamy/ui-sdk-*@*` aliases (dev dependencies: the build copies
+        // them into dist). Knip resolves those imports to the workspace's files and matches them by its package name,
+        // so it never counts the alias as used.
+        "@ui-sdk/core",
+        "@ui-sdk/react"
       ]
     },
     "registry": {

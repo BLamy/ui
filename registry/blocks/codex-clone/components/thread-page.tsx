@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { Textarea } from '@ui-sdk/react/textarea';
+import { Textarea } from '@brett_lamy/ui/sdk/react/textarea';
 import { Button } from '@/components/ui/button';
 import { Toggle } from '@/components/ui/toggle';
 import { IndexBar } from '@/components/ui/index-bar';

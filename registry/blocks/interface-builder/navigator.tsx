@@ -5,7 +5,7 @@
    ↻ repeat, if, ⚡ actions, ✦ motion. Resting on a scene, a segue or a context previews it in a hover card (previews.tsx):
    the scene as the canvas draws it, a segue's two ends and what it hands over, a context's fields. */
 import { useMemo, useState } from 'react';
-import { Button as SdkButton } from '@ui-sdk/react/button';
+import { Button as SdkButton } from '@brett_lamy/ui/sdk/react/button';
 import { Segmented, SegmentedItem } from '@/components/ui/segmented';
 import { Tree, type TreeNode } from '@/components/ui/tree';
 import { Icon, type IconName } from '@/lib/icon';

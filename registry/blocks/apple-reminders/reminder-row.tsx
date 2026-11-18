@@ -4,11 +4,11 @@
 import { useState, type CSSProperties } from 'react';
 import { TASK_STATES } from '@brett_lamy/ui/docstream/gitbook';
 import { TASK_STATE_ICONS } from '@brett_lamy/ui/docstream/tasks';
-import { Checkbox } from '@ui-sdk/react/checkbox';
-import { Collapsible, CollapsiblePanel, CollapsibleTrigger } from '@ui-sdk/react/collapsible';
+import { Checkbox } from '@brett_lamy/ui/sdk/react/checkbox';
+import { Collapsible, CollapsiblePanel, CollapsibleTrigger } from '@brett_lamy/ui/sdk/react/collapsible';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuContextTrigger } from '@/components/ui/dropdown-menu';
 import { HoverCardHeader } from '@/components/ui/hover-card';
-import { Button as SdkButton } from '@ui-sdk/react/button';
+import { Button as SdkButton } from '@brett_lamy/ui/sdk/react/button';
 import { Chevron, Icon, type IconName } from '@/lib/icon';
 import { cn } from '@/lib/utils';
 import { SYSTEM, dueLabel, stateOf, type Reminder, type RList } from './data';

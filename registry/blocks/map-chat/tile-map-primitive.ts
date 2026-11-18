@@ -7,7 +7,7 @@ import {
   type ChangeDetails,
   type Viewport,
   type ViewportReason,
-} from '@ui-sdk/core';
+} from '@brett_lamy/ui/sdk/core';
 
 /* ══ The tile map's navigation, on UI SDK's viewport ══
    The map is a canvas whose units are Web Mercator pixels at zoom level 0 (the world is 256 across), so the viewport's

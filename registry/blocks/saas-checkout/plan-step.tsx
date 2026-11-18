@@ -1,7 +1,7 @@
 /* Step 1 — the plan, how it is billed, and how many seats. Prices roll to their yearly figure when the cycle changes;
    the seat stepper (UI SDK's NumberInput: arrows, Page Up/Down, typing, held step buttons) keeps to the plan's
    limits. */
-import { NumberInput, NumberInputControl, NumberInputDecrement, NumberInputGroup, NumberInputIncrement } from '@ui-sdk/react/number-input';
+import { NumberInput, NumberInputControl, NumberInputDecrement, NumberInputGroup, NumberInputIncrement } from '@brett_lamy/ui/sdk/react/number-input';
 import { Badge } from '@/components/ui/badge';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';

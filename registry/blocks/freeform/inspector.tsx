@@ -1,8 +1,8 @@
 /* The Format panel: what you can change about the selection, by kind, and how it's arranged. With nothing selected
    it formats the board itself. Sliders checkpoint once when a change starts, change live, and end it on commit. */
 import { useRef, type ReactNode } from 'react';
-import { Button as SdkButton } from '@ui-sdk/react/button';
-import { Toggle as SdkToggle } from '@ui-sdk/react/toggle';
+import { Button as SdkButton } from '@brett_lamy/ui/sdk/react/button';
+import { Toggle as SdkToggle } from '@brett_lamy/ui/sdk/react/toggle';
 import { Segmented, SegmentedItem } from '@/components/ui/segmented';
 import { Slider } from '@/components/ui/slider';
 import { ToggleGroup } from '@/components/ui/toggle';

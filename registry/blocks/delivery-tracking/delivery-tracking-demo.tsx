@@ -7,7 +7,7 @@ import {
   HoverCardTrigger,
   createHoverCardController,
 } from '@/components/ui/hover-card';
-import { Button } from '@ui-sdk/react/button';
+import { Button } from '@brett_lamy/ui/sdk/react/button';
 import { ProgressStepper, type ProgressStepperStep } from '@/components/ui/progress-stepper';
 import { springs, useReducedMotion } from '@/lib/motion';
 import { prefersReducedMotion } from '@/lib/reduced-motion';
@@ -15,7 +15,7 @@ import { themeScopeProps, useAppearance } from '@/lib/theme';
 import { cn } from '@/lib/utils';
 
 import { cva } from 'class-variance-authority';
-import { Collapsible, CollapsiblePanel, CollapsibleTrigger } from '@ui-sdk/react/collapsible';
+import { Collapsible, CollapsiblePanel, CollapsibleTrigger } from '@brett_lamy/ui/sdk/react/collapsible';
 import { AnimatePresence, motion } from 'framer-motion';
 
 // The map is the map-chat block's, through its entry: installing this block installs map-chat with it.

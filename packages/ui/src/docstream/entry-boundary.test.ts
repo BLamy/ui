@@ -14,6 +14,7 @@ import { describe, expect, it } from "vitest"
 const root = resolve(__dirname, "../..")
 const pkg = JSON.parse(readFileSync(join(root, "package.json"), "utf8")) as {
   exports: Record<string, ExportTarget>
+  imports?: Record<string, unknown>
   dependencies: Record<string, string>
   peerDependencies: Record<string, string>
   peerDependenciesMeta: Record<string, { optional?: boolean }>
@@ -157,6 +158,17 @@ describe("entry boundaries", () => {
       for (const spec of graph(target).bare) {
         // The library itself, which docstream is part of.
         if (spec.startsWith("node:") || spec.startsWith("@brett_lamy/ui/")) continue
+        // UI SDK ships inside the package. The sources name it as upstream does; the build copies it into
+        // dist/vendor/ui-sdk and points those imports at the copy (scripts/vendor-ui-sdk.mjs), so a published file never
+        // imports it by name, and the copy's own private specifiers (`#dev`) are the package's `imports`.
+        if (spec.startsWith("@ui-sdk/")) {
+          expect(target.startsWith("./src/"), `${name} (${target}) imports ${spec} by name`).toBe(true)
+          continue
+        }
+        if (spec.startsWith("#")) {
+          expect(Object.keys(pkg.imports ?? {}), `${name} imports ${spec}`).toContain(spec)
+          continue
+        }
         const id = spec.startsWith("@") ? spec.split("/").slice(0, 2).join("/") : spec.split("/")[0]!
         expect(declared.has(id), `${name} imports ${spec}`).toBe(true)
       }

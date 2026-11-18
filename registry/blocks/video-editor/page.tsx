@@ -7,7 +7,7 @@
    FFmpeg's threads need a cross-origin isolated page; without one the browser reads and plays what it can, and
    exporting is off. The sample clips are made by FFmpeg's test sources when the editor opens. */
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { registerShortcut, useShortcutHint } from '@ui-sdk/react/shortcuts';
+import { registerShortcut, useShortcutHint } from '@brett_lamy/ui/sdk/react/shortcuts';
 import { AdaptivePane, AdaptivePaneTrigger, createAdaptivePaneController } from '@/components/ui/adaptive-pane';
 import { Button } from '@/components/ui/button';
 import { Filmstrip } from '@/components/ui/filmstrip';

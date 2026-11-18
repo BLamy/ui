@@ -3,8 +3,8 @@
 import { createContext, use, useEffect, useRef, useState, type ReactNode } from 'react';
 import { Swap } from '@/components/ui/swap';
 import { NumberMorph } from '@/components/ui/number-morph';
-import { Button as SdkButton } from '@ui-sdk/react/button';
-import { Toggle as SdkToggle } from '@ui-sdk/react/toggle';
+import { Button as SdkButton } from '@brett_lamy/ui/sdk/react/button';
+import { Toggle as SdkToggle } from '@brett_lamy/ui/sdk/react/toggle';
 import { CountdownRing, useCountdown } from '@/components/ui/progress-ring';
 import { TextMorph } from '@/components/ui/text-morph';
 import { hud as pageHud, type ToastHud } from '@/components/ui/toast';

@@ -1,7 +1,8 @@
 {
   "name": "@brett_lamy/ui-sdk-core",
+  "private": true,
   "version": "0.1.0-beta.2.bl.1",
-  "description": "A library of behaviors to build your components. Made for agents. BL fork of @ui-sdk/core: upstream plus layer hosts.",
+  "description": "A library of behaviors to build your components. Made for agents. BL fork of @ui-sdk/core: upstream plus layer hosts. Private: it ships inside @brett_lamy/ui.",
   "keywords": [
     "ui",
     "ui-sdk",
@@ -334,8 +335,5 @@
   ],
   "scripts": {
     "build": "node ../../tools/ui-sdk/build.mjs --only core --if-stale"
-  },
-  "publishConfig": {
-    "access": "public"
   }
 }

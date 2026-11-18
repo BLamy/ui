@@ -2,7 +2,7 @@ import { createContext, useContext, type ComponentProps, type CSSProperties, typ
 import { cva, type VariantProps } from 'class-variance-authority';
 import { Avatar } from '@/components/ui/avatar';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
-import { Toggle as SdkToggle } from '@ui-sdk/react/toggle';
+import { Toggle as SdkToggle } from '@brett_lamy/ui/sdk/react/toggle';
 import { MarkdownView } from '@/components/ui/markdown-view';
 import { Toolbar, ToolbarButton } from '@/components/ui/toolbar';
 import { chatUserAvatar, useChatUsers, type ChatUser } from './chat-users';

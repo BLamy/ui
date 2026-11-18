@@ -5,7 +5,7 @@ import { useState, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { MarkdownView } from '@/components/ui/markdown-view';
-import { Button as SdkButton } from '@ui-sdk/react/button';
+import { Button as SdkButton } from '@brett_lamy/ui/sdk/react/button';
 import { Segmented, SegmentedItem } from '@/components/ui/segmented';
 import { CodeEditorCopyButton } from '@/components/ui/code-editor';
 import { cn } from '@/lib/utils';

@@ -7,8 +7,8 @@ import {
   type ChangeDetails,
   type ReorderDraft,
   type ReorderReason,
-} from '@ui-sdk/core';
-import { createParts } from '@ui-sdk/react/primitive';
+} from '@brett_lamy/ui/sdk/core';
+import { createParts } from '@brett_lamy/ui/sdk/react/primitive';
 
 type RankingState = { value: string[]; focused: string | null; moving: ReorderDraft | null };
 type RankingOptions = {

@@ -1,6 +1,6 @@
-import { definePrimitive } from '@ui-sdk/core';
+import { definePrimitive } from '@brett_lamy/ui/sdk/core';
 import { bindPullToRefresh } from '@/lib/pull-to-refresh';
-import { createParts } from '@ui-sdk/react/primitive';
+import { createParts } from '@brett_lamy/ui/sdk/react/primitive';
 import { useState } from 'react';
 import { buttonVariants } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';

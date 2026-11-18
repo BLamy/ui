@@ -1,6 +1,6 @@
 import { useCallback, useLayoutEffect, useRef, useState } from 'react';
-import { createStickToBottom } from '@ui-sdk/core';
-import { Input } from '@ui-sdk/react/input';
+import { createStickToBottom } from '@brett_lamy/ui/sdk/core';
+import { Input } from '@brett_lamy/ui/sdk/react/input';
 import { Button } from '@/components/ui/button';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
 import { SplitViewHeader, SplitViewSupplementary, useSplitView } from '@/components/ui/split-view';

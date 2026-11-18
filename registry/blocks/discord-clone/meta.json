@@ -27,8 +27,7 @@
     "components/chat-shell-context.ts"
   ],
   "dependencies": [
-    "@ui-sdk/core",
-    "@ui-sdk/react",
-    "class-variance-authority"
+    "class-variance-authority",
+    "@brett_lamy/ui"
   ]
 }

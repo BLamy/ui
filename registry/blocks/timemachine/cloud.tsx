@@ -2,12 +2,12 @@
    (Rivet), which syncs them live and lets another device watch them. */
 import { useState, type ReactNode } from 'react';
 import { Field, FieldDescription, FieldLabel } from '@/components/ui/field';
-import { Button as SdkButton } from '@ui-sdk/react/button';
+import { Button as SdkButton } from '@brett_lamy/ui/sdk/react/button';
 import { Segmented, SegmentedItem } from '@/components/ui/segmented';
 import { Icon } from '@/lib/icon';
 import { useSessionCloud } from '@/lib/session-recorder';
 import { cn } from '@/lib/utils';
-import { Input } from '@ui-sdk/react/input';
+import { Input } from '@brett_lamy/ui/sdk/react/input';
 import { timeLabel } from './format';
 
 /** A labelled setting: the Field names its Input and reads the hint out with it. */

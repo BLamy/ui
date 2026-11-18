@@ -10,7 +10,7 @@ import { Box, LabelChip, Oct, StatePill, type Layout, type Nav } from './parts';
 import { FilterMenus, ItemRow, ListToolbar, StateToggle } from './lists';
 import { Thread } from './pull-request';
 import { Loaded, useLoad, useRepo } from './repo-context';
-import { Button as SdkButton } from '@ui-sdk/react/button';
+import { Button as SdkButton } from '@brett_lamy/ui/sdk/react/button';
 
 export function IssueList({ ui, nav, labelFilter }: { ui: Layout; nav: Nav; labelFilter: string[] }) {
   const { source } = useRepo();

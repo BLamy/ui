@@ -7,10 +7,10 @@ import {
   type MouseEvent as ReactMouseEvent,
   type ReactNode,
 } from 'react';
-import type { Viewport } from '@ui-sdk/core';
-import { usePart, usePrimitive } from '@ui-sdk/react/primitive';
+import type { Viewport } from '@brett_lamy/ui/sdk/core';
+import { usePart, usePrimitive } from '@brett_lamy/ui/sdk/react/primitive';
 import { HoverCard, HoverCardContent, HoverCardTrigger, createHoverCardController } from '@/components/ui/hover-card';
-import { Button } from '@ui-sdk/react/button';
+import { Button } from '@brett_lamy/ui/sdk/react/button';
 import { changeDetails } from '@/lib/change-details';
 import { useContainerSize } from '@/lib/container';
 import { prefersReducedMotion } from '@/lib/reduced-motion';

@@ -8,9 +8,9 @@ import {
   popupTitle,
   popupTrigger,
   type ChangeDetails,
-} from '@ui-sdk/core';
-import { popoverPreset } from '@ui-sdk/core/popover';
-import { createParts } from '@ui-sdk/react/primitive';
+} from '@brett_lamy/ui/sdk/core';
+import { popoverPreset } from '@brett_lamy/ui/sdk/core/popover';
+import { createParts } from '@brett_lamy/ui/sdk/react/primitive';
 import { useState } from 'react';
 import { buttonVariants } from '@/components/ui/button';
 import { popoverMotion, popoverSurface } from '@/lib/primitives';

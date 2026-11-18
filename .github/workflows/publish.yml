@@ -1,12 +1,11 @@
 name: Publish packages
 
-# Publishes every @brett_lamy/* library whose package.json version isn't on npm yet, in dependency order:
-# the two UI SDK fork packages (built from the vendor/ui-sdk submodule), then @brett_lamy/ui. Docstream and the
-# Docstream editor ship inside @brett_lamy/ui (`@brett_lamy/ui/docstream…`): @brett_lamy/docstream and
+# Publishes @brett_lamy/ui when its package.json version isn't on npm yet. It is the only package: every BL library is
+# an entry of it (`@brett_lamy/ui/audio`, `@brett_lamy/ui/docstream`, …), and UI SDK ships inside it too
+# (`@brett_lamy/ui/sdk/…`, built from the vendor/ui-sdk submodule into dist/vendor/ui-sdk). @brett_lamy/docstream and
 # @brett_lamy/docstream-editor stopped at 2.0.1 and are not published from here.
-# `pnpm pack` rewrites `workspace:*` to the real versions; `npm publish` then uploads the tarball using
-# npm trusted publishing (OIDC — configure this workflow, publish.yml, as the trusted publisher for each
-# package on npmjs.com) or, if set, the NPM_TOKEN repository secret.
+# `pnpm pack` writes the tarball; `npm publish` uploads it using npm trusted publishing (OIDC — configure this
+# workflow, publish.yml, as the package's trusted publisher on npmjs.com) or, if set, the NPM_TOKEN repository secret.
 on:
   push:
     branches: [main]
@@ -29,7 +28,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        # vendor/ui-sdk (our UI SDK fork) is a submodule; `pnpm install` builds the two @ui-sdk wrapper packages from it.
+        # vendor/ui-sdk (our UI SDK fork) is a submodule; `pnpm install` compiles it, and the library's build copies it in.
         with: { submodules: true }
 
       - uses: pnpm/action-setup@v4
@@ -46,8 +45,12 @@ jobs:
 
       # The library's tests read its build (docstream's entry boundaries load every dist entry in plain Node), so a
       # version is only published once both pass.
-      - name: Build and test libraries
-        run: pnpm nx run-many -t build,test -p @brett_lamy/ui-sdk-core,@brett_lamy/ui-sdk-react,@brett_lamy/ui
+      - name: Build and test the library
+        run: pnpm nx run-many -t build,test -p @brett_lamy/ui
+
+      # Each library entry within its budget, wide imports tree-shaking to what their own entries cost.
+      - name: Entry sizes
+        run: node tools/size/measure.mjs --check
 
       # Temporary: the claims npm's trusted publishing sees (payload only, no signature), to match its config.
       - name: Show OIDC claims
@@ -71,8 +74,7 @@ jobs:
           # Trusted publishing needs npm 11.5.1+; verbose output says why an OIDC exchange was refused.
           echo "npm $(npm --version)"
           mkdir -p "$RUNNER_TEMP/pkgs"
-          # The fork's two packages first: @brett_lamy/ui depends on them (as @ui-sdk/core and @ui-sdk/react).
-          for pkg in ui-sdk-core ui-sdk-react ui; do
+          for pkg in ui; do
             NAME=$(node -p "require('./packages/$pkg/package.json').name")
             VERSION=$(node -p "require('./packages/$pkg/package.json').version")
             if npm view "$NAME@$VERSION" version >/dev/null 2>&1; then
@@ -81,7 +83,7 @@ jobs:
             fi
             TARBALL=$(cd "packages/$pkg" && pnpm pack --pack-destination "$RUNNER_TEMP/pkgs" | tail -1)
             echo "Publishing $NAME@$VERSION ($TARBALL)"
-            # npm refuses a prerelease version without an explicit tag; the fork's versions are all prereleases.
+            # npm refuses a prerelease version without an explicit tag.
             case "$VERSION" in *-*) TAG="--tag latest" ;; *) TAG="" ;; esac
             npm publish "$TARBALL" --access public $TAG --loglevel verbose
           done

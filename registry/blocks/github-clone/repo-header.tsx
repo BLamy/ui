@@ -4,7 +4,7 @@
 import { Avatar } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Button as SdkButton } from '@ui-sdk/react/button';
+import { Button as SdkButton } from '@brett_lamy/ui/sdk/react/button';
 import { cn } from '@/lib/utils';
 import { Counter, Mark, Oct, ghButton, type OctName, type Layout } from './parts';
 import { useRepo } from './repo-context';

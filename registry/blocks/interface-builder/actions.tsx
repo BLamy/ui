@@ -2,7 +2,7 @@
    Interface Builder way and shows the line of React it becomes; press it to edit it. Add one from the menu. */
 import { useState } from 'react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuGroupLabel, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Button as SdkButton } from '@ui-sdk/react/button';
+import { Button as SdkButton } from '@brett_lamy/ui/sdk/react/button';
 import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
 import { ChoiceInput, ExprInput, Field, IconAction, TextInput } from './fields';

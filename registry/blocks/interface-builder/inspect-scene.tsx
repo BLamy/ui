@@ -2,7 +2,7 @@
    that make up its delegate protocol), useState, useMemo and useEffect, the contexts it reads (found from its
    expressions) and the outlets it holds. Its First Responder proxy edits the commands the scene handles; its Exit
    proxy lists the unwinds. */
-import { Button as SdkButton } from '@ui-sdk/react/button';
+import { Button as SdkButton } from '@brett_lamy/ui/sdk/react/button';
 import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
 import { ActionList } from './actions';

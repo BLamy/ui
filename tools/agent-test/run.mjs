@@ -11,7 +11,8 @@
    tools/agent-test/.results/. Exits 1 when a scenario fails. */
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { createRequire } from 'node:module';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(HERE, '../..');
@@ -181,7 +182,9 @@ async function main() {
   const { model, how } = await pickModel(key);
   console.log(`agent-test: model ${model} (${how}); ${chosen.length} scenario(s); caps ${MAX_TURNS} turns, ${MAX_SCENARIO_TOKENS} tokens each, ${MAX_RUN_TOKENS} per run`);
 
-  const { agentTools } = await import('@ui-sdk/core/agent');
+  // UI SDK is the library's (packages/ui imports it as `@ui-sdk/core`; the workspace root does not depend on it).
+  const fromUi = createRequire(join(dirname(fileURLToPath(import.meta.url)), '../../packages/ui/package.json'));
+  const { agentTools } = await import(pathToFileURL(fromUi.resolve('@ui-sdk/core/agent')).href);
   const tools = agentTools.map((t) => ({ type: 'function', function: { name: t.name, description: t.description, parameters: t.inputSchema } }));
 
   const [{ createServer }, { default: react }, { default: tailwindcss }, { aliases }, { chromium }] = await Promise.all([

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { Button } from '@ui-sdk/react/button';
+import { Button } from '@brett_lamy/ui/sdk/react/button';
 import { FloatingSheet, FloatingSheetBody } from '@/components/ui/floating-sheet';
 import { ThemeScope } from '@/lib/theme';
 import { cn } from '@/lib/utils';

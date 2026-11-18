@@ -27,7 +27,7 @@
     "styles.ts"
   ],
   "dependencies": [
-    "@ui-sdk/react"
+    "@brett_lamy/ui"
   ],
   "variants": [
     {

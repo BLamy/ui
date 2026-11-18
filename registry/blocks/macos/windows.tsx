@@ -3,9 +3,9 @@
    itself out, and presents its popups, as it would on a phone. It stays mounted while the window is minimized. On a phone-sized desktop the
    same window is a full-screen app that zooms out of its springboard icon — no chrome, same mounted app. */
 import { Suspense, memo, useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
-import { Button as SdkButton } from '@ui-sdk/react/button';
+import { Button as SdkButton } from '@brett_lamy/ui/sdk/react/button';
 import { Spinner } from '@/components/ui/spinner';
-import { bindDrag } from '@ui-sdk/core';
+import { bindDrag } from '@brett_lamy/ui/sdk/core';
 import { Icon } from '@/lib/icon';
 import { AppearanceProvider, BLProvider, type Appearance } from '@/lib/theme';
 import { useOptionalTailscale } from '@/lib/tailscale-react';

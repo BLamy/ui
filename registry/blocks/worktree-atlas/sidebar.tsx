@@ -6,9 +6,9 @@
    it in a hover card (its folder, HEAD, pull request, size and age), so two agent branches can be told apart before
    either is opened. */
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { Collapsible, CollapsiblePanel, CollapsibleTrigger } from '@ui-sdk/react/collapsible';
-import { Toggle as SdkToggle, ToggleGroup } from '@ui-sdk/react/toggle';
-import { Button as SdkButton } from '@ui-sdk/react/button';
+import { Collapsible, CollapsiblePanel, CollapsibleTrigger } from '@brett_lamy/ui/sdk/react/collapsible';
+import { Toggle as SdkToggle, ToggleGroup } from '@brett_lamy/ui/sdk/react/toggle';
+import { Button as SdkButton } from '@brett_lamy/ui/sdk/react/button';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuContextTrigger } from '@/components/ui/dropdown-menu';
 import { HoverCardHeader } from '@/components/ui/hover-card';

@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { createChange, createLasso, definePrimitive, live, type ChangeDetails, type LassoDraft } from '@ui-sdk/core';
-import { createParts } from '@ui-sdk/react/primitive';
+import { createChange, createLasso, definePrimitive, live, type ChangeDetails, type LassoDraft } from '@brett_lamy/ui/sdk/core';
+import { createParts } from '@brett_lamy/ui/sdk/react/primitive';
 
 type ShapesState = { selected: string[]; lasso: LassoDraft | null };
 type ShapesOptions = {

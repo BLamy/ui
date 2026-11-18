@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/navigation-stack';
 import { NowPlayingBars } from '@/components/ui/now-playing-bars';
 import { SearchInput } from '@/components/ui/search-input';
-import { Button as SdkButton } from '@ui-sdk/react/button';
+import { Button as SdkButton } from '@brett_lamy/ui/sdk/react/button';
 import { Icon, type IconShape } from '@/lib/icon';
 import { cn } from '@/lib/utils';
 import { ArtistArt, Artwork, PlaylistArt } from './artwork';

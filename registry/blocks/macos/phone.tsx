@@ -6,13 +6,13 @@
 import { useCallback, useEffect, useRef, useState, type MouseEvent, type PointerEvent as ReactPointerEvent } from 'react';
 import type { Appearance } from '@/lib/theme';
 import { useContainerSize } from '@/lib/container';
-import { bindDrag, bindHold } from '@ui-sdk/core';
+import { bindDrag, bindHold } from '@brett_lamy/ui/sdk/core';
 import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
 import { APPS, type DesktopApp } from './apps';
 import type { Area } from './desktop';
 import { AppTile, Hat } from './parts';
-import { Button as SdkButton } from '@ui-sdk/react/button';
+import { Button as SdkButton } from '@brett_lamy/ui/sdk/react/button';
 
 /** Status bar and home bar heights. */
 export const STATUS_H = 44;

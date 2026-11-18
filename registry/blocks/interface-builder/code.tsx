@@ -2,7 +2,7 @@
    JSX and its scene's file; otherwise any file of the app (App.tsx, each scene, the contexts, the runtime). */
 import { useMemo, useState } from 'react';
 import { CodeEditor } from '@/components/ui/code-editor';
-import { Button as SdkButton } from '@ui-sdk/react/button';
+import { Button as SdkButton } from '@brett_lamy/ui/sdk/react/button';
 import { Icon } from '@/lib/icon';
 import { generate, nodeSnippet } from './codegen';
 import { ChoiceInput, Help, Section } from './fields';

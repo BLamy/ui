@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { Button as SdkButton } from '@ui-sdk/react/button'
-import { Toggle as SdkToggle } from '@ui-sdk/react/toggle'
+import { Button as SdkButton } from '@brett_lamy/ui/sdk/react/button'
+import { Toggle as SdkToggle } from '@brett_lamy/ui/sdk/react/toggle'
 import { cn } from '@/lib/utils'
 
 const FILTERS = ['Inbox', 'Unread', 'Flagged', 'Attachments']

@@ -1,7 +1,7 @@
 /* The board gallery: every board as a card with a live thumbnail, favorites, and a card to start a new one. */
 import { useState } from 'react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Button as SdkButton } from '@ui-sdk/react/button';
+import { Button as SdkButton } from '@brett_lamy/ui/sdk/react/button';
 import { Segmented, SegmentedItem } from '@/components/ui/segmented';
 import { useContainerWidth, useSizeClassScope } from '@/lib/container';
 import { Icon } from '@/lib/icon';

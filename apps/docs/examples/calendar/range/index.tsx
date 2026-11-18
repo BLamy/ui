@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { daysBetween } from '@ui-sdk/core/date'
+import { daysBetween } from '@brett_lamy/ui/sdk/core/date'
 import { Calendar, type CalendarValue } from '@/components/ui/calendar'
 
 // Pinned to September 2026 in en-US so the demo reads the same for everyone.

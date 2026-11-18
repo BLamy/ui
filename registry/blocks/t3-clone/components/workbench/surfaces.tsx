@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { MultiFileDiff } from '@pierre/diffs/react';
 import { FileTree, useFileTree } from '@pierre/trees/react';
-import { Button } from '@ui-sdk/react/button';
+import { Button } from '@brett_lamy/ui/sdk/react/button';
 import { useScopeAppearance } from '@/lib/theme';
 import { Icon, type IconName } from '@/lib/icon';
 import { cn } from '@/lib/utils';

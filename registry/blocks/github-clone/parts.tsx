@@ -3,7 +3,7 @@
    library's CodeEditor (gpu-lexer on WebGPU), recolored with Primer's syntax palette below. */
 import { useMemo, type CSSProperties, type ReactNode } from 'react';
 import { EmptyState } from '@/components/ui/empty-state';
-import { Collapsible, CollapsiblePanel, CollapsibleTrigger } from '@ui-sdk/react/collapsible';
+import { Collapsible, CollapsiblePanel, CollapsibleTrigger } from '@brett_lamy/ui/sdk/react/collapsible';
 import { Badge } from '@/components/ui/badge';
 import { CodeEditor, SyntaxTokens, useSyntaxTokens } from '@/components/ui/code-editor';
 import { TabsIndicator, TabsPanel, TabsTab } from '@/components/ui/tabs';

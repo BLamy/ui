@@ -2,7 +2,7 @@
    while minimized; closing the window unmounts OpenCode, which disposes both the terminal and its container. */
 import { useMemo, useRef, useState } from 'react';
 import { OpenCode } from '@/components/ui/open-code';
-import { Button as SdkButton } from '@ui-sdk/react/button';
+import { Button as SdkButton } from '@brett_lamy/ui/sdk/react/button';
 import { createAgentWasmOpenCodeHost, type OpenCodeHostBridge } from '@/lib/open-code-host';
 import { createVaultOpenCodeCredentialStore } from '@/lib/open-code-keychain';
 import { useOptionalTailscale } from '@/lib/tailscale-react';

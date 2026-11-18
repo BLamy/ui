@@ -4,7 +4,7 @@
    (a ref), the first responder (autoFocus, and the commands it handles), and the events it sends (its actions). */
 import type { ReactNode } from 'react';
 import { FontPicker, FontPickerContent, FontPickerTrigger } from '@/components/ui/font-picker';
-import { Button as SdkButton } from '@ui-sdk/react/button';
+import { Button as SdkButton } from '@brett_lamy/ui/sdk/react/button';
 import { Segmented, SegmentedItem } from '@/components/ui/segmented';
 import { Icon } from '@/lib/icon';
 import { ActionList, type ActionContext } from './actions';

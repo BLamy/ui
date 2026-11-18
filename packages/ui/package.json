@@ -10,6 +10,28 @@
   "main": "./dist/index.js",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "imports": {
+    "#dev": {
+      "development": {
+        "types": "./dist/vendor/ui-sdk/core/foundation/kernel/dev.d.ts",
+        "default": "./dist/vendor/ui-sdk/core/foundation/kernel/dev.js"
+      },
+      "default": {
+        "types": "./dist/vendor/ui-sdk/core/foundation/kernel/dev-stub.d.ts",
+        "default": "./dist/vendor/ui-sdk/core/foundation/kernel/dev-stub.js"
+      }
+    },
+    "#name-check": {
+      "development": {
+        "types": "./dist/vendor/ui-sdk/core/foundation/text/name-check.d.ts",
+        "default": "./dist/vendor/ui-sdk/core/foundation/text/name-check.js"
+      },
+      "default": {
+        "types": "./dist/vendor/ui-sdk/core/foundation/text/name-check-stub.d.ts",
+        "default": "./dist/vendor/ui-sdk/core/foundation/text/name-check-stub.js"
+      }
+    }
+  },
   "exports": {
     "./package.json": "./package.json",
     ".": {
@@ -45,6 +67,91 @@
     "./ffmpeg-worker.js": {
       "@org/source": "./src/lib/ffmpeg/ffmpeg-worker.js",
       "default": "./dist/ffmpeg-worker.js"
+    },
+    "./tokens": {
+      "@org/source": "./src/libraries/tokens.ts",
+      "types": "./dist/libraries/tokens.d.ts",
+      "default": "./dist/libraries/tokens.js"
+    },
+    "./motion": {
+      "@org/source": "./src/libraries/motion.ts",
+      "types": "./dist/libraries/motion.d.ts",
+      "default": "./dist/libraries/motion.js"
+    },
+    "./icons": {
+      "@org/source": "./src/libraries/icons.ts",
+      "types": "./dist/libraries/icons.d.ts",
+      "default": "./dist/libraries/icons.js"
+    },
+    "./time": {
+      "@org/source": "./src/libraries/time.ts",
+      "types": "./dist/libraries/time.d.ts",
+      "default": "./dist/libraries/time.js"
+    },
+    "./canvas": {
+      "@org/source": "./src/libraries/canvas.ts",
+      "types": "./dist/libraries/canvas.d.ts",
+      "default": "./dist/libraries/canvas.js"
+    },
+    "./diagram": {
+      "@org/source": "./src/libraries/diagram.ts",
+      "types": "./dist/libraries/diagram.d.ts",
+      "default": "./dist/libraries/diagram.js"
+    },
+    "./audio": {
+      "@org/source": "./src/libraries/audio.ts",
+      "types": "./dist/libraries/audio.d.ts",
+      "default": "./dist/libraries/audio.js"
+    },
+    "./video": {
+      "@org/source": "./src/libraries/video.ts",
+      "types": "./dist/libraries/video.d.ts",
+      "default": "./dist/libraries/video.js"
+    },
+    "./markdown": {
+      "@org/source": "./src/libraries/markdown.ts",
+      "types": "./dist/libraries/markdown.d.ts",
+      "default": "./dist/libraries/markdown.js"
+    },
+    "./composer": {
+      "@org/source": "./src/libraries/composer.ts",
+      "types": "./dist/libraries/composer.d.ts",
+      "default": "./dist/libraries/composer.js"
+    },
+    "./replay": {
+      "@org/source": "./src/libraries/replay.ts",
+      "types": "./dist/libraries/replay.d.ts",
+      "default": "./dist/libraries/replay.js"
+    },
+    "./sql": {
+      "@org/source": "./src/libraries/sql.ts",
+      "types": "./dist/libraries/sql.d.ts",
+      "default": "./dist/libraries/sql.js"
+    },
+    "./pglite": {
+      "@org/source": "./src/libraries/pglite.ts",
+      "types": "./dist/libraries/pglite.d.ts",
+      "default": "./dist/libraries/pglite.js"
+    },
+    "./filter": {
+      "@org/source": "./src/libraries/filter.ts",
+      "types": "./dist/libraries/filter.d.ts",
+      "default": "./dist/libraries/filter.js"
+    },
+    "./sync": {
+      "@org/source": "./src/libraries/sync.ts",
+      "types": "./dist/libraries/sync.d.ts",
+      "default": "./dist/libraries/sync.js"
+    },
+    "./vault": {
+      "@org/source": "./src/libraries/vault.ts",
+      "types": "./dist/libraries/vault.d.ts",
+      "default": "./dist/libraries/vault.js"
+    },
+    "./tailscale": {
+      "@org/source": "./src/libraries/tailscale.ts",
+      "types": "./dist/libraries/tailscale.d.ts",
+      "default": "./dist/libraries/tailscale.js"
     },
     "./adaptive-pane": {
       "@org/source": "./src/components/adaptive-pane.tsx",
@@ -96,11 +203,6 @@
       "types": "./dist/components/call-stack.d.ts",
       "default": "./dist/components/call-stack.js"
     },
-    "./canvas": {
-      "@org/source": "./src/components/canvas.tsx",
-      "types": "./dist/components/canvas.d.ts",
-      "default": "./dist/components/canvas.js"
-    },
     "./card": {
       "@org/source": "./src/components/card.tsx",
       "types": "./dist/components/card.d.ts",
@@ -136,11 +238,6 @@
       "types": "./dist/components/command-menu.d.ts",
       "default": "./dist/components/command-menu.js"
     },
-    "./composer": {
-      "@org/source": "./src/components/composer/index.ts",
-      "types": "./dist/components/composer/index.d.ts",
-      "default": "./dist/components/composer/index.js"
-    },
     "./conversation": {
       "@org/source": "./src/components/conversation.tsx",
       "types": "./dist/components/conversation.d.ts",
@@ -170,11 +267,6 @@
       "@org/source": "./src/components/debug-toolbar.tsx",
       "types": "./dist/components/debug-toolbar.d.ts",
       "default": "./dist/components/debug-toolbar.js"
-    },
-    "./diagram": {
-      "@org/source": "./src/components/diagram.tsx",
-      "types": "./dist/components/diagram.d.ts",
-      "default": "./dist/components/diagram.js"
     },
     "./diagram-frame": {
       "@org/source": "./src/components/diagram-frame.tsx",
@@ -215,11 +307,6 @@
       "@org/source": "./src/components/filmstrip.tsx",
       "types": "./dist/components/filmstrip.d.ts",
       "default": "./dist/components/filmstrip.js"
-    },
-    "./filter": {
-      "@org/source": "./src/components/filter.tsx",
-      "types": "./dist/components/filter.d.ts",
-      "default": "./dist/components/filter.js"
     },
     "./filter-input": {
       "@org/source": "./src/components/filter-input.tsx",
@@ -1186,6 +1273,687 @@
     "./docstream-editor/styles.css": {
       "@org/source": "./src/docstream-editor/styles.css",
       "default": "./dist/docstream-editor/styles.css"
+    },
+    "./sdk/core": {
+      "@org/source": "./src/sdk/core/index.ts",
+      "types": "./dist/sdk/core/index.d.ts",
+      "default": "./dist/sdk/core/index.js"
+    },
+    "./sdk/core/calendar": {
+      "@org/source": "./src/sdk/core/calendar.ts",
+      "types": "./dist/sdk/core/calendar.d.ts",
+      "default": "./dist/sdk/core/calendar.js"
+    },
+    "./sdk/core/menu": {
+      "@org/source": "./src/sdk/core/menu.ts",
+      "types": "./dist/sdk/core/menu.d.ts",
+      "default": "./dist/sdk/core/menu.js"
+    },
+    "./sdk/core/popover": {
+      "@org/source": "./src/sdk/core/popover.ts",
+      "types": "./dist/sdk/core/popover.d.ts",
+      "default": "./dist/sdk/core/popover.js"
+    },
+    "./sdk/core/dialog": {
+      "@org/source": "./src/sdk/core/dialog.ts",
+      "types": "./dist/sdk/core/dialog.d.ts",
+      "default": "./dist/sdk/core/dialog.js"
+    },
+    "./sdk/core/alert-dialog": {
+      "@org/source": "./src/sdk/core/alert-dialog.ts",
+      "types": "./dist/sdk/core/alert-dialog.d.ts",
+      "default": "./dist/sdk/core/alert-dialog.js"
+    },
+    "./sdk/core/drawer": {
+      "@org/source": "./src/sdk/core/drawer.ts",
+      "types": "./dist/sdk/core/drawer.d.ts",
+      "default": "./dist/sdk/core/drawer.js"
+    },
+    "./sdk/core/toast": {
+      "@org/source": "./src/sdk/core/toast.ts",
+      "types": "./dist/sdk/core/toast.d.ts",
+      "default": "./dist/sdk/core/toast.js"
+    },
+    "./sdk/core/overlays": {
+      "@org/source": "./src/sdk/core/overlays.ts",
+      "types": "./dist/sdk/core/overlays.d.ts",
+      "default": "./dist/sdk/core/overlays.js"
+    },
+    "./sdk/core/tooltip": {
+      "@org/source": "./src/sdk/core/tooltip.ts",
+      "types": "./dist/sdk/core/tooltip.d.ts",
+      "default": "./dist/sdk/core/tooltip.js"
+    },
+    "./sdk/core/hover-card": {
+      "@org/source": "./src/sdk/core/hover-card.ts",
+      "types": "./dist/sdk/core/hover-card.d.ts",
+      "default": "./dist/sdk/core/hover-card.js"
+    },
+    "./sdk/core/shortcuts": {
+      "@org/source": "./src/sdk/core/shortcuts.ts",
+      "types": "./dist/sdk/core/shortcuts.d.ts",
+      "default": "./dist/sdk/core/shortcuts.js"
+    },
+    "./sdk/core/tabs": {
+      "@org/source": "./src/sdk/core/tabs.ts",
+      "types": "./dist/sdk/core/tabs.d.ts",
+      "default": "./dist/sdk/core/tabs.js"
+    },
+    "./sdk/core/accordion": {
+      "@org/source": "./src/sdk/core/accordion.ts",
+      "types": "./dist/sdk/core/accordion.d.ts",
+      "default": "./dist/sdk/core/accordion.js"
+    },
+    "./sdk/core/collapsible": {
+      "@org/source": "./src/sdk/core/collapsible.ts",
+      "types": "./dist/sdk/core/collapsible.d.ts",
+      "default": "./dist/sdk/core/collapsible.js"
+    },
+    "./sdk/core/checkbox": {
+      "@org/source": "./src/sdk/core/checkbox.ts",
+      "types": "./dist/sdk/core/checkbox.d.ts",
+      "default": "./dist/sdk/core/checkbox.js"
+    },
+    "./sdk/core/switch": {
+      "@org/source": "./src/sdk/core/switch.ts",
+      "types": "./dist/sdk/core/switch.d.ts",
+      "default": "./dist/sdk/core/switch.js"
+    },
+    "./sdk/core/radio": {
+      "@org/source": "./src/sdk/core/radio.ts",
+      "types": "./dist/sdk/core/radio.d.ts",
+      "default": "./dist/sdk/core/radio.js"
+    },
+    "./sdk/core/rating": {
+      "@org/source": "./src/sdk/core/rating.ts",
+      "types": "./dist/sdk/core/rating.d.ts",
+      "default": "./dist/sdk/core/rating.js"
+    },
+    "./sdk/core/field": {
+      "@org/source": "./src/sdk/core/field.ts",
+      "types": "./dist/sdk/core/field.d.ts",
+      "default": "./dist/sdk/core/field.js"
+    },
+    "./sdk/core/label": {
+      "@org/source": "./src/sdk/core/label.ts",
+      "types": "./dist/sdk/core/label.d.ts",
+      "default": "./dist/sdk/core/label.js"
+    },
+    "./sdk/core/button": {
+      "@org/source": "./src/sdk/core/button.ts",
+      "types": "./dist/sdk/core/button.d.ts",
+      "default": "./dist/sdk/core/button.js"
+    },
+    "./sdk/core/toggle": {
+      "@org/source": "./src/sdk/core/toggle.ts",
+      "types": "./dist/sdk/core/toggle.d.ts",
+      "default": "./dist/sdk/core/toggle.js"
+    },
+    "./sdk/core/toolbar": {
+      "@org/source": "./src/sdk/core/toolbar.ts",
+      "types": "./dist/sdk/core/toolbar.d.ts",
+      "default": "./dist/sdk/core/toolbar.js"
+    },
+    "./sdk/core/menubar": {
+      "@org/source": "./src/sdk/core/menubar.ts",
+      "types": "./dist/sdk/core/menubar.d.ts",
+      "default": "./dist/sdk/core/menubar.js"
+    },
+    "./sdk/core/separator": {
+      "@org/source": "./src/sdk/core/separator.ts",
+      "types": "./dist/sdk/core/separator.d.ts",
+      "default": "./dist/sdk/core/separator.js"
+    },
+    "./sdk/core/select": {
+      "@org/source": "./src/sdk/core/select.ts",
+      "types": "./dist/sdk/core/select.d.ts",
+      "default": "./dist/sdk/core/select.js"
+    },
+    "./sdk/core/segmented-control": {
+      "@org/source": "./src/sdk/core/segmented-control.ts",
+      "types": "./dist/sdk/core/segmented-control.d.ts",
+      "default": "./dist/sdk/core/segmented-control.js"
+    },
+    "./sdk/core/combobox": {
+      "@org/source": "./src/sdk/core/combobox.ts",
+      "types": "./dist/sdk/core/combobox.d.ts",
+      "default": "./dist/sdk/core/combobox.js"
+    },
+    "./sdk/core/command": {
+      "@org/source": "./src/sdk/core/command.ts",
+      "types": "./dist/sdk/core/command.d.ts",
+      "default": "./dist/sdk/core/command.js"
+    },
+    "./sdk/core/autocomplete": {
+      "@org/source": "./src/sdk/core/autocomplete.ts",
+      "types": "./dist/sdk/core/autocomplete.d.ts",
+      "default": "./dist/sdk/core/autocomplete.js"
+    },
+    "./sdk/core/input": {
+      "@org/source": "./src/sdk/core/input.ts",
+      "types": "./dist/sdk/core/input.d.ts",
+      "default": "./dist/sdk/core/input.js"
+    },
+    "./sdk/core/slider": {
+      "@org/source": "./src/sdk/core/slider.ts",
+      "types": "./dist/sdk/core/slider.d.ts",
+      "default": "./dist/sdk/core/slider.js"
+    },
+    "./sdk/core/color-picker": {
+      "@org/source": "./src/sdk/core/color-picker.ts",
+      "types": "./dist/sdk/core/color-picker.d.ts",
+      "default": "./dist/sdk/core/color-picker.js"
+    },
+    "./sdk/core/image-cropper": {
+      "@org/source": "./src/sdk/core/image-cropper.ts",
+      "types": "./dist/sdk/core/image-cropper.d.ts",
+      "default": "./dist/sdk/core/image-cropper.js"
+    },
+    "./sdk/core/number-input": {
+      "@org/source": "./src/sdk/core/number-input.ts",
+      "types": "./dist/sdk/core/number-input.d.ts",
+      "default": "./dist/sdk/core/number-input.js"
+    },
+    "./sdk/core/file-input": {
+      "@org/source": "./src/sdk/core/file-input.ts",
+      "types": "./dist/sdk/core/file-input.d.ts",
+      "default": "./dist/sdk/core/file-input.js"
+    },
+    "./sdk/core/trigger-menu": {
+      "@org/source": "./src/sdk/core/trigger-menu.ts",
+      "types": "./dist/sdk/core/trigger-menu.d.ts",
+      "default": "./dist/sdk/core/trigger-menu.js"
+    },
+    "./sdk/core/token-input": {
+      "@org/source": "./src/sdk/core/token-input.ts",
+      "types": "./dist/sdk/core/token-input.d.ts",
+      "default": "./dist/sdk/core/token-input.js"
+    },
+    "./sdk/core/avatar": {
+      "@org/source": "./src/sdk/core/avatar.ts",
+      "types": "./dist/sdk/core/avatar.d.ts",
+      "default": "./dist/sdk/core/avatar.js"
+    },
+    "./sdk/core/progress": {
+      "@org/source": "./src/sdk/core/progress.ts",
+      "types": "./dist/sdk/core/progress.d.ts",
+      "default": "./dist/sdk/core/progress.js"
+    },
+    "./sdk/core/meter": {
+      "@org/source": "./src/sdk/core/meter.ts",
+      "types": "./dist/sdk/core/meter.d.ts",
+      "default": "./dist/sdk/core/meter.js"
+    },
+    "./sdk/core/otp-input": {
+      "@org/source": "./src/sdk/core/otp-input.ts",
+      "types": "./dist/sdk/core/otp-input.d.ts",
+      "default": "./dist/sdk/core/otp-input.js"
+    },
+    "./sdk/core/scroll-area": {
+      "@org/source": "./src/sdk/core/scroll-area.ts",
+      "types": "./dist/sdk/core/scroll-area.d.ts",
+      "default": "./dist/sdk/core/scroll-area.js"
+    },
+    "./sdk/core/resizable": {
+      "@org/source": "./src/sdk/core/resizable.ts",
+      "types": "./dist/sdk/core/resizable.d.ts",
+      "default": "./dist/sdk/core/resizable.js"
+    },
+    "./sdk/core/navigation-menu": {
+      "@org/source": "./src/sdk/core/navigation-menu.ts",
+      "types": "./dist/sdk/core/navigation-menu.d.ts",
+      "default": "./dist/sdk/core/navigation-menu.js"
+    },
+    "./sdk/core/password-input": {
+      "@org/source": "./src/sdk/core/password-input.ts",
+      "types": "./dist/sdk/core/password-input.d.ts",
+      "default": "./dist/sdk/core/password-input.js"
+    },
+    "./sdk/core/pagination": {
+      "@org/source": "./src/sdk/core/pagination.ts",
+      "types": "./dist/sdk/core/pagination.d.ts",
+      "default": "./dist/sdk/core/pagination.js"
+    },
+    "./sdk/core/carousel": {
+      "@org/source": "./src/sdk/core/carousel.ts",
+      "types": "./dist/sdk/core/carousel.d.ts",
+      "default": "./dist/sdk/core/carousel.js"
+    },
+    "./sdk/core/listbox": {
+      "@org/source": "./src/sdk/core/listbox.ts",
+      "types": "./dist/sdk/core/listbox.d.ts",
+      "default": "./dist/sdk/core/listbox.js"
+    },
+    "./sdk/core/tree": {
+      "@org/source": "./src/sdk/core/tree.ts",
+      "types": "./dist/sdk/core/tree.d.ts",
+      "default": "./dist/sdk/core/tree.js"
+    },
+    "./sdk/core/waterfall": {
+      "@org/source": "./src/sdk/core/waterfall.ts",
+      "types": "./dist/sdk/core/waterfall.d.ts",
+      "default": "./dist/sdk/core/waterfall.js"
+    },
+    "./sdk/core/async-options": {
+      "@org/source": "./src/sdk/core/async-options.ts",
+      "types": "./dist/sdk/core/async-options.d.ts",
+      "default": "./dist/sdk/core/async-options.js"
+    },
+    "./sdk/core/text-match": {
+      "@org/source": "./src/sdk/core/text-match.ts",
+      "types": "./dist/sdk/core/text-match.d.ts",
+      "default": "./dist/sdk/core/text-match.js"
+    },
+    "./sdk/core/date": {
+      "@org/source": "./src/sdk/core/date.ts",
+      "types": "./dist/sdk/core/date.d.ts",
+      "default": "./dist/sdk/core/date.js"
+    },
+    "./sdk/core/number": {
+      "@org/source": "./src/sdk/core/number.ts",
+      "types": "./dist/sdk/core/number.d.ts",
+      "default": "./dist/sdk/core/number.js"
+    },
+    "./sdk/core/date-input": {
+      "@org/source": "./src/sdk/core/date-input.ts",
+      "types": "./dist/sdk/core/date-input.d.ts",
+      "default": "./dist/sdk/core/date-input.js"
+    },
+    "./sdk/core/time-input": {
+      "@org/source": "./src/sdk/core/time-input.ts",
+      "types": "./dist/sdk/core/time-input.d.ts",
+      "default": "./dist/sdk/core/time-input.js"
+    },
+    "./sdk/core/timeline": {
+      "@org/source": "./src/sdk/core/timeline.ts",
+      "types": "./dist/sdk/core/timeline.d.ts",
+      "default": "./dist/sdk/core/timeline.js"
+    },
+    "./sdk/core/color": {
+      "@org/source": "./src/sdk/core/color.ts",
+      "types": "./dist/sdk/core/color.d.ts",
+      "default": "./dist/sdk/core/color.js"
+    },
+    "./sdk/core/image": {
+      "@org/source": "./src/sdk/core/image.ts",
+      "types": "./dist/sdk/core/image.d.ts",
+      "default": "./dist/sdk/core/image.js"
+    },
+    "./sdk/core/date-picker": {
+      "@org/source": "./src/sdk/core/date-picker.ts",
+      "types": "./dist/sdk/core/date-picker.d.ts",
+      "default": "./dist/sdk/core/date-picker.js"
+    },
+    "./sdk/core/agent": {
+      "@org/source": "./src/sdk/core/agent.ts",
+      "types": "./dist/sdk/core/agent.d.ts",
+      "default": "./dist/sdk/core/agent.js"
+    },
+    "./sdk/core/observe": {
+      "@org/source": "./src/sdk/core/observe.ts",
+      "types": "./dist/sdk/core/observe.d.ts",
+      "default": "./dist/sdk/core/observe.js"
+    },
+    "./sdk/core/history": {
+      "@org/source": "./src/sdk/core/history.ts",
+      "types": "./dist/sdk/core/history.d.ts",
+      "default": "./dist/sdk/core/history.js"
+    },
+    "./sdk/core/gesture": {
+      "@org/source": "./src/sdk/core/gesture.ts",
+      "types": "./dist/sdk/core/gesture.d.ts",
+      "default": "./dist/sdk/core/gesture.js"
+    },
+    "./sdk/core/renderer": {
+      "@org/source": "./src/sdk/core/renderer.ts",
+      "types": "./dist/sdk/core/renderer.d.ts",
+      "default": "./dist/sdk/core/renderer.js"
+    },
+    "./sdk/core/testing": {
+      "@org/source": "./src/sdk/core/testing.ts",
+      "types": "./dist/sdk/core/testing.d.ts",
+      "default": "./dist/sdk/core/testing.js"
+    },
+    "./sdk/core/web.css": "./dist/vendor/ui-sdk/core/web.css",
+    "./sdk/react/accordion": {
+      "@org/source": "./src/sdk/react/accordion.ts",
+      "types": "./dist/sdk/react/accordion.d.ts",
+      "default": "./dist/sdk/react/accordion.js"
+    },
+    "./sdk/react/alert-dialog": {
+      "@org/source": "./src/sdk/react/alert-dialog.ts",
+      "types": "./dist/sdk/react/alert-dialog.d.ts",
+      "default": "./dist/sdk/react/alert-dialog.js"
+    },
+    "./sdk/react/async-options": {
+      "@org/source": "./src/sdk/react/async-options.ts",
+      "types": "./dist/sdk/react/async-options.d.ts",
+      "default": "./dist/sdk/react/async-options.js"
+    },
+    "./sdk/react/autocomplete": {
+      "@org/source": "./src/sdk/react/autocomplete.ts",
+      "types": "./dist/sdk/react/autocomplete.d.ts",
+      "default": "./dist/sdk/react/autocomplete.js"
+    },
+    "./sdk/react/avatar": {
+      "@org/source": "./src/sdk/react/avatar.ts",
+      "types": "./dist/sdk/react/avatar.d.ts",
+      "default": "./dist/sdk/react/avatar.js"
+    },
+    "./sdk/react/button": {
+      "@org/source": "./src/sdk/react/button.ts",
+      "types": "./dist/sdk/react/button.d.ts",
+      "default": "./dist/sdk/react/button.js"
+    },
+    "./sdk/react/calendar": {
+      "@org/source": "./src/sdk/react/calendar.ts",
+      "types": "./dist/sdk/react/calendar.d.ts",
+      "default": "./dist/sdk/react/calendar.js"
+    },
+    "./sdk/react/carousel": {
+      "@org/source": "./src/sdk/react/carousel.ts",
+      "types": "./dist/sdk/react/carousel.d.ts",
+      "default": "./dist/sdk/react/carousel.js"
+    },
+    "./sdk/react/checkbox": {
+      "@org/source": "./src/sdk/react/checkbox.ts",
+      "types": "./dist/sdk/react/checkbox.d.ts",
+      "default": "./dist/sdk/react/checkbox.js"
+    },
+    "./sdk/react/collapsible": {
+      "@org/source": "./src/sdk/react/collapsible.ts",
+      "types": "./dist/sdk/react/collapsible.d.ts",
+      "default": "./dist/sdk/react/collapsible.js"
+    },
+    "./sdk/react/color": {
+      "@org/source": "./src/sdk/react/color.ts",
+      "types": "./dist/sdk/react/color.d.ts",
+      "default": "./dist/sdk/react/color.js"
+    },
+    "./sdk/react/color-picker": {
+      "@org/source": "./src/sdk/react/color-picker.ts",
+      "types": "./dist/sdk/react/color-picker.d.ts",
+      "default": "./dist/sdk/react/color-picker.js"
+    },
+    "./sdk/react/combobox": {
+      "@org/source": "./src/sdk/react/combobox.ts",
+      "types": "./dist/sdk/react/combobox.d.ts",
+      "default": "./dist/sdk/react/combobox.js"
+    },
+    "./sdk/react/command": {
+      "@org/source": "./src/sdk/react/command.ts",
+      "types": "./dist/sdk/react/command.d.ts",
+      "default": "./dist/sdk/react/command.js"
+    },
+    "./sdk/react/date": {
+      "@org/source": "./src/sdk/react/date.ts",
+      "types": "./dist/sdk/react/date.d.ts",
+      "default": "./dist/sdk/react/date.js"
+    },
+    "./sdk/react/date-input": {
+      "@org/source": "./src/sdk/react/date-input.ts",
+      "types": "./dist/sdk/react/date-input.d.ts",
+      "default": "./dist/sdk/react/date-input.js"
+    },
+    "./sdk/react/date-picker": {
+      "@org/source": "./src/sdk/react/date-picker.ts",
+      "types": "./dist/sdk/react/date-picker.d.ts",
+      "default": "./dist/sdk/react/date-picker.js"
+    },
+    "./sdk/react/dialog": {
+      "@org/source": "./src/sdk/react/dialog.ts",
+      "types": "./dist/sdk/react/dialog.d.ts",
+      "default": "./dist/sdk/react/dialog.js"
+    },
+    "./sdk/react/drawer": {
+      "@org/source": "./src/sdk/react/drawer.ts",
+      "types": "./dist/sdk/react/drawer.d.ts",
+      "default": "./dist/sdk/react/drawer.js"
+    },
+    "./sdk/react/field": {
+      "@org/source": "./src/sdk/react/field.ts",
+      "types": "./dist/sdk/react/field.d.ts",
+      "default": "./dist/sdk/react/field.js"
+    },
+    "./sdk/react/file-input": {
+      "@org/source": "./src/sdk/react/file-input.ts",
+      "types": "./dist/sdk/react/file-input.d.ts",
+      "default": "./dist/sdk/react/file-input.js"
+    },
+    "./sdk/react/gesture": {
+      "@org/source": "./src/sdk/react/gesture.ts",
+      "types": "./dist/sdk/react/gesture.d.ts",
+      "default": "./dist/sdk/react/gesture.js"
+    },
+    "./sdk/react/hover-card": {
+      "@org/source": "./src/sdk/react/hover-card.ts",
+      "types": "./dist/sdk/react/hover-card.d.ts",
+      "default": "./dist/sdk/react/hover-card.js"
+    },
+    "./sdk/react/image": {
+      "@org/source": "./src/sdk/react/image.ts",
+      "types": "./dist/sdk/react/image.d.ts",
+      "default": "./dist/sdk/react/image.js"
+    },
+    "./sdk/react/image-cropper": {
+      "@org/source": "./src/sdk/react/image-cropper.ts",
+      "types": "./dist/sdk/react/image-cropper.d.ts",
+      "default": "./dist/sdk/react/image-cropper.js"
+    },
+    "./sdk/react/input": {
+      "@org/source": "./src/sdk/react/input.ts",
+      "types": "./dist/sdk/react/input.d.ts",
+      "default": "./dist/sdk/react/input.js"
+    },
+    "./sdk/react/label": {
+      "@org/source": "./src/sdk/react/label.ts",
+      "types": "./dist/sdk/react/label.d.ts",
+      "default": "./dist/sdk/react/label.js"
+    },
+    "./sdk/react/listbox": {
+      "@org/source": "./src/sdk/react/listbox.ts",
+      "types": "./dist/sdk/react/listbox.d.ts",
+      "default": "./dist/sdk/react/listbox.js"
+    },
+    "./sdk/react/menu": {
+      "@org/source": "./src/sdk/react/menu.ts",
+      "types": "./dist/sdk/react/menu.d.ts",
+      "default": "./dist/sdk/react/menu.js"
+    },
+    "./sdk/react/menubar": {
+      "@org/source": "./src/sdk/react/menubar.ts",
+      "types": "./dist/sdk/react/menubar.d.ts",
+      "default": "./dist/sdk/react/menubar.js"
+    },
+    "./sdk/react/meter": {
+      "@org/source": "./src/sdk/react/meter.ts",
+      "types": "./dist/sdk/react/meter.d.ts",
+      "default": "./dist/sdk/react/meter.js"
+    },
+    "./sdk/react/navigation-menu": {
+      "@org/source": "./src/sdk/react/navigation-menu.ts",
+      "types": "./dist/sdk/react/navigation-menu.d.ts",
+      "default": "./dist/sdk/react/navigation-menu.js"
+    },
+    "./sdk/react/number": {
+      "@org/source": "./src/sdk/react/number.ts",
+      "types": "./dist/sdk/react/number.d.ts",
+      "default": "./dist/sdk/react/number.js"
+    },
+    "./sdk/react/number-input": {
+      "@org/source": "./src/sdk/react/number-input.ts",
+      "types": "./dist/sdk/react/number-input.d.ts",
+      "default": "./dist/sdk/react/number-input.js"
+    },
+    "./sdk/react/otp-input": {
+      "@org/source": "./src/sdk/react/otp-input.ts",
+      "types": "./dist/sdk/react/otp-input.d.ts",
+      "default": "./dist/sdk/react/otp-input.js"
+    },
+    "./sdk/react/overlays": {
+      "@org/source": "./src/sdk/react/overlays.ts",
+      "types": "./dist/sdk/react/overlays.d.ts",
+      "default": "./dist/sdk/react/overlays.js"
+    },
+    "./sdk/react/pagination": {
+      "@org/source": "./src/sdk/react/pagination.ts",
+      "types": "./dist/sdk/react/pagination.d.ts",
+      "default": "./dist/sdk/react/pagination.js"
+    },
+    "./sdk/react/password-input": {
+      "@org/source": "./src/sdk/react/password-input.ts",
+      "types": "./dist/sdk/react/password-input.d.ts",
+      "default": "./dist/sdk/react/password-input.js"
+    },
+    "./sdk/react/popover": {
+      "@org/source": "./src/sdk/react/popover.ts",
+      "types": "./dist/sdk/react/popover.d.ts",
+      "default": "./dist/sdk/react/popover.js"
+    },
+    "./sdk/react/primitive": {
+      "@org/source": "./src/sdk/react/primitive.ts",
+      "types": "./dist/sdk/react/primitive.d.ts",
+      "default": "./dist/sdk/react/primitive.js"
+    },
+    "./sdk/react/preferences": {
+      "@org/source": "./src/sdk/react/preferences.ts",
+      "types": "./dist/sdk/react/preferences.d.ts",
+      "default": "./dist/sdk/react/preferences.js"
+    },
+    "./sdk/react/progress": {
+      "@org/source": "./src/sdk/react/progress.ts",
+      "types": "./dist/sdk/react/progress.d.ts",
+      "default": "./dist/sdk/react/progress.js"
+    },
+    "./sdk/react/radio": {
+      "@org/source": "./src/sdk/react/radio.ts",
+      "types": "./dist/sdk/react/radio.d.ts",
+      "default": "./dist/sdk/react/radio.js"
+    },
+    "./sdk/react/rating": {
+      "@org/source": "./src/sdk/react/rating.ts",
+      "types": "./dist/sdk/react/rating.d.ts",
+      "default": "./dist/sdk/react/rating.js"
+    },
+    "./sdk/react/resizable": {
+      "@org/source": "./src/sdk/react/resizable.ts",
+      "types": "./dist/sdk/react/resizable.d.ts",
+      "default": "./dist/sdk/react/resizable.js"
+    },
+    "./sdk/react/scroll-area": {
+      "@org/source": "./src/sdk/react/scroll-area.ts",
+      "types": "./dist/sdk/react/scroll-area.d.ts",
+      "default": "./dist/sdk/react/scroll-area.js"
+    },
+    "./sdk/react/segmented-control": {
+      "@org/source": "./src/sdk/react/segmented-control.ts",
+      "types": "./dist/sdk/react/segmented-control.d.ts",
+      "default": "./dist/sdk/react/segmented-control.js"
+    },
+    "./sdk/react/select": {
+      "@org/source": "./src/sdk/react/select.ts",
+      "types": "./dist/sdk/react/select.d.ts",
+      "default": "./dist/sdk/react/select.js"
+    },
+    "./sdk/react/separator": {
+      "@org/source": "./src/sdk/react/separator.ts",
+      "types": "./dist/sdk/react/separator.d.ts",
+      "default": "./dist/sdk/react/separator.js"
+    },
+    "./sdk/react/shortcuts": {
+      "@org/source": "./src/sdk/react/shortcuts.ts",
+      "types": "./dist/sdk/react/shortcuts.d.ts",
+      "default": "./dist/sdk/react/shortcuts.js"
+    },
+    "./sdk/react/slider": {
+      "@org/source": "./src/sdk/react/slider.ts",
+      "types": "./dist/sdk/react/slider.d.ts",
+      "default": "./dist/sdk/react/slider.js"
+    },
+    "./sdk/react/switch": {
+      "@org/source": "./src/sdk/react/switch.ts",
+      "types": "./dist/sdk/react/switch.d.ts",
+      "default": "./dist/sdk/react/switch.js"
+    },
+    "./sdk/react/tabs": {
+      "@org/source": "./src/sdk/react/tabs.ts",
+      "types": "./dist/sdk/react/tabs.d.ts",
+      "default": "./dist/sdk/react/tabs.js"
+    },
+    "./sdk/react/text-match": {
+      "@org/source": "./src/sdk/react/text-match.ts",
+      "types": "./dist/sdk/react/text-match.d.ts",
+      "default": "./dist/sdk/react/text-match.js"
+    },
+    "./sdk/react/agent": {
+      "@org/source": "./src/sdk/react/agent.ts",
+      "types": "./dist/sdk/react/agent.d.ts",
+      "default": "./dist/sdk/react/agent.js"
+    },
+    "./sdk/react/observe": {
+      "@org/source": "./src/sdk/react/observe.ts",
+      "types": "./dist/sdk/react/observe.d.ts",
+      "default": "./dist/sdk/react/observe.js"
+    },
+    "./sdk/react/history": {
+      "@org/source": "./src/sdk/react/history.ts",
+      "types": "./dist/sdk/react/history.d.ts",
+      "default": "./dist/sdk/react/history.js"
+    },
+    "./sdk/react/textarea": {
+      "@org/source": "./src/sdk/react/textarea.ts",
+      "types": "./dist/sdk/react/textarea.d.ts",
+      "default": "./dist/sdk/react/textarea.js"
+    },
+    "./sdk/react/time-input": {
+      "@org/source": "./src/sdk/react/time-input.ts",
+      "types": "./dist/sdk/react/time-input.d.ts",
+      "default": "./dist/sdk/react/time-input.js"
+    },
+    "./sdk/react/timeline": {
+      "@org/source": "./src/sdk/react/timeline.ts",
+      "types": "./dist/sdk/react/timeline.d.ts",
+      "default": "./dist/sdk/react/timeline.js"
+    },
+    "./sdk/react/toast": {
+      "@org/source": "./src/sdk/react/toast.ts",
+      "types": "./dist/sdk/react/toast.d.ts",
+      "default": "./dist/sdk/react/toast.js"
+    },
+    "./sdk/react/toggle": {
+      "@org/source": "./src/sdk/react/toggle.ts",
+      "types": "./dist/sdk/react/toggle.d.ts",
+      "default": "./dist/sdk/react/toggle.js"
+    },
+    "./sdk/react/token-input": {
+      "@org/source": "./src/sdk/react/token-input.ts",
+      "types": "./dist/sdk/react/token-input.d.ts",
+      "default": "./dist/sdk/react/token-input.js"
+    },
+    "./sdk/react/toolbar": {
+      "@org/source": "./src/sdk/react/toolbar.ts",
+      "types": "./dist/sdk/react/toolbar.d.ts",
+      "default": "./dist/sdk/react/toolbar.js"
+    },
+    "./sdk/react/tooltip": {
+      "@org/source": "./src/sdk/react/tooltip.ts",
+      "types": "./dist/sdk/react/tooltip.d.ts",
+      "default": "./dist/sdk/react/tooltip.js"
+    },
+    "./sdk/react/tree": {
+      "@org/source": "./src/sdk/react/tree.ts",
+      "types": "./dist/sdk/react/tree.d.ts",
+      "default": "./dist/sdk/react/tree.js"
+    },
+    "./sdk/react/trigger-menu": {
+      "@org/source": "./src/sdk/react/trigger-menu.ts",
+      "types": "./dist/sdk/react/trigger-menu.d.ts",
+      "default": "./dist/sdk/react/trigger-menu.js"
+    },
+    "./sdk/react/waterfall": {
+      "@org/source": "./src/sdk/react/waterfall.ts",
+      "types": "./dist/sdk/react/waterfall.d.ts",
+      "default": "./dist/sdk/react/waterfall.js"
     }
   },
   "dependencies": {
@@ -1200,8 +1968,6 @@
     "@tiptap/pm": "3.30.5",
     "@tiptap/react": "3.30.5",
     "@tiptap/starter-kit": "3.30.5",
-    "@ui-sdk/core": "workspace:@brett_lamy/ui-sdk-core@*",
-    "@ui-sdk/react": "workspace:@brett_lamy/ui-sdk-react@*",
     "@vscode/codicons": "0.0.46-24",
     "@wterm/dom": "0.5.8",
     "@wterm/ghostty": "0.5.8",
@@ -1228,6 +1994,7 @@
     "@brett_lamy/viz-engine": ">=0.2.0",
     "@electric-sql/pglite": "^0.5.8",
     "@electric-sql/pglite-tools": "^0.4.8",
+    "@types/react": ">=19.2.10",
     "elkjs": "^0.12.1",
     "react": "^19",
     "react-dom": "^19",
@@ -1250,6 +2017,9 @@
     "@electric-sql/pglite-tools": {
       "optional": true
     },
+    "@types/react": {
+      "optional": true
+    },
     "elkjs": {
       "optional": true
     },
@@ -1260,8 +2030,8 @@
       "optional": true
     }
   },
-  "description": "iOS-flavored React components on UI SDK, Tailwind v4 and cva: adaptive containers (SplitView, NavigationStack, Credenza), lists, tokens, Composer, PencilKit, and Docstream (a GitBook-flavored Markdown and AI-stream renderer, @brett_lamy/ui/docstream) with its editor (@brett_lamy/ui/docstream-editor). Also a shadcn registry (source-copy items and app blocks).",
-  "license": "MIT",
+  "description": "iOS-flavored React components on UI SDK, Tailwind v4 and cva, as one package of libraries: the core at the root (NavigationStack, SplitView, Dialog flows, lists, tokens) and an entry per library (@brett_lamy/ui/audio, /video, /diagram, /time, /markdown, /composer, /docstream, /docstream-editor, …). UI SDK is inside (@brett_lamy/ui/sdk/…). Also a shadcn registry: every part and every library installs as source.",
+  "license": "MIT AND Apache-2.0",
   "sideEffects": [
     "*.css"
   ],
@@ -1284,7 +2054,10 @@
     "components",
     "docstream",
     "markdown",
-    "gitbook"
+    "gitbook",
+    "diagram",
+    "audio",
+    "video"
   ],
   "devDependencies": {
     "@agent-wasm/core": "0.4.0",
@@ -1294,6 +2067,9 @@
     "@electric-sql/pglite-tools": "0.4.8",
     "@testing-library/dom": "^10.4.2",
     "@testing-library/react": "^16.3.3",
+    "@types/react": "^19.2.10",
+    "@ui-sdk/core": "workspace:@brett_lamy/ui-sdk-core@*",
+    "@ui-sdk/react": "workspace:@brett_lamy/ui-sdk-react@*",
     "elkjs": "0.12.1",
     "fake-indexeddb": "^6.2.5",
     "happy-dom": "^20.14.5",

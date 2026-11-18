@@ -8,7 +8,7 @@
    ⌘K palette · ⌘J Ask QA · ⇧⌘↵ start a run · ⇧⌘C copy open bug reports · ⇧⌘L light/dark · ⌘. change status of
    the open bug. */
 import { useState, type CSSProperties, type ReactNode } from 'react';
-import { useShortcut } from '@ui-sdk/react/shortcuts';
+import { useShortcut } from '@brett_lamy/ui/sdk/react/shortcuts';
 import { Swap } from '@/components/ui/swap';
 import {
   CommandMenu, CommandMenuDialog, CommandMenuDialogContent, CommandMenuEmpty, CommandMenuFooter, CommandMenuGroup, CommandMenuGroupLabel,

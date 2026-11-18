@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
-import { bindHold, bindRepeat } from '@ui-sdk/core';
+import { bindHold, bindRepeat } from '@brett_lamy/ui/sdk/core';
 import { Icon } from '@/lib/icon';
 
 /** The latest callback, for a binding made once on mount. */

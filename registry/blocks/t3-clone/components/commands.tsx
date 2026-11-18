@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useShortcut } from '@ui-sdk/react/shortcuts';
+import { useShortcut } from '@brett_lamy/ui/sdk/react/shortcuts';
 import { type Appearance } from '@/lib/theme';
 import { useWorkbenchShell } from './workbench/workbench-shell';
 import { CommandPalette } from './command-palette';

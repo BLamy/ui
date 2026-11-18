@@ -17,9 +17,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { usePersistentState } from '@/lib/persistent-state';
 import { createCommandMenuController, type CommandMenuController } from '@/components/ui/command-menu';
-import { Button as SdkButton } from '@ui-sdk/react/button';
+import { Button as SdkButton } from '@brett_lamy/ui/sdk/react/button';
 import { ToastRegion, createHud, type ToastHud } from '@/components/ui/toast';
-import { useShortcut } from '@ui-sdk/react/shortcuts';
+import { useShortcut } from '@brett_lamy/ui/sdk/react/shortcuts';
 import { useContainerSize } from '@/lib/container';
 import { usePresence } from '@/lib/presence';
 import { sizeClassOf } from '@/lib/size-class';

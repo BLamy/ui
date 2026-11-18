@@ -4,7 +4,7 @@
    (or tabbing to it) shows the list's one hover card: the component drawn as it's inserted, where it comes from, and its props,
    events and slots (previews.tsx). Pressing closes it, so it's never over the canvas a drag is aiming at. */
 import { useMemo, useState, type PointerEvent, type RefObject } from 'react';
-import { bindDrag, dragThreshold } from '@ui-sdk/core';
+import { bindDrag, dragThreshold } from '@brett_lamy/ui/sdk/core';
 import { createHoverCardController, HoverCard, HoverCardContent, HoverCardTrigger, type HoverCardController } from '@/components/ui/hover-card';
 import { SearchInput } from '@/components/ui/search-input';
 import { Icon } from '@/lib/icon';

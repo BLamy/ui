@@ -1,5 +1,5 @@
-import { DialogClose, DialogContent } from '@ui-sdk/react/dialog';
-import { Toggle as SdkToggle, ToggleGroup } from '@ui-sdk/react/toggle';
+import { DialogClose, DialogContent } from '@brett_lamy/ui/sdk/react/dialog';
+import { Toggle as SdkToggle, ToggleGroup } from '@brett_lamy/ui/sdk/react/toggle';
 import { Dialog } from '@/components/ui/dialog';
 import { type Appearance } from '@/lib/theme';
 import { cn } from '@/lib/utils';

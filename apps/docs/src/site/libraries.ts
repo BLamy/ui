@@ -1,15 +1,17 @@
-/* The BL libraries: what is on npm today, and what @brett_lamy/ui splits into. This manifest is the single source for
-   the site's Libraries menu, the library pages, the roadmap's package and module maps, and the release placeholders
-   (tools/release/placeholders.mjs). `modules` lists the units of packages/ui/src that move into a planned package;
-   libraries.test.ts checks the plan against the real imports: every unit has exactly one home, no library imports
-   from one it doesn't build on, and no two npm packages would need each other.
+/* The BL libraries: one npm package, `@brett_lamy/ui`, and the libraries inside it. Every library is a subpath of the
+   package (`@brett_lamy/ui/audio`, `@brett_lamy/ui/markdown`, `@brett_lamy/ui/sdk/react/dialog`) and a set of items in
+   the shadcn registry, so an app installs one package, or copies source, and bundles only the entries it imports.
+   This manifest is the single source for the site's Libraries menu, the library pages, the roadmap's package and module
+   maps, and for the entries themselves: tools/registry/package-exports.mjs reads `entry` and `modules` and writes
+   packages/ui/src/libraries/<entry>.ts, the package's `exports`, and one registry item per library.
 
-   Since 2026-11-16 docstream and docstream-editor are part of @brett_lamy/ui (the owner's decision): they ship as the
-   library's entries (`@brett_lamy/ui/docstream/<entry>`, `@brett_lamy/ui/docstream-editor/<entry>`), and their own npm
-   packages stop at 2.0.1. They stay libraries here, with their own docs, because they are one: the core never needs
-   them to draw a button, and they import only the foundation (Tokens, Icons) and, through the package's own entries,
-   the few core modules SPLIT_CHANGES lists (the capnp fence's lazy `@brett_lamy/ui/cloudflare`, the xstate fence's
-   readers), each of which the split replaces with an optional peer or a dependency (CONVENTIONS rule 7).
+   `modules` lists the units of packages/ui/src a library owns; the core (`ui`) owns every unit no other library
+   lists. libraries.test.ts checks the plan against the real imports: every unit has exactly one home, and no library
+   imports from one it doesn't build on, but for the lazy links in LAYER_EXCEPTIONS.
+
+   Docstream and docstream-editor were packages of their own until 2.0.1; since 6.0 they are libraries here like the
+   rest (`@brett_lamy/ui/docstream/<entry>`, `@brett_lamy/ui/docstream-editor/<entry>`). UI SDK, the behavior layer,
+   is inside the package too: our build of the `vendor/ui-sdk` submodule, at `@brett_lamy/ui/sdk/…`.
 
    `external` is every npm package a library's own modules import that the libraries it builds on don't already
    bring, marked "(optional peer)" when @brett_lamy/ui declares it one; libraries.test.ts checks both.
@@ -17,9 +19,9 @@
    Node reads this file too (type stripping), so it holds only erasable TypeScript: no enums, type-only imports. */
 import type { IconName } from '@/lib/icon';
 
-export type Category = 'foundation' | 'ui' | 'content' | 'data' | 'platform';
-/** `live`: on npm — a package of its own, or entries of one (`partOf`). `new`: published for the first time with 6.0.
-    `planned`: its code is in @brett_lamy/ui today, and gets a package of its own in the split. */
+export type Category = 'foundation' | 'ui' | 'content' | 'data' | 'sandboxing' | 'platform';
+/** `live`: on npm before 6.0, as `@brett_lamy/ui` or under a name of its own (docstream). `new`: an entry of
+    `@brett_lamy/ui` that 6.0 adds. `planned`: not shipped yet. */
 export type Status = 'live' | 'new' | 'planned';
 
 export const STATUS_LABEL: Record<Status, string> = { live: 'On npm', new: 'New in 6.0', planned: 'Planned' };
@@ -27,17 +29,22 @@ export const STATUS_LABEL: Record<Status, string> = { live: 'On npm', new: 'New 
 export interface Library {
   id: string;
   name: string;
-  /** What an app imports: the package, or for a library that ships inside another, its entry. */
+  /** What an app imports: the package, or the library's entry of it. */
   npm: string;
   category: Category;
   status: Status;
   icon: IconName;
   tagline: string;
   description: string;
-  /** The library whose npm package carries this one (docstream ships in `ui`). */
+  /** The library whose npm package carries this one: `ui`, for every library but the core itself. */
   partOf?: string;
-  /** The npm packages it publishes, when that's more than `npm` (the UI SDK wrappers are two). */
-  packages?: string[];
+  /** The generated entry that gathers the library: `@brett_lamy/ui/<entry>` re-exports every module of `modules`
+      that has an entry of its own (packages/ui/src/libraries/<entry>.ts). Also the name of its registry item,
+      `library-<entry>`, which installs all of them with the shadcn CLI. */
+  entry?: string;
+  /** Other entries of the package that belong to the library, kept apart for their size or their peers
+      (`cloudflare` beside Diagram). */
+  alsoAt?: string[];
   /** Packages this library used to be published as, frozen at their last version. */
   formerly?: Array<{ npm: string; last: string }>;
   /** The docs' route (`#/<docs>`), for libraries with docs. */
@@ -46,8 +53,8 @@ export interface Library {
   dependsOn: string[];
   /** npm packages it brings (beyond react). */
   external?: string[];
-  /** For planned libraries: the units of packages/ui/src that move here. A trailing `*` takes every unit that starts
-      with what comes before it (`lib/diagram-*`). */
+  /** The units of packages/ui/src the library owns. A trailing `*` takes every unit that starts with what comes
+      before it (`lib/diagram-*`). */
   modules?: string[];
   /** What it's for, in a few lines. */
   highlights: string[];
@@ -59,21 +66,22 @@ export const CATEGORIES: Array<{ id: Category; label: string; tone: 1 | 2 | 3 | 
   { id: 'ui', label: 'UI', tone: 1 },
   { id: 'content', label: 'Content & AI', tone: 3 },
   { id: 'data', label: 'Data & state', tone: 4 },
-  { id: 'platform', label: 'Platform & tooling', tone: 5 },
+  { id: 'sandboxing', label: 'Sandboxing', tone: 5 },
+  // Six groups, five chart tones: the last group shares the first's, at the other end of every list.
+  { id: 'platform', label: 'Platform & tooling', tone: 2 },
 ];
 
 export const LIBRARIES: Library[] = [
   /* ── Foundation ─────────────────────────────────────────────────────────────────────────────── */
   {
-    id: 'ui-sdk', name: 'UI SDK', npm: '@brett_lamy/ui-sdk-react', category: 'foundation', status: 'new', icon: 'layers',
-    packages: ['@brett_lamy/ui-sdk-core', '@brett_lamy/ui-sdk-react'],
-    tagline: 'The behavior layer: our fork of UI SDK, as two packages.',
-    description: 'Every interactive part of the kit is a UI SDK part: keyboard, focus, selection, dismissal, popups, drag and drop and ARIA come from it. We build our fork (vendor/ui-sdk, upstream plus layer hosts, `bindLayer`\'s `when` and an exported `SlotProps`) into @brett_lamy/ui-sdk-core and @brett_lamy/ui-sdk-react, and import them under upstream\'s names, `@ui-sdk/core` and `@ui-sdk/react`, through npm aliases. They publish with @brett_lamy/ui 6.0, which depends on them.',
+    id: 'ui-sdk', name: 'UI SDK', npm: '@brett_lamy/ui/sdk', partOf: 'ui', category: 'foundation', status: 'new', icon: 'layers',
+    tagline: 'The behavior layer: our build of UI SDK, inside the package.',
+    description: 'Every interactive part of the kit is a UI SDK part: keyboard, focus, selection, dismissal, popups, drag and drop and ARIA come from it. The package carries its own build of UI SDK (the `vendor/ui-sdk` submodule: upstream plus layer hosts, `bindLayer`\'s `when` and an exported `SlotProps`), so there is nothing else to install and one copy of its focus and layer state in the page. Wherever UI SDK\'s docs say `@ui-sdk/…`, write `@brett_lamy/ui/sdk/…`: `@brett_lamy/ui/sdk/core`, `@brett_lamy/ui/sdk/react/dialog`.',
     dependsOn: [],
-    highlights: ['`@ui-sdk/react/<part>`: Dialog, Menu, Select, Tabs, Toolbar, Tree…', 'Layer hosts: popups that stay inside a framed app', 'Upstream\'s API, three small additions, nothing else'],
+    highlights: ['`@brett_lamy/ui/sdk/react/<part>`: Dialog, Menu, Select, Tabs, Toolbar, Tree…', 'Layer hosts: popups that stay inside a framed app', 'Upstream\'s API, three small additions, nothing else'],
   },
   {
-    id: 'tokens', name: 'Tokens', npm: '@brett_lamy/tokens', category: 'foundation', status: 'planned', icon: 'drop',
+    id: 'tokens', name: 'Tokens', npm: '@brett_lamy/ui/tokens', partOf: 'ui', entry: 'tokens', category: 'foundation', status: 'new', icon: 'drop',
     tagline: 'Design tokens, themes, size classes and the class helpers everything else uses.',
     description: 'The single source of color, type, radius, shadow and spring timing: tokens.css generates its TypeScript twin, the bl-theme maps it onto Tailwind v4, and BLProvider, ThemeScope and `appearance` retint any subtree. The size-class scope (`compact` / `medium` / `regular`, measured on a container, never the viewport) lives here too, because the providers are what measure it, and so does syntax lexing, whose token classes the shared syntax palette colors: gpu-lexer behind one queue and adapter probe, with the synchronous lexer as its fallback (CodeEditor, docstream\'s fences, the editor and the replay DevTools all lex through it). The change details every kit callback hands out (`changeDetails`) are here too.',
     dependsOn: ['ui-sdk'], external: ['clsx', 'tailwind-merge', 'class-variance-authority', 'gpu-lexer'],
@@ -81,7 +89,7 @@ export const LIBRARIES: Library[] = [
     highlights: ['tokens.css → tokens.generated.ts, one source of truth', 'BLProvider, ThemeScope, `appearance` and `tint`', 'Size classes from a container\'s own box', '`cn`, `cx` and the shared focus and surface recipes'],
   },
   {
-    id: 'motion', name: 'Motion', npm: '@brett_lamy/motion', category: 'foundation', status: 'planned', icon: 'pulse',
+    id: 'motion', name: 'Motion', npm: '@brett_lamy/ui/motion', partOf: 'ui', entry: 'motion', category: 'foundation', status: 'new', icon: 'pulse',
     tagline: 'iOS springs, morphs, presence and the gestures that drive them.',
     description: 'The springs every transition uses and reduced-motion handling, presence (exit animations that finish before unmount), the morphing parts (TextMorph, NumberMorph, Morph, AnimatedHeight, Swap, Celebrate) and the gestures behind sheets and stacks: edge swipe, pull to refresh and the large-title flight.',
     dependsOn: ['tokens'], external: ['framer-motion'],
@@ -92,7 +100,7 @@ export const LIBRARIES: Library[] = [
     highlights: ['Springs matched to UIKit, `motion-reduce` everywhere', 'TextMorph, NumberMorph, Morph, AnimatedHeight, Swap', 'Edge swipe, pull to refresh, title flight'],
   },
   {
-    id: 'icons', name: 'Icons', npm: '@brett_lamy/icons', category: 'foundation', status: 'planned', icon: 'star',
+    id: 'icons', name: 'Icons', npm: '@brett_lamy/ui/icons', partOf: 'ui', entry: 'icons', category: 'foundation', status: 'new', icon: 'star',
     tagline: 'An SF Symbols–style icon set as typed React components.',
     description: 'Every glyph the kit draws, as one `<Icon name>` component with weights, aliases and search keywords, plus the chat, PencilKit, workbench and documents shape sets (the last drawn for docstream and its editor) and the file-type icons Tree uses. Icons animate between shapes, so they build on Motion.',
     dependsOn: ['tokens', 'motion'],
@@ -104,13 +112,13 @@ export const LIBRARIES: Library[] = [
   {
     id: 'ui', name: 'UI', npm: '@brett_lamy/ui', category: 'ui', status: 'live', icon: 'grid', docs: 'introduction',
     tagline: 'iOS-flavored components on UI SDK and Tailwind v4.',
-    description: 'The core: controls, fields and pickers, the popups (Dialog with its views, Sheet, Popover, DropdownMenu, Select, Combobox, Toast) and the containers that make an app feel native — NavigationStack, SplitView, Tabs, AdaptivePane, Sidebar, List, Toolbar, DataTable — plus the workbench and debugging parts, and MarkdownView and MarkdownEditor on docstream. Every module is its own entry (`@brett_lamy/ui/dialog`) and its own shadcn registry item. After the split it keeps this core, with docstream and its editor; the libraries beside it take the rest.',
-    dependsOn: ['ui-sdk', 'tokens', 'motion', 'icons', 'docstream', 'docstream-editor'],
+    description: 'The core, and the package every other library ships in: controls, fields and pickers, the popups (Dialog with its views, Sheet, Popover, DropdownMenu, Select, Combobox, Toast) and the containers that make an app feel native — NavigationStack, SplitView, Tabs, AdaptivePane, Sidebar, List, Toolbar, DataTable — plus the workbench and debugging parts. `@brett_lamy/ui` itself exports the core; every module is also its own entry (`@brett_lamy/ui/dialog`) and its own shadcn registry item.',
+    dependsOn: ['ui-sdk', 'tokens', 'motion', 'icons'],
     external: ['class-variance-authority', '@wterm/*', '@vscode/codicons'],
     highlights: ['NavigationStack, SplitView, Tabs, AdaptivePane, Sidebar, Dialog flows', 'One spelling per concept: `size`, `variant`, `tone`, `side`, `presentation`', 'Responsive by container: a sheet in a compact column, a popover in a wide one', 'Install from npm, or copy the source with the shadcn registry'],
   },
   {
-    id: 'time', name: 'Time', npm: '@brett_lamy/time', category: 'ui', status: 'planned', icon: 'calendar',
+    id: 'time', name: 'Time', npm: '@brett_lamy/ui/time', partOf: 'ui', entry: 'time', category: 'ui', status: 'new', icon: 'calendar',
     tagline: 'Dates, times and schedules: calendars, pickers and a cron editor.',
     description: 'Calendar, DateInput and DatePicker, NaturalTimeInput, which reads schedules written in plain English ("every weekday at 9am") and previews their next occurrences, and CronEditor, both on small in-browser parsers (gpu-time, gpu-cron).',
     dependsOn: ['ui'], external: ['gpu-time', 'gpu-cron', 'cronstrue'],
@@ -118,7 +126,7 @@ export const LIBRARIES: Library[] = [
     highlights: ['Calendar, DateInput, DatePicker with ranges', 'NaturalTimeInput: "every weekday at 9am" → occurrences', 'CronEditor with next runs and plain-English descriptions'],
   },
   {
-    id: 'canvas', name: 'Canvas', npm: '@brett_lamy/canvas', category: 'ui', status: 'planned', icon: 'pencil-tip',
+    id: 'canvas', name: 'Canvas', npm: '@brett_lamy/ui/canvas', partOf: 'ui', entry: 'canvas', category: 'ui', status: 'new', icon: 'pencil-tip',
     tagline: 'An infinite board and PencilKit drawing.',
     description: 'Canvas, a pannable, zoomable board with frames, handles, marquee selection, snapping guides and the geometry behind them, and PencilKit: pressure-aware ink, the tool palette, undo history and the annotator the Composer uses for images and screenshots.',
     dependsOn: ['ui'], external: ['perfect-freehand'],
@@ -126,23 +134,31 @@ export const LIBRARIES: Library[] = [
     highlights: ['Pan, zoom, select, resize, snap', 'PencilKit ink with the iPadOS tool palette', 'Annotate any image'],
   },
   {
-    id: 'diagram', name: 'Diagram', npm: '@brett_lamy/diagram', category: 'ui', status: 'planned', icon: 'network',
+    id: 'diagram', name: 'Diagram', npm: '@brett_lamy/ui/diagram', partOf: 'ui', entry: 'diagram', alsoAt: ['cloudflare'], category: 'ui', status: 'new', icon: 'network',
     tagline: 'Diagrams you can edit, state machines you can run, and Cloudflare systems.',
-    description: 'Diagram, an editable node-and-edge drawing on Canvas with automatic layout (elkjs) and keyboard editing; DiagramFrame, the editor chrome around it; StateDiagram, which draws an xstate machine, edits it and simulates it; and CloudflareDiagram with the Cloudflare catalog, which reads and writes wrangler and workerd configs. The catalog is about 150 KB, so it has an entry of its own (`@brett_lamy/ui/cloudflare` today).',
+    description: 'Diagram, an editable node-and-edge drawing on Canvas with automatic layout (elkjs) and keyboard editing; DiagramFrame, the editor chrome around it; StateDiagram, which draws an xstate machine, edits it and simulates it; and CloudflareDiagram with the Cloudflare catalog, which reads and writes wrangler and workerd configs. The catalog is about 150 KB, so CloudflareDiagram has an entry of its own, `@brett_lamy/ui/cloudflare`.',
     dependsOn: ['ui', 'canvas'], external: ['elkjs (optional peer)', 'xstate (optional peer)', 'jsonc-parser', '@babel/parser'],
     modules: ['components/diagram*', 'components/state-diagram.tsx', 'components/cloudflare-diagram.tsx', 'lib/diagram-*', 'lib/state-diagram-*', 'lib/cloudflare-*', 'lib/use-font-version.ts', 'cloudflare.ts'],
     highlights: ['Automatic layout, keyboard editing, a minimap', 'Run an xstate machine on its own diagram', 'Cloudflare systems from wrangler.jsonc and workerd configs'],
   },
   {
-    id: 'media', name: 'Media', npm: '@brett_lamy/media', category: 'ui', status: 'planned', icon: 'video',
-    tagline: 'Video, audio and session recording in the browser.',
-    description: 'VideoPreview and a multi-track VideoTimeline with an FFmpeg (WebAssembly) renderer, Waveform, Filmstrip and NowPlayingBars, and the rrweb session recorder whose recordings docstream\'s replay player plays back. The recorder writes to Sync\'s append-only streams, so a recording can follow you to another device.',
-    dependsOn: ['ui', 'sync'], external: ['rrweb'],
+    id: 'audio', name: 'Audio', npm: '@brett_lamy/ui/audio', partOf: 'ui', entry: 'audio', category: 'ui', status: 'new', icon: 'waveform',
+    tagline: 'Waveforms, a playback clock and live-coded music.',
+    description: 'Waveform, which draws any audio file and scrubs it, NowPlayingBars, the playback clock a player, a timeline and transport controls share (time, rate, loop, scrubbing, with no re-render per tick), and StrudelPlayer, docstream\'s Strudel widget as a component of its own.',
+    dependsOn: ['ui', 'docstream'],
+    modules: ['components/waveform.tsx', 'components/now-playing-bars.tsx', 'components/strudel-player.tsx', 'lib/playback.ts'],
+    highlights: ['Waveforms from any audio file', 'One playback clock for a player and its transport', 'StrudelPlayer: patterns you can edit while they play'],
+  },
+  {
+    id: 'video', name: 'Video', npm: '@brett_lamy/ui/video', partOf: 'ui', entry: 'video', category: 'ui', status: 'new', icon: 'video',
+    tagline: 'A video preview and a multi-track timeline that renders in the browser.',
+    description: 'VideoPreview and a multi-track VideoTimeline with an FFmpeg (WebAssembly) renderer, and Filmstrip, which draws a clip\'s frames. The timeline and the preview follow Audio\'s playback clock. FFmpeg loads only when a render starts, from files the app serves.',
+    dependsOn: ['ui', 'audio'],
     modules: [
-      'components/video-preview.tsx', 'components/video-timeline.tsx', 'components/waveform.tsx', 'components/filmstrip.tsx', 'components/now-playing-bars.tsx',
-      'lib/playback.ts', 'lib/video-timeline-model.ts', 'lib/video-timeline-primitive.ts', 'lib/video-render.ts', 'lib/ffmpeg/', 'lib/session-recorder.ts',
+      'components/video-preview.tsx', 'components/video-timeline.tsx', 'components/filmstrip.tsx',
+      'lib/video-timeline-model.ts', 'lib/video-timeline-primitive.ts', 'lib/video-render.ts', 'lib/ffmpeg/',
     ],
-    highlights: ['A timeline editor that renders with FFmpeg in a worker', 'Waveforms and filmstrips from any media file', 'Record sessions with rrweb, replay them in docstream'],
+    highlights: ['A timeline editor that renders with FFmpeg in a worker', 'Filmstrips from any video file', 'Preview and timeline on one clock'],
   },
 
   /* ── Content & AI ───────────────────────────────────────────────────────────────────────────── */
@@ -167,25 +183,41 @@ export const LIBRARIES: Library[] = [
     highlights: ['Edit what docstream renders, and save the same Markdown', 'Slash menu, paste, drag-and-drop files', 'Source-file editing for demos'],
   },
   {
-    id: 'composer', name: 'Composer', npm: '@brett_lamy/composer', category: 'content', status: 'planned', icon: 'bubble',
+    id: 'markdown', name: 'Markdown', npm: '@brett_lamy/ui/markdown', partOf: 'ui', entry: 'markdown', category: 'content', status: 'new', icon: 'doc-text',
+    tagline: 'MarkdownView and MarkdownEditor: docstream as two kit components.',
+    description: 'The short way to docstream: MarkdownView renders Markdown (and a streaming answer) with the kit\'s look, MarkdownEditor edits it in place with the kit\'s toolbar, and both take the kit\'s prop spellings. Two of docstream\'s fences also stand on their own here: StlViewer for 3D models and TuiPreview for terminal apps. Reach for Docstream itself when you need its blocks, DocsSite or the AST.',
+    dependsOn: ['ui', 'docstream', 'docstream-editor'],
+    modules: ['components/markdown-view.tsx', 'components/markdown-editor.tsx', 'components/stl-viewer.tsx', 'components/tui-preview.tsx'],
+    highlights: ['`<MarkdownView streaming>` for AI answers', '`<MarkdownEditor>` with a byte-stable round trip', 'StlViewer and TuiPreview outside a document'],
+  },
+  {
+    id: 'composer', name: 'Composer', npm: '@brett_lamy/ui/composer', partOf: 'ui', entry: 'composer', category: 'content', status: 'new', icon: 'bubble',
     tagline: 'The chat surfaces: prompt box, transcript and the chat beside an artifact.',
     description: 'Composer, the prompt box as parts (card, editor, attachments, pills, compact and floating), with Conversation, MessageScroller and ArtifactChatContainer (docked, or floating on a FloatingSheet): everything a chat UI needs around a model, none of the model.',
-    dependsOn: ['ui', 'canvas', 'docstream-editor'],
+    dependsOn: ['ui', 'canvas', 'markdown'],
     modules: ['components/composer/', 'components/conversation.tsx', 'components/message-scroller.tsx', 'components/artifact-chat-container.tsx', 'lib/message-scroller-context.ts', 'lib/message-scroller-primitive.ts'],
     highlights: ['A prompt box you assemble from parts', 'Transcripts that stay at the bottom while streaming', 'Docked or floating chat beside any artifact'],
+  },
+  {
+    id: 'replay', name: 'Replay', npm: '@brett_lamy/ui/replay', partOf: 'ui', entry: 'replay', category: 'content', status: 'new', icon: 'play-rectangle',
+    tagline: 'Record a session in the page, and play it back with DevTools.',
+    description: 'The rrweb session recorder, which writes a recording to Sync\'s append-only streams so it can follow you to another device, and ReplayPreview, docstream\'s replay player as a component of its own: the page as it was, with a timeline, console, network and an element inspector.',
+    dependsOn: ['docstream', 'sync'], external: ['rrweb'],
+    modules: ['lib/session-recorder.ts', 'components/replay-preview.tsx'],
+    highlights: ['Record with rrweb, one session per page load', 'ReplayPreview: timeline, console, network, inspector', 'Recordings sync across devices'],
   },
 
   /* ── Data & state ───────────────────────────────────────────────────────────────────────────── */
   {
-    id: 'sql', name: 'SQL', npm: '@brett_lamy/sql', category: 'data', status: 'planned', icon: 'table',
+    id: 'sql', name: 'SQL', npm: '@brett_lamy/ui/sql', partOf: 'ui', entry: 'sql', category: 'data', status: 'new', icon: 'table',
     tagline: 'A Postgres console for the browser.',
-    description: 'SqlConsole — editor, results, schema tree, history, import and export — on PGlite. Its results and history are the core\'s DataTable and its schema is a Tree, so the package is the console itself.',
+    description: 'SqlConsole — editor, results, schema tree, history, import and export — on PGlite. Its results and history are the core\'s DataTable and its schema is a Tree, so the library is the console itself.',
     dependsOn: ['ui', 'pglite'],
     modules: ['components/sql-console.tsx'],
     highlights: ['A full SQL console in one component', 'Typed result cells, CSV and JSON export', 'A schema browser on the database\'s own catalog'],
   },
   {
-    id: 'pglite', name: 'PGlite', npm: '@brett_lamy/pglite', category: 'data', status: 'planned', icon: 'internaldrive',
+    id: 'pglite', name: 'PGlite', npm: '@brett_lamy/ui/pglite', partOf: 'ui', entry: 'pglite', category: 'data', status: 'new', icon: 'internaldrive',
     tagline: 'Postgres in the tab, as React hooks.',
     description: 'Headless hooks and helpers around PGlite (Postgres compiled to WebAssembly): open a persistent database, read its schema, import and export dumps and files, detect what storage the browser offers, split SQL into statements, and keep a database to one writing tab with a Web Lock. The schema reader names an icon per object kind, so it builds on Icons.',
     dependsOn: ['icons'], external: ['@electric-sql/pglite (optional peer)', '@electric-sql/pglite-tools (optional peer)'],
@@ -193,7 +225,7 @@ export const LIBRARIES: Library[] = [
     highlights: ['`usePGlite` with IndexedDB or OPFS persistence', 'Dumps, archives and file import', 'No UI: bring your own, or use SQL'],
   },
   {
-    id: 'filter', name: 'Filter', npm: '@brett_lamy/filter', category: 'data', status: 'planned', icon: 'filter-circle',
+    id: 'filter', name: 'Filter', npm: '@brett_lamy/ui/filter', partOf: 'ui', entry: 'filter', category: 'data', status: 'new', icon: 'filter-circle',
     tagline: 'Filter bars, and filters you can type in plain English.',
     description: 'Filter — chips for fields, operators, dates and options on the kit\'s Toolbar — and FilterInput, which turns "open bugs from last week" into those chips with a small WebGPU model (gpu-query). The model never sees your field names: it reads a schema built from their labels and options.',
     dependsOn: ['ui'],
@@ -201,7 +233,7 @@ export const LIBRARIES: Library[] = [
     highlights: ['Linear-style filter chips', 'Natural-language filters on a WebGPU model', 'A typed filter model you can serialize'],
   },
   {
-    id: 'sync', name: 'Sync', npm: '@brett_lamy/sync', category: 'data', status: 'planned', icon: 'cloud',
+    id: 'sync', name: 'Sync', npm: '@brett_lamy/ui/sync', partOf: 'ui', entry: 'sync', category: 'data', status: 'new', icon: 'cloud',
     tagline: 'Local-first state that survives reloads and follows you across devices.',
     description: 'usePersistentState for small settings, append-only local streams in the browser, and the Durable Streams client that mirrors them to a server and reads other devices\' streams back. Off until a server URL is set: nothing leaves the browser by default.',
     dependsOn: [],
@@ -209,9 +241,29 @@ export const LIBRARIES: Library[] = [
     highlights: ['`usePersistentState`, typed and versioned', 'Append-only local streams', 'Cloud sync on Durable Streams'],
   },
 
+  /* ── Sandboxing ─────────────────────────────────────────────────────────────────────────────────
+     Two ways to run code a person or a model wrote, in the tab. The names say which to reach for: Sandbox is the
+     default for almost everyone; Linux VM is the heavy, experimental one for what Sandbox cannot do. Both are clients:
+     the package carries the API, and the runtime files (megabytes to gigabytes) are fetched by the frame at run time,
+     never part of the npm tarball. Planned: neither has an entry yet (the research and the API are in the roadmap). */
+  {
+    id: 'sandbox', name: 'Sandbox', npm: '@brett_lamy/ui/sandbox', partOf: 'ui', category: 'sandboxing', status: 'planned', icon: 'shield',
+    tagline: 'Run Node-compatible code, npm and a dev server in an isolated frame. Light, and the one to start with.',
+    description: 'The lightweight sandbox: a Node-compatible runtime in the browser (our fork of almostnode, BLamy/almostnode) with a virtual disk, a shell, git, npm installs and Vite or Next dev servers. It starts in under a megabyte, and the code runs in an isolated frame with an origin of its own, so it cannot read the page, its cookies or its storage. Almost everyone should use this one. The package will carry the client (`createSandbox`, `useSandbox`, `SandboxPreview`); the runtime is fetched when a sandbox starts, not installed with the package.',
+    dependsOn: ['ui'],
+    highlights: ['JavaScript, TypeScript, npm packages, a shell and git', 'Isolated: an origin of its own, no access to the page', 'Under 1 MB to start; dev servers with live previews', 'The default: reach for Linux VM only when this cannot do the job'],
+  },
+  {
+    id: 'linux-vm', name: 'Linux VM', npm: '@brett_lamy/ui/linux-vm', partOf: 'ui', category: 'sandboxing', status: 'planned', icon: 'cube',
+    tagline: 'A whole Linux computer in the tab. Heavy, slow and experimental: for what Sandbox cannot do.',
+    description: 'A RISC-V machine emulated in WebAssembly (BLamy/wasm-vm) that boots a real Linux kernel: BusyBox, Alpine, native binaries, compilers, container images. Use it only when Sandbox cannot do the job, because it costs a great deal more: it downloads from about 40 MB to several hundred, runs programs many times slower than native, has no preview URLs yet, and is not optimized. It will share Sandbox\'s API (`createLinuxVM` gives the same files and `run`), so an app can start on Sandbox and move by changing an import.',
+    dependsOn: ['sandbox'],
+    highlights: ['A real kernel: native binaries, `apk` packages, compilers', 'Same API as Sandbox: files, run, dispose', 'Heavy: tens to hundreds of megabytes, far slower than native', 'Experimental: not optimized, no previews yet'],
+  },
+
   /* ── Platform & tooling ─────────────────────────────────────────────────────────────────────── */
   {
-    id: 'vault', name: 'Vault', npm: '@brett_lamy/vault', category: 'platform', status: 'planned', icon: 'passkey',
+    id: 'vault', name: 'Vault', npm: '@brett_lamy/ui/vault', partOf: 'ui', entry: 'vault', category: 'platform', status: 'new', icon: 'passkey',
     tagline: 'Passkey-locked, end-to-end encrypted storage.',
     description: 'A vault whose key never leaves a passkey (WebAuthn PRF): encrypt and store secrets in the browser, unlock with Face ID or Touch ID, and gate any screen behind it with VaultGate, which carries its own enrollment flow.',
     dependsOn: ['ui'],
@@ -219,7 +271,7 @@ export const LIBRARIES: Library[] = [
     highlights: ['Keys derived from a passkey, never stored', 'VaultGate locks any subtree', 'Works offline'],
   },
   {
-    id: 'tailscale', name: 'Tailscale', npm: '@brett_lamy/tailscale', category: 'platform', status: 'planned', icon: 'vpn',
+    id: 'tailscale', name: 'Tailscale', npm: '@brett_lamy/ui/tailscale', partOf: 'ui', entry: 'tailscale', category: 'platform', status: 'new', icon: 'vpn',
     tagline: 'Reach your tailnet from a web page.',
     description: 'Join a tailnet from the browser (Tailscale compiled to WebAssembly), fetch from tailnet hosts, pick an exit node, and route a page\'s requests through a service worker — with the login and tailnet controls and an in-memory fake for tests.',
     dependsOn: ['ui'], external: ['@agent-wasm/tailscale-connect (optional peer)'],
@@ -227,19 +279,12 @@ export const LIBRARIES: Library[] = [
     highlights: ['`fetch` to tailnet hosts from a tab', 'A service-worker router for whole pages', 'A fake tailnet for tests'],
   },
   {
-    id: 'opencode', name: 'OpenCode', npm: '@brett_lamy/opencode', category: 'platform', status: 'planned', icon: 'terminal',
+    id: 'opencode', name: 'OpenCode', npm: '@brett_lamy/ui/opencode', partOf: 'ui', category: 'platform', status: 'new', icon: 'terminal',
     tagline: 'The OpenCode agent, running in the page.',
-    description: 'OpenCode in a component: its runtime in the browser (almost-node or agent-wasm), a preview of what it builds, and provider keys kept in a passkey Vault. It is already an entry of its own (`@brett_lamy/ui/opencode`), because the runtime is large.',
+    description: 'OpenCode in a component: its runtime in the browser (almost-node or agent-wasm), a preview of what it builds, and provider keys kept in a passkey Vault. Its entry, `@brett_lamy/ui/opencode`, is written by hand, because the runtime is large and loads only when the component mounts.',
     dependsOn: ['ui', 'vault'],
     modules: ['components/open-code.tsx', 'lib/open-code-*', 'opencode.ts'],
     highlights: ['A coding agent with no server of its own', 'Live preview of the app it writes', 'Keys locked behind a passkey'],
-  },
-  {
-    id: 'registry', name: 'Registry', npm: '@brett_lamy/registry', category: 'platform', status: 'planned', icon: 'cube',
-    tagline: 'Turn a component library into a shadcn registry.',
-    description: 'The build behind blamy.github.io/ui/r: one registry item per module, dependencies computed from real imports, hand-written manifests checked against the code, and theme items generated from your tokens — as a CLI for any library that imports itself through aliases. The app blocks stay a private, registry-only package.',
-    dependsOn: [], external: ['typescript'],
-    highlights: ['One item per module, dependencies from imports', 'Manifests checked against the code', '`--check` for CI'],
   },
 ];
 
@@ -251,8 +296,8 @@ export const categoryOf = (l: Library) => CATEGORY[l.category];
 
 /** The npm package a library ships in: its own, or its `partOf` library's. */
 export const packageOf = (l: Library): Library => (l.partOf ? LIBRARY[l.partOf] : l);
-/** Every npm package name the plan publishes (subpath entries aside). */
-export const packageNames = (l: Library): string[] => (l.partOf ? [] : (l.packages ?? [l.npm]));
+/** Every npm package name the plan publishes (subpath entries aside): one, the core's. */
+export const packageNames = (l: Library): string[] => (l.partOf ? [] : [l.npm]);
 
 /** Does a module pattern (`lib/diagram-*`, `components/composer/`, `cloudflare.ts`) take this unit? */
 export const takes = (pattern: string, unit: string) => (pattern.endsWith('*') ? unit.startsWith(pattern.slice(0, -1)) : unit === pattern);
@@ -265,22 +310,24 @@ export function reach(id: string, seen = new Set<string>()): Set<string> {
   return seen;
 }
 
-/** Code changes the split needs beyond moving files (each one an import the layering would otherwise forbid). */
-export const SPLIT_CHANGES: Array<{ unit: string; imports: string; change: string }> = [
+/** Imports that go against the layering, each loaded lazily, so the library below still works without the one above:
+    docstream sits under the core, and three of its fences draw with parts of Diagram, which sits over it. In one
+    package nothing has to be installed for them; the fence's module graph just grows when a document uses one. */
+export const LAYER_EXCEPTIONS: Array<{ unit: string; imports: string; why: string }> = [
   {
     unit: 'docstream/', imports: '@brett_lamy/ui/cloudflare',
-    change: 'Docstream\'s capnp fence draws a workerd config with CloudflareDiagram, which it loads lazily from `@brett_lamy/ui/cloudflare`. Docstream ships in @brett_lamy/ui and Diagram doesn\'t, so after the split the fence loads `@brett_lamy/diagram/cloudflare` as an optional peer, the way the viz fence loads `@brett_lamy/viz-engine`: without it the fence shows the config\'s source.',
+    why: 'Docstream\'s capnp fence draws a workerd config with CloudflareDiagram, which it loads lazily from `@brett_lamy/ui/cloudflare` when the first capnp fence shows. Until it has loaded, and if it cannot, the fence shows the config\'s source.',
   },
   {
     unit: 'docstream/', imports: '@brett_lamy/ui/lib/state-diagram-source',
-    change: 'Docstream\'s xstate fence writes its text form (the Mermaid statechart it shows where the diagram can\'t load) from a machine read by the kit\'s `parseXState`, so the fence and StateDiagram read a machine one way, in a module (`xstate/machine`) the fence loads lazily. Diagram builds on ui, so docstream (in ui) can\'t depend on it: after the split that module loads `@brett_lamy/diagram/state-diagram-source` (Babel only, no ELK) as an optional peer, as the capnp fence loads the Cloudflare entry. Without it the fence shows the machine\'s source.',
+    why: 'Docstream\'s xstate fence writes its text form (the Mermaid statechart it shows where the diagram can\'t load) from a machine read by the kit\'s `parseXState`, so the fence and StateDiagram read a machine one way, in a module (`xstate/machine`) the fence loads lazily (Babel only, no ELK).',
   },
   {
     unit: 'docstream/', imports: '@brett_lamy/ui/lib/state-diagram-model',
-    change: 'Docstream\'s xstate fence writes its text form from the kit\'s `machineToDraft`, so the fence and StateDiagram label a machine one way, in the same lazily loaded module. After the split it loads `@brett_lamy/diagram/state-diagram-model` (no React, no ELK) the same way, as an optional peer: no package of the split needs another both ways.',
+    why: 'Docstream\'s xstate fence writes its text form from the kit\'s `machineToDraft`, so the fence and StateDiagram label a machine one way, in the same lazily loaded module (no React, no ELK).',
   },
   {
     unit: 'docstream/', imports: '@brett_lamy/ui/state-diagram',
-    change: 'Docstream\'s xstate fence draws a machine with the kit\'s StateDiagram, read-only, which it loads lazily from `@brett_lamy/ui/state-diagram` when the first fence shows. Docstream ships in @brett_lamy/ui and Diagram doesn\'t, so after the split the fence loads `@brett_lamy/diagram/state-diagram` as an optional peer, the way the capnp fence loads `@brett_lamy/diagram/cloudflare`: without it the fence shows its text form, or the machine\'s source when that can\'t load either.',
+    why: 'Docstream\'s xstate fence draws a machine with the kit\'s StateDiagram, read-only, which it loads lazily from `@brett_lamy/ui/state-diagram` when the first fence shows. Without it the fence shows its text form, or the machine\'s source when that can\'t load either.',
   },
 ];

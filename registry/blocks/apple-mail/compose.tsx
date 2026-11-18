@@ -9,7 +9,7 @@ import { useSplitView } from '@/components/ui/split-view';
 import { TextMorph } from '@/components/ui/text-morph';
 import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
-import { Input } from '@ui-sdk/react/input';
+import { Input } from '@brett_lamy/ui/sdk/react/input';
 import { ME } from './data';
 import type { MailState } from './use-mail';
 

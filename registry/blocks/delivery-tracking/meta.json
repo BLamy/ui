@@ -13,7 +13,7 @@
   ],
   "dependencies": [
     "class-variance-authority",
-    "@ui-sdk/react",
-    "framer-motion"
+    "framer-motion",
+    "@brett_lamy/ui"
   ]
 }

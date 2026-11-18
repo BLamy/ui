@@ -1,13 +1,13 @@
 import * as React from 'react';
-import type { ChangeDetails } from '@ui-sdk/core';
-import { Collapsible, CollapsiblePanel, CollapsibleTrigger, type CollapsibleOpenChangeReason } from '@ui-sdk/react/collapsible';
-import { Input } from '@ui-sdk/react/input';
+import type { ChangeDetails } from '@brett_lamy/ui/sdk/core';
+import { Collapsible, CollapsiblePanel, CollapsibleTrigger, type CollapsibleOpenChangeReason } from '@brett_lamy/ui/sdk/react/collapsible';
+import { Input } from '@brett_lamy/ui/sdk/react/input';
 import { Icon, type IconName } from '@/lib/icon';
 import { cn } from '@/lib/utils';
 import { useOptionalWorkbenchShell } from './workbench/workbench-shell';
 import { Button as UiButton } from '@/components/ui/button';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
-import { Button } from '@ui-sdk/react/button';
+import { Button } from '@brett_lamy/ui/sdk/react/button';
 
 /* ══ Thread sidebar parts ══
    <ThreadSidebar>

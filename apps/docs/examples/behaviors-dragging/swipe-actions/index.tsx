@@ -8,8 +8,8 @@ import {
   type SwipeDraft,
   type SwipeOpen,
   type SwipeSide,
-} from '@ui-sdk/core';
-import { createParts, usePart, type PartProps } from '@ui-sdk/react/primitive';
+} from '@brett_lamy/ui/sdk/core';
+import { createParts, usePart, type PartProps } from '@brett_lamy/ui/sdk/react/primitive';
 import { Button } from '@/components/ui/button';
 
 type RowsState = { open: SwipeOpen | null; swiping: SwipeDraft | null; focused: string | null };

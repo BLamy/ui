@@ -6,7 +6,10 @@
     "developer", "git", "application"
   ],
   "dependencies": [
-    "@pierre/diffs", "isomorphic-git", "buffer", "@ui-sdk/react"
+    "@pierre/diffs",
+    "isomorphic-git",
+    "buffer",
+    "@brett_lamy/ui"
   ],
   "files": [
     "page.tsx", "sidebar.tsx", "file-column.tsx", "detail-column.tsx", "delete-dialog.tsx", "parts.tsx", "files.ts", "use-atlas.ts", "types.ts", "data.ts", "browser-source.ts", "git-fs.ts"

@@ -14,8 +14,6 @@
   "dependencies": {
     "@agent-wasm/core": "0.4.0",
     "@brett_lamy/ui": "workspace:*",
-    "@ui-sdk/core": "workspace:@brett_lamy/ui-sdk-core@*",
-    "@ui-sdk/react": "workspace:@brett_lamy/ui-sdk-react@*",
     "@visual-json/react": "0.4.0",
     "@visual-json/yaml": "0.4.0",
     "use-fs": "2.1.0"

@@ -1,5 +1,5 @@
 import { createContext, useContext, type ComponentProps, type ReactNode } from 'react';
-import { Button as SdkButton } from '@ui-sdk/react/button';
+import { Button as SdkButton } from '@brett_lamy/ui/sdk/react/button';
 import { Icon } from '@/lib/icon';
 import { cn, cx } from '@/lib/utils';
 import { useOptionalChatShell } from './chat-shell-context';

@@ -1,5 +1,5 @@
 import { useCallback, useLayoutEffect, useRef, useState, type ComponentProps, type ReactNode, type Ref } from 'react';
-import { createStickToBottom } from '@ui-sdk/core';
+import { createStickToBottom } from '@brett_lamy/ui/sdk/core';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';

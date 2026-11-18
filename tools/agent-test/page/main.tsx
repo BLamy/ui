@@ -3,7 +3,7 @@
    on `window.__state` for run.mjs's end-state check, which the model never sees. */
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import { createAgent } from '@ui-sdk/react/agent';
+import { createAgent } from '@brett_lamy/ui/sdk/react/agent';
 import { BLProvider } from '@/lib/theme';
 import '../../../packages/ui/src/styles.css';
 import { scenarios, store } from './scenarios';

@@ -1,8 +1,8 @@
 import * as React from 'react';
 import { useState } from 'react';
-import { Resizable, ResizableHandle, ResizablePanel } from '@ui-sdk/react/resizable';
-import { Toggle as ToggleButton, ToggleGroup, type ToggleGroupValueChangeReason } from '@ui-sdk/react/toggle';
-import type { ChangeDetails } from '@ui-sdk/core';
+import { Resizable, ResizableHandle, ResizablePanel } from '@brett_lamy/ui/sdk/react/resizable';
+import { Toggle as ToggleButton, ToggleGroup, type ToggleGroupValueChangeReason } from '@brett_lamy/ui/sdk/react/toggle';
+import type { ChangeDetails } from '@brett_lamy/ui/sdk/core';
 import { AdaptivePane, AdaptivePaneTrigger, createAdaptivePaneController, type AdaptivePaneController, type AdaptivePanePresentation } from '@/components/ui/adaptive-pane';
 import { FloatingSheet, FloatingSheetBody } from '@/components/ui/floating-sheet';
 import { SizeClassProvider, useSizeClass } from '@/lib/container';

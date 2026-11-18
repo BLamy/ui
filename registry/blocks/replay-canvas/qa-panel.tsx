@@ -4,7 +4,7 @@
    its target and bugs; on a test run, its journeys and how each one ended (each list shares one hover card). */
 import { useEffect, useMemo, useState } from 'react';
 import { HoverCard, HoverCardContent, HoverCardHeader, HoverCardTrigger, createHoverCardController } from '@/components/ui/hover-card';
-import { Button as SdkButton } from '@ui-sdk/react/button';
+import { Button as SdkButton } from '@brett_lamy/ui/sdk/react/button';
 import { SearchInput } from '@/components/ui/search-input';
 import { Spinner } from '@/components/ui/spinner';
 import { Icon } from '@/lib/icon';

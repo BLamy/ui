@@ -8,8 +8,8 @@ import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 
 import { DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Swap } from '@/components/ui/swap';
 import { Morph } from '@/components/ui/morph';
-import { Button as SdkButton } from '@ui-sdk/react/button';
-import { Toggle as SdkToggle } from '@ui-sdk/react/toggle';
+import { Button as SdkButton } from '@brett_lamy/ui/sdk/react/button';
+import { Toggle as SdkToggle } from '@brett_lamy/ui/sdk/react/toggle';
 import { Slider } from '@/components/ui/slider';
 import { Icon, type IconName } from '@/lib/icon';
 import { cn } from '@/lib/utils';

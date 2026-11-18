@@ -16,5 +16,5 @@
     "lib/data.ts",
     "lib/use-codex.ts"
   ],
-  "dependencies": ["@ui-sdk/core", "@ui-sdk/react"]
+  "dependencies": ["@brett_lamy/ui"]
 }

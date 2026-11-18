@@ -11,8 +11,8 @@ import {
   type MoveDraft,
   type MovePoint,
   type MoveReason,
-} from '@ui-sdk/core';
-import { createParts } from '@ui-sdk/react/primitive';
+} from '@brett_lamy/ui/sdk/core';
+import { createParts } from '@brett_lamy/ui/sdk/react/primitive';
 
 type BoardState = { positions: Record<string, MovePoint>; focused: string | null; moving: MoveDraft | null };
 type BoardOptions = {

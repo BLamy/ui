@@ -12,7 +12,7 @@
    - Drag the round handle on a selection (or ⌃-drag a node) to another scene for a segue, or from a container to
      embed the scene; drag a dock to move its scene; drag the entry arrow. */
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent } from 'react';
-import { dragThreshold } from '@ui-sdk/core';
+import { dragThreshold } from '@brett_lamy/ui/sdk/core';
 import { Canvas, CanvasFrame, CanvasGuides, CanvasMiniMap, useCanvas, type CanvasController, type CanvasPointerInfo, type CanvasViewportChangeDetails } from '@/components/ui/canvas';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuGroupLabel, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuContextTrigger } from '@/components/ui/dropdown-menu';
 import { snapMove, toBoard, type Guide, type Pt, type Rect, type Viewport } from '@/lib/canvas-math';

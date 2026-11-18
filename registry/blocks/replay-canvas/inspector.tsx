@@ -3,8 +3,8 @@
    draw the frame from it) and the segues in and out; a segue says what was clicked, where it led and in which
    recordings. Either way the recording itself plays below, in ReplayPreview, from that moment. */
 import type { ReactNode } from 'react';
-import { Button as SdkButton } from '@ui-sdk/react/button';
-import { Toggle as SdkToggle } from '@ui-sdk/react/toggle';
+import { Button as SdkButton } from '@brett_lamy/ui/sdk/react/button';
+import { Toggle as SdkToggle } from '@brett_lamy/ui/sdk/react/toggle';
 import { formatReplayTime } from '@brett_lamy/ui/docstream/replay';
 import { ReplayPreview } from '@/components/ui/replay-preview';
 import { Icon } from '@/lib/icon';

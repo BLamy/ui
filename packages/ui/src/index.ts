@@ -1,3 +1,18 @@
+/* The package root: the core, and the foundation it stands on (Tokens, Motion, Icons).
+ *
+ * Every other library is an entry of its own, so an app that imports the root never loads one it doesn't use:
+ *
+ *   @brett_lamy/ui/time      Calendar, DateInput, DatePicker, NaturalTimeInput, CronEditor
+ *   @brett_lamy/ui/canvas    Canvas, PencilKit            @brett_lamy/ui/diagram   Diagram, DiagramFrame, StateDiagram
+ *   @brett_lamy/ui/audio     Waveform, StrudelPlayer…     @brett_lamy/ui/video     VideoPreview, VideoTimeline, Filmstrip
+ *   @brett_lamy/ui/markdown  MarkdownView, MarkdownEditor @brett_lamy/ui/composer  Composer, Conversation…
+ *   @brett_lamy/ui/replay    ReplayPreview, the recorder  @brett_lamy/ui/filter    Filter, FilterInput
+ *   @brett_lamy/ui/sql       SqlConsole                   @brett_lamy/ui/pglite    the PGlite hooks
+ *   @brett_lamy/ui/sync      usePersistentState, streams  @brett_lamy/ui/vault     VaultGate, the passkey vault
+ *   @brett_lamy/ui/tailscale, /opencode, /cloudflare, /docstream, /docstream-editor, /sdk/… (UI SDK)
+ *
+ * and every module is an entry too (`@brett_lamy/ui/dialog`). The list of libraries is apps/docs/src/site/libraries.ts;
+ * tools/registry/build.mjs fails when this file re-exports a module that belongs to one of them. */
 import './styles.css';
 
 // lib
@@ -15,40 +30,6 @@ export type { NumberMorphProps } from './components/number-morph';
 export { Swap } from './components/swap';
 export type { SwapProps, SwapEffect } from './components/swap';
 export { AnimatedHeight } from './components/animated-height';
-export { Canvas, CanvasFrame, CanvasHandles, CanvasMarquee, CanvasGuides, CanvasMiniMap, canvasFrameVariants, useCanvas, createCanvasController } from './components/canvas';
-export type {
-  CanvasProps, CanvasPointerInfo, CanvasContextValue, CanvasController, CanvasFitOptions, CanvasInsets, CanvasViewportChangeDetails, CanvasViewportReason,
-  CanvasFrameProps, CanvasHandlesProps, CanvasMarqueeProps, CanvasGuidesProps, CanvasMiniMapProps, CanvasMiniMapItem, CanvasPointerLayer,
-} from './components/canvas';
-export {
-  Diagram, DiagramNodeBody, DiagramNodeHeader, DiagramSections, DiagramEntryMarker, DiagramToolbar, DiagramToolbarButton, useDiagram, useDiagramHistory, createDiagramController,
-  diagramEdgeVariants, diagramNodeVariants, diagramItemVariants, diagramEdgeLabelVariants,
-} from './components/diagram';
-export type {
-  DiagramProps, DiagramNodeBodyProps, DiagramNodeHeaderProps, DiagramSectionsProps, DiagramToolbarProps, DiagramToolbarButtonProps, DiagramContextValue, DiagramController, DiagramData, DiagramItem, DiagramNoun, DiagramActionDetails,
-  DiagramDataChangeDetails, DiagramDataChangeReason, DiagramSelectionChangeDetails, DiagramSelectionChangeReason,
-  DiagramHistory, DiagramHistoryChangeDetails, DiagramHistoryOptions, UseDiagramHistory,
-} from './components/diagram';
-export {
-  DiagramFrame, DiagramFrameBoard, DiagramFramePanel, DiagramFrameBar, DiagramFrameTrigger, DiagramFrameCover, DiagramFrameCoverHeader, DiagramFrameSection,
-  useDiagramFrame,
-} from './components/diagram-frame';
-export type {
-  DiagramFrameProps, DiagramFrameBoardProps, DiagramFramePanelProps, DiagramFrameBarProps, DiagramFrameTriggerProps, DiagramFrameCoverProps,
-  DiagramFrameCoverHeaderProps, DiagramFrameSectionProps,
-} from './components/diagram-frame';
-export { StateDiagram } from './components/state-diagram';
-export type { StateDiagramProps, StateDiagramConfigChangeDetails, StateDiagramConfigChangeReason } from './components/state-diagram';
-// The diagram's data types, which Diagram's props take; the operations on them are on `@brett_lamy/ui/lib/diagram-model`.
-export type {
-  DiagramConnection, DiagramEdge, DiagramEdgeTone, DiagramEdgeVariant, DiagramGlyph, DiagramNode, DiagramNodeKind, DiagramNodeVariant, DiagramPort,
-  DiagramSection, DiagramSectionItem, DiagramSelection, DiagramSide, DiagramTone,
-} from './lib/diagram-model';
-// StateDiagram's machine types; its logic (parseXState, machineToDraft, the simulation, the edits) is on
-// `@brett_lamy/ui/lib/state-diagram-*`.
-export type { StateMachineLike } from './lib/state-diagram-model';
-export type { StateMachineConfig, StateMachineImplementations } from './lib/state-diagram-edit';
-export type { SimulationStandIns } from './lib/state-diagram-simulation';
 export type { AnimatedHeightProps } from './components/animated-height';
 export { Celebrate } from './components/celebrate';
 export type { CelebrateProps } from './components/celebrate';
@@ -72,11 +53,6 @@ export { bindPullToRefresh } from './lib/pull-to-refresh';
 export type { BindPullToRefreshOptions, PullToRefreshDetails, PullToRefresh } from './lib/pull-to-refresh';
 export { bindScrollEdge, useHideOnScroll } from './lib/scroll-edge';
 export type { BindScrollEdgeOptions } from './lib/scroll-edge';
-// The hooks of the storage engines; the engines are on their own entries (`@brett_lamy/ui/lib/append-stream`,
-// `lib/durable-streams`, `lib/session-recorder`, `lib/persistent-state`).
-export { useSessionRecording, useSessions, useSessionCloud } from './lib/session-recorder';
-export type { SessionInfo, SessionRecordingOptions } from './lib/session-recorder';
-export { usePersistentState } from './lib/persistent-state';
 export { useControllableChange } from './lib/controllable-state';
 export type { ContainerSize, UseSizeClassOptions } from './lib/container';
 export { Icon, Chevron, isIconName, ICON_NAMES, ICON_ALIASES, ICON_CATEGORIES, ICON_KEYWORDS } from './lib/icon';
@@ -167,7 +143,6 @@ export type {
   BreadcrumbProps, BreadcrumbItemProps, BreadcrumbItemData, BreadcrumbEntry, BreadcrumbEllipsisProps, BreadcrumbFit, BreadcrumbFitOptions,
 } from './components/breadcrumb';
 
-
 // ── shadcn primitives (UI SDK + Tailwind + cva) ──
 export { Badge, badgeVariants } from './components/badge';
 export type { BadgeProps } from './components/badge';
@@ -194,11 +169,6 @@ export { Input, inputVariants, fieldSurfaceVariants, fieldFocusRing, createInput
 export type { InputProps, InputController, InputValueCommitDetails } from './components/input';
 export { Textarea, textareaVariants } from './components/textarea';
 export type { TextareaProps } from './components/textarea';
-export { MarkdownEditor, MarkdownEditorToolbarButton, markdownEditorVariants, looksLikeMarkdown, insertMarkdown } from './components/markdown-editor';
-export type {
-  MarkdownEditorProps, MarkdownEditorHandle, MarkdownEditorInstance, MarkdownEditorAttachment, MarkdownEditorClassNames,
-  MarkdownEditorValueChangeDetails, MarkdownEditorValueChangeReason, MarkdownEditorToolbarButtonProps, MarkdownEditorDemo,
-} from './components/markdown-editor';
 export { Field, FieldLabel, FieldDescription, FieldError, FieldSet, FieldLegend, FieldGroup, FieldControl, useFieldControl } from './components/field';
 export type { FieldProps, FieldLabelProps } from './components/field';
 export { Checkbox, CheckboxIndicator, CheckboxGroup, checkboxVariants, createCheckboxController, createCheckboxGroupController } from './components/checkbox';
@@ -315,91 +285,7 @@ export type { CodeToken } from './lib/syntax';
 export type { CodeTokenType } from './lib/syntax-lexer';
 // ── end shadcn primitives ──
 
-// ── Workbench: IDE-style agent workspace — composer, chat, terminal dock, surface panel, WorkbenchShell ──
-export {
-  MarkdownView,
-  type MarkdownViewProps,
-  type MarkdownViewDemo,
-  type ReferenceNode,
-  type CodeBlockNode,
-  type CodeBlockRenderDetails,
-} from './components/markdown-view';
-export { MessageScroller, MessageScrollerItem, type MessageScrollerProps, type MessageScrollerItemProps } from './components/message-scroller';
-export {
-  Composer,
-  ComposerCard,
-  ComposerAddon,
-  ComposerFooter,
-  ComposerSpacer,
-  ComposerSeparator,
-  ComposerText,
-  ComposerPill,
-  ComposerSelect,
-  ComposerSend,
-  ComposerStop,
-  ComposerAdd,
-  ComposerExpand,
-  ComposerAttachments,
-  ComposerInput,
-  ComposerOptions,
-  ComposerOptionsOutlet,
-  ComposerBump,
-  ComposerBumpHandle,
-  ComposerBumpContent,
-  useComposer,
-  useComposerBump,
-  composerCardVariants,
-  composerAddonVariants,
-  composerBumpVariants,
-  type ComposerProps,
-  type ComposerCollapse,
-  type ComposerContextValue,
-  type ComposerAttachment,
-  type ComposerAttachmentKind,
-  type ComposerAttachOptions,
-  type ComposerFileSource,
-  type FileRejection,
-  type ComposerCardProps,
-  type ComposerAddonProps,
-  type ComposerFooterProps,
-  type ComposerSpacerProps,
-  type ComposerSeparatorProps,
-  type ComposerTextProps,
-  type ComposerAttachmentsProps,
-  type ComposerPillProps,
-  type ComposerSelectProps,
-  type ComposerSelectItem,
-  type ComposerSelectChangeDetails,
-  type ComposerSendProps,
-  type ComposerStopProps,
-  type ComposerAddProps,
-  type ComposerExpandProps,
-  type ComposerInputProps,
-  type ComposerOptionsProps,
-  type ComposerOptionsOutletProps,
-  type ComposerBumpProps,
-  type ComposerBumpContextValue,
-  type ComposerBumpHandleProps,
-  type ComposerBumpContentProps,
-  type ComposerValueChangeDetails,
-  type ComposerAttachmentsChangeDetails,
-  type ComposerExpandedChangeDetails,
-  type ComposerCollapsedChangeDetails,
-  type ComposerBumpOpenChangeDetails,
-} from './components/composer';
-export {
-  ComposerCards,
-  ComposerMorphCard,
-  ComposerQueue,
-  type ComposerCardsProps,
-  type ComposerMorphCardProps,
-  type ComposerQueueProps,
-  type ComposerQueueItem,
-  type ComposerQueueActions,
-  type ComposerQueueItemsChangeDetails,
-} from './components/composer';
-
-// ── Chat: floating/artifact chat containers (ChatShell and the Discord-style parts live in the discord-clone block) ──
+// ── FloatingSheet (the chat containers that sit on it are in `@brett_lamy/ui/composer`) ──
 export {
   FloatingSheet,
   FloatingSheetBody,
@@ -425,64 +311,11 @@ export {
   type FloatingSheetSize,
 } from './components/floating-sheet';
 export {
-  ArtifactChatContainer,
-  ArtifactChatContainerContent,
-  ArtifactChatContainerChat,
-  ArtifactChatContainerComposer,
-  useArtifactChatContainer,
-  artifactChatContainerVariants,
-  type ArtifactChatContainerProps,
-  type ArtifactChatContainerContentProps,
-  type ArtifactChatContainerContextValue,
-  type ArtifactChatContainerOpenChangeDetails,
-  type ArtifactChatContainerMinimizedChangeDetails,
-  type ArtifactChatContainerComposingChangeDetails,
-  type ArtifactChatContainerComposingChangeReason,
-  type ArtifactChatContainerPresentation,
-  type ArtifactChatContainerSide,
-} from './components/artifact-chat-container';
-export {
   ProgressStepper, ProgressStepperItem, ProgressStepperItemIcon, ProgressStepperItemTrack, ProgressStepperItemLabel, ProgressStepperItemDescription, progressStepperVariants,
   type ProgressStepperProps, type ProgressStepperItemProps, type ProgressStepperStep, type ProgressStepperItemState,
 } from './components/progress-stepper';
 
-// PencilKit — freehand drawing on perfect-freehand (formerly @brett_lamy/pencilkit)
-export type {
-  PencilTool,
-  PencilDrawTool,
-  PencilPoint,
-  PencilStroke,
-  PencilInk,
-  PencilWidth,
-} from './components/pencilkit';
-export { StrokePath } from './components/pencilkit';
-export type { StrokePathProps } from './components/pencilkit';
-export { PencilCanvas } from './components/pencilkit';
-export type { PencilCanvasProps, PencilStrokesChangeDetails, PencilStrokesChangeReason } from './components/pencilkit';
-export {
-  PencilToolbar,
-  PencilToolPicker,
-  PencilInkPicker,
-  PencilWidthPicker,
-  PencilActions,
-} from './components/pencilkit';
-export type {
-  PencilToolbarProps,
-  PencilToolPickerProps,
-  PencilInkPickerProps,
-  PencilWidthPickerProps,
-  PencilActionsProps,
-  PencilPickerPresentation,
-} from './components/pencilkit';
-export { usePencilHistory } from './components/pencilkit';
-export type { PencilHistory } from './components/pencilkit';
-export { PencilKitAnnotator } from './components/pencilkit';
-export { ImageAnnotator, ImageAnnotatorProvider } from './components/pencilkit';
-export type {
-  ImageAnnotatorProps, ImageAnnotatorProviderProps, ImageAnnotatorEngine, ImageAnnotatorEngineProps, ImageAnnotatorSurface,
-} from './components/pencilkit';
-
-// ── feedback, media and morph primitives ──
+// ── feedback and morph primitives ──
 export {
   ToastRegion, Toast, ToastIcon, ToastTitle, ToastDescription, ToastAction, ToastClose, ToastProvider, toast, createToaster, hud, createHud,
   useToast, toastRegionVariants, toastVariants, toastIconVariants,
@@ -493,19 +326,6 @@ export type {
 } from './components/toast';
 export { ProgressRing, CountdownRing, useCountdown, progressRingVariants, countdownRingValueVariants } from './components/progress-ring';
 export type { ProgressRingProps, ProgressRingSize, ProgressRingTone, CountdownRingProps, UseCountdownOptions, UseCountdown } from './components/progress-ring';
-// ReplayPreview lives in docstream; re-exported here (see components/replay-preview.tsx)
-export { ReplayPreview } from './components/replay-preview';
-export type {
-  ReplayPreviewProps, ReplayPreviewHandle, ReplaySource, ReplayChrome, ReplayEvent, ReplayMarker, ReplayMarkerKind,
-  ReplayDevtools, ReplayDevtoolsTab, ReplayInspection, ReplayInspectionTab,
-} from './components/replay-preview';
-// The STL viewer and the Strudel player live in docstream; re-exported here (see components/stl-viewer.tsx, strudel-player.tsx)
-export { StlViewer } from './components/stl-viewer';
-export type { StlViewerProps } from './components/stl-viewer';
-export { StrudelPlayer, playStrudel, stopStrudel, updateStrudel, subscribeStrudel, getStrudelSnapshot } from './components/strudel-player';
-export type { StrudelPlayerProps, StrudelCodeChangeDetails, StrudelPanelChangeReason, StrudelSnapshot } from './components/strudel-player';
-export { NowPlayingBars } from './components/now-playing-bars';
-export type { NowPlayingBarsProps } from './components/now-playing-bars';
 export { MorphGroup, Morph, MorphPresence, useMorphTransition } from './components/morph';
 export type { MorphGroupProps, MorphProps, MorphPresenceProps } from './components/morph';
 export {
@@ -520,31 +340,7 @@ export type {
   CommandMenuState, CommandMenuData, CommandMenuDataItem, CommandMenuDataGroup,
 } from './components/command-menu';
 
-// ── AI transcript parts (used by the Composer, ArtifactChatContainer and several blocks) ──
-export {
-  Conversation, ConversationEmpty, ConversationMessages, ConversationComposer, ConversationSuggestions, ConversationSuggestion,
-  ConversationUserMessage, ConversationAssistantMessage, ConversationMarkdown, ConversationTyping, ConversationWorkLog, ConversationToolCall,
-  type ConversationProps, type ConversationEmptyProps, type ConversationMessagesProps, type ConversationComposerProps,
-  type ConversationSuggestionsProps, type ConversationSuggestionProps, type ConversationAssistantMessageProps, type ConversationUserMessageProps, type ConversationMarkdownProps, type ConversationTypingProps,
-  type ConversationWorkLogProps, type ConversationToolCallProps,
-} from './components/conversation';
-
-// ── Calendar / DateInput / DatePicker / ColorPicker ──
-export {
-  Calendar, CalendarHeader, CalendarHeading, CalendarPrevious, CalendarNext, CalendarMonthSelect, CalendarYearSelect,
-  CalendarMonths, CalendarGrid, CalendarGridHeading, CalendarWeekdays, CalendarWeekday, CalendarWeeks, CalendarDay, calendarVariants, createCalendarController,
-  type CalendarProps, type CalendarMonthsProps, type CalendarDayProps, type CalendarController, type CalendarDayState, type CalendarGridCell,
-  type CalendarMode, type CalendarValue, type DateMatcher, type DateMatchers,
-} from './components/calendar';
-export {
-  DateInput, DateInputSegment, TimeInput, TimeInputSegment, dateInputVariants, createDateInputController, createTimeInputController,
-  type DateInputProps, type TimeInputProps, type DateInputController, type TimeInputController, type DateInputSegmentData, type DateInputState,
-} from './components/date-input';
-export {
-  DatePicker, DatePickerInputGroup, DatePickerInput, DatePickerTrigger, DatePickerClear, DatePickerHint, DatePickerPreset, DatePickerContent,
-  datePickerInputGroupVariants, createDatePickerController,
-  type DatePickerProps, type DatePickerInputGroupProps, type DatePickerContentProps, type DatePickerController, type DatePickerMode, type DatePickerValue,
-} from './components/date-picker';
+// ── ColorPicker (Calendar, DateInput and DatePicker are in `@brett_lamy/ui/time`) ──
 export {
   ColorPicker, ColorPickerTrigger, ColorPickerContent, ColorPickerArea, ColorPickerAreaThumb, ColorPickerAreaCanvas,
   ColorPickerSlider, ColorPickerSliderThumb, ColorPickerSwatches, ColorPickerSwatchItem, ColorPickerInputGroup, ColorPickerInput,
@@ -564,53 +360,11 @@ export {
   useGoogleFont, useGoogleFontStatus, type GoogleFontOptions, type GoogleFontStatus,
 } from './lib/google-fonts';
 
-// ── NaturalTimeInput / CronEditor ──
-export { NaturalTimeInput, type NaturalTimeInputProps, type NaturalTimeInputChange, type NaturalTimeInputParseOptions } from './components/natural-time-input';
-export { CronEditor, CRON_PRESETS, type CronEditorProps, type CronPreset, type CronEditorChangeDetails, type CronEditorChangeReason } from './components/cron-editor';
-// The parsers' hooks; the parsers and the cron functions are on `@brett_lamy/ui/lib/gpu-time`, `lib/gpu-cron`, `lib/cron`.
-export { useTimeParse, type UseTimeParseOptions, type TimeParseState } from './lib/gpu-time';
-export { useCronParse, type UseCronParseOptions, type CronParseState } from './lib/gpu-cron';
-
-// ── Passkey vault ──
-export {
-  VaultGate, VaultUnlock, VaultSetup, VaultUnsupported, VaultStatusBadge, VaultEnrollDialog, VaultRecoveryKey, vaultRecoveryKeyVariants,
-  vaultUnsupportedMessage,
-} from './components/vault-gate';
-export type {
-  VaultGateProps, VaultGateScreens, VaultUnlockProps, VaultSetupProps, VaultUnsupportedProps, VaultStatusBadgeProps, VaultEnrollDialogProps,
-  VaultRecoveryKeyProps,
-} from './components/vault-gate';
-
-// ── SqlConsole (the PGlite engine is on its own entries: @brett_lamy/ui/lib/pglite, lib/pglite-core, …) ──
-export {
-  SqlConsole, SqlConsoleHeader, SqlConsoleDatabaseMenu, SqlConsoleSidebar, SqlConsoleEditor, SqlConsoleEditorFooter, SqlConsoleEditorRun,
-  SqlConsoleResults, useSqlHistory,
-} from './components/sql-console';
-export type {
-  SqlConsoleProps, SqlConsoleHeaderProps, SqlConsoleEditorProps, SqlConsoleEditorFooterProps, SqlConsoleEditorRunProps, SqlConsoleEditorHandle,
-  SqlHistory,
-} from './components/sql-console';
-
 // Spreadsheet: a virtualized grid with GPU sorting and histograms (its model and the CSV reader: @brett_lamy/ui/lib/spreadsheet-model, lib/csv)
 export { Spreadsheet, spreadsheetVariants, createSpreadsheetController } from './components/spreadsheet';
 export type {
   SpreadsheetProps, SpreadsheetController, SpreadsheetSortInfo, SpreadsheetSortChangeReason, SpreadsheetValueChangeReason, SpreadsheetColumnWidthsChangeReason,
 } from './components/spreadsheet';
-
-
-// ── Filters ──
-export {
-  FilterBar, FilterToolbar, FilterMenu, FilterList, FilterChip, FilterClear, FilterMatch, FilterValueEditor, useFilters, useFilterBar, useOptionalFilterBar,
-  filterChipVariants,
-} from './components/filter';
-export type {
-  FilterBarProps, FilterToolbarProps, FilterMenuProps, FilterListProps, FilterChipProps, FilterClearProps, FilterMatchProps, FilterValueEditorProps,
-  FilterBarContextValue, FilterState, FilterActions, UseFiltersOptions, FilterChangeDetails, FilterChangeReason, FilterMatchChangeDetails,
-  FilterMatchChangeReason, FilterChangeOptions,
-} from './components/filter';
-export { FilterInput } from './components/filter-input';
-export type { FilterInputProps } from './components/filter-input';
-
 
 // ── FileUpload ──
 export {
@@ -619,36 +373,6 @@ export {
 export type {
   FileUploadProps, FileUploadDropzoneProps, FileUploadTriggerProps, FileUploadListProps, FileUploadItemProps, FileUploadThumbnailProps, FileUploadContextValue, FileUploadFilesHandler,
 } from './components/file-upload';
-
-
-// ── Tailscale ──
-export {
-  TailscaleLoginButton, TailscaleStatusBadge, TailscaleMark, TailscaleSummary, TailscaleExitNodes, tailscaleStatusBadgeVariants,
-} from './components/tailscale-controls';
-export type {
-  TailscaleLoginButtonProps, TailscaleLoginButtonLabels, TailscaleStatusBadgeProps, TailscaleSummaryProps, TailscaleMarkProps,
-  TailscaleExitNodesProps, TailscaleExitNodeLabels, TailscaleExitNodeState, TailscaleExitNodeChangeDetails,
-} from './components/tailscale-controls';
-
-
-// ── Video: the editing parts (FFmpeg, the timeline model, render and playback are on @brett_lamy/ui/lib/ffmpeg, lib/video-timeline-model, …) ──
-export { VideoTimeline, videoTimelineMediaType, fitVideoTimelineZoom } from './components/video-timeline';
-export type {
-  VideoTimelineProps, VideoTimelineMedia, VideoTimelineDrop, VideoTimelineDropDetails, VideoTimelineAction, VideoTimelineChangeDetails, VideoTimelineChangeReason,
-  VideoTimelineSelectionReason, VideoTimelineZoomReason,
-} from './components/video-timeline';
-export { VideoPreview, VideoPreviewControls, VideoPreviewTimecode } from './components/video-preview';
-export type { VideoPreviewProps, VideoPreviewControlsProps, VideoPreviewTimecodeProps } from './components/video-preview';
-export { Filmstrip } from './components/filmstrip';
-export type { FilmstripProps, FilmstripFrame } from './components/filmstrip';
-export { Waveform, waveformVariants } from './components/waveform';
-export type { WaveformProps } from './components/waveform';
-
-export { TuiPreview } from './components/tui-preview';
-export type { TuiPreviewProps, TuiPreviewOptions, TuiPreviewState, TuiAppearance, TuiTheme } from './components/tui-preview';
-export { OpenCode, openCodeVariants } from './components/open-code';
-export type { OpenCodeProps, OpenCodeBaseProps, OpenCodeHostProps, OpenCodeState } from './components/open-code';
-
 
 export {
   Workspace, WorkspaceTab, WorkspaceTabTrigger, WorkspaceTabClose, WorkspaceToolbar, WorkspaceMaximize,

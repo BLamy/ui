@@ -11,6 +11,16 @@ const reactFromRoot = nx.configs['flat/react'].map((config) => ({
   files: REACT_PROJECTS.flatMap((dir) => (config.files ?? ['**/*']).map((pattern) => `${dir}/${pattern}`)),
 }));
 
+/* UI SDK ships inside @brett_lamy/ui. Only the library's own source names it as upstream does (`@ui-sdk/react/dialog`);
+   blocks, docs examples and apps import the copy an app gets, `@brett_lamy/ui/sdk/react/dialog`. The projects that hold
+   such code add this to their own config (registry, apps/docs). */
+export const noUpstreamUiSdk = {
+  files: ['**/*.ts', '**/*.tsx'],
+  rules: {
+    'no-restricted-imports': ['error', { patterns: [{ group: ['@ui-sdk/*'], message: 'UI SDK ships inside the package: import @brett_lamy/ui/sdk/… instead.' }] }],
+  },
+};
+
 export default [
   ...reactFromRoot,
   ...nx.configs['flat/base'],

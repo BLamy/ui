@@ -9,8 +9,8 @@ import {
   type ResizeDraft,
   type ResizeHandle,
   type ResizeReason,
-} from '@ui-sdk/core';
-import { createParts, usePart, type PartProps } from '@ui-sdk/react/primitive';
+} from '@brett_lamy/ui/sdk/core';
+import { createParts, usePart, type PartProps } from '@brett_lamy/ui/sdk/react/primitive';
 import { cn } from '@/lib/utils';
 
 type FrameState = { boxes: Record<string, ResizeBox>; draft: ResizeDraft | null };

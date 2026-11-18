@@ -7,8 +7,8 @@ import {
   definePrimitive,
   dragThreshold,
   type ChangeDetails,
-} from '@ui-sdk/core';
-import { createParts } from '@ui-sdk/react/primitive';
+} from '@brett_lamy/ui/sdk/core';
+import { createParts } from '@brett_lamy/ui/sdk/react/primitive';
 
 type TaggerState = { value: string[]; over: boolean };
 type TaggerReason = 'drag' | 'item-press' | 'remove-press';

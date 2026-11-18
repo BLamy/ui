@@ -74,6 +74,16 @@ export const npmVersion = (name) => {
  *  aren't registry modules): code that uses them imports `@brett_lamy/ui/docstream…` by the package's name, and its item
  *  installs the library at this version, as it once installed `@brett_lamy/docstream`. */
 export const isDocstreamSpecifier = (spec) => /^@brett_lamy\/ui\/docstream(-editor)?(\/|$)/.test(spec);
+/** UI SDK is part of the library too, and not copied either: the package ships its own build of it at
+ *  `@brett_lamy/ui/sdk/…`. The library's source names it as upstream does (`@ui-sdk/react/dialog`); a registry item
+ *  installs `@brett_lamy/ui` for it, and its copied files import `@brett_lamy/ui/sdk/react/dialog` (`sdkSpecifier`,
+ *  applied to every item's files when the static registry is written). */
+export const isUpstreamSdkSpecifier = (spec) => /^@ui-sdk\/(core|react)(\/|$)/.test(spec);
+export const isSdkSpecifier = (spec) => /^@brett_lamy\/ui\/sdk\/(core|react)(\/|$)/.test(spec);
+export const sdkSpecifier = (spec) => spec.replace(/^@ui-sdk\//, '@brett_lamy/ui/sdk/');
+/** The library's parts a copied file may import by the package's name. */
+export const isPackageSpecifier = (spec) => isDocstreamSpecifier(spec) || isSdkSpecifier(spec);
+export const uiVersion = () => workspaceVersion('@brett_lamy/ui');
 
 /** Real import specifiers of a file (TypeScript's scanner, so strings in sample data don't count). */
 export function importsOf(path) {
@@ -181,6 +191,7 @@ export function buildGraph({ errors = [] } = {}) {
           const pkg = spec.startsWith('@') ? spec.split('/').slice(0, 2).join('/') : spec.split('/')[0];
           // Anything else of the library's is copied, so it's imported by its alias, never by name.
           if (pkg === '@brett_lamy/ui' && isDocstreamSpecifier(spec)) npm.set(pkg, workspaceVersion(pkg));
+          else if (isUpstreamSdkSpecifier(spec)) npm.set('@brett_lamy/ui', workspaceVersion('@brett_lamy/ui'));
           else if (pkg === '@brett_lamy/ui') errors.push(`${SRC}/${f}: the library must not import itself ("${spec}"), but for its docstream entries`);
           else npm.set(pkg, npmVersion(pkg));
         }

@@ -26,7 +26,7 @@
    turns an exit node back on. Try Again also swaps an offline or failing exit node for another online one. With no online
    exit node a public address fails with an explanation. */
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
-import { shortcuts, useShortcut } from '@ui-sdk/react/shortcuts';
+import { shortcuts, useShortcut } from '@brett_lamy/ui/sdk/react/shortcuts';
 import { useSizeClass } from '@/lib/container';
 import { AppearanceProvider, BLProvider, useAppearance, type Appearance } from '@/lib/theme';
 import { webStorageTailscalePersistence, type Tailscale, type TailscaleOptions } from '@/lib/tailscale';

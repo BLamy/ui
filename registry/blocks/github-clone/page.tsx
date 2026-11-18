@@ -13,7 +13,7 @@ import { Avatar } from '@/components/ui/avatar';
 import {
   NavigationStack, NavigationStackBar, NavigationStackContent, NavigationStackLeading, NavigationStackPage, NavigationStackTitle, NavigationStackTrailing,
 } from '@/components/ui/navigation-stack';
-import { Button as SdkButton } from '@ui-sdk/react/button';
+import { Button as SdkButton } from '@brett_lamy/ui/sdk/react/button';
 import { Tabs, TabsBar, TabsList } from '@/components/ui/tabs';
 import { SizeClassProvider, useSizeClass, useSizeClassScope } from '@/lib/container';
 import type { Tailscale } from '@/lib/tailscale';

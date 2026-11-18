@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        # vendor/ui-sdk (our UI SDK fork) is a submodule; `pnpm install` builds the two @ui-sdk wrapper packages from it.
+        # vendor/ui-sdk (our UI SDK fork) is a submodule; `pnpm install` compiles it, and the library's build copies it in.
         with: { submodules: true }
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
@@ -33,6 +33,10 @@ jobs:
         run: |
           node tools/cloudflare/catalog.mjs --check
           node tools/cloudflare/check-package.mjs
+      # What each library entry costs an app: within its budget, a name imported through a library or the root costing
+      # what its own entry costs, no module bundled twice.
+      - name: Entry sizes
+        run: node tools/size/measure.mjs --check
       - run: pnpm exec playwright install chromium --with-deps
       - name: Behavior tests (taps, swipes, right-clicks)
         run: pnpm e2e

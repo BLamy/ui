@@ -10,7 +10,7 @@ import { Avatar } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogBackdrop, DialogClose, DialogContent, DialogHeader, DialogTitle, DialogView } from '@/components/ui/dialog';
 import { SplitViewSection } from '@/components/ui/split-view';
-import { Button as SdkButton } from '@ui-sdk/react/button';
+import { Button as SdkButton } from '@brett_lamy/ui/sdk/react/button';
 import { Spinner } from '@/components/ui/spinner';
 import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';

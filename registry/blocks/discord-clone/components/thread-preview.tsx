@@ -1,7 +1,7 @@
 import type { ComponentProps, ReactNode } from 'react';
 import { Avatar } from '@/components/ui/avatar';
 import { chatUserAvatar, type ChatUser } from './chat-users';
-import { Button as SdkButton } from '@ui-sdk/react/button';
+import { Button as SdkButton } from '@brett_lamy/ui/sdk/react/button';
 import { cn, cx } from '@/lib/utils';
 
 /* ══ ThreadPreview — the card under a message that opens its thread ══

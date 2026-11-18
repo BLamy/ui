@@ -2,11 +2,11 @@ import {
   createChange,
   definePrimitive,
   type ChangeDetails,
-} from '@ui-sdk/core';
+} from '@brett_lamy/ui/sdk/core';
 import { bindBack } from '@/lib/back';
 import { bindEdgeSwipe } from '@/lib/edge-swipe';
 import { createPageStack, type PageStackExit, type PageStackReason } from '@/lib/stack';
-import { createParts } from '@ui-sdk/react/primitive';
+import { createParts } from '@brett_lamy/ui/sdk/react/primitive';
 import { useState, type ReactNode } from 'react';
 import { Icon } from '@/lib/icon';
 

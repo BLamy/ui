@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { weekday } from '@ui-sdk/core/date'
+import { weekday } from '@brett_lamy/ui/sdk/core/date'
 import { Button } from '@/components/ui/button'
 import { DateInput } from '@/components/ui/date-input'
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field'

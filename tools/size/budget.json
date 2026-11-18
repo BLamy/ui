@@ -1,0 +1,37 @@
+{
+  "note": "gzip bytes each library entry (`gzip`) and each single import (`names`) may load, 5% over what tools/size/measure.mjs measured when it was set. Raise one on purpose: node tools/size/measure.mjs --update, and say why in the commit.",
+  "gzip": {
+    "ui-sdk": 68352,
+    "tokens": 20224,
+    "motion": 68864,
+    "icons": 72704,
+    "ui": 562432,
+    "time": 103680,
+    "canvas": 102144,
+    "diagram": 353792,
+    "audio": 51456,
+    "video": 110080,
+    "docstream": 256512,
+    "docstream-editor": 444672,
+    "markdown": 504064,
+    "composer": 578048,
+    "replay": 128256,
+    "sql": 202752,
+    "pglite": 11520,
+    "filter": 176128,
+    "sync": 3840,
+    "vault": 141312,
+    "tailscale": 120320,
+    "opencode": 2048
+  },
+  "names": {
+    "Button from the root": 69376,
+    "Dialog from the root": 43008,
+    "cn from the root": 9984,
+    "Waveform from /audio": 11520,
+    "Calendar from /time": 45824,
+    "MarkdownView from /markdown": 248832,
+    "FilterInput from /filter": 160256,
+    "usePersistentState from /sync": 512
+  }
+}

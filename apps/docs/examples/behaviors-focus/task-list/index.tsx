@@ -7,8 +7,8 @@ import {
   isTypeaheadKey,
   labelOf,
   selects,
-} from '@ui-sdk/core';
-import { createParts } from '@ui-sdk/react/primitive';
+} from '@brett_lamy/ui/sdk/core';
+import { createParts } from '@brett_lamy/ui/sdk/react/primitive';
 import { Button } from '@/components/ui/button';
 
 type TasksState = { focused: string | null };

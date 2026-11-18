@@ -2,7 +2,7 @@
    library it doesn't build on, and no two npm packages would need each other. When this fails, the plan
    (libraries.ts) and the code disagree — fix one. */
 import { describe, expect, it } from 'vitest';
-import { LIBRARIES, LIBRARY, SPLIT_CHANGES, ownerOf, packageNames, packageOf, reach, takes } from './libraries';
+import { LIBRARIES, LIBRARY, LAYER_EXCEPTIONS, ownerOf, packageNames, packageOf, reach, takes } from './libraries';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { UI_ROOT, importsOf, listUnits, resolveImport } from './plan-graph';
@@ -48,7 +48,7 @@ describe('the split plan', () => {
         const to = 'unit' in target ? ownerOf(target.unit).id : 'uiSdk' in target ? 'ui-sdk' : 'barrel' in target ? 'ui' : null;
         const at = `${unit} (${from}) imports ${spec}`;
         if (!to) { violations.push(`${at}: no such module`); continue; }
-        const planned = SPLIT_CHANGES.some((c) => c.unit === unit && c.imports === spec);
+        const planned = LAYER_EXCEPTIONS.some((c) => c.unit === unit && c.imports === spec);
         if (!allowed.has(to) && !planned) violations.push(`${at} (${to})`);
       }
     }
@@ -101,7 +101,7 @@ describe('the split plan', () => {
   });
 
   it('lists only split changes the code still needs', () => {
-    for (const c of SPLIT_CHANGES) {
+    for (const c of LAYER_EXCEPTIONS) {
       expect(importsOf(c.unit).some(({ spec }) => spec === c.imports), `${c.unit} no longer imports ${c.imports}`).toBe(true);
     }
   });

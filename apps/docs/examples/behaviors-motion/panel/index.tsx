@@ -1,5 +1,5 @@
-import { bindPanel, definePrimitive } from '@ui-sdk/core';
-import { createParts } from '@ui-sdk/react/primitive';
+import { bindPanel, definePrimitive } from '@brett_lamy/ui/sdk/core';
+import { createParts } from '@brett_lamy/ui/sdk/react/primitive';
 import { Icon } from '@/lib/icon';
 
 type FaqState = { expanded: string[]; exiting: string[] };

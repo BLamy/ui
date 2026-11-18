@@ -13,7 +13,7 @@ import { Icon } from '@/lib/icon';
 import { BLProvider } from '@/lib/theme';
 import { cn } from '@/lib/utils';
 import { parseStrudel, StrudelRack, StrudelSyntaxError, type StrudelSong } from '@brett_lamy/ui/docstream/strudel/rack';
-import { Textarea } from '@ui-sdk/react/textarea';
+import { Textarea } from '@brett_lamy/ui/sdk/react/textarea';
 import { SONGS, type StudioSong } from './songs';
 import { SyntaxTree } from './syntax-tree';
 

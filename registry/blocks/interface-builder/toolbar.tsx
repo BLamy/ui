@@ -2,11 +2,11 @@
    activity pill (the document, its scenes and segues, and its issues), then motion (play the selected scene's
    appear, the timeline), the scenes' appearance, undo and redo, the library (⇧⌘L), zoom and the inspector toggle. */
 import { useRef, useState, type ReactNode } from 'react';
-import { useShortcut } from '@ui-sdk/react/shortcuts';
+import { useShortcut } from '@brett_lamy/ui/sdk/react/shortcuts';
 import { AdaptivePaneTrigger, type AdaptivePaneController } from '@/components/ui/adaptive-pane';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Button as SdkButton } from '@ui-sdk/react/button';
-import { Toggle as SdkToggle } from '@ui-sdk/react/toggle';
+import { Button as SdkButton } from '@brett_lamy/ui/sdk/react/button';
+import { Toggle as SdkToggle } from '@brett_lamy/ui/sdk/react/toggle';
 import { Popover, PopoverClose, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useSizeClass } from '@/lib/container';
 import { Icon } from '@/lib/icon';

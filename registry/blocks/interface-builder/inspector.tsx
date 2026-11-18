@@ -3,10 +3,10 @@
    hooks and its code; a segue, a context, the entry point, a scene's First Responder and Exit each have their own;
    with nothing selected it inspects the storyboard. */
 import { useRef, useState, type ReactNode, type RefObject } from 'react';
-import { useShortcut, useShortcutHint } from '@ui-sdk/react/shortcuts';
-import { Tabs, TabsList, TabsPanel, TabsTab } from '@ui-sdk/react/tabs';
+import { useShortcut, useShortcutHint } from '@brett_lamy/ui/sdk/react/shortcuts';
+import { Tabs, TabsList, TabsPanel, TabsTab } from '@brett_lamy/ui/sdk/react/tabs';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Button as SdkButton } from '@ui-sdk/react/button';
+import { Button as SdkButton } from '@brett_lamy/ui/sdk/react/button';
 import { Icon, type IconShape } from '@/lib/icon';
 import { cn } from '@/lib/utils';
 import { nodeLabel, specOf } from './catalog';

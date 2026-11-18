@@ -2,6 +2,9 @@
  *   @/components/ui/<x>      → packages/ui/src/components/<x>     (components/ui/<x> in a consumer app)
  *   @/lib/<x>                → packages/ui/src/lib/<x>            (lib/<x>)
  *   @/components/blocks/<x>  → registry/blocks/<x>                (components/blocks/<x>)
+ * and the package's UI SDK entries, which copied source imports by the package's name:
+ *   @brett_lamy/ui/sdk/<x>   → packages/ui/src/sdk/<x>            (each a one-line re-export of `@ui-sdk/<x>`, so the
+ *                                                                 library's own modules and an app share one copy)
  * Keep in sync with `paths` in tsconfig.base.json. Used by the Vite configs (lib build, docs, Storybook, Vitest). */
 import { readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
@@ -13,6 +16,7 @@ export const aliases = [
   { find: /^@\/components\/ui\/(.*)$/, replacement: `${ROOT}/packages/ui/src/components/$1` },
   { find: /^@\/lib\/(.*)$/, replacement: `${ROOT}/packages/ui/src/lib/$1` },
   { find: /^@\/components\/blocks\/(.*)$/, replacement: `${ROOT}/registry/blocks/$1` },
+  { find: /^@brett_lamy\/ui\/sdk\/(.*)$/, replacement: `${ROOT}/packages/ui/src/sdk/$1` },
 ];
 
 /* The library's entries that code inside it imports by the package's name: docstream and docstream-editor

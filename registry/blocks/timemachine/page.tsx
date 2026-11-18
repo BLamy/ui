@@ -8,14 +8,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import { EmptyState } from '@/components/ui/empty-state';
 import { AlertDialog, AlertDialogBackdrop, AlertDialogClose, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/dialog';
-import { Button as SdkButton } from '@ui-sdk/react/button';
+import { Button as SdkButton } from '@brett_lamy/ui/sdk/react/button';
 import { Popover, PopoverContent, PopoverTitle, PopoverTrigger } from '@/components/ui/popover';
 import { SplitView, SplitViewDetail, SplitViewItem, SplitViewSidebar, useSplitViewBack, type SplitViewColumn } from '@/components/ui/split-view';
 import { Icon } from '@/lib/icon';
 import { clearSessions, storageUsage, useSessionCloud, useSessions, type SessionInfo } from '@/lib/session-recorder';
 import { BLProvider, useAppearance } from '@/lib/theme';
 import { cn } from '@/lib/utils';
-import { Meter, MeterIndicator, MeterTrack } from '@ui-sdk/react/meter';
+import { Meter, MeterIndicator, MeterTrack } from '@brett_lamy/ui/sdk/react/meter';
 import { CloudPanel } from './cloud';
 import { SessionDetail, SessionPeek } from './detail';
 import { bytes, count, dayLabel, duration, timeLabel } from './format';

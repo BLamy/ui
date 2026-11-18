@@ -6,7 +6,7 @@
    contact card on their avatar, a reminders list's first items on its sidebar row (`SplitViewItem preview`), an
    album's tracks on its cover. */
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
-import { Resizable, ResizableHandle, ResizablePanel } from '@ui-sdk/react/resizable';
+import { Resizable, ResizableHandle, ResizablePanel } from '@brett_lamy/ui/sdk/react/resizable';
 import { Avatar } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';

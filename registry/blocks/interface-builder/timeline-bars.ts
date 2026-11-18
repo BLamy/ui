@@ -1,4 +1,4 @@
-import { createChange, createSpans, definePrimitive, type ChangeDetails, type Span, type SpansDraft, type SpansReason } from '@ui-sdk/core';
+import { createChange, createSpans, definePrimitive, type ChangeDetails, type Span, type SpansDraft, type SpansReason } from '@brett_lamy/ui/sdk/core';
 
 /* ══ timelineBars — the motion timeline's bars: UI SDK's `createSpans` as a primitive ══
    A track per animated node and one bar on it: from when its appear starts to when it comes to rest, in ms. Drag a

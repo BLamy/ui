@@ -1,6 +1,6 @@
 /* The middle column: the selected category's items with search. Rows are SplitViewItems, so they select the
    detail beside them — or push it on a phone. Resting on a sign-in previews it (AccountPreview). */
-import { Button as SdkButton } from '@ui-sdk/react/button';
+import { Button as SdkButton } from '@brett_lamy/ui/sdk/react/button';
 import { SearchInput } from '@/components/ui/search-input';
 import { EmptyState } from '@/components/ui/empty-state';
 import { SplitViewContent, SplitViewHeader, SplitViewItem, SplitViewSidebarTrigger } from '@/components/ui/split-view';

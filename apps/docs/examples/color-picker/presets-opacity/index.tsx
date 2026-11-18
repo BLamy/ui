@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { formatColor, parseColor } from '@ui-sdk/core/color'
+import { formatColor, parseColor } from '@brett_lamy/ui/sdk/core/color'
 import {
   ColorPicker,
   ColorPickerSlider,

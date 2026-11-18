@@ -2,7 +2,7 @@
    prepare(for:sender:) — and the destination's delegate, implemented here), a context (its fields, and who reads
    them), the entry point, and the storyboard itself (its device, the commands the app handles, and its JSON). */
 import { FontStackPicker, FontStackPickerContent, FontStackPickerInputGroup } from '@/components/ui/font-picker';
-import { Button as SdkButton } from '@ui-sdk/react/button';
+import { Button as SdkButton } from '@brett_lamy/ui/sdk/react/button';
 import { Icon } from '@/lib/icon';
 import { ActionList } from './actions';
 import { TransitionEditor } from './curves';

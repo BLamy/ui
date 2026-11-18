@@ -4,7 +4,7 @@
    a list previews what's next in it (ListPreview). */
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuContextTrigger } from '@/components/ui/dropdown-menu';
 import { NumberMorph } from '@/components/ui/number-morph';
-import { Button as SdkButton } from '@ui-sdk/react/button';
+import { Button as SdkButton } from '@brett_lamy/ui/sdk/react/button';
 import { SearchInput } from '@/components/ui/search-input';
 import { SplitViewContent, SplitViewItem, SplitViewSection, SplitViewSidebar, useSplitView } from '@/components/ui/split-view';
 import { Icon } from '@/lib/icon';

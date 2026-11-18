@@ -4,7 +4,7 @@ import { Toggle } from '@/components/ui/toggle';
 import { MarkdownEditor, type MarkdownEditorClassNames, type MarkdownEditorHandle } from '@/components/ui/markdown-editor';
 import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
-import { Textarea } from '@ui-sdk/react/textarea';
+import { Textarea } from '@brett_lamy/ui/sdk/react/textarea';
 import { BROWSER_ROOT } from './use-note-files';
 import type { Note } from './data';
 import type { NotesState } from './use-notes';

@@ -5,7 +5,7 @@
    action plays on an outlet; Layout animates its own layout changes, and a Magic Motion id (layoutId) makes it a shared
    element that flies between scenes; Children staggers what appears inside it. Each has its own transition. */
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Button as SdkButton } from '@ui-sdk/react/button';
+import { Button as SdkButton } from '@brett_lamy/ui/sdk/react/button';
 import { Segmented, SegmentedItem } from '@/components/ui/segmented';
 import { Icon } from '@/lib/icon';
 import { TransitionButton } from './curves';

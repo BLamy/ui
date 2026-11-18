@@ -7,12 +7,12 @@
    Slow Animations slows the transitions the storyboard sets. Edits made while it runs show up live. */
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
 import { AnimatePresence, LayoutGroup, motion, MotionConfig, type PanInfo } from 'framer-motion';
-import { DialogContent as SdkDialogContent, DialogTitle as SdkDialogTitle, type DialogOpenChangeDetails } from '@ui-sdk/react/dialog';
-import { useShortcut } from '@ui-sdk/react/shortcuts';
+import { DialogContent as SdkDialogContent, DialogTitle as SdkDialogTitle, type DialogOpenChangeDetails } from '@brett_lamy/ui/sdk/react/dialog';
+import { useShortcut } from '@brett_lamy/ui/sdk/react/shortcuts';
 import { Dialog, DialogClose, type DialogController } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Button as SdkButton } from '@ui-sdk/react/button';
-import { Toggle as SdkToggle } from '@ui-sdk/react/toggle';
+import { Button as SdkButton } from '@brett_lamy/ui/sdk/react/button';
+import { Toggle as SdkToggle } from '@brett_lamy/ui/sdk/react/toggle';
 import { createHud, ToastRegion } from '@/components/ui/toast';
 import { SizeClassProvider, useContainerSize, useSizeClass } from '@/lib/container';
 import { Icon } from '@/lib/icon';

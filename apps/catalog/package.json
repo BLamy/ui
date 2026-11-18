@@ -11,8 +11,6 @@
     "@brett_lamy/ui": "workspace:*"
   },
   "devDependencies": {
-    "@ui-sdk/core": "workspace:@brett_lamy/ui-sdk-core@*",
-    "@ui-sdk/react": "workspace:@brett_lamy/ui-sdk-react@*",
     "highlight.js": "11.11.2",
     "use-sync-external-store": "1.6.0"
   }

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { formatColor, parseColor } from '@ui-sdk/core/color'
+import { formatColor, parseColor } from '@brett_lamy/ui/sdk/core/color'
 import { ColorInput } from '@/components/ui/color-picker'
 import { Field, FieldDescription, FieldError, FieldLabel } from '@/components/ui/field'
 

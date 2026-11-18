@@ -83,7 +83,7 @@ it('⌘L, ⌘R, ⌘[ and ⌘] (Ctrl here) are scoped shortcuts: they work while 
   await settle();
   await signIn();
 
-  const { shortcuts } = await import('@ui-sdk/react/shortcuts');
+  const { shortcuts } = await import('@brett_lamy/ui/sdk/react/shortcuts');
   // happy-dom is not an Apple platform, so `mod` is Control.
   const press = (target: Element, key: string) => act(async () => {
     target.dispatchEvent(new KeyboardEvent('keydown', { key, ctrlKey: true, bubbles: true, cancelable: true }));

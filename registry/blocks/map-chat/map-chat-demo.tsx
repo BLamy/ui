@@ -7,7 +7,7 @@ import {
   type ArtifactChatContainerProps,
 } from '@/components/ui/artifact-chat-container';
 import { HoverCard, HoverCardContent, HoverCardHeader, HoverCardTrigger } from '@/components/ui/hover-card';
-import { Button } from '@ui-sdk/react/button';
+import { Button } from '@brett_lamy/ui/sdk/react/button';
 import { Composer, ComposerAddon, ComposerAttachments, ComposerCard, ComposerFooter, ComposerInput, ComposerSend, ComposerSpacer } from '@/components/ui/composer';
 import { MarkdownView, type ReferenceNode } from '@/components/ui/markdown-view';
 import { themeScopeClass, useAppearance, type Appearance } from '@/lib/theme';

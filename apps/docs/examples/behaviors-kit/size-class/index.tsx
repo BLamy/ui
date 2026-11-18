@@ -1,6 +1,6 @@
-import { definePrimitive } from '@ui-sdk/core';
+import { definePrimitive } from '@brett_lamy/ui/sdk/core';
 import { bindSizeClass, sizeClassOf, type SizeClass, type SizeClassBreakpoints } from '@/lib/size-class';
-import { createParts } from '@ui-sdk/react/primitive';
+import { createParts } from '@brett_lamy/ui/sdk/react/primitive';
 import { useState } from 'react';
 import { buttonVariants } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTitle, PopoverTrigger } from '@/components/ui/popover';

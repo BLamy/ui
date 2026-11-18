@@ -10,8 +10,6 @@
   "dependencies": {
     "@agent-wasm/core": "^0.4.0",
     "@brett_lamy/ui": "workspace:*",
-    "@ui-sdk/core": "workspace:@brett_lamy/ui-sdk-core@*",
-    "@ui-sdk/react": "workspace:@brett_lamy/ui-sdk-react@*",
     "react": "19.2.3",
     "react-dom": "19.2.3"
   },

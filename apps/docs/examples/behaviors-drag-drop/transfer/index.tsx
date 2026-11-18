@@ -9,8 +9,8 @@ import {
   type TransferDraft,
   type TransferLists,
   type TransferReason,
-} from '@ui-sdk/core';
-import { createParts } from '@ui-sdk/react/primitive';
+} from '@brett_lamy/ui/sdk/core';
+import { createParts } from '@brett_lamy/ui/sdk/react/primitive';
 
 const NAMES: Record<string, string> = { closet: 'Closet', bag: 'Bag' };
 

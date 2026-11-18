@@ -32,6 +32,6 @@
   "dependencies": [
     "@agent-wasm/core",
     "@agent-wasm/tailscale-connect",
-    "@ui-sdk/react"
+    "@brett_lamy/ui"
   ]
 }

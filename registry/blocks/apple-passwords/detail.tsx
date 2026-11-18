@@ -6,14 +6,14 @@ import { AnimatedHeight } from '@/components/ui/animated-height';
 import { Button } from '@/components/ui/button';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
 import { Input } from '@/components/ui/input';
-import { Button as SdkButton } from '@ui-sdk/react/button';
+import { Button as SdkButton } from '@brett_lamy/ui/sdk/react/button';
 import { QRCode } from '@/components/ui/qr-code';
 import { EmptyState } from '@/components/ui/empty-state';
 import { SplitViewContent, SplitViewHeader } from '@/components/ui/split-view';
 import { Textarea } from '@/components/ui/textarea';
 import { Icon } from '@/lib/icon';
 import { cn } from '@/lib/utils';
-import { Collapsible, CollapsiblePanel, CollapsibleTrigger } from '@ui-sdk/react/collapsible';
+import { Collapsible, CollapsiblePanel, CollapsibleTrigger } from '@brett_lamy/ui/sdk/react/collapsible';
 import { GROUPS, SEVERITY, type Account, type WifiNetwork } from './data';
 import {
   Card, CodeValue, CopyButton, DetailHeader, Field, PasswordValue, RevealButton, SiteTile, WifiTile, useCode, type CodeClock,

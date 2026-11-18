@@ -1,7 +1,7 @@
 /* A run: its ring and status, what it found (findings), what it covered, the exploration it recorded, and its
    journeys grouped by outcome — a journey with bugs unfolds to list them. A live run fills in as it goes. */
 import { useState, type ReactNode } from 'react';
-import { Collapsible, CollapsiblePanel, CollapsibleTrigger } from '@ui-sdk/react/collapsible';
+import { Collapsible, CollapsiblePanel, CollapsibleTrigger } from '@brett_lamy/ui/sdk/react/collapsible';
 import { AnimatedHeight } from '@/components/ui/animated-height';
 import { Button } from '@/components/ui/button';
 import { MarkdownView } from '@/components/ui/markdown-view';
