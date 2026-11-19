@@ -58,6 +58,10 @@ export interface Library {
   modules?: string[];
   /** What it's for, in a few lines. */
   highlights: string[];
+  /** What its page shows first: blocks (registry/blocks/<slug>) and docs pages (pages/<id>.md), ahead of the ones
+      showcase-graph.ts finds from the imports. For libraries every block uses (the import count can't rank them)
+      and pages named for no unit of the library. */
+  showcase?: { blocks?: string[]; pages?: string[] };
 }
 
 /** Categories, each with a chart color token (`chart-1` … `chart-5`) that marks its libraries. */
@@ -78,6 +82,7 @@ export const LIBRARIES: Library[] = [
     tagline: 'The behavior layer: our build of UI SDK, inside the package.',
     description: 'Every interactive part of the kit is a UI SDK part: keyboard, focus, selection, dismissal, popups, drag and drop and ARIA come from it. The package carries its own build of UI SDK (the `vendor/ui-sdk` submodule: upstream plus layer hosts, `bindLayer`\'s `when` and an exported `SlotProps`), so there is nothing else to install and one copy of its focus and layer state in the page. Wherever UI SDK\'s docs say `@ui-sdk/…`, write `@brett_lamy/ui/sdk/…`: `@brett_lamy/ui/sdk/core`, `@brett_lamy/ui/sdk/react/dialog`.',
     dependsOn: [],
+    showcase: { blocks: ['interface-builder', 'apple-mail', 'split-view-demos'], pages: ['ui-sdk'] },
     highlights: ['`@brett_lamy/ui/sdk/react/<part>`: Dialog, Menu, Select, Tabs, Toolbar, Tree…', 'Layer hosts: popups that stay inside a framed app', 'Upstream\'s API, three small additions, nothing else'],
   },
   {
@@ -86,6 +91,7 @@ export const LIBRARIES: Library[] = [
     description: 'The single source of color, type, radius, shadow and spring timing: tokens.css generates its TypeScript twin, the bl-theme maps it onto Tailwind v4, and BLProvider, ThemeScope and `appearance` retint any subtree. The size-class scope (`compact` / `medium` / `regular`, measured on a container, never the viewport) lives here too, because the providers are what measure it, and so does syntax lexing, whose token classes the shared syntax palette colors: gpu-lexer behind one queue and adapter probe, with the synchronous lexer as its fallback (CodeEditor, docstream\'s fences, the editor and the replay DevTools all lex through it). The change details every kit callback hands out (`changeDetails`) are here too.',
     dependsOn: ['ui-sdk'], external: ['clsx', 'tailwind-merge', 'class-variance-authority', 'gpu-lexer'],
     modules: ['lib/tokens.generated.ts', 'lib/utils.ts', 'lib/theme.tsx', 'lib/theme-context.tsx', 'lib/primitives.ts', 'lib/size-class.ts', 'lib/container.ts', 'lib/syntax-lexer.ts', 'lib/syntax.ts', 'lib/webgpu.ts', 'lib/change-details.ts'],
+    showcase: { blocks: ['interface-builder', 'apple-settings', 'split-view-demos'], pages: ['theming', 'styling', 'variants', 'utilities'] },
     highlights: ['tokens.css → tokens.generated.ts, one source of truth', 'BLProvider, ThemeScope, `appearance` and `tint`', 'Size classes from a container\'s own box', '`cn`, `cx` and the shared focus and surface recipes'],
   },
   {
@@ -97,6 +103,7 @@ export const LIBRARIES: Library[] = [
       'lib/motion.ts', 'lib/motion-lazy.ts', 'lib/motion-engine.ts', 'lib/reduced-motion.ts', 'lib/presence.ts', 'lib/morph-path.ts', 'lib/title-flight.ts', 'lib/edge-swipe.ts', 'lib/pull-to-refresh.ts',
       'components/text-morph.tsx', 'components/number-morph.tsx', 'components/animated-height.tsx', 'components/morph.tsx', 'components/celebrate.tsx', 'components/swap.tsx',
     ],
+    showcase: { blocks: ['apple-reminders', 'saas-checkout', 'apple-mail'] },
     highlights: ['Springs matched to UIKit, `motion-reduce` everywhere', 'TextMorph, NumberMorph, Morph, AnimatedHeight, Swap', 'Edge swipe, pull to refresh, title flight'],
   },
   {
@@ -105,6 +112,7 @@ export const LIBRARIES: Library[] = [
     description: 'Every glyph the kit draws, as one `<Icon name>` component with weights, aliases and search keywords, plus the chat, PencilKit, workbench and documents shape sets (the last drawn for docstream and its editor) and the file-type icons Tree uses. Icons animate between shapes, so they build on Motion.',
     dependsOn: ['tokens', 'motion'],
     modules: ['lib/icon.tsx', 'lib/icon-shapes/', 'lib/file-icons.tsx'],
+    showcase: { blocks: ['apple-settings', 'vscode', 'apple-notes'], pages: ['icons'] },
     highlights: ['`<Icon name="paperplane" weight="semibold" />`', 'Aliases and keywords for pickers and search', 'File-type, folder and badge icons'],
   },
 
@@ -115,6 +123,7 @@ export const LIBRARIES: Library[] = [
     description: 'The core, and the package every other library ships in: controls, fields and pickers, the popups (Dialog with its views, Sheet, Popover, DropdownMenu, Select, Combobox, Toast) and the containers that make an app feel native — NavigationStack, SplitView, Tabs, AdaptivePane, Sidebar, List, Toolbar, DataTable — plus the workbench and debugging parts. `@brett_lamy/ui` itself exports the core; every module is also its own entry (`@brett_lamy/ui/dialog`) and its own shadcn registry item.',
     dependsOn: ['ui-sdk', 'tokens', 'motion', 'icons'],
     external: ['class-variance-authority', '@wterm/*', '@vscode/codicons'],
+    showcase: { blocks: ['apple-notes', 'github-clone', 'interface-builder', 'apple-mail', 'saas-checkout', 'split-view-demos'] },
     highlights: ['NavigationStack, SplitView, Tabs, AdaptivePane, Sidebar, Dialog flows', 'One spelling per concept: `size`, `variant`, `tone`, `side`, `presentation`', 'Responsive by container: a sheet in a compact column, a popover in a wide one', 'Install from npm, or copy the source with the shadcn registry'],
   },
   {
@@ -147,6 +156,7 @@ export const LIBRARIES: Library[] = [
     description: 'Waveform, which draws any audio file and scrubs it, NowPlayingBars, the playback clock a player, a timeline and transport controls share (time, rate, loop, scrubbing, with no re-render per tick), and StrudelPlayer, docstream\'s Strudel widget as a component of its own.',
     dependsOn: ['ui', 'docstream'],
     modules: ['components/waveform.tsx', 'components/now-playing-bars.tsx', 'components/strudel-player.tsx', 'lib/playback.ts'],
+    showcase: { blocks: ['strudel-studio', 'apple-music'] },
     highlights: ['Waveforms from any audio file', 'One playback clock for a player and its transport', 'StrudelPlayer: patterns you can edit while they play'],
   },
   {
@@ -238,6 +248,7 @@ export const LIBRARIES: Library[] = [
     description: 'usePersistentState for small settings, append-only local streams in the browser, and the Durable Streams client that mirrors them to a server and reads other devices\' streams back. Off until a server URL is set: nothing leaves the browser by default.',
     dependsOn: [],
     modules: ['lib/persistent-state.ts', 'lib/append-stream.ts', 'lib/durable-streams.ts'],
+    showcase: { pages: ['hooks-state'] },
     highlights: ['`usePersistentState`, typed and versioned', 'Append-only local streams', 'Cloud sync on Durable Streams'],
   },
 
@@ -270,6 +281,7 @@ export const LIBRARIES: Library[] = [
     description: 'A vault whose key never leaves a passkey (WebAuthn PRF): encrypt and store secrets in the browser, unlock with Face ID or Touch ID, and gate any screen behind it with VaultGate, which carries its own enrollment flow.',
     dependsOn: ['ui'],
     modules: ['lib/vault.ts', 'lib/vault-storage.ts', 'lib/vault-react.tsx', 'lib/passkey.ts', 'components/vault-gate.tsx'],
+    showcase: { pages: ['passkey-vault', 'env-variables'] },
     highlights: ['Keys derived from a passkey, never stored', 'VaultGate locks any subtree', 'Works offline'],
   },
   {

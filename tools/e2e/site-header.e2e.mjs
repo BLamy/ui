@@ -1,11 +1,11 @@
 import { test, expect } from '@playwright/test';
 
-/* The BL site has one bar. Every docs site it mounts (the ui docs, docstream's, the editor's, the roadmap) is a
+/* The BL site has one bar. Every docs site it mounts (the ui docs, the libraries, docstream's, the editor's, the roadmap) is a
    DocsSite without a header of its own (`header={false}`), and the site's header holds that site's search and, while
    the site is narrow enough to fold its sidebar away, the button that opens its navigation. These run against the
    site itself (`#/<route>`), not a `?demo=`. */
-const DOCS_ROUTES = ['introduction', 'dialog', 'blocks', 'docstream', 'docstream-editor', 'roadmap', 'roadmap/packages'];
-const OTHER_ROUTES = ['', 'libraries', 'libraries/ui'];
+const DOCS_ROUTES = ['introduction', 'dialog', 'blocks', 'docstream', 'docstream-editor', 'roadmap', 'roadmap/packages', 'libraries', 'libraries/ui'];
+const OTHER_ROUTES = [''];
 
 const open = async (page, route) => {
   await page.goto(`/?theme=light#/${route}`, { waitUntil: 'load' });

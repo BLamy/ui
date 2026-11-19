@@ -6,7 +6,6 @@ import { dirname, join, resolve } from 'node:path';
 import { LIBRARIES } from '../libraries';
 import { UI_ROOT } from '../plan-graph';
 import { INSTALL_COMMAND, PACKAGE, SAMPLE_NPM, SAMPLE_SOURCE, SOURCE_ITEM, SOURCE_LIBRARY_ITEM } from './install-data';
-import { ALL, FILING, FOLDERS, NOTES } from './notes-data';
 import { formatSize } from './sizes';
 
 const REPO = resolve(UI_ROOT, '../..');
@@ -111,49 +110,13 @@ describe('the libraries section', () => {
   });
 });
 
-describe('the live app\'s notes', () => {
-  const note = (id: string) => NOTES.find((n) => n.id === id)?.markdown ?? '';
-
-  it('files every note in a folder, with ids of its own', () => {
-    expect(new Set(NOTES.map((n) => n.id)).size).toBe(NOTES.length);
-    expect(FOLDERS[0].id).toBe(ALL);
-    for (const n of NOTES) expect(FILING.some((f) => f.id === n.folder), `${n.id} → ${n.folder}`).toBe(true);
-    for (const f of FILING) expect(NOTES.some((n) => n.folder === f.id), `${f.id} has a note`).toBe(true);
-  });
-
-  it('quotes the size classes lib/size-class.ts measures', () => {
+describe('the live app', () => {
+  it('is the macOS block, which turns into a phone where the kit\'s compact size class starts', () => {
     const src = read(join(UI_ROOT, 'src/lib/size-class.ts'));
-    const [, medium, regular] = /medium = (\d+), regular = (\d+)/.exec(src) ?? [];
-    expect([medium, regular]).toEqual(['640', '1024']);
-    const text = note('columns');
-    expect(text).toContain(`| under ${medium} px | compact |`);
-    expect(text).toContain(`| ${medium} to ${Number(regular) - 1} px | medium |`);
-    expect(text).toContain(`| ${regular} px and up | regular |`);
-  });
-
-  it('quotes the springs lib/motion.ts defines', () => {
-    const src = read(join(UI_ROOT, 'src/lib/motion.ts'));
-    const springs = [...src.matchAll(/^\s+(\w+): \{ type: 'spring', stiffness: (\d+), damping: (\d+)/gm)];
-    expect(springs.map(([, name]) => name)).toEqual(['snappy', 'smooth', 'tray', 'bouncy']);
-    const text = note('springs');
-    for (const [, name, stiffness, damping] of springs) expect(text, name).toContain(`| \`${name}\` | ${stiffness} / ${damping} |`);
-    // The utilities the note names are tokens, and `springs` is what the module exports.
-    const tokens = read(join(UI_ROOT, 'src/tokens.css'));
-    for (const token of ['--ease-spring-smooth', '--transition-duration-spring-smooth']) expect(tokens).toContain(token);
-    expect(text).toContain('`duration-spring-smooth ease-spring-smooth`');
-    expect(src).toMatch(/^export const springs = \{/m);
-  });
-
-  it('draws its notes with a part the Markdown library exports, with the props the note shows', () => {
-    const file = entrySource(`${PACKAGE}/markdown`);
-    expect(file && exportsOf(file).has('MarkdownView'), `${PACKAGE}/markdown exports MarkdownView`).toBe(true);
-    const src = read(join(UI_ROOT, 'src/components/markdown-view.tsx'));
-    for (const prop of ['markdown', 'streaming']) expect(src, prop).toMatch(new RegExp(`\\b${prop}\\??:`));
-  });
-
-  it('describes Dialog\'s default presentation as the component has it', () => {
-    const src = read(join(UI_ROOT, 'src/components/dialog.tsx'));
-    expect(src).toMatch(/export function Dialog\(\{[^}]*presentation = 'auto'/);
-    expect(note('dialogs')).toContain('`presentation="auto"` by default');
+    const [, medium] = /medium = (\d+), regular = (\d+)/.exec(src) ?? [];
+    expect(medium).toBe('640');
+    const block = read(join(REPO, 'registry/blocks/macos/page.tsx'));
+    expect(block).toMatch(/const isPhone = \(width: number\) => sizeClassOf\(width\) === 'compact'/);
+    expect(read(join(REPO, 'apps/docs/src/site/landing.tsx'))).toContain("import('@/components/blocks/macos/page')");
   });
 });

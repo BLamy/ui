@@ -1,5 +1,4 @@
-/* The BL site: one header over every page, and a hash router that picks what sits under it — the landing page, the
-   libraries, a docs site of its own (docstream, the editor, the roadmap), or the ui docs (every other `#/<page>`, as
+/* The BL site: one header over every page, and a hash router that picks what sits under it — the landing page, a docs site of its own (the libraries, docstream, the editor, the roadmap), or the ui docs (every other `#/<page>`, as
    before, including `#/blocks/<slug>`). `?demo=`, `?render` and `?harness=` never get here: main.tsx serves them bare.
 
    The header is the only bar. Every docs site under it is a DocsSite without its own header, sharing one controller
@@ -11,8 +10,6 @@ import App from '../app/app';
 import { SITE_URL } from '../pages';
 import { Landing } from './landing';
 import { DOCS_SITES, LibraryDocs, type DocsSiteId } from './library-docs';
-import { LibrariesIndex, LibraryPage } from './library-pages';
-import { LIBRARY } from './libraries';
 import { SiteHeader, type SiteArea } from './site-header';
 import { UNDER_HEADER } from './embedded';
 
@@ -33,29 +30,25 @@ const routeFromHash = () => window.location.hash.replace(/^#\/?/, '').split('#')
 
 type View =
   | { kind: 'home' }
-  | { kind: 'libraries' }
-  | { kind: 'library'; id: string }
   | { kind: 'docs'; id: DocsSiteId }
   | { kind: 'ui' };
 
 function viewOf(route: string): View {
   if (!route) return { kind: 'home' };
-  if (route === 'libraries') return { kind: 'libraries' };
-  if (route.startsWith('libraries/')) return { kind: 'library', id: route.slice('libraries/'.length) };
   const site = DOCS_SITES.find((s) => route === s || route.startsWith(`${s}/`));
   if (site) return { kind: 'docs', id: site };
   return { kind: 'ui' };
 }
 
-const AREA: Record<View['kind'], SiteArea> = { home: 'home', libraries: 'libraries', library: 'libraries', docs: 'library-docs', ui: 'docs' };
+const AREA: Record<View['kind'], SiteArea> = { home: 'home', docs: 'library-docs', ui: 'docs' };
+/** The header's area for a docs site: the libraries' own, or a library's docs. */
+const areaOf = (view: View): SiteArea => (view.kind === 'docs' && view.id === 'libraries' ? 'libraries' : AREA[view.kind]);
 
 /** What the header's search says it covers on each docs site ("Search Docstream…"). */
-const DOCS_NAME: Record<DocsSiteId | 'ui', string> = { ui: 'BL UI', docstream: 'Docstream', 'docstream-editor': 'Docstream Editor', roadmap: 'the roadmap' };
+const DOCS_NAME: Record<DocsSiteId | 'ui', string> = { ui: 'BL UI', docstream: 'Docstream', 'docstream-editor': 'Docstream Editor', roadmap: 'the roadmap', libraries: 'the libraries' };
 
 function titleOf(view: View): string | null {
   if (view.kind === 'home') return 'BL — React libraries for apps that feel native';
-  if (view.kind === 'libraries') return 'Libraries — BL';
-  if (view.kind === 'library') return `${LIBRARY[view.id]?.name ?? 'Library'} — BL`;
   return null; // A docs site keeps the title in step with its page.
 }
 
@@ -109,7 +102,7 @@ export default function Site() {
       <div className="flex h-dvh flex-col overflow-hidden" onClickCapture={followSiteLinks}>
         <SiteHeader
           route={route}
-          area={AREA[view.kind]}
+          area={areaOf(view)}
           appearance={appearance}
           onToggleAppearance={toggleAppearance}
           docs={docsName ? { controller: docs, name: docsName } : undefined}
@@ -119,7 +112,7 @@ export default function Site() {
             : view.kind === 'ui' ? <App appearance={appearance} height={UNDER_HEADER} controller={docs} />
             : (
               <BLProvider appearance={appearance} className="bg-background select-text">
-                {view.kind === 'home' ? <Landing /> : view.kind === 'libraries' ? <LibrariesIndex /> : <LibraryPage id={view.id} />}
+                <Landing />
               </BLProvider>
             )}
         </div>

@@ -7,9 +7,11 @@ import type { Plugin } from 'vite';
 import { aliases } from '../../tools/alias.mjs';
 import { getServiceWorkerContent } from '@agent-wasm/core/next';
 import { countMarkdown, listUnits } from './src/site/plan-graph.ts';
+import { libraryShowcase } from './src/site/showcase-graph.ts';
 
 /* `virtual:bl-site-files`: what the BL site reports on without bundling the files — the units of packages/ui/src (the
-   roadmap's module map, see src/site/plan-graph.ts) and the Markdown pages of docstream's and the editor's docs. */
+   roadmap's module map, see src/site/plan-graph.ts), the Markdown pages of docstream's and the editor's docs, and the
+   blocks and docs pages each library's page shows (src/site/showcase-graph.ts). */
 function siteFiles(): Plugin {
   const ID = 'virtual:bl-site-files';
   return {
@@ -18,7 +20,7 @@ function siteFiles(): Plugin {
     load(id) {
       if (id !== `\0${ID}`) return null;
       const pages = ['docstream-playground', 'docstream-editor-playground'].reduce((n, app) => n + countMarkdown(new URL(`../${app}/docs`, import.meta.url).pathname), 0);
-      return `export const uiUnits = ${JSON.stringify(listUnits())};\nexport const libraryPages = ${pages};\n`;
+      return `export const uiUnits = ${JSON.stringify(listUnits())};\nexport const libraryPages = ${pages};\nexport const libraryShowcase = ${JSON.stringify(libraryShowcase())};\n`;
     },
   };
 }

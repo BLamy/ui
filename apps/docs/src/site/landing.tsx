@@ -1,8 +1,10 @@
-/* The site's front page. It leads with the kit itself: a small app built from the real parts, in a frame whose width
+/* The site's front page. It leads with the kit itself: the macOS block, a desktop built from the real parts, in a frame whose width
    the reader sets, so "responsive by container" is something they do rather than read. Then the two ways to install,
    as commands to copy, and the libraries as what they are: entries of one package. The page's own parts are in
    ./landing/. */
+import { lazy, Suspense } from 'react';
 import { Button } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/spinner';
 import { Icon } from '@/lib/icon';
 import { pressableFocusRing } from '@/lib/primitives';
 import { useCopy } from '@/lib/use-copy';
@@ -11,10 +13,13 @@ import { BLOCK_PAGES } from '../pages';
 import { InstallWays } from './landing/install';
 import { INSTALL_COMMAND, PACKAGE } from './landing/install-data';
 import { LibraryIndex } from './landing/library-index';
-import NotesApp from './landing/notes-app';
 import { Stage } from './landing/stage';
 import { LIBRARY } from './libraries';
 import { REPO_URL, SitePage } from './site-parts';
+
+/* The macOS block: a desktop whose apps are the other blocks, and an iPhone under 640 px. Loaded after the page, and
+   its apps load as they open. It doesn't record the session or open Alfred on load, so the page keeps its focus. */
+const MacOS = lazy(() => import('@/components/blocks/macos/page'));
 
 /** A link in the page's own voice: the text color, an arrow, underlined while hovered. */
 function TextLink({ href, children, external }: { href: string; children: string; external?: boolean }) {
@@ -76,18 +81,20 @@ export function Landing() {
           </div>
         </div>
         <Stage
-          label="Notes, a live example app"
-          lead="This is the kit running, not a picture of it."
+          label="macOS, a live example app"
+          lead="This is the kit running, not a picture of it. Open an app from the Dock."
           caption={({ resizable, sizeClass, available, regularFits }) => (
             <>
-              Notes is a SplitView in a frame, and it measures the frame, never the window. Under 640 px its columns are a stack, and its sort menu and New Note dialog open as sheets.{' '}
+              A desktop built from the kit, whose apps are the other <a href="#/blocks">blocks</a>: Mail, Notes, Reminders, Safari, VS Code and more. It measures its frame, never the window, so under 640 px it becomes an iPhone with a springboard, and the windows come back where they were when it widens.{' '}
               {resizable
                 ? <>The frame is {sizeClass} now.{regularFits ? null : <> This page gives it at most {available} px, so regular, which starts at 1024 px, is out of reach here.</>}</>
                 : <>The frame is {sizeClass} at this width; on a wider screen you can resize it.</>}
             </>
           )}
         >
-          <NotesApp />
+          <Suspense fallback={<div role="status" className="grid h-full place-items-center text-footnote text-muted-foreground"><span className="flex items-center gap-2"><Spinner size={16} /> Starting the desktop…</span></div>}>
+            <MacOS defaultApps={['mail', 'notes']} defaultOpen={false} autoFocus={false} record={false} />
+          </Suspense>
         </Stage>
       </section>
 

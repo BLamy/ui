@@ -4,4 +4,6 @@ declare module 'virtual:bl-site-files' {
   export const uiUnits: string[];
   /** Markdown pages across docstream's and the editor's docs folders. */
   export const libraryPages: number;
+  /** Per library id: the blocks that import it and the docs pages of its parts (src/site/showcase-graph.ts). */
+  export const libraryShowcase: import('./showcase-graph').LibraryShowcase;
 }

@@ -90,7 +90,7 @@ export function Stage({ children, label, lead, caption }: {
           data-size-class={sizeClass}
           onTransitionEnd={(e) => { if (e.target === e.currentTarget) setSpringing(false); }}
           className={cn(
-            'relative mx-auto h-140 w-(--frame-width) max-w-full overflow-hidden rounded-card shadow-raised',
+            'relative mx-auto h-[min(46rem,80dvh)] w-(--frame-width) max-w-full overflow-hidden rounded-card shadow-raised',
             springing && 'transition-[width] duration-spring-smooth ease-spring-smooth motion-reduce:transition-none',
           )}
           style={{ '--frame-width': `${width}px` } as CSSProperties}
