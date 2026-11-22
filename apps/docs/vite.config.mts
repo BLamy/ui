@@ -63,6 +63,34 @@ function tailscaleServiceWorker(): Plugin {
   };
 }
 
+/* `.replay` files: Replay recordings read once into JSON, which docstream opens in the time travel debugger
+   ({% embed url="replays/checkout.replay" %}). The Replay Debugger block holds them (its demos load them too); the docs
+   serve them at replays/<name>.replay rather than keep a second copy. */
+const REPLAY_FILES: Record<string, string> = {
+  'shop.replay': 'shop.json',
+  'checkout.replay': 'checkout-session.json',
+  'tanstack.replay': 'tanstack-session.json',
+};
+function replayFiles(): Plugin {
+  const fileOf = (name: string) => new URL(`../../registry/blocks/replay-debugger/recordings/${REPLAY_FILES[name]}`, import.meta.url);
+  return {
+    name: 'bl-docs-replay-files',
+    configureServer(server) {
+      server.middlewares.use((req, res, next) => {
+        const path = req.url ? new URL(req.url, 'http://x').pathname : '';
+        const name = path.startsWith(`${server.config.base}replays/`) ? path.slice(`${server.config.base}replays/`.length) : '';
+        if (!(name in REPLAY_FILES)) return next();
+        res.setHeader('content-type', 'application/json');
+        res.setHeader('cache-control', 'no-cache');
+        res.end(readFileSync(fileOf(name)));
+      });
+    },
+    generateBundle() {
+      for (const name of Object.keys(REPLAY_FILES)) this.emitFile({ type: 'asset', fileName: `replays/${name}`, source: readFileSync(fileOf(name)) });
+    },
+  };
+}
+
 /* FFmpeg (lib/ffmpeg) runs on threads, so its page must be cross-origin isolated. Every document gets
    `Document-Isolation-Policy: isolate-and-credentialless`, which isolates it in Chrome without COOP (popups such as the
    Tailscale sign-in keep their opener) or COEP's demands on iframes. Browsers without it get COOP/COEP on the URLs that
@@ -155,7 +183,7 @@ export default defineConfig(() => ({
     host: 'localhost',
     proxy: openCodeAssets,
   },
-  plugins: [react(), tailwindcss(), siteFiles(), tailscaleServiceWorker(), almostNodeServiceWorker(), ffmpegIsolation(), extractInlinedBinaries()],
+  plugins: [react(), tailwindcss(), siteFiles(), replayFiles(), tailscaleServiceWorker(), almostNodeServiceWorker(), ffmpegIsolation(), extractInlinedBinaries()],
   resolve: {
     conditions: ['@org/source'], alias: aliases,
     // Docstream is part of the library (`@brett_lamy/ui/docstream…`), served from its source like every other module, so

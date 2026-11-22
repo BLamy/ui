@@ -8,8 +8,8 @@ import { Toggle } from '@/components/ui/toggle';
 import { useState } from 'react';
 import { useSizeClassScope } from '@/lib/container';
 import type { SizeClass } from '@/lib/size-class';
-import type { NavigationKind, StepLink } from './host';
-import { frameName, sourceName, type DebuggerModel } from './model';
+import type { NavigationKind } from './host';
+import { sourceName, type DebuggerModel } from './model';
 import { useModel } from './use-model';
 const Navigation: Partial<Record<DebugToolbarAction, NavigationKind>> = {
   continue: 'continue',
@@ -68,33 +68,7 @@ export function StepButtons({
     />
   );
 }
-function Links({ groups }: { groups: StepLink[][] }) {
-  return (
-    <>
-      {groups.map((links) => (
-        <span
-          key={links[0].id}
-          className="debugger-links inline-flex flex-wrap gap-0.5 ms-1.5 align-middle"
-        >
-          {links.map((link) => (
-            <Button
-              key={link.id}
-              variant="quiet"
-              size="sm"
-              className="debugger-request h-5 px-1.5 text-caption2 font-medium text-primary max-w-full overflow-hidden text-ellipsis"
-              data-slot="debugger-request"
-              title={link.title}
-              onClick={link.onClick}
-            >
-              {link.label}
-            </Button>
-          ))}
-        </span>
-      ))}
-    </>
-  );
-}
-/** Where this is: paused in what, at which step, and what the moment has to do with anything else. */
+/** Between JavaScript: says so, and offers the way to the next step that ran. Nothing while paused in code. */
 export function DebuggerPosition({
   model,
   className,
@@ -104,7 +78,7 @@ export function DebuggerPosition({
 }) {
   // What's here changes with everything that can move.
   useModel(model, (m) => m.version);
-  const { idle, stepInfo: info, summary, pause, playheadMs } = model;
+  const { idle, stepInfo: info, playheadMs } = model;
   if (idle) {
     const loc = model.viewed(info?.location);
     const source = loc ? model.sourceEntries.get(loc.sourceId) : undefined;
@@ -151,45 +125,7 @@ export function DebuggerPosition({
       </div>
     );
   }
-  if (!info || !summary)
-    return (
-      <div
-        className={cn(
-          'debugger-position block flex-[1_1_260px] min-w-0 max-h-[62px] overflow-x-hidden overflow-y-auto text-caption leading-4 [&.idle]:flex [&.idle]:items-center [&.idle]:gap-2',
-          className,
-        )}
-        data-slot="debugger-position"
-        style={style}
-      />
-    );
-  const loc = model.viewed(info.location);
-  const source = loc ? model.sourceEntries.get(loc.sourceId) : undefined;
-  const frame = model.stackFrames()[0];
-  const links = model.host.describeStep?.(info);
-  return (
-    <div
-      className={cn(
-        'debugger-position block flex-[1_1_260px] min-w-0 max-h-[62px] overflow-x-hidden overflow-y-auto text-caption leading-4 [&.idle]:flex [&.idle]:items-center [&.idle]:gap-2',
-        className,
-      )}
-      data-slot="debugger-position"
-      style={style}
-    >
-      <span className="debugger-paused me-1.5 inline-flex rounded-sm bg-warning/10 px-1.5 py-0.5 text-warning font-semibold">Paused</span>
-      <span>{frame ? ` in ${frameName(frame)}` : ''}</span>
-      {loc ? (
-        <span className="debugger-mono font-mono text-caption">{` ${sourceName(source)}:${loc.line}:${loc.column ?? 0}`}</span>
-      ) : null}
-      <span className="debugger-muted text-muted-foreground text-caption2">
-        {` · step ${info.index.toLocaleString()} of ${summary.steps.toLocaleString()} · progress ${info.progress.toLocaleString()}`}
-        {pause?.ms !== undefined
-          ? ` · replayed in ${Math.round(pause.ms)} ms`
-          : ''}
-        {!pause && model.windowText ? ` · ${model.windowText}` : ''}
-      </span>
-      {links?.length ? <Links groups={links} /> : null}
-    </div>
-  );
+  return null;
 }
 const DevToolsOpenTitle =
   'Open Chrome DevTools attached to this recording. It pauses at the start, like node --inspect-brk, and follows this playhead';
@@ -294,7 +230,7 @@ export function DevToolsControl({
     </div>
   );
 }
-/** What goes over the code: stepping, where this is, and the way into DevTools. */
+/** What goes over the code: stepping, application code only, and the way into DevTools. `data-step` is the paused step. */
 export function DebuggerToolbar({
   model,
   sizeClass,
@@ -303,15 +239,14 @@ export function DebuggerToolbar({
   style,
 }: DebuggerPartProps & {
   model: DebuggerModel;
-  /** A compact size class wraps the position onto its own line and drops the engine line. Default: the size-class
-      scope it's in. */
+  /** A compact size class shortens the DevTools label and wraps the between-JS notice onto its own line. Default:
+      the size-class scope it's in. */
   sizeClass?: SizeClass;
   devTools?: boolean;
 }) {
   const scope = useSizeClassScope();
   const compact = (sizeClass ?? scope) === 'compact';
-  const warning = useModel(model, (m) => m.summary?.timeline.warning ?? null);
-  const engine = useModel(model, (m) => m.debugStatus());
+  const step = useModel(model, (m) => m.stepInfo?.index);
   const applicationCodeOnly = useModel(model, (m) => m.applicationCodeOnly);
   const unavailable = useModel(model, (m) => m.applicationCodeUnavailable);
   return (
@@ -323,6 +258,7 @@ export function DebuggerToolbar({
         className,
       )}
       data-slot="debugger-toolbar"
+      data-step={step}
       style={style}
     >
       <StepButtons model={model} />
@@ -344,20 +280,6 @@ export function DebuggerToolbar({
         </span>
       ) : null}
       <DebuggerPosition model={model} />
-      {compact ? null : (
-        <div
-          className="debugger-engine basis-full min-w-0 shrink overflow-hidden text-muted-foreground text-caption2 whitespace-nowrap text-ellipsis"
-          data-slot="debugger-engine"
-        >
-          {engine}
-          {warning ? (
-            <span className="debugger-warning text-warning" title={warning}>
-              {' '}
-              · JS times on the playhead are approximate
-            </span>
-          ) : null}
-        </div>
-      )}
     </div>
   );
 }

@@ -1,0 +1,6 @@
+{
+  "title": "Flame Chart · a million spans",
+  "description": "1,000,000 spans in eight services over about four minutes, built as typed arrays. Wheel to zoom from the whole run to a single query and drag to pan; the line under the chart says what each redraw took.",
+  "height": 620,
+  "status": "Live"
+}

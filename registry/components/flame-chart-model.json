@@ -1,0 +1,29 @@
+{
+  "name": "flame-chart-model",
+  "title": "Flame chart model",
+  "description": "The data and drawing behind FlameChart: spans as typed-array columns (flameData packs objects and rows), a per-row index by start with a running max end for culling and hit testing, self time, family, critical path, percentiles and interval unions, lane layout, ruler ticks, and the canvas drawing with level of detail.",
+  "files": [
+    "lib/flame-chart-model.ts",
+    "lib/flame-chart-draw.ts"
+  ],
+  "exports": [
+    "flameData",
+    "packRows",
+    "selfTimes",
+    "selfTime",
+    "criticalPath",
+    "familyOf",
+    "spanAt",
+    "percentile",
+    "unionMs",
+    "formatDuration"
+  ],
+  "types": [
+    "FlameData",
+    "FlameLane",
+    "FlameSpanInput",
+    "FlameRange",
+    "FlameIndex",
+    "FlameTree"
+  ]
+}

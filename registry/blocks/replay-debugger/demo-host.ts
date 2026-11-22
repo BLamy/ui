@@ -17,7 +17,7 @@ import type {
   StepClock,
   StepInfo,
   TimelineMarks,
-} from './host';
+} from '@/components/ui/replay-debugger';
 
 /* ══ A recording you can hold in your hand ══
    Everything the debugger block asks of a host, answered from a table: a short program, already run. It's what the block's
@@ -306,7 +306,11 @@ export const DEMO_SUMMARY: DebuggerSummary = {
   steps: STOPS.length,
   firstStep: 0,
   lastStep,
-  timeline: { warning: null },
+  timeline: {
+    warning: null,
+    times: STOPS.map((_, i) => timeOf(i)),
+    depths: STOPS.map((stop) => stop.stack.length - 1),
+  },
 };
 
 const hitCounts: Record<number, number> = {};

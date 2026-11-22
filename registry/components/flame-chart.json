@@ -1,0 +1,35 @@
+{
+  "name": "flame-chart",
+  "title": "FlameChart",
+  "description": "A distributed trace as a canvas flame chart: a lane per process or service, each span under the span that caused it, curves to what it caused in other lanes, solid for running, outlined for waiting, dashed for pending and red for failed, with a minimap, a ruler and a playhead a debugger can follow. Spans are typed-array columns indexed per row, so a million draw in milliseconds: binary-search culling, sub-pixel spans merged into runs, cached labels, and the playhead and hover on an overlay. On UI SDK: the playhead, view, selection and collapsed lanes each with change details, onSpanActivate, keyboard navigation between spans, and an agent bridge.",
+  "page": "flame-chart",
+  "files": [
+    "components/flame-chart.tsx"
+  ],
+  "exports": [
+    "FlameChart",
+    "flameChartVariants"
+  ],
+  "imports": [
+    "FlameChart",
+    "flameData",
+    "criticalPath",
+    "familyOf"
+  ],
+  "types": [
+    "FlameChartProps",
+    "FlameChartHandle",
+    "FlameDrawStats",
+    "FlameValueChangeDetails",
+    "FlameValueChangeReason",
+    "FlameValueCommitDetails",
+    "FlameViewChangeDetails",
+    "FlameViewChangeReason",
+    "FlameSelectReason",
+    "FlameSelectedChangeDetails",
+    "FlameCollapseReason",
+    "FlameCollapsedLanesChangeDetails",
+    "FlameActivateReason",
+    "FlameActivateDetails"
+  ]
+}

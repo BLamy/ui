@@ -46,3 +46,6 @@ packages/ui-sdk-*/docs/
 .env.*
 !.env.example
 tools/agent-test/.results/
+
+# The extractor that drives Replay's native linker over recordings, and the recorded checkout demo: kept locally, not in git.
+tools/replay-cache/

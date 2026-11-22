@@ -1,0 +1,6 @@
+{
+  "title": "Trace Timeline · a test story from a recording",
+  "description": "A real run of shop.js, replayed once with the linker and loaded from its JSON cache. Scrub and the story scrolls with you; under 600 px the timeline is a rail under your thumb.",
+  "height": 600,
+  "status": "Live"
+}

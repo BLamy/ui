@@ -236,6 +236,22 @@ player nears the viewport:
 `isRrwebUrl(url)` the test the renderer uses; both are exported from the root and
 `@brett_lamy/ui/docstream/replay`.
 
+An embed of a `.replay` file opens a time travel debugger over it. The file is Replay
+recordings read once with Replay's native linker and written down as JSON: one recording
+(`bl-replay-cache/…`: every step of the program's own code, its frames, scopes and values)
+or a session of several (`bl-replay-session/…`: a page and the services behind it on one
+clock, with the spans that join them). One recording opens in the debugger; a session opens
+with the page as rrweb saw it, its timeline and each request's code, or, with no page, a
+debugger over every recording. It's fetched, and the debugger loaded, only near the viewport:
+
+```md
+{% embed url="./checkout.replay" title="Checkout, a page and four services" %}
+```
+
+`ReplayDebugFile` (`url`, `title`, `view`) is that embed as a component, and
+`isReplayDebugUrl(url)` its test; the debugger is BL UI's ReplayDebugger
+(`@brett_lamy/ui/replay`).
+
 The replay component is also available directly. `ReplayPreview` takes either
 `events` (an rrweb recording you hold: the full player) or `source` (a page URL, an
 event array, or an events endpoint):

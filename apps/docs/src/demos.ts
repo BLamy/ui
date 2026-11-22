@@ -20,7 +20,8 @@ const blocks = createGlobDemoResolver({
   entry: 'page.tsx',
   modules: import.meta.glob('../../../registry/blocks/*/page.tsx'),
   sources: import.meta.glob<string>(
-    ['../../../registry/blocks/*/**/*.{ts,tsx,css,json}', '!../../../registry/blocks/*/**/*.stories.tsx'],
+    // A session recording (megabytes of JSON) is data a block fetches by URL, not source to read or copy with the page.
+    ['../../../registry/blocks/*/**/*.{ts,tsx,css,json}', '!../../../registry/blocks/*/**/*.stories.tsx', '!../../../registry/blocks/*/recordings/*-session.json'],
     { query: '?raw', import: 'default' },
   ),
   // How the viewer shows a block: full bleed, multi-file. Its title and description head its own docs page

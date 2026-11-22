@@ -1,0 +1,6 @@
+{
+  "title": "Flame Chart · checkouts across five services",
+  "description": "Five checkouts through a browser, a gateway, orders, payments and inventory: links between services, a declined charge that retried, receipts still pending. Search to highlight, select a span to light its family, or show its critical path.",
+  "height": 640,
+  "status": "Live"
+}

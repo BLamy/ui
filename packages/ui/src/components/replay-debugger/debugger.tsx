@@ -22,10 +22,11 @@ import {
   DebuggerScopes,
   DebuggerStack,
 } from './stack';
+import { DebuggerTimeline } from './timeline';
 import { DebuggerToolbar } from './toolbar';
 /* ══ All of it, in the room it's given ══
-   The block's parts together, for a host that doesn't want to arrange them itself: the code with its console under it and
-   the stack beside it in a Workspace, and one at a time under a bottom tab bar in a compact box (the kit's size class of its own
+   The block's parts together, for a host that doesn't want to arrange them itself: a timeline of the whole recording
+   across the top, the code with its console under it and the stack beside it in a Workspace, and one at a time under a bottom tab bar in a compact box (the kit's size class of its own
    box). The width can change at any moment, and nothing's lost, as everything worth keeping is in the model. */
 type Tab = 'code' | 'console' | 'stack';
 type Section = 'stack' | 'scopes' | 'breakpoints';
@@ -48,20 +49,23 @@ const Sections: {
   { value: 'scopes', label: 'Scopes' },
   { value: 'breakpoints', label: 'Breakpoints' },
 ];
+/** A console row, with the step that logged it when it's known: pressing the row pauses there (otherwise at its time). */
+export type DebuggerConsoleRow = LogRow & { step?: number };
 /** What's been logged and where, for a console: by default, what a host's said with `logged`, and what logpoints found. */
-function useConsoleRows(model: DebuggerModel, logged: readonly LogRow[] = []) {
+function useConsoleRows(model: DebuggerModel, logged: readonly DebuggerConsoleRow[] = []) {
   const version = useSyncExternalStore(
     model.subscribe,
     () => model.marksVersion,
   );
   return useMemo(() => {
-    const hits: LogRow[] = [];
+    const hits: DebuggerConsoleRow[] = [];
     for (const [, results] of model.logpointResults) {
       results.entries.forEach((hit, i) => {
         hits.push({
           id: `lp${results.run}:${i}`,
           level: hit.error ? 'error' : 'log',
           time: model.map?.approxTimeOf(hit.step.index),
+          step: hit.step.index,
           source: `line ${hit.step.location?.line ?? ''}`,
           message:
             hit.error ?? JSON.stringify(hit.result?.returned?.value ?? '…'),
@@ -76,9 +80,12 @@ function useConsoleRows(model: DebuggerModel, logged: readonly LogRow[] = []) {
 function ConsolePart({
   model,
   logged,
+  onJump,
 }: {
   model: DebuggerModel;
-  logged?: readonly LogRow[];
+  logged?: readonly DebuggerConsoleRow[];
+  /** After a press on a row has moved the debugger there. */
+  onJump?: () => void;
 }) {
   const rows = useConsoleRows(model, logged);
   const time = useSyncExternalStore(
@@ -96,6 +103,12 @@ function ConsolePart({
         rows={rows}
         currentTime={time}
         markerLabel="Paused here"
+        onAction={(_, { row }) => {
+          if (row.step !== undefined) void model.pauseAt(row.step);
+          else if (row.time !== undefined) model.setPlayhead(row.time);
+          else return;
+          onJump?.();
+        }}
         footer={footer}
         className="debugger-console-list flex-1 min-h-0"
       />
@@ -217,13 +230,17 @@ const defaultLayout: WorkspaceLayoutInput<Tab> = {
 };
 export interface ReplayDebuggerProps extends DebuggerPartProps {
   model: DebuggerModel;
-  /** What the recording logged, on the same clock as the model's playhead. */
-  logged?: readonly LogRow[];
+  /** What the recording logged, on the same clock as the model's playhead. Pressing a row pauses at its `step`, or at
+   *  its time without one. */
+  logged?: readonly DebuggerConsoleRow[];
+  /** A timeline of the whole recording across the top, to scrub. Turn it off when the host has its own. Default: on. */
+  timeline?: boolean;
   className?: string;
 }
 export function ReplayDebugger({
   model,
   logged,
+  timeline = true,
   className,
   style,
 }: ReplayDebuggerProps) {
@@ -238,7 +255,8 @@ export function ReplayDebugger({
           toolbar={<DebuggerToolbar model={model} sizeClass={sizeClass} />}
         />
       );
-    if (id === 'console') return <ConsolePart model={model} logged={logged} />;
+    // One panel at a time: a press on a console row shows the code it went to.
+    if (id === 'console') return <ConsolePart model={model} logged={logged} onJump={narrow ? () => setTab('code') : undefined} />;
     return <StackPart model={model} sizeClass={sizeClass} />;
   };
   return (
@@ -252,6 +270,7 @@ export function ReplayDebugger({
       style={style}
     >
       <SizeClassProvider value={sizeClass}>
+      {timeline ? <DebuggerTimeline model={model} compact={narrow} /> : null}
       {narrow ? (
         <>
           <div className="replay-debugger-panel flex flex-col flex-1 min-h-0 h-full">

@@ -79,6 +79,13 @@ const [view, setView] = useState(range)
 />
 ```
 
+The list under it is a [LogList](https://blamy.github.io/ui/#/log-list) of the same stops, given the playhead as `currentTime`. Scrub the strip or the rail and the list scrolls to the moment you're on; press a row and the playhead goes there. The timeline doesn't know the list is there: they share one number.
+
+```tsx
+<TraceTimeline … value={time} onValueChange={(t) => setTime(t)} />
+<LogList rows={rows} currentTime={time} onAction={(id, { row }) => setTime(row.time)} />
+```
+
 The strip fills the width of its parent and is as tall as its rows want, unless you give it a height: thread rows share what's there, from 4 to 14 px each. The rail is positioned like IndexBar: absolute on an edge (`side`: `end`, the default, or `start`, which follow the text direction) of the nearest positioned ancestor, the full height of it and 44 px wide, so put it next to your scroller and not inside it. Move or size it with classes: `className="inset-y-2"` keeps it 8 px from the top and bottom, `w-14` widens it. A rail on the `end` side publishes how far list rows run under it as `--bl-index-bar-inset` on its parent, with the same meaning as IndexBar's, so `ListRow`s keep their accessories clear of it (`insetContent={false}` opts out).
 
 | On a strip | On a rail |
@@ -89,6 +96,43 @@ The strip fills the width of its parent and is as tall as its rows want, unless 
 | `stops` as a row of ticks | `stops` as dashes that swell around the pointer, with a card beside it |
 | A hover line with its time in the ruler | A hover line, and the card |
 | A playhead with a head | A line across the rail and a small time pill on the inner side |
+
+## A test story, from a recording
+
+A run of a small Node script told the way a test runner's story view tells a test, as in Wallaby or the Replay Tests extension for VS Code: every line that ran, in order, indented by how deep the stack was, with what its frame held beside it. Scrub and the story scrolls with you, and the code follows. The axis is `stopAxis` over every step, so each step gets the same share of the strip however long it took, as a story would.
+
+{% demo src="trace-timeline/test-story" %}
+
+On a phone it's the same component under 600 px: the timeline becomes a rail on the story's edge, under your thumb, the card beside it says which line you're on, and the line and its values sit in a card above the list.
+
+{% demo src="trace-timeline/test-story" viewport="phone" title="Trace Timeline · a test story on a phone" %}
+
+Nothing here replays anything. The recording (Node 26 running `shop.js`, 42 kB) was replayed once with Replay's native linker by an extractor (kept outside this repository), which pauses at every step in the program's own sources and writes down where each step is, its stack, where each kind of step goes from it, and the frames, scopes and objects there. The page loads that JSON, 42 kB gzipped, and `storyOf(cache)` from the [Replay Debugger](https://blamy.github.io/ui/#/blocks/replay-debugger) block turns it into entries. It's the idea of [rr-dash](https://github.com/replayio/rr-dash)'s bundle, extract once and load the answers, in the shape of the block's `DebuggerHost`.
+
+```tsx
+import { storyOf } from '@/components/blocks/replay-debugger/cache'
+import cache from './shop.json'
+
+const entries = storyOf(cache) // [{ step, ms, depth, file, line, code, functionName, values, logged }]
+const times = Float64Array.from(entries, (e) => e.ms)
+
+<TraceTimeline range={{ start: times[0], end: times.at(-1) }} axis={stopAxis(stops, range)} … />
+<LogList rows={rows} currentId={entries[story.at(time)].step} currentTime={time} />
+```
+
+## A full-stack session, request by request
+
+Several recordings on one clock: a page that recorded itself with rrweb, and four Node services behind it (a gateway, orders, payments and inventory) that call each other over HTTP with W3C trace context, each recorded with Replay and replayed once into JSON. The timeline has a lane per recording, each with its own `offset` onto the shared clock, and each request drawn from where the page sent it to where the gateway answered. The page plays above it, and beside them is every request a backend answered, with its code at the step the playhead is on, highlighted, and the call stack and variables there.
+
+The axis is `stopAxis` over every step of every request, so a request that took 3 ms of a six-second session still gets its share and scrubs line by line. As the playhead passes into the next request, that one opens and the last one closes, and the list keeps it in view.
+
+{% demo src="trace-timeline/request-points" %}
+
+On a phone it's the same component: the page floats in a corner as a picture in picture you can drag to any other, the timeline is a rail on the edge under your thumb, and the request points fill the rest.
+
+{% demo src="trace-timeline/request-points" viewport="phone" title="Trace Timeline · a full-stack session on a phone" %}
+
+The session is a `ReplaySession` (format `bl-replay-session/1`), extracted once with Replay's linker, and the view is the [Replay Debugger](https://blamy.github.io/ui/#/blocks/replay-debugger) block's `FullStackReplay`.
 
 ## Lanes
 

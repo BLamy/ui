@@ -166,8 +166,10 @@
         { "id": "open-code", "title": "OpenCode" },
         { "id": "pencilkit", "title": "PencilKit" },
         { "id": "replay-preview", "title": "ReplayPreview" },
+        { "id": "replay-debugger", "title": "ReplayDebugger" },
         { "id": "terminal", "title": "Terminal" },
         { "id": "trace-timeline", "title": "TraceTimeline" },
+        { "id": "flame-chart", "title": "FlameChart" },
         { "id": "tui-preview", "title": "TuiPreview" },
         { "id": "workspace", "title": "Workspace" }
       ]

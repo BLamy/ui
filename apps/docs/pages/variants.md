@@ -1,6 +1,6 @@
 # Variants reference
 
-Every BL UI component is a [cva](https://cva.style) recipe. This page is generated from the source (103 recipes) — the same functions you can call on any element, and the defaults you can edit in your installed copy. See [Styling and variants](https://blamy.github.io/ui/#/styling) for how to use, compose and change them.
+Every BL UI component is a [cva](https://cva.style) recipe. This page is generated from the source (104 recipes) — the same functions you can call on any element, and the defaults you can edit in your installed copy. See [Styling and variants](https://blamy.github.io/ui/#/styling) for how to use, compose and change them.
 
 ```tsx
 import { buttonVariants } from '@/components/ui/button'
@@ -721,6 +721,23 @@ box-border inline-flex max-w-full min-w-0 items-stretch rounded-lg text-foregrou
 | --- | --- |
 | `default` (default) | `bg-secondary shadow-hairline` |
 | `preview` | `bg-primary/10 text-foreground shadow-hairline` |
+
+## FlameChart
+
+### `flameChartVariants`
+
+Defined in `@/components/ui/flame-chart`. Base classes:
+
+```text
+relative block h-(--fc-height) w-full touch-none overflow-hidden font-sans select-none -outline-offset-2 [outline:2px_solid_transparent] focus-visible:[outline:2px_solid_var(--primary)]
+```
+
+**`frame`** — default `none`
+
+| Value | Adds |
+| --- | --- |
+| `none` (default) | `bg-background` |
+| `card` | `rounded-card bg-background shadow-hairline` |
 
 ## FloatingSheet
 

@@ -466,6 +466,7 @@ const MIME: Record<string, string> = {
   webm: "video/webm",
   stl: "model/stl",
   rrweb: "application/json",
+  replay: "application/json",
   txt: "text/plain",
   csv: "text/csv",
 }

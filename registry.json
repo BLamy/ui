@@ -5187,6 +5187,61 @@
       }
     },
     {
+      "name": "flame-chart-model",
+      "type": "registry:lib",
+      "title": "Flame chart model",
+      "description": "The data and drawing behind FlameChart: spans as typed-array columns (flameData packs objects and rows), a per-row index by start with a running max end for culling and hit testing, self time, family, critical path, percentiles and interval unions, lane layout, ruler ticks, and the canvas drawing with level of detail.",
+      "dependencies": [],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/trace-timeline-model.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/flame-chart-draw.ts",
+          "type": "registry:lib",
+          "target": "lib/flame-chart-draw.ts"
+        },
+        {
+          "path": "packages/ui/src/lib/flame-chart-model.ts",
+          "type": "registry:lib",
+          "target": "lib/flame-chart-model.ts"
+        }
+      ]
+    },
+    {
+      "name": "flame-chart",
+      "type": "registry:ui",
+      "title": "FlameChart",
+      "description": "A distributed trace as a canvas flame chart: a lane per process or service, each span under the span that caused it, curves to what it caused in other lanes, solid for running, outlined for waiting, dashed for pending and red for failed, with a minimap, a ruler and a playhead a debugger can follow. Spans are typed-array columns indexed per row, so a million draw in milliseconds: binary-search culling, sub-pixel spans merged into runs, cached labels, and the playhead and hover on an overlay. On UI SDK: the playhead, view, selection and collapsed lanes each with change details, onSpanActivate, keyboard navigation between spans, and an agent bridge.",
+      "dependencies": [
+        "@brett_lamy/ui@6.0.0",
+        "class-variance-authority@^0.7.1"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/flame-chart-model.json",
+        "https://blamy.github.io/ui/r/flame-chart-primitive.json",
+        "https://blamy.github.io/ui/r/theme.json",
+        "https://blamy.github.io/ui/r/trace-timeline-model.json",
+        "https://blamy.github.io/ui/r/utils.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/flame-chart.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/flame-chart.tsx"
+        }
+      ],
+      "meta": {
+        "page": "flame-chart",
+        "exports": [
+          "FlameChart",
+          "flameChartVariants"
+        ]
+      }
+    },
+    {
       "name": "floating-sheet",
       "type": "registry:ui",
       "title": "FloatingSheet",
@@ -6783,6 +6838,192 @@
           "radioGroupVariants",
           "radioVariants",
           "createRadioGroupController"
+        ]
+      }
+    },
+    {
+      "name": "replay-debugger",
+      "type": "registry:ui",
+      "title": "ReplayDebugger",
+      "description": "A time travel debugger over Replay recordings read once into JSON: forward and reverse stepping, breakpoints, logpoints, call stacks, scopes and evaluation, a timeline of the whole recording across the top, and for a session of several recordings (a browser and the services behind it) one timeline, a distributed trace as a flame chart, and each request's code step by step beside the page as rrweb saw it. Docstream opens a .replay file in it.",
+      "dependencies": [
+        "@brett_lamy/ui@6.0.0"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/breadcrumb.json",
+        "https://blamy.github.io/ui/r/button.json",
+        "https://blamy.github.io/ui/r/call-stack.json",
+        "https://blamy.github.io/ui/r/call-stack-model.json",
+        "https://blamy.github.io/ui/r/checkbox.json",
+        "https://blamy.github.io/ui/r/code-editor.json",
+        "https://blamy.github.io/ui/r/code-editor-model.json",
+        "https://blamy.github.io/ui/r/container.json",
+        "https://blamy.github.io/ui/r/debug-toolbar.json",
+        "https://blamy.github.io/ui/r/disclosure.json",
+        "https://blamy.github.io/ui/r/file-icons.json",
+        "https://blamy.github.io/ui/r/flame-chart.json",
+        "https://blamy.github.io/ui/r/flame-chart-model.json",
+        "https://blamy.github.io/ui/r/input.json",
+        "https://blamy.github.io/ui/r/log-list.json",
+        "https://blamy.github.io/ui/r/log-list-model.json",
+        "https://blamy.github.io/ui/r/object-tree.json",
+        "https://blamy.github.io/ui/r/object-tree-model.json",
+        "https://blamy.github.io/ui/r/object-tree-value.json",
+        "https://blamy.github.io/ui/r/object-value.json",
+        "https://blamy.github.io/ui/r/popover.json",
+        "https://blamy.github.io/ui/r/replay-preview.json",
+        "https://blamy.github.io/ui/r/segmented.json",
+        "https://blamy.github.io/ui/r/size-class.json",
+        "https://blamy.github.io/ui/r/tabs.json",
+        "https://blamy.github.io/ui/r/toggle.json",
+        "https://blamy.github.io/ui/r/trace-timeline.json",
+        "https://blamy.github.io/ui/r/trace-timeline-model.json",
+        "https://blamy.github.io/ui/r/tree.json",
+        "https://blamy.github.io/ui/r/utils.json",
+        "https://blamy.github.io/ui/r/workspace.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/components/replay-debugger/cache.ts",
+          "type": "registry:ui",
+          "target": "components/ui/replay-debugger/cache.ts"
+        },
+        {
+          "path": "packages/ui/src/components/replay-debugger/code.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/replay-debugger/code.tsx"
+        },
+        {
+          "path": "packages/ui/src/components/replay-debugger/console.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/replay-debugger/console.tsx"
+        },
+        {
+          "path": "packages/ui/src/components/replay-debugger/debugger.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/replay-debugger/debugger.tsx"
+        },
+        {
+          "path": "packages/ui/src/components/replay-debugger/full-stack.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/replay-debugger/full-stack.tsx"
+        },
+        {
+          "path": "packages/ui/src/components/replay-debugger/host.ts",
+          "type": "registry:ui",
+          "target": "components/ui/replay-debugger/host.ts"
+        },
+        {
+          "path": "packages/ui/src/components/replay-debugger/index.ts",
+          "type": "registry:ui",
+          "target": "components/ui/replay-debugger/index.ts"
+        },
+        {
+          "path": "packages/ui/src/components/replay-debugger/line-panels.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/replay-debugger/line-panels.tsx"
+        },
+        {
+          "path": "packages/ui/src/components/replay-debugger/model.ts",
+          "type": "registry:ui",
+          "target": "components/ui/replay-debugger/model.ts"
+        },
+        {
+          "path": "packages/ui/src/components/replay-debugger/replay-view.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/replay-debugger/replay-view.tsx"
+        },
+        {
+          "path": "packages/ui/src/components/replay-debugger/request-points.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/replay-debugger/request-points.tsx"
+        },
+        {
+          "path": "packages/ui/src/components/replay-debugger/seed-stops.ts",
+          "type": "registry:ui",
+          "target": "components/ui/replay-debugger/seed-stops.ts"
+        },
+        {
+          "path": "packages/ui/src/components/replay-debugger/session-debugger.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/replay-debugger/session-debugger.tsx"
+        },
+        {
+          "path": "packages/ui/src/components/replay-debugger/session-flame.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/replay-debugger/session-flame.tsx"
+        },
+        {
+          "path": "packages/ui/src/components/replay-debugger/session-timeline.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/replay-debugger/session-timeline.tsx"
+        },
+        {
+          "path": "packages/ui/src/components/replay-debugger/session.ts",
+          "type": "registry:ui",
+          "target": "components/ui/replay-debugger/session.ts"
+        },
+        {
+          "path": "packages/ui/src/components/replay-debugger/source-tree.ts",
+          "type": "registry:ui",
+          "target": "components/ui/replay-debugger/source-tree.ts"
+        },
+        {
+          "path": "packages/ui/src/components/replay-debugger/sources.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/replay-debugger/sources.tsx"
+        },
+        {
+          "path": "packages/ui/src/components/replay-debugger/stack.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/replay-debugger/stack.tsx"
+        },
+        {
+          "path": "packages/ui/src/components/replay-debugger/styles.ts",
+          "type": "registry:ui",
+          "target": "components/ui/replay-debugger/styles.ts"
+        },
+        {
+          "path": "packages/ui/src/components/replay-debugger/timeline.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/replay-debugger/timeline.tsx"
+        },
+        {
+          "path": "packages/ui/src/components/replay-debugger/toolbar.tsx",
+          "type": "registry:ui",
+          "target": "components/ui/replay-debugger/toolbar.tsx"
+        },
+        {
+          "path": "packages/ui/src/components/replay-debugger/use-model.ts",
+          "type": "registry:ui",
+          "target": "components/ui/replay-debugger/use-model.ts"
+        },
+        {
+          "path": "packages/ui/src/components/replay-debugger/values.ts",
+          "type": "registry:ui",
+          "target": "components/ui/replay-debugger/values.ts"
+        }
+      ],
+      "meta": {
+        "page": "replay-debugger",
+        "exports": [
+          "ReplayDebugger",
+          "ReplayView",
+          "CachedReplayDebugger",
+          "DebuggerModel",
+          "DebuggerTimeline",
+          "SessionDebugger",
+          "SessionTimeline",
+          "SessionFlame",
+          "RequestPoints",
+          "FullStackReplay",
+          "createCachedHost",
+          "CachedClock",
+          "cachedSummary",
+          "analyzeSession",
+          "requestPoints",
+          "storyOf"
         ]
       }
     },
@@ -9243,6 +9484,27 @@
           "path": "packages/ui/src/lib/diagram-text.ts",
           "type": "registry:lib",
           "target": "lib/diagram-text.ts"
+        }
+      ]
+    },
+    {
+      "name": "flame-chart-primitive",
+      "type": "registry:lib",
+      "title": "Flame Chart Primitive",
+      "description": "Flame Chart Primitive — part of BL UI's library (lib/flame-chart-primitive.ts).",
+      "dependencies": [
+        "@brett_lamy/ui@6.0.0"
+      ],
+      "registryDependencies": [
+        "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/flame-chart-model.json",
+        "https://blamy.github.io/ui/r/trace-timeline-model.json"
+      ],
+      "files": [
+        {
+          "path": "packages/ui/src/lib/flame-chart-primitive.ts",
+          "type": "registry:lib",
+          "target": "lib/flame-chart-primitive.ts"
         }
       ]
     },
@@ -12101,7 +12363,7 @@
       "name": "replay-debugger",
       "type": "registry:block",
       "title": "Replay Debugger",
-      "description": "A time-travel debugger with forward and reverse stepping, source navigation, breakpoints, logpoints, call stacks, scopes and expression evaluation. A plain DebuggerHost interface supplies data and callbacks; the included demo answers from an in-memory table.",
+      "description": "A time-travel debugger with forward and reverse stepping, source navigation, breakpoints, logpoints, call stacks, scopes and expression evaluation. A plain DebuggerHost interface supplies data and callbacks; the included demo answers from an in-memory table, or from a real recording read once into JSON with Replay's native linker. A session of several recordings (a browser and the services behind it) plays on one timeline, with a flame chart of its distributed trace, each request's code, and the page as rrweb saw it.",
       "categories": [
         "developer-tools",
         "application"
@@ -12111,31 +12373,8 @@
       ],
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
-        "https://blamy.github.io/ui/r/breadcrumb.json",
-        "https://blamy.github.io/ui/r/button.json",
-        "https://blamy.github.io/ui/r/call-stack.json",
-        "https://blamy.github.io/ui/r/call-stack-model.json",
-        "https://blamy.github.io/ui/r/checkbox.json",
-        "https://blamy.github.io/ui/r/code-editor.json",
-        "https://blamy.github.io/ui/r/code-editor-model.json",
-        "https://blamy.github.io/ui/r/container.json",
-        "https://blamy.github.io/ui/r/debug-toolbar.json",
-        "https://blamy.github.io/ui/r/file-icons.json",
-        "https://blamy.github.io/ui/r/input.json",
-        "https://blamy.github.io/ui/r/log-list.json",
-        "https://blamy.github.io/ui/r/log-list-model.json",
-        "https://blamy.github.io/ui/r/object-tree.json",
-        "https://blamy.github.io/ui/r/object-tree-model.json",
-        "https://blamy.github.io/ui/r/object-tree-value.json",
-        "https://blamy.github.io/ui/r/object-value.json",
-        "https://blamy.github.io/ui/r/popover.json",
-        "https://blamy.github.io/ui/r/segmented.json",
-        "https://blamy.github.io/ui/r/size-class.json",
-        "https://blamy.github.io/ui/r/tabs.json",
-        "https://blamy.github.io/ui/r/toggle.json",
-        "https://blamy.github.io/ui/r/tree.json",
-        "https://blamy.github.io/ui/r/utils.json",
-        "https://blamy.github.io/ui/r/workspace.json"
+        "https://blamy.github.io/ui/r/replay-debugger.json",
+        "https://blamy.github.io/ui/r/utils.json"
       ],
       "files": [
         {
@@ -12144,89 +12383,34 @@
           "target": "components/blocks/replay-debugger/page.tsx"
         },
         {
-          "path": "registry/blocks/replay-debugger/debugger.tsx",
-          "type": "registry:component",
-          "target": "components/blocks/replay-debugger/debugger.tsx"
-        },
-        {
-          "path": "registry/blocks/replay-debugger/code.tsx",
-          "type": "registry:component",
-          "target": "components/blocks/replay-debugger/code.tsx"
-        },
-        {
-          "path": "registry/blocks/replay-debugger/console.tsx",
-          "type": "registry:component",
-          "target": "components/blocks/replay-debugger/console.tsx"
-        },
-        {
-          "path": "registry/blocks/replay-debugger/line-panels.tsx",
-          "type": "registry:component",
-          "target": "components/blocks/replay-debugger/line-panels.tsx"
-        },
-        {
-          "path": "registry/blocks/replay-debugger/sources.tsx",
-          "type": "registry:component",
-          "target": "components/blocks/replay-debugger/sources.tsx"
-        },
-        {
-          "path": "registry/blocks/replay-debugger/source-tree.ts",
-          "type": "registry:component",
-          "target": "components/blocks/replay-debugger/source-tree.ts"
-        },
-        {
-          "path": "registry/blocks/replay-debugger/stack.tsx",
-          "type": "registry:component",
-          "target": "components/blocks/replay-debugger/stack.tsx"
-        },
-        {
-          "path": "registry/blocks/replay-debugger/toolbar.tsx",
-          "type": "registry:component",
-          "target": "components/blocks/replay-debugger/toolbar.tsx"
-        },
-        {
-          "path": "registry/blocks/replay-debugger/use-model.ts",
-          "type": "registry:component",
-          "target": "components/blocks/replay-debugger/use-model.ts"
-        },
-        {
-          "path": "registry/blocks/replay-debugger/values.ts",
-          "type": "registry:component",
-          "target": "components/blocks/replay-debugger/values.ts"
-        },
-        {
-          "path": "registry/blocks/replay-debugger/model.ts",
-          "type": "registry:component",
-          "target": "components/blocks/replay-debugger/model.ts"
-        },
-        {
-          "path": "registry/blocks/replay-debugger/host.ts",
-          "type": "registry:component",
-          "target": "components/blocks/replay-debugger/host.ts"
-        },
-        {
           "path": "registry/blocks/replay-debugger/demo-host.ts",
           "type": "registry:component",
           "target": "components/blocks/replay-debugger/demo-host.ts"
         },
         {
-          "path": "registry/blocks/replay-debugger/index.ts",
+          "path": "registry/blocks/replay-debugger/shop-recording.ts",
           "type": "registry:component",
-          "target": "components/blocks/replay-debugger/index.ts"
+          "target": "components/blocks/replay-debugger/shop-recording.ts"
         },
         {
-          "path": "registry/blocks/replay-debugger/replay-debugger.css",
+          "path": "registry/blocks/replay-debugger/recordings/shop.json",
           "type": "registry:file",
-          "target": "components/blocks/replay-debugger/replay-debugger.css"
+          "target": "components/blocks/replay-debugger/recordings/shop.json"
         },
         {
-          "path": "registry/blocks/replay-debugger/seed-stops.ts",
+          "path": "registry/blocks/replay-debugger/sessions.ts",
           "type": "registry:component",
-          "target": "components/blocks/replay-debugger/seed-stops.ts"
+          "target": "components/blocks/replay-debugger/sessions.ts"
         },
         {
-          "path": "registry/blocks/replay-debugger/styles.ts",
-          "type": "registry:component",
-          "target": "components/blocks/replay-debugger/styles.ts"
+          "path": "registry/blocks/replay-debugger/recordings/checkout-session.json",
+          "type": "registry:file",
+          "target": "components/blocks/replay-debugger/recordings/checkout-session.json"
+        },
+        {
+          "path": "registry/blocks/replay-debugger/recordings/tanstack-session.json",
+          "type": "registry:file",
+          "target": "components/blocks/replay-debugger/recordings/tanstack-session.json"
         }
       ],
       "meta": {
@@ -13186,6 +13370,9 @@
         "https://blamy.github.io/ui/r/field.json",
         "https://blamy.github.io/ui/r/file-size.json",
         "https://blamy.github.io/ui/r/file-upload.json",
+        "https://blamy.github.io/ui/r/flame-chart.json",
+        "https://blamy.github.io/ui/r/flame-chart-model.json",
+        "https://blamy.github.io/ui/r/flame-chart-primitive.json",
         "https://blamy.github.io/ui/r/floating-sheet.json",
         "https://blamy.github.io/ui/r/font-picker.json",
         "https://blamy.github.io/ui/r/font-stack-primitive.json",
@@ -13400,6 +13587,7 @@
       "description": "Every part of the Replay library (@brett_lamy/ui/replay on npm): Record a session in the page, and play it back with DevTools.",
       "registryDependencies": [
         "https://blamy.github.io/ui/r/bl-ui.json",
+        "https://blamy.github.io/ui/r/replay-debugger.json",
         "https://blamy.github.io/ui/r/replay-preview.json",
         "https://blamy.github.io/ui/r/session-recorder.json"
       ]

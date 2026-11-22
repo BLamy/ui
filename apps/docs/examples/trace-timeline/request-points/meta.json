@@ -1,0 +1,6 @@
+{
+  "title": "Trace Timeline · a full-stack session, step by step",
+  "description": "Four Node services and the page that called them, each recorded and replayed once, from JSON. Scrub to walk every line each backend ran; under 640 px the page floats and the timeline is a rail.",
+  "height": 680,
+  "status": "Live"
+}

@@ -1,0 +1,6 @@
+{
+  "title": "DebugToolbar · a controlled debugger",
+  "description": "The step is state you hold; the toolbar, the timeline and the code are views of it. Every answer comes from a recording's JSON cache.",
+  "height": 480,
+  "status": "Live"
+}

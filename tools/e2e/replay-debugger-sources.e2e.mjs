@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { openDemo, openHarness } from './helpers.mjs';
 
-const position = (page) => page.locator('[data-slot=debugger-position]');
+const toolbarRoot = (page) => page.locator('[data-slot="debugger-toolbar"]');
 const picker = (page) => page.getByRole('dialog', { name: 'Choose a recorded source' });
 test.beforeEach(async ({ page }) => {
   const errors = [];
@@ -16,8 +16,8 @@ for (const width of [1400, 390]) {
   test(`breadcrumbs reveal a source tree at ${width}px and file selection preserves the pause`, async ({ page }) => {
     await page.setViewportSize({ width, height: 850 });
     await openHarness(page, 'debugger-sources', '[data-slot=replay-debugger]');
-    await expect(position(page)).toContainText('step 12 of 18');
-    const before = await position(page).textContent();
+    await expect(toolbarRoot(page)).toHaveAttribute('data-step', '12');
+    const before = await toolbarRoot(page).getAttribute('data-step');
     await expect(page.locator('[data-slot=debugger-sources-place]')).toHaveCount(0);
     await expect(page.getByRole('tree', { name: 'Recorded sources' })).toHaveCount(0);
     await path(page).getByRole('button', { name: 'cart.js', exact: true }).click();
@@ -30,7 +30,7 @@ for (const width of [1400, 390]) {
     await expect(picker(page)).toHaveCount(0);
     await expect(path(page)).toContainText('discount.ts');
     await expect(page.locator('[data-slot=code-editor-content]')).toContainText('export const discount = 0.9;');
-    await expect(position(page)).toHaveText(before);
+    await expect(toolbarRoot(page)).toHaveAttribute('data-step', before);
     await path(page).getByRole('button', { name: 'Sources', exact: true }).click();
     await expect(tree).toBeVisible();
     const framework = tree.getByRole('treeitem', { name: /Framework and generated code/ });
@@ -42,13 +42,13 @@ for (const width of [1400, 390]) {
     await expect(path(page)).toContainText('runtime.js');
     const bounds = await path(page).boundingBox();
     expect(bounds.x + bounds.width).toBeLessThanOrEqual(width);
-    await expect(position(page)).toHaveText(before);
+    await expect(toolbarRoot(page)).toHaveAttribute('data-step', before);
   });
 }
 
 test('tree keys browse without stepping, Escape returns focus and outside press dismisses', async ({ page }) => {
   await openHarness(page, 'debugger-sources', '[data-slot=replay-debugger]');
-  await expect(position(page)).toContainText('step 12 of 18');
+  await expect(toolbarRoot(page)).toHaveAttribute('data-step', '12');
   const crumb = path(page).getByRole('button', { name: 'cart.js', exact: true });
   await crumb.click();
   const file = picker(page).getByRole('treeitem', { name: 'cart.js', exact: true });
@@ -56,25 +56,26 @@ test('tree keys browse without stepping, Escape returns focus and outside press 
   await page.keyboard.press('ArrowDown');
   await expect(picker(page)).toBeVisible();
   await expect(path(page)).toContainText('cart.js');
-  await expect(position(page)).toContainText('step 12 of 18');
+  await expect(toolbarRoot(page)).toHaveAttribute('data-step', '12');
   await page.setViewportSize({ width: 390, height: 850 });
   await expect(picker(page)).toBeVisible();
-  await expect(position(page)).toContainText('step 12 of 18');
+  await expect(toolbarRoot(page)).toHaveAttribute('data-step', '12');
   await page.keyboard.press('Escape');
   await expect(picker(page)).toHaveCount(0);
   await expect(crumb).toBeFocused();
   await page.keyboard.press('Enter');
   await expect(picker(page)).toBeVisible();
   // A real pointer press outside the popover dismisses it.
-  const outside = await position(page).boundingBox();
+  // The toolbar's empty end, past its buttons.
+  const outside = await toolbarRoot(page).boundingBox();
   expect(outside).toBeTruthy();
-  await page.mouse.click(outside.x + outside.width / 2, outside.y + outside.height / 2);
+  await page.mouse.click(outside.x + outside.width - 6, outside.y + outside.height / 2);
   await expect(picker(page)).toHaveCount(0);
 });
 
 test('Return opens the highlighted source without changing the paused step', async ({ page }) => {
   await openHarness(page, 'debugger-sources', '[data-slot=replay-debugger]');
-  await expect(position(page)).toContainText('step 12 of 18');
+  await expect(toolbarRoot(page)).toHaveAttribute('data-step', '12');
   await path(page).getByRole('button', { name: 'src', exact: true }).click();
   await picker(page).getByRole('searchbox').fill('discount.ts');
   // Tab enters the tree on its tab stop (the folder the crumb opened), and ArrowDown moves to the file in it.
@@ -84,7 +85,7 @@ test('Return opens the highlighted source without changing the paused step', asy
   await page.keyboard.press('Enter');
   await expect(picker(page)).toHaveCount(0);
   await expect(path(page)).toContainText('discount.ts');
-  await expect(position(page)).toContainText('step 12 of 18');
+  await expect(toolbarRoot(page)).toHaveAttribute('data-step', '12');
 });
 
 test('the toolbar uses the requested icons and order, grays unavailable Step out and navigates the recorded program', async ({ page }) => {
@@ -120,7 +121,7 @@ test('the toolbar uses the requested icons and order, grays unavailable Step out
   expect(appearance.forward).not.toBe(appearance.stepping);
   const step = async (action, expected) => {
     await toolbar.locator(`[data-action="${action}"]`).click();
-    await expect(position(page)).toContainText(`step ${expected} of 18`);
+    await expect(toolbarRoot(page)).toHaveAttribute('data-step', String(expected));
   };
   for (let i = 1; i <= 5; i++) await step('step-into', i);
   await expect(toolbar.getByRole('button', { name: 'Step out', exact: true })).toBeEnabled();

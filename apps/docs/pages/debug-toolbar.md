@@ -44,6 +44,32 @@ import { DebugToolbar } from '@brett_lamy/ui/debug-toolbar'
 <DebugToolbar actions={['continue', 'step-over', 'step-into', 'step-out', 'restart', 'stop']} onAction={dispatch} />
 ```
 
+## A controlled debugger
+
+The toolbar holds no state: it says which action was pressed, and `disabledActions` is whatever you say can't go anywhere. So a debugger built on it can be controlled, with the position as one number you hold and every action a pure function from the position to the next one. Here the step is the state; the toolbar, the timeline under it, the code and the values are all drawn from it. Set a breakpoint in the gutter and Continue goes to its next hit, scrub the timeline and the toolbar's choices follow, and an action that would go nowhere from here is greyed out.
+
+{% demo src="debug-toolbar/controlled" %}
+
+```tsx
+function debuggerReducer(state, action) {
+  if (action === 'stop') return { ...state, stopped: true }
+  if (action === 'restart') return { ...state, step: first, stopped: false }
+  const next = navigateCached(cache, state.step, NAVIGATION[action], breakpointsOf(state))
+  return next < 0 ? state : { ...state, step: next }
+}
+
+const [state, setState] = useState(initial)
+
+<DebugToolbar
+  onAction={(action) => setState((s) => debuggerReducer(s, action))}
+  disabledActions={actions.filter((action) => debuggerReducer(state, action) === state)}
+/>
+<TraceTimeline value={timeOf(state.step)} onValueChange={(t) => setState((s) => ({ ...s, step: stepAt(t) }))} … />
+<CodeEditor currentLine={lineOf(state.step)} … />
+```
+
+The answers come from a real recording, read once: an extractor replays a `recording.dat` with Replay's native linker, pauses at every step of the program, and writes where each kind of step goes from each step, every line's hits, and the frames and scopes, to one JSON file. `navigateCached` reads it, and the [Replay Debugger](https://blamy.github.io/ui/#/blocks/replay-debugger) block's `createCachedHost(cache)` answers the whole debugger from the same file (its "A real recording" variant).
+
 ## Looks and sizes
 
 `variant` and `size` are Toolbar's. The default is `floating`, the card VS Code floats over the editor; `variant="plain"` sits in a pane's header with no surface (the Replay Debugger block uses it). `size="sm"` gives 28px tools for a narrow pane, `default` 36px, `lg` 44px (a touch layout). The colors are the theme's: Continue, Reverse continue and Restart in `success`, Stop in `destructive`, the steps in the toolbar's neutral color, so the strip follows light, dark and any theme scope.

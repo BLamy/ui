@@ -94,7 +94,7 @@ function DebuggerEditor({
           const bp = model.breakpoints.get(`${sourceId}:${line}`);
           if (!bp)
             return breakable.has(line) ? (
-              <span className="debugger-marker block size-[9px] rounded-full [&.on]:bg-warning [&.on[data-kind=logpoint]]:bg-primary [&.on:not([data-enabled])]:opacity-35" />
+              <span className="debugger-marker block size-[9px] rounded-full [button:hover>&:not(.on)]:bg-warning/45 [&.on]:bg-warning [&.on[data-kind=logpoint]]:bg-primary [&.on:not([data-enabled])]:opacity-35" />
             ) : null;
           return (
             <span

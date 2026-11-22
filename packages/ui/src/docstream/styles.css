@@ -606,6 +606,25 @@ summary:is(.docs-expandable-trigger, .oas-response-trigger)::-webkit-details-mar
   gap: 6px;
 }
 
+/* ReplayDebugFile: a .replay file ({% embed url="checkout.replay" %}) in the time travel debugger. It's an app, so it
+   gets a frame of its own height; under 640 px the session view is the phone layout inside it. */
+.docstream-replay-debug {
+  margin: 0;
+  height: min(720px, 85vh);
+  min-height: 480px;
+  border: 1px solid var(--gb-border);
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--gb-bg, transparent);
+}
+.docstream-replay-debug__message {
+  display: grid;
+  height: 100%;
+  place-items: center;
+  font-size: 13px;
+  color: var(--gb-muted-foreground, #71717a);
+}
+
 /* An asset the host's resolver hasn't returned yet. */
 .docstream-asset-pending {
   aspect-ratio: 16 / 9;

@@ -64,9 +64,9 @@
     },
     "ui": {
       "entry": "@brett_lamy/ui",
-      "min": 1644348,
-      "gzip": 538135,
-      "brotli": 431741,
+      "min": 1680822,
+      "gzip": 549908,
+      "brotli": 440972,
       "lazy": {
         "min": 151971,
         "gzip": 68858,
@@ -154,13 +154,13 @@
     },
     "docstream": {
       "entry": "@brett_lamy/ui/docstream",
-      "min": 730661,
-      "gzip": 244151,
-      "brotli": 204681,
+      "min": 736015,
+      "gzip": 245394,
+      "brotli": 205966,
       "lazy": {
-        "min": 3133625,
-        "gzip": 1014638,
-        "brotli": 776954
+        "min": 3528706,
+        "gzip": 1149778,
+        "brotli": 882964
       },
       "peers": [
         "elkjs",
@@ -169,13 +169,13 @@
     },
     "docstream-editor": {
       "entry": "@brett_lamy/ui/docstream-editor",
-      "min": 1314469,
-      "gzip": 423462,
-      "brotli": 349963,
+      "min": 1320010,
+      "gzip": 425996,
+      "brotli": 351598,
       "lazy": {
-        "min": 3117426,
-        "gzip": 1011471,
-        "brotli": 773890
+        "min": 3509752,
+        "gzip": 1142698,
+        "brotli": 878363
       },
       "peers": [
         "elkjs",
@@ -184,13 +184,13 @@
     },
     "markdown": {
       "entry": "@brett_lamy/ui/markdown",
-      "min": 1348646,
-      "gzip": 435545,
-      "brotli": 359054,
+      "min": 1356189,
+      "gzip": 438199,
+      "brotli": 361280,
       "lazy": {
-        "min": 3101172,
-        "gzip": 1005794,
-        "brotli": 769130
+        "min": 3485613,
+        "gzip": 1136425,
+        "brotli": 873040
       },
       "peers": [
         "elkjs",
@@ -199,13 +199,13 @@
     },
     "composer": {
       "entry": "@brett_lamy/ui/composer",
-      "min": 1564059,
-      "gzip": 506579,
-      "brotli": 415033,
+      "min": 1571780,
+      "gzip": 509591,
+      "brotli": 417083,
       "lazy": {
-        "min": 3026927,
-        "gzip": 977879,
-        "brotli": 749818
+        "min": 3405381,
+        "gzip": 1106812,
+        "brotli": 851925
       },
       "peers": [
         "elkjs",
@@ -214,13 +214,13 @@
     },
     "replay": {
       "entry": "@brett_lamy/ui/replay",
-      "min": 354682,
-      "gzip": 121920,
-      "brotli": 104873,
+      "min": 932552,
+      "gzip": 316006,
+      "brotli": 257509,
       "lazy": {
-        "min": 358414,
-        "gzip": 125561,
-        "brotli": 95935
+        "min": 448921,
+        "gzip": 156882,
+        "brotli": 123042
       },
       "peers": []
     },
@@ -358,9 +358,9 @@
       "gzip": 43638
     },
     "MarkdownView from /markdown": {
-      "wide": 710842,
-      "narrow": 710871,
-      "gzip": 236881
+      "wide": 716066,
+      "narrow": 716088,
+      "gzip": 238910
     },
     "FilterInput from /filter": {
       "wide": 314805,

@@ -89,14 +89,13 @@ import ReplayCanvas from '@/components/blocks/replay-canvas/page';
 
 {% demo src="blocks/replay-debugger" layout="multi" %}
 
-The Replay Debugger block is a time-travel debugger composed from [CodeEditor](https://blamy.github.io/ui/#/code-editor), [CallStack](https://blamy.github.io/ui/#/call-stack), [ObjectTree](https://blamy.github.io/ui/#/object-tree), [LogList](https://blamy.github.io/ui/#/log-list), [DebugToolbar](https://blamy.github.io/ui/#/debug-toolbar) and [Workspace](https://blamy.github.io/ui/#/workspace). It includes forward and reverse stepping, source navigation, breakpoints, logpoints, scopes and expression evaluation. In a compact box it shows one panel at a time; widening it keeps the same model and selection. It installs as source into `components/blocks/replay-debugger` with the core components it imports; it does not need the npm package or a replay engine.
+The Replay Debugger block is a time-travel debugger composed from [CodeEditor](https://blamy.github.io/ui/#/code-editor), [CallStack](https://blamy.github.io/ui/#/call-stack), [ObjectTree](https://blamy.github.io/ui/#/object-tree), [LogList](https://blamy.github.io/ui/#/log-list), [DebugToolbar](https://blamy.github.io/ui/#/debug-toolbar) and [Workspace](https://blamy.github.io/ui/#/workspace). It includes a [Trace Timeline](https://blamy.github.io/ui/#/trace-timeline) of the whole recording across the top, forward and reverse stepping, source navigation, breakpoints, logpoints, scopes and expression evaluation. In a compact box it shows one panel at a time; widening it keeps the same model and selection. It installs as source into `components/blocks/replay-debugger` with the core components it imports; it does not need the npm package or a replay engine.
 
 {% command %}npx shadcn@latest add https://blamy.github.io/ui/r/replay-debugger.json{% endcommand %}
 
 ```tsx
-import { ReplayDebugger, DebuggerModel } from '@/components/blocks/replay-debugger';
-import type { DebuggerHost, DebuggerSummary, StepClock } from '@/components/blocks/replay-debugger';
-import '@/components/blocks/replay-debugger/replay-debugger.css';
+import { ReplayDebugger, DebuggerModel } from '@brett_lamy/ui/replay';
+import type { DebuggerHost, DebuggerSummary, StepClock } from '@brett_lamy/ui/replay';
 
 const model = new DebuggerModel(recordingId, host);
 model.ready(summary, clock);
@@ -105,7 +104,23 @@ await model.show(initialTime, initialStep);
 <ReplayDebugger model={model} logged={consoleRows} />;
 ```
 
+The timeline draws when JS ran, with deeper stacks reaching further down, breakpoint and logpoint hits as bars and console messages as dots, from the marks the model publishes. Scrubbing it moves the model's playhead, and stepping moves its playhead back. It reads step times from the summary's `timeline.times` (and `timeline.depths`) when the host gives them, and otherwise asks the clock for a sample. `timeline={false}` leaves it out for a host with a timeline of its own, and `DebuggerTimeline` is the same strip on its own, to put anywhere.
+
 `DebuggerHost` supplies plain source, step, frame and value data plus callbacks for navigation, pauses, evaluations and logpoints. `StepClock` maps indexed steps to the host's playhead. The host owns loading and persistence; dispose the model when replacing that session. The included `createDemoHost`, `DemoClock` and `DEMO_SUMMARY` answer from an in-memory table and show how to implement the interface.
+
+**From a JSON cache.** A host doesn't need an engine running. An extractor, kept outside this repository, replays a short `recording.dat` once with Replay's native linker (through the Recording Inspector's engine in full-stack-osx-demo), pauses at every step in the program's own sources, and writes a `ReplayCache`: the sources with their hit counts, each step's time, depth, location and stack, where every kind of step goes from it, each line's hits, the frames, scopes and reachable objects at each step, and the console. `createCachedHost(cache)`, `CachedClock` and `cachedSummary(cache)` answer the whole debugger from it, so the page loads the JSON and that's all. Expressions are read from the kept scopes: names and paths like `cart.items[0].price` work, and anything that would run code says it needs the engine. The block's "A real recording" variant runs on `SHOP_RECORDING`, a Node run of a small shop script (84 steps, 42 kB gzipped); `storyOf(cache)` tells the same run as a test story, as the [Trace Timeline](https://blamy.github.io/ui/#/trace-timeline) page shows.
+
+```tsx
+import { CachedClock, cachedSummary, createCachedHost } from '@brett_lamy/ui/replay';
+import cache from './recording.json';
+
+const model = new DebuggerModel('shop.js', createCachedHost(cache, { onHit: (hit) => model.onEvent(hit) }));
+model.ready(cachedSummary(cache), new CachedClock(cache));
+```
+
+**Several recordings of one session.** The same extractor writes a `ReplaySession` (`bl-replay-session/1`): every replayed recording's cache with its offset onto a shared clock, the spans that join them as a distributed tracer has them (trace, span and parent IDs, kind, status, attributes such as `http.status_code`, `session.id` and `enduser.id`, and the steps each span starts and ends at), each process's CPU and memory samples, its logs, and for a page that recorded itself, its rrweb events. The demos' sessions are services that report their spans as trace context in their console (a gateway, orders, payments and inventory, with a shop page in a browser recording itself with rrweb), and a full-stack-osx-demo pair bundle (a browser and its server, lined up on the host's clock). `session.ts` says which field stands for each of the Replay inspector's session analytics, and `analyzeSession` derives them: self time as duration less the union of children, each service's busy time with overlaps counted once, P50 and P95 per operation, errors, unfinished spans, and spans that began before their parent.
+
+The block's session parts take one: `SessionTimeline` (a lane per recording on a TraceTimeline), `SessionDebugger` (a debugger model for each replayed recording behind one playhead; stepping in one moves it, pressing another lane shows that recording at the same moment), `SessionFlame` (the trace as a [FlameChart](https://blamy.github.io/ui/#/flame-chart), with the code's own calls under each server span; double-click a span to open its recording there), `RequestPoints` and `FullStackReplay` (the page, the timeline and each request's code). The variants above run them on a recording of the checkout services and on the TanStack Start pair.
 
 The summary's optional `engineLabel` is display text supplied by the host. An empty index can supply no sources and zero steps. The demo page's `empty` prop (or `variant="empty"` in the docs viewer) exercises that completed empty state, and `startAt` chooses its initial table step. `DebuggerModel` accepts an optional third argument, `{ now }`, for the monotonic clock used to display pause latency; it defaults to `performance.now`. The in-memory demo supplies a fixed clock so its screenshots repeat exactly.
 

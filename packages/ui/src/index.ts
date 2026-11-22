@@ -390,6 +390,8 @@ export type {
 // Debugging parts
 export { DebugToolbar, DebugToolbarButton, debugToolbarActions } from './components/debug-toolbar';
 export type { DebugToolbarAction, DebugToolbarActionDetails, DebugToolbarProps, DebugToolbarButtonProps } from './components/debug-toolbar';
+export { FlameChart, flameChartVariants } from './components/flame-chart';
+export type { FlameChartProps, FlameChartHandle, FlameDrawStats, FlameValueChangeDetails, FlameValueChangeReason, FlameValueCommitDetails, FlameViewChangeDetails, FlameViewChangeReason, FlameSelectReason, FlameSelectedChangeDetails, FlameCollapseReason, FlameCollapsedLanesChangeDetails, FlameActivateReason, FlameActivateDetails } from './components/flame-chart';
 export { TraceTimeline, TraceTimelinePreview, traceTimelineVariants } from './components/trace-timeline';
 export type { TraceTimelineProps, TraceTimelinePreviewProps, TraceTimelineHandle, TraceValueChangeDetails, TraceValueChangeReason, TraceValueCommitDetails, TraceViewChangeDetails, TraceViewChangeReason, TracePickReason, TraceFocusedLaneChangeDetails, TraceSelectedThreadChangeDetails, TraceSelectedRequestChangeDetails, TraceDrawStats, TraceFetchActivity } from './components/trace-timeline';
 export {

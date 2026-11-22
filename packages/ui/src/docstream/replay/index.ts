@@ -27,6 +27,8 @@ export type { ReplayEvent } from './types';
 export { isReplayQaUrl, normalizeReplayEmbedUrl } from './url';
 export { ReplayFile, isRrwebUrl, splitReplayFragment } from './ReplayFile';
 export type { ReplayFileProps } from './ReplayFile';
+export { ReplayDebugFile, isReplayDebugUrl } from './ReplayDebugFile';
+export type { ReplayDebugFileProps } from './ReplayDebugFile';
 export { sanitizeReplayEvent } from './sanitize';
 export { consoleLogToReplayEvents, harToReplayEvents, mergeReplaySources } from './sources';
 export { parseWebVTT, replayCaptionsAt } from './captions';

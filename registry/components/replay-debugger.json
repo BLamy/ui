@@ -1,0 +1,37 @@
+{
+  "name": "replay-debugger",
+  "title": "ReplayDebugger",
+  "description": "A time travel debugger over Replay recordings read once into JSON: forward and reverse stepping, breakpoints, logpoints, call stacks, scopes and evaluation, a timeline of the whole recording across the top, and for a session of several recordings (a browser and the services behind it) one timeline, a distributed trace as a flame chart, and each request's code step by step beside the page as rrweb saw it. Docstream opens a .replay file in it.",
+  "page": "replay-debugger",
+  "exports": [
+    "ReplayDebugger",
+    "ReplayView",
+    "CachedReplayDebugger",
+    "DebuggerModel",
+    "DebuggerTimeline",
+    "SessionDebugger",
+    "SessionTimeline",
+    "SessionFlame",
+    "RequestPoints",
+    "FullStackReplay",
+    "createCachedHost",
+    "CachedClock",
+    "cachedSummary",
+    "analyzeSession",
+    "requestPoints",
+    "storyOf"
+  ],
+  "imports": [
+    "ReplayView"
+  ],
+  "types": [
+    "DebuggerHost",
+    "DebuggerSummary",
+    "StepClock",
+    "ReplayCache",
+    "ReplaySession",
+    "SessionSpan",
+    "SessionRecording",
+    "ReplayFileData"
+  ]
+}

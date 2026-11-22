@@ -205,7 +205,14 @@ export interface DebuggerSummary {
   steps: number;
   firstStep: number;
   lastStep: number;
-  timeline: { warning?: string | null };
+  timeline: {
+    warning?: string | null;
+    /** When each pausable step ran, in ms on the playhead's clock, sorted: the debugger's timeline draws them. Without
+     *  them it asks the clock for a sample of steps' times. */
+    times?: ArrayLike<number>;
+    /** How deep the stack was at each of those steps, parallel to `times`. */
+    depths?: ArrayLike<number>;
+  };
   simulation?: SeedSummary | null;
   /** Which part of the recording this is, if it's too big to all be here. Steps are numbered within it. */
   window?: {
@@ -240,14 +247,6 @@ export interface TimelineMarks {
   console: number[];
   stops?: number[];
   errorStops?: number[];
-}
-
-/** Something to press that goes somewhere from the moment you're on: a request this step is part of, and its other end. */
-export interface StepLink {
-  id: string;
-  label: string;
-  title: string;
-  onClick: () => void;
 }
 
 export type StatusOptions = { error?: boolean; sticky?: boolean };
@@ -310,8 +309,6 @@ export interface DebuggerHost {
   stepAcross?(direction: 1 | -1): Promise<number>;
   /** A step that would pass where this recording hands the work to another. Says whether it went there instead. */
   crossWithStep?(how: NavigationKind, next: number): Promise<boolean>;
-  /** What a step has to do with anything the host knows about, like the requests of a session. */
-  describeStep?(info: StepInfo): StepLink[][] | null;
   /** Where the host keeps showing a logpoint's hits has more to show. */
   onLogpoints?(): void;
   onDevToolsPause?(step: number): void;

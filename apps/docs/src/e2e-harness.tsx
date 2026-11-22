@@ -12,7 +12,8 @@ import { TailscaleLoginButton, TailscaleStatusBadge } from '@/components/ui/tail
 import { createFakeTailscaleClient } from '@/lib/tailscale-fake'
 import { TailscaleProvider, useTailscaleStatus } from '@/lib/tailscale-react'
 import { useTailscaleRouter } from '@/lib/tailscale-router/react'
-import { ReplayDebugger, DebuggerModel, createDemoHost, DemoClock, DEMO_SUMMARY } from '@/components/blocks/replay-debugger'
+import { ReplayDebugger, DebuggerModel } from '@/components/ui/replay-debugger'
+import { createDemoHost, DemoClock, DEMO_SUMMARY } from '@/components/blocks/replay-debugger/demo-host'
 
 /* Test tooling, not a demo: `?harness=<name>` (dev server only; main.tsx never loads this in a production build)
    renders the Tailscale components on an in-memory tailnet, so tools/e2e can drive them without a Tailscale account.

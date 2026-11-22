@@ -211,10 +211,10 @@ export const LIBRARIES: Library[] = [
   {
     id: 'replay', name: 'Replay', npm: '@brett_lamy/ui/replay', partOf: 'ui', entry: 'replay', category: 'content', status: 'new', icon: 'play-rectangle',
     tagline: 'Record a session in the page, and play it back with DevTools.',
-    description: 'The rrweb session recorder, which writes a recording to Sync\'s append-only streams so it can follow you to another device, and ReplayPreview, docstream\'s replay player as a component of its own: the page as it was, with a timeline, console, network and an element inspector.',
-    dependsOn: ['docstream', 'sync'], external: ['rrweb'],
-    modules: ['lib/session-recorder.ts', 'components/replay-preview.tsx'],
-    highlights: ['Record with rrweb, one session per page load', 'ReplayPreview: timeline, console, network, inspector', 'Recordings sync across devices'],
+    description: 'The rrweb session recorder, which writes a recording to Sync\'s append-only streams so it can follow you to another device, and ReplayPreview, docstream\'s replay player as a component of its own: the page as it was, with a timeline, console, network and an element inspector. And ReplayDebugger: a time-travel debugger over Replay recordings read once into JSON, one recording or a whole session of a browser and its services on one timeline, which docstream opens from a `.replay` file.',
+    dependsOn: ['ui', 'docstream', 'sync'], external: ['rrweb'],
+    modules: ['lib/session-recorder.ts', 'components/replay-preview.tsx', 'components/replay-debugger/'],
+    highlights: ['Record with rrweb, one session per page load', 'ReplayPreview: timeline, console, network, inspector', 'ReplayDebugger: time travel over recordings read once into JSON', 'Recordings sync across devices'],
   },
 
   /* ── Data & state ───────────────────────────────────────────────────────────────────────────── */
@@ -328,6 +328,10 @@ export function reach(id: string, seen = new Set<string>()): Set<string> {
     docstream sits under the core, and three of its fences draw with parts of Diagram, which sits over it. In one
     package nothing has to be installed for them; the fence's module graph just grows when a document uses one. */
 export const LAYER_EXCEPTIONS: Array<{ unit: string; imports: string; why: string }> = [
+  {
+    unit: 'docstream/', imports: '@brett_lamy/ui/replay-debugger',
+    why: 'Docstream opens a `.replay` embed in the time travel debugger, which it loads lazily from `@brett_lamy/ui/replay-debugger` when the embed nears the viewport. Until it has loaded the frame says so, and if the file cannot be read it says why.',
+  },
   {
     unit: 'docstream/', imports: '@brett_lamy/ui/cloudflare',
     why: 'Docstream\'s capnp fence draws a workerd config with CloudflareDiagram, which it loads lazily from `@brett_lamy/ui/cloudflare` when the first capnp fence shows. Until it has loaded, and if it cannot, the fence shows the config\'s source.',

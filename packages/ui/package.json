@@ -318,6 +318,11 @@
       "types": "./dist/components/filter-input.d.ts",
       "default": "./dist/components/filter-input.js"
     },
+    "./flame-chart": {
+      "@org/source": "./src/components/flame-chart.tsx",
+      "types": "./dist/components/flame-chart.d.ts",
+      "default": "./dist/components/flame-chart.js"
+    },
     "./floating-sheet": {
       "@org/source": "./src/components/floating-sheet.tsx",
       "types": "./dist/components/floating-sheet.d.ts",
@@ -487,6 +492,11 @@
       "@org/source": "./src/lib/filter-query.ts",
       "types": "./dist/lib/filter-query.d.ts",
       "default": "./dist/lib/filter-query.js"
+    },
+    "./lib/flame-chart-model": {
+      "@org/source": "./src/lib/flame-chart-model.ts",
+      "types": "./dist/lib/flame-chart-model.d.ts",
+      "default": "./dist/lib/flame-chart-model.js"
     },
     "./lib/google-fonts": {
       "@org/source": "./src/lib/google-fonts.ts",
@@ -892,6 +902,11 @@
       "@org/source": "./src/components/radio-group.tsx",
       "types": "./dist/components/radio-group.d.ts",
       "default": "./dist/components/radio-group.js"
+    },
+    "./replay-debugger": {
+      "@org/source": "./src/components/replay-debugger/index.ts",
+      "types": "./dist/components/replay-debugger/index.d.ts",
+      "default": "./dist/components/replay-debugger/index.js"
     },
     "./replay-preview": {
       "@org/source": "./src/components/replay-preview.tsx",

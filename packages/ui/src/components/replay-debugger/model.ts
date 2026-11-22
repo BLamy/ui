@@ -21,6 +21,7 @@ import type {
   SourceEntry,
   StepClock,
   StepInfo,
+  TimelineMarks,
 } from './host';
 
 /* ══ One recording's debugger, with no DOM in it ══
@@ -245,6 +246,8 @@ export class DebuggerModel {
 
   /** Goes up when a line's marks or panels change. */
   marksVersion = 0;
+  /** The marks last published for a timeline: breakpoint, logpoint and console times. */
+  timelineMarks: TimelineMarks | null = null;
   /** A line to bring into view, whenever whoever's showing the code next can. */
   scrollRequest: { line: number; seq: number } | null = null;
   /** The Sources list: whether it's open, where it's a thing to open. */
@@ -451,31 +454,6 @@ export class DebuggerModel {
       await this.moveTo(position.step, position.idle);
   }
 
-  /** The time of a step, for what's only near enough. */
-  debugStatus() {
-    const { summary } = this;
-    if (!summary) return '';
-    const part = summary.window
-      ? ` in part ${(summary.window.number + 1).toLocaleString()} of ${summary.window.of.toLocaleString()}`
-      : '';
-    const whole =
-      summary.window && this.wholeProgress !== null
-        ? ` · ${Math.floor(this.wholeProgress * 100)}% through indexing all of it`
-        : '';
-    // What's past this takes as long as the replay does to get there, however far that is.
-    const replay =
-      this.replayProgress !== null
-        ? ` · replayed ${Math.floor(this.replayProgress * 100)}% so far`
-        : '';
-    const memory = this.memoryNotice
-      ? this.memoryNotice.reason === 'pressure'
-        ? ' · Memory is low; replay cache reduced, so jumps may take longer'
-        : ` · Replay cache reduced for the ${this.memoryNotice.budgetMB.toLocaleString()} MiB budget; jumps may take longer`
-      : '';
-    const engine = summary.engineLabel ? ` · ${summary.engineLabel}` : '';
-    return `${summary.steps.toLocaleString()} steps indexed${part}${whole}${replay}${memory} · ${summary.runtime}${engine}`;
-  }
-
   /** The timeline's marks for breakpoint hits, logpoint hits and console messages. */
   publishMarks() {
     const { map, summary } = this;
@@ -487,7 +465,7 @@ export class DebuggerModel {
           markedSteps(bp.hits || []).map((step) => map.approxTimeOf(step)!),
         )
         .filter((t) => t !== undefined);
-    this.host.onMarks({
+    this.timelineMarks = {
       breakpoints: hitTimes(enabled.filter((bp) => bp.logpoint === null)),
       logpoints: hitTimes(enabled.filter((bp) => bp.logpoint !== null)),
       console: summary.consoleMessages
@@ -501,7 +479,9 @@ export class DebuggerModel {
         .filter((stop) => stop.error)
         .map((stop) => map.approxTimeOf(stop.step)!)
         .filter((t) => t !== undefined),
-    });
+    };
+    this.host.onMarks(this.timelineMarks);
+    this.changed();
   }
 
   onEvent(event: { type: string; [key: string]: unknown }) {
